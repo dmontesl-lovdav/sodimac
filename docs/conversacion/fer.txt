@@ -171,9 +171,21 @@ POST /invoices/search
 
 Nada mas avísame cuando levanten la VM para aplicar el fix en DEV.
 
+Para levantar catalogos-api en local (Sodimac):
+
+cd APP03022-mrch.backend.somx.catalogos-api
+mvn spring-boot:run
+
+Eso levanta en puerto 8083 con perfil dev (apunta a localhost:5434, usuario wwwb2bportal).
+
+Si lo levantas desde tu PC personal (Docker PostgreSQL en puerto 5432, usuario postgres):
+
+cd APP03022-mrch.backend.somx.catalogos-api
+mvn spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:postgresql://localhost:5432/b2b_portal?currentSchema=shared_catalogs --spring.datasource.username=postgres --spring.datasource.password=postgres"
+
 Para verificar despues del fix, ejecuta este curl:
 
-curl -s "https://dev.vendor.fbusinesscenter.com/ppsomx/catalogos/CatEstatusComplemento/details?lang=1" | python -m json.tool
+curl -s "http://localhost:8083/CatEstatusComplemento/details?lang=1" | python -m json.tool
 
 Deberias ver internalStatus con valor numerico en cada entrada, por ejemplo:
 {

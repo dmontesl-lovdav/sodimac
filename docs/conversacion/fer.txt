@@ -142,20 +142,20 @@ Ahora la API de catalogos te va a devolver algo asi:
 
 El campo `internalStatus` es el que debes mandar en el campo `status` del endpoint `POST /invoices/search`. El mapeo es:
 
-EFA001 = 0 (Rechazada)
+EFA001 = 0 (Rechazo Comercial)
 EFA002 = 1 (Pendiente Addenda)
-EFA003 = 2 (Addenda Registrada)
-EFA004 = 3 (En Revision)
-EFA005 = 4 (Pre-Autorizada)
-EFA006 = 5 (Autorizada)
-EFA007 = 6 (Programada para Pago)
-EFA008 = 7 (Pago Parcial)
-EFA009 = 8 (Pagada)
-EFA010 = 9 (Devolucion)
-EFA011 = 10 (Nota de Credito)
-EFA012 = 11 (Cancelada)
-EFA013 = 12 (Cancelacion SAT)
-EFA014 = 13 (Conciliada)
+EFA003 = 2 (Recibido Parcial)
+EFA004 = 3 (Pendiente de Contabilizar)
+EFA005 = 4 (En proceso de descarga)
+EFA006 = 5 (Desglose de factura)
+EFA007 = 6 (Pendiente de envio a contabilizar)
+EFA008 = 7 (Pendiente de Pago)
+EFA009 = 8 (Pagado)
+EFA010 = 9 (Pendiente de complemento)
+EFA011 = 10 (Completado)
+EFA012 = 11 (Rechazo Contable)
+EFA013 = 12 (No valido fiscal)
+EFA014 = 13 (Pago Manual)
 
 Ejemplo de uso:
 POST /invoices/search
@@ -170,3 +170,16 @@ POST /invoices/search
 }
 
 Nada mas avísame cuando levanten la VM para aplicar el fix en DEV.
+
+Para verificar despues del fix, ejecuta este curl:
+
+curl -s "https://dev.vendor.fbusinesscenter.com/ppsomx/catalogos/CatEstatusComplemento/details?lang=1" | python -m json.tool
+
+Deberias ver internalStatus con valor numerico en cada entrada, por ejemplo:
+{
+  "key": "EFA002",
+  "internalStatus": 1,
+  "description": "Pendiente Addenda",
+  "color": "Amarillo",
+  "sortOrder": 2
+}

@@ -128,4 +128,45 @@ POST con este payload:
 }
  
 Deja lo reviso y te paso una respuesta
- 
+
+Listo Fer, ya encontre el problema. El campo `internalStatus` venia null porque no estaba poblado en la base de datos. Ya lo corregi.
+
+Ahora la API de catalogos te va a devolver algo asi:
+{
+  "key": "EFA002",
+  "internalStatus": 1,
+  "description": "Pendiente Addenda",
+  "color": "Amarillo",
+  "sortOrder": 2
+}
+
+El campo `internalStatus` es el que debes mandar en el campo `status` del endpoint `POST /invoices/search`. El mapeo es:
+
+EFA001 = 0 (Rechazada)
+EFA002 = 1 (Pendiente Addenda)
+EFA003 = 2 (Addenda Registrada)
+EFA004 = 3 (En Revision)
+EFA005 = 4 (Pre-Autorizada)
+EFA006 = 5 (Autorizada)
+EFA007 = 6 (Programada para Pago)
+EFA008 = 7 (Pago Parcial)
+EFA009 = 8 (Pagada)
+EFA010 = 9 (Devolucion)
+EFA011 = 10 (Nota de Credito)
+EFA012 = 11 (Cancelada)
+EFA013 = 12 (Cancelacion SAT)
+EFA014 = 13 (Conciliada)
+
+Ejemplo de uso:
+POST /invoices/search
+{
+  "rfcEmisor": "",
+  "fechaInicioRecepcion": "2025-08-07",
+  "fechaFinalRecepcion": "2025-12-26",
+  "tipoDocumento": "i",
+  "page": 0,
+  "size": 10,
+  "status": 1
+}
+
+Nada mas avísame cuando levanten la VM para aplicar el fix en DEV.

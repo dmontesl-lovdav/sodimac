@@ -1,0 +1,2 @@
+INSERT INTO tenant_finance.account_statement_discount (account_statement_discount_uuid,account_statement_uuid,document_number,reference_number,series,folio,"uuid",discount_date,accounting_date,currency,amount,exchange_rate,base_currency,base_amount,status,created_by,created_at,updated_by,updated_at) VALUES
+	 ('95d12d8f-3ade-416c-bb95-735ae4d2130d'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,'DESC-001','PROMO-ENE-2026',NULL,NULL,NULL,'2026-01-28 12:00:00','2026-01-29 08:00:00','MXN',2000.00,1.000000,'MXN',2000.00,'Aplicado',1,'2026-02-09 12:22:42.162639',NULL,NULL);

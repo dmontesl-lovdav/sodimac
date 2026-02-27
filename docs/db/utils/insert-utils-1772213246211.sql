@@ -1,0 +1,95 @@
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,1,'TIMEOUT_TIMBRADO_MS','Timeout en milisegundos para servicio de timbrado','30000',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (1,1,'URL_PAC_PRODUCCION','URL del PAC en ambiente de produccion','https://pac.ejemplo.com/timbrado',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (1,1,'URL_PAC_SANDBOX','URL del PAC en ambiente de pruebas','https://sandbox.pac.ejemplo.com/timbrado',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (1,1,'VERSION_CFDI','Version de CFDI vigente','4.0',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (2,1,'TIPO_CAMBIO_API','URL de API para tipo de cambio','https://api.banxico.org.mx/tipocambio',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (2,1,'RETENCION_ISR','Tasa de retencion ISR','0.10',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (5,1,'SESSION_TIMEOUT_MINUTES','Timeout de sesion en minutos','30',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (6,1,'REPORT_PAGE_SIZE','Tamano de pagina por defecto en reportes','50',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (6,1,'REPORT_MAX_ROWS','Maximo de filas en exportacion','10000',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (7,1,'SMTP_HOST','Servidor SMTP para envio de correos','smtp.empresa.com',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL);
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (7,1,'SMTP_PORT','Puerto SMTP','587',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,NULL),
+	 (1,1,'TEST_PARAM','Parametro de prueba actualizado','test_value',1.00,'2025-12-22 16:37:20.862','2025-12-22 16:37:50.574',0,1,'2025-12-22 22:37:19.092774',NULL,'2025-12-22 16:38:47.303'),
+	 (1,1,'TEST_PARAM','Parametro de prueba actualizado','new_test_value',1.10,'2025-12-22 16:37:50.675',NULL,0,1,'2025-12-22 16:37:50.675',NULL,'2025-12-22 16:38:55.98'),
+	 (NULL,9,'provemos JL','PRUEBA NUMERO 1','2',1.00,'2026-01-13 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-14 17:22:26.678612',NULL,NULL),
+	 (NULL,9,'pruebaJL2','xxx','2',1.00,'2026-01-13 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-14 20:54:13.407723',NULL,NULL),
+	 (NULL,9,'prueba JL3','Descripcion','12',1.00,'2026-01-13 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-14 21:38:57.21306',NULL,NULL),
+	 (1,1,'DIAS_CANCELACION','Dias limite para cancelacion de CFDI','30',1.00,'2025-12-14 18:00:00','2026-01-15 08:33:30.304',0,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-15 08:33:30.304'),
+	 (6,1,'REPORT_CACHE_MINUTES','Minutos de cache para reportes','15',1.00,'2025-12-15 13:23:40.443549','2026-01-15 12:21:03.32',0,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-15 12:21:03.32'),
+	 (6,1,'REPORT_CACHE_MINUTES','Minutos de cache para reportes','16',1.10,'2025-12-14 18:00:00','2026-01-15 12:22:44.95',0,1,'2026-01-15 12:21:03.448',NULL,'2026-01-15 12:22:44.951'),
+	 (6,1,'REPORT_CACHE_MINUTES','Minutos de cache para reportes','17',1.20,'2025-12-14 18:00:00',NULL,1,1,'2026-01-15 12:22:45.092',NULL,NULL);
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,1,'Prueba activo','Minutos de cache para reportes','20',1.00,'2026-01-14 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-15 18:27:31.638574',NULL,NULL),
+	 (1,1,'Fiscal','guha','12',1.00,'2026-01-14 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-15 18:32:19.24038',NULL,NULL),
+	 (7,3,'Super','Dias limite para cancelacion de CFDI','1',1.00,'2026-01-14 18:00:00','2026-01-14 18:00:00',1,1,'2026-01-15 18:35:55.292635',NULL,NULL),
+	 (NULL,3,'prueba JL','PRUEBA NUMERO 1','3',1.00,'2026-01-14 18:00:00','2026-01-15 13:00:51.904',0,1,'2026-01-14 15:49:23.624772',NULL,'2026-01-15 13:00:51.904'),
+	 (NULL,3,'prueba JL','PRUEBA NUMERO 1','4',1.10,'2026-01-14 18:00:00','2026-01-15 18:00:00',1,1,'2026-01-15 13:00:52.049',NULL,NULL),
+	 (5,1,'JWT_EXPIRATION_HOURS','Horas de expiracion del token JWT','8',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:39:27.55'),
+	 (7,1,'MAX_EMAILS_BATCH','Maximo de correos por lote','100',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:39:51.937'),
+	 (5,1,'MAX_LOGIN_ATTEMPTS','Intentos maximos de login antes de bloqueo','5',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:40:06.522'),
+	 (1,1,'MAX_RETRIES_TIMBRADO','Numero maximo de reintentos para timbrado','3',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:40:39.67'),
+	 (5,1,'PASSWORD_MIN_LENGTH','Longitud minima de contrasena','8',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:42:49.919');
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,1,'MAX_SEARCH_MONTHS','Máximo de meses permitidos en rango de búsqueda de facturas','6',1.00,'2026-01-08 16:36:03.373617',NULL,1,1,'2026-01-08 16:36:03.373617',NULL,'2026-01-16 09:44:45.014'),
+	 (2,1,'MONEDA_DEFAULT','Moneda por defecto del sistema','MXN',1.00,'2025-12-15 13:23:40.443549',NULL,1,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-16 09:52:20.083'),
+	 (17,5,'Prueba 23','PRUEBA NUMERO 23','10',1.00,'2026-01-15 18:00:00','2026-01-15 18:00:00',1,1,'2026-01-16 21:21:38.964763',NULL,NULL),
+	 (1,1,'prueba JL2','Dias limite para cancelacion de CFDI','30',1.00,'2026-01-15 18:00:00','2026-01-15 18:00:00',1,1,'2026-01-16 21:27:48.77367',NULL,NULL),
+	 (2,3,'Alexis','PRUEBA NUMERO 1','30',1.00,'2026-01-15 18:00:00','2026-01-15 18:00:00',1,1,'2026-01-16 21:30:13.592238',NULL,NULL),
+	 (1,1,'DIAS_CANCELACION','Dias limite para cancelacion de CFDI','31',1.10,'2025-12-14 18:00:00','2026-01-16 15:33:05.544',0,1,'2026-01-15 08:33:30.39',NULL,'2026-01-16 15:33:05.544'),
+	 (5,5,'Preubas 3','Dorada','90',1.00,'2026-01-19 18:00:00','2026-01-19 18:00:00',1,1,'2026-01-20 16:54:23.353538',NULL,NULL),
+	 (5,2,'Prueba de Confi','PLata','1',1.00,'2026-01-19 18:00:00','2026-01-19 18:00:00',1,1,'2026-01-21 01:47:27.305113',NULL,NULL),
+	 (7,1,'EMAIL_FROM','Correo remitente por defecto','noreply@empresa.com',1.00,'2025-12-15 13:23:40.443549','2026-01-20 19:53:14.852',0,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-20 19:53:14.852'),
+	 (7,2,'Confuri',NULL,'90',1.00,'2026-01-19 18:00:00','2026-01-19 18:00:00',1,1,'2026-01-21 01:58:59.632333',NULL,NULL);
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,3,'Prueba proceso','PLata','1',1.00,'2026-01-20 18:00:00','2026-01-20 18:00:00',1,1,'2026-01-21 22:04:44.593572',NULL,NULL),
+	 (7,6,'Prueba Notificacion','Notificar','90',1.00,'2026-01-20 18:00:00','2026-01-20 18:00:00',1,1,'2026-01-21 22:06:39.808979',NULL,NULL),
+	 (8,1,'Intregaciones','Tasa general de IVAQQ','1',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 06:44:34.849592',NULL,NULL),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','0.16',1.00,'2025-12-14 18:00:00','2026-01-21 16:44:25.689',0,1,'2025-12-15 13:23:40.443549',NULL,'2026-01-21 16:44:25.689'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','0.161',1.10,'2025-12-14 18:00:00','2026-01-21 16:49:23.862',0,1,'2026-01-21 16:44:25.772',NULL,'2026-01-21 16:49:23.862'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','0.1616',1.20,'2025-12-31 18:00:00','2026-01-21 16:50:25.106',0,1,'2026-01-21 16:49:23.943',NULL,'2026-01-21 16:50:25.106'),
+	 (8,3,'Prueba de Configurcion','PLata','90',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 06:21:44.825034',NULL,NULL),
+	 (8,13,'Intregaciones 2','Notificar','12',1.00,'2026-01-21 18:00:00','2026-01-24 18:00:00',1,1,'2026-01-22 06:47:36.325713',NULL,NULL),
+	 (3,5,'aclara','h','90',1.00,'2026-01-21 18:00:00','2026-01-22 01:31:12.944',0,1,'2026-01-22 07:30:59.955235',NULL,'2026-01-22 01:31:12.944'),
+	 (6,5,'Pruebas Con Reportes','Tasa general de IVAQQ','10',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 15:28:00.305804',NULL,NULL);
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (4,4,'Pruebas con Catalogos','Catalogos','1',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 16:07:11.028805',NULL,NULL),
+	 (17,13,'Prueba auditoria','PLata','32',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 16:46:45.787856',NULL,NULL),
+	 (3,13,'Prueba verificacion','Tasa general de IVAQQ','90',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 17:00:46.928735',NULL,NULL),
+	 (6,13,'Prueba fecha','Tasa general de IVAQQ','32',1.00,'2026-01-21 18:00:00','2026-01-22 18:00:00',1,1,'2026-01-22 17:08:40.796423',NULL,NULL),
+	 (7,1,'EMAIL_FROM','Correo remitente por defecto','2',1.10,'2025-12-14 18:00:00',NULL,1,1,'2026-01-20 19:53:14.962',NULL,'2026-01-22 15:44:12.476'),
+	 (17,13,'Pruebas 4',NULL,'21',1.00,'2026-01-20 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-20 17:46:36.537165',NULL,'2026-01-22 15:44:58.102'),
+	 (1,1,'DIAS_CANCELACION','Dias limite para cancelacion ','32',1.20,'2025-12-14 18:00:00',NULL,1,1,'2026-01-16 15:33:05.64',NULL,'2026-01-27 10:51:11.57'),
+	 (4,5,'Prueba Mayor','Tasa general de IVAQQqq','3',1.00,'2026-01-21 18:00:00','2026-01-22 13:14:45.067',0,1,'2026-01-22 19:06:46.752621',NULL,'2026-01-22 13:14:45.067'),
+	 (4,5,'Prueba Mayor','Tasa general de IVAQQqq','32',1.10,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 13:14:45.149',NULL,NULL),
+	 (3,5,'aclara','hola probando DEscripcion','901',1.10,'2026-01-21 18:00:00','2026-01-22 13:30:09.869',0,1,'2026-01-22 01:31:13.047',NULL,'2026-01-22 13:30:09.869');
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (17,13,'Prueba alexis','Tasa general de IVAQQ','12',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 21:16:52.711515',NULL,NULL),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','0.16161',1.30,'2025-12-31 18:00:00','2026-01-22 16:02:53.488',0,1,'2026-01-21 16:50:25.182',NULL,'2026-01-22 16:02:53.488'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','4',1.40,'2025-12-31 18:00:00','2026-01-22 16:04:44.066',0,1,'2026-01-22 16:02:53.568',NULL,'2026-01-22 16:04:44.066'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','5',1.50,'2025-12-31 18:00:00','2026-01-22 16:05:04.231',0,1,'2026-01-22 16:04:44.15',NULL,'2026-01-22 16:05:04.231'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','6',1.60,'2025-12-31 18:00:00','2026-01-22 16:05:21.988',0,1,'2026-01-22 16:05:04.313',NULL,'2026-01-22 16:05:21.988'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','7',1.70,'2025-12-31 18:00:00','2026-01-22 16:05:40.313',0,1,'2026-01-22 16:05:22.065',NULL,'2026-01-22 16:05:40.313'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','8',1.80,'2025-12-31 18:00:00','2026-01-22 16:06:01.238',0,1,'2026-01-22 16:05:40.502',NULL,'2026-01-22 16:06:01.238'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','9',1.90,'2025-12-31 18:00:00','2026-01-22 16:06:24.436',0,1,'2026-01-22 16:06:01.31',NULL,'2026-01-22 16:06:24.436'),
+	 (2,1,'IVA_TASA_GENERAL','Tasa general de IVAQQ','2',2.00,'2025-12-31 18:00:00','2026-01-22 16:06:59.329',0,1,'2026-01-22 16:06:24.511',NULL,'2026-01-22 16:06:59.329'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion 1','100000',2.60,'2026-04-30 18:00:00',NULL,1,1,'2026-01-22 16:20:58.58',NULL,'2026-01-27 10:53:46.191');
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (3,5,'aclara','Prueba exitosa','9010',1.20,'2026-01-21 18:00:00','2026-01-27 10:56:12.304',0,1,'2026-01-22 13:30:09.961',NULL,'2026-01-27 10:56:12.304'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion','21',2.10,'2025-12-31 18:00:00','2026-01-22 16:10:20.11',0,1,'2026-01-22 16:06:59.408',NULL,'2026-01-22 16:10:20.11'),
+	 (3,5,'aclara','Valor de descripcion','90101',1.30,'2026-01-21 18:00:00','2026-01-27 10:57:30.877',0,1,'2026-01-27 10:56:12.378',NULL,'2026-01-27 10:57:30.877'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion 1','10',2.20,'2025-12-31 18:00:00','2026-01-22 16:11:16.979',0,1,'2026-01-22 16:10:20.184',NULL,'2026-01-22 16:11:16.979'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion 1','100',2.30,'2025-12-31 18:00:00','2026-01-22 16:14:13.733',0,1,'2026-01-22 16:11:17.234',NULL,'2026-01-22 16:14:13.733'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion 1','1000',2.40,'2026-01-21 18:00:00','2026-01-22 16:16:08.593',0,1,'2026-01-22 16:14:13.921',NULL,'2026-01-22 16:16:08.593'),
+	 (2,1,'IVA_TASA_GENERAL','Verificar cambios de Descripcion 1','10000',2.50,'2026-03-31 18:00:00','2026-01-22 16:20:58.491',0,1,'2026-01-22 16:16:08.671',NULL,'2026-01-22 16:20:58.491'),
+	 (1,13,'Prueba 33','Verificar cambios de Descripcion 1','2',1.00,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 22:25:18.808734',NULL,'2026-01-22 16:41:13.14'),
+	 (1,6,'Prueba Notificacion1','Tasa general de IVAQQ','12',1.00,'2026-01-21 18:00:00','2026-01-22 19:15:26.956',0,1,'2026-01-22 21:18:33.424332',NULL,'2026-01-22 19:15:26.956'),
+	 (1,6,'Prueba Notificacion1','Tasa general de IVAQQqqaaaaaaaaaaa','121',1.10,'2026-01-21 18:00:00','2026-01-22 19:16:16.537',0,1,'2026-01-22 19:15:27.039',NULL,'2026-01-22 19:16:16.537');
+INSERT INTO core_utils.cat_parameter (id_module,id_type,"name",description,value,"version",start_date,end_date,status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,6,'Prueba Notificacion1','Tasa general de IVAQQ','12',1.20,'2026-01-21 18:00:00','2026-01-21 18:00:00',1,1,'2026-01-22 19:16:16.638',NULL,'2026-01-22 19:16:17.085'),
+	 (3,5,'aclara','Prueba final exitosa','901011',1.40,'2026-01-21 18:00:00','2026-01-27 11:00:39.136',0,1,'2026-01-27 10:57:30.948',NULL,'2026-01-27 11:00:39.136'),
+	 (3,5,'aclara','Prueba final exitosa','9010111',1.50,'2026-01-21 18:00:00','2026-01-27 11:06:54.662',0,1,'2026-01-27 11:00:39.208',NULL,'2026-01-27 11:06:54.662'),
+	 (3,5,'aclara','Prueba final exitosa','90',1.60,'2026-01-21 18:00:00','2026-01-30 18:00:00',1,1,'2026-01-27 11:06:54.751',NULL,NULL),
+	 (17,13,'Confirmacion de nueva creacion','Probando que funciones correctamente','100',1.00,'2026-01-28 18:00:00','2026-01-29 09:49:38.441',0,1,'2026-01-29 15:38:17.027436',NULL,'2026-01-29 09:49:38.441'),
+	 (17,13,'Confirmacion de nueva creacion','Probando que funciones ','1000',1.10,'2026-01-28 18:00:00','2026-01-28 18:00:00',1,1,'2026-01-29 09:49:38.539',NULL,'2026-01-29 09:50:09.577');

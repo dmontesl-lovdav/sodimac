@@ -1,0 +1,2 @@
+INSERT INTO tenant_fiscal.totals (totals_uuid,payments_uuid,total_payments_amount,total_base_iva_16,total_tax_iva_16,total_base_iva_8,total_tax_iva_8,total_base_iva_0,total_withholding_iva,total_withholding_isr,created_by,created_at,updated_by,updated_at) VALUES
+	 ('dddddddd-eeee-ffff-0000-000000000001'::uuid,'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid,1800.00,1551.72,248.28,0.00,0.00,0.00,0.00,0.00,1,'2025-11-20 15:44:36.165578',NULL,NULL);

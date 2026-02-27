@@ -1,0 +1,2 @@
+INSERT INTO tenant_fiscal.equivalence_dr (equivalence_uuid,related_document_uuid,folio,amount_paid,previous_balance,remaining_balance,currency,installment_number,tax_object,series,created_by,created_at,updated_by,updated_at) VALUES
+	 ('bbbb1111-cccc-2222-dddd-333333333333'::uuid,'cccccccc-dddd-eeee-ffff-000000000001'::uuid,'002',1800.00,1800.00,0.00,'MXN',1,'02','A',1,'2025-11-20 15:44:36.165578',NULL,NULL);

@@ -1,0 +1,2 @@
+INSERT INTO tenant_fiscal.related_documents (related_document_uuid,payment_uuid,document_uuid,amount_paid,previous_balance,remaining_balance,installment_number,series,folio,currency,exchange_rate,created_by,created_at,updated_by,updated_at) VALUES
+	 ('cccccccc-dddd-eeee-ffff-000000000001'::uuid,'bbbbbbbb-cccc-dddd-eeee-ffffffffffff'::uuid,'77777777-7777-7777-7777-777777777777'::uuid,1800.00,1800.00,0.00,1,'A','002','MXN',1.000000,1,'2025-11-20 15:44:36.165578',NULL,NULL);

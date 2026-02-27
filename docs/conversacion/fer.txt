@@ -1,0 +1,131 @@
+buenas David qué tal, una duda de fiscal, hay algún endpoint para cancelar?  
+ 
+o uso la de cambio de estatus? 
+ 
+Hola Fer buenos días, para cancelar directamente no, para cambiar de estatus si, hay un tren de estatus, es decir no podemos cambiar directamente
+ 
+Puedes ir revisando este jira xfa: [STM-1166] Servicio de gestión del tren de estatus permitido por opción en el módulo de Catálogo de…
+ 
+si recuerdo que solamente si es pago parcial y otro estauts se puede cancelar, caso contrario no, pero por ejemplo en el front puedo mandar llamar esa función si tengo estos dos status correcto? y si jalaría la validación correcta
+ 
+Si, correcto
+ 
+ya están sincronizados con el bff
+ 
+vava
+ 
+otra duda, estás manejando tú el tema de bitácora de actividades? 
+tengo un ticket que me habla sobre añadir a la bitáctra de actividades el tema de la cancelación de cuándo y quién lo hizo 
+ 
+Si tengo una tabla de bitácora de facturas, pero es interna del proceso, es decir, podemos comprobar por sql pero no tenemos un api que nos liste los resultados
+ 
+oh okok, si más bien entonces si yo mando llamar la api para cancelar la factura (cambio estatus) entonces tu endpoint actualiza la bitácora con el movimiento cierto? 
+ 
+Si
+ 
+vava
+ 
+duda rápida, prometo no dar más lata ajaja
+ 
+ejecuto el put aquí 
+https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices
+con este payload
+ 
+ 
+{
+"uuid":"527c83e9-f65a-42e2-a687-df587adcfd21",
+"numeroProveedor":12345,
+"estatus":0,
+"idUsuarioActualizacion":1
+}
+ 
+y recibo error: 
+El documento con UUID no se encuentra registrado en el sistema: UUID: 527c83e9-f65a-42e2-a687-df587adcfd21
+ 
+ 
+jejej, ntp ese si lo tengo que revisar
+ 
+Te aviso en un momento
+ 
+va que va
+ 
+ntp, es parte del desarrollo
+ 
+va dale, otra más, tienes algún sql o script que genere facturas con sus adendas y relaciones para ir llenando la tabla que se muestra porque ahora solo hay un registro válido 
+ 
+No, las pruebas las hice al cargar la factura, si no urge mucho mañana puedo poblar estas tablas 
+ 
+no no urge, sin tema solo para probar bien listados, ordenamiento, búsquedas, etc en el front 
+ 
+va, ya estas
+ 
+Una mala noticia Fer
+ 
+El endpoint que estás usando (PUT /invoices) es para actualizar datos de la factura (addenda). 
+
+Para cambiar estatus es otro endpoint, el uuid va en la URL:
+
+PUT /invoices/{uuid}/status
+
+Aquí un ejemplo con un documento que existe en DEV:
+
+curl -X PUT "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/a12b2040-d8f8-4fce-ab9d-37a636f8e59e/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\": 12345, \"estatusOrigen\": 2, \"estatusDes
+ 
+El detalle es que internamente utiliza el servicio de catálogos y este no está aún levantado en el ambiente de desarrollo
+ 
+Changos otro ticket bloqueado por dependencia 
+ 
+Pero vava gracias por avisar, levanto la API de cat y le voy avanzando, pregunta cómo tienes tu .env?
+ 
+Es java, no necesita el .env
+ 
+Ah cierto jaja vava 
+ 
+Listo Fer, ya están los inserts
+ 
+Vava muchas gracias 
+ 
+Hola David qué tal, una dudilla dudosa 
+ 
+seguimos caídos en la VM, pero logré sacar unos estatus del catálogo, mi duda es pro ejemplo yo mando al back de fiscal el estatus de la factura o nota de crrédito pero el catálogo no me da el id del mismo, me da algo como esto:
+{
+      "key": "EFA002",
+      "internalStatus": null,
+      "externalKey": null,
+      "value": null,
+      "description": "Pendiente Addenda",
+      "color": "Amarillo",
+      "sortOrder": 2,
+      "validFrom": null,
+      "validTo": null,
+      "attributes": null
+    }
+debería mandar el key? 
+ 
+Hola Fer, todo bien.
+ 
+Si, seguimos con la base abajo
+ 
+me pasas el end point xfa
+ 
+en fiscal
+https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search
+ 
+me pasas el payload también xfa
+ 
+POST con este payload:
+{
+"rfcEmisor":"",
+"fechaInicioRecepcion":"2025-08-07",
+"fechaFinalRecepcion":"2025-12-26",
+"tipoDocumento":"i",
+"page":0,
+"size":10,
+"serie":"",
+"uuid":"",
+"folio":"",
+"status":"" <<< aquí debería ir 1,2,3 etc correcto? pero la api de catálogo no tiene esos ids
+}
+ 
+Deja lo reviso y te paso una respuesta
+ 

@@ -27,3 +27,10 @@ Thumbs.db
  
 # PowerShell scripts temporales
 emp.txt
+
+# Comprimidos
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz

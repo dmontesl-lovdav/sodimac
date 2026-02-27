@@ -1,0 +1,58 @@
+name: Pipeline CI Microservice
+
+on:
+  push:
+    branches:
+      - develop
+      - feature/**
+      - uat
+      - release/**
+      - main
+      - master
+      - hotfix/**
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+
+  
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  build:
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/build-node-generic-gcp-artefactory.yml@main
+    secrets: inherit
+    with:
+      container_image: "gcr.io/fal-corp-stro-ops-prd/pipeline-node-sdk:20"
+      command_build: "npm run build"
+      command_dependency: "npm install"
+      command_test: "npm test"
+      runners: ${{ vars.RUNNER_MERCH }}
+
+  build_docker:
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/gcp-docker-build.yml@main
+    secrets: inherit
+    with:
+      language: "node"
+      runners: ${{ vars.RUNNER_MERCH }}
+      
+  deploy:
+    needs: build_docker
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/deploy-gke-generic.yml@main
+    secrets: inherit
+    with:
+      language: "node"
+      country: "CL"
+      business: "FA"
+      runners: ${{ vars.RUNNER_MERCH }}
+      retail_type: "merch"

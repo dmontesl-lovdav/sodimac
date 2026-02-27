@@ -1,0 +1,104 @@
+{
+	"info": {
+		"_postman_id": "stm-397-validaciones-nc",
+		"name": "STM-397 - Validaciones Nota de Credito",
+		"description": "Colección para probar las validaciones de serie, folio y UUID en notas de crédito.\n\n**Criterios de Aceptación:**\n- CA01: WRN7015 - NC sin serie o folio\n- CA02: WRN7016 - NC duplicada por serie+folio\n- CA03: WRN7017 - NC duplicada por UUID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CA01 - WRN7015 - NC sin serie o folio",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/NC_sin_folio.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA01: Registrar nota de crédito sin folio.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7015\",\n  \"message\": \"La nota de crédito requiere una serie y folio para publicar el documento. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "CA02 - WRN7016 - NC duplicada serie+folio",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/NC_duplicada_serie_folio.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA02: Registrar nota de crédito con serie+folio duplicada.\n\n**Prerequisito:** Debe existir una NC con Serie=MC, Folio=00444871 del emisor JOH120507FU9.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7016\",\n  \"message\": \"La nota de crédito se encuentra previamente registrada con la misma serie y folio. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "CA03 - WRN7017 - NC duplicada UUID",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/NC_duplicada_uuid.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA03: Registrar nota de crédito con UUID duplicado.\n\n**Prerequisito:** Debe existir una NC con UUID=A12B2040-D8F8-4FCE-AB9D-37A636F8E59E del emisor JOH120507FU9.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7017\",\n  \"message\": \"La nota de crédito se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/actuator/health",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["actuator", "health"]
+				},
+				"description": "Verificar que el servicio fiscal-api está activo."
+			},
+			"response": []
+		}
+	]
+}

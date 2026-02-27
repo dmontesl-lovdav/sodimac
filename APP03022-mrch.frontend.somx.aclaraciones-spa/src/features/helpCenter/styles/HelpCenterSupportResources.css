@@ -1,0 +1,118 @@
+/* Main */
+.hcsr-main {
+    width: 100%;
+    background: #ffffff;
+    padding-bottom: 3rem;
+    /* pb-12 */
+}
+
+/* Outer container */
+.hcsr-inner {
+    padding: 0 1rem;
+    /* px-4 */
+    padding-top: 0.5rem;
+    /* pt-2 */
+    padding-bottom: 1rem;
+    /* pb-4 */
+}
+
+@media (min-width: 768px) {
+    .hcsr-inner {
+        padding-left: 1.5rem;
+        /* md:px-6 */
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hcsr-inner {
+        padding-left: 2rem;
+        /* lg:px-8 */
+        padding-right: 2rem;
+    }
+}
+
+/* Breadcrumb wrapper with negative margins */
+.hcsr-breadcrumb-wrapper {
+    margin-left: -1rem;
+    /* -mx-4 */
+    margin-right: -1rem;
+    margin-top: -0.25rem;
+    /* -mt-1 */
+}
+
+@media (min-width: 768px) {
+    .hcsr-breadcrumb-wrapper {
+        margin-left: -1.5rem;
+        /* md:-mx-6 */
+        margin-right: -1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hcsr-breadcrumb-wrapper {
+        margin-left: -2rem;
+        /* lg:-mx-8 */
+        margin-right: -2rem;
+    }
+}
+
+/* Panel container with negative margins */
+.hcsr-panel-wrapper {
+    margin-left: -1rem;
+    /* -mx-4 */
+    margin-right: -1rem;
+}
+
+@media (min-width: 768px) {
+    .hcsr-panel-wrapper {
+        margin-left: -1.5rem;
+        /* md:-mx-6 */
+        margin-right: -1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hcsr-panel-wrapper {
+        margin-left: -2rem;
+        /* lg:-mx-8 */
+        margin-right: -2rem;
+    }
+}
+
+/* Panel styles */
+.hcsr-panel {
+    border: 1px solid #e5e7eb;
+    /* border-gray-200 */
+    border-radius: 0.75rem;
+    /* rounded-xl */
+    background: #ffffff;
+}
+
+/* Panel padding */
+.hcsr-panel-padding {
+    padding: 1rem;
+    /* p-4 */
+}
+
+@media (min-width: 768px) {
+    .hcsr-panel-padding {
+        padding: 1.5rem;
+        /* md:p-6 */
+    }
+}
+
+@media (min-width: 1024px) {
+    .hcsr-panel-padding {
+        padding: 2rem;
+        /* lg:p-8 */
+    }
+}
+
+/* Grid layout */
+.hcsr-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.5rem;
+    /* gap-6 */
+}

@@ -1,0 +1,159 @@
+/*--- HEADER SPACING (margin bottom + negative margins originales) ---*/
+.hch-header {
+    margin-bottom: 1.5rem;
+    /* mb-6 */
+    margin-left: -1rem;
+    /* -mx-4 */
+    margin-right: -1rem;
+}
+
+@media (min-width: 768px) {
+    .hch-header {
+        margin-left: -1.5rem;
+        /* md:-mx-6 */
+        margin-right: -1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hch-header {
+        margin-left: -2rem;
+        /* lg:-mx-8 */
+        margin-right: -2rem;
+    }
+}
+
+/*--- BOX ---*/
+.hch-box {
+    background: #f8fafc;
+    /* bg-slate-50 */
+    border: 1px solid #e2e8f0;
+    /* border-slate-200 */
+    border-radius: 0.75rem;
+    /* rounded-xl */
+    padding: 1.25rem 1.25rem;
+    /* px-5 py-6 */
+}
+
+@media (min-width: 768px) {
+    .hch-box {
+        padding: 2rem;
+        /* md:px-8 md:py-8 */
+    }
+}
+
+/*--- TITLE ---*/
+.hch-title {
+    font-size: 26px;
+    /* text-[26px] */
+    font-weight: 600;
+    /* font-semibold */
+    line-height: 1.2;
+    color: #0f172a;
+    /* text-slate-900 */
+}
+
+@media (min-width: 768px) {
+    .hch-title {
+        font-size: 32px;
+        /* md:text-[32px] */
+    }
+}
+
+/*--- DESCRIPTION TEXT ---*/
+.hch-description {
+    margin-top: 0.5rem;
+    /* mt-2 */
+    font-size: 0.875rem;
+    /* text-sm */
+    line-height: 1.6;
+    color: #334155;
+    /* text-slate-700 */
+    max-width: 56rem;
+    /* max-w-4xl */
+}
+
+@media (min-width: 768px) {
+    .hch-description {
+        font-size: 15px;
+        /* md:text-[15px] */
+    }
+}
+
+/* Bold parts inside description */
+.hch-strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/*--- NOTE BOX ---*/
+.hch-note {
+    margin-top: 1.25rem;
+    /* mt-5 */
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    /* gap-3 */
+    padding: 0.75rem 1rem;
+    /* px-4 py-3 */
+    border: 1px solid #bfdbfe;
+    /* border-blue-200 */
+    background: #eff6ff;
+    /* bg-blue-50 */
+    border-radius: 0.5rem;
+    font-size: 13px;
+    /* text-[13px] */
+    color: #1e40af;
+    /* text-blue-900 */
+}
+
+@media (min-width: 768px) {
+    .hch-note {
+        font-size: 0.875rem;
+        /* md:text-sm */
+    }
+}
+
+/* Icon */
+.hch-note-icon {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.hch-note-svg {
+    width: 20px;
+    height: 20px;
+    color: #1e40af;
+    /* blue-900 */
+}
+
+/* Note text */
+.hch-note-text {
+    flex: 1;
+}
+
+.hch-note-strong {
+    font-weight: 600;
+}
+
+/* Close button */
+.hch-note-close {
+    margin-left: 0.5rem;
+    /* ml-2 */
+    padding: 0.25rem;
+    /* px-1 */
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: rgba(30, 58, 138, 0.7);
+    /* text-blue-900/70 */
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.hch-note-close:hover {
+    background: #dbeafe;
+    /* hover:bg-blue-100 */
+}

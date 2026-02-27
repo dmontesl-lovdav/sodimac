@@ -1,0 +1,187 @@
+{
+	"info": {
+		"_postman_id": "stm-1236-suppliers-bff",
+		"name": "STM-1236 - Suppliers BFF",
+		"description": "Coleccion para probar los endpoints de proveedores via BFF Catalogos.\n\nTicket: STM-1236\nRelacionado: STM-1225 (backend catalogos-api)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Proveedores",
+			"item": [
+				{
+					"name": "GET - Listar todos los proveedores",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Obtiene todos los proveedores registrados"
+					}
+				},
+				{
+					"name": "GET - Listar proveedores por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers?status=1",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers"],
+							"query": [
+								{
+									"key": "status",
+									"value": "1",
+									"description": "1=Activo, 0=Inactivo"
+								}
+							]
+						},
+						"description": "Obtiene proveedores filtrados por estado"
+					}
+				},
+				{
+					"name": "GET - Obtener proveedor por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/1",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "1"]
+						},
+						"description": "Obtiene un proveedor especifico por su ID"
+					}
+				},
+				{
+					"name": "GET - Obtener proveedor por numero",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/number/PROV001",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "number", "PROV001"]
+						},
+						"description": "Obtiene un proveedor por su numero unico"
+					}
+				},
+				{
+					"name": "GET - Obtener proveedor por RFC",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/rfc/ABC123456789",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "rfc", "ABC123456789"]
+						},
+						"description": "Obtiene un proveedor por su RFC"
+					}
+				},
+				{
+					"name": "POST - Crear proveedor",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"PROV999\",\n    \"rfc\": \"RFC123456789\",\n    \"businessName\": \"Nuevo Proveedor S.A.\",\n    \"supplierTypeId\": 1,\n    \"paymentConditionId\": 3,\n    \"logo\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Crea un nuevo proveedor. supplierTypeId: 1=NAC, 2=INT, 3=MIX"
+					}
+				},
+				{
+					"name": "PUT - Actualizar proveedor",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"businessName\": \"Nombre Actualizado S.A.\",\n    \"supplierTypeId\": 2,\n    \"paymentConditionId\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/1",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "1"]
+						},
+						"description": "Actualiza un proveedor existente por su ID"
+					}
+				},
+				{
+					"name": "DELETE - Eliminar proveedor",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/1",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "1"]
+						},
+						"description": "Elimina (soft-delete) un proveedor por su ID"
+					}
+				}
+			]
+		},
+		{
+			"name": "Tipos de Proveedor",
+			"item": [
+				{
+					"name": "GET - Listar tipos de proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/types",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "types"]
+						},
+						"description": "Obtiene todos los tipos de proveedor disponibles (NAC, INT, MIX)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Condiciones de Pago",
+			"item": [
+				{
+					"name": "GET - Listar condiciones de pago",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/payment-conditions",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "payment-conditions"]
+						},
+						"description": "Obtiene todas las condiciones de pago disponibles (Contado, 15 dias, 30 dias, etc.)"
+					}
+				}
+			]
+		}
+	]
+}

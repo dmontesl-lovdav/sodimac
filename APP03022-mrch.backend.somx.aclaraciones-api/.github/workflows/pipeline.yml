@@ -1,0 +1,52 @@
+name: Pipeline CI Microservice
+on:
+  push:
+    branches:
+      - develop
+      - feature/**
+      - uat
+      - release/**
+      - main
+      - master
+      - hotfix/**
+      - "v*.*.*" 
+    tags:
+      - "v*.*.*"      # versión semántica: v1.0.0, v2.1.4, etc.
+  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+
+
+jobs:
+  build:
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/build-java-maven-generic.yml@main
+    secrets: inherit
+    with:
+      container_image: "openjdk:21-ea-33-jdk"
+      command_build: "./mvnw -U -s .m2/settings.xml --batch-mode -Dmaven.repo.local=.m2/repository package -Dmaven.test.skip=true"
+      command_test: "./mvnw -U -s .m2/settings.xml --batch-mode -Dmaven.repo.local=.m2/repository test"
+      runners: ${{ vars.RUNNER_MERCH }}
+      
+  build_docker:
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/gcp-docker-build.yml@main
+    secrets: inherit
+    with:
+      language: "go"
+      runners: ${{ vars.RUNNER_MERCH }}
+      
+  deploy:
+    needs: build_docker
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/deploy-gke-generic.yml@main
+    secrets: inherit
+    with:
+      language: "go"
+      country: "CL"
+      business: "FA"
+      runners: ${{ vars.RUNNER_MERCH }}
+      retail_type: "merch"

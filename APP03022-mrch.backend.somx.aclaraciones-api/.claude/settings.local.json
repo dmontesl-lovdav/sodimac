@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(xargs cat:*)",
+      "Bash(dir \"c:\\\\workspace-fbc-github\" /b)",
+      "Bash(findstr:*)",
+      "Bash(dir \"c:\\\\workspace-fbc\" /b)",
+      "Bash(dir:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(curl:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(timeout 60 tail:*)",
+      "Bash(echo:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)",
+      "Bash(xargs:*)",
+      "Bash(mvn compile:*)",
+      "Bash(ls:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(python:*)",
+      "Bash(docker ps:*)",
+      "Bash(if not exist \"C:\\\\workspace-fbc-github\\\\docs\" mkdir \"C:\\\\workspace-fbc-github\\\\docs\")",
+      "Bash(gh run list:*)",
+      "Bash(jshell:*)"
+    ]
+  }
+}

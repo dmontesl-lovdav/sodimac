@@ -1,0 +1,2255 @@
+swagger: "2.0"
+info:
+  contact:
+    email: tech@sodimac.com
+    name: Sodimac Tech Team
+  description:
+    "API BFF para consulta de catalogos compartidos del portal FBC.
+
+    Funcionalidades principales:
+    - Consulta de catalogos por modulo, codigo, ID o prefijo
+    - Consulta de mensajes por clave (BUS, WRN, ERR, etc.)
+    - Soporte para catalogos SAT con external_key y vigencia (valid_from, valid_to)
+    - Filtrado de catalogos dependientes (ej: UsoCFDI por RegimenFiscal)
+    - Formateo de mensajes con placeholders dinamicos
+    - Soporte multi-idioma (ES, EN, PT)
+    - Gestion de proveedores (suppliers)
+    - Filtrado de proveedores por tipo y estado de bloqueo (STM-831)
+    - Bloqueos temporales de proveedores (supplier-blocks)
+    - Consulta de centros de costo, beneficio y cuentas contables
+
+    "
+  title: Catalogos API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: catalogos
+  x-consumer-segments: retail
+  x-service-name: catalogos
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+
+paths:
+  /health:
+    get:
+      tags:
+        - health-controller
+      summary: Health check del servicio
+      description: Verifica el estado del servicio de catalogos
+      operationId: healthCheck
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Servicio funcionando
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: UP
+              service:
+                type: string
+                example: catalogos-api
+
+  /:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener todos los catalogos
+      description: Retorna listado de todos los catalogos disponibles
+      operationId: getAllCatalogs
+      produces:
+        - application/json
+      parameters:
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Lista de catalogos
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogHeaderDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /module/{module}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catalogos por modulo
+      description: Retorna listado de catalogos filtrados por modulo
+      operationId: getCatalogsByModule
+      produces:
+        - application/json
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+          description: Codigo del modulo (fiscal, transporte, sistema, general)
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Lista de catalogos del modulo
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogHeaderDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /{code}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catalogo por codigo
+      description: Retorna un catalogo especifico con sus detalles
+      operationId: getCatalogByCode
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          type: string
+          description: Codigo del catalogo (ej CatMsgNegocio, CatEstatusFactura)
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Catalogo con detalles
+          schema:
+            $ref: '#/definitions/CatalogHeaderDto'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /{code}/details:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener detalles de un catalogo
+      description: |
+        Retorna los detalles/items de un catalogo.
+        Permite filtrar por dependencia de otro catálogo usando el parámetro dependsOn.
+        Formato: dependsOn=CATALOG_CODE:EXTERNAL_KEY (ej: dependsOn=c_RegimenFiscal:605).
+        Si no se especifica dependsOn o si no hay relaciones configuradas, retorna todos los detalles.
+      operationId: getCatalogDetails
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          type: string
+          description: Codigo del catalogo
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+        - name: dependsOn
+          in: query
+          type: string
+          required: false
+          description: "Filtro de dependencia. Formato: CATALOG_CODE:EXTERNAL_KEY (ej: c_RegimenFiscal:605)"
+      responses:
+        "200":
+          description: Lista de detalles del catalogo
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogDetailDto'
+        "400":
+          description: Formato de dependsOn invalido
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /{code}/details/{key}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener detalle especifico por codigo y clave
+      description: Retorna un detalle especifico de un catalogo
+      operationId: getCatalogDetailByKey
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          type: string
+          description: Codigo del catalogo
+        - name: key
+          in: path
+          required: true
+          type: string
+          description: Clave del detalle
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Detalle del catalogo
+          schema:
+            $ref: '#/definitions/CatalogDetailDto'
+        "404":
+          description: Detalle no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /message/{key}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener mensaje por clave unica
+      description: Busca directamente por clave estandarizada (BUS001, WRN002, ERR001, etc.)
+      operationId: getMessageByKey
+      produces:
+        - application/json
+      parameters:
+        - name: key
+          in: path
+          required: true
+          type: string
+          description: Clave unica del mensaje (ej BUS001, WRN002, EFA001)
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Mensaje encontrado
+          schema:
+            $ref: '#/definitions/CatalogDetailDto'
+        "404":
+          description: Mensaje no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /message/{key}/format:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener mensaje con placeholders sustituidos
+      description: |
+        Busca el mensaje por clave y sustituye los placeholders {0}, {1}, etc. con los parametros proporcionados.
+        Ejemplo: GET /message/BUS002/format?params=RFC123456789 donde el mensaje es 'El RFC del receptor {0} no acepta...'
+      operationId: getMessageByKeyFormatted
+      produces:
+        - application/json
+      parameters:
+        - name: key
+          in: path
+          required: true
+          type: string
+          description: Clave unica del mensaje (ej BUS002, RES001)
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+        - name: params
+          in: query
+          type: array
+          items:
+            type: string
+          collectionFormat: multi
+          required: false
+          description: Parametros para sustituir placeholders {0}, {1}, etc
+      responses:
+        "200":
+          description: Mensaje formateado
+          schema:
+            $ref: '#/definitions/CatalogDetailDto'
+        "400":
+          description: Cantidad de parametros incorrecta
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: Mensaje no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /id/{id}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catalogo por ID
+      description: Retorna un catalogo especifico con sus detalles por su ID numerico
+      operationId: getCatalogById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID numerico del catalogo
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Catalogo con detalles
+          schema:
+            $ref: '#/definitions/CatalogHeaderDto'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /prefix/{prefix}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catalogo por prefijo
+      description: |
+        Retorna un catalogo especifico con sus detalles por su prefijo.
+        El prefijo identifica el tipo de catalogo (ej: EFA=Estatus Factura, BUS=Mensajes Negocio)
+      operationId: getCatalogByPrefix
+      produces:
+        - application/json
+      parameters:
+        - name: prefix
+          in: path
+          required: true
+          type: string
+          description: Prefijo del catalogo (ej EFA, BUS, ERR, WRN)
+        - name: lang
+          in: query
+          type: integer
+          default: 1
+          description: ID del idioma (1=ES, 2=EN, 3=PT)
+      responses:
+        "200":
+          description: Catalogo con detalles
+          schema:
+            $ref: '#/definitions/CatalogHeaderDto'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  # ===================== SUPPLIERS =====================
+
+  /suppliers:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener todos los proveedores
+      description: Retorna listado de proveedores. Por defecto solo activos.
+      operationId: getAllSuppliers
+      produces:
+        - application/json
+      parameters:
+        - name: status
+          in: query
+          type: integer
+          required: false
+          description: "Estado: 1=Activo, 0=Inactivo. Por defecto: solo activos"
+      responses:
+        "200":
+          description: Lista de proveedores
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    post:
+      tags:
+        - supplier-controller
+      summary: Crear nuevo proveedor
+      description: Crea un nuevo proveedor en el sistema
+      operationId: createSupplier
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SupplierCreateDto'
+      responses:
+        "201":
+          description: Proveedor creado
+          schema:
+            $ref: '#/definitions/SupplierDto'
+        "400":
+          description: Datos invalidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /suppliers/{id}:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener proveedor por ID
+      description: Retorna un proveedor especifico por su ID
+      operationId: getSupplierById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del proveedor
+      responses:
+        "200":
+          description: Proveedor encontrado
+          schema:
+            $ref: '#/definitions/SupplierDto'
+        "404":
+          description: Proveedor no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    put:
+      tags:
+        - supplier-controller
+      summary: Actualizar proveedor
+      description: Actualiza un proveedor existente
+      operationId: updateSupplier
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del proveedor
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SupplierUpdateDto'
+      responses:
+        "200":
+          description: Proveedor actualizado
+          schema:
+            $ref: '#/definitions/SupplierDto'
+        "404":
+          description: Proveedor no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "400":
+          description: Datos invalidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    delete:
+      tags:
+        - supplier-controller
+      summary: Eliminar proveedor
+      description: Elimina (desactiva) un proveedor
+      operationId: deleteSupplier
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del proveedor
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+      responses:
+        "204":
+          description: Proveedor eliminado
+        "404":
+          description: Proveedor no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /suppliers/number/{supplierNumber}:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener proveedor por numero
+      description: Retorna un proveedor por su numero unico
+      operationId: getSupplierByNumber
+      produces:
+        - application/json
+      parameters:
+        - name: supplierNumber
+          in: path
+          required: true
+          type: string
+          description: Numero del proveedor
+      responses:
+        "200":
+          description: Proveedor encontrado
+          schema:
+            $ref: '#/definitions/SupplierDto'
+        "404":
+          description: Proveedor no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /suppliers/rfc/{rfc}:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener proveedor por RFC
+      description: Retorna un proveedor por su RFC
+      operationId: getSupplierByRfc
+      produces:
+        - application/json
+      parameters:
+        - name: rfc
+          in: path
+          required: true
+          type: string
+          description: RFC del proveedor
+      responses:
+        "200":
+          description: Proveedor encontrado
+          schema:
+            $ref: '#/definitions/SupplierDto'
+        "404":
+          description: Proveedor no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /suppliers/types:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener tipos de proveedor
+      description: Retorna listado de tipos de proveedor activos
+      operationId: getAllSupplierTypes
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Lista de tipos de proveedor
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierTypeDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /suppliers/payment-conditions:
+    get:
+      tags:
+        - supplier-controller
+      summary: Obtener condiciones de pago
+      description: Retorna listado de condiciones de pago activas
+      operationId: getAllPaymentConditions
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Lista de condiciones de pago
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PaymentConditionDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  # ===================== SUPPLIER FILTER (STM-831) =====================
+
+  /suppliers/filter:
+    get:
+      tags:
+        - supplier-controller
+      summary: Filtrar proveedores por tipo y estado de bloqueo
+      description: |
+        STM-831: Permite filtrar proveedores por tipo de proveedor y estado de bloqueo.
+
+        **Tipos de proveedor (tipoProveedor):**
+        - 0: Todos los proveedores
+        - 1: MERCANCIA - Proveedores de mercancia ODBMS
+        - 2: TRANSPORTE - Proveedores de transporte Carta Porte
+        - 3: INDIRECTOS - Proveedores de insumos SAP
+        - 4: SERVICIOS - Proveedores de servicios
+
+        **Estados de bloqueo (estatusBloqueo):**
+        - 0: Solo proveedores bloqueados
+        - 1: Solo proveedores activos (no bloqueados)
+        - 2: Todos (bloqueados y activos)
+      operationId: filterSuppliers
+      produces:
+        - application/json
+      parameters:
+        - name: tipoProveedor
+          in: query
+          type: integer
+          required: true
+          description: "Tipo de proveedor: 0=Todos, 1=Mercancia, 2=Transporte, 3=Indirectos, 4=Servicios"
+          enum: [0, 1, 2, 3, 4]
+        - name: estatusBloqueo
+          in: query
+          type: integer
+          required: true
+          description: "Estado de bloqueo: 0=Solo bloqueados, 1=Solo activos, 2=Todos"
+          enum: [0, 1, 2]
+      responses:
+        "200":
+          description: Lista de proveedores filtrados con informacion de bloqueo
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierFilterDto'
+        "400":
+          description: Tipo de proveedor invalido (BUS214)
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  # ===================== SUPPLIER BLOCKS (STM-1224) =====================
+
+  /supplier-blocks:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Obtener todos los bloqueos
+      description: Retorna listado de bloqueos de proveedores. Por defecto solo activos.
+      operationId: getAllSupplierBlocks
+      produces:
+        - application/json
+      parameters:
+        - name: status
+          in: query
+          type: integer
+          required: false
+          description: "Estado: 1=Activo, 0=Inactivo. Por defecto: solo activos"
+      responses:
+        "200":
+          description: Lista de bloqueos
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierBlockDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    post:
+      tags:
+        - supplier-block-controller
+      summary: Crear nuevo bloqueo de proveedor
+      description: Crea un nuevo bloqueo temporal para un proveedor
+      operationId: createSupplierBlock
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SupplierBlockCreateDto'
+      responses:
+        "201":
+          description: Bloqueo creado
+          schema:
+            $ref: '#/definitions/SupplierBlockDto'
+        "400":
+          description: Datos invalidos o bloqueo solapado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /supplier-blocks/{id}:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Obtener bloqueo por ID
+      description: Retorna un bloqueo especifico por su ID
+      operationId: getSupplierBlockById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del bloqueo
+      responses:
+        "200":
+          description: Bloqueo encontrado
+          schema:
+            $ref: '#/definitions/SupplierBlockDto'
+        "404":
+          description: Bloqueo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    put:
+      tags:
+        - supplier-block-controller
+      summary: Actualizar bloqueo
+      description: Actualiza un bloqueo existente
+      operationId: updateSupplierBlock
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del bloqueo
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SupplierBlockUpdateDto'
+      responses:
+        "200":
+          description: Bloqueo actualizado
+          schema:
+            $ref: '#/definitions/SupplierBlockDto'
+        "404":
+          description: Bloqueo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "400":
+          description: Datos invalidos o bloqueo solapado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    delete:
+      tags:
+        - supplier-block-controller
+      summary: Eliminar bloqueo
+      description: Elimina (desactiva) un bloqueo
+      operationId: deleteSupplierBlock
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID del bloqueo
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza la operacion
+      responses:
+        "204":
+          description: Bloqueo eliminado
+        "404":
+          description: Bloqueo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /supplier-blocks/supplier/{supplierNumber}:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Obtener bloqueos por numero de proveedor
+      description: Retorna todos los bloqueos de un proveedor
+      operationId: getBlocksBySupplierNumber
+      produces:
+        - application/json
+      parameters:
+        - name: supplierNumber
+          in: path
+          required: true
+          type: string
+          description: Numero del proveedor
+      responses:
+        "200":
+          description: Lista de bloqueos del proveedor
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierBlockDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /supplier-blocks/supplier/{supplierNumber}/active:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Obtener bloqueos activos vigentes
+      description: Retorna los bloqueos activos vigentes de un proveedor
+      operationId: getCurrentActiveBlocks
+      produces:
+        - application/json
+      parameters:
+        - name: supplierNumber
+          in: path
+          required: true
+          type: string
+          description: Numero del proveedor
+      responses:
+        "200":
+          description: Lista de bloqueos vigentes
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierBlockDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /supplier-blocks/supplier/{supplierNumber}/is-blocked:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Verificar si proveedor esta bloqueado
+      description: Verifica si un proveedor tiene bloqueos activos vigentes
+      operationId: isSupplierBlocked
+      produces:
+        - application/json
+      parameters:
+        - name: supplierNumber
+          in: path
+          required: true
+          type: string
+          description: Numero del proveedor
+      responses:
+        "200":
+          description: Estado de bloqueo
+          schema:
+            $ref: '#/definitions/SupplierBlockStatusDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /supplier-blocks/supplier/{supplierNumber}/at-date:
+    get:
+      tags:
+        - supplier-block-controller
+      summary: Obtener bloqueos a una fecha especifica
+      description: Retorna los bloqueos activos de un proveedor a una fecha determinada
+      operationId: getBlocksAtDate
+      produces:
+        - application/json
+      parameters:
+        - name: supplierNumber
+          in: path
+          required: true
+          type: string
+          description: Numero del proveedor
+        - name: date
+          in: query
+          required: true
+          type: string
+          format: date
+          description: Fecha a consultar (formato yyyy-MM-dd)
+      responses:
+        "200":
+          description: Lista de bloqueos a la fecha
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SupplierBlockDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/{catalogId}/elementos:
+    get:
+      tags:
+        - catalog-element-controller
+      summary: Consultar elementos de un catalogo
+      description: |
+        Retorna elementos con filtros opcionales y paginacion server-side.
+        Por defecto retorna 10 registros por pagina ordenados por fecha de creacion descendente.
+      operationId: getElements
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+        - name: idElemento
+          in: query
+          type: integer
+          required: false
+          description: ID del elemento (filtro exacto)
+        - name: elemento
+          in: query
+          type: string
+          required: false
+          description: Nombre del elemento (filtro parcial, case-insensitive)
+        - name: valor
+          in: query
+          type: string
+          required: false
+          description: Valor del elemento (filtro parcial, case-insensitive)
+        - name: idCatalogoPadre
+          in: query
+          type: integer
+          required: false
+          description: ID del catalogo padre
+        - name: idElementoPadre
+          in: query
+          type: integer
+          required: false
+          description: ID del elemento padre
+        - name: estatus
+          in: query
+          type: integer
+          required: false
+          description: "Estatus: 1=Activo, 0=Inactivo"
+        - name: page
+          in: query
+          type: integer
+          default: 1
+          description: Numero de pagina (1-indexed)
+        - name: pageSize
+          in: query
+          type: integer
+          default: 10
+          description: Tamaño de pagina
+        - name: sortBy
+          in: query
+          type: string
+          default: createdAt
+          description: Campo para ordenar
+        - name: sortDir
+          in: query
+          type: string
+          default: desc
+          description: "Direccion de orden: asc, desc"
+      responses:
+        "200":
+          description: Lista de elementos paginada
+          schema:
+            $ref: '#/definitions/CatalogElementPageResponse'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    post:
+      tags:
+        - catalog-element-controller
+      summary: Crear un elemento
+      description: Crea un nuevo elemento en el catalogo especificado
+      operationId: createElement
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que crea el elemento
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CatalogElementCreateDto'
+      responses:
+        "201":
+          description: Elemento creado
+          schema:
+            $ref: '#/definitions/CatalogElementDto'
+        "400":
+          description: Datos invalidos o duplicado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/{catalogId}/elementos/{elementId}:
+    get:
+      tags:
+        - catalog-element-controller
+      summary: Obtener detalle de un elemento
+      description: Retorna el detalle completo de un elemento para edicion
+      operationId: getElementById
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+        - name: elementId
+          in: path
+          required: true
+          type: integer
+          description: ID del elemento
+      responses:
+        "200":
+          description: Elemento encontrado
+          schema:
+            $ref: '#/definitions/CatalogElementDto'
+        "404":
+          description: Elemento no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    put:
+      tags:
+        - catalog-element-controller
+      summary: Actualizar un elemento
+      description: Actualiza un elemento existente en el catalogo
+      operationId: updateElement
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+        - name: elementId
+          in: path
+          required: true
+          type: integer
+          description: ID del elemento
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que actualiza
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CatalogElementUpdateDto'
+      responses:
+        "200":
+          description: Elemento actualizado
+          schema:
+            $ref: '#/definitions/CatalogElementDto'
+        "400":
+          description: Datos invalidos o duplicado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: Elemento no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/elementos/{elementId}/estatus:
+    patch:
+      tags:
+        - catalog-element-controller
+      summary: Cambiar estatus de un elemento
+      description: Activa o desactiva un elemento. Al desactivar, el elemento deja de ser visible.
+      operationId: changeElementStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: elementId
+          in: path
+          required: true
+          type: integer
+          description: ID del elemento
+        - name: X-User-Id
+          in: header
+          type: string
+          default: system
+          description: ID del usuario que realiza el cambio
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CatalogElementStatusDto'
+      responses:
+        "200":
+          description: Estatus actualizado
+          schema:
+            $ref: '#/definitions/CatalogElementDto'
+        "400":
+          description: Estatus invalido
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: Elemento no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/primarios:
+    get:
+      tags:
+        - catalog-element-controller
+      summary: Listar catalogos primarios activos
+      description: Retorna catalogos primarios activos para el dropdown de 'Seleccionar catalogo padre'
+      operationId: getPrimaryCatalogs
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Lista de catalogos primarios
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogSimpleDto'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/{catalogId}/elementos/activos:
+    get:
+      tags:
+        - catalog-element-controller
+      summary: Listar elementos activos de un catalogo
+      description: Retorna elementos activos para el dropdown de 'Seleccionar elemento padre'
+      operationId: getActiveElements
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+      responses:
+        "200":
+          description: Lista de elementos activos
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogElementDto'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /catalogos/{catalogId}/detalle:
+    get:
+      tags:
+        - catalog-element-controller
+      summary: Obtener detalle de un catalogo
+      description: Retorna informacion del catalogo para mostrar en la tarjeta de detalle
+      operationId: getCatalogDetail
+      produces:
+        - application/json
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          type: integer
+          description: ID del catalogo
+      responses:
+        "200":
+          description: Catalogo encontrado
+          schema:
+            $ref: '#/definitions/CatalogSimpleDto'
+        "404":
+          description: Catalogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  # ===================== STATUS TRAIN (STM-1166) =====================
+
+  /status-train/validate:
+    get:
+      tags:
+        - status-train-controller
+      summary: Validar transicion de estatus
+      description: |
+        Valida si una transicion de estatus esta permitida para una opcion especifica.
+        Opciones: 1=Factura, 2=NC, 3=Pagos, 4=CartaPorte
+      operationId: validateTransition
+      produces:
+        - application/json
+      parameters:
+        - name: optionId
+          in: query
+          required: true
+          type: integer
+          description: "ID de opcion (1=Factura, 2=NC, 3=Pagos, 4=CartaPorte)"
+        - name: sourceStatus
+          in: query
+          required: true
+          type: integer
+          description: Estatus origen
+        - name: targetStatus
+          in: query
+          required: true
+          type: integer
+          description: Estatus destino
+      responses:
+        "200":
+          description: Transicion permitida
+          schema:
+            $ref: '#/definitions/StatusTrainValidationResponse'
+        "400":
+          description: Transicion no permitida o estatus no catalogado
+          schema:
+            $ref: '#/definitions/StatusTrainValidationResponse'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /status-train/allowed-destinations:
+    get:
+      tags:
+        - status-train-controller
+      summary: Obtener destinos permitidos
+      description: Retorna los estatus destino permitidos desde un estatus origen
+      operationId: getAllowedDestinations
+      produces:
+        - application/json
+      parameters:
+        - name: optionId
+          in: query
+          required: true
+          type: integer
+          description: "ID de opcion (1=Factura, 2=NC, 3=Pagos, 4=CartaPorte)"
+        - name: sourceStatus
+          in: query
+          required: true
+          type: integer
+          description: Estatus origen
+      responses:
+        "200":
+          description: Lista de destinos permitidos
+          schema:
+            $ref: '#/definitions/StatusTrainListResponse'
+        "400":
+          description: Estatus origen no catalogado
+          schema:
+            $ref: '#/definitions/StatusTrainListResponse'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /status-train:
+    post:
+      tags:
+        - status-train-controller
+      summary: Crear regla de transicion
+      description: Crea una nueva regla de transicion de estatus
+      operationId: createStatusTrain
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/StatusTrainCreateDto'
+      responses:
+        "201":
+          description: Regla creada
+          schema:
+            $ref: '#/definitions/StatusTrainDto'
+        "400":
+          description: Datos invalidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /status-train/{id}:
+    get:
+      tags:
+        - status-train-controller
+      summary: Obtener regla por ID
+      description: Retorna una regla de transicion por su ID
+      operationId: getStatusTrainById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID de la regla
+      responses:
+        "200":
+          description: Regla encontrada
+          schema:
+            $ref: '#/definitions/StatusTrainDto'
+        "404":
+          description: Regla no encontrada
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    put:
+      tags:
+        - status-train-controller
+      summary: Actualizar regla
+      description: Actualiza una regla de transicion existente
+      operationId: updateStatusTrain
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID de la regla
+        - name: optionId
+          in: query
+          required: true
+          type: integer
+          description: ID de opcion para validacion
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/StatusTrainUpdateDto'
+      responses:
+        "200":
+          description: Regla actualizada
+          schema:
+            $ref: '#/definitions/StatusTrainDto'
+        "404":
+          description: Regla no encontrada
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+    delete:
+      tags:
+        - status-train-controller
+      summary: Eliminar regla
+      description: Elimina una regla de transicion
+      operationId: deleteStatusTrain
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID de la regla
+      responses:
+        "204":
+          description: Regla eliminada
+        "404":
+          description: Regla no encontrada
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+definitions:
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 500
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Internal Server Error
+        type: string
+    type: object
+
+  CatalogHeaderDto:
+    type: object
+    properties:
+      code:
+        type: string
+        example: CatMsgNegocio
+        description: Código único del catálogo
+      prefix:
+        type: string
+        example: EFA
+        description: Prefijo para claves de detalle
+      name:
+        type: string
+        example: Mensajes de Negocio
+        description: Nombre del catálogo
+      description:
+        type: string
+        description: Descripción del catálogo
+      module:
+        type: string
+        example: sistema
+        description: Módulo al que pertenece
+      catalogType:
+        type: string
+        example: SIMPLE
+        description: "Tipo de catálogo: SIMPLE, MESSAGE, SAT_FISCAL, HIERARCHICAL, BOOLEAN"
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/CatalogDetailDto'
+
+  CatalogDetailDto:
+    type: object
+    properties:
+      key:
+        type: string
+        example: BUS001
+        description: Clave del elemento
+      externalKey:
+        type: string
+        example: G01
+        description: Clave externa/real del catálogo (ej G01 del SAT)
+      value:
+        type: string
+        example: "0.160000"
+        description: Valor asociado al elemento (ej 0.16 para IVA 16%)
+      description:
+        type: string
+        example: La addenda de la factura no cumple con la estructura requerida
+        description: Descripción del elemento
+      color:
+        type: string
+        example: "#28a745"
+        description: Color asociado (hexadecimal)
+      sortOrder:
+        type: integer
+        description: Orden de visualización
+      validFrom:
+        type: string
+        format: date
+        example: "2024-01-01"
+        description: Fecha de inicio de vigencia
+      validTo:
+        type: string
+        format: date
+        example: "2024-12-31"
+        description: Fecha de fin de vigencia
+      attributes:
+        type: string
+        example: '{"aplica_pf": true, "aplica_pm": true}'
+        description: Atributos adicionales en formato JSON
+
+  # ===================== SUPPLIER DTOs =====================
+
+  SupplierDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID del proveedor
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero unico del proveedor
+      rfc:
+        type: string
+        example: "ABC123456789"
+        description: RFC del proveedor
+      businessName:
+        type: string
+        example: "Proveedor ABC S.A. de C.V."
+        description: Razon social del proveedor
+      supplierType:
+        $ref: '#/definitions/SupplierTypeDto'
+      logo:
+        type: string
+        example: "https://example.com/logo.png"
+        description: URL del logo del proveedor
+      paymentCondition:
+        $ref: '#/definitions/PaymentConditionDto'
+      status:
+        type: integer
+        example: 1
+        description: "Estado: 1=Activo, 0=Inactivo"
+
+  SupplierCreateDto:
+    type: object
+    required:
+      - supplierNumber
+      - rfc
+      - businessName
+    properties:
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero unico del proveedor
+      rfc:
+        type: string
+        example: "ABC123456789"
+        description: RFC del proveedor
+      businessName:
+        type: string
+        example: "Proveedor ABC S.A. de C.V."
+        description: Razon social del proveedor
+      supplierTypeId:
+        type: integer
+        example: 1
+        description: ID del tipo de proveedor
+      logo:
+        type: string
+        example: "https://example.com/logo.png"
+        description: URL del logo del proveedor
+      paymentConditionId:
+        type: integer
+        example: 1
+        description: ID de la condicion de pago
+
+  SupplierUpdateDto:
+    type: object
+    properties:
+      rfc:
+        type: string
+        example: "ABC123456789"
+        description: RFC del proveedor
+      businessName:
+        type: string
+        example: "Proveedor ABC S.A. de C.V."
+        description: Razon social del proveedor
+      supplierTypeId:
+        type: integer
+        example: 1
+        description: ID del tipo de proveedor
+      logo:
+        type: string
+        example: "https://example.com/logo.png"
+        description: URL del logo del proveedor
+      paymentConditionId:
+        type: integer
+        example: 1
+        description: ID de la condicion de pago
+      status:
+        type: integer
+        example: 1
+        description: "Estado: 1=Activo, 0=Inactivo"
+
+  SupplierTypeDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID del tipo de proveedor
+      code:
+        type: string
+        example: "NACIONAL"
+        description: Codigo del tipo de proveedor
+      description:
+        type: string
+        example: "Proveedor nacional"
+        description: Descripcion del tipo de proveedor
+
+  PaymentConditionDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID de la condicion de pago
+      conditionName:
+        type: string
+        example: "30 dias"
+        description: Nombre de la condicion de pago
+      days:
+        type: integer
+        example: 30
+        description: Dias de la condicion de pago
+
+  # ===================== SUPPLIER FILTER DTOs (STM-831) =====================
+
+  SupplierFilterDto:
+    type: object
+    description: Proveedor con informacion de bloqueo
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID del proveedor
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero unico del proveedor
+      rfc:
+        type: string
+        example: "ABC123456789"
+        description: RFC del proveedor
+      businessName:
+        type: string
+        example: "Proveedor ABC S.A. de C.V."
+        description: Razon social del proveedor
+      supplierType:
+        $ref: '#/definitions/SupplierTypeDto'
+      paymentCondition:
+        $ref: '#/definitions/PaymentConditionDto'
+      status:
+        type: integer
+        example: 1
+        description: "Estado: 1=Activo, 0=Inactivo"
+      blocked:
+        type: boolean
+        example: false
+        description: Indica si el proveedor esta actualmente bloqueado
+      blockInfo:
+        $ref: '#/definitions/SupplierBlockInfoDto'
+        description: Informacion del bloqueo (solo si blocked=true)
+
+  SupplierBlockInfoDto:
+    type: object
+    description: Informacion del bloqueo activo de un proveedor
+    properties:
+      validFrom:
+        type: string
+        format: date
+        example: "2025-12-01"
+        description: Fecha de inicio del bloqueo
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin del bloqueo
+      blockReason:
+        type: string
+        example: "Bloqueo temporal por auditoria"
+        description: Razon del bloqueo
+
+  # ===================== STATUS TRAIN DTOs (STM-1166) =====================
+
+  StatusTrainDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID de la regla
+      optionId:
+        type: integer
+        example: 1
+        description: "ID de opcion (1=Factura, 2=NC, 3=Pagos, 4=CartaPorte)"
+      sourceStatus:
+        type: integer
+        example: 3
+        description: Estatus origen
+      targetStatus:
+        type: integer
+        example: 4
+        description: Estatus destino
+      createdBy:
+        type: integer
+        example: 1001
+        description: Usuario que creo la regla
+      createdAt:
+        type: string
+        format: date-time
+        description: Fecha de creacion
+      updatedBy:
+        type: integer
+        description: Usuario que actualizo la regla
+      updatedAt:
+        type: string
+        format: date-time
+        description: Fecha de actualizacion
+
+  StatusTrainCreateDto:
+    type: object
+    required:
+      - optionId
+      - sourceStatus
+      - targetStatus
+      - createdBy
+    properties:
+      optionId:
+        type: integer
+        example: 1
+        description: "ID de opcion (1=Factura, 2=NC, 3=Pagos, 4=CartaPorte)"
+      sourceStatus:
+        type: integer
+        example: 99
+        description: Estatus origen
+      targetStatus:
+        type: integer
+        example: 100
+        description: Estatus destino
+      createdBy:
+        type: integer
+        example: 1001
+        description: Usuario que crea la regla
+
+  StatusTrainUpdateDto:
+    type: object
+    properties:
+      sourceStatus:
+        type: integer
+        example: 99
+        description: Estatus origen
+      targetStatus:
+        type: integer
+        example: 101
+        description: Estatus destino
+      updatedBy:
+        type: integer
+        example: 1002
+        description: Usuario que actualiza la regla
+
+  StatusTrainValidationResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+        description: Indica si la operacion fue exitosa
+      valid:
+        type: boolean
+        example: true
+        description: Indica si la transicion es valida
+      code:
+        type: string
+        example: "WRN7011"
+        description: Codigo de error (WRN7010=origen no catalogado, WRN7011=transicion no permitida)
+      message:
+        type: string
+        example: "El estatus origen no existe catalogado"
+        description: Mensaje descriptivo
+      data:
+        $ref: '#/definitions/StatusTrainDto'
+
+  StatusTrainListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+        description: Indica si la operacion fue exitosa
+      code:
+        type: string
+        description: Codigo de error si aplica
+      message:
+        type: string
+        description: Mensaje descriptivo
+      count:
+        type: integer
+        example: 3
+        description: Cantidad de destinos permitidos
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/StatusTrainDto'
+
+  # ===================== SUPPLIER BLOCK DTOs (STM-1224) =====================
+
+  SupplierBlockDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID del bloqueo
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero del proveedor bloqueado
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio del bloqueo
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin del bloqueo
+      blockReason:
+        type: string
+        example: "Incumplimiento de contrato"
+        description: Razon del bloqueo
+      status:
+        type: integer
+        example: 1
+        description: "Estado: 1=Activo, 0=Inactivo"
+      currentlyBlocked:
+        type: boolean
+        example: true
+        description: Indica si el bloqueo esta vigente actualmente
+      createdAt:
+        type: string
+        format: date-time
+        description: Fecha de creacion
+      createdBy:
+        type: string
+        example: "admin"
+        description: Usuario que creo el registro
+      updatedAt:
+        type: string
+        format: date-time
+        description: Fecha de actualizacion
+      updatedBy:
+        type: string
+        example: "admin"
+        description: Usuario que actualizo el registro
+
+  SupplierBlockCreateDto:
+    type: object
+    required:
+      - supplierNumber
+      - validFrom
+      - validTo
+    properties:
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero del proveedor a bloquear
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio del bloqueo
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin del bloqueo
+      blockReason:
+        type: string
+        example: "Incumplimiento de contrato"
+        description: Razon del bloqueo
+
+  SupplierBlockUpdateDto:
+    type: object
+    properties:
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio del bloqueo
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin del bloqueo
+      blockReason:
+        type: string
+        example: "Incumplimiento de contrato"
+        description: Razon del bloqueo
+      status:
+        type: integer
+        example: 1
+        description: "Estado: 1=Activo, 0=Inactivo"
+
+  SupplierBlockStatusDto:
+    type: object
+    properties:
+      supplierNumber:
+        type: string
+        example: "PROV001"
+        description: Numero del proveedor
+      blocked:
+        type: boolean
+        example: true
+        description: Indica si el proveedor esta bloqueado
+
+  CatalogElementDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID unico del elemento
+      catalogId:
+        type: integer
+        example: 5
+        description: ID del catalogo al que pertenece
+      catalogCode:
+        type: string
+        example: "CAT_MOTIVOS"
+        description: Codigo del catalogo
+      element:
+        type: string
+        example: "Motivo A"
+        description: Nombre del elemento
+      value:
+        type: string
+        example: "100.00"
+        description: Valor del elemento
+      key:
+        type: string
+        example: "MOT001"
+        description: Clave interna del elemento
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio de vigencia
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin de vigencia
+      status:
+        type: integer
+        example: 1
+        description: "Estatus: 1=Activo, 0=Inactivo"
+      statusDescription:
+        type: string
+        example: "Activo"
+        description: Descripcion del estatus
+      parentCatalogId:
+        type: integer
+        example: 3
+        description: ID del catalogo padre (solo para catalogos secundarios)
+      parentCatalogName:
+        type: string
+        example: "Catalogo de Modulos"
+        description: Nombre del catalogo padre
+      parentElementId:
+        type: integer
+        example: 10
+        description: ID del elemento padre (solo para catalogos secundarios)
+      parentElementName:
+        type: string
+        example: "Finanzas"
+        description: Nombre del elemento padre
+      createdBy:
+        type: string
+        example: "admin"
+        description: ID del usuario que creo el registro
+      createdAt:
+        type: string
+        format: date-time
+        description: Fecha de creacion
+      updatedBy:
+        type: string
+        example: "admin"
+        description: ID del usuario que actualizo el registro
+      updatedAt:
+        type: string
+        format: date-time
+        description: Fecha de actualizacion
+      sortOrder:
+        type: integer
+        example: 1
+        description: Orden de visualizacion
+      attributes:
+        type: string
+        description: Atributos adicionales en formato JSON
+
+  CatalogElementCreateDto:
+    type: object
+    required:
+      - element
+      - validFrom
+    properties:
+      element:
+        type: string
+        example: "Motivo K"
+        description: Nombre del elemento (obligatorio)
+      value:
+        type: string
+        example: "250.00"
+        description: Valor del elemento (opcional)
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio de vigencia (obligatoria)
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin de vigencia (opcional)
+      parentCatalogId:
+        type: integer
+        example: 3
+        description: ID del catalogo padre (solo para catalogos secundarios)
+      parentElementId:
+        type: integer
+        example: 10
+        description: ID del elemento padre (solo para catalogos secundarios)
+      sortOrder:
+        type: integer
+        example: 1
+        description: Orden de visualizacion
+      attributes:
+        type: string
+        description: Atributos adicionales en formato JSON
+
+  CatalogElementUpdateDto:
+    type: object
+    properties:
+      element:
+        type: string
+        example: "Motivo K Actualizado"
+        description: Nombre del elemento
+      value:
+        type: string
+        example: "300.00"
+        description: Valor del elemento
+      validFrom:
+        type: string
+        format: date
+        example: "2025-01-01"
+        description: Fecha de inicio de vigencia
+      validTo:
+        type: string
+        format: date
+        example: "2025-12-31"
+        description: Fecha de fin de vigencia
+      parentCatalogId:
+        type: integer
+        example: 3
+        description: ID del catalogo padre (solo para catalogos secundarios)
+      parentElementId:
+        type: integer
+        example: 10
+        description: ID del elemento padre (solo para catalogos secundarios)
+      sortOrder:
+        type: integer
+        example: 2
+        description: Orden de visualizacion
+      attributes:
+        type: string
+        description: Atributos adicionales en formato JSON
+      status:
+        type: integer
+        example: 1
+        description: "Estatus: 1=Activo, 0=Inactivo"
+
+  CatalogElementStatusDto:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: integer
+        example: 1
+        description: "Nuevo estatus: 1=Activo, 0=Inactivo"
+
+  CatalogElementPageResponse:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/CatalogElementDto'
+        description: Lista de elementos
+      page:
+        type: integer
+        example: 1
+        description: Numero de pagina actual (1-indexed)
+      pageSize:
+        type: integer
+        example: 10
+        description: Tamaño de pagina
+      total:
+        type: integer
+        example: 25
+        description: Total de elementos encontrados
+      totalPages:
+        type: integer
+        example: 3
+        description: Total de paginas
+      hasNext:
+        type: boolean
+        example: true
+        description: Indica si hay pagina siguiente
+      hasPrevious:
+        type: boolean
+        example: false
+        description: Indica si hay pagina anterior
+
+  CatalogSimpleDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+        description: ID del catalogo
+      code:
+        type: string
+        example: "CAT_MODULOS"
+        description: Codigo del catalogo
+      name:
+        type: string
+        example: "Catalogo de Modulos"
+        description: Nombre del catalogo
+      description:
+        type: string
+        example: "Lista de modulos del sistema"
+        description: Descripcion del catalogo
+      catalogType:
+        type: string
+        example: "PRIMARIO"
+        description: "Tipo de catalogo: PRIMARIO o SECUNDARIO"
+      status:
+        type: integer
+        example: 1
+        description: "Estatus: 1=Activo, 0=Inactivo"
+
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

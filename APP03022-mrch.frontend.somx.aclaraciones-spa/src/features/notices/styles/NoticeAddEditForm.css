@@ -1,0 +1,87 @@
+/* container general */
+.naf-container {
+    padding: 16px 32px 16px 32px;
+}
+
+.naf-breadcrumb {
+    margin-left: -32px;
+    margin-top: -4px;
+}
+
+/* progress margin */
+.naf-progress {
+    margin-bottom: 24px;
+}
+
+/* card */
+.naf-card {
+    margin-left: -32px;
+    margin-right: -32px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.naf-card-inner {
+    padding: 16px 32px;
+}
+
+/* content */
+.naf-content {
+    max-width: 48rem;
+    /* w-lg */
+}
+
+/* title */
+.naf-title {
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+/* section titles */
+.naf-section-title {
+    font-weight: bold;
+    margin-top: 16px;
+}
+
+.naf-section-margin {
+    margin-top: 32px;
+    /* mt-8 */
+}
+
+/* margins */
+.naf-margin-top {
+    margin-top: 8px;
+}
+
+.naf-margin-top-lg {
+    margin-top: 16px;
+}
+
+/* divider */
+.naf-divider {
+    border-bottom: 1px solid #e5e7eb;
+    padding-top: 20px;
+}
+
+/* ------- FOOTER ------- */
+
+.naf-footer {
+    padding-top: 24px;
+    /* más espacio arriba */
+    padding-bottom: 24px;
+    height: auto;
+    /* liberamos la altura fija */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+}
+
+/* botón volver */
+.naf-backlink {
+    text-decoration: underline;
+    margin-right: 4px;
+}

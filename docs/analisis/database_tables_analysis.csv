@@ -1,0 +1,36 @@
+Table Name,finanzas-api (Migration),finanzas-api (Entity),fiscal-api (Migration),fiscal-api (Entity),Schema,Category,Status,Issue
+accounts_payable,YES,YES,NO,NO,tenant_finance,Financial Operations,OK,
+addendum,YES,NO,YES,NO,tenant_fiscal,CFDI Complement,MISSING ENTITY (both),Need to create entity or remove from migrations
+authorized_receiver_catalog,YES,NO,YES,NO,tenant_fiscal,CFDI Catalog,MISSING ENTITY (both),Need to create entity or remove from migrations
+equivalence_dr,YES,NO,YES,NO,tenant_fiscal,CFDI Payments,MISSING ENTITY (both),Need to create entity or remove from migrations
+finanzas_payments,NO,YES,NO,NO,tenant_finance,Financial Payments,CRITICAL BUG,Entity exists but NO CREATE TABLE in migration!
+fiscal_payments,YES,YES,NO,NO,tenant_finance,Fiscal Payments,WRONG LOCATION,Should be in fiscal-api (tenant_fiscal schema)
+invoice,YES,NO,YES,YES,tenant_fiscal,CFDI Invoice,OK (fiscal-api),finanzas-api has table but shouldn't
+issuer,YES,NO,YES,YES,tenant_fiscal,CFDI Issuer,OK (fiscal-api),finanzas-api has table but shouldn't
+log,YES,NO,YES,NO,tenant_fiscal,CFDI Log,MISSING ENTITY (both),Need to create entity or remove from migrations
+origin_catalog,NO,YES,NO,NO,tenant_finance,Catalog,MISSING TABLE,Entity exists but no table in migration
+pac_catalog,YES,YES,YES,NO,tenant_fiscal,CFDI Catalog,MISSING ENTITY (fiscal-api),Entity only in finanzas-api (wrong location)
+payment,YES,NO,YES,YES,tenant_fiscal,CFDI Payment,OK (fiscal-api),finanzas-api has table but shouldn't
+payment_file_registry,NO,NO,YES,NO,tenant_fiscal,CFDI Registry,MISSING ENTITY (fiscal-api),Need to create entity
+payment_response_catalog,NO,NO,YES,NO,tenant_fiscal,CFDI Catalog,MISSING ENTITY (fiscal-api),Need to create entity
+payments,YES,NO,YES,YES,tenant_fiscal,CFDI Payments,OK (fiscal-api),finanzas-api has table but shouldn't
+purchase_order,YES,YES,NO,NO,tenant_finance,Purchase Order,OK,
+rebate,YES,YES,NO,NO,tenant_finance,Rebate,OK,
+receipt,YES,YES,NO,NO,tenant_finance,Receipt,OBSOLETE,Marked for deletion - migrate to reception
+receipt_sku,YES,YES,NO,NO,tenant_finance,Receipt SKU,OBSOLETE,Marked for deletion - migrate to reception_sku
+receiver,YES,NO,YES,YES,tenant_fiscal,CFDI Receiver,OK (fiscal-api),finanzas-api has table but shouldn't
+reception,NO,YES,NO,NO,tenant_finance,Reception,MISSING TABLE,Entity exists but no table in migration
+reception_sku,NO,YES,NO,NO,tenant_finance,Reception SKU,MISSING TABLE,Entity exists but no table in migration
+related_cfdi,YES,NO,YES,NO,tenant_fiscal,CFDI Relations,MISSING ENTITY (both),Need to create entity or remove from migrations
+related_documents,YES,NO,YES,YES,tenant_fiscal,CFDI Documents,OK (fiscal-api),finanzas-api has table but shouldn't
+sap_document,YES,YES,NO,NO,tenant_finance,SAP Integration,OK,
+shipping_guide,YES,YES,NO,NO,tenant_finance,Shipping,OK,
+shipping_guide_document,NO,YES,NO,NO,tenant_finance,Shipping Document,MISSING TABLE,Entity exists but no table in migration
+shipping_guide_purchase_order,NO,YES,NO,NO,tenant_finance,Shipping PO,MISSING TABLE,Entity exists but no table in migration
+stamped_rebate,YES,YES,NO,NO,tenant_finance,Stamped Rebate,OK,
+stamping_rebate,NO,YES,NO,NO,tenant_finance,Stamping Rebate,MISSING TABLE,Entity exists but no table in migration
+status_catalog,NO,YES,NO,NO,tenant_finance,Catalog,MISSING TABLE,Entity exists but no table in migration
+supplier_block,NO,YES,NO,NO,tenant_finance,Supplier Block,MISSING TABLE,Entity exists but no table in migration
+totals,YES,NO,YES,YES,tenant_fiscal,CFDI Totals,OK (fiscal-api),finanzas-api has table but shouldn't
+vendor_block,YES,YES,NO,NO,tenant_finance,Vendor Block,OK,
+version_catalog,YES,YES,YES,NO,tenant_fiscal,CFDI Catalog,MISSING ENTITY (fiscal-api),Entity only in finanzas-api (wrong location)

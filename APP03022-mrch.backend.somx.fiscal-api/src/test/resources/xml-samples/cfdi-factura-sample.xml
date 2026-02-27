@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"
+                 Version="4.0"
+                 Serie="A"
+                 Folio="123"
+                 Fecha="2025-01-15T10:30:00"
+                 Sello="MockSello123"
+                 FormaPago="03"
+                 NoCertificado="00001000000123456789"
+                 Certificado="MockCertificado"
+                 SubTotal="1000.00"
+                 Moneda="MXN"
+                 Total="1160.00"
+                 TipoDeComprobante="I"
+                 Exportacion="01"
+                 MetodoPago="PUE"
+                 LugarExpedicion="06000">
+
+    <cfdi:Emisor Rfc="ABC123456789"
+                 Nombre="Empresa de Prueba S.A. de C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="DEF987654321"
+                   Nombre="Cliente de Prueba S.A. de C.V."
+                   DomicilioFiscalReceptor="06100"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="G03"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="10101504"
+                       NoIdentificacion="PROD001"
+                       Cantidad="1.000000"
+                       ClaveUnidad="H87"
+                       Unidad="Pieza"
+                       Descripcion="Producto de prueba"
+                       ValorUnitario="1000.000000"
+                       Importe="1000.00"
+                       ObjetoImp="02">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="1000.00"
+                                   Impuesto="002"
+                                   TipoFactor="Tasa"
+                                   TasaOCuota="0.160000"
+                                   Importe="160.00"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+    </cfdi:Conceptos>
+
+    <cfdi:Impuestos TotalImpuestosTrasladados="160.00">
+        <cfdi:Traslados>
+            <cfdi:Traslado Impuesto="002"
+                           TipoFactor="Tasa"
+                           TasaOCuota="0.160000"
+                           Importe="160.00"/>
+        </cfdi:Traslados>
+    </cfdi:Impuestos>
+
+    <cfdi:Complemento>
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="12345678-1234-1234-1234-123456789012"
+                                FechaTimbrado="2025-01-15T10:35:00"
+                                RfcProvCertif="PAC123456789"
+                                SelloCFD="MockSelloCFD"
+                                NoCertificadoSAT="00001000000987654321"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>

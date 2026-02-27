@@ -1,0 +1,36 @@
+/* Contenedor de chips */
+.chiplist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    /* gap-2 */
+    padding-top: 4px;
+    /* pt-1 */
+}
+
+/* Cada chip */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eaf5fc;
+    color: #002d4c;
+    border-radius: 9999px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Botón de eliminar */
+.chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    color: #003865;
+}
+
+.chip-remove:hover {
+    color: #c53030;
+}

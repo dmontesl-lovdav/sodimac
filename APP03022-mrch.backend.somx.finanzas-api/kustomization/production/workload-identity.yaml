@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROJECT_NAME}
+spec:
+  template:
+    spec:
+      serviceAccountName: fbc-workload-identity
+      containers:
+        - name: ${PROJECT_NAME}

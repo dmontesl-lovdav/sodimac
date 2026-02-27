@@ -1,0 +1,35 @@
+.amr-layout {
+    padding: 24px;
+}
+
+.amr-box {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 32px;
+    margin-top: 16px;
+    width: 600px;
+    background: white;
+}
+
+.amr-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+.amr-field {
+    margin-top: 20px;
+}
+
+.amr-footer {
+    padding-top: 24px;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+.amr-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

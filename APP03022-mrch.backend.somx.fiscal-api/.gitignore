@@ -1,0 +1,74 @@
+﻿# NetBeans specific #
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# Local config
+application-local.properties
+*.env
+.env
+.env.local
+.env.*.local
+
+# Class Files #
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.log
+*.gz
+
+# Development scripts and local files
+*.bat
+*.ps1
+*.sh
+.copilot-instructions.md
+
+# Maven target and release files
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.project
+.classpath
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.gradle/
+.scannerwork/
+bin/
+.settings/ 
+
+# Claude Code specific files
+.claude/
+.factorypath
+# JAXB generated files
+src/main/java/META-INF/JAXB/*.xjb
+src/main/java/com/sodimac/fiscal/api/model/dto/invoicexml/generated/
+# IDE temporary files
+*.tmp.*
+# JAXB generated package info
+**/generated/package-info.java
+
+# Eclipse metadata
+.metadata/
+
+# Markdown files
+*.md

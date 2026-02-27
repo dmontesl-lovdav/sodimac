@@ -1,0 +1,124 @@
+/* WRAPPER */
+.rc-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER ROW (equiv. flex flex-row) */
+.rc-header-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* CHECK ICON container (place-items-center place-content-center) */
+.rc-check-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rc-check-icon {
+    width: 48px;
+    height: 48px;
+}
+
+/* TITLE (font-medium text-2xl pl-3) */
+.rc-title {
+    font-weight: 500;
+    font-size: 1.5rem;
+    /* 2xl */
+    padding-left: 0.75rem;
+    /* pl-3 */
+}
+
+/* PARAGRAPH (mt-3) */
+.rc-paragraph {
+    margin-top: 0.75rem;
+    line-height: 1.5;
+}
+
+/* SECTION TITLE (mt-5 font-bold text-xl) */
+.rc-section-title {
+    margin-top: 1.25rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* FIELDS (mt-3, span bold pr-2) */
+.rc-field {
+    margin-top: 0.75rem;
+}
+
+.rc-field span {
+    font-weight: bold;
+    padding-right: 0.5rem;
+}
+
+/* TICKET AREA */
+.rc-ticket-row {
+    margin-top: 0.75rem;
+}
+
+.rc-ticket-label {
+    font-weight: bold;
+}
+
+.rc-ticket-value {
+    display: inline-block;
+    background: #E6F0FF;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
+/* BUTTONS (h-10 text-right) */
+.rc-buttons {
+    height: 2.5rem;
+    text-align: right;
+    margin-top: 1rem;
+}
+
+.rc-btn-back {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    margin-right: 0.5rem;
+}
+
+.rc-btn-help {
+    /* normal botón */
+}
+
+/* ===== Mobile spacing fix ===== */
+@media (max-width: 768px) {
+    .rf-w-lg {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+
+    .rf-title {
+        font-size: 1.25rem;
+    }
+
+    .rf-subtitle {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .rf-submit-bar {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 12px;
+    }
+
+    .rf-submit-btn {
+        width: 100%;
+    }
+
+    .rf-back-link {
+        text-align: center;
+    }
+}

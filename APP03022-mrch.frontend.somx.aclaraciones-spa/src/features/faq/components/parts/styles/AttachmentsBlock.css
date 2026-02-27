@@ -1,0 +1,96 @@
+/* Contenedor general */
+.attachments-block {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Total row */
+.att-total-row {
+    font-size: 14px;
+    margin-top: 8px;
+    color: #4b5563;
+}
+
+.att-total {
+    color: #4b5563;
+}
+
+.att-total-error {
+    color: #dc2626;
+    /* rojo */
+    font-weight: 500;
+}
+
+.att-error-msg {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #dc2626;
+}
+
+/* Lista de existentes */
+.att-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0 0;
+}
+
+.att-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #f3f4f6;
+    /* gray-100 */
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.att-item-warning {
+    background: #ffe4e6;
+    /* red-50 */
+}
+
+.att-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Botón del archivo */
+.att-file {
+    background: none;
+    border: none;
+    padding: 0;
+
+    font-size: 14px;
+    color: #003865;
+
+    cursor: pointer;
+
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.att-file:hover {
+    text-decoration: underline;
+}
+
+.att-file-marked {
+    text-decoration: line-through;
+    color: #dc2626;
+}
+
+/* Tamaño */
+.att-size {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.att-size-marked {
+    color: #dc2626;
+}

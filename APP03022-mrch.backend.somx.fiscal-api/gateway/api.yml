@@ -1,0 +1,1733 @@
+# ========================================================================
+# ESPECIFICACIÓN OPENAPI COMPLETA - FISCAL API BFF
+# ========================================================================
+# Este archivo documenta todos los endpoints REST del sistema fiscal.
+# Versión: 3.0 (Completa con todos los endpoints)
+# Fecha: 2025-12-23
+# ========================================================================
+
+swagger: '2.0'
+
+info:
+  title: Fiscal API - Backend for Frontend
+  description: |
+    API BFF para gestión de comprobantes fiscales digitales mexicanos (CFDI).
+
+    Funcionalidades principales:
+    - Procesamiento de XML fiscales (CFDI 4.0, CartaPorte 3.1, Pagos 2.0)
+    - Registro y gestión de facturas y notas de crédito
+    - Registro y gestión de complementos de pago
+    - Descarga masiva de XML y PDF
+    - Generación de PDF desde XML
+    - Gestión de catálogos (Emisores, Receptores, PACs)
+    - Validación y timbrado con múltiples PACs
+
+    Autenticación: OAuth2 con KeyCloak (Bearer Token)
+  version: 3.0.0
+  contact:
+    name: Sodimac Tech Team
+    email: tech@sodimac.com
+
+host: localhost:8081
+basePath: /api
+schemes:
+  - http
+  - https
+
+# ========================================================================
+# DEFINICIÓN DE TAGS (Agrupación de endpoints)
+# ========================================================================
+tags:
+  - name: XML Processing
+    description: Procesamiento y validación de XML fiscales
+  - name: Invoices
+    description: Gestión de facturas y notas de crédito CFDI
+  - name: Payments
+    description: Gestión de complementos de pago
+  - name: PDF Generation
+    description: Generación de PDF desde XML
+  - name: Catalogs
+    description: Catálogos de emisores, receptores y PACs
+  - name: Related Documents
+    description: Documentos relacionados y CFDIs relacionados
+  - name: Addendums
+    description: Addendas de comprobantes
+  - name: System
+    description: Endpoints de sistema (logs, versiones, health)
+
+# ========================================================================
+# PATHS - ENDPOINTS REST
+# ========================================================================
+paths:
+
+  # ======================================================================
+  # XML PROCESSING - Procesamiento de XML fiscales
+  # ======================================================================
+
+  /fiscal/xml/process:
+    post:
+      tags:
+        - XML Processing
+      summary: Procesar XML fiscal como String
+      description: |
+        Procesa un documento XML fiscal y retorna JSON estructurado.
+        Detecta automáticamente el tipo de documento (CFDI, CartaPorte, Pagos).
+      operationId: processXmlString
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: XML procesado exitosamente
+          schema:
+            $ref: '#/definitions/FiscalXmlResponse'
+        '400':
+          description: XML inválido o formato no soportado
+        '500':
+          description: Error interno del servidor
+
+  /fiscal/xml/process/file:
+    post:
+      tags:
+        - XML Processing
+      summary: Procesar archivo XML fiscal
+      description: Sube y procesa un archivo XML fiscal
+      operationId: processXmlFile
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: Archivo procesado exitosamente
+          schema:
+            $ref: '#/definitions/FiscalXmlResponse'
+        '400':
+          description: Archivo inválido
+
+  /fiscal/xml/detect:
+    post:
+      tags:
+        - XML Processing
+      summary: Detectar tipo de documento fiscal
+      operationId: detectDocumentType
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tipo detectado exitosamente
+          schema:
+            type: string
+            enum: [CFDI_40, CARTA_PORTE_31, PAGOS_20]
+
+  /fiscal/xml/validate:
+    post:
+      tags:
+        - XML Processing
+      summary: Validar documento fiscal XML
+      operationId: validateFiscalDocument
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validación completada
+          schema:
+            $ref: '#/definitions/ValidationResponse'
+
+  /fiscal/xml/health:
+    get:
+      tags:
+        - System
+      summary: Health check del procesador XML
+      operationId: xmlProcessorHealth
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Servicio funcionando
+          schema:
+            $ref: '#/definitions/HealthResponse'
+
+  /validacion/upload:
+    post:
+      tags:
+        - XML Processing
+      summary: Validar XML con PAC configurado
+      operationId: validateXmlWithPac
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: file
+          in: formData
+          required: true
+          type: file
+        - name: pais
+          in: formData
+          required: true
+          type: string
+        - name: rfc
+          in: formData
+          required: true
+          type: string
+      responses:
+        '200':
+          description: XML validado sin errores
+        '400':
+          description: Error en el formato del XML
+
+  # ======================================================================
+  # INVOICES - Facturas y Notas de Crédito CFDI
+  # ======================================================================
+
+  /invoices:
+    get:
+      tags:
+        - Invoices
+      summary: Obtener facturas paginadas
+      operationId: getAllInvoices
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de facturas
+          schema:
+            $ref: '#/definitions/PageInvoiceDto'
+    put:
+      tags:
+        - Invoices
+      summary: Actualizar factura o nota de crédito (STM-339)
+      description: |
+        Actualiza el estatus y/o addenda de una factura o nota de crédito.
+        Valida transiciones de estatus permitidas.
+      operationId: updateInvoice
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceUpdateRequest'
+      responses:
+        '200':
+          description: Documento actualizado exitosamente
+          schema:
+            $ref: '#/definitions/InvoiceUpdateResponse'
+        '400':
+          description: Error de validación
+        '404':
+          description: Documento no encontrado
+
+  /invoices/register:
+    post:
+      tags:
+        - Invoices
+      summary: Registrar factura o nota de crédito (STM-337)
+      description: |
+        Registra una factura (I) o nota de crédito (E).
+        Valida RFC receptor, versión CFDI, addenda y SAT.
+      operationId: registerInvoice
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+          description: Archivo XML del CFDI
+      responses:
+        '200':
+          description: Documento registrado exitosamente
+          schema:
+            $ref: '#/definitions/InvoiceRegistrationResponse'
+        '400':
+          description: Error de validación
+
+  /invoices/search:
+    post:
+      tags:
+        - Invoices
+      summary: Buscar facturas y notas de crédito (STM-338)
+      description: |
+        Busca documentos fiscales con filtros obligatorios y opcionales.
+        Retorna información de Comprobante, Emisor, Receptor y Addenda.
+      operationId: searchInvoices
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceSearchRequest'
+      responses:
+        '200':
+          description: Búsqueda exitosa
+          schema:
+            $ref: '#/definitions/PageInvoiceSearchResponse'
+        '400':
+          description: Filtros obligatorios faltantes
+
+  /invoices/validate-nc-relation:
+    post:
+      tags:
+        - Invoices
+      summary: Validar relación NC-Factura
+      description: Valida que un XML de NC está relacionado con una factura
+      operationId: validateNCRelation
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: invoiceFiscalUuid
+          in: formData
+          required: true
+          type: string
+        - name: xmlFile
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: Validación completada
+          schema:
+            $ref: '#/definitions/NCValidationResponse'
+
+  /invoices/{uuid}/xml:
+    get:
+      tags:
+        - Invoices
+      summary: Obtener XML por UUID fiscal
+      description: |
+        Obtiene el contenido XML de una factura, NC o complemento de pago
+        por su UUID fiscal. Busca primero en facturas/NC, luego en pagos.
+      operationId: getXmlByUuid
+      produces:
+        - application/xml
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: uuid
+          in: path
+          required: true
+          type: string
+        - name: download
+          in: query
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: XML obtenido exitosamente
+          schema:
+            type: string
+        '404':
+          description: Documento no encontrado
+
+  /invoices/download/xml:
+    post:
+      tags:
+        - Invoices
+      summary: Descarga masiva de XMLs en ZIP (STM-396)
+      operationId: downloadXmlZip
+      consumes:
+        - application/json
+      produces:
+        - application/zip
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkDownloadRequest'
+      responses:
+        '200':
+          description: Archivo ZIP generado
+        '400':
+          description: Lista de UUIDs vacía
+
+  /invoices/download/pdf:
+    post:
+      tags:
+        - Invoices
+      summary: Descarga masiva de PDFs en ZIP (STM-396)
+      operationId: downloadPdfZip
+      consumes:
+        - application/json
+      produces:
+        - application/zip
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkDownloadRequest'
+      responses:
+        '200':
+          description: Archivo ZIP generado
+        '400':
+          description: Lista de UUIDs vacía
+
+  /invoices/export/csv:
+    post:
+      tags:
+        - Invoices
+      summary: Exportar datos a CSV (STM-396)
+      operationId: exportCsv
+      consumes:
+        - application/json
+      produces:
+        - text/csv
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceSearchRequest'
+      responses:
+        '200':
+          description: Archivo CSV generado
+        '400':
+          description: Filtros obligatorios faltantes
+
+  # ======================================================================
+  # PAYMENTS - Complementos de Pago
+  # ======================================================================
+
+  /payments:
+    get:
+      tags:
+        - Payments
+      summary: Obtener pagos paginados
+      operationId: getAllPayments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de pagos
+          schema:
+            $ref: '#/definitions/PagePaymentDto'
+
+  /payments/{uuid}:
+    get:
+      tags:
+        - Payments
+      summary: Obtener pago por UUID
+      operationId: getPaymentByUuid
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: uuid
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Pago encontrado
+          schema:
+            $ref: '#/definitions/PaymentDto'
+        '404':
+          description: Pago no encontrado
+
+  /fiscal/complementos-pago/registrar:
+    post:
+      tags:
+        - Payments
+      summary: Registrar complemento de pago
+      operationId: registerPayment
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+          description: Archivo XML del complemento de pago
+      responses:
+        '200':
+          description: Complemento registrado exitosamente
+          schema:
+            $ref: '#/definitions/PaymentRegistrationResponse'
+        '400':
+          description: Error de validación
+
+  /fiscal/complementos-pago/buscar:
+    get:
+      tags:
+        - Payments
+      summary: Buscar complementos de pago
+      operationId: searchPayments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: rfcEmisor
+          in: query
+          type: string
+        - name: rfcReceptor
+          in: query
+          type: string
+        - name: fechaInicio
+          in: query
+          type: string
+          format: date
+        - name: fechaFin
+          in: query
+          type: string
+          format: date
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        '200':
+          description: Búsqueda exitosa
+          schema:
+            $ref: '#/definitions/PagePaymentDto'
+
+  /payment-documents:
+    get:
+      tags:
+        - Payments
+      summary: Obtener documentos de pago paginados
+      operationId: getAllPaymentDocuments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de documentos de pago
+          schema:
+            $ref: '#/definitions/PagePaymentDocumentDto'
+
+  /payment-documents/{uuid}:
+    get:
+      tags:
+        - Payments
+      summary: Obtener documento de pago por UUID
+      operationId: getPaymentDocumentByUuid
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: uuid
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Documento encontrado
+        '404':
+          description: Documento no encontrado
+
+  # ======================================================================
+  # PDF GENERATION - Generación de PDF
+  # ======================================================================
+
+  /api/fiscal/pdf/from-file:
+    post:
+      tags:
+        - PDF Generation
+      summary: Generar PDF desde archivo XML
+      operationId: generatePdfFromFile
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: PDF generado exitosamente
+        '400':
+          description: XML inválido
+
+  /api/fiscal/pdf/from-fiscal-uuid/{invoiceUuid}:
+    get:
+      tags:
+        - PDF Generation
+      summary: Generar PDF desde UUID fiscal almacenado
+      description: Genera un PDF de factura a partir del UUID fiscal en BD
+      operationId: generatePdfFromUuid
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: invoiceUuid
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: PDF generado exitosamente
+        '404':
+          description: Documento no encontrado
+
+  /api/payment/pdf/from-file:
+    post:
+      tags:
+        - PDF Generation
+      summary: Generar PDF de pago desde archivo XML
+      operationId: generatePaymentPdfFromFile
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: PDF generado exitosamente
+        '400':
+          description: XML inválido
+
+  /api/payment/pdf/from-uuid/{invoiceUuid}:
+    get:
+      tags:
+        - PDF Generation
+      summary: Generar PDF de pago desde UUID fiscal
+      operationId: generatePaymentPdfFromUuid
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: invoiceUuid
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: PDF generado exitosamente
+        '404':
+          description: Documento no encontrado
+
+  # ======================================================================
+  # RELATED DOCUMENTS - Documentos Relacionados
+  # ======================================================================
+
+  /related-documents:
+    get:
+      tags:
+        - Related Documents
+      summary: Obtener documentos relacionados paginados
+      operationId: getAllRelatedDocuments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de documentos relacionados
+
+  /related-documents/by-payment/{paymentsUuid}:
+    get:
+      tags:
+        - Related Documents
+      summary: Obtener documentos relacionados por UUID de pago
+      operationId: getRelatedDocumentsByPayment
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: paymentsUuid
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Documentos relacionados encontrados
+        '404':
+          description: Pago no encontrado
+
+  /related-cfdi:
+    get:
+      tags:
+        - Related Documents
+      summary: Obtener CFDIs relacionados paginados
+      operationId: getAllRelatedCfdi
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de CFDIs relacionados
+
+  # ======================================================================
+  # CATALOGS - Catálogos
+  # ======================================================================
+
+  /authorized-receivers:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener receptores autorizados
+      operationId: getAllAuthorizedReceivers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de receptores autorizados
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/AuthorizedReceiverCatalogDto'
+
+  /issuers:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener emisores
+      operationId: getAllIssuers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de emisores
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/IssuerDto'
+
+  /receivers:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener receptores
+      operationId: getAllReceivers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de receptores
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverDto'
+
+  /pac-catalog:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener catálogo de PACs
+      operationId: getAllPacs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de PACs
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PacCatalogDto'
+
+  /version-catalog:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener catálogo de versiones CFDI
+      operationId: getAllVersions
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de versiones CFDI
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/VersionCatalogDto'
+
+  /equivalence-dr:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener equivalencias DR
+      operationId: getAllEquivalenceDr
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de equivalencias
+
+  /receiver-rfc:
+    get:
+      tags:
+        - Catalogs
+      summary: Obtener todos los RFCs autorizados
+      operationId: getAllReceiverRfcs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Lista de RFCs autorizados
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverRfcViewDTO'
+    post:
+      tags:
+        - Catalogs
+      summary: Crear RFC autorizado
+      operationId: addReceiverRfc
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/AddReceiverRfcRequestDTO'
+      responses:
+        '200':
+          description: RFC creado exitosamente
+          schema:
+            $ref: '#/definitions/ReceiverRfcViewDTO'
+
+  /receiver-rfc/search:
+    get:
+      tags:
+        - Catalogs
+      summary: Buscar RFCs con filtros
+      operationId: searchReceiverRfcs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: rfc
+          in: query
+          type: string
+        - name: businessName
+          in: query
+          type: string
+        - name: taxRegime
+          in: query
+          type: string
+        - name: status
+          in: query
+          type: integer
+        - name: limit
+          in: query
+          type: integer
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Resultados de búsqueda
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverRfcViewDTO'
+
+  /receiver-rfc/{id}:
+    put:
+      tags:
+        - Catalogs
+      summary: Actualizar RFC autorizado
+      operationId: updateReceiverRfc
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateReceiverRfcDTO'
+      responses:
+        '200':
+          description: RFC actualizado exitosamente
+          schema:
+            $ref: '#/definitions/ReceiverRfcViewDTO'
+
+  # ======================================================================
+  # ADDENDUMS - Addendas
+  # ======================================================================
+
+  /addendums:
+    get:
+      tags:
+        - Addendums
+      summary: Obtener addendas paginadas
+      operationId: getAllAddendums
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de addendas
+          schema:
+            $ref: '#/definitions/PageAddendumDto'
+
+  # ======================================================================
+  # SYSTEM - Endpoints de Sistema
+  # ======================================================================
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check general
+      operationId: healthCheck
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Servicio funcionando
+          schema:
+            $ref: '#/definitions/HealthResponse'
+
+  /logs:
+    get:
+      tags:
+        - System
+      summary: Obtener logs paginados
+      operationId: getAllLogs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: page
+          in: query
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: Lista de logs
+
+  /totals:
+    get:
+      tags:
+        - System
+      summary: Obtener totales y estadísticas
+      operationId: getTotals
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Totales obtenidos
+          schema:
+            $ref: '#/definitions/TotalsDto'
+
+  /xml-invoices/convert-all:
+    get:
+      tags:
+        - System
+      summary: Convertir todos los XML
+      operationId: convertAllXml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Conversión completada
+
+  /xml-invoices/upload-convert:
+    post:
+      tags:
+        - System
+      summary: Subir y convertir XML
+      operationId: uploadConvertXml
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: XML convertido
+
+  /xml-invoices/detect-document-type:
+    post:
+      tags:
+        - System
+      summary: Detectar tipo de documento XML
+      operationId: detectXmlDocumentType
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        '200':
+          description: Tipo detectado
+
+# ========================================================================
+# DEFINITIONS - Modelos de datos (DTOs)
+# ========================================================================
+definitions:
+
+  # XML Processing Response
+  FiscalXmlResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      documentType:
+        type: string
+      comprobante:
+        type: object
+      emisor:
+        type: object
+      receptor:
+        type: object
+      timbreFiscalDigital:
+        type: object
+
+  ValidationResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      isValid:
+        type: boolean
+      documentType:
+        type: string
+      message:
+        type: string
+
+  HealthResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        example: UP
+      service:
+        type: string
+      timestamp:
+        type: integer
+        format: int64
+
+  # Invoice DTOs
+  InvoiceDto:
+    type: object
+    properties:
+      invoiceUuid:
+        type: string
+        format: uuid
+      fiscalUuid:
+        type: string
+        format: uuid
+      documentType:
+        type: string
+      series:
+        type: string
+      folio:
+        type: string
+      issueDate:
+        type: string
+        format: date-time
+      total:
+        type: number
+        format: double
+      status:
+        type: integer
+
+  PageInvoiceDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/InvoiceDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  InvoiceSearchRequest:
+    type: object
+    required:
+      - rfcEmisor
+      - fechaInicioRecepcion
+      - fechaFinalRecepcion
+      - tipoDocumento
+    properties:
+      rfcEmisor:
+        type: string
+      rfcReceptor:
+        type: string
+      fechaInicioRecepcion:
+        type: string
+        format: date
+      fechaFinalRecepcion:
+        type: string
+        format: date
+      tipoDocumento:
+        type: string
+        enum: [I, E]
+      serie:
+        type: string
+      folio:
+        type: string
+      uuid:
+        type: string
+      estatus:
+        type: integer
+      page:
+        type: integer
+        default: 0
+      size:
+        type: integer
+        default: 20
+      sortBy:
+        type: string
+      sortDirection:
+        type: string
+        enum: [ASC, DESC]
+
+  PageInvoiceSearchResponse:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/InvoiceSearchResponse'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+
+  InvoiceSearchResponse:
+    type: object
+    properties:
+      invoiceUuid:
+        type: string
+      fiscalUuid:
+        type: string
+      documentType:
+        type: string
+      series:
+        type: string
+      folio:
+        type: string
+      issueDate:
+        type: string
+        format: date-time
+      total:
+        type: number
+      status:
+        type: integer
+      statusName:
+        type: string
+      rfcEmisor:
+        type: string
+      nombreEmisor:
+        type: string
+      rfcReceptor:
+        type: string
+      nombreReceptor:
+        type: string
+      xmlContent:
+        type: string
+
+  InvoiceRegistrationResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      code:
+        type: string
+      message:
+        type: string
+      invoiceUuid:
+        type: string
+      fiscalUuid:
+        type: string
+
+  InvoiceUpdateRequest:
+    type: object
+    required:
+      - uuid
+      - numeroProveedor
+      - estatus
+      - idUsuarioActualizacion
+    properties:
+      uuid:
+        type: string
+      numeroProveedor:
+        type: number
+      estatus:
+        type: integer
+      idUsuarioActualizacion:
+        type: integer
+      addenda:
+        $ref: '#/definitions/AddendaUpdateDto'
+
+  AddendaUpdateDto:
+    type: object
+    properties:
+      idProveedor:
+        type: number
+      noRecepcion:
+        type: string
+      noOc:
+        type: string
+      idGuiaEntrega:
+        type: string
+      tipoProveedor:
+        type: string
+      tipoAddenda:
+        type: string
+
+  InvoiceUpdateResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      code:
+        type: string
+      message:
+        type: string
+      invoiceUuid:
+        type: string
+
+  NCValidationResponse:
+    type: object
+    properties:
+      valid:
+        type: boolean
+      businessCode:
+        type: string
+      message:
+        type: string
+      ncUuid:
+        type: string
+      relationType:
+        type: string
+
+  BulkDownloadRequest:
+    type: object
+    required:
+      - invoiceUuids
+    properties:
+      invoiceUuids:
+        type: array
+        items:
+          type: string
+      documentType:
+        type: string
+        enum: [I, E]
+
+  # Payment DTOs
+  PaymentDto:
+    type: object
+    properties:
+      paymentsUuid:
+        type: string
+        format: uuid
+      fiscalUuid:
+        type: string
+        format: uuid
+      amount:
+        type: number
+        format: double
+      currency:
+        type: string
+      paymentDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+
+  PagePaymentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/PaymentDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  PaymentRegistrationResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      code:
+        type: string
+      message:
+        type: string
+      paymentsUuid:
+        type: string
+      fiscalUuid:
+        type: string
+
+  PagePaymentDocumentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          type: object
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+
+  # Catalog DTOs
+  AuthorizedReceiverCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+      status:
+        type: integer
+
+  IssuerDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+      taxRegime:
+        type: string
+
+  ReceiverDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+
+  PacCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      description:
+        type: string
+      active:
+        type: boolean
+
+  VersionCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      version:
+        type: string
+      documentType:
+        type: string
+      namespace:
+        type: string
+      active:
+        type: boolean
+
+  AddReceiverRfcRequestDTO:
+    type: object
+    required:
+      - businessName
+      - rfc
+      - taxRegime
+      - validFrom
+      - validTo
+    properties:
+      businessName:
+        type: string
+        maxLength: 255
+      rfc:
+        type: string
+        minLength: 12
+        maxLength: 13
+      taxRegime:
+        type: string
+        maxLength: 3
+      validFrom:
+        type: string
+        format: date
+      validTo:
+        type: string
+        format: date
+
+  UpdateReceiverRfcDTO:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: integer
+        minimum: 0
+        maximum: 1
+
+  ReceiverRfcViewDTO:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      businessName:
+        type: string
+      rfc:
+        type: string
+      taxRegime:
+        type: string
+      status:
+        type: integer
+      validFrom:
+        type: string
+        format: date
+      validTo:
+        type: string
+        format: date
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  # Addendum DTOs
+  AddendumDto:
+    type: object
+    properties:
+      addendumUuid:
+        type: string
+        format: uuid
+      invoiceUuid:
+        type: string
+        format: uuid
+      supplierNumber:
+        type: number
+      addendaType:
+        type: string
+      content:
+        type: string
+
+  PageAddendumDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/AddendumDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  # System DTOs
+  TotalsDto:
+    type: object
+    properties:
+      totalInvoices:
+        type: integer
+        format: int64
+      totalCreditNotes:
+        type: integer
+        format: int64
+      totalPayments:
+        type: integer
+        format: int64
+      totalAmount:
+        type: number
+        format: double
+
+# ========================================================================
+# CONFIGURACIÓN DE SEGURIDAD
+# ========================================================================
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: |
+      Token Bearer de KeyCloak OAuth2.
+      Formato: Bearer {token}
+
+security:
+  - bearerAuth: []

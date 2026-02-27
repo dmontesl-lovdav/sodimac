@@ -1,0 +1,14 @@
+include:
+  - project: "rtl/merchandise-ti-corp/foundational/configuration/template-cicd"
+    ref: master
+    file: "/pipeline-ci-cd/java/template-maven.yml"
+
+variables:
+  CI_LANGUAGE_IMAGE_DOCKER: "openjdk:21-ea-33-jdk"
+  DOCKER_IMAGE_ENABLED: "true"
+  DEPLOY_GKE_ENABLED: "true"
+
+  # build
+  COMMAND: "./mvnw -U -s .m2/settings.xml --batch-mode -Dmaven.repo.local=.m2/repository package -Dmaven.test.skip=true"
+  # test
+  COMMAND_TEST: "./mvnw -U -s .m2/settings.xml --batch-mode -Dmaven.repo.local=.m2/repository test"

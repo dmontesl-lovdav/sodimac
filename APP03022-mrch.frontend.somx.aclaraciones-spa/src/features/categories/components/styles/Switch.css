@@ -1,0 +1,65 @@
+/* Contenedor del switch */
+.sw-container {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+/* Switch ON */
+.sw-on {
+    background-color: #002d4c;
+}
+
+/* Switch OFF */
+.sw-off {
+    background-color: #d1d5db;
+    /* gris */
+}
+
+/* Thumb */
+.sw-thumb {
+    position: absolute;
+    top: 3px;
+    /* centra vertical */
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    /* esto centra el ícono */
+    justify-content: center;
+    /* esto centra el ícono */
+    transition: all 0.2s ease;
+}
+
+/* Thumb ON → se mueve a la derecha */
+.sw-thumb-on {
+    right: 3px;
+    background-color: white;
+}
+
+/* Thumb OFF → se queda a la izquierda */
+.sw-thumb-off {
+    left: 3px;
+    background-color: #002d4c;
+}
+
+/* Icono palomita */
+.sw-icon-on {
+    width: 10px;
+    height: 10px;
+    fill: #002d4c;
+}
+
+/* Icono tachita */
+.sw-icon-off {
+    width: 10px;
+    height: 10px;
+    stroke: white;
+    stroke-width: 2;
+}

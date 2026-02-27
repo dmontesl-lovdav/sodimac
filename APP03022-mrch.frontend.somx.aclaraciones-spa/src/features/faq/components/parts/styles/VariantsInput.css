@@ -1,0 +1,39 @@
+/* Contenedor principal */
+.variants-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Fila de input + botón */
+.variants-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    /* gap-6 */
+}
+
+/* Input ocupa todo el ancho disponible */
+.variants-input {
+    flex: 1;
+}
+
+/* Botón agregar */
+.variants-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icono "+" */
+.vi-plus {
+    font-size: 22px;
+    line-height: 1;
+    user-select: none;
+}
+
+/* Estado disabled */
+.vi-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}

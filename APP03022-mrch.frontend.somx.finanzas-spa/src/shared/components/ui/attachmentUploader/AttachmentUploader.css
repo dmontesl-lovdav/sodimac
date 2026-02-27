@@ -1,0 +1,158 @@
+/*───────────────────────────────────────────────────────────
+ * src/shared/components/ui/attachmentUploader/AttachmentUploader.css
+ *──────────────────────────────────────────────────────────*/
+
+/* zona drag-&-drop (marco punteado) */
+div.action {
+    width: 100%;
+    border-radius: 4px;
+    background-image:
+        repeating-linear-gradient(90deg, #a6a6a6, #a6a6a6 12px, transparent 12px, transparent 16px),
+        repeating-linear-gradient(180deg, #a6a6a6, #a6a6a6 12px, transparent 12px, transparent 16px),
+        repeating-linear-gradient(90deg, #a6a6a6, #a6a6a6 12px, transparent 12px, transparent 16px),
+        repeating-linear-gradient(180deg, #a6a6a6, #a6a6a6 12px, transparent 12px, transparent 16px);
+    background-position: left top, right top, left bottom, left top;
+    background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+    background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+    padding-top: 25px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+}
+
+div.action div {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+div.caption-icon {
+    width: 70px;
+    height: 60px;
+    margin-bottom: 15px;
+}
+
+div.caption-text-alt {
+    color: #0d9bd3;
+    text-decoration: underline;
+}
+
+div.caption-footer {
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+/* lista de archivos */
+div.file-container {
+    border: #dddddd 1px solid;
+    margin-top: 16px;
+    position: relative;
+    border-radius: 4px;
+    width: 100%;
+    height: 48px;
+    background-color: #d7f0d9;
+}
+
+div.file-name {
+    margin-top: 8px;
+    margin-left: 16px;
+    width: 80%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+div.file-size {
+    font-size: 10px;
+    margin-left: 16px;
+    margin-top: -3px;
+}
+
+div.file-err {
+    background-color: #f7cac8;
+}
+
+div.file-err-caption {
+    font-size: 10px;
+    color: #721c24;
+    margin: 3px 0 0 16px;
+}
+
+/* ────────── acciones por archivo ────────── */
+/* ancho icono = 24px | margen entre iconos = 16px */
+
+div.file-delete {
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    /* ←  base */
+    cursor: pointer;
+}
+
+div.file-download {
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    top: 12px;
+    right: 56px;
+    /* 16 + 24 + 16 */
+    cursor: pointer;
+}
+
+div.file-view {
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    top: 12px;
+    right: 96px;
+    /* 16 + 24 + 16 + 24 + 16 */
+    cursor: pointer;
+}
+
+/*───────────────────────────────────────────────────────────
+ * modal de pre-visualización
+ *──────────────────────────────────────────────────────────*/
+.au-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.au-modal {
+    position: relative;
+    background: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    max-width: 90%;
+    max-height: 90%;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.au-close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.5rem;
+    font-size: 1.5rem;
+    border: none;
+    background: transparent;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.au-img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.au-canvas {
+    max-width: 80vw;
+    max-height: 80vh;
+    display: block;
+}

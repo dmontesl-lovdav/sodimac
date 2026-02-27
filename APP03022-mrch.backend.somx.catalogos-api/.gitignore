@@ -1,0 +1,47 @@
+# NetBeans specific #
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# Local config
+*.local
+*.env
+.env
+.env.local
+.env.*.local
+
+# Class Files #
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.log
+*.gz
+
+# Maven target and release files
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.project
+.classpath
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store

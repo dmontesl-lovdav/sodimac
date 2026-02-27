@@ -1,0 +1,236 @@
+/* section: mt-12 lg:mt-16 space-y-6 */
+.hca-section {
+    margin-top: 3rem;
+    /* mt-12 */
+}
+
+@media (min-width: 1024px) {
+    .hca-section {
+        margin-top: 4rem;
+        /* lg:mt-16 */
+    }
+}
+
+.hca-section>*+* {
+    margin-top: 1.5rem;
+    /* space-y-6 */
+}
+
+/* title: text-2xl font-medium mb-4 text-gray-700 */
+.hca-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: #4b5563;
+}
+
+/* grid: grid gap-10 lg:grid-cols-3 */
+.hca-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    /* gap-10 */
+}
+
+@media (min-width: 1024px) {
+    .hca-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* base card */
+.hca-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 1rem;
+    /* rounded-2xl */
+    padding: 2rem;
+    /* p-8 */
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.hca-card:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    /* shadow-md approx */
+    transform: translateY(-2px);
+}
+
+/* specific backgrounds / borders */
+.hca-card-manual {
+    position: relative;
+    border-color: #d9e6f5;
+    background: #f3f6f9;
+}
+
+.hca-card-cases {
+    border-color: #cfe1f5;
+    background: #eaf3fb;
+}
+
+.hca-card-new {
+    border-color: #cfe1f5;
+    background: #e4eff7;
+}
+
+/* text blocks */
+.hca-card-manual-text {
+    padding-right: 7rem;
+    /* pr-28 */
+}
+
+/* card titles */
+.hca-card-title {
+    font-weight: 500;
+    font-size: 1.25rem;
+    /* text-xl */
+    color: #333333;
+    margin: 0;
+}
+
+.hca-card-title-row {
+    display: flex;
+    align-items: center;
+}
+
+/* card description */
+.hca-card-desc {
+    margin-top: 0.75rem;
+    /* mt-3 */
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+/* links wrappers */
+.hca-link-inline {
+    margin-top: 2rem;
+    /* mt-8 */
+    align-self: flex-start;
+}
+
+.hca-link-full {
+    margin-top: 2rem;
+    align-self: flex-start;
+    width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .hca-link-full {
+        width: auto;
+    }
+}
+
+/* button outline (manuales / consulta casos) */
+.hca-btn-outline {
+    padding: 0.5rem 1.25rem;
+    /* py-2 px-5 */
+    border-radius: 9999px;
+    border: 1px solid #003865;
+    color: #003865;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: transparent;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+    box-shadow: 0 0 0 0 rgba(0, 56, 101, 0);
+}
+
+.hca-btn-outline:hover {
+    background: #e6f1ff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+}
+
+.hca-btn-outline:focus-visible {
+    outline: 2px solid rgba(0, 56, 101, 0.3);
+    outline-offset: 2px;
+}
+
+/* button primary (crear caso) */
+.hca-btn-primary {
+    padding: 0.5rem 1.25rem;
+    width: 100%;
+    border-radius: 9999px;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: #002b55;
+    color: #ffffff;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        filter 0.15s ease;
+}
+
+@media (min-width: 1024px) {
+    .hca-btn-primary {
+        width: auto;
+    }
+}
+
+.hca-btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+}
+
+.hca-btn-primary:focus-visible {
+    outline: 2px solid rgba(0, 43, 85, 0.4);
+    outline-offset: 2px;
+}
+
+/* image on manual card: absolute right-6 top-1/2 -translate-y-1/2 h-24 object-contain */
+.hca-card-manual-img {
+    position: absolute;
+    right: 1.5rem;
+    /* right-6 */
+    top: 50%;
+    transform: translateY(-50%);
+    height: 6rem;
+    /* h-24 */
+    width: auto;
+    object-fit: contain;
+}
+
+/* spinner: ml-2 w-4 h-4 rounded-full border-2 border-[#c5161d] border-t-transparent animate-spin */
+.hca-spinner {
+    margin-left: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    border: 2px solid #c5161d;
+    border-top-color: transparent;
+    animation: hca-spin 0.8s linear infinite;
+}
+
+@keyframes hca-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* badge: ml-2 inline-block min-w-[1.25rem] h-5 px-1 text-xs leading-5 text-center rounded-full bg-[#c5161d] text-white */
+.hca-badge {
+    margin-left: 0.5rem;
+    display: inline-block;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    /* h-5 */
+    padding: 0 0.25rem;
+    /* px-1 */
+    font-size: 0.75rem;
+    /* text-xs */
+    line-height: 1.25rem;
+    /* leading-5 */
+    text-align: center;
+    border-radius: 9999px;
+    background: #c5161d;
+    color: #ffffff;
+}

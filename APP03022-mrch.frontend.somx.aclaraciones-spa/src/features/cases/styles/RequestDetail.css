@@ -1,0 +1,93 @@
+/* Wrapper general: antes pl-5 pt-5 pr-5 */
+.rd-wrapper {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 20px;
+}
+
+/* Título: antes font-medium text-2xl */
+.rd-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Divider: antes pt-5 mt-5 border-t border-gray-200 */
+.rd-section-divider {
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Ancho del contenido: antes w-3xl */
+.rd-container {
+    max-width: 48rem;
+}
+
+/* Etiquetas: antes font-bold pr-2 */
+.rd-label {
+    font-weight: bold;
+    padding-right: 8px;
+}
+
+/* Attachments: antes mt-5 */
+.rd-attachments {
+    margin-top: 20px;
+}
+
+/* Footer: antes h-10 text-right pt-6 mt-5 border-t */
+.rd-footer-row {
+    height: 40px;
+    text-align: right;
+    padding-top: 24px;
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Link: antes underline underline-offset-4 inline-block mr-2 */
+.rd-footer-link {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* -------------- BADGES (mapa de colores) -------------- */
+
+.rd-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Tailwind: bg-green-100 text-green-800 */
+.rd-badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+/* Tailwind: bg-red-100 text-red-800 */
+.rd-badge-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Tailwind: bg-yellow-100 text-yellow-800 */
+.rd-badge-warn {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+/* Tailwind: bg-blue-100 text-blue-800 */
+.rd-badge-info {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* Tailwind: bg-gray-100 text-gray-800 */
+.rd-badge-gray {
+    background-color: #f3f4f6;
+    color: #1f2937;
+}

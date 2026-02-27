@@ -1,0 +1,22 @@
+include:
+  - project: 'rtl/merchandise-ti-corp/foundational/configuration/template-cicd'
+    file: 'dev/build/node/build.yml'
+    ref: 'master'
+
+  - project: 'rtl/merchandise-ti-corp/foundational/configuration/template-cicd'
+    file: 'dev/build/container/build-docker.yml'
+    ref: 'master'
+
+  - project: 'rtl/merchandise-ti-corp/foundational/configuration/template-cicd'
+    file: 'dev/deploy/argocd/sync.yml'
+    ref: 'master'
+
+variables:
+  TAG_RUNNER: 'fal-runner-merch-ops'
+  PROJECT_NAME: 'fbc-finanzas'
+
+stages:
+  - build-dist
+  - build
+  - argocd-sync
+  - deploy

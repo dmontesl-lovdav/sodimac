@@ -1,0 +1,121 @@
+/* CONTENEDOR GENERAL */
+.rc-container {
+    width: 48rem;
+    /* equivalente a w-3xl */
+    margin: 0 auto;
+}
+
+/* PADDING GLOBAL EN MODO LOADED/DETAIL */
+.rc-padding {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 1.25rem;
+}
+
+/* HEADER */
+.rc-header {
+    margin-top: 0.75rem;
+}
+
+.rc-title {
+    text-align: center;
+    font-weight: 500;
+    font-size: 1.5rem;
+}
+
+/* BLOQUES PRINCIPALES */
+.rc-block {
+    margin-top: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    /* border-gray-200 */
+    padding-top: 1.25rem;
+}
+
+/* FILAS FIJAS */
+.rc-row {
+    margin-top: 0.75rem;
+}
+
+.rc-label {
+    font-weight: bold;
+    padding-right: 0.5rem;
+}
+
+.rc-label-bold {
+    font-weight: bold;
+}
+
+/* LINK */
+.rc-link {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+/* ALIGN RIGHT */
+.rc-right {
+    height: 2.5rem;
+    text-align: right;
+    margin-top: 0.75rem;
+}
+
+/* GRID DE SELECTS */
+.rc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.rc-select {
+    margin-top: 0.5rem;
+}
+
+/* COMMENTS */
+.rc-comments-header {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rc-comments {
+    padding-top: 0.75rem;
+}
+
+.rc-comments-all {
+    padding-top: 0.75rem;
+    max-height: 16rem;
+    overflow: auto;
+    padding-right: 0.25rem;
+}
+
+/* TOP SPACING */
+.rc-top {
+    margin-top: 0.5rem;
+}
+
+/* NOTA */
+.rc-note {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ACCIONES ABAJO */
+.rc-actions {
+    width: 48rem;
+    margin-top: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.25rem;
+    height: 2.5rem;
+    text-align: right;
+}
+
+.rc-inline {
+    display: inline-block;
+}
+
+.rc-ml {
+    margin-left: 0.75rem;
+}

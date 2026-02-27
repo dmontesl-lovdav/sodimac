@@ -1,0 +1,13 @@
+.form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    /* equivalente a gap-6 */
+    margin-top: 24px;
+}
+
+/* Estado disabled del botón de guardar */
+.ff-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

@@ -1,0 +1,358 @@
+{
+  "info": {
+    "name": "STM-338 - Consulta de Facturas y NC",
+    "description": "Colección de Postman para probar la funcionalidad de consulta de facturas y notas de crédito registradas en el portal.\n\nEndpoint: POST /api/invoices/search\nPuerto: 8082",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "fiscal_api_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "rfc_emisor",
+      "value": "AAA010101AAA",
+      "type": "string"
+    },
+    {
+      "key": "rfc_receptor",
+      "value": "CSD161207R2A",
+      "type": "string"
+    },
+    {
+      "key": "fecha_inicio",
+      "value": "2025-01-01",
+      "type": "string"
+    },
+    {
+      "key": "fecha_final",
+      "value": "2025-12-31",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Buscar Facturas (Básico)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca todas las facturas (tipo I) de un emisor en un rango de fechas.\n\nFiltros obligatorios:\n- rfcEmisor\n- fechaInicioRecepcion\n- fechaFinalRecepcion\n- tipoDocumento (I)"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Buscar Notas de Crédito (Básico)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca todas las notas de crédito (tipo E) de un emisor en un rango de fechas.\n\nFiltros obligatorios:\n- rfcEmisor\n- fechaInicioRecepcion\n- fechaFinalRecepcion\n- tipoDocumento (E)"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Buscar por RFC Receptor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"rfcReceptor\": \"{{rfc_receptor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca facturas filtrando también por RFC receptor (Sodimac).\n\nÚtil cuando el emisor emite facturas a múltiples receptores."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Buscar por ID Proveedor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"idProveedor\": 1001,\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca facturas de un proveedor específico (Supplier Number).\n\nEl idProveedor se obtiene de la Addenda del CFDI."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Buscar por Serie y Folio",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"serie\": \"A\",\n  \"folio\": \"12345\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca una factura específica por Serie y Folio.\n\nÚtil cuando conoces el número exacto del documento."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Buscar por UUID Fiscal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca un documento específico por su UUID fiscal (Folio Fiscal del TimbreFiscalDigital).\n\nEl UUID es único para cada documento."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Buscar por Estatus",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"estatus\": 1,\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca facturas con un estatus específico.\n\nEstatus de Factura (I):\n- 0: Rechazo Comercial\n- 1: Pendiente Addenda\n- 2: Recibido Parcial\n- 3: Pendiente de Contabilizar\n- 7: Aplicado\n- 8: Completado\n\nEstatus de NC (E):\n- 0: Rechazo Comercial\n- 1: Pendiente Addenda\n- 2: Recibido Parcial\n- 3: Pendiente de Contabilizar\n- 7: Aplicado\n- 8: Completado"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Búsqueda Combinada (Todos los Filtros)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"rfcReceptor\": \"{{rfc_receptor}}\",\n  \"idProveedor\": 1001,\n  \"serie\": \"A\",\n  \"folio\": \"12345\",\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"estatus\": 1,\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Búsqueda combinada usando todos los filtros disponibles.\n\nTodos los filtros opcionales se aplican con operador AND."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Paginación - Página 2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 1,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Obtiene la segunda página de resultados.\n\nPaginación:\n- page=0: Primera página (registros 1-20)\n- page=1: Segunda página (registros 21-40)\n- page=2: Tercera página (registros 41-60)"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Error - Sin RFC Emisor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Prueba de validación - Falta RFC Emisor (obligatorio).\n\nEsperado: HTTP 400 con mensaje de error."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Error - Sin Tipo de Documento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Prueba de validación - Falta Tipo de Documento (obligatorio).\n\nEsperado: HTTP 400 con mensaje de error."
+      },
+      "response": []
+    },
+    {
+      "name": "12. Buscar por Orden de Compra",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"noOrdenCompra\": \"OC-2025-001234\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca facturas por Numero de Orden de Compra.\n\nFiltra documentos que tengan la OC especificada en la addenda.\nEl campo noOrdenCompra se obtiene de addendum.purchase_order_number."
+      },
+      "response": []
+    },
+    {
+      "name": "13. Buscar por Recepcion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"noRecepcion\": \"REC-2025-005678\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca facturas por Numero de Recepcion.\n\nFiltra documentos que tengan la recepcion especificada en la addenda.\nEl campo noRecepcion se obtiene de addendum.reception_number."
+      },
+      "response": []
+    },
+    {
+      "name": "14. Buscar NC por OC y Recepcion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"noOrdenCompra\": \"OC-2025-001234\",\n  \"noRecepcion\": \"REC-2025-005678\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+        },
+        "url": {
+          "raw": "{{fiscal_api_url}}/invoices/search",
+          "host": ["{{fiscal_api_url}}"],
+          "path": ["invoices", "search"]
+        },
+        "description": "Busca Notas de Credito por OC y Recepcion.\n\nCombina ambos filtros para encontrar NC asociadas a una OC y Recepcion especifica.\nAmbos filtros se aplican con operador AND."
+      },
+      "response": []
+    }
+  ]
+}

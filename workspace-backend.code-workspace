@@ -1,0 +1,53 @@
+{
+	"folders": [
+		{
+			"name": "APP03022-mrch.backend.somx.aclaraciones-api",
+			"path": "APP03022-mrch.backend.somx.aclaraciones-api"
+		},
+		{
+			"name": "APP03022-mrch.backend.somx.auditoria-api",
+			"path": "APP03022-mrch.backend.somx.auditoria-api"
+		},
+		{
+			"name": "APP03022-mrch.backend.somx.catalogos-api",
+			"path": "APP03022-mrch.backend.somx.catalogos-api"
+		},
+		{
+			"name": "APP03022-mrch.backend.somx.finanzas-api",
+			"path": "APP03022-mrch.backend.somx.finanzas-api"
+		},
+		{
+			"name": "APP03022-mrch.backend.somx.fiscal-api",
+			"path": "APP03022-mrch.backend.somx.fiscal-api"
+		},
+		{
+			"name": "APP03022-mrch.backend.somx.util-api",
+			"path": "APP03022-mrch.backend.somx.util-api"
+		},
+		{
+			"name": "APP03022-mrch.bff.somx.ppsomx",
+			"path": "APP03022-mrch.bff.somx.ppsomx"
+		},
+		{
+			"name": "APP03022-mrch.bff.somx.ppsomx.catalogos",
+			"path": "APP03022-mrch.bff.somx.ppsomx.catalogos"
+		},
+		{
+			"name": "APP03022-mrch.bff.somx.ppsomx.finanzas",
+			"path": "APP03022-mrch.bff.somx.ppsomx.finanzas"
+		},
+		{
+			"name": "APP03022-mrch.bff.somx.ppsomx.fiscal",
+			"path": "APP03022-mrch.bff.somx.ppsomx.fiscal"
+		},
+		{
+			"name": "APP03022-mrch.bff.somx.ppsomx.auditoria",
+			"path": "APP03022-mrch.bff.somx.ppsomx.auditoria"
+		},
+		{
+			"name": "docs",
+			"path": "docs"
+		}
+	],
+	"settings": {}
+}

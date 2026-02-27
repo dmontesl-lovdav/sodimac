@@ -1,0 +1,634 @@
+{
+  "info": {
+    "_postman_id": "stm-393-consulta-facturas",
+    "name": "STM-393 - Consulta de Facturas",
+    "description": "Coleccion de endpoints para la pantalla de consulta de facturas registradas.\n\nServicios involucrados:\n- fiscal-api (Puerto 8082)\n- catalogos-api (Puerto 8083)\n- utils-api (Puerto 3712)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "fiscal_api_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "catalogos_api_url",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "utils_api_url",
+      "value": "http://localhost:3712",
+      "type": "string"
+    },
+    {
+      "key": "bff_fiscal_url",
+      "value": "https://dev.fbusinesscenter.com/ppsomx/fiscal",
+      "type": "string"
+    },
+    {
+      "key": "rfc_emisor",
+      "value": "AAA010101AAA",
+      "type": "string"
+    },
+    {
+      "key": "fecha_inicio",
+      "value": "2025-01-01",
+      "type": "string"
+    },
+    {
+      "key": "fecha_fin",
+      "value": "2025-06-30",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Catalogos",
+      "item": [
+        {
+          "name": "1.1 Obtener Catalogo Estatus Factura",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogos_api_url}}/CatEstatusFactura/details?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["CatEstatusFactura", "details"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1",
+                  "description": "1=ES, 2=EN, 3=PT"
+                }
+              ]
+            },
+            "description": "Obtiene el catalogo de estatus de factura para el combo de filtro"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Obtener Mensaje INF6000",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogos_api_url}}/message/INF6000?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["message", "INF6000"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Mensaje: No existe informacion con los criterios establecidos"
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Obtener Mensaje WRN7000",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogos_api_url}}/message/WRN7000?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["message", "WRN7000"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Mensaje: La fecha inicio no puede ser superior a la fecha final"
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Obtener Mensaje WRN7005",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogos_api_url}}/message/WRN7005?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["message", "WRN7005"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Mensaje: El periodo de busqueda no puede ser superior a 6 meses"
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Obtener Mensaje WRN7006",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogos_api_url}}/message/WRN7006?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["message", "WRN7006"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Mensaje: La fecha final no puede ser menor a la fecha inicio"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Parametros",
+      "item": [
+        {
+          "name": "2.1 Obtener MAX_SEARCH_MONTHS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{utils_api_url}}/api/parameters?name=MAX_SEARCH_MONTHS&status=1",
+              "host": ["{{utils_api_url}}"],
+              "path": ["api", "parameters"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "MAX_SEARCH_MONTHS"
+                },
+                {
+                  "key": "status",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtiene el parametro de rango maximo de meses para busqueda"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Listar Parametros FISCAL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{utils_api_url}}/api/parameters?idModule=1&status=1",
+              "host": ["{{utils_api_url}}"],
+              "path": ["api", "parameters"],
+              "query": [
+                {
+                  "key": "idModule",
+                  "value": "1",
+                  "description": "1=FISCAL"
+                },
+                {
+                  "key": "status",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Lista todos los parametros del modulo FISCAL"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Busqueda de Facturas",
+      "item": [
+        {
+          "name": "3.1 Buscar Facturas (Basico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busqueda basica de facturas con filtros obligatorios"
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Buscar Facturas (Con Filtros)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"idProveedor\": 1234567890,\n  \"serie\": \"A\",\n  \"folio\": \"12345\",\n  \"estatus\": 1,\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busqueda de facturas con todos los filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Buscar por OC y Recepcion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"noOrdenCompra\": \"OC-2025-001234\",\n  \"noRecepcion\": \"REC-2025-005678\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busqueda de facturas por OC y Recepcion (STM-338)"
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 Paginacion - Pagina 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 1,\n  \"size\": 10,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Test de paginacion - pagina 2"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Validaciones (Errores Esperados)",
+      "item": [
+        {
+          "name": "4.1 Error - Fecha Inicio > Fecha Fin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-06-30\",\n  \"fechaFinalRecepcion\": \"2025-01-01\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Debe retornar error VAL001 / WRN7000"
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Error - Rango > 6 Meses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2024-01-01\",\n  \"fechaFinalRecepcion\": \"2025-01-01\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Debe retornar error VAL002 / WRN7005 (rango de 12 meses)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Descargas",
+      "item": [
+        {
+          "name": "5.1 Descargar XML (Masivo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"uuid-factura-1\",\n    \"uuid-factura-2\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/xml",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "xml"]
+            },
+            "description": "Descarga masiva de XMLs en ZIP"
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Descargar PDF (Masivo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"uuid-factura-1\",\n    \"uuid-factura-2\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/pdf",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "pdf"]
+            },
+            "description": "Descarga masiva de PDFs en ZIP"
+          },
+          "response": []
+        },
+        {
+          "name": "5.3 Exportar CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\"\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/export/csv",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "export", "csv"]
+            },
+            "description": "Exportar resultados a CSV"
+          },
+          "response": []
+        },
+        {
+          "name": "5.4 Exportar XLSX (2 Hojas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\"\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/export/xlsx",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "export", "xlsx"]
+            },
+            "description": "Exportar a XLSX con 2 hojas:\n- Hoja 1: Facturas encontradas\n- Hoja 2: Notas de Credito relacionadas\n\nResponse: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet (archivo binario)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Via BFF",
+      "item": [
+        {
+          "name": "6.1 Buscar Facturas (BFF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{bff_fiscal_url}}/invoices/search",
+              "host": ["{{bff_fiscal_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busqueda de facturas via BFF (requiere JWT)"
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Exportar XLSX (BFF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\"\n}"
+            },
+            "url": {
+              "raw": "{{bff_fiscal_url}}/invoices/export/xlsx",
+              "host": ["{{bff_fiscal_url}}"],
+              "path": ["invoices", "export", "xlsx"]
+            },
+            "description": "Exportar XLSX via BFF (requiere JWT)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Dev Local (BFF localhost)",
+      "item": [
+        {
+          "name": "7.1 Health Check BFF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/health",
+              "host": ["http://localhost:3001"],
+              "path": ["health"]
+            },
+            "description": "Verificar que el BFF local este levantado"
+          },
+          "response": []
+        },
+        {
+          "name": "7.2 Buscar Facturas (Local)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/invoices/search",
+              "host": ["http://localhost:3001"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busqueda de facturas via BFF local (puerto 3001)\n\nRequiere:\n- BFF levantado: npm start (puerto 3001)\n- fiscal-api levantado (puerto 8082)"
+          },
+          "response": []
+        },
+        {
+          "name": "7.3 Exportar XLSX (Local)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_fin}}\",\n  \"tipoDocumento\": \"I\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/invoices/export/xlsx",
+              "host": ["http://localhost:3001"],
+              "path": ["invoices", "export", "xlsx"]
+            },
+            "description": "Exportar XLSX via BFF local\n\nRequiere:\n- BFF levantado: npm start (puerto 3001)\n- fiscal-api levantado (puerto 8082)\n- utils-api levantado (puerto 3712) si validacion activa"
+          },
+          "response": []
+        },
+        {
+          "name": "7.4 Validacion Rango > 6 Meses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2024-01-01\",\n  \"fechaFinalRecepcion\": \"2025-01-01\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/invoices/search",
+              "host": ["http://localhost:3001"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Prueba validacion WRN7005 - Rango mayor a 6 meses\n\nEsperado: HTTP 400 con mensaje WRN7005"
+          },
+          "response": []
+        },
+        {
+          "name": "7.5 Validacion Fecha Inicio > Fin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-06-30\",\n  \"fechaFinalRecepcion\": \"2025-01-01\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/invoices/search",
+              "host": ["http://localhost:3001"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Prueba validacion WRN7000 - Fecha inicio mayor a fecha fin\n\nEsperado: HTTP 400 con mensaje WRN7000"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

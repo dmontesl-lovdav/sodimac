@@ -1,0 +1,484 @@
+{
+  "info": {
+    "name": "STM-1166 - Tren de Estatus",
+    "description": "Coleccion de Postman para el servicio de gestion del tren de estatus.\n\nEndpoints para validar y administrar transiciones de estatus permitidas por opcion.\n\n**Opciones disponibles:**\n- 1 = Factura (I)\n- 2 = Nota de Credito (E)\n- 3 = Complemento de Pago (P)\n- 4 = CartaPorte (T)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Validacion de Transiciones",
+      "item": [
+        {
+          "name": "1.1 Validar Transicion Permitida (3->4)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=3&targetStatus=4",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "3" },
+                { "key": "targetStatus", "value": "4" }
+              ]
+            },
+            "description": "Valida si la transicion de estatus 3 -> 4 esta permitida para Facturas.\n\nEsperado: HTTP 200 con valid=true"
+          }
+        },
+        {
+          "name": "1.2 Validar Transicion NO Permitida (3->8)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=3&targetStatus=8",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "3" },
+                { "key": "targetStatus", "value": "8" }
+              ]
+            },
+            "description": "Intenta validar una transicion que NO esta permitida (3 -> 8).\n\nEsperado: HTTP 400 con codigo WRN7011"
+          }
+        },
+        {
+          "name": "1.3 Validar Estatus Origen Inexistente (99->4)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=99&targetStatus=4",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "99" },
+                { "key": "targetStatus", "value": "4" }
+              ]
+            },
+            "description": "Intenta validar con un estatus origen que no esta catalogado.\n\nEsperado: HTTP 400 con codigo WRN7010"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Consulta de Destinos Permitidos",
+      "item": [
+        {
+          "name": "2.1 Destinos desde PENDIENTE_ADDENDA (1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/allowed-destinations?optionId=1&sourceStatus=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "allowed-destinations"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "1" }
+              ]
+            },
+            "description": "Obtiene los destinos permitidos desde PENDIENTE_ADDENDA (1) para Facturas.\n\nEsperado: [2, 3, 13] (Recibido Parcial, Pendiente Contabilizar, Pago Manual)"
+          }
+        },
+        {
+          "name": "2.2 Destinos desde PENDIENTE_CONTABILIZAR (3)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/allowed-destinations?optionId=1&sourceStatus=3",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "allowed-destinations"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "3" }
+              ]
+            },
+            "description": "Obtiene los destinos permitidos desde PENDIENTE_CONTABILIZAR (3).\n\nEsperado: [4] (Proceso de descarga)"
+          }
+        },
+        {
+          "name": "2.3 Destinos desde PROCESO_DESCARGA (4)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/allowed-destinations?optionId=1&sourceStatus=4",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "allowed-destinations"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "4" }
+              ]
+            },
+            "description": "Obtiene los destinos permitidos desde PROCESO_DESCARGA (4).\n\nEsperado: [5, 11] (Desglose factura, Rechazo Contable)"
+          }
+        },
+        {
+          "name": "2.4 Destinos para Nota de Credito (opt=2, src=1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/allowed-destinations?optionId=2&sourceStatus=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "allowed-destinations"],
+              "query": [
+                { "key": "optionId", "value": "2" },
+                { "key": "sourceStatus", "value": "1" }
+              ]
+            },
+            "description": "Obtiene los destinos permitidos para NC desde PENDIENTE_ADDENDA.\n\nEsperado: [2, 3] (Recibido Parcial, Pendiente Contabilizar)"
+          }
+        },
+        {
+          "name": "2.5 Destinos - Estado Final COMPLETADO (10)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/allowed-destinations?optionId=1&sourceStatus=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "allowed-destinations"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "10" }
+              ]
+            },
+            "description": "Consulta destinos desde COMPLETADO (10), que es un estado final.\n\nEsperado: HTTP 400 con WRN7010 (no hay transiciones desde este estado)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. CRUD de Reglas",
+      "item": [
+        {
+          "name": "3.1 Crear Nueva Regla (99->100)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"optionId\": 1,\n  \"sourceStatus\": 99,\n  \"targetStatus\": 100,\n  \"createdBy\": 1001\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/status-train",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train"]
+            },
+            "description": "Crea una nueva regla de transicion (para pruebas).\n\nEsperado: HTTP 201 con la regla creada"
+          }
+        },
+        {
+          "name": "3.2 Obtener Regla por ID (1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "1"]
+            },
+            "description": "Obtiene una regla especifica por su ID.\n\nEsperado: HTTP 200 con los datos de la regla"
+          }
+        },
+        {
+          "name": "3.3 Actualizar Regla (ID 1)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceStatus\": 99,\n  \"targetStatus\": 101,\n  \"updatedBy\": 1002\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/status-train/1?optionId=2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "1"],
+              "query": [
+                { "key": "optionId", "value": "2" }
+              ]
+            },
+            "description": "Actualiza una regla existente.\n\nEsperado: HTTP 200 con la regla actualizada"
+          }
+        },
+        {
+          "name": "3.4 Eliminar Regla (ID 999)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "999"]
+            },
+            "description": "Elimina una regla de transicion.\n\nEsperado: HTTP 204 (sin contenido) o 404 si no existe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Flujo Completo - Factura",
+      "item": [
+        {
+          "name": "4.1 Transicion 1->3 (Addenda->Contabilizar)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=1&targetStatus=3",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "1" },
+                { "key": "targetStatus", "value": "3" }
+              ]
+            },
+            "description": "PENDIENTE_ADDENDA (1) -> PENDIENTE_CONTABILIZAR (3)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.2 Transicion 3->4 (Contabilizar->Descarga)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=3&targetStatus=4",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "3" },
+                { "key": "targetStatus", "value": "4" }
+              ]
+            },
+            "description": "PENDIENTE_CONTABILIZAR (3) -> PROCESO_DESCARGA (4)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.3 Transicion 4->5 (Descarga->Desglose)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=4&targetStatus=5",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "4" },
+                { "key": "targetStatus", "value": "5" }
+              ]
+            },
+            "description": "PROCESO_DESCARGA (4) -> DESGLOSE_FACTURA (5)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.4 Transicion 5->6 (Desglose->Envio)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=5&targetStatus=6",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "5" },
+                { "key": "targetStatus", "value": "6" }
+              ]
+            },
+            "description": "DESGLOSE_FACTURA (5) -> PENDIENTE_ENVIO_CONTABILIZAR (6)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.5 Transicion 6->7 (Envio->Pago)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=6&targetStatus=7",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "6" },
+                { "key": "targetStatus", "value": "7" }
+              ]
+            },
+            "description": "PENDIENTE_ENVIO_CONTABILIZAR (6) -> PENDIENTE_PAGO (7)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.6 Transicion 7->8 (Pago->Pagado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=7&targetStatus=8",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "7" },
+                { "key": "targetStatus", "value": "8" }
+              ]
+            },
+            "description": "PENDIENTE_PAGO (7) -> PAGADO (8)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.7 Transicion 8->9 (Pagado->Complemento)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=8&targetStatus=9",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "8" },
+                { "key": "targetStatus", "value": "9" }
+              ]
+            },
+            "description": "PAGADO (8) -> PENDIENTE_COMPLEMENTO (9)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "4.8 Transicion 9->10 (Complemento->Completado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=9&targetStatus=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "9" },
+                { "key": "targetStatus", "value": "10" }
+              ]
+            },
+            "description": "PENDIENTE_COMPLEMENTO (9) -> COMPLETADO (10)\n\nEsperado: valid=true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Flujo Rechazo Contable",
+      "item": [
+        {
+          "name": "5.1 Transicion 4->11 (Descarga->Rechazo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=4&targetStatus=11",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "4" },
+                { "key": "targetStatus", "value": "11" }
+              ]
+            },
+            "description": "PROCESO_DESCARGA (4) -> RECHAZO_CONTABLE (11)\n\nEsperado: valid=true"
+          }
+        },
+        {
+          "name": "5.2 Transicion 11->7 (Rechazo->Pago)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/status-train/validate?optionId=1&sourceStatus=11&targetStatus=7",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["status-train", "validate"],
+              "query": [
+                { "key": "optionId", "value": "1" },
+                { "key": "sourceStatus", "value": "11" },
+                { "key": "targetStatus", "value": "7" }
+              ]
+            },
+            "description": "RECHAZO_CONTABLE (11) -> PENDIENTE_PAGO (7)\n\nEsperado: valid=true (recuperacion de rechazo)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Health Check",
+      "item": [
+        {
+          "name": "6.1 Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/actuator/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["actuator", "health"]
+            },
+            "description": "Verificar que catalogos-api este levantado"
+          }
+        }
+      ]
+    }
+  ]
+}

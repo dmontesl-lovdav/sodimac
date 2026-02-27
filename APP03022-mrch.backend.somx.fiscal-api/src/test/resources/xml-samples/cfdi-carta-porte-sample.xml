@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                 xmlns:cartaporte31="http://www.sat.gob.mx/CartaPorte31"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd
+                                   http://www.sat.gob.mx/CartaPorte31 http://www.sat.gob.mx/sitio_internet/cfd/CartaPorte/CartaPorte31.xsd"
+                 Version="4.0"
+                 Serie="CP"
+                 Folio="001"
+                 Fecha="2025-01-15T08:00:00"
+                 Sello="MockSelloCartaPorte"
+                 FormaPago="99"
+                 NoCertificado="00001000000456789123"
+                 Certificado="MockCertificadoCP"
+                 SubTotal="0.00"
+                 Moneda="XXX"
+                 Total="0.00"
+                 TipoDeComprobante="T"
+                 Exportacion="01"
+                 LugarExpedicion="06000">
+
+    <cfdi:Emisor Rfc="TRANSP123456789"
+                 Nombre="Transportes de Prueba S.A. de C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="CLIENTE987654321"
+                   Nombre="Cliente Receptor de Mercancía S.A."
+                   DomicilioFiscalReceptor="64000"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="S01"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="78101800"
+                       Cantidad="1.000000"
+                       ClaveUnidad="E48"
+                       Descripcion="Servicio de transporte de carga"
+                       ValorUnitario="0.00"
+                       Importe="0.00"
+                       ObjetoImp="01"/>
+    </cfdi:Conceptos>
+
+    <cfdi:Complemento>
+        <cartaporte31:CartaPorte Version="3.1"
+                                TranspInternac="No"
+                                TotalDistRec="450.5">
+
+            <cartaporte31:Ubicaciones>
+                <cartaporte31:Ubicacion TipoUbicacion="Origen"
+                                       IDUbicacion="OR001"
+                                       RFCRemitenteDestinatario="REMI123456789"
+                                       NombreRemitenteDestinatario="Remitente de Prueba"
+                                       NumRegIdTrib=""
+                                       ResidenciaFiscal=""
+                                       FechaHoraSalidaLlegada="2025-01-15T09:00:00"
+                                       DistanciaRecorrida="0">
+                    <cartaporte31:Domicilio Calle="Calle Origen 123"
+                                           Colonia="Centro"
+                                           Localidad="01"
+                                           Municipio="001"
+                                           Estado="MEX"
+                                           Pais="MEX"
+                                           CodigoPostal="50000"/>
+                </cartaporte31:Ubicacion>
+
+                <cartaporte31:Ubicacion TipoUbicacion="Destino"
+                                       IDUbicacion="DE001"
+                                       RFCRemitenteDestinatario="DEST987654321"
+                                       NombreRemitenteDestinatario="Destinatario de Prueba"
+                                       FechaHoraSalidaLlegada="2025-01-15T15:00:00"
+                                       DistanciaRecorrida="450.5">
+                    <cartaporte31:Domicilio Calle="Calle Destino 456"
+                                           Colonia="Industrial"
+                                           Localidad="01"
+                                           Municipio="020"
+                                           Estado="NLE"
+                                           Pais="MEX"
+                                           CodigoPostal="64000"/>
+                </cartaporte31:Ubicacion>
+            </cartaporte31:Ubicaciones>
+
+            <cartaporte31:Mercancias PesoBrutoTotal="1000.00"
+                                    UnidadPeso="KGM"
+                                    PesoNetoTotal="950.00"
+                                    NumTotalMercancias="1">
+
+                <cartaporte31:Mercancia BienesTransp="10101504"
+                                       ClaveSTCC=""
+                                       Descripcion="Productos de prueba para transporte"
+                                       Cantidad="50.000000"
+                                       ClaveUnidad="H87"
+                                       Unidad="Pieza"
+                                       Dimensiones=""
+                                       MaterialPeligroso="No"
+                                       CveMaterialPeligroso=""
+                                       Embalaje=""
+                                       DescripEmbalaje=""
+                                       SectorCOFEPRIS=""
+                                       NombreIngredienteActivo=""
+                                       NomQuimicoOTecnico=""
+                                       DenominacionGenerica=""
+                                       DenominacionDistintiva=""
+                                       Fabricante=""
+                                       FechaVencimiento=""
+                                       LoteFabricacion=""
+                                       PesoEnKg="1000.000"
+                                       ValorMercancia="10000.00"
+                                       Moneda="MXN"
+                                       FraccionArancelaria=""
+                                       UUIDComercioExt="">
+
+                    <cartaporte31:Pedimentos Pedimento=""/>
+                </cartaporte31:Mercancia>
+
+                <cartaporte31:Autotransporte PermSCT="TPAF01"
+                                            NumPermisoSCT="PERM123456">
+
+                    <cartaporte31:IdentificacionVehicular ConfigVehicular="C2"
+                                                         PlacaVM="ABC1234"
+                                                         AnioModeloVM="2020"/>
+
+                    <cartaporte31:Seguros AseguraRespCivil="SEGURO123"
+                                         PolizaRespCivil="POL123456"/>
+                </cartaporte31:Autotransporte>
+            </cartaporte31:Mercancias>
+
+            <cartaporte31:FiguraTransporte>
+                <cartaporte31:TiposFigura TipoFigura="01"
+                                         RFCFigura="CHOFER123456789"
+                                         NombreFigura="Conductor de Prueba"
+                                         NumLicencia="LIC123456789"/>
+            </cartaporte31:FiguraTransporte>
+
+        </cartaporte31:CartaPorte>
+
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="87654321-4321-4321-4321-210987654321"
+                                FechaTimbrado="2025-01-15T08:05:00"
+                                RfcProvCertif="PAC987654321"
+                                SelloCFD="MockSelloCFDCP"
+                                NoCertificadoSAT="00001000000123987654"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>

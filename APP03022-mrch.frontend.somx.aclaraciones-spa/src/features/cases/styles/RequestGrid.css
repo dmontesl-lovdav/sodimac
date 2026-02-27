@@ -1,0 +1,171 @@
+.view-icon {
+    width: 70px;
+    height: 60px;
+    margin-bottom: 15px;
+    background-size: 100% 100%;
+    background-image: url("data:image/svg+xml,%3Csvg%20width=%2220%22%20height=%2216%22%20viewBox=%220%200%2020%2016%22%20fill=%22none%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath%20d=%22M12.122%205.87975C13.293%207.05075%2013.293%208.95175%2012.122%2010.1247C10.951%2011.2957%209.05003%2011.2957%207.87703%2010.1247C6.70603%208.95375%206.70603%207.05275%207.87703%205.87975C9.05003%204.70675%2010.95%204.70675%2012.122%205.87975Z%22%20stroke=%22#323232%22%20stroke-width=%221.5%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%3Cpath%20d=%22M1%208C1%207.341%201.152%206.689%201.446%206.088C2.961%202.991%206.309%201%2010%201C13.691%201%2017.039%202.991%2018.554%206.088C18.848%206.689%2019%207.341%2019%208C19%208.659%2018.848%209.311%2018.554%209.912C17.039%2013.009%2013.691%2015%2010%2015C6.309%2015%202.961%2013.009%201.446%209.912C1.152%209.311%201%208.659%201%208Z%22%20stroke=%22#323232%22%20stroke-width=%221.5%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%3C/svg%3E");
+}
+
+fbc-button {
+    display: inline-block;
+    margin-right: 1em;
+}
+
+.pill-info {
+    background: #e3f4ff;
+    color: #0078c8;
+}
+
+.pill-success {
+    background: #e7f5ea;
+    color: #2e7d32;
+}
+
+.pill-warning {
+    background: #fff4e5;
+    color: #b76e00;
+}
+
+.pill-error {
+    background: #fde8e8;
+    color: #d32f2f;
+}
+
+.pill-default {
+    background: #eeeeee;
+    color: #424242;
+}
+
+/* contenedor horizontal */
+.actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* separación entre iconos */
+}
+
+/* iconos base */
+.action-icon {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+}
+
+.action-icon svg {
+    fill: #002d4c;
+    /* color base */
+    transition: fill .15s;
+}
+
+/* efectos hover */
+
+/* azul al pasar el mouse */
+.view-icon:hover svg {
+    fill: #005ea8;
+}
+
+/* rojo al pasar el mouse */
+.delete-icon:hover svg {
+    fill: #c62828;
+}
+
+/* outlined button – same height / border as the inputs */
+.search-btn {
+    height: 56px;
+    /* match .fbc-custom-input */
+    min-width: 92px;
+    max-width: 92px;
+    /* same blue & thickness */
+    font: 16px/56px Roboto, sans-serif;
+    color: #002d4c;
+    background: #fff;
+    transition: background .15s, color .15s;
+}
+
+.search-btn:hover {
+    background: #f5f7fa;
+}
+
+.search-btn:active {
+    background: #e9eef3;
+}
+
+.switch-cell {
+    /* quitamos el estilo nativo del checkbox */
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: default;
+    width: 36px;
+    height: 18px;
+    border-radius: 34px;
+    background: #d0dae4;
+    /* gris OFF */
+    position: relative;
+    vertical-align: middle;
+}
+
+.switch-cell:before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    transition: transform .2s;
+}
+
+.switch-cell:checked {
+    background: #002d4c;
+    /* azul ON */
+}
+
+.switch-cell:checked:before {
+    transform: translateX(18px);
+}
+
+.switch-cell:focus {
+    outline: none;
+}
+
+/* Reemplazo de: p-6 flex flex-col gap-6 */
+.rg-loading-wrapper {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Reemplazo de text-center text-gray-600 mt-3 */
+.rg-loading-text {
+    text-align: center;
+    color: #555;
+    margin-top: 12px;
+}
+
+/* Reemplazo de mb-6 */
+.rg-block {
+    margin-bottom: 24px;
+}
+
+/* Reemplazo de flex items-center gap-2 mt-6 mb-6 */
+.rg-view-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+/* Reemplazo de mb-6 */
+.rg-summary {
+    margin-bottom: 24px;
+}
+
+/* Reemplazo de h-10 pt-5 text-right */
+.rg-back-row {
+    height: 40px;
+    padding-top: 20px;
+    text-align: right;
+}

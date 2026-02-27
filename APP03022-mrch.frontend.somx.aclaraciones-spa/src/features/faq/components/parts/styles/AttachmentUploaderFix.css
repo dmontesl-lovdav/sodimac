@@ -1,0 +1,64 @@
+/* === FIX para que los iconos NO se salgan del recuadro verde === */
+
+/* el contenedor del archivo subido */
+.file-container {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-right: 120px !important;
+    /* deja espacio para los iconos */
+    height: 48px !important;
+    overflow: hidden !important;
+}
+
+/* nombre y tamaño en una sola columna */
+.file-name {
+    margin-top: 0 !important;
+    margin-left: 16px !important;
+    max-width: calc(100% - 140px) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.file-size {
+    margin-left: 16px !important;
+    margin-top: 2px !important;
+}
+
+/* --- iconos --- */
+
+.file-view,
+.file-download,
+.file-delete {
+    width: 20px !important;
+    height: 20px !important;
+    cursor: pointer !important;
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* ojo */
+.file-view {
+    right: 72px !important;
+    /* 72px = perfectamente alineado */
+}
+
+/* descargar */
+.file-download {
+    right: 42px !important;
+}
+
+/* borrar */
+.file-delete {
+    right: 12px !important;
+}
+
+.file-view img,
+.file-download img,
+.file-delete img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}

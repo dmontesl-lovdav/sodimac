@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: ${PROJECT_NAME}
+spec:
+  selector:
+    matchLabels:
+      app: ${PROJECT_NAME}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      creationTimestamp: null
+      labels:
+        app: ${PROJECT_NAME}
+    spec:
+      serviceAccountName: fbc-workload-identity
+      containers:
+        - image: foo/bar
+          name: ${PROJECT_NAME}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+              name: http
+              protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 1000
+            runAsUser: 1000
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+
+

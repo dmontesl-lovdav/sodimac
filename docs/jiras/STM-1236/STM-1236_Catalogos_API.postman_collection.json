@@ -1,0 +1,433 @@
+{
+	"info": {
+		"_postman_id": "stm-1236-catalogos-api",
+		"name": "STM-1236 - Catalogos API",
+		"description": "Coleccion de endpoints del CatalogController en catalogos-api (Puerto 8083).\n\nEndpoints para consulta de catalogos compartidos del portal FBC.\n\nSwagger: http://localhost:8083/swagger-ui",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8083",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Catalogos",
+			"item": [
+				{
+					"name": "Obtener todos los catalogos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Obtiene la lista de todos los catalogos disponibles en el sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener catalogos por modulo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/module/fiscal",
+							"host": ["{{base_url}}"],
+							"path": ["module", "fiscal"]
+						},
+						"description": "Obtiene catalogos filtrados por modulo. Modulos disponibles: fiscal, sistema, general, transporte."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener catalogo por codigo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusRegistro",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusRegistro"]
+						},
+						"description": "Obtiene un catalogo especifico por su codigo, incluyendo sus detalles."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener detalles de catalogo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusRegistro/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusRegistro", "details"]
+						},
+						"description": "Obtiene solo los detalles (items) de un catalogo."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener detalle por codigo y clave",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusRegistro/details/ERG001",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusRegistro", "details", "ERG001"]
+						},
+						"description": "Obtiene un detalle especifico por codigo de catalogo y clave del item."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener mensaje por clave",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/message/BUS001",
+							"host": ["{{base_url}}"],
+							"path": ["message", "BUS001"]
+						},
+						"description": "Obtiene un mensaje directamente por su clave unica (ej: BUS001, WRN002, ERR001)."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener mensaje formateado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/message/BUS002/format",
+							"host": ["{{base_url}}"],
+							"path": ["message", "BUS002", "format"]
+						},
+						"description": "Obtiene un mensaje con placeholders sustituidos. Usar query param 'params' para pasar valores."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener catalogo por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/id/1",
+							"host": ["{{base_url}}"],
+							"path": ["id", "1"]
+						},
+						"description": "Obtiene un catalogo por su ID numerico."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener catalogo por prefijo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/prefix/EFA",
+							"host": ["{{base_url}}"],
+							"path": ["prefix", "EFA"]
+						},
+						"description": "Obtiene un catalogo por su prefijo (ej: EFA=Estatus Factura, BUS=Mensajes Negocio, ERR=Errores)."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints del CatalogController para consulta de catalogos compartidos."
+		},
+		{
+			"name": "Catalogos Especificos",
+			"item": [
+				{
+					"name": "CatEstatusRegistro - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusRegistro/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusRegistro", "details"]
+						},
+						"description": "Catalogo de estados genericos para registros (Activo, Inactivo, Borrado Logico)."
+					},
+					"response": []
+				},
+				{
+					"name": "CatEstatusFactura - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusFactura/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusFactura", "details"]
+						},
+						"description": "Catalogo de estados del ciclo de vida de facturas."
+					},
+					"response": []
+				},
+				{
+					"name": "CatEstatusNotaCredito - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusNotaCredito/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusNotaCredito", "details"]
+						},
+						"description": "Catalogo de estados para notas de credito."
+					},
+					"response": []
+				},
+				{
+					"name": "CatEstatusPago - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusPago/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusPago", "details"]
+						},
+						"description": "Catalogo de estados para complementos de pago."
+					},
+					"response": []
+				},
+				{
+					"name": "CatEstatusRecepcion - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusRecepcion/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusRecepcion", "details"]
+						},
+						"description": "Catalogo de estados para recepciones de mercancia."
+					},
+					"response": []
+				},
+				{
+					"name": "CatEstatusCartaPorte - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatEstatusCartaPorte/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatEstatusCartaPorte", "details"]
+						},
+						"description": "Catalogo de estados para guias de embarque/carta porte."
+					},
+					"response": []
+				},
+				{
+					"name": "CatMsgNegocio - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatMsgNegocio/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatMsgNegocio", "details"]
+						},
+						"description": "Catalogo de mensajes de validacion de negocio (BUS)."
+					},
+					"response": []
+				},
+				{
+					"name": "CatMsgErrorSistema - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatMsgErrorSistema/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatMsgErrorSistema", "details"]
+						},
+						"description": "Catalogo de mensajes de error tecnico (ERR)."
+					},
+					"response": []
+				},
+				{
+					"name": "CatMsgAdvertencia - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatMsgAdvertencia/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatMsgAdvertencia", "details"]
+						},
+						"description": "Catalogo de mensajes de advertencia (WRN)."
+					},
+					"response": []
+				},
+				{
+					"name": "CatMsgInformativo - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatMsgInformativo/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatMsgInformativo", "details"]
+						},
+						"description": "Catalogo de mensajes informativos (INF)."
+					},
+					"response": []
+				},
+				{
+					"name": "CatMsgExitoso - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/CatMsgExitoso/details",
+							"host": ["{{base_url}}"],
+							"path": ["CatMsgExitoso", "details"]
+						},
+						"description": "Catalogo de mensajes de exito (RES)."
+					},
+					"response": []
+				}
+			],
+			"description": "Acceso directo a los detalles de catalogos mas utilizados."
+		},
+		{
+			"name": "Catalogos SAT",
+			"item": [
+				{
+					"name": "c_RegimenFiscal - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_RegimenFiscal/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_RegimenFiscal", "details"]
+						},
+						"description": "Catalogo de regimenes fiscales del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_UsoCFDI - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_UsoCFDI/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_UsoCFDI", "details"]
+						},
+						"description": "Catalogo de usos de CFDI del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_FormaPago - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_FormaPago/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_FormaPago", "details"]
+						},
+						"description": "Catalogo de formas de pago del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_MetodoPago - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_MetodoPago/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_MetodoPago", "details"]
+						},
+						"description": "Catalogo de metodos de pago del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_TipoDeComprobante - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_TipoDeComprobante/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_TipoDeComprobante", "details"]
+						},
+						"description": "Catalogo de tipos de comprobante del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_TipoRelacion - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_TipoRelacion/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_TipoRelacion", "details"]
+						},
+						"description": "Catalogo de tipos de relacion entre CFDIs del SAT para CFDI 4.0."
+					},
+					"response": []
+				},
+				{
+					"name": "c_TasaOCuota - Detalles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/c_TasaOCuota/details",
+							"host": ["{{base_url}}"],
+							"path": ["c_TasaOCuota", "details"]
+						},
+						"description": "Catalogo de tasas o cuotas de IVA del SAT."
+					},
+					"response": []
+				}
+			],
+			"description": "Catalogos del SAT para CFDI 4.0."
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "health"]
+						},
+						"description": "Verifica el estado del servicio."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de monitoreo."
+		}
+	]
+}

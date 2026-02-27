@@ -1,0 +1,29 @@
+# Compilados Java
+target/
+bin/
+build/
+*.class
+*.jar
+*.war
+*.ear
+ 
+# IDEs
+.idea/
+.vs/
+*.iml
+.classpath
+.project
+.settings/
+ 
+# Node
+node_modules/
+dist/
+ 
+# Sistema
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+ 
+# PowerShell scripts temporales
+emp.txt

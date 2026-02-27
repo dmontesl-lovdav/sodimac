@@ -1,0 +1,120 @@
+/* ===== Base button ===== */
+
+.generic-btn {
+    height: 44px;
+    /* h-11 */
+    padding: 0 1.5rem;
+    /* px-6 */
+    border-radius: 0.375rem;
+    /* rounded-md */
+    font-size: 0.875rem;
+    /* text-sm */
+    font-weight: 500;
+    /* font-medium */
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== DISABLED ===== */
+.generic-btn.disabled {
+    opacity: 0.6;
+    /* opacity-60 */
+    cursor: not-allowed;
+}
+
+.generic-btn.enabled {
+    cursor: pointer;
+}
+
+/* ===== Variants ===== */
+
+/* --- PRIMARY --- */
+.btn-primary {
+    background-color: #002d4c;
+    color: white;
+}
+
+/* (no hover porque tailwind no lo tenía diferente) */
+
+
+/* --- OUTLINE --- */
+.btn-outline {
+    background-color: white;
+    border: 1px solid #9ca3af;
+    /* gray-400 */
+    color: inherit;
+}
+
+.btn-outline:hover:not(.disabled) {
+    background-color: #f9fafb;
+    /* gray-50 */
+}
+
+
+/* === LINK BUTTON (estilo UAT real) === */
+.btn-link {
+    height: 26px;
+    padding: 0 10px;
+
+    background-color: #ffffff;
+    border: 1px solid #B6C3D1;
+    /* gris clarito */
+    border-radius: 6px;
+
+    font-size: 13px;
+    font-weight: 500;
+    color: #003865;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    cursor: pointer;
+    text-decoration: none;
+    /* quitar underline */
+}
+
+.btn-link:hover:not(.disabled) {
+    background-color: #F3F5F7;
+    /* gris claro suave */
+    border-color: #9AA9B8;
+}
+
+
+/* --- OUTLINE FILL --- */
+.btn-outlineFill {
+    background-color: transparent;
+    border: 1px solid #002d4c;
+    color: #002d4c;
+}
+
+.btn-outlineFill:hover:not(.disabled) {
+    background-color: #002d4c;
+    color: white;
+}
+
+/* --- TEXT / LINK SECONDARY (como "Volver") --- */
+.btn-text {
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border: none;
+
+    font-size: 14px;
+    color: #4d657a;
+    text-decoration: none;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    transition: color 0.15s ease;
+}
+
+.btn-text:hover:not(.disabled) {
+    color: #003865;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}

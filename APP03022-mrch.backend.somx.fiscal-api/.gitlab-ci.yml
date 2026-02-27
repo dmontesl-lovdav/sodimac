@@ -1,0 +1,17 @@
+include:
+  - project: "rtl/merchandise-ti-corp/foundational/configuration/template-cicd"
+    ref: master
+    file: "/pipeline-ci-cd/java/template-maven-artifact.yml"
+
+variables:
+  DOCKER_IMAGE_ENABLED: "true"
+  DEPLOY_GKE_ENABLED: "true"
+  LIBRARIES_MAVEN_ENABLED: "true"
+  CI_LANGUAGE_IMAGE_DOCKER: gcr.io/fal-corp-stro-ops-prd/pipeline-maven-sdk:21
+
+
+
+  # # build
+  # COMMAND: "mvn --batch-mode --errors package -DskipTests"
+  # # test
+  # COMMAND_TEST: "mvn  --batch-mode -Dmaven.repo.local=.m2/repository test"

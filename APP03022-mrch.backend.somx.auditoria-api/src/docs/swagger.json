@@ -1,0 +1,281 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Auditoria API",
+    "version": "1.0.0",
+    "description": "Express + TypeScript API (OAS3)"
+  },
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "basePath": "/api",
+  "paths": {
+    "/accounts": {
+      "get": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "List accounts payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Status code (e.g. 1=open, 2=closed)",
+            "type": "integer"
+          },
+          {
+            "name": "vendorNumber",
+            "in": "query",
+            "required": false,
+            "description": "Vendor number identifier",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of accounts payable",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AccountsPayable"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Create account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateAccountsPayableDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          }
+        }
+      }
+    },
+    "/accounts/{id}": {
+      "get": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Get account payable by ID",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Found",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Remove account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Update account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UpdateAccountsPayableDto"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "error": "Something went wrong"
+      }
+    },
+    "AccountsPayable": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "vendorNumber": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "id",
+        "vendorNumber",
+        "status",
+        "amount"
+      ]
+    },
+    "CreateAccountsPayableDto": {
+      "type": "object",
+      "properties": {
+        "vendorNumber": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "vendorNumber",
+        "status",
+        "amount"
+      ]
+    },
+    "UpdateAccountsPayableDto": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Bearer <token>"
+    }
+  },
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ]
+}

@@ -1,0 +1,77 @@
+/* Wrapper */
+.hcc-aside {
+    grid-column: span 12;
+}
+
+@media (min-width: 768px) {
+    .hcc-aside {
+        grid-column: span 4;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hcc-aside {
+        grid-column: span 3;
+    }
+}
+
+/* Title */
+.hcc-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #0f172a;
+}
+
+/* Loading / empty text */
+.hcc-loading {
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+/* List */
+.hcc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Category button */
+.hcc-btn {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: #1e293b;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+
+    /* ❗ sin delay al activar, solo para hover */
+    transition: background-color 0.15s ease;
+}
+
+.hcc-btn:hover {
+    background: #f9fafb;
+}
+
+/* Active state — instantáneo */
+.hcc-btn-active {
+    background-color: #003865 !important;
+    color: #ffffff !important;
+    border-color: #003865 !important;
+    transition: none !important;
+    /* ← SIN delay al activarse */
+}
+
+/* FIX — evita cambios raros de color al hacer click (focus) */
+.hcc-btn:focus,
+.hcc-btn-active:focus {
+    outline: none;
+    color: inherit !important;
+    background-color: inherit !important;
+}

@@ -1,0 +1,183 @@
+{
+	"info": {
+		"_postman_id": "stm-1258-ajuste-facturacion-nc",
+		"name": "STM-1258 - Ajuste Facturacion NC",
+		"description": "Ajuste al servicio de facturacion y nota de credito para visualizar y actualizar datos en el front\n\nBFF: https://dev.fbusinesscenter.com/ppsomx/fiscal\nAPI Backend: fiscal-api (Puerto 8082)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Visualizacion",
+			"item": [
+				{
+					"name": "Buscar Facturas",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices/search",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices", "search"]
+						},
+						"description": "Busqueda de facturas (tipoDocumento=I)\n\nFiltros obligatorios:\n- rfcEmisor: RFC del emisor/proveedor\n- fechaInicioRecepcion: Fecha inicio (YYYY-MM-DD)\n- fechaFinalRecepcion: Fecha fin (YYYY-MM-DD)\n- tipoDocumento: I (Factura)\n\nFiltros opcionales:\n- rfcReceptor: RFC del receptor\n- idProveedor: Numero de proveedor\n- serie: Serie del documento\n- folio: Folio del documento\n- uuid: UUID fiscal\n- estatus: Codigo de estatus"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Notas de Credito",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices/search",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices", "search"]
+						},
+						"description": "Busqueda de Notas de Credito (tipoDocumento=E)\n\nLa respuesta incluye:\n- Datos del comprobante\n- Datos del emisor\n- Datos del receptor\n- Datos de addenda\n- XML completo\n- Factura relacionada (para NC)"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por UUID Fiscal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"uuid\": \"{{fiscal_uuid}}\",\n  \"page\": 0,\n  \"size\": 20\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices/search",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices", "search"]
+						},
+						"description": "Busqueda especifica por UUID fiscal del SAT"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por Proveedor",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"idProveedor\": {{id_proveedor}},\n  \"page\": 0,\n  \"size\": 20\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices/search",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices", "search"]
+						},
+						"description": "Busqueda por numero de proveedor (Supplier Number)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Actualizacion",
+			"item": [
+				{
+					"name": "Actualizar Factura",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"uuid\": \"{{fiscal_uuid}}\",\n  \"numeroProveedor\": {{id_proveedor}},\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345,\n  \"addenda\": {\n    \"noOc\": \"OC-12345\",\n    \"noRecepcion\": \"REC-001\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices"]
+						},
+						"description": "Actualizar factura - estatus y/o datos de addenda\n\nCampos obligatorios:\n- uuid: UUID fiscal del documento (del SAT)\n- numeroProveedor: Supplier Number\n- estatus: Nuevo codigo de estatus\n- idUsuarioActualizacion: ID del usuario\n\nCodigos de estatus para Facturas:\n- 0: Rechazo Comercial\n- 1: Pendiente Addenda\n- 2: Recibido Parcial\n- 3: Pendiente Contabilizar\n- 4: Proceso Descarga\n- 5: Desglose Factura\n- 6: Pendiente Envio\n- 7: Aplicado\n- 8: Completado\n- 11: Rechazo Contable\n- 12: No valido fiscal\n- 13: Cerrado"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Nota de Credito",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"uuid\": \"{{fiscal_uuid_nc}}\",\n  \"numeroProveedor\": {{id_proveedor}},\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345,\n  \"addenda\": {\n    \"tipoNotaCredito\": \"01\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices"]
+						},
+						"description": "Actualizar nota de credito - estatus y/o datos de addenda\n\nCodigos de estatus para Notas de Credito:\n- 0: Rechazo Comercial\n- 1: Pendiente Addenda\n- 2: Recibido Parcial\n- 3: Pendiente Contabilizar\n- 4: Proceso Descarga\n- 5: Desglose NC\n- 6: Pendiente Envio\n- 7: Aplicado\n- 8: Completado\n- 11: Rechazo Contable\n- 12: No valido fiscal"
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar Solo Estatus",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"uuid\": \"{{fiscal_uuid}}\",\n  \"numeroProveedor\": {{id_proveedor}},\n  \"estatus\": 3,\n  \"idUsuarioActualizacion\": 12345\n}"
+						},
+						"url": {
+							"raw": "{{bff_fiscal_url}}/invoices",
+							"host": ["{{bff_fiscal_url}}"],
+							"path": ["invoices"]
+						},
+						"description": "Actualizar solo el estatus sin modificar addenda"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		}
+	],
+	"variable": [
+		{"key": "bff_fiscal_url", "value": "https://dev.fbusinesscenter.com/ppsomx/fiscal", "type": "string"},
+		{"key": "rfc_emisor", "value": "SOD970101ABC", "type": "string"},
+		{"key": "id_proveedor", "value": "12345", "type": "string"},
+		{"key": "fiscal_uuid", "value": "aaaaaaaa-1111-2222-3333-444444444444", "type": "string"},
+		{"key": "fiscal_uuid_nc", "value": "bbbbbbbb-1111-2222-3333-444444444444", "type": "string"}
+	]
+}

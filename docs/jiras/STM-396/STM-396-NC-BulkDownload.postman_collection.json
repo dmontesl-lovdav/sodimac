@@ -1,0 +1,537 @@
+{
+  "info": {
+    "name": "STM-396 - Notas de Credito y Descarga Masiva",
+    "description": "Coleccion de Postman para probar la funcionalidad de consulta de Notas de Credito y descarga masiva de documentos fiscales.\n\nEndpoints:\n- POST /invoices/search (consulta NC con datos de factura relacionada)\n- POST /invoices/download/xml (descarga masiva XML en ZIP)\n- POST /invoices/download/pdf (descarga masiva PDF en ZIP - generados en tiempo real con Apache FOP)\n- POST /invoices/export/csv (exportacion a CSV)\n\nGeneracion de PDF:\n- Los PDFs se generan en tiempo real desde el XML usando Apache FOP\n- Utiliza plantilla XSL (Formato4.0.xsl) para CFDI 4.0\n- Incluye codigo QR con URL de verificacion SAT\n- Requiere xml_content en la base de datos\n\nPuerto fiscal-api: 8082\nPuerto catalogos-api: 8083",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "fiscal_api_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "catalogos_api_url",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "rfc_emisor",
+      "value": "AAA010101AAA",
+      "type": "string"
+    },
+    {
+      "key": "rfc_receptor",
+      "value": "CSD161207R2A",
+      "type": "string"
+    },
+    {
+      "key": "fecha_inicio",
+      "value": "2025-01-01",
+      "type": "string"
+    },
+    {
+      "key": "fecha_final",
+      "value": "2025-12-31",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Catalogos API",
+      "description": "Endpoints de catalogos-api para TipoRelacion y TipoAddenda",
+      "item": [
+        {
+          "name": "1. Obtener todos los TipoRelacion (SAT)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/c_TipoRelacion/details?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["c_TipoRelacion", "details"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1",
+                  "description": "Idioma: 1=ES, 2=EN, 3=PT"
+                }
+              ]
+            },
+            "description": "Obtiene todos los tipos de relacion SAT para CFDIs.\n\nCodigos:\n- 01: Nota de credito de los documentos relacionados\n- 02: Nota de debito de los documentos relacionados\n- 03: Devolucion de mercancia sobre facturas o traslados previos\n- 04: Sustitucion de los CFDI previos\n- 05: Traslados de mercancias facturados previamente\n- 06: Factura generada por los traslados previos\n- 07: CFDI por aplicacion de anticipo\n- 08: Factura generada por pagos en parcialidades\n- 09: Factura generada por pagos diferidos"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Obtener TipoRelacion por codigo (01)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/c_TipoRelacion/details/01?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["c_TipoRelacion", "details", "01"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtiene la descripcion del TipoRelacion 01 (Nota de credito).\n\nEl external_key es el codigo SAT (01-09)."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Obtener todos los TipoAddenda (Sodimac)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/TipoAddenda/details?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["TipoAddenda", "details"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtiene todos los tipos de addenda Sodimac.\n\nCodigos:\n- 1: Addenda Estandar\n- 2: Addenda con Carta Porte\n- 3: Addenda Complemento de Pago\n- 4: Addenda Internacional\n- 5: Addenda Sodimac"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Obtener TipoAddenda por codigo (1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/TipoAddenda/details/1?lang=1",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["TipoAddenda", "details", "1"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtiene la descripcion del TipoAddenda 1 (Addenda Estandar).\n\nEl external_key es el codigo numerico (1-5)."
+          },
+          "response": []
+        },
+        {
+          "name": "5. TipoRelacion en Ingles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/c_TipoRelacion/details/01?lang=2",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["c_TipoRelacion", "details", "01"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "2",
+                  "description": "Idioma: 2=EN"
+                }
+              ]
+            },
+            "description": "Obtiene TipoRelacion 01 en ingles.\n\nEsperado: Credit note for related documents"
+          },
+          "response": []
+        },
+        {
+          "name": "6. TipoRelacion en Portugues",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogos_api_url}}/c_TipoRelacion/details/01?lang=3",
+              "host": ["{{catalogos_api_url}}"],
+              "path": ["c_TipoRelacion", "details", "01"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "3",
+                  "description": "Idioma: 3=PT"
+                }
+              ]
+            },
+            "description": "Obtiene TipoRelacion 01 en portugues.\n\nEsperado: Nota de credito dos documentos relacionados"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Consulta Notas de Credito",
+      "description": "Endpoints de consulta de NC con datos de factura relacionada (STM-396)",
+      "item": [
+        {
+          "name": "1. Buscar Notas de Credito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca Notas de Credito (tipo E) de un emisor.\n\nEl response incluye:\n- relationType: Tipo de relacion SAT (01, 02, etc.)\n- relationTypeName: Descripcion del tipo de relacion (desde catalogos-api)\n- relatedInvoiceSeries: Serie de la factura relacionada\n- relatedInvoiceFolio: Folio de la factura relacionada\n- relatedInvoiceUuid: UUID fiscal de la factura relacionada\n- relatedInvoiceSubtotal: Subtotal de la factura relacionada\n- relatedInvoiceTotal: Total de la factura relacionada"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Buscar NC por ID Proveedor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"idProveedor\": 1001,\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca NC de un proveedor especifico por su ID (Supplier Number).\n\nEl idProveedor se obtiene de la Addenda del CFDI."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Buscar NC por UUID Fiscal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca una NC especifica por su UUID fiscal.\n\nEl response incluye los datos de la factura relacionada."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Buscar NC por Estatus",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"estatus\": 1,\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca NC con un estatus especifico.\n\nEstatus de NC (CreditNoteStatus):\n- 0: Rechazo Comercial\n- 1: Pendiente Addenda\n- 2: Recibido Parcial\n- 3: Pendiente de Contabilizar\n- 4: Proceso de descarga\n- 5: Desglose de factura\n- 6: Pendiente de envio a contabilizar\n- 7: Aplicado\n- 8: Completado\n- 11: Rechazo Contable\n- 12: No valido fiscal"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Buscar Facturas con NC Relacionadas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca Facturas (tipo I) que pueden tener NC relacionadas.\n\nEl response incluye:\n- notasCreditoRelacionadas: Lista de NC relacionadas con la factura\n  - invoiceUuid: UUID interno de la NC\n  - fiscalUuid: Folio fiscal de la NC\n  - serie/folio: Serie y folio de la NC\n  - total: Total de la NC\n  - tipoRelacion: Codigo de relacion SAT\n  - tipoRelacionNombre: Descripcion del tipo de relacion"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Descarga Masiva",
+      "description": "Endpoints de descarga masiva de documentos fiscales (STM-396)",
+      "item": [
+        {
+          "name": "1. Descargar XMLs en ZIP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/zip"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"550e8400-e29b-41d4-a716-446655440001\",\n    \"550e8400-e29b-41d4-a716-446655440002\",\n    \"550e8400-e29b-41d4-a716-446655440003\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/xml",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "xml"]
+            },
+            "description": "Descarga multiples documentos XML en un archivo ZIP.\n\nRequest:\n- invoiceUuids: Lista de UUIDs internos de facturas/NC a descargar\n\nResponse:\n- Content-Type: application/zip\n- Content-Disposition: attachment; filename=documentos_fiscales_YYYYMMDD_HHmmss.zip\n\nEl ZIP contiene los archivos XML con el nombre:\n{Serie}_{Folio}_{UUID_fiscal}.xml"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Descargar PDFs en ZIP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/zip"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"550e8400-e29b-41d4-a716-446655440001\",\n    \"550e8400-e29b-41d4-a716-446655440002\",\n    \"550e8400-e29b-41d4-a716-446655440003\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/pdf",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "pdf"]
+            },
+            "description": "Descarga multiples documentos PDF en un archivo ZIP.\n\nRequest:\n- invoiceUuids: Lista de UUIDs internos de facturas/NC a descargar\n\nResponse:\n- Content-Type: application/zip\n- Content-Disposition: attachment; filename=documentos_fiscales_YYYYMMDD_HHmmss.zip\n\nEl ZIP contiene los archivos PDF con el nombre:\n{Serie}_{Folio}_{UUID_fiscal}.pdf\n\nGeneracion de PDF:\n- Los PDFs se generan en tiempo real usando Apache FOP con transformacion XSL\n- Utiliza la plantilla Formato4.0.xsl para renderizar CFDI 4.0\n- Incluye codigo QR con URL de verificacion SAT\n- Requiere que el documento tenga contenido XML (xml_content en BD)\n- Los documentos sin XML seran omitidos del ZIP"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Exportar a CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/csv"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/export/csv",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "export", "csv"]
+            },
+            "description": "Exporta documentos a formato CSV usando filtros de busqueda.\n\nRequest (mismos filtros que /search):\n- rfcEmisor: RFC del emisor (obligatorio)\n- fechaInicioRecepcion/fechaFinalRecepcion: Rango de fechas (obligatorio)\n- tipoDocumento: I (Factura) o E (NC) (obligatorio)\n- Otros filtros opcionales: idProveedor, serie, folio, etc.\n\nResponse:\n- Content-Type: text/csv; charset=UTF-8\n- Content-Disposition: attachment; filename=facturas/notas_credito_YYYYMMDD_HHmmss.csv\n\nColumnas CSV:\n- UUID Interno, UUID Fiscal, Tipo, Serie, Folio\n- Fecha Emision, RFC Emisor, Nombre Emisor, RFC Receptor\n- Subtotal, Total, Moneda, Estatus, Nombre Estatus\n- Orden Compra, Recepcion\n- Tipo Relacion, Factura Relacionada (solo NC)\n\nNota: BOM UTF-8 para compatibilidad con Excel. Maximo 10,000 registros."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Error - Lista vacia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": []\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/xml",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "xml"]
+            },
+            "description": "Prueba de validacion - Lista de UUIDs vacia.\n\nEsperado: HTTP 400 con mensaje de error."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Error - UUID no encontrado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/xml",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "xml"]
+            },
+            "description": "Prueba con UUID que no existe en la base de datos.\n\nEsperado: HTTP 404 o ZIP vacio dependiendo de la implementacion."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flujo Completo",
+      "description": "Ejemplo de flujo completo: buscar, seleccionar y descargar",
+      "item": [
+        {
+          "name": "Paso 1 - Buscar documentos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/search",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "Paso 1: Buscar NC para obtener los invoiceUuid.\n\nDel response, copiar los invoiceUuid de los documentos que deseas descargar."
+          },
+          "response": []
+        },
+        {
+          "name": "Paso 2 - Descargar seleccion en ZIP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/zip"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceUuids\": [\n    \"REEMPLAZAR_CON_UUID_DEL_PASO_1\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/download/xml",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "download", "xml"]
+            },
+            "description": "Paso 2: Usar los invoiceUuid del paso anterior para descargar los XMLs.\n\nReemplazar los UUIDs en el body con los valores reales del paso 1."
+          },
+          "response": []
+        },
+        {
+          "name": "Paso 3 - Exportar a CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/csv"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"{{rfc_emisor}}\",\n  \"fechaInicioRecepcion\": \"{{fecha_inicio}}\",\n  \"fechaFinalRecepcion\": \"{{fecha_final}}\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{fiscal_api_url}}/invoices/export/csv",
+              "host": ["{{fiscal_api_url}}"],
+              "path": ["invoices", "export", "csv"]
+            },
+            "description": "Paso 3: Exportar todos los documentos que coincidan con los filtros a CSV.\n\nUsa los mismos filtros del Paso 1 para exportar hasta 10,000 registros."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

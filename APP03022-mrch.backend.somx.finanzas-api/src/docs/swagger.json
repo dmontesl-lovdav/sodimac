@@ -1,0 +1,1768 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Finanzas API",
+    "version": "1.0.0",
+    "description": "Express + TypeScript API (OAS3)"
+  },
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "basePath": "/api",
+  "paths": {
+    "/accounts": {
+      "get": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "List accounts payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Status code (e.g. 1=open, 2=closed)",
+            "type": "integer"
+          },
+          {
+            "name": "vendorNumber",
+            "in": "query",
+            "required": false,
+            "description": "Vendor number identifier",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of accounts payable",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AccountsPayable"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Create account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateAccountsPayableDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          }
+        }
+      }
+    },
+    "/accounts/{id}": {
+      "get": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Get account payable by ID",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Found",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Remove account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Update account payable",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UpdateAccountsPayableDto"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Purchase order UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/components/schemas/AccountsPayable"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/finanzas-payments": {
+      "get": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "Payments to providers",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Test",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AccountsPayable"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rebates": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "List all rebates",
+        "description": "Retrieve all rebates with optional relations to stamped rebates",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of rebates",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Rebate"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Create new rebate",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateRebateDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/components/schemas/Rebate"
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        }
+      }
+    },
+    "/rebates/{id}": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Get rebate by ID",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Rebate UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rebate found",
+            "schema": {
+              "$ref": "#/components/schemas/Rebate"
+            }
+          },
+          "404": {
+            "description": "Rebate not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Update rebate",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UpdateRebateDto"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Rebate UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/components/schemas/Rebate"
+            }
+          },
+          "404": {
+            "description": "Rebate not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Delete rebate",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Rebate UUID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Rebate not found"
+          }
+        }
+      }
+    },
+    "/rebates/published": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Get published rebates",
+        "description": "Retrieve all rebates with status = 2 (published)",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of published rebates",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Rebate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rebates/published/export/csv": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Export published rebates to CSV",
+        "description": "Generate CSV file with all published rebates (status = 2)",
+        "produces": [
+          "text/csv"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CSV file generated",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/rebates/vendor/{vendorNumber}": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Get rebates by vendor number",
+        "description": "Retrieve all rebates for a specific vendor",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "vendorNumber",
+            "in": "path",
+            "required": true,
+            "description": "Vendor identifier",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rebates for vendor",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Rebate"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid vendor number"
+          }
+        }
+      }
+    },
+    "/rebates/search": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Search rebates with dynamic filters (Criteria API equivalent)",
+        "description": "Advanced search endpoint supporting multiple filters.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "vendorNumber",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact vendor number",
+            "type": "integer"
+          },
+          {
+            "name": "documentNumber",
+            "in": "query",
+            "required": false,
+            "description": "Filter by document number (LIKE search - partial match)",
+            "type": "string"
+          },
+          {
+            "name": "sapDocument",
+            "in": "query",
+            "required": false,
+            "description": "Filter by SAP document (LIKE search - partial match)",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by status code (1=pending, 2=published)",
+            "type": "integer"
+          },
+          {
+            "name": "periodId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by period identifier",
+            "type": "integer"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Results per page (max 1000)",
+            "type": "integer"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number (0-indexed)",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching rebates",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Rebate"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filter parameters"
+          }
+        }
+      }
+    },
+    "/rebates/export/csv": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "summary": "Export filtered rebates to CSV",
+        "description": "Generate CSV file with rebates matching the provided filters. Supports all search filters from /rebates/search endpoint.",
+        "produces": [
+          "text/csv"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "vendorNumber",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact vendor number",
+            "type": "integer"
+          },
+          {
+            "name": "documentNumber",
+            "in": "query",
+            "required": false,
+            "description": "Filter by document number (LIKE search)",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by status code",
+            "type": "integer"
+          },
+          {
+            "name": "periodId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by period identifier",
+            "type": "integer"
+          },
+          {
+            "name": "dueDateFrom",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "dueDateTo",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file generated",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "error": "Something went wrong"
+      }
+    },
+    "AccountsPayable": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "vendorNumber": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "id",
+        "vendorNumber",
+        "status",
+        "amount"
+      ]
+    },
+    "CreateAccountsPayableDto": {
+      "type": "object",
+      "properties": {
+        "vendorNumber": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "vendorNumber",
+        "status",
+        "amount"
+      ]
+    },
+    "UpdateAccountsPayableDto": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "FiscalPayment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "paymentNumber": {
+          "type": "string",
+          "description": "Payment number"
+        },
+        "company": {
+          "type": "integer",
+          "description": "Company code"
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "Reference number"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Payment amount (numeric string)"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency code (e.g., MXN, USD)"
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Document type code"
+        },
+        "sapDocument": {
+          "type": "string",
+          "nullable": true,
+          "description": "SAP document number"
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Payment date"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method (e.g., PPD, PUE)"
+        },
+        "bankAccount": {
+          "type": "string",
+          "description": "Bank account number"
+        },
+        "referencePayment": {
+          "type": "string",
+          "description": "Payment reference"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "paymentNumber",
+        "company",
+        "documentNumber",
+        "referenceNumber",
+        "vendorNumber",
+        "amount",
+        "currency",
+        "documentType",
+        "paymentDate",
+        "status",
+        "paymentMethod",
+        "bankAccount",
+        "referencePayment",
+        "createdBy"
+      ]
+    },
+    "CreateFiscalPaymentDto": {
+      "type": "object",
+      "properties": {
+        "paymentNumber": {
+          "type": "string"
+        },
+        "company": {
+          "type": "integer"
+        },
+        "documentNumber": {
+          "type": "string"
+        },
+        "referenceNumber": {
+          "type": "string"
+        },
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "documentType": {
+          "type": "string"
+        },
+        "sapDocument": {
+          "type": "string",
+          "nullable": true
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "bankAccount": {
+          "type": "string"
+        },
+        "referencePayment": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "paymentNumber",
+        "company",
+        "documentNumber",
+        "referenceNumber",
+        "vendorNumber",
+        "amount",
+        "currency",
+        "documentType",
+        "paymentDate",
+        "status",
+        "paymentMethod",
+        "bankAccount",
+        "referencePayment",
+        "createdBy"
+      ]
+    },
+    "UpdateFiscalPaymentDto": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "sapDocument": {
+          "type": "string"
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "integer"
+        }
+      }
+    },
+    "Rebate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "Reference number"
+        },
+        "sapDocument": {
+          "type": "string",
+          "nullable": true,
+          "description": "SAP document number"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Rebate amount (numeric string)"
+        },
+        "source": {
+          "type": "integer",
+          "description": "Source identifier"
+        },
+        "periodId": {
+          "type": "integer",
+          "description": "Period identifier (e.g., 202501)"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Due date"
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Posting date"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code (1=pending, 2=published)"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        },
+        "stampedRebate": {
+          "$ref": "#/components/schemas/StampedRebate",
+          "nullable": true
+        }
+      },
+      "required": [
+        "id",
+        "documentNumber",
+        "referenceNumber",
+        "vendorNumber",
+        "amount",
+        "source",
+        "periodId",
+        "dueDate",
+        "postingDate",
+        "status",
+        "createdBy"
+      ]
+    },
+    "CreateRebateDto": {
+      "type": "object",
+      "properties": {
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "Reference number"
+        },
+        "sapDocument": {
+          "type": "string",
+          "nullable": true,
+          "description": "SAP document number"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Rebate amount (numeric string)"
+        },
+        "source": {
+          "type": "integer",
+          "description": "Source identifier"
+        },
+        "periodId": {
+          "type": "integer",
+          "description": "Period identifier (e.g., 202501)"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Due date"
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Posting date"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code (1=pending, 2=published)"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        }
+      },
+      "required": [
+        "documentNumber",
+        "referenceNumber",
+        "vendorNumber",
+        "amount",
+        "source",
+        "periodId",
+        "dueDate",
+        "postingDate",
+        "status",
+        "createdBy"
+      ]
+    },
+    "UpdateRebateDto": {
+      "type": "object",
+      "properties": {
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "Reference number"
+        },
+        "sapDocument": {
+          "type": "string",
+          "nullable": true,
+          "description": "SAP document number"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Rebate amount (numeric string)"
+        },
+        "source": {
+          "type": "integer",
+          "description": "Source identifier"
+        },
+        "periodId": {
+          "type": "integer",
+          "description": "Period identifier"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Due date"
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Posting date"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code (1=pending, 2=published)"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "description": "User ID who updated the record"
+        }
+      }
+    },
+    "RebateFilterDto": {
+      "type": "object",
+      "properties": {
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Filter by vendor number"
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "Filter by document number (LIKE search)"
+        },
+        "sapDocument": {
+          "type": "string",
+          "description": "Filter by SAP document (LIKE search)"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Filter by status code"
+        },
+        "periodId": {
+          "type": "integer",
+          "description": "Filter by period ID"
+        },
+        "limit": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Results per page"
+        },
+        "page": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "description": "Page number (0-indexed)"
+        }
+      }
+    },
+    "StampedRebate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Total amount (numeric string)"
+        },
+        "periodId": {
+          "type": "integer",
+          "description": "Period identifier (e.g., 202501)"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        },
+        "rebates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Rebate"
+          },
+          "description": "Related rebates"
+        }
+      },
+      "required": [
+        "id",
+        "documentNumber",
+        "vendorNumber",
+        "status",
+        "amount",
+        "periodId",
+        "createdBy"
+      ]
+    },
+    "SapDocument": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "documentNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "Reference number"
+        },
+        "company": {
+          "type": "integer",
+          "description": "Company code"
+        },
+        "fiscalYear": {
+          "type": "integer",
+          "description": "Fiscal year"
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Document type code"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Document amount (numeric string)"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency code"
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Posting date"
+        },
+        "documentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Document date"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "documentNumber",
+        "referenceNumber",
+        "company",
+        "fiscalYear",
+        "documentType",
+        "amount",
+        "currency",
+        "postingDate",
+        "documentDate",
+        "status",
+        "createdBy"
+      ]
+    },
+    "CreateSapDocumentDto": {
+      "type": "object",
+      "properties": {
+        "documentNumber": {
+          "type": "string"
+        },
+        "referenceNumber": {
+          "type": "string"
+        },
+        "company": {
+          "type": "integer"
+        },
+        "fiscalYear": {
+          "type": "integer"
+        },
+        "documentType": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "documentDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "createdBy": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "documentNumber",
+        "referenceNumber",
+        "company",
+        "fiscalYear",
+        "documentType",
+        "amount",
+        "currency",
+        "postingDate",
+        "documentDate",
+        "status",
+        "createdBy"
+      ]
+    },
+    "UpdateSapDocumentDto": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "updatedBy": {
+          "type": "integer"
+        }
+      }
+    },
+    "ShippingGuide": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "guideNumber": {
+          "type": "string",
+          "description": "Shipping guide number"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "truckPlate": {
+          "type": "string",
+          "description": "Truck license plate"
+        },
+        "trailerPlate": {
+          "type": "string",
+          "nullable": true,
+          "description": "Trailer license plate"
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Driver full name"
+        },
+        "driverLicense": {
+          "type": "string",
+          "description": "Driver's license number"
+        },
+        "sourceId": {
+          "type": "integer",
+          "description": "Source location ID"
+        },
+        "destinationId": {
+          "type": "integer",
+          "description": "Destination location ID"
+        },
+        "deliveryType": {
+          "type": "integer",
+          "description": "Delivery type code"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Shipment amount (numeric string)"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency code"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code"
+        },
+        "comments": {
+          "type": "string",
+          "nullable": true,
+          "description": "Additional comments"
+        },
+        "deliveryDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled delivery date"
+        },
+        "estimatedArrival": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Estimated arrival timestamp"
+        },
+        "actualArrival": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Actual arrival timestamp"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Sent timestamp"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "guideNumber",
+        "vendorNumber",
+        "truckPlate",
+        "driverName",
+        "driverLicense",
+        "sourceId",
+        "destinationId",
+        "deliveryType",
+        "amount",
+        "currency",
+        "status",
+        "deliveryDate",
+        "estimatedArrival",
+        "sentAt",
+        "createdBy"
+      ]
+    },
+    "CreateShippingGuideDto": {
+      "type": "object",
+      "properties": {
+        "guideNumber": {
+          "type": "string"
+        },
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "truckPlate": {
+          "type": "string"
+        },
+        "trailerPlate": {
+          "type": "string",
+          "nullable": true
+        },
+        "driverName": {
+          "type": "string"
+        },
+        "driverLicense": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "integer"
+        },
+        "destinationId": {
+          "type": "integer"
+        },
+        "deliveryType": {
+          "type": "integer"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "comments": {
+          "type": "string",
+          "nullable": true
+        },
+        "deliveryDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "estimatedArrival": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actualArrival": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "guideNumber",
+        "vendorNumber",
+        "truckPlate",
+        "driverName",
+        "driverLicense",
+        "sourceId",
+        "destinationId",
+        "deliveryType",
+        "amount",
+        "currency",
+        "status",
+        "deliveryDate",
+        "estimatedArrival",
+        "sentAt",
+        "createdBy"
+      ]
+    },
+    "UpdateShippingGuideDto": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer"
+        },
+        "actualArrival": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comments": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "integer"
+        }
+      }
+    },
+    "CreateStampedRebateDto": {
+      "type": "object",
+      "properties": {
+        "documentNumber": {
+          "type": "string"
+        },
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "periodId": {
+          "type": "integer"
+        },
+        "createdBy": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "documentNumber",
+        "vendorNumber",
+        "status",
+        "amount",
+        "periodId",
+        "createdBy"
+      ]
+    },
+    "UpdateStampedRebateDto": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "integer"
+        }
+      }
+    },
+    "VendorBlock": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID primary key"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "description": "Vendor identifier"
+        },
+        "blockReason": {
+          "type": "string",
+          "description": "Block reason code (e.g., FRAUD, DEBT)"
+        },
+        "blockDescription": {
+          "type": "string",
+          "description": "Detailed block description"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Block start date"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Block end date (null for permanent blocks)"
+        },
+        "status": {
+          "type": "integer",
+          "description": "Status code (1=active, 0=inactive)"
+        },
+        "autoUnblock": {
+          "type": "boolean",
+          "description": "Auto-unblock when endDate is reached"
+        },
+        "blockType": {
+          "type": "string",
+          "description": "Block type (TEMP=temporary, PERM=permanent)"
+        },
+        "createdBy": {
+          "type": "integer",
+          "description": "User ID who created the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "description": "User ID who updated the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "vendorNumber",
+        "blockReason",
+        "blockDescription",
+        "startDate",
+        "status",
+        "autoUnblock",
+        "blockType",
+        "createdBy"
+      ]
+    },
+    "CreateVendorBlockDto": {
+      "type": "object",
+      "properties": {
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "blockReason": {
+          "type": "string"
+        },
+        "blockDescription": {
+          "type": "string"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "status": {
+          "type": "integer"
+        },
+        "autoUnblock": {
+          "type": "boolean"
+        },
+        "blockType": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "vendorNumber",
+        "blockReason",
+        "blockDescription",
+        "startDate",
+        "status",
+        "autoUnblock",
+        "blockType",
+        "createdBy"
+      ]
+    },
+    "UpdateVendorBlockDto": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blockDescription": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Bearer <token>"
+    }
+  },
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ]
+}

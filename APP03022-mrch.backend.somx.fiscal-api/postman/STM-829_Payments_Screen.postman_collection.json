@@ -1,0 +1,803 @@
+{
+  "info": {
+    "_postman_id": "stm-829-payments-screen",
+    "name": "STM-829 - Pantalla de Pagos",
+    "description": "Coleccion para probar los servicios de consulta de pagos para la pantalla de Pagos del modulo financiero.\n\nEndpoints disponibles:\n- GET /fiscal/complementos-pago/buscar - Busqueda de pagos con filtros\n\nCriterios de Aceptacion:\n- CA-02: Fechas inicio y fin son obligatorias\n- CA-03: Numero de proveedor solo visible para admin\n- CA-04: Paginacion de 10 registros\n- CA-06: Exportacion de informacion (manejo en frontend)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "base_url_dev",
+      "value": "https://fiscal-api-dev.sodimac.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Busqueda de Pagos - Filtros Obligatorios",
+      "item": [
+        {
+          "name": "1.1 Buscar pagos con fechas obligatorias",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&page=0&size=10&sortBy=paymentDate&sortDirection=DESC",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01",
+                  "description": "OBLIGATORIO - Fecha inicio de pago (CA-02)"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31",
+                  "description": "OBLIGATORIO - Fecha fin de pago (CA-02)"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Numero de pagina (base 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "10 registros por pagina (CA-04)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "paymentDate",
+                  "description": "Campo para ordenamiento"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "DESC",
+                  "description": "Direccion del ordenamiento"
+                }
+              ]
+            },
+            "description": "CA-02: Busqueda con fechas obligatorias.\nCA-04: Paginacion de 10 registros.\n\nEste es el caso de uso basico donde el usuario busca pagos especificando solo las fechas obligatorias."
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Buscar pagos - Perfil Administrador (con numero proveedor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&numeroProveedor=1234567&page=0&size=10&sortBy=paymentDate&sortDirection=DESC",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01",
+                  "description": "OBLIGATORIO - Fecha inicio de pago"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31",
+                  "description": "OBLIGATORIO - Fecha fin de pago"
+                },
+                {
+                  "key": "numeroProveedor",
+                  "value": "1234567",
+                  "description": "CA-03: Solo visible para perfil administrador"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "paymentDate"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "DESC"
+                }
+              ]
+            },
+            "description": "CA-03: Usuario administrador puede filtrar por numero de proveedor.\n\nEl frontend debe mostrar el filtro 'Numero de proveedor' solo cuando el perfil sea administrador."
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Buscar pagos con todos los filtros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&numeroProveedor=1234567&folio=ABC123&status=1&page=0&size=10&sortBy=paymentDate&sortDirection=DESC",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01",
+                  "description": "OBLIGATORIO - Fecha inicio de pago"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31",
+                  "description": "OBLIGATORIO - Fecha fin de pago"
+                },
+                {
+                  "key": "numeroProveedor",
+                  "value": "1234567",
+                  "description": "Numero de proveedor (solo admin)"
+                },
+                {
+                  "key": "folio",
+                  "value": "ABC123",
+                  "description": "Numero de documento/folio (opcional)"
+                },
+                {
+                  "key": "status",
+                  "value": "1",
+                  "description": "Estatus: 0=Cancelado, 1=Vigente, 2=Pendiente, 3=Rechazado"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "paymentDate"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "DESC"
+                }
+              ]
+            },
+            "description": "Busqueda con todos los filtros disponibles aplicados.\n\nFiltros:\n- Fecha inicio (OBLIGATORIO)\n- Fecha fin (OBLIGATORIO)\n- Numero de proveedor (solo admin)\n- Numero de documento/folio (opcional)\n- Estatus (opcional)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Paginacion y Ordenamiento",
+      "item": [
+        {
+          "name": "2.1 Pagina 1 (primeros 10 registros)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Primera pagina (base 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "CA-04: 10 registros por pagina"
+                }
+              ]
+            },
+            "description": "CA-04: Grid con paginacion de 10 registros - Pagina 1"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Pagina 2 (siguientes 10 registros)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&page=1&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Segunda pagina"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "CA-04: Grid con paginacion de 10 registros - Pagina 2"
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Ordenar por fecha de pago ASC",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&page=0&size=10&sortBy=paymentDate&sortDirection=ASC",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "paymentDate",
+                  "description": "Ordenar por fecha de pago"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "ASC",
+                  "description": "Orden ascendente (mas antiguos primero)"
+                }
+              ]
+            },
+            "description": "Ordenamiento por fecha de pago en orden ascendente"
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Ordenar por folio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&page=0&size=10&sortBy=folio&sortDirection=ASC",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "folio",
+                  "description": "Ordenar por folio/numero de documento"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "ASC"
+                }
+              ]
+            },
+            "description": "Ordenamiento por numero de folio"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Filtros Opcionales",
+      "item": [
+        {
+          "name": "3.1 Filtrar por RFC Emisor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&rfcEmisor=AAA010101AAA&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "rfcEmisor",
+                  "value": "AAA010101AAA",
+                  "description": "RFC del proveedor emisor"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtrar pagos por RFC del emisor (proveedor)"
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Filtrar por estatus Vigente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&status=1&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "status",
+                  "value": "1",
+                  "description": "1 = Vigente"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtrar solo pagos con estatus Vigente (1)\n\nEstatus disponibles:\n- 0 = Cancelado\n- 1 = Vigente\n- 2 = Pendiente\n- 3 = Rechazado"
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Filtrar por serie",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&serie=A&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "serie",
+                  "value": "A",
+                  "description": "Serie del complemento de pago"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtrar por serie del complemento de pago"
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 Filtrar por rango de montos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&fechaPagoFin=2025-12-31&montoMinimo=1000&montoMaximo=50000&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "montoMinimo",
+                  "value": "1000",
+                  "description": "Monto minimo del pago"
+                },
+                {
+                  "key": "montoMaximo",
+                  "value": "50000",
+                  "description": "Monto maximo del pago"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtrar pagos por rango de montos"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Casos de Uso - Navegacion a Factura (CA-05)",
+      "item": [
+        {
+          "name": "4.1 Obtener detalle de factura por documento y proveedor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"folio\": \"ABC123\",\n  \"numeroProveedor\": 1234567,\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/search",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "search"]
+            },
+            "description": "CA-05: Al seleccionar 'Ver factura', redirigir a pantalla de facturacion.\n\nSe envian como parametros:\n- Numero de documento (folio del pago)\n- Id del proveedor (numeroProveedor)\n\nEste endpoint busca la factura relacionada con el pago seleccionado."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Consultas Auxiliares",
+      "item": [
+        {
+          "name": "5.1 Obtener pago por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            },
+            "description": "Obtener detalle de un pago especifico por su UUID.\n\nUtil para ver informacion detallada de un pago seleccionado en el grid."
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Obtener documento de pago por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment-documents/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{base_url}}"],
+              "path": ["payment-documents", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            },
+            "description": "Obtener documento de complemento de pago completo por UUID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Validaciones y Errores",
+      "item": [
+        {
+          "name": "6.1 Error - Sin fecha inicio (CA-02)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoFin=2025-12-31&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "CA-02: Prueba de error - Sin fecha inicio.\n\nEsperado: El sistema no debe permitir la consulta y debe indicar que el campo es obligatorio."
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Error - Sin fecha fin (CA-02)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-01-01&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "CA-02: Prueba de error - Sin fecha fin.\n\nEsperado: El sistema no debe permitir la consulta y debe indicar que el campo es obligatorio."
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Error - Sin fechas (CA-02)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "CA-02: Prueba de error - Sin ambas fechas.\n\nEsperado: El sistema no debe permitir la consulta."
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Error - Fecha inicio mayor que fecha fin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=2025-12-31&fechaPagoFin=2025-01-01&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "2025-12-31",
+                  "description": "Fecha inicio MAYOR que fecha fin (error)"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "2025-01-01",
+                  "description": "Fecha fin MENOR que fecha inicio (error)"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Prueba de error: Fecha inicio mayor que fecha fin.\n\nEsperado: Error de validacion"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Limpiar Filtros (CA-07)",
+      "item": [
+        {
+          "name": "7.1 Busqueda con filtros limpios (estado inicial)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fiscal/complementos-pago/buscar?fechaPagoInicio=&fechaPagoFin=&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "complementos-pago", "buscar"],
+              "query": [
+                {
+                  "key": "fechaPagoInicio",
+                  "value": "",
+                  "description": "Vacio despues de limpiar filtros"
+                },
+                {
+                  "key": "fechaPagoFin",
+                  "value": "",
+                  "description": "Vacio despues de limpiar filtros"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "CA-07: Simula estado despues de 'Limpiar filtros'.\n\nEl frontend debe restablecer los campos a su estado inicial."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

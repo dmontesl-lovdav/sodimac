@@ -1,0 +1,55 @@
+name: Pipeline CI Microservice
+on:
+  push:
+    branches:
+      - develop
+      - feature/**
+      - uat
+      - release/**
+      - main
+      - master
+      - hotfix/**
+      - "v*.*.*" 
+    tags:
+      - "v*.*.*"      # versión semántica: v1.0.0, v2.1.4, etc.
+  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/build-java-maven-generic.yml@main
+    secrets: inherit
+    with:
+      container_image: "maven:3.9.9-eclipse-temurin-21"
+      command_build: "mvn --batch-mode --errors package -DskipTests"
+      command_test: "mvn --batch-mode test"
+      runners: ${{ vars.RUNNER_MERCH }}
+      
+  build_docker:
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/gcp-docker-build.yml@main
+    secrets: inherit
+    with:
+      language: "java"
+      runners: ${{ vars.RUNNER_MERCH }}
+      
+  deploy:
+    needs: build_docker
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/deploy-gke-generic.yml@main
+    secrets: inherit
+    with:
+      language: "java"
+      country: "CL"
+      business: "FA"
+      runners: ${{ vars.RUNNER_MERCH }}
+      retail_type: "merch"

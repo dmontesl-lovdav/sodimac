@@ -1,0 +1,345 @@
+{
+  "info": {
+    "_postman_id": "stm-410-invoice-status-update",
+    "name": "STM-410 - Actualización de Estatus con Validación",
+    "description": "Colección para probar los endpoints de STM-410:\n- Búsqueda de facturas por estatus (obligatorio)\n- Actualización de estatus con validación de transición\n\nRequiere que el servicio de catalogos-api esté corriendo con STM-1166 implementado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "test_uuid",
+      "value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Búsqueda por Estatus",
+      "item": [
+        {
+          "name": "1.1 Buscar facturas con estatus obligatorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"AAA010101AAA\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"estatus\": 3,\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/search/by-status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Busca facturas filtrando por estatus obligatorio.\n\nEl campo 'estatus' es obligatorio en esta búsqueda."
+          }
+        },
+        {
+          "name": "1.2 Buscar NC con estatus obligatorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"AAA010101AAA\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"estatus\": 1,\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/search/by-status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Busca notas de crédito filtrando por estatus obligatorio."
+          }
+        },
+        {
+          "name": "1.3 Error - Sin estatus (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"AAA010101AAA\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/search/by-status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Prueba de error: Sin campo estatus.\n\nEsperado: HTTP 400 Bad Request"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Actualización de Estatus",
+      "item": [
+        {
+          "name": "2.1 Actualizar estatus (transición válida)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 4,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Transición de Pendiente Contabilizar a Proceso de Descarga\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Actualiza el estatus de una factura.\n\nTransición: 3 (Pendiente Contabilizar) -> 4 (Proceso de Descarga)"
+          }
+        },
+        {
+          "name": "2.2 Actualizar a Pendiente de Pago (con fecha)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 6,\n  \"estatusDestino\": 7,\n  \"idUsuarioActualizacion\": 12345,\n  \"fechaContabilizacion\": \"2025-01-15\",\n  \"comentario\": \"Contabilizado en SAP\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Actualiza estatus a 7 (Pendiente de Pago).\n\nCuando el estatusDestino es 7, se guarda la fechaContabilizacion."
+          }
+        },
+        {
+          "name": "2.3 Error - Transición no permitida (WRN7011)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 1,\n  \"estatusDestino\": 8,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Intento de transición no permitida\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Prueba de error: Transición no permitida.\n\n1 (Pendiente Addenda) -> 8 (Pagado) NO es válido.\n\nEsperado: HTTP 400 con código WRN7011"
+          }
+        },
+        {
+          "name": "2.4 Error - Estatus origen no catalogado (WRN7010)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 999,\n  \"estatusDestino\": 1,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Prueba de error: Estatus origen no existe.\n\nEsperado: HTTP 400 con código WRN7010"
+          }
+        },
+        {
+          "name": "2.5 Error - Documento no encontrado (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 4,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/00000000-0000-0000-0000-000000000000/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "00000000-0000-0000-0000-000000000000", "status"]
+            },
+            "description": "Prueba de error: UUID no existe.\n\nEsperado: HTTP 404 con código BUS3101"
+          }
+        },
+        {
+          "name": "2.6 Error - Estatus actual no coincide (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 5,\n  \"estatusDestino\": 6,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Estatus origen incorrecto\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Prueba de error: El estatus actual del documento no coincide con estatusOrigen.\n\nEsperado: HTTP 400 con código BUS3102"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Flujo Completo",
+      "item": [
+        {
+          "name": "3.1 Buscar facturas en estatus 3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"AAA010101AAA\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"estatus\": 3,\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/search/by-status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Paso 1: Buscar facturas pendientes de contabilizar"
+          }
+        },
+        {
+          "name": "3.2 Actualizar de 3 a 4",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 4,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Paso 2: Mover a Proceso de Descarga"
+          }
+        },
+        {
+          "name": "3.3 Actualizar de 4 a 5",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 4,\n  \"estatusDestino\": 5,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Paso 3: Mover a Desglose de Factura"
+          }
+        },
+        {
+          "name": "3.4 Actualizar de 5 a 6",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 5,\n  \"estatusDestino\": 6,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Paso 4: Mover a Pendiente de Envío"
+          }
+        },
+        {
+          "name": "3.5 Actualizar de 6 a 7 (con fecha)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1234567890,\n  \"estatusOrigen\": 6,\n  \"estatusDestino\": 7,\n  \"idUsuarioActualizacion\": 12345,\n  \"fechaContabilizacion\": \"2025-01-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_uuid}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{test_uuid}}", "status"]
+            },
+            "description": "Paso 5: Mover a Pendiente de Pago (guarda fechaContabilizacion)"
+          }
+        }
+      ]
+    }
+  ]
+}

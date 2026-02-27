@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "stm-410-invoice-status-update",
+    "name": "STM-410 - Actualizacion de Estatus con Validacion",
+    "description": "Coleccion para probar los endpoints de STM-410:\n- Busqueda de facturas por estatus (obligatorio)\n- Actualizacion de estatus con validacion de transicion\n\nRequiere que el servicio de catalogos-api este corriendo con STM-1166 implementado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Busqueda por Estatus",
+      "item": [
+        {
+          "name": "1.1 Buscar facturas con estatus=1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"SOD970101ABC\",\n  \"fechaInicioRecepcion\": \"2025-08-01\",\n  \"fechaFinalRecepcion\": \"2026-01-31\",\n  \"tipoDocumento\": \"I\",\n  \"estatus\": 1,\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search/by-status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Busca facturas filtrando por estatus obligatorio.\n\nEl campo 'estatus' es obligatorio en esta busqueda.\n\nEsperado: HTTP 200 con lista de facturas"
+          }
+        },
+        {
+          "name": "1.2 Buscar facturas con estatus=3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"SOD970101ABC\",\n  \"fechaInicioRecepcion\": \"2025-08-01\",\n  \"fechaFinalRecepcion\": \"2026-01-31\",\n  \"tipoDocumento\": \"I\",\n  \"estatus\": 3,\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search/by-status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Busca facturas pendientes de contabilizar.\n\nEsperado: HTTP 200"
+          }
+        },
+        {
+          "name": "1.3 Buscar NC con estatus=2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"JOH120507FU9\",\n  \"fechaInicioRecepcion\": \"2025-08-01\",\n  \"fechaFinalRecepcion\": \"2026-01-31\",\n  \"tipoDocumento\": \"E\",\n  \"estatus\": 2,\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search/by-status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Busca notas de credito filtrando por estatus obligatorio.\n\nEsperado: HTTP 200"
+          }
+        },
+        {
+          "name": "1.4 Error - Sin estatus (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"SOD970101ABC\",\n  \"fechaInicioRecepcion\": \"2025-08-01\",\n  \"fechaFinalRecepcion\": \"2026-01-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search/by-status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search", "by-status"]
+            },
+            "description": "Prueba de error: Sin campo estatus.\n\nEsperado: HTTP 400 Bad Request"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Actualizacion de Estatus - Exitosos",
+      "item": [
+        {
+          "name": "2.1 Actualizar 1 -> 3 (Addenda a Contabilizar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 1,\n  \"estatusDestino\": 3,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Transicion de Pendiente Addenda a Pendiente Contabilizar\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Actualiza el estatus de una factura.\n\nTransicion: 1 (Pendiente Addenda) -> 3 (Pendiente Contabilizar)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        },
+        {
+          "name": "2.2 Actualizar 3 -> 4 (Contabilizar a Descarga)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 4,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Proceso de descarga iniciado\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 3 (Pendiente Contabilizar) -> 4 (Proceso de Descarga)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        },
+        {
+          "name": "2.3 Actualizar 4 -> 5 (Descarga a Desglose)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 4,\n  \"estatusDestino\": 5,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 4 (Proceso de Descarga) -> 5 (Desglose de Factura)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        },
+        {
+          "name": "2.4 Actualizar 5 -> 6 (Desglose a Envio)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 5,\n  \"estatusDestino\": 6,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 5 (Desglose de Factura) -> 6 (Pendiente de Envio)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        },
+        {
+          "name": "2.5 Actualizar 6 -> 7 (Envio a Pago con fecha)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 6,\n  \"estatusDestino\": 7,\n  \"idUsuarioActualizacion\": 12345,\n  \"fechaContabilizacion\": \"2026-01-16\",\n  \"comentario\": \"Contabilizado en SAP\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 6 (Pendiente de Envio) -> 7 (Pendiente de Pago)\n\nCuando estatusDestino=7, se guarda la fechaContabilizacion.\n\nEsperado: HTTP 200 con codigo BUS3010 y fechaContabilizacion en respuesta"
+          }
+        },
+        {
+          "name": "2.6 Actualizar 7 -> 8 (Pago a Pagado)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 7,\n  \"estatusDestino\": 8,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Pago recibido\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 7 (Pendiente de Pago) -> 8 (Pagado)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Actualizacion de Estatus - Errores",
+      "item": [
+        {
+          "name": "3.1 Error - Transicion no permitida (WRN7011)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 8,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Intento de transicion no permitida\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Prueba de error: Transicion no permitida.\n\n3 (Pendiente Contabilizar) -> 8 (Pagado) NO es valido.\n\nEsperado: HTTP 400 con codigo WRN7011"
+          }
+        },
+        {
+          "name": "3.2 Error - Estatus actual no coincide (BUS3102)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 5,\n  \"estatusDestino\": 6,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Estatus origen incorrecto\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Prueba de error: El estatus actual del documento no coincide con estatusOrigen.\n\nSi el documento tiene status=3 y enviamos estatusOrigen=5, falla.\n\nEsperado: HTTP 400 con codigo BUS3102"
+          }
+        },
+        {
+          "name": "3.3 Error - Estatus origen no catalogado (BUS3102)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 999,\n  \"estatusDestino\": 1,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Prueba de error: Estatus origen no existe.\n\nPrimero se valida que el estatus actual coincida, por lo que retorna BUS3102.\n\nEsperado: HTTP 400 con codigo BUS3102"
+          }
+        },
+        {
+          "name": "3.4 Error - Documento no encontrado (BUS3101)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 4,\n  \"idUsuarioActualizacion\": 12345\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/00000000-0000-0000-0000-000000000000/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "00000000-0000-0000-0000-000000000000", "status"]
+            },
+            "description": "Prueba de error: UUID no existe.\n\nEsperado: HTTP 404 con codigo BUS3101"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Flujo Completo de Rechazo",
+      "item": [
+        {
+          "name": "4.1 Rechazo contable (4 -> 11)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 4,\n  \"estatusDestino\": 11,\n  \"idUsuarioActualizacion\": 12345,\n  \"comentario\": \"Rechazo por inconsistencia contable\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 4 (Proceso de Descarga) -> 11 (Rechazo Contable)\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        },
+        {
+          "name": "4.2 Recuperacion de rechazo (11 -> 7)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 11,\n  \"estatusDestino\": 7,\n  \"idUsuarioActualizacion\": 12345,\n  \"fechaContabilizacion\": \"2026-01-16\",\n  \"comentario\": \"Correccion aplicada, recuperando proceso\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/9db51140-3fec-45a9-89ee-7e8b35dda53f/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "9db51140-3fec-45a9-89ee-7e8b35dda53f", "status"]
+            },
+            "description": "Transicion: 11 (Rechazo Contable) -> 7 (Pendiente de Pago)\n\nRecuperacion despues de corregir el problema contable.\n\nEsperado: HTTP 200 con codigo BUS3010"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+REMOTE_URL=http://mrch-backend-somx-catalogos-api:8083
+LOCAL_PORT=8080
+LOCAL_CONTEXT=/
+HEALTH_PATH=/health

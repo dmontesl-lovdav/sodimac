@@ -1,0 +1,11 @@
+COUNTRY=CL
+PROJECT_ID=fal-corp-safe-platform-uat
+FIRESTORE_DATABASE=sodimac
+FIRESTORE_CONNECTION_POOL_SIZE=3
+SALES_ORDER_COLLECTION=sales-order
+SALES_PAYMENT_RECEIPT_COLLECTION_NAME=sales-payment-receipt
+NUM_GO_ROUTINES=1
+MAX_MESSAGES=250
+SALE_TRANSACTION_CONFIRMED_SUBSCRIPTION=rtl.sod.rtlo.safep.cs.sales.sale-transaction-confirmed-cl
+LOG_AUDIT_ACTIVATED=true
+TOPIC_AUDIT_EVENT=rtl.sod.stro.sacc.safep.audit-bigquery

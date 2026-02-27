@@ -1,0 +1,60 @@
+/* ------------------------------
+   Modal overlay
+------------------------------ */
+.cg-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.30);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+}
+
+/* ------------------------------
+   Modal container
+------------------------------ */
+.cg-modal {
+    background: #ffffff;
+    width: 90%;
+    max-width: 520px;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+    position: relative;
+}
+
+/* ------------------------------
+   Close button
+------------------------------ */
+.cg-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #475569;
+}
+
+.cg-close:hover {
+    color: #0284c7;
+}
+
+/* ------------------------------
+   Title & description
+------------------------------ */
+.cg-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #0f172a;
+}
+
+.cg-description {
+    font-size: 14px;
+    color: #475569;
+    white-space: pre-line;
+    line-height: 1.45;
+}

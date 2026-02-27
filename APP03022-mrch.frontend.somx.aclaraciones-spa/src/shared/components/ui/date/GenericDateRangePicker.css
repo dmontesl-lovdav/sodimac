@@ -1,0 +1,60 @@
+/* ----- contenedor del input (antes: relative w-full) ----- */
+.gdrp-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* ----- tamaño SM (antes: h-10 text-sm) ----- */
+.gdrp-size-sm {
+    height: 40px;
+    font-size: 0.875rem;
+}
+
+/* ----- tamaño MD (antes: h-11 text-sm) ----- */
+.gdrp-size-md {
+    height: 44px;
+    font-size: 0.875rem;
+}
+
+/* ----- tamaño LG (antes: h-12 text-base) ----- */
+.gdrp-size-lg {
+    height: 48px;
+    font-size: 1rem;
+}
+
+/* ----- input principal (antes: w-full rounded-md border border-gray-300 pl-4 pr-10 bg-white focus:ring...) ----- */
+.gdrp-input {
+    width: 100%;
+    background: white;
+    border: 1px solid #d1d5db;
+    /* border-gray-300 */
+    border-radius: 6px;
+    /* rounded-md */
+    padding-left: 16px;
+    /* pl-4 */
+    padding-right: 40px;
+    /* pr-10 (espacio para caret) */
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ----- focus (antes: focus:ring-2 focus:ring-sky-500 focus:border-sky-500) ----- */
+.gdrp-input:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
+}
+
+/* ----- caret (antes: absolute right-3 top-1/2 -translate-y-1/2 text-[#002d4c]) ----- */
+.gdrp-caret {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #002d4c;
+    pointer-events: none;
+}
+
+/* wrapperClassName (antes: w-full) */
+.gdrp-full {
+    width: 100%;
+}

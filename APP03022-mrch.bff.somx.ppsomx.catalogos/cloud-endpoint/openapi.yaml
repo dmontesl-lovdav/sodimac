@@ -1,0 +1,326 @@
+swagger: "2.0"
+info:
+  contact:
+    email: tech@sodimac.com
+    name: Sodimac Tech Team
+  description:
+    "API BFF para gestión de catálogos y mensajes del Portal de Proveedores de Sodimac México.
+
+    Funcionalidades principales:
+    - Consulta de catálogos del sistema por módulo o código
+    - Consulta de detalles de catálogos con soporte multi-idioma
+    - Obtención de mensajes de error/éxito por código e idioma
+    - Health check del servicio
+
+    Sin autenticación requerida.
+    "
+  title: Catalogos API
+  version: 1.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: catalogos
+  x-consumer-segments: retail
+  x-service-name: catalogos
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+paths:
+  /health:
+    get:
+      tags:
+        - health-controller
+      summary: Health check del servicio
+      description: Verifica el estado general del servicio catalogos-api
+      operationId: health
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Servicio funcionando
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: UP
+              service:
+                type: string
+                example: catalogos-api
+
+  /api/v1/catalogs:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener todos los catálogos
+      description: Retorna la lista completa de catálogos disponibles en el sistema
+      operationId: getAllCatalogs
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Lista de catálogos
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogDto'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /api/v1/catalogs/module/{module}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catálogos por módulo
+      description: Retorna los catálogos filtrados por módulo del sistema
+      operationId: getCatalogsByModule
+      produces:
+        - application/json
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+          description: Código del módulo (ej. FISCAL, COMMON)
+      responses:
+        "200":
+          description: Lista de catálogos del módulo
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogDto'
+        "404":
+          description: Módulo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /api/v1/catalogs/code/{code}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catálogo por código
+      description: Retorna un catálogo específico por su código único
+      operationId: getCatalogByCode
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          type: string
+          description: Código único del catálogo
+      responses:
+        "200":
+          description: Catálogo encontrado
+          schema:
+            $ref: '#/definitions/CatalogDto'
+        "404":
+          description: Catálogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /api/v1/catalogs/{catalogCode}/details:
+    get:
+      tags:
+        - catalog-detail-controller
+      summary: Obtener detalles de un catálogo
+      description: Retorna todos los detalles (items) de un catálogo específico
+      operationId: getCatalogDetails
+      produces:
+        - application/json
+      parameters:
+        - name: catalogCode
+          in: path
+          required: true
+          type: string
+          description: Código del catálogo
+      responses:
+        "200":
+          description: Lista de detalles del catálogo
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CatalogDetailDto'
+        "404":
+          description: Catálogo no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /api/v1/catalogs/{catalogCode}/details/{key}:
+    get:
+      tags:
+        - catalog-detail-controller
+      summary: Obtener detalle específico por key
+      description: Retorna un detalle específico del catálogo por su key, con soporte multi-idioma
+      operationId: getCatalogDetailByKey
+      produces:
+        - application/json
+      parameters:
+        - name: catalogCode
+          in: path
+          required: true
+          type: string
+          description: Código del catálogo
+        - name: key
+          in: path
+          required: true
+          type: string
+          description: Key del detalle dentro del catálogo
+        - name: language
+          in: query
+          required: false
+          type: string
+          default: es
+          description: Código de idioma (es, en, pt)
+      responses:
+        "200":
+          description: Detalle encontrado
+          schema:
+            $ref: '#/definitions/CatalogDetailDto'
+        "404":
+          description: Detalle no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+  /api/v1/messages/{code}:
+    get:
+      tags:
+        - message-controller
+      summary: Obtener mensaje por código
+      description: Retorna un mensaje del sistema por su código, con soporte multi-idioma
+      operationId: getMessageByKey
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          type: string
+          description: Código del mensaje
+        - name: language
+          in: query
+          required: false
+          type: string
+          default: es
+          description: Código de idioma (es, en, pt)
+      responses:
+        "200":
+          description: Mensaje encontrado
+          schema:
+            $ref: '#/definitions/MessageDto'
+        "404":
+          description: Mensaje no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+
+definitions:
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 404
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Not Found
+        type: string
+    type: object
+
+  CatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      code:
+        type: string
+        example: CAT_PAC
+      name:
+        type: string
+        example: Catálogo de PACs
+      description:
+        type: string
+        example: Proveedores Autorizados de Certificación
+      module:
+        type: string
+        example: FISCAL
+      active:
+        type: boolean
+        example: true
+
+  CatalogDetailDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      catalogCode:
+        type: string
+        example: CAT_PAC
+      key:
+        type: string
+        example: PAC_001
+      value:
+        type: string
+        example: Finkok
+      description:
+        type: string
+        example: Proveedor Finkok para timbrado
+      language:
+        type: string
+        example: es
+      order:
+        type: integer
+        example: 1
+      active:
+        type: boolean
+        example: true
+
+  MessageDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      code:
+        type: string
+        example: ERR_001
+      message:
+        type: string
+        example: Error al procesar la solicitud
+      type:
+        type: string
+        example: ERROR
+        enum: [ERROR, WARNING, INFO, SUCCESS]
+      language:
+        type: string
+        example: es
+      module:
+        type: string
+        example: FISCAL
+
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

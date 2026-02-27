@@ -1,0 +1,45 @@
+.sla-form-layout {
+    padding: 8px 16px 16px;
+}
+
+.sla-form-breadcrumb {
+    margin-left: -16px;
+    margin-top: -4px;
+}
+
+.sla-form-box {
+    margin-left: -16px;
+    margin-right: -16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.sla-form-inner {
+    padding: 16px;
+}
+
+.sla-form-container {
+    max-width: 750px;
+    margin-top: 16px;
+}
+
+.sla-form-title {
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.sla-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.sla-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+}

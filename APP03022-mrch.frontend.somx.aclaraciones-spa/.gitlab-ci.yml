@@ -1,0 +1,8 @@
+include:
+  - project: "rtl/merchandise-ti-corp/foundational/configuration/template-cicd"
+    ref: master
+    file: "/pipeline-ci-cd/node/template-front-react.yml"
+
+variables:
+  CI_LANGUAGE_IMAGE_DOCKER: "gcr.io/fal-corp-stro-ops-prd/node:20-alpine3-test"
+  DEPLOY_STORAGE_REACT_ENABLED: true

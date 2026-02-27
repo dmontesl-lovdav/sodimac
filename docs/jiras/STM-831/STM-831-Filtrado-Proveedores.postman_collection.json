@@ -1,0 +1,228 @@
+{
+	"info": {
+		"_postman_id": "stm-831-filtrado-proveedores",
+		"name": "STM-831 - Filtrado Proveedores",
+		"description": "Colección para probar el endpoint de filtrado de proveedores por tipo y estado de bloqueo.\n\nSTM-831: Ajustar servicio del catálogo de proveedores",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Filtrado de Proveedores",
+			"item": [
+				{
+					"name": "01. Todos los proveedores (sin filtro de tipo)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=0&estatusBloqueo=2",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "0", "description": "0 = Todos los tipos"},
+								{"key": "estatusBloqueo", "value": "2", "description": "2 = Todos (bloqueados y activos)"}
+							]
+						},
+						"description": "Obtiene todos los proveedores sin filtrar por tipo, incluyendo bloqueados y activos."
+					}
+				},
+				{
+					"name": "02. Proveedores de Mercancía activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=1&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "1", "description": "1 = MERCANCIA"},
+								{"key": "estatusBloqueo", "value": "1", "description": "1 = Solo activos (no bloqueados)"}
+							]
+						},
+						"description": "Obtiene proveedores de mercancía que NO están bloqueados."
+					}
+				},
+				{
+					"name": "03. Proveedores de Transporte activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=2&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "2", "description": "2 = TRANSPORTE"},
+								{"key": "estatusBloqueo", "value": "1", "description": "1 = Solo activos (no bloqueados)"}
+							]
+						},
+						"description": "Obtiene proveedores de transporte que NO están bloqueados."
+					}
+				},
+				{
+					"name": "04. Proveedores Indirectos activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=3&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "3", "description": "3 = INDIRECTOS"},
+								{"key": "estatusBloqueo", "value": "1", "description": "1 = Solo activos (no bloqueados)"}
+							]
+						},
+						"description": "Obtiene proveedores indirectos que NO están bloqueados."
+					}
+				},
+				{
+					"name": "05. Proveedores de Servicios activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=4&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "4", "description": "4 = SERVICIOS"},
+								{"key": "estatusBloqueo", "value": "1", "description": "1 = Solo activos (no bloqueados)"}
+							]
+						},
+						"description": "Obtiene proveedores de servicios que NO están bloqueados."
+					}
+				},
+				{
+					"name": "06. Solo proveedores bloqueados",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=0&estatusBloqueo=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "0", "description": "0 = Todos los tipos"},
+								{"key": "estatusBloqueo", "value": "0", "description": "0 = Solo bloqueados"}
+							]
+						},
+						"description": "Obtiene todos los proveedores que tienen un bloqueo activo vigente."
+					}
+				},
+				{
+					"name": "07. Proveedores de Mercancía bloqueados",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=1&estatusBloqueo=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "1", "description": "1 = MERCANCIA"},
+								{"key": "estatusBloqueo", "value": "0", "description": "0 = Solo bloqueados"}
+							]
+						},
+						"description": "Obtiene proveedores de mercancía que están bloqueados."
+					}
+				}
+			]
+		},
+		{
+			"name": "Validación de Errores",
+			"item": [
+				{
+					"name": "Error: Tipo de proveedor inválido (5)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=5&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "5", "description": "5 = Tipo inválido"},
+								{"key": "estatusBloqueo", "value": "1"}
+							]
+						},
+						"description": "Prueba de error BUS214: Tipo de proveedor fuera del rango válido (0-4)."
+					}
+				},
+				{
+					"name": "Error: Tipo de proveedor inválido (-1)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=-1&estatusBloqueo=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "-1", "description": "-1 = Tipo inválido"},
+								{"key": "estatusBloqueo", "value": "1"}
+							]
+						},
+						"description": "Prueba de error BUS214: Tipo de proveedor negativo."
+					}
+				},
+				{
+					"name": "Error: Tipo de proveedor inválido (99)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/filter?tipoProveedor=99&estatusBloqueo=2",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "filter"],
+							"query": [
+								{"key": "tipoProveedor", "value": "99", "description": "99 = Tipo inválido"},
+								{"key": "estatusBloqueo", "value": "2"}
+							]
+						},
+						"description": "Prueba de error BUS214: Tipo de proveedor muy alto."
+					}
+				}
+			]
+		},
+		{
+			"name": "Catálogos Auxiliares",
+			"item": [
+				{
+					"name": "Obtener tipos de proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "types"]
+						},
+						"description": "Lista todos los tipos de proveedor disponibles (MERCANCIA, TRANSPORTE, INDIRECTOS, SERVICIOS)."
+					}
+				},
+				{
+					"name": "Obtener condiciones de pago",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/payment-conditions",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "payment-conditions"]
+						},
+						"description": "Lista todas las condiciones de pago disponibles."
+					}
+				}
+			]
+		}
+	]
+}

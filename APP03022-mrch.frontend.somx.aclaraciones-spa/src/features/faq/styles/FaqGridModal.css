@@ -1,0 +1,52 @@
+/* ============================================= */
+/*                FAQ GRID MODAL                 */
+/* ============================================= */
+
+.faq-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.faq-modal-dialog {
+    width: 90%;
+    max-width: 600px;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+
+.faq-modal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #111827;
+}
+
+.faq-modal-text {
+    white-space: pre-line;
+    color: #374151;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.faq-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #374151;
+}
+
+.faq-modal-close:hover {
+    color: #0284c7;
+}

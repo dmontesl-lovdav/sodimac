@@ -1,0 +1,3032 @@
+swagger: "2.0"
+info:
+  contact:
+    email: jrcastillo@falabella.cl
+    name: Arquitectura Falabella Tecnologia Corp.
+  description: |
+    Support RESTful operations for aclaraciones flow. The main object is
+    Request (Aclaración).
+  title: Aclaraciones API
+  version: 1.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: odbms
+  x-consumer-segments: retail
+  x-service-name: odbms
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+paths:
+  /catalogs/{type}:
+    get:
+      tags:
+        - catalog-controller
+      summary: Retrieves all Catalog objects by type and by optional parent.
+      operationId: getCatalog
+      produces:
+        - application/json
+      parameters:
+        - name: type
+          in: path
+          description: Catalog type.
+          required: true
+          type: integer
+          format: int32
+        - name: parentId
+          in: query
+          description: Catalog parent id value. Optional.
+          required: false
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        "200":
+          description: Catalog objects that meet given criteria.
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/CatalogDto"
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+  /faq-categories:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - default: false
+          in: query
+          name: includeIcons
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: List of categories
+          schema:
+            $ref: "#/definitions/FaqCategoryDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: getFaqCategories
+      summary: Returns active FAQ categories
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FaqCategoryDto"
+      responses:
+        "200":
+          description: Updated state
+          schema:
+            $ref: "#/definitions/FaqCategoryResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: createFaqCategoryData
+      summary: Creates a category with given data
+  /faq-categories/bulk-upload:
+    post:
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - format: binary
+          in: formData
+          name: file
+          required: true
+          type: string
+      responses:
+        "201":
+          description: Import summary
+          schema:
+            $ref: "#/definitions/BulkCategoryUploadResult"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      description: >
+        Required columns: name, description, is_active (any value except
+        “false”/0 → true).
+      operationId: bulkUpload_1
+      summary: Bulk upload categories from CSV
+  /faq-categories/template:
+    get:
+      produces:
+        - application/octet-stream
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            format: byte
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: downloadTemplate_1
+      summary: Download CSV template for bulk upload
+  "/faq-categories/{id}":
+    delete:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: deleteFaqCategory
+      summary: Delete category permanently
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FaqCategoryDto"
+      responses:
+        "200":
+          description: Updated state
+          schema:
+            $ref: "#/definitions/FaqCategoryResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: updateFaqCategoryData
+      summary: Replaces a category with given data
+  "/faq-categories/{id}/publication":
+    patch:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateFaqCategoryPublicationRequest"
+      responses:
+        "200":
+          description: Updated state
+          schema:
+            $ref: "#/definitions/FaqCategoryResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: updateFaqCategoryPublication
+      summary: Publish / unpublish a category
+  "/faq-categories/{id}/publish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FaqCategoryResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: publish_3
+      summary: Publish category
+  "/faq-categories/{id}/unpublish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FaqCategoryResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-category-controller
+      operationId: unpublish_3
+      summary: Un-publish category
+  /faqs:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: searchTerm
+          required: false
+          type: string
+        - format: int64
+          in: query
+          name: categoryId
+          required: false
+          type: integer
+        - in: query
+          name: popularOnly
+          required: false
+          type: boolean
+        - default: 50
+          format: int32
+          in: query
+          name: size
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FaqView"
+            type: array
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      description: |
+        Filtra por texto libre (`searchTerm`) y/o `categoryId`.
+        Si `popularOnly=true` las ordena por `views DESC`.
+      operationId: getFaqs
+      summary: Busca preguntas frecuentes activas
+    post:
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: formData
+          name: categoryId
+          required: true
+          type: integer
+        - in: formData
+          maxLength: 512
+          minLength: 0
+          name: question
+          required: true
+          type: string
+        - in: formData
+          name: answer
+          required: true
+          type: string
+        - collectionFormat: csv
+          in: formData
+          items:
+            type: string
+          name: aliases
+          type: array
+        - collectionFormat: csv
+          in: formData
+          items:
+            format: int64
+            type: integer
+          name: relatedIds
+          type: array
+        - collectionFormat: csv
+          in: formData
+          items:
+            format: binary
+            type: string
+          name: files
+          type: array
+      responses:
+        "201":
+          description: Creada
+          schema:
+            $ref: "#/definitions/FaqResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      description: |
+        Recibe pregunta(s), respuesta, categoría y (opcional)
+        archivos adjuntos. Devuelve la FAQ recién creada.
+      operationId: createFaq
+      summary: Crea una nueva pregunta frecuente
+  "/faqs/attachments/{id}/download":
+    get:
+      produces:
+        - application/octet-stream
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            format: byte
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: downloadAttachment
+      summary: Descarga el archivo adjunto de una FAQ
+  /faqs/bulk-upload:
+    post:
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - format: binary
+          in: formData
+          name: file
+          required: true
+          type: string
+      responses:
+        "201":
+          description: Resumen de importación
+          schema:
+            $ref: "#/definitions/BulkFaqUploadResult"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      description: "Columnas requeridas: question, answer, is_active"
+      operationId: bulkUpload
+      summary: Bulk upload FAQs from CSV
+  /faqs/template:
+    get:
+      produces:
+        - application/octet-stream
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            format: byte
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: downloadTemplate
+      summary: Download CSV template for FAQ bulk upload
+  "/faqs/{id}":
+    delete:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: Eliminada
+        "404":
+          description: FAQ no existe
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: deleteFaq
+      summary: Elimina permanentemente la FAQ
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FaqDetailResponse"
+        "404":
+          description: No existe la FAQ
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: getFaqById
+      summary: Obtiene la FAQ por id (detalle completo)
+    put:
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - format: int64
+          in: formData
+          name: categoryId
+          required: true
+          type: integer
+        - in: formData
+          maxLength: 512
+          minLength: 0
+          name: question
+          required: true
+          type: string
+        - in: formData
+          name: answer
+          required: true
+          type: string
+        - collectionFormat: csv
+          in: formData
+          items:
+            type: string
+          name: aliases
+          type: array
+        - collectionFormat: csv
+          in: formData
+          items:
+            format: int64
+            type: integer
+          name: relatedIds
+          type: array
+        - in: formData
+          name: files
+          type: string
+          format: byte
+          required: false
+          description: "Adjunta archivo(s) codificado(s) en base64. Para múltiples, repetir el campo 'files'."
+      responses:
+        "200":
+          description: Actualizada
+          schema:
+            $ref: "#/definitions/FaqResponse"
+        "404":
+          description: FAQ no existe
+          schema:
+            type: string
+      tags:
+        - faq-controller
+      operationId: updateFaq
+      summary: Actualiza la pregunta frecuente
+  "/faqs/{id}/publication":
+    patch:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/UpdateFaqPublicationRequest"
+      responses:
+        "200":
+          description: Estado actualizado
+          schema:
+            $ref: "#/definitions/FaqResponse"
+        "404":
+          description: FAQ no existe
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: updateFaqPublication
+      summary: Publica o despublica una FAQ
+  "/faqs/{id}/publish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FaqResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: publish_2
+      summary: Publica la FAQ
+  "/faqs/{id}/unpublish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FaqResponse"
+      security:
+        - bearerAuth: []
+      tags:
+        - faq-controller
+      operationId: unpublish_2
+      summary: Despublica la FAQ
+  /feedback:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int32
+          in: query
+          name: size
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: list_2
+      summary: Returns list
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: create_2
+      summary: Create record
+  "/feedback/{id}":
+    delete:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: delete_1
+      summary: Delete permanently
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: getOne_1
+      summary: Get record by id (with answers)
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: update_1
+      summary: Update record
+  "/feedback/{id}/publish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: publish_1
+      summary: Publish record
+  "/feedback/{id}/unpublish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FeedbackDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - feedback-controller
+      operationId: unpublish_1
+      summary: Unpublish record
+  /notices:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Notice objects that meets given criteria.
+          schema:
+            items:
+              $ref: "#/definitions/NoticeDto"
+            type: array
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: getNotices
+      summary: |
+        Retrieves a list of Notice (Información Relacionada) based for the
+        current user session.
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NoticeDto"
+      responses:
+        "200":
+          description: >-
+            Given notice (Información Relacionada) has been successfully
+            created.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: postNotice
+      summary: Creates a new Notice (Información Relacionada)
+  "/notices/{noticeId}":
+    delete:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Notice (Información Relacionada) `id`.
+          format: int32
+          in: path
+          name: noticeId
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        "200":
+          description: >-
+            Given notice (Información Relacionada) has been successfully
+            deleted.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: deleteNotice
+      summary: Deletes a Notice (Información Relacionada)
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Notice (Información Relacionada) `id`.
+          format: int32
+          in: path
+          name: noticeId
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        "200":
+          description: Notice objects with given `id`.
+          schema:
+            $ref: "#/definitions/NoticeDto"
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: getNotice
+      summary: Retrieves a Notice (Información Relacionada) based on its id.
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Notice (Información Relacionada) `id`.
+          format: int32
+          in: path
+          name: noticeId
+          required: true
+          type: integer
+          x-example: 112233
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NoticeDto"
+      responses:
+        "200":
+          description: >-
+            Given notice (Información Relacionada) has been successfully
+            updated.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: putNotice
+      summary: Updates a Notice (Información Relacionada)
+  "/notices/{noticeId}/publish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Notice (Información Relacionada) `id`.
+          format: int32
+          in: path
+          name: noticeId
+          required: true
+          type: integer
+          x-example: 112233
+        - default: true
+          description: Publishing status
+          in: query
+          name: publish
+          required: false
+          type: boolean
+          x-example: true
+      responses:
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - notice-controller
+      operationId: publishNotice
+      summary: De/publish a Notice (Información Relacionada).
+  /purchase-orders:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: query
+          name: ordenCompra
+          required: false
+          type: integer
+        - format: int64
+          in: query
+          name: recepcion
+          required: false
+          type: integer
+        - format: int64
+          in: query
+          name: numeroProveedor
+          required: false
+          type: integer
+        - format: int32
+          in: query
+          name: estatus
+          required: false
+          type: integer
+        - format: date
+          in: query
+          name: fechaRecDesde
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: fechaRecHasta
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: fechaRegDesde
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: fechaRegHasta
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/PurchaseOrderView"
+            type: array
+      security:
+        - bearerAuth: []
+      tags:
+        - purchase-order-controller
+      operationId: getPurchaseOrders
+      summary: Consulta OC + recepciones
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreatePurchaseOrderRequest"
+      responses:
+        "201":
+          description: Orden registrada
+          schema:
+            additionalProperties:
+              type: object
+            type: object
+        "400":
+          description: Datos inválidos
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - purchase-order-controller
+      operationId: postPurchaseOrder
+      summary: Registra nueva orden de compra
+  "/purchase-orders/{ordenCompra}":
+    patch:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: ordenCompra
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdatePurchaseOrderRequest"
+      responses:
+        "200":
+          description: Actualización exitosa
+          schema:
+            $ref: "#/definitions/PurchaseOrderView"
+      security:
+        - bearerAuth: []
+      tags:
+        - purchase-order-controller
+      operationId: patchPurchaseOrder
+      summary: Actualiza estatus de OC / recepciones
+  /related-information:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int32
+          in: query
+          name: businessUnit
+          required: false
+          type: integer
+        - format: int32
+          in: query
+          name: country
+          required: false
+          type: integer
+        - format: int32
+          in: query
+          name: size
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: list_1
+      summary: Returns list
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: create_1
+      summary: Create record
+  "/related-information/{id}":
+    delete:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: delete
+      summary: Delete record permanently
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: getOne
+      summary: Get record (with image)
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: update
+      summary: Update record
+  "/related-information/{id}/publish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: publish
+      summary: Publish record
+  "/related-information/{id}/unpublish":
+    post:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RelatedInformationDto"
+      security:
+        - bearerAuth: []
+      tags:
+        - related-information-controller
+      operationId: unpublish
+      summary: Un-publish record
+  /requests:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: "Optional search criteria (orderId, provider or requestId)."
+          in: query
+          name: criteria
+          required: false
+          type: string
+          x-example: 112233
+        - description: "Optional lower creation date, inclusive."
+          in: query
+          name: dateFrom
+          required: false
+          type: string
+          x-example: "2025-01-01T00:00:00.000Z"
+        - description: "Optional upper creation date, inclusive."
+          in: query
+          name: dateTo
+          required: false
+          type: string
+          x-example: "2025-01-31T00:00:00.000Z"
+        - description: Optional reason `id`.
+          format: int32
+          in: query
+          name: reason
+          required: false
+          type: integer
+          x-example: 1
+        - description: Optional status `id`.
+          format: int32
+          in: query
+          name: status
+          required: false
+          type: integer
+          x-example: 10
+      responses:
+        "200":
+          description: Request objects that meets given criteria.
+          schema:
+            items:
+              $ref: "#/definitions/RequestDto"
+            type: array
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - request-controller
+      operationId: getRequests
+      summary: >-
+        Retrieves a list of Request (Aclaración) based for the current user
+        session.
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RequestDto"
+      responses:
+        "200":
+          description: Given request (aclaración) has been successfully created.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - request-controller
+      operationId: postRequest
+      summary: Creates a new Request (Aclaración)
+  "/requests/{requestId}":
+    delete:
+      produces:
+        - application/octet-stream
+      parameters:
+        - description: Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        '200':
+          description: Request objects with given `id`.
+          schema:
+            $ref: '#/definitions/RequestDto'
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - request-controller
+      operationId: deleteRequest
+      summary: Deletes a Request (Aclaración) based on its id.
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        "200":
+          description: Request objects with given `id`.
+          schema:
+            $ref: "#/definitions/RequestDto"
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - request-controller
+      operationId: getRequest
+      summary: Retrieves a Request (Aclaración) based on its id.
+  "/requests/{requestId}/attachments":
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Related Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Attachment objects for given `requestId`.
+          schema:
+            items:
+              $ref: "#/definitions/AttachmentDto"
+            type: array
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - attachment-controller
+      operationId: getAttachments
+      summary: |
+        Retrieves all Attachment objects of given Request (Aclaración) with
+        no content.
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Related Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/AttachmentDto"
+      responses:
+        "200":
+          description: Given Attachment has been successfully created.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - attachment-controller
+      operationId: postAttachment
+      summary: Creates a new Attachment onto related Request (Aclaración).
+  "/requests/{requestId}/attachments/{attachmentId}":
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Attachment `id`.
+          format: int32
+          in: path
+          name: attachmentId
+          required: true
+          type: integer
+        - format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: >-
+            Attachment object for given `attachmentId`. Includes Base64
+            `content`.
+          schema:
+            $ref: "#/definitions/AttachmentDto"
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - attachment-controller
+      operationId: getAttachment
+      summary: Retrieves an Attachment with full content.
+  "/requests/{requestId}/comments":
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Related Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Comment object for given `requestId`.
+          schema:
+            items:
+              $ref: "#/definitions/CommentDto"
+            type: array
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - comment-controller
+      operationId: getComments
+      summary: Retrieves all Comment objects of given Request (Aclaración).
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Related Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CommentDto"
+      responses:
+        "200":
+          description: Given Comment has been successfully created.
+          schema:
+            format: int32
+            type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - comment-controller
+      operationId: postComment
+      summary: Creates a new Comment onto related Request (Aclaración).
+  "/requests/{requestId}/configure":
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - description: KeyCloack OAuth2 token.
+          in: header
+          name: Authorization
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - description: Request (Aclaración) `id`.
+          format: int32
+          in: path
+          name: requestId
+          required: true
+          type: integer
+          x-example: 112233
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RequestDto"
+      responses:
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - request-controller
+      operationId: configureRequest
+      summary: Configures a Request (Aclaración).
+  /shipment-guides:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: query
+          name: supplierNumber
+          required: false
+          type: integer
+        - in: query
+          name: guideNumber
+          required: false
+          type: string
+        - format: int64
+          in: query
+          name: purchaseOrder
+          required: false
+          type: integer
+        - format: int32
+          in: query
+          name: status
+          required: false
+          type: integer
+        - format: date
+          in: query
+          name: fromShipDate
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: toShipDate
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: fromRegDate
+          required: false
+          type: string
+        - format: date
+          in: query
+          name: toRegDate
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/ShipmentGuideView"
+            type: array
+      tags:
+        - shipment-guide-controller
+      operationId: list
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateShipmentGuideRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      tags:
+        - shipment-guide-controller
+      operationId: create
+  "/shipment-guides/{id}":
+    patch:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - format: int64
+          in: path
+          name: id
+          required: true
+          type: integer
+        - in: header
+          name: X-User
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateShipmentGuideRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      tags:
+        - shipment-guide-controller
+      operationId: update_2
+  /slas:
+    get:
+      produces:
+        - application/octet-stream
+      parameters: []
+      responses:
+        '200':
+          description: Sla objects that meets given criteria.
+          schema:
+            items:
+              $ref: '#/definitions/SlaDto'
+            type: array
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: getSlas
+      summary: Retrieves a list of Sla based for the current user session.
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/octet-stream
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/SlaDto'
+      responses:
+        '200':
+          description: Given sla has been successfully created.
+          schema:
+            format: int32
+            type: integer
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: postSla
+      summary: Creates a new Sla.
+  '/slas/{id}':
+    delete:
+      produces:
+        - application/octet-stream
+      parameters:
+        - description: Sla `id`.
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        '200':
+          description: Given sla has been successfully deleted.
+          schema:
+            format: int32
+            type: integer
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: deleteSla
+      summary: Deletes a Sla
+    get:
+      produces:
+        - application/octet-stream
+      parameters:
+        - description: Sla `id`.
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+          x-example: 112233
+      responses:
+        '200':
+          description: Sla objects with given `id`.
+          schema:
+            $ref: '#/definitions/SlaDto'
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: getSla
+      summary: Retrieves a Sla based on its id.
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/octet-stream
+      parameters:
+        - description: Sla `id`.
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+          x-example: 112233
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/SlaDto'
+      responses:
+        '200':
+          description: Given sla has been successfully updated.
+          schema:
+            format: int32
+            type: integer
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: putSla
+      summary: Updates a Sla
+  '/slas/{id}/publish':
+    post:
+      produces:
+        - application/octet-stream
+      parameters:
+        - description: Sla `id`.
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+          x-example: 112233
+        - default: true
+          description: Publishing status
+          in: query
+          name: publish
+          required: false
+          type: boolean
+          x-example: true
+      responses:
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: The server has not found anything matching the requested URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      tags:
+        - sla-controller
+      operationId: publishSla
+      summary: De/publish a Sla.
+definitions:
+  AttachmentDto:
+    properties:
+      author:
+        description: Name or email of uploader.
+        example: Gabriel Galván
+        type: string
+      content:
+        description: Base64 file content
+        example: R2FicmllbCBHYWx2w6Fu
+        type: string
+      creationTime:
+        format: date-time
+        type: string
+      id:
+        format: int32
+        type: integer
+      name:
+        description: Attachment filename
+        example: constancia_fiscal.pdf
+        type: string
+    type: object
+  AttachmentInfo:
+    properties:
+      contentType:
+        type: string
+      downloadUrl:
+        type: string
+      fileName:
+        type: string
+      id:
+        format: int64
+        type: integer
+      sizeKb:
+        format: int32
+        type: integer
+    type: object
+  BulkCategoryUploadResult:
+    properties:
+      errors:
+        items:
+          $ref: "#/definitions/ErrorRow"
+        type: array
+      inserted:
+        format: int32
+        type: integer
+      skipped:
+        format: int32
+        type: integer
+    type: object
+  BulkFaqUploadResult:
+    properties:
+      errors:
+        items:
+          $ref: "#/definitions/ErrorRow"
+        type: array
+      inserted:
+        format: int32
+        type: integer
+      skipped:
+        format: int32
+        type: integer
+    type: object
+  CatalogDto:
+    properties:
+      description:
+        description: Catalog human description.
+        example: México
+        type: string
+      id:
+        description: Catalog `id`. This is the refered value.
+        example: 11
+        format: int32
+        type: integer
+      type:
+        description: |2
+              Type of family. Available known values are:
+              - 1. Business Units.
+              - 2. Countries.
+              - 3. Systems (modules).
+              - 4. Request reasons.
+              - 5. Request details.
+              - 11. Task kanban columns.
+              - 12. Task progress.
+              - 13. Task priority.
+              - 14. Task repetitiveness.
+        example: 1
+        format: int32
+        type: integer
+    type: object
+  CommentDto:
+    properties:
+      author:
+        description: Name or email of commenter.
+        example: Gabriel Galván
+        type: string
+      comment:
+        description: Requester or maanger comment.
+        example: Se solicita constancia fiscal del proveedor.
+        type: string
+      creationTime:
+        format: date-time
+        type: string
+      id:
+        format: int32
+        type: integer
+    type: object
+  CreateFaqRequest:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      answer:
+        type: string
+      categoryId:
+        format: int64
+        type: integer
+      files:
+        items:
+          format: binary
+          type: string
+        type: array
+      question:
+        maxLength: 512
+        minLength: 0
+        type: string
+      relatedIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+    required:
+      - answer
+      - categoryId
+      - question
+    type: object
+  CreatePurchaseOrderRequest:
+    properties:
+      estatus:
+        format: int32
+        type: integer
+      fechaRegistro:
+        format: date
+        type: string
+      idOrigen:
+        format: int64
+        type: integer
+      idUsuario:
+        format: int64
+        type: integer
+      importe:
+        type: number
+      numeroProveedor:
+        format: int64
+        type: integer
+      ordenCompra:
+        format: int64
+        type: integer
+      recepciones:
+        items:
+          $ref: "#/definitions/CreateReceptionRequest"
+        type: array
+    required:
+      - estatus
+      - fechaRegistro
+      - idOrigen
+      - idUsuario
+      - importe
+      - numeroProveedor
+      - ordenCompra
+      - recepciones
+    type: object
+  CreateReceptionRequest:
+    properties:
+      comentario:
+        maxLength: 256
+        minLength: 0
+        type: string
+      estatus:
+        format: int32
+        type: integer
+      fechaRecepcion:
+        format: date
+        type: string
+      fechaRegistro:
+        format: date
+        type: string
+      idDestino:
+        format: int64
+        type: integer
+      idOrigen:
+        format: int64
+        type: integer
+      idUsuario:
+        format: int64
+        type: integer
+      importe:
+        type: number
+      recepcion:
+        format: int64
+        type: integer
+      skus:
+        items:
+          $ref: "#/definitions/CreateSkuRequest"
+        type: array
+    required:
+      - estatus
+      - fechaRecepcion
+      - fechaRegistro
+      - idDestino
+      - idOrigen
+      - idUsuario
+      - importe
+      - recepcion
+      - skus
+    type: object
+  CreateShipmentGuideRequest:
+    properties:
+      amount:
+        minimum: 0.01
+        type: number
+      comments:
+        type: string
+      deliveryDate:
+        format: date
+        type: string
+      deliveryType:
+        type: string
+      guideNumber:
+        pattern: "^[A-Z0-9-]{4,50}$"
+        type: string
+      origin:
+        type: string
+      plate:
+        type: string
+      providerNumber:
+        format: int64
+        type: integer
+      purchaseOrders:
+        items:
+          format: int64
+          type: integer
+        type: array
+      receipts:
+        items:
+          format: int64
+          type: integer
+        type: array
+      shippingDate:
+        format: date
+        type: string
+      trailerPlate:
+        type: string
+    required:
+      - amount
+      - deliveryDate
+      - deliveryType
+      - guideNumber
+      - origin
+      - providerNumber
+      - purchaseOrders
+      - receipts
+      - shippingDate
+    type: object
+  CreateSkuRequest:
+    properties:
+      cantidad:
+        minimum: 0.000001
+        type: number
+      costoTotal:
+        minimum: 0.01
+        type: number
+      costoUnitario:
+        minimum: 0.01
+        type: number
+      descripcion:
+        maxLength: 256
+        minLength: 0
+        type: string
+      estatus:
+        format: int32
+        maximum: 2147483647
+        minimum: 0
+        type: integer
+      fechaActualizacion:
+        format: date
+        type: string
+      idUsuarioActualizacion:
+        format: int64
+        type: integer
+      sku:
+        maxLength: 15
+        minLength: 0
+        type: string
+    required:
+      - cantidad
+      - costoTotal
+      - costoUnitario
+      - descripcion
+      - estatus
+      - sku
+    type: object
+  ErrorRow:
+    properties:
+      line:
+        format: int32
+        type: integer
+      reason:
+        type: string
+    type: object
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 401
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Unauthorized
+        type: string
+    type: object
+  FaqCategoryDto:
+    properties:
+      description:
+        type: string
+      icon:
+        type: string
+      id:
+        format: int64
+        type: integer
+      isActive:
+        type: boolean
+      name:
+        type: string
+    required:
+      - description
+      - name
+    type: object
+  FaqCategoryResponse:
+    properties:
+      description:
+        type: string
+      id:
+        format: int64
+        type: integer
+      isActive:
+        type: boolean
+      name:
+        type: string
+    type: object
+  FaqDetailResponse:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      answer:
+        type: string
+      attachments:
+        items:
+          $ref: "#/definitions/AttachmentInfo"
+        type: array
+      categoryId:
+        format: int64
+        type: integer
+      id:
+        format: int64
+        type: integer
+      question:
+        type: string
+      relatedIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+    type: object
+  FaqResponse:
+    properties:
+      answer:
+        type: string
+      categoryName:
+        type: string
+      id:
+        format: int64
+        type: integer
+      question:
+        type: string
+    type: object
+  FaqView:
+    properties:
+      answer:
+        type: string
+      categoryId:
+        format: int64
+        type: integer
+      categoryName:
+        type: string
+      id:
+        format: int64
+        type: integer
+      published:
+        type: boolean
+      question:
+        type: string
+      views:
+        format: int32
+        type: integer
+    type: object
+  FeedbackAnswerDto:
+    properties:
+      id:
+        format: int64
+        type: integer
+      position:
+        format: int32
+        type: integer
+      text:
+        type: string
+    type: object
+  FeedbackDto:
+    properties:
+      answers:
+        items:
+          $ref: "#/definitions/FeedbackAnswerDto"
+        type: array
+      id:
+        format: int64
+        type: integer
+      isActive:
+        type: boolean
+      question:
+        type: string
+    type: object
+  NoticeDto:
+    properties:
+      businessUnit:
+        description: Business Unit. See `catalogs` methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      country:
+        description: Country of origin. See `catalogs` methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      description:
+        description: Info's long description - paragraph.
+        example: 6
+        maxLength: 128
+        minLength: 2
+        type: string
+      id:
+        description: Unique numeric identifier.
+        example: 6
+        format: int32
+        type: integer
+      link:
+        description: Info's hyperlink
+        example: 6
+        maxLength: 256
+        minLength: 2
+        type: string
+      name:
+        description: Info's title
+        example: 6
+        maxLength: 64
+        minLength: 2
+        type: string
+      position:
+        description: Info's position or location
+        example: 6
+        format: int32
+        type: integer
+      published:
+        description: Publish status
+        example: true
+        type: boolean
+    required:
+      - businessUnit
+      - country
+      - position
+    type: object
+  PurchaseOrderView:
+    properties:
+      estatus:
+        format: int32
+        type: integer
+      fechaRegistro:
+        format: date
+        type: string
+      idOrigen:
+        format: int64
+        type: integer
+      idUsuario:
+        format: int64
+        type: integer
+      importe:
+        type: number
+      nombreProveedor:
+        type: string
+      numeroProveedor:
+        format: int64
+        type: integer
+      ordenCompra:
+        format: int64
+        type: integer
+      recepciones:
+        items:
+          $ref: "#/definitions/ReceptionView"
+        type: array
+    type: object
+  ReceptionView:
+    properties:
+      comentario:
+        type: string
+      estatus:
+        format: int32
+        type: integer
+      fechaRecepcion:
+        format: date
+        type: string
+      fechaRegistro:
+        format: date
+        type: string
+      idDestino:
+        format: int64
+        type: integer
+      idOrigen:
+        format: int64
+        type: integer
+      idUsuario:
+        format: int64
+        type: integer
+      importe:
+        type: number
+      recepcion:
+        format: int64
+        type: integer
+      skus:
+        items:
+          $ref: "#/definitions/SkuView"
+        type: array
+    type: object
+  RelatedInformationDto:
+    properties:
+      businessUnitId:
+        format: int32
+        type: integer
+      countryId:
+        format: int32
+        type: integer
+      id:
+        format: int64
+        type: integer
+      image:
+        type: string
+      imageName:
+        type: string
+      isActive:
+        type: boolean
+      link:
+        type: string
+      title:
+        type: string
+    required:
+      - link
+      - title
+    type: object
+  RequestDto:
+    properties:
+      attachments:
+        description: Attached files.
+        items:
+          $ref: "#/definitions/AttachmentDto"
+        type: array
+      businessUnit:
+        description: |
+          Business Unit for this Request. See `catalogs` methods for
+          further info.
+        example: 6
+        format: int32
+        type: integer
+      clazz:
+        description: |
+          Task Kanban board column. See `catalogs` methods for further
+          info.
+        example: 6
+        format: int32
+        type: integer
+      comments:
+        description: Comments.
+        items:
+          $ref: "#/definitions/CommentDto"
+        type: array
+      company:
+        description: Requester company name.
+        example: Empresa S.A.
+        type: string
+      country:
+        description: |
+          Country of origin for this Request. See `catalogs` methods
+          for further info.
+        example: 6
+        format: int32
+        type: integer
+      creationTime:
+        description: Creation time in ISO 8601 format
+        example: "2025-05-14T15:51:31.000Z"
+        format: date-time
+        type: string
+      description:
+        description: String description.
+        example: Random string
+        type: string
+      detail:
+        description: |
+          Details of an specific reason for this Request. See `catalogs`
+          methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      elapsedTime:
+        description: Elapsed time since `creationTime` in days
+        example: 5
+        format: int32
+        type: integer
+      id:
+        description: Numeric Unique Identifier
+        example: 99888
+        format: int32
+        type: integer
+      module:
+        description: |
+          System's module for this Request. See `catalogs` methods for
+          further info.
+        example: 6
+        format: int32
+        type: integer
+      operator:
+        description: Name or email of current supporter.
+        example: Gabriel Galván
+        type: string
+      orderId:
+        description: Related Order Id
+        example: 999-888-777
+        type: string
+      priority:
+        description: Task priority. See `catalogs` methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      progress:
+        description: Task progress. See `catalogs` methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      reason:
+        description: |
+          Reason for this Request. See `catalogs` methods for further
+          info.
+        example: 5
+        format: int32
+        type: integer
+      repeatitiveness:
+        description: Task repeatitiveness. See `catalogs` methods for further info.
+        example: 6
+        format: int32
+        type: integer
+      requester:
+        description: Name or email of requester.
+        example: Gabriel Galván
+        type: string
+      rut:
+        description: Requester tax identifier.
+        example: XAXA010101SV5
+        type: string
+      status:
+        description: |
+          Status of this Request (Aclaración). Available values are:
+          - STATUS_UNATTENDED = 10;
+          - STATUS_ONGOING = 20;
+          - STATUS_RESOLVED = 30;
+          - STATUS_CANCELLED = 40;
+        example: 40
+        format: int32
+        type: integer
+    type: object
+  ShipmentGuideView:
+    properties:
+      amount:
+        type: number
+      createdAt:
+        format: date
+        type: string
+      deliveryType:
+        type: string
+      guideNumber:
+        type: string
+      id:
+        format: int64
+        type: integer
+      origin:
+        type: string
+      plate:
+        type: string
+      shippingDate:
+        format: date
+        type: string
+      status:
+        format: int32
+        type: integer
+      statusDesc:
+        type: string
+      supplierName:
+        type: string
+      supplierNumber:
+        format: int64
+        type: integer
+      trailerPlate:
+        type: string
+    type: object
+  SkuView:
+    properties:
+      cantidad:
+        type: number
+      costoTotal:
+        type: number
+      costoUnitario:
+        type: number
+      descripcion:
+        type: string
+      estatus:
+        format: int32
+        type: integer
+      sku:
+        type: string
+    type: object
+  SlaDto:
+    properties:
+      businessUnit:
+        description: Business unit catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      country:
+        description: Country catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      firstResponseLevel:
+        description: First Response SLA catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      id:
+        description: SLA unique identifier.
+        example: 6
+        format: int32
+        type: integer
+      manager:
+        description: Manager email
+        example: develop@sodimac.com.mx
+        type: string
+      module:
+        description: Module catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      priority:
+        description: Priority catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      published:
+        description: Publishing status
+        example: true
+        type: boolean
+      reason:
+        description: Reason catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+      resolutionLevel:
+        description: Resolution SLA catalog value.
+        example: 6
+        format: int32
+        maximum: 32
+        type: integer
+    required:
+      - businessUnit
+      - country
+      - firstResponseLevel
+      - manager
+      - module
+      - priority
+      - published
+      - reason
+      - resolutionLevel
+    type: object
+  UpdateFaqCategoryPublicationRequest:
+    properties:
+      published:
+        type: boolean
+    type: object
+  UpdateFaqPublicationRequest:
+    properties:
+      published:
+        type: boolean
+    type: object
+  UpdateFaqRequest:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      answer:
+        type: string
+      categoryId:
+        format: int64
+        type: integer
+      files:
+        items:
+          format: binary
+          type: string
+        type: array
+      question:
+        maxLength: 512
+        minLength: 0
+        type: string
+      relatedIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+    required:
+      - answer
+      - categoryId
+      - question
+    type: object
+  UpdatePurchaseOrderRequest:
+    properties:
+      estatusOC:
+        format: int32
+        type: integer
+      recepciones:
+        items:
+          $ref: "#/definitions/UpdateReceptionStatus"
+        type: array
+    required:
+      - estatusOC
+    type: object
+  UpdateReceptionStatus:
+    properties:
+      estatus:
+        format: int32
+        type: integer
+      recepcion:
+        format: int64
+        type: integer
+    required:
+      - estatus
+      - recepcion
+    type: object
+  UpdateShipmentGuideRequest:
+    properties:
+      cartaPorteCsv:
+        type: string
+      cartaPorteXml:
+        type: string
+      plate:
+        pattern: "^[A-Z0-9-]{1,15}$"
+        type: string
+      status:
+        format: int32
+        minimum: 0
+        type: integer
+      trailerPlate:
+        pattern: "^[A-Z0-9-]{0,15}$"
+        type: string
+    type: object
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: "${KEYCLOAK}/auth/realms/corp"
+    x-google-jwks_uri: "${JWKS_URL}"
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+security:
+  - bearerAuth: []
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: "${DOMAIN_OPENAPI}"

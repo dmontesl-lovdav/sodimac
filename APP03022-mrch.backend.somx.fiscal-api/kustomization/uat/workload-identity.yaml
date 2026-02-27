@@ -1,0 +1,7 @@
+﻿# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: fiscal-api-sa
+#   annotations:
+#     iam.gke.io/gcp-service-account: fiscal-api@fal-corp-fiscal-uat.iam.gserviceaccount.com
+

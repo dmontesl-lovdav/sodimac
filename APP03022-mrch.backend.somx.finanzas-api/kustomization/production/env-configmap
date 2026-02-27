@@ -1,0 +1,10 @@
+# App Configuration
+NODE_ENV=production
+PORT=8091
+
+# Database Configuration (JDBC format for compatibility with Spring Boot)
+DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/ebook_prd?currentSchema=tenant_finance&useSSL=true
+
+# Additional Configuration
+DB_PURCHASE_SCHEMA=ebook_purchase
+LOCAL_TEMPLATE_MAXIMUM_ROWS_TO_DELETE=20

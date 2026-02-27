@@ -1,0 +1,21 @@
+<cfdi:Comprobante xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" Version="4.0" Serie="FA" Fecha="2025-05-09T09:16:25" Sello="keM/Mcg5Hu+cYE9KPLJCATHT6Maol++zlfUTmGGhl1H4IPBjBvSdayXeSqT/bsuEWSNuSymTAQx4NTBCFOIOOh1DLOqGzHC4QAC1JVLAuyie2DK7/EvS2vQOiS6wLPzPA7CF9Y1pKQLx2lnRMWCyEZXM0A0HwhNWd/V+X+ifIAqpHfaQEqmnPYV2F9q1SEnjc+0yGdyDsjx9gOG22+6IPt28dNimRoZl269Saw2oBRJjNpDwLx7aASnAdlqeqzJT65UcrXEZhx3SpDn7QAo9+iuoBHKchj5Kb3uZv5+7H5x8DQJRlxbnk1dP0NxHsg/LlFLuqSS/jnHm/VEnMxEUWw==" FormaPago="99" NoCertificado="00001000000701166655" Certificado="MIIGHTCCBAWgAwIBAgIUMDAwMDEwMDAwMDA3MDExNjY2NTUwDQYJKoZIhvcNAQELBQAwggGV" CondicionesDePago="30 Días Fecha Recepción Merc." SubTotal="528.80" Moneda="MXN" Total="613.41" TipoDeComprobante="I" MetodoPago="PUE" LugarExpedicion="06500" Exportacion="01">
+	<cfdi:Emisor Rfc="JOH120507FU9" Nombre="SC JOHNSON" RegimenFiscal="601"/>
+	<cfdi:Receptor Rfc="CSD161207R2A" Nombre="COMERCIALIZADORA SDMHC" UsoCFDI="G02" DomicilioFiscalReceptor="53150" RegimenFiscalReceptor="601"/>
+	<cfdi:Conceptos>
+		<cfdi:Concepto ClaveProdServ="47131800" NoIdentificacion="7501032931513" Cantidad="1.000" ClaveUnidad="XBX" Unidad="MCS" Descripcion="Producto de prueba" ValorUnitario="528.80" Importe="528.80" ObjetoImp="02">
+			<cfdi:Impuestos>
+				<cfdi:Traslados>
+					<cfdi:Traslado Base="528.80" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="84.61"/>
+				</cfdi:Traslados>
+			</cfdi:Impuestos>
+		</cfdi:Concepto>
+	</cfdi:Conceptos>
+	<cfdi:Impuestos TotalImpuestosTrasladados="84.61">
+		<cfdi:Traslados>
+			<cfdi:Traslado Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="84.61" Base="528.80"/>
+		</cfdi:Traslados>
+	</cfdi:Impuestos>
+	<cfdi:Complemento>
+		<tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" Version="1.1" UUID="44444444-4444-4444-4444-444444444444" FechaTimbrado="2025-05-09T10:16:56" RfcProvCertif="ASE0201179X0" SelloCFD="keM/Mcg5Hu+cYE9KPLJCATHT6Maol++zlfUTmGGhl1H4IPBjBvSdayXeSqT/bsuEWSNuSymTAQx4NTBCFOIOOh1DLOqGzHC4QAC1JVLAuyie2DK7/EvS2vQOiS6wLPzPA7CF9Y1pKQLx2lnRMWCyEZXM0A0HwhNWd/V+X+ifIAqpHfaQEqmnPYV2F9q1SEnjc+0yGdyDsjx9gOG22+6IPt28dNimRoZl269Saw2oBRJjNpDwLx7aASnAdlqeqzJT65UcrXEZhx3SpDn7QAo9+iuoBHKchj5Kb3uZv5+7H5x8DQJRlxbnk1dP0NxHsg/LlFLuqSS/jnHm/VEnMxEUWw==" NoCertificadoSAT="00001000000519281088" SelloSAT="AcAWS37T"/>
+	</cfdi:Complemento>
+</cfdi:Comprobante>

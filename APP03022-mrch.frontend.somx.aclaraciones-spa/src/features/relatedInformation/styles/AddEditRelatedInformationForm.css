@@ -1,0 +1,136 @@
+/* ========================================== */
+/*   CONTENEDOR GENERAL  */
+/* ========================================== */
+
+.ri-form-container {
+    padding: 0.5rem 1rem 1rem 1rem;
+
+    /* 🔥 ya NO centramos el contenido */
+    display: block;
+    width: 100%;
+}
+
+/* breakpoints */
+@media (min-width: 768px) {
+    .ri-form-container {
+        padding-left: 2rem;
+        /* igual UAT */
+        padding-right: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .ri-form-container {
+        padding-left: 3rem;
+        /* ✨ pegado como UAT */
+        padding-right: 2rem;
+    }
+}
+
+/* ========================================== */
+/*   BREADCRUMBS  */
+/* ========================================== */
+
+.ri-form-breadcrumb {
+    margin-left: 0;
+    margin-top: -0.25rem;
+}
+
+/* ========================================== */
+/*   CARD → pegado izquierda + ancho UAT      */
+/* ========================================== */
+
+.ri-form-card {
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background: transparent;
+
+    /* 🔥 ancho EXACTO como UAT */
+    width: 100%;
+    max-width: 960px;
+
+    /* pegado a la izquierda */
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ========================================== */
+/*   INTERIOR DEL CARD  */
+/* ========================================== */
+
+.ri-form-card-inner {
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .ri-form-card-inner {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .ri-form-card-inner {
+        padding: 2rem;
+    }
+}
+
+/* ========================================== */
+/*   TITULO PRINCIPAL   */
+/* ========================================== */
+
+.ri-form-title {
+    padding-bottom: 1rem;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+@media (min-width: 1024px) {
+    .ri-form-title {
+        font-size: 1.5rem;
+        line-height: 2rem;
+    }
+}
+
+/* ------------------------------------------ */
+
+.ri-form-subsection {
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+/* ========================================== */
+/*   CAMPOS  */
+/* ========================================== */
+
+.ri-field-spacing {
+    margin-top: 0.5rem;
+}
+
+/* ========================================== */
+/*   HINT DE IMAGEN  */
+/* ========================================== */
+
+.ri-form-image-hint {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+/* ========================================== */
+/*   BOTONES  */
+/* ========================================== */
+
+.ri-form-actions {
+    padding-top: 1.25rem;
+    height: 2.5rem;
+    text-align: right;
+}
+
+.ri-form-back {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    margin-right: 0.75rem;
+}

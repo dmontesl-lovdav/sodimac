@@ -1,0 +1,11 @@
+include:
+
+  - project: 'rtl/merchandise-ti-corp/foundational/configuration/template-cicd'
+    ref: master
+    file: '/pipeline-ci-cd/node/template.yml'
+
+variables:
+  CI_LANGUAGE_IMAGE_DOCKER: node:22
+  DOCKER_IMAGE_ENABLED: "true"
+  DEPLOY_GKE_ENABLED: "true"
+  DEPLOY_CLOUDENDPOINTS_ENABLED: "true"

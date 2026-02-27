@@ -1,0 +1,90 @@
+/* Wrapper general */
+.bcu-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 8px 4px 40px;
+}
+
+/* Header */
+.bcu-header {
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #d1d5db;
+}
+
+.bcu-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.bcu-subtitle {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #475569;
+}
+
+/* Step rows */
+.bcu-step-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.bcu-step-info {
+    max-width: 60%;
+}
+
+.bcu-step-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bcu-step-text {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #4d657a;
+    max-width: 360px;
+}
+
+.bcu-step-action,
+.bcu-step-upload {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 40%;
+}
+
+/* Button */
+.bcu-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icon */
+.bcu-download-icon {
+    width: 16px;
+    fill: currentColor;
+}
+
+/* Separator */
+.bcu-separator {
+    margin-top: 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid #d1d5db;
+}
+
+/* Footer buttons */
+.bcu-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    margin-top: 50px;
+}
+
+.bcu-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

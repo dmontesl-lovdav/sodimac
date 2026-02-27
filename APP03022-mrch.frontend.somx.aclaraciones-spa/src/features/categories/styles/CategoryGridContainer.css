@@ -1,0 +1,163 @@
+/* === Confirm Modal === */
+
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.confirm-modal {
+    width: 90%;
+    max-width: 380px;
+    background: white;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.confirm-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fef3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px auto;
+}
+
+.confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.confirm-message {
+    font-size: 14px;
+    color: #334155;
+    white-space: pre-line;
+    margin-bottom: 20px;
+}
+
+/* Actions */
+
+.confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.confirm-btn-cancel {
+    padding: 8px 20px;
+    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.confirm-btn-cancel:hover {
+    background: #f9fafb;
+}
+
+.confirm-btn-confirm {
+    padding: 8px 20px;
+    border-radius: 5px;
+    background: #d32f2f;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.confirm-btn-confirm:hover {
+    background: #b71c1c;
+}
+
+
+/* === Header (categorías) === */
+
+.category-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 10px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+}
+
+.category-title {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.category-description {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+/* actions (buttons top right) */
+.category-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* shared button styles */
+.category-btn {
+    height: 44px;
+    padding: 0 24px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* primary */
+.btn-primary {
+    background-color: #002d4c;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #001e33;
+}
+
+/* outline */
+.btn-outline {
+    background: white;
+    border: 1px solid #9ca3af;
+    color: #374151;
+}
+
+.btn-outline:hover {
+    background: #f3f4f6;
+}
+
+/* footer */
+.category-footer {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-text {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    color: #003865;
+    cursor: pointer;
+}
+
+.btn-text:hover {
+    text-decoration: underline;
+}

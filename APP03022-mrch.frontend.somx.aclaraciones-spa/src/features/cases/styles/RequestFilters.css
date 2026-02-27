@@ -1,0 +1,43 @@
+/* Reemplazo de grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mt-6 mb-6 */
+.rf-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+    .rf-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .rf-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Reemplazo de -mt-2 */
+.rf-mt--2 {
+    margin-top: -8px;
+}
+
+/* Reemplazo de px-4 */
+.rf-date-input-padding {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+/* Reemplazo de w-full */
+.rf-full {
+    width: 100%;
+}
+
+/* Reemplazo de flex gap-2 items-end */
+.rf-actions {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}

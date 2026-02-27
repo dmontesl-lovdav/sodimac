@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+
+configMapGenerator:
+  - name: ${PROJECT_NAME}-configmap
+    envs:
+      - "env"
+    options:
+      disableNameSuffixHash: true
+secretGenerator:
+  - name: ${PROJECT_NAME}-secret
+    envs:
+    - env-secrets
+    options:
+      disableNameSuffixHash: true
+
+namespace: ${NAMESPACE_UAT}
+
+patches:
+  - path: env-var.yaml
+  - path: resources.yaml
+  - path: workload-identity.yaml
+
+resources:
+  - ../base
+  - hpa-config.yaml
+  - ingress.yaml
+
+images:
+  - name: foo/bar
+    newName: ${CI_REGISTRY_IMAGE}/${GCP_PROJECT_ID_UAT}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}
+    newTag: "${CI_COMMIT_SHORT_SHA}"

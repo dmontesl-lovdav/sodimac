@@ -1,0 +1,104 @@
+{
+	"info": {
+		"_postman_id": "stm-395-validaciones-factura",
+		"name": "STM-395 - Validaciones Factura",
+		"description": "Colección para probar las validaciones de serie, folio y UUID en facturas.\n\n**Criterios de Aceptación:**\n- CA01: WRN7012 - Factura sin serie o folio\n- CA02: WRN7013 - Factura duplicada por serie+folio\n- CA03: WRN7014 - Factura duplicada por UUID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CA01 - WRN7012 - Factura sin serie o folio",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/Factura_sin_folio.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA01: Registrar factura sin folio.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7012\",\n  \"message\": \"La factura requiere una serie y folio para publicar el documento. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "CA02 - WRN7013 - Factura duplicada serie+folio",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/Factura_duplicada_serie_folio.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA02: Registrar factura con serie+folio duplicada.\n\n**Prerequisito:** Debe existir una factura con Serie=A, Folio=001 del emisor TST010101AAA.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7013\",\n  \"message\": \"La factura se encuentra previamente registrada con la misma serie y folio. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "CA03 - WRN7014 - Factura duplicada UUID",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "test-files/Factura_duplicada_uuid.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/invoices/register",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["invoices", "register"]
+				},
+				"description": "Prueba CA03: Registrar factura con UUID duplicado.\n\n**Prerequisito:** Debe existir una factura con UUID=66666666-6666-6666-6666-666666666666 del emisor TST010101AAA.\n\n**Resultado esperado:**\n```json\n{\n  \"code\": \"WRN7014\",\n  \"message\": \"La factura se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar.\",\n  \"success\": false\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/actuator/health",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8082",
+					"path": ["actuator", "health"]
+				},
+				"description": "Verificar que el servicio fiscal-api está activo."
+			},
+			"response": []
+		}
+	]
+}

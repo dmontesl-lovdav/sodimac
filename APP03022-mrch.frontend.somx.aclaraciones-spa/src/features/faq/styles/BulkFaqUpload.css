@@ -1,0 +1,110 @@
+/* ============================================= */
+/*               BULK FAQ UPLOAD                 */
+/* ============================================= */
+
+.bulk-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* --------------------------------------------- */
+/*                   HEADER                      */
+/* --------------------------------------------- */
+
+.bulk-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.bulk-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.bulk-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* --------------------------------------------- */
+/*                STEP SECTION                   */
+/* --------------------------------------------- */
+
+.bulk-step-row {
+    margin-top: 0.25rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .bulk-step-row {
+        grid-template-columns: 1fr 1fr;
+        align-items: flex-start;
+    }
+}
+
+.bulk-step-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.bulk-step-text {
+    font-size: 0.875rem;
+    color: #4d657a;
+    max-width: 420px;
+}
+
+/* --------------------------------------------- */
+/*                 BUTTON AREA                   */
+/* --------------------------------------------- */
+
+.bulk-step-button {
+    display: flex;
+    justify-content: flex-start;
+}
+
+@media (min-width: 768px) {
+    .bulk-step-button {
+        justify-content: flex-end;
+    }
+}
+
+/* --------------------------------------------- */
+/*              DROPZONE COLUMN                  */
+/* --------------------------------------------- */
+
+.bulk-dropzone-col {
+    min-height: 180px;
+}
+
+/* --------------------------------------------- */
+/*               SEPARATORS                      */
+/* --------------------------------------------- */
+
+.bulk-separator {
+    border-bottom: 1px solid #e5e7eb;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+}
+
+/* --------------------------------------------- */
+/*                   FOOTER                     */
+/* --------------------------------------------- */
+
+.bulk-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+}
+
+.disabled-btn {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}

@@ -1,0 +1,20 @@
+[35mREADME.md[m[36m:[m    [1;31maccountsPayable[m.controller.ts
+[35mREADME.md[m[36m:[m      [1;31maccountsPayable[m.ts
+[35mREADME.md[m[36m:[m      [1;31maccountsPayable[m.ts
+[35mREADME.md[m[36m:[m    [1;31maccountsPayable[m.repo.ts
+[35mREADME.md[m[36m:[m    [1;31maccountsPayable[m.service.ts
+[35mREADME.md[m[36m:[m    [1;31maccountsPayable[m.routes.ts
+[35mREADME.md[m[36m:[m   router.use("/accounts", [1;31maccountsPayable[mRouter);
+[35msrc/controllers/accountsPayable.controller.ts[m[36m:[mimport * as svc from "@/services/[1;31maccountsPayable[m.service.js";
+[35msrc/controllers/accountsPayable.controller.ts[m[36m:[m} from "@/schemas/[1;31maccountsPayable[m.schema.js";
+[35msrc/docs/components/accountsPayable.ts[m[36m:[m// src/docs/components/[1;31maccountsPayable[m.ts
+[35msrc/docs/components/accountsPayable.ts[m[36m:[mexport const [1;31maccountsPayable[mSchemas: Record<string, OpenAPIV3.SchemaObject> = {
+[35msrc/docs/paths/accountsPayable.ts[m[36m:[m// src/docs/paths/[1;31maccountsPayable[m.ts
+[35msrc/docs/paths/accountsPayable.ts[m[36m:[mexport const [1;31maccountsPayable[mPaths: OpenAPIV3.PathsObject = {
+[35msrc/routes/accountsPayable.routes.ts[m[36m:[mimport * as controller from "@/controllers/[1;31maccountsPayable[m.controller.js";
+[35msrc/routes/accountsPayable.routes.ts[m[36m:[m} from "@/schemas/[1;31maccountsPayable[m.schema.js";
+[35msrc/routes/index.ts[m[36m:[mimport [1;31maccountsPayable[mRouter from "./[1;31maccountsPayable[m.routes.js";
+[35msrc/routes/index.ts[m[36m:[mrouter.use("/accounts", [1;31maccountsPayable[mRouter);
+[35msrc/services/accountsPayable.service.ts[m[36m:[m// src/services/[1;31maccountsPayable[m.service.ts
+[35msrc/services/accountsPayable.service.ts[m[36m:[mimport * as r from "@/repositories/[1;31maccountsPayable[m.repo.js";
+[35msrc/services/accountsPayable.service.ts[m[36m:[m} from "@/schemas/[1;31maccountsPayable[m.schema.js";

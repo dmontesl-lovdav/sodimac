@@ -1,0 +1,86 @@
+/* Layout general */
+.ngc-layout {
+    padding: 16px 32px;
+}
+
+.ngc-breadcrumb {
+    margin-left: -32px;
+    margin-top: -4px;
+}
+
+/* Card */
+.ngc-card {
+    margin-left: -32px;
+    margin-right: -32px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.ngc-card-inner {
+    padding: 16px 32px;
+}
+
+/* Header */
+.ngc-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.ngc-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.ngc-subtitle {
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.ngc-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.ngc-add-btn {
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    background-color: #002d4c;
+    cursor: pointer;
+    border: none;
+}
+
+.ngc-add-btn:hover {
+    background-color: #003865;
+}
+
+/* Footer */
+.ngc-footer {
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+}
+
+.ngc-backlink {
+    font-size: 0.875rem;
+    color: #003865;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.ngc-backlink:hover {
+    text-decoration: underline;
+}

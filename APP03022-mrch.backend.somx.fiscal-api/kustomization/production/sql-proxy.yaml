@@ -1,0 +1,22 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROJECT_NAME}
+spec:
+  template:
+    spec:
+      serviceAccountName: fbc-workload-identity
+      containers:
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+        args:
+          - "--structured-logs"
+          - "--port=5434"
+          - "sod-mx-mrch-fiscal-prd:us-east4:fiscal-db"
+        securityContext:
+          runAsNonRoot: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu:    "50m"
+

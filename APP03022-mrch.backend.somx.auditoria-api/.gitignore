@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build / TypeScript
+dist/
+*.tsbuildinfo
+
+# Env / credenciales
+.env
+.env.*.local
+.env.local
+
+# Logs
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.gz
+*.seed
+
+# Coverage / tests
+coverage/
+.junit/
+.nyc_output/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeORM temp
+tmp/

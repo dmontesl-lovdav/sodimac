@@ -1,0 +1,104 @@
+/* ===================================== */
+/*             GENERIC INPUT             */
+/* ===================================== */
+
+.generic-input-container {
+    position: relative;
+    width: 100%;
+}
+
+/* ---------- INPUT ---------- */
+
+.generic-input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid #d1d5db;
+    /* slate-300 */
+    padding: 16px 16px 8px 16px;
+    /* pl-4 pr-4 pt-6 pb-2 */
+    font-size: 15px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.generic-input:focus {
+    border-color: #0369a1;
+    /* sky-700 */
+}
+
+.generic-input.error {
+    border-color: #e11d48 !important;
+    /* rose-600 */
+}
+
+.generic-input:disabled {
+    color: #94a3b8;
+    /* slate-400 */
+    cursor: not-allowed;
+}
+
+/* ---------- LABEL (floating) ---------- */
+
+.generic-input-label {
+    position: absolute;
+    left: 16px;
+    pointer-events: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: #64748b;
+    /* slate-600 */
+}
+
+/* estado normal */
+.generic-input-label.resting {
+    top: 15px;
+    font-size: 0.875rem;
+    /* text-sm */
+}
+
+/* estado flotando */
+.generic-input-label.floating {
+    top: -2px;
+    /* sube el label visualmente */
+    font-size: 0.75rem;
+}
+
+/* label en focus */
+.generic-input-label.focused {
+    color: #0369a1;
+    /* sky-700 */
+}
+
+/* label con error */
+.generic-input-label.error {
+    color: #e11d48;
+    /* rose-600 */
+}
+
+/* ---------- HELPER & COUNTER ---------- */
+
+.generic-input-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.generic-input-helper {
+    color: #6b7280;
+    /* slate-500 */
+}
+
+.generic-input-helper.error {
+    color: #e11d48;
+}
+
+.generic-input-counter {
+    color: #6b7280;
+}
+
+.generic-input-counter.error {
+    color: #e11d48;
+}

@@ -1,0 +1,2196 @@
+swagger: "2.0"
+info:
+  contact:
+    email: tech@sodimac.com
+    name: Sodimac Tech Team
+  description:
+    "Support RESTful operations for fiscal flow. API BFF para gestión de
+    comprobantes fiscales digitales mexicanos (CFDI).
+
+    Funcionalidades principales:
+    - Procesamiento de XML fiscales (CFDI 4.0, CartaPorte 3.1, Pagos 2.0)
+    - Gestión de catálogos (Emisores, Receptores, PACs)
+    - Validación y timbrado con múltiples PACs
+    - Consulta de facturas con paginación
+
+    Autenticación: OAuth2 con KeyCloak (Bearer Token)
+
+    "
+  title: Fiscal API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: fiscal
+  x-consumer-segments: retail
+  x-service-name: fiscal
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+paths:
+  /health:
+    get:
+      tags:
+        - health-controller
+      summary: Health check del servicio
+      description: Verifica el estado general del servicio fiscal-api
+      operationId: health
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Servicio funcionando
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: UP
+              service:
+                type: string
+                example: fiscal-api
+
+  /fiscal/xml/process:
+    post:
+      tags:
+        - xml-processing-controller
+      summary: Procesar XML fiscal como String
+      description: |
+        Procesa un documento XML fiscal y retorna JSON estructurado.
+        Detecta automáticamente el tipo de documento (CFDI, CartaPorte, Pagos).
+      operationId: processXmlString
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: Bearer token de KeyCloak
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          description: Contenido XML del documento fiscal
+          schema:
+            type: string
+      responses:
+        "200":
+          description: XML procesado exitosamente
+          schema:
+            $ref: '#/definitions/FiscalXmlResponse'
+        "400":
+          description: XML inválido o formato no soportado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/xml/process/file:
+    post:
+      tags:
+        - xml-processing-controller
+      summary: Procesar archivo XML fiscal
+      description: Sube y procesa un archivo XML fiscal
+      operationId: processXmlFile
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: file
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML
+      responses:
+        "200":
+          description: Archivo procesado exitosamente
+          schema:
+            $ref: '#/definitions/FiscalXmlResponse'
+        "400":
+          description: Archivo inválido
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/xml/detect:
+    post:
+      tags:
+        - xml-processing-controller
+      summary: Detectar tipo de documento fiscal
+      description: Analiza el XML y detecta el tipo usando cat_version
+      operationId: detectDocumentType
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tipo detectado exitosamente
+          schema:
+            type: string
+            enum: [CFDI_40, CARTA_PORTE_31, PAGOS_20]
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/xml/validate:
+    post:
+      tags:
+        - xml-processing-controller
+      summary: Validar documento fiscal XML
+      description: Valida si el XML es un documento fiscal válido
+      operationId: validateFiscalDocument
+      consumes:
+        - text/xml
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Validación completada
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              isValid:
+                type: boolean
+              documentType:
+                type: string
+              message:
+                type: string
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/xml/health:
+    get:
+      tags:
+        - xml-processing-controller
+      summary: Health check del procesador XML
+      description: Verifica el estado del servicio de procesamiento XML
+      operationId: xmlProcessorHealth
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Servicio funcionando
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: UP
+              service:
+                type: string
+              timestamp:
+                type: integer
+                format: int64
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /validacion/upload:
+    post:
+      tags:
+        - fiscal-validation-controller
+      summary: Validar XML con PAC configurado
+      description: |
+        Valida XML fiscal con el PAC primario configurado.
+        En caso de fallo, intenta con el PAC secundario.
+      operationId: validateXmlWithPac
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: file
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML
+        - name: pais
+          in: formData
+          required: true
+          type: string
+          description: Código de país
+        - name: rfc
+          in: formData
+          required: true
+          type: string
+          description: RFC del emisor
+      responses:
+        "200":
+          description: XML validado sin errores
+        "400":
+          description: Error en el formato del XML
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices:
+    get:
+      tags:
+        - invoice-controller
+      summary: Obtener facturas paginadas
+      description: Retorna listado de facturas con metadata de paginación
+      operationId: getAllInvoices
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+          description: Número de página (0-indexed)
+        - name: size
+          in: query
+          type: integer
+          default: 20
+          description: Tamaño de página
+      responses:
+        "200":
+          description: Lista de facturas
+          schema:
+            $ref: '#/definitions/PageInvoiceDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - invoice-controller
+      summary: Actualizar factura
+      description: Actualiza una factura existente
+      operationId: updateInvoice
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceUpdateDto'
+      responses:
+        "200":
+          description: Factura actualizada
+          schema:
+            $ref: '#/definitions/InvoiceDto'
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/register:
+    post:
+      tags:
+        - invoice-controller
+      summary: Registrar factura con XML
+      description: Registra una nueva factura subiendo el archivo XML
+      operationId: registerInvoice
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: xmlFile
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML de la factura
+      responses:
+        "200":
+          description: Factura registrada exitosamente
+          schema:
+            $ref: '#/definitions/InvoiceDto'
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/search:
+    post:
+      tags:
+        - invoice-controller
+      summary: Búsqueda avanzada de facturas
+      description: Busca facturas con múltiples criterios
+      operationId: searchInvoices
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceSearchDto'
+      responses:
+        "200":
+          description: Resultados de búsqueda
+          schema:
+            $ref: '#/definitions/PageInvoiceDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/{uuid}/xml:
+    get:
+      tags:
+        - invoice-controller
+      summary: Obtener XML por UUID fiscal
+      description: |
+        Obtiene el contenido XML de una factura, NC o complemento de pago
+        por su UUID fiscal. Busca primero en facturas/NC, luego en pagos.
+      operationId: getXmlByUuid
+      produces:
+        - application/xml
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          description: UUID fiscal del documento
+        - name: download
+          in: query
+          type: boolean
+          default: false
+          description: true para descargar como archivo, false para visualizar
+      responses:
+        "200":
+          description: XML obtenido exitosamente
+          schema:
+            type: string
+        "404":
+          description: Documento no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/{uuid}/status:
+    put:
+      tags:
+        - invoice-controller
+      summary: Actualizar estatus de factura (STM-410)
+      description: |
+        Actualiza el estatus de una factura o nota de crédito.
+        Valida transiciones permitidas en el tren de estatus.
+      operationId: updateInvoiceStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          description: UUID fiscal del documento
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceStatusUpdateRequest'
+      responses:
+        "200":
+          description: Estatus actualizado exitosamente
+          schema:
+            $ref: '#/definitions/InvoiceStatusUpdateResponse'
+        "400":
+          description: Error de validación o transición no permitida
+          schema:
+            $ref: '#/definitions/InvoiceStatusUpdateResponse'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: Documento no encontrado
+          schema:
+            $ref: '#/definitions/InvoiceStatusUpdateResponse'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/download/xml:
+    post:
+      tags:
+        - invoice-controller
+      summary: Descargar XMLs en ZIP
+      description: Descarga masiva de archivos XML de facturas/NC en formato ZIP
+      operationId: downloadXmlZip
+      consumes:
+        - application/json
+      produces:
+        - application/zip
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkDownloadRequest'
+      responses:
+        "200":
+          description: Archivo ZIP con XMLs
+          schema:
+            type: string
+            format: binary
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/download/pdf:
+    post:
+      tags:
+        - invoice-controller
+      summary: Descargar PDFs en ZIP
+      description: Descarga masiva de archivos PDF de facturas/NC en formato ZIP
+      operationId: downloadPdfZip
+      consumes:
+        - application/json
+      produces:
+        - application/zip
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/BulkDownloadRequest'
+      responses:
+        "200":
+          description: Archivo ZIP con PDFs
+          schema:
+            type: string
+            format: binary
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/export/csv:
+    post:
+      tags:
+        - invoice-controller
+      summary: Exportar facturas a CSV
+      description: Exporta facturas/NC a archivo CSV segun criterios de busqueda
+      operationId: exportCsv
+      consumes:
+        - application/json
+      produces:
+        - text/csv
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvoiceSearchDto'
+      responses:
+        "200":
+          description: Archivo CSV con facturas
+          schema:
+            type: string
+            format: binary
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /invoices/validate-nc-relation:
+    post:
+      tags:
+        - invoice-controller
+      summary: Validar relación de nota de crédito
+      description: Valida la relación entre una nota de crédito y su factura relacionada
+      operationId: validateNcRelation
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NcRelationValidationDto'
+      responses:
+        "200":
+          description: Validación completada
+          schema:
+            type: object
+            properties:
+              valid:
+                type: boolean
+              message:
+                type: string
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /authorized-receivers:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener receptores autorizados
+      description: Lista completa de receptores autorizados
+      operationId: getAllAuthorizedReceivers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de receptores autorizados
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/AuthorizedReceiverCatalogDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /issuers:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener emisores
+      description: Lista completa de emisores registrados
+      operationId: getAllIssuers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de emisores
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/IssuerDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /receivers:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener receptores
+      description: Lista completa de receptores registrados
+      operationId: getAllReceivers
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de receptores
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /pac-catalog:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catálogo de PACs
+      description: Lista de Proveedores Autorizados de Certificación disponibles
+      operationId: getAllPacs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de PACs
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PacCatalogDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /version-catalog:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener catálogo de versiones
+      description: Lista de versiones de documentos fiscales soportadas
+      operationId: getAllVersions
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de versiones
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/VersionCatalogDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /equivalence-dr:
+    get:
+      tags:
+        - catalog-controller
+      summary: Obtener equivalencias DR
+      description: Lista de equivalencias de documentos relacionados
+      operationId: getAllEquivalenceDr
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Lista de equivalencias
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EquivalenceDrDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /payments:
+    get:
+      tags:
+        - payment-controller
+      summary: Obtener pagos paginados
+      operationId: getAllPayments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de pagos
+          schema:
+            $ref: '#/definitions/PagePaymentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /payments/{uuid}:
+    get:
+      tags:
+        - payment-controller
+      summary: Obtener pago por UUID
+      operationId: getPaymentByUuid
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          description: UUID del pago
+      responses:
+        "200":
+          description: Pago encontrado
+          schema:
+            $ref: '#/definitions/PaymentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/complementos-pago/registrar:
+    post:
+      tags:
+        - payment-registration-controller
+      summary: Registrar complemento de pago
+      description: Registra un nuevo complemento de pago subiendo el archivo XML
+      operationId: registerPaymentComplement
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: xmlFile
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML del complemento de pago
+      responses:
+        "200":
+          description: Complemento registrado exitosamente
+          schema:
+            $ref: '#/definitions/PaymentDto'
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /fiscal/complementos-pago/buscar:
+    get:
+      tags:
+        - payment-registration-controller
+      summary: Buscar complementos de pago
+      description: Busca complementos de pago con filtros
+      operationId: searchPaymentComplements
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: query
+          type: string
+        - name: rfcEmisor
+          in: query
+          type: string
+        - name: fechaInicio
+          in: query
+          type: string
+          format: date
+        - name: fechaFin
+          in: query
+          type: string
+          format: date
+      responses:
+        "200":
+          description: Resultados de búsqueda
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PaymentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /payment-documents:
+    get:
+      tags:
+        - payment-documents-controller
+      summary: Obtener documentos de pago
+      operationId: getAllPaymentDocuments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de documentos de pago
+          schema:
+            $ref: '#/definitions/PagePaymentDocumentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /payment-documents/{uuid}:
+    get:
+      tags:
+        - payment-documents-controller
+      summary: Obtener documento de pago por UUID
+      operationId: getPaymentDocumentByUuid
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          description: UUID del documento de pago
+      responses:
+        "200":
+          description: Documento encontrado
+          schema:
+            $ref: '#/definitions/PaymentDocumentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /related-cfdi:
+    get:
+      tags:
+        - related-cfdi-controller
+      summary: Obtener CFDI relacionados
+      operationId: getAllRelatedCfdi
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de CFDI relacionados
+          schema:
+            $ref: '#/definitions/PageRelatedCfdiDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /related-documents:
+    get:
+      tags:
+        - related-documents-controller
+      summary: Obtener documentos relacionados
+      operationId: getAllRelatedDocuments
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de documentos relacionados
+          schema:
+            $ref: '#/definitions/PageRelatedDocumentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /related-documents/by-payment/{paymentsUuid}:
+    get:
+      tags:
+        - related-documents-controller
+      summary: Obtener documentos relacionados por UUID de pago
+      operationId: getRelatedDocumentsByPayment
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: paymentsUuid
+          in: path
+          required: true
+          type: string
+          description: UUID del pago
+      responses:
+        "200":
+          description: Lista de documentos relacionados
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RelatedDocumentDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "404":
+          description: The server has not found anything matching the Request-URI.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /totals:
+    get:
+      tags:
+        - totals-controller
+      summary: Obtener totales
+      description: Obtiene totales de documentos fiscales
+      operationId: getAllTotals
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de totales
+          schema:
+            $ref: '#/definitions/PageTotalDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /logs:
+    get:
+      tags:
+        - log-controller
+      summary: Obtener logs
+      description: Obtiene logs del sistema
+      operationId: getAllLogs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de logs
+          schema:
+            $ref: '#/definitions/PageLogDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /addendums:
+    get:
+      tags:
+        - addendum-controller
+      summary: Obtener addendas paginadas
+      operationId: getAllAddendums
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: size
+          in: query
+          type: integer
+          default: 20
+      responses:
+        "200":
+          description: Lista de addendas
+          schema:
+            $ref: '#/definitions/PageAddendumDto'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /xml-invoices/upload-convert:
+    post:
+      tags:
+        - xml-invoice-controller
+      summary: Subir y convertir XML a factura
+      description: Convierte un archivo XML en una factura registrada
+      operationId: uploadAndConvertXml
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: file
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML
+      responses:
+        "200":
+          description: XML convertido exitosamente
+          schema:
+            $ref: '#/definitions/InvoiceDto'
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /xml-invoices/convert-all:
+    get:
+      tags:
+        - xml-invoice-controller
+      summary: Convertir todos los XMLs pendientes
+      description: Procesa todos los XMLs pendientes de conversión
+      operationId: convertAllPendingXmls
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "200":
+          description: Conversión completada
+          schema:
+            type: object
+            properties:
+              processedCount:
+                type: integer
+              successCount:
+                type: integer
+              errorCount:
+                type: integer
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /xml-invoices/detect-document-type:
+    post:
+      tags:
+        - xml-invoice-controller
+      summary: Detectar tipo de documento
+      description: Detecta el tipo de documento fiscal del XML
+      operationId: detectXmlDocumentType
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: file
+          in: formData
+          required: true
+          type: string
+          description: Archivo XML
+      responses:
+        "200":
+          description: Tipo detectado
+          schema:
+            type: object
+            properties:
+              documentType:
+                type: string
+              version:
+                type: string
+        "400":
+          description: Invalid input.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+definitions:
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 401
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Unauthorized
+        type: string
+    type: object
+
+  FiscalXmlResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      documentType:
+        type: string
+      comprobante:
+        type: object
+      emisor:
+        type: object
+      receptor:
+        type: object
+      timbreFiscalDigital:
+        type: object
+
+  InvoiceDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      folio:
+        type: string
+      serie:
+        type: string
+      fecha:
+        type: string
+        format: date-time
+      total:
+        type: number
+        format: double
+      subtotal:
+        type: number
+        format: double
+      uuid:
+        type: string
+      rfcEmisor:
+        type: string
+      rfcReceptor:
+        type: string
+      moneda:
+        type: string
+      tipoComprobante:
+        type: string
+
+  InvoiceStatusUpdateRequest:
+    type: object
+    required:
+      - numeroProveedor
+      - estatusOrigen
+      - estatusDestino
+      - idUsuarioActualizacion
+    properties:
+      numeroProveedor:
+        type: number
+        description: Numero de proveedor
+      estatusOrigen:
+        type: integer
+        description: Estatus actual del documento
+      estatusDestino:
+        type: integer
+        description: Nuevo estatus deseado
+      idUsuarioActualizacion:
+        type: integer
+        format: int64
+        description: ID del usuario que realiza la actualizacion
+      fechaContabilizacion:
+        type: string
+        format: date
+        description: Fecha de contabilizacion (solo si estatusDestino = 7)
+      comentario:
+        type: string
+        description: Comentario o motivo del cambio
+
+  InvoiceStatusUpdateResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      code:
+        type: string
+      message:
+        type: string
+      invoiceUuid:
+        type: string
+        format: uuid
+      fiscalUuid:
+        type: string
+        format: uuid
+      documentType:
+        type: string
+      estatusAnterior:
+        type: integer
+      estatusNuevo:
+        type: integer
+      estatusNuevoNombre:
+        type: string
+      fechaContabilizacion:
+        type: string
+        format: date
+      fechaActualizacion:
+        type: string
+        format: date-time
+
+  InvoiceUpdateDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      status:
+        type: string
+
+  InvoiceSearchDto:
+    type: object
+    properties:
+      uuid:
+        type: string
+      rfcEmisor:
+        type: string
+      rfcReceptor:
+        type: string
+      fechaInicio:
+        type: string
+        format: date
+      fechaFin:
+        type: string
+        format: date
+      page:
+        type: integer
+        default: 0
+      size:
+        type: integer
+        default: 20
+
+  BulkDownloadRequest:
+    type: object
+    required:
+      - invoiceUuids
+    properties:
+      invoiceUuids:
+        type: array
+        description: Lista de UUIDs de facturas/NC a descargar
+        items:
+          type: string
+          format: uuid
+      documentType:
+        type: string
+        description: Tipo de documento (I=Factura, E=NC). Opcional, si no se especifica descarga ambos tipos
+
+  NcRelationValidationDto:
+    type: object
+    properties:
+      ncUuid:
+        type: string
+      relatedUuid:
+        type: string
+
+  PageInvoiceDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/InvoiceDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  AuthorizedReceiverCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+      status:
+        type: integer
+
+  IssuerDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+      taxRegime:
+        type: string
+
+  ReceiverDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      rfc:
+        type: string
+      businessName:
+        type: string
+
+  PacCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      description:
+        type: string
+      active:
+        type: boolean
+
+  VersionCatalogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      version:
+        type: string
+      documentType:
+        type: string
+      description:
+        type: string
+
+  EquivalenceDrDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      code:
+        type: string
+      description:
+        type: string
+
+  PaymentDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      uuid:
+        type: string
+      amount:
+        type: number
+        format: double
+      currency:
+        type: string
+      paymentDate:
+        type: string
+        format: date-time
+      rfcEmisor:
+        type: string
+
+  PagePaymentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/PaymentDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  PaymentDocumentDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      uuid:
+        type: string
+      documentUuid:
+        type: string
+      amount:
+        type: number
+        format: double
+
+  PagePaymentDocumentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/PaymentDocumentDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  RelatedCfdiDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      uuid:
+        type: string
+      relatedUuid:
+        type: string
+      relationType:
+        type: string
+
+  PageRelatedCfdiDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/RelatedCfdiDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  RelatedDocumentDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      documentUuid:
+        type: string
+      relatedDocumentUuid:
+        type: string
+      amount:
+        type: number
+        format: double
+
+  PageRelatedDocumentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/RelatedDocumentDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  TotalDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      totalAmount:
+        type: number
+        format: double
+      currency:
+        type: string
+
+  PageTotalDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/TotalDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  LogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      message:
+        type: string
+      level:
+        type: string
+      timestamp:
+        type: string
+        format: date-time
+
+  PageLogDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/LogDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+  AddendumDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      content:
+        type: string
+      type:
+        type: string
+
+  PageAddendumDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/AddendumDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
+    x-google-jwks_uri: ${JWKS_URL}
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+security:
+  - bearerAuth: []
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

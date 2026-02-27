@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROJECT_NAME}
+spec:
+  template:
+    spec:
+      containers:
+        - name: ${PROJECT_NAME}
+          envFrom:
+            - configMapRef:
+                name: ${PROJECT_NAME}-configmap
+            - secretRef:
+                name: ${PROJECT_NAME}-secret

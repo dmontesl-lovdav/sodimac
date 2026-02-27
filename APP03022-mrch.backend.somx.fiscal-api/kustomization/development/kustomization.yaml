@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+  - hpa-config.yaml
+  - workload-identity.yaml
+  - ingress.yaml
+
+namespace: ${NAMESPACE_DEV}
+
+configMapGenerator:
+  - name: ${PROJECT_NAME}-configmap
+    envs:
+      - env-configmap
+    options:
+      disableNameSuffixHash: true
+
+secretGenerator:
+  - name: ${PROJECT_NAME}-secrets
+    envs:
+      - env-secrets
+    options:
+      disableNameSuffixHash: true
+
+patches:
+  - path: env-var.yaml
+  - path: resources.yaml
+#  - path: sql-proxy.yaml

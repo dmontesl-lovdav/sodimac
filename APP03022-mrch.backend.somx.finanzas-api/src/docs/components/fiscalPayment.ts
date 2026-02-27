@@ -1,0 +1,61 @@
+// src/docs/components/fiscalPayment.ts
+import type { OpenAPIV3 } from "openapi-types";
+
+export const fiscalPaymentSchemas: Record<string, OpenAPIV3.SchemaObject> = {
+    FiscalPayment: {
+        type: "object",
+        properties: {
+            id: { type: "string", format: "uuid", description: "UUID primary key" },
+            paymentNumber: { type: "string", description: "Payment number" },
+            company: { type: "integer", description: "Company code" },
+            documentNumber: { type: "string", description: "Document number" },
+            referenceNumber: { type: "string", description: "Reference number" },
+            vendorNumber: { type: "integer", description: "Vendor identifier" },
+            amount: { type: "string", description: "Payment amount (numeric string)" },
+            currency: { type: "string", description: "Currency code (e.g., MXN, USD)" },
+            documentType: { type: "string", description: "Document type code" },
+            sapDocument: { type: "string", nullable: true, description: "SAP document number" },
+            paymentDate: { type: "string", format: "date-time", description: "Payment date" },
+            status: { type: "integer", description: "Status code" },
+            paymentMethod: { type: "string", description: "Payment method (e.g., PPD, PUE)" },
+            bankAccount: { type: "string", description: "Bank account number" },
+            referencePayment: { type: "string", description: "Payment reference" },
+            createdBy: { type: "integer", description: "User ID who created the record" },
+            createdAt: { type: "string", format: "date-time", description: "Creation timestamp" },
+            updatedBy: { type: "integer", nullable: true, description: "User ID who updated the record" },
+            updatedAt: { type: "string", format: "date-time", nullable: true, description: "Update timestamp" },
+        },
+        required: ["id", "paymentNumber", "company", "documentNumber", "referenceNumber", "vendorNumber", "amount", "currency", "documentType", "paymentDate", "status", "paymentMethod", "bankAccount", "referencePayment", "createdBy"],
+    },
+    CreateFiscalPaymentDto: {
+        type: "object",
+        properties: {
+            paymentNumber: { type: "string" },
+            company: { type: "integer" },
+            documentNumber: { type: "string" },
+            referenceNumber: { type: "string" },
+            vendorNumber: { type: "integer" },
+            amount: { type: "string" },
+            currency: { type: "string" },
+            documentType: { type: "string" },
+            sapDocument: { type: "string", nullable: true },
+            paymentDate: { type: "string", format: "date-time" },
+            status: { type: "integer" },
+            paymentMethod: { type: "string" },
+            bankAccount: { type: "string" },
+            referencePayment: { type: "string" },
+            createdBy: { type: "integer" },
+        },
+        required: ["paymentNumber", "company", "documentNumber", "referenceNumber", "vendorNumber", "amount", "currency", "documentType", "paymentDate", "status", "paymentMethod", "bankAccount", "referencePayment", "createdBy"],
+    },
+    UpdateFiscalPaymentDto: {
+        type: "object",
+        properties: {
+            amount: { type: "string" },
+            status: { type: "integer" },
+            sapDocument: { type: "string" },
+            paymentMethod: { type: "string" },
+            updatedBy: { type: "integer" },
+        },
+    },
+};

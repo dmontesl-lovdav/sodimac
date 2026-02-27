@@ -1,0 +1,407 @@
+swagger: "2.0"
+info:
+  contact:
+    email: tech@sodimac.com
+    name: Sodimac Tech Team
+  description:
+    "BFF para el servicio de Auditoría. API que funciona como proxy transparente
+    hacia el backend de auditoría.
+
+    Funcionalidades principales:
+    - Registro de logs de actividad
+    - Consulta de logs con filtros y paginación
+    - Generación de UUIDs para trazabilidad
+
+    Autenticación: OAuth2 con KeyCloak (Bearer Token)
+
+    "
+  title: Auditoria API
+  version: 1.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: auditoria
+  x-consumer-segments: retail
+  x-service-name: auditoria
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+paths:
+  /health:
+    get:
+      tags:
+        - health-controller
+      summary: Health check del servicio
+      description: Verifica el estado general del servicio auditoria-api
+      operationId: health
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Servicio funcionando
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                example: true
+              env:
+                type: string
+                example: production
+
+  /api/activity-logs:
+    get:
+      tags:
+        - activity-logs-controller
+      summary: Listar logs de actividad
+      description: |
+        Obtiene una lista paginada de logs de actividad con filtros.
+        El rango de fechas no puede exceder 30 días.
+      operationId: listActivityLogs
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: Bearer token de KeyCloak
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          description: Filtros de búsqueda
+          schema:
+            $ref: '#/definitions/ListActivityLogQueryDto'
+      responses:
+        "200":
+          description: Lista de logs obtenida exitosamente
+          schema:
+            $ref: '#/definitions/ActivityLogListResponse'
+        "400":
+          description: Parámetros inválidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - activity-logs-controller
+      summary: Crear log de actividad
+      description: |
+        Registra un nuevo log de actividad en el sistema.
+        El procesamiento se realiza en background.
+      operationId: createActivityLog
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: Bearer token de KeyCloak
+          x-example: Bearer XXXXXXXXX
+        - name: body
+          in: body
+          required: true
+          description: Datos del log de actividad
+          schema:
+            $ref: '#/definitions/CreateActivityLogDto'
+      responses:
+        "201":
+          description: Log creado exitosamente (procesamiento en background)
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Data received, processing in background.
+        "400":
+          description: Datos inválidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+  /api/activity-logs/uuid:
+    get:
+      tags:
+        - activity-logs-controller
+      summary: Generar UUID
+      description: Genera un nuevo UUID para trazabilidad
+      operationId: generateUuid
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: Bearer token de KeyCloak
+          x-example: Bearer XXXXXXXXX
+      responses:
+        "201":
+          description: UUID generado exitosamente
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        "400":
+          description: Error en la generación
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        "500":
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+
+definitions:
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 401
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Unauthorized
+        type: string
+    type: object
+
+  CreateActivityLogDto:
+    type: object
+    required:
+      - traceId
+      - modulo
+      - action
+      - serviceName
+      - userId
+      - isError
+      - message
+      - messageDetail
+      - timestamp
+    properties:
+      traceId:
+        type: string
+        description: Identificador único de traza
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      traceFrontId:
+        type: string
+        description: Identificador de traza del frontend (opcional)
+        example: "front-trace-123"
+      modulo:
+        type: string
+        description: Nombre del módulo que genera el log
+        example: "fiscal"
+      action:
+        type: string
+        description: Acción realizada
+        example: "CREATE_INVOICE"
+      serviceName:
+        type: string
+        description: Nombre del servicio
+        example: "fiscal-api"
+      userId:
+        type: string
+        description: Identificador del usuario
+        example: "user123"
+      isError:
+        type: boolean
+        description: Indica si el log es de error
+        example: false
+      message:
+        type: string
+        description: Mensaje principal del log
+        example: "Factura creada exitosamente"
+      messageDetail:
+        type: string
+        description: Detalle adicional del mensaje
+        example: "UUID: 550e8400-e29b-41d4-a716-446655440000"
+      details:
+        type: object
+        description: Detalles adicionales en formato JSON (opcional)
+      durationms:
+        type: number
+        format: int64
+        description: Duración en milisegundos (opcional)
+        example: 150
+      timestamp:
+        type: string
+        format: date-time
+        description: Fecha y hora del evento
+        example: "2024-01-15T10:30:00Z"
+
+  ListActivityLogQueryDto:
+    type: object
+    required:
+      - dateAtInitial
+      - dateAtEnd
+      - pageNumber
+      - pageSize
+    properties:
+      dateAtInitial:
+        type: string
+        format: date-time
+        description: Fecha inicial del rango de búsqueda
+        example: "2024-01-01T00:00:00Z"
+      dateAtEnd:
+        type: string
+        format: date-time
+        description: Fecha final del rango de búsqueda (máximo 30 días después de dateAtInitial)
+        example: "2024-01-15T23:59:59Z"
+      traceId:
+        type: string
+        description: Filtrar por ID de traza (opcional)
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      modulo:
+        type: string
+        description: Filtrar por módulo (opcional)
+        example: "fiscal"
+      serviceName:
+        type: string
+        description: Filtrar por nombre de servicio (opcional)
+        example: "fiscal-api"
+      pageNumber:
+        type: integer
+        format: int32
+        description: Número de página (0-indexed)
+        example: 0
+      pageSize:
+        type: integer
+        format: int32
+        description: Tamaño de página
+        example: 20
+
+  ActivityLogDto:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: ID del registro
+      traceId:
+        type: string
+        description: Identificador de traza
+      traceFrontId:
+        type: string
+        description: Identificador de traza del frontend
+      modulo:
+        type: string
+        description: Módulo que generó el log
+      action:
+        type: string
+        description: Acción realizada
+      serviceName:
+        type: string
+        description: Nombre del servicio
+      userId:
+        type: string
+        description: ID del usuario
+      isError:
+        type: boolean
+        description: Indica si es un error
+      message:
+        type: string
+        description: Mensaje del log
+      messageDetail:
+        type: string
+        description: Detalle del mensaje
+      details:
+        type: object
+        description: Detalles adicionales
+      durationms:
+        type: number
+        format: int64
+        description: Duración en ms
+      timestamp:
+        type: string
+        format: date-time
+        description: Fecha y hora del evento
+      createdAt:
+        type: string
+        format: date-time
+        description: Fecha de creación del registro
+
+  ActivityLogListResponse:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/ActivityLogDto'
+      totalElements:
+        type: integer
+        format: int64
+      totalPages:
+        type: integer
+      size:
+        type: integer
+      number:
+        type: integer
+      httpStatus:
+        type: integer
+        format: int32
+
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
+    x-google-jwks_uri: ${JWKS_URL}
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+security:
+  - bearerAuth: []
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

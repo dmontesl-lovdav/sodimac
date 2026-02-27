@@ -1,0 +1,250 @@
+.sg-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  width: 100%;
+  position: relative;
+}
+
+.sg-title {
+  font-weight: 700;
+}
+
+.sg-divider {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sg-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.sg-field {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.sg-button {
+  height: 44px;
+}
+
+.sg-export-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  position: relative;
+}
+
+.sg-export-button {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sg-export-button:hover {
+  background: #f8fafc;
+}
+
+.sg-export-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 4px;
+  width: 160px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.sg-export-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sg-export-item:hover {
+  background: #f8fafc;
+}
+
+.sg-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sg-status-yellow {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.sg-status-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.sg-status-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sg-status-muted {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.sg-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.sg-cancel-button {
+  border: 1px solid #ef4444;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sg-cancel-button:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+.sg-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.sg-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  width: 520px;
+  max-width: 95vw;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+}
+
+.sg-modal h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sg-modal .sg-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.sg-modal label {
+  font-size: 13px;
+  color: #4b5563;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sg-modal select,
+.sg-modal textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.sg-modal textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.sg-select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.sg-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.sg-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  outline: none;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.sg-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.sg-btn {
+  border-radius: 6px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sg-btn-outline {
+  border-color: #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.sg-btn-primary {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.sg-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

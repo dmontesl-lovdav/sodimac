@@ -1,0 +1,34 @@
+/* flex flex-wrap items-end gap-4 mb-6 */
+.ri-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* widths: w-56 md:w-64 */
+.ri-select-bu {
+    width: 14rem;
+}
+
+@media (min-width: 768px) {
+    .ri-select-bu {
+        width: 16rem;
+    }
+}
+
+.ri-select-id {
+    width: 320px;
+}
+
+/* w-40 md:w-56 */
+.ri-select-country {
+    width: 10rem;
+}
+
+@media (min-width: 768px) {
+    .ri-select-country {
+        width: 14rem;
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "env": {
+    "node": true,
+    "browser": true
+  },
+  "extends": ["ts-react-important-stuff", "plugin:prettier/recommended"],
+  "parser": "@babel/eslint-parser",
+  "ignorePatterns": ["*.mustache.ts"],
+  "rules": {
+    "no-console": "off"
+  }
+}

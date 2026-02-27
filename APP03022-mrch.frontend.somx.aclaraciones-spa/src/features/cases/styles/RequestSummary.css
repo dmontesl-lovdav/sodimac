@@ -1,0 +1,108 @@
+/* Wrapper general (antes pl-5 pt-5 pr-5) */
+.rs-wrapper {
+    padding: 20px;
+}
+
+/* -------- HEADER -------- */
+/* flex flex-row items-center gap-3 */
+.rs-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+/* place-content-center font-medium text-2xl */
+.rs-header-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* -------- TEXTO Y CAMPOS -------- */
+/* mt-3 */
+.rs-item {
+    margin-top: 12px;
+}
+
+/* font-bold pr-2 */
+.rs-label {
+    font-weight: bold;
+    padding-right: 8px;
+}
+
+/* divider (antes pt-5 mt-5 border-t) */
+.rs-divider {
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* mt-5 */
+.rs-attachments {
+    margin-top: 20px;
+}
+
+/* -------- FOOTER -------- */
+/* h-10 text-right pt-6 mt-5 border-t */
+.rs-footer {
+    height: 40px;
+    text-align: right;
+    padding-top: 24px;
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* underline underline-offset-4 inline-block mr-2 */
+.rs-back-link {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* inline-block */
+.rs-modify-btn {
+    display: inline-block;
+}
+
+/* -------- LOADING -------- */
+/* p-6 */
+.rs-loading {
+    padding: 24px;
+}
+
+/* h-2 w-full rounded bg-gray-200 overflow-hidden */
+.rs-loading-bar {
+    height: 8px;
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* h-full w-1/3 bg-[#002d4c] animate-pulse */
+.rs-loading-bar-inner {
+    height: 100%;
+    width: 33%;
+    background: #002d4c;
+    animation: rs-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rs-pulse {
+    0% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.3;
+    }
+}
+
+.rs-footer-actions>*:not(:last-child) {
+    margin-right: 12px;
+}

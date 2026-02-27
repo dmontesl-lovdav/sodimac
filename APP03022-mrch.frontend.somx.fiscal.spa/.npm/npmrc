@@ -1,0 +1,8 @@
+
+@omnichannel-retail:registry=https://us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/
+//us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/:always-auth=true
+@ui-kit:registry=https://us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/
+//us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/:always-auth=true
+@rtl:registry=https://gitlab.falabella.tech/api/v4/packages/npm/
+//gitlab.falabella.tech/api/v4/packages/npm/:_authToken=_brqw6umRyPmEFJggf-G
+//gitlab.falabella.tech/api/v4/projects/55741/packages/npm/:_authToken=_brqw6umRyPmEFJggf-G

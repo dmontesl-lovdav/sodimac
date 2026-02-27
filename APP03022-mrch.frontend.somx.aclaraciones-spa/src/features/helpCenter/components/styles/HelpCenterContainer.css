@@ -1,0 +1,212 @@
+/* Root container: min-h-screen w-full flex flex-col */
+.hcc-root {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Inner content: flex-grow w-full bg-white shadow-sm px-8 pt-4 */
+.hcc-content {
+    flex: 1 1 auto;
+    width: 100%;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* shadow-sm */
+    padding-left: 2rem;
+    /* px-8 */
+    padding-right: 2rem;
+    padding-top: 1rem;
+    /* pt-4 */
+}
+
+/* ===== HERO (header azul) ===== */
+
+/* hidden lg:block + bg + text-white + relative + overflow-hidden */
+.hcc-hero {
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+    background-color: #002b55;
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .hcc-hero {
+        display: block;
+    }
+}
+
+/* world image: absolute -left-2 top-0 h-full w-auto opacity-40 */
+.hcc-hero-world {
+    position: absolute;
+    left: -0.5rem;
+    top: 0;
+    height: 100%;
+    width: auto;
+    opacity: 0.4;
+}
+
+/* clouds */
+.hcc-hero-cloud {
+    position: absolute;
+    width: 6rem;
+    /* w-24 */
+}
+
+.hcc-hero-cloud-1 {
+    top: 1rem;
+    /* top-4 */
+    right: 35%;
+    /* right-[35%] */
+    opacity: 0.9;
+}
+
+.hcc-hero-cloud-2 {
+    right: 4rem;
+    /* right-16 */
+    bottom: 2.5rem;
+    /* bottom-10 */
+    opacity: 0.8;
+}
+
+/* inner flex: relative z-10 flex items-center justify-between gap-10 px-16 py-14 */
+.hcc-hero-inner {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2.5rem;
+    /* gap-10 */
+    padding-left: 4rem;
+    /* px-16 */
+    padding-right: 4rem;
+    padding-top: 3.5rem;
+    /* py-14 */
+    padding-bottom: 3.5rem;
+}
+
+/* left text: w-[60%] pl-32 xl:pl-[28rem] */
+.hcc-hero-text {
+    width: 60%;
+    padding-left: 8rem;
+    /* pl-32 */
+}
+
+@media (min-width: 1280px) {
+    .hcc-hero-text {
+        padding-left: 28rem;
+        /* xl:pl-[28rem] */
+    }
+}
+
+/* h2: text-3xl font-medium tracking-wide mb-1 */
+.hcc-hero-subtitle {
+    font-size: 1.875rem;
+    /* 3xl */
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    margin-bottom: 0.25rem;
+}
+
+/* h1: text-5xl font-bold leading-tight */
+.hcc-hero-title {
+    font-size: 3rem;
+    /* 5xl */
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0;
+}
+
+/* p: text-gray-200 text-lg max-w-xl mt-4 */
+.hcc-hero-description {
+    margin-top: 1rem;
+    font-size: 1.125rem;
+    /* text-lg */
+    max-width: 36rem;
+    /* max-w-xl */
+    color: #e5e7eb;
+    /* gray-200 */
+}
+
+/* ===== ALERTA ===== */
+
+/* section: mt-8 bg-[#fff9db] border border-[#f6e8ac] text-[#8a6d1a] text-sm lg:text-base */
+.hcc-alert {
+    margin-top: 2rem;
+    /* mt-8 */
+    background: #fff9db;
+    border: 1px solid #f6e8ac;
+    color: #8a6d1a;
+    font-size: 0.875rem;
+}
+
+@media (min-width: 1024px) {
+    .hcc-alert {
+        font-size: 1rem;
+    }
+}
+
+/* inner: flex items-center justify-between gap-4 px-6 py-4 */
+.hcc-alert-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    /* gap-4 */
+    padding: 1rem 1.5rem;
+    /* py-4 px-6 */
+}
+
+/* left block: flex items-start gap-3 */
+.hcc-alert-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* icon: w-6 h-6 text-[#d97706] */
+.hcc-alert-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #d97706;
+}
+
+/* text */
+.hcc-alert-text {
+    flex: 1;
+}
+
+/* close button: text-2xl leading-none hover:opacity-70 cursor-pointer */
+.hcc-alert-close {
+    font-size: 1.5rem;
+    line-height: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    color: inherit;
+}
+
+.hcc-alert-close:hover {
+    opacity: 0.7;
+}
+
+/* ===== MAIN CONTENT ===== */
+
+/* main: w-full !bg-white pb-12 */
+.hcc-main {
+    width: 100%;
+    background: #ffffff;
+    padding-bottom: 3rem;
+    /* pb-12 */
+}
+
+/* divider: border-t border-gray-200 my-10 */
+.hcc-divider {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+}

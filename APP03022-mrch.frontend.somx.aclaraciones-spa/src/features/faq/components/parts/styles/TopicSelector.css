@@ -1,0 +1,40 @@
+/* Contenedor general */
+.topic-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Fila principal */
+.topic-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    /* equivalente a gap-6 */
+}
+
+/* Select ocupa el ancho disponible */
+.topic-select {
+    flex: 1;
+}
+
+/* Botón "Agregar tema" */
+.topic-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+/* Icono del "+" */
+.ts-plus {
+    font-size: 22px;
+    line-height: 1;
+    user-select: none;
+}
+
+/* Estado deshabilitado */
+.ts-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}

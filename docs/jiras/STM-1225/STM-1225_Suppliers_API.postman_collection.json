@@ -1,0 +1,423 @@
+{
+	"info": {
+		"_postman_id": "stm-1225-suppliers-api",
+		"name": "STM-1225 - Catalogo de Proveedores",
+		"description": "Coleccion para validar la API de gestion del catalogo de proveedores.\n\nJIRA: STM-1225\nImplementacion de API para gestionar el catalogo de proveedores",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8083",
+			"type": "string"
+		},
+		{
+			"key": "supplierId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "supplierNumber",
+			"value": "PROV001",
+			"type": "string"
+		},
+		{
+			"key": "rfc",
+			"value": "ABC123456789",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Verifica que el servicio este activo"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Suppliers - CRUD",
+			"item": [
+				{
+					"name": "GET - Obtener todos los proveedores",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Retorna la lista de todos los proveedores activos"
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Obtener proveedores con filtro status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers?status=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers"],
+							"query": [
+								{
+									"key": "status",
+									"value": "1",
+									"description": "1=Activo, 0=Inactivo"
+								}
+							]
+						},
+						"description": "Retorna proveedores filtrados por estado"
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Obtener proveedor por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/{{supplierId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "{{supplierId}}"]
+						},
+						"description": "Retorna un proveedor especifico por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Obtener proveedor por numero",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/number/{{supplierNumber}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "number", "{{supplierNumber}}"]
+						},
+						"description": "Retorna un proveedor por su numero unico"
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Obtener proveedor por RFC",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/rfc/{{rfc}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "rfc", "{{rfc}}"]
+						},
+						"description": "Retorna un proveedor por su RFC"
+					},
+					"response": []
+				},
+				{
+					"name": "POST - Crear proveedor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('supplierId', jsonData.id);",
+									"    pm.collectionVariables.set('supplierNumber', jsonData.supplierNumber);",
+									"    pm.collectionVariables.set('rfc', jsonData.rfc);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "test-user",
+								"description": "Usuario que realiza la operacion"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"PROV001\",\n    \"rfc\": \"ABC123456789\",\n    \"businessName\": \"Proveedor Test S.A. de C.V.\",\n    \"supplierTypeId\": 1,\n    \"logo\": \"https://example.com/logo.png\",\n    \"paymentConditionId\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Crea un nuevo proveedor en el sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT - Actualizar proveedor",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "test-user",
+								"description": "Usuario que realiza la operacion"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rfc\": \"XYZ987654321\",\n    \"businessName\": \"Proveedor Actualizado S.A. de C.V.\",\n    \"supplierTypeId\": 2,\n    \"logo\": \"https://example.com/nuevo-logo.png\",\n    \"paymentConditionId\": 5,\n    \"status\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/{{supplierId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "{{supplierId}}"]
+						},
+						"description": "Actualiza un proveedor existente"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Eliminar proveedor",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-User-Id",
+								"value": "test-user",
+								"description": "Usuario que realiza la operacion"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/{{supplierId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "{{supplierId}}"]
+						},
+						"description": "Elimina (desactiva) un proveedor"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Supplier Types - Catalogo",
+			"item": [
+				{
+					"name": "GET - Obtener tipos de proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "types"]
+						},
+						"description": "Retorna el catalogo de tipos de proveedor (NAC, INT, MIX)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment Conditions - Catalogo",
+			"item": [
+				{
+					"name": "GET - Obtener condiciones de pago",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/payment-conditions",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "payment-conditions"]
+						},
+						"description": "Retorna el catalogo de condiciones de pago (Contado, 15, 30, 45, 60, 90 dias)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Centers - Centros",
+			"item": [
+				{
+					"name": "Cost Centers",
+					"item": [
+						{
+							"name": "GET - Obtener centros de costo",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/cost",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "cost"]
+								},
+								"description": "Retorna todos los centros de costo activos"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener centro de costo por ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/cost/1",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "cost", "1"]
+								},
+								"description": "Retorna un centro de costo por ID"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener centro de costo por codigo",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/cost/code/CC001",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "cost", "code", "CC001"]
+								},
+								"description": "Retorna un centro de costo por codigo"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener centros de costo por sucursal SAP",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/cost/sap-branch/SAP001",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "cost", "sap-branch", "SAP001"]
+								},
+								"description": "Retorna centros de costo filtrados por sucursal SAP"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Benefit Centers",
+					"item": [
+						{
+							"name": "GET - Obtener centros de beneficio",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/benefit",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "benefit"]
+								},
+								"description": "Retorna todos los centros de beneficio activos"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener centro de beneficio por ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/benefit/1",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "benefit", "1"]
+								},
+								"description": "Retorna un centro de beneficio por ID"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener centro de beneficio por codigo",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/benefit/code/CB001",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "benefit", "code", "CB001"]
+								},
+								"description": "Retorna un centro de beneficio por codigo"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Accounting Accounts",
+					"item": [
+						{
+							"name": "GET - Obtener cuentas contables",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/accounting",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "accounting"]
+								},
+								"description": "Retorna todas las cuentas contables activas"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener cuenta contable por ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/accounting/1",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "accounting", "1"]
+								},
+								"description": "Retorna una cuenta contable por ID"
+							},
+							"response": []
+						},
+						{
+							"name": "GET - Obtener cuenta contable por codigo",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/centers/accounting/code/1100001",
+									"host": ["{{baseUrl}}"],
+									"path": ["centers", "accounting", "code", "1100001"]
+								},
+								"description": "Retorna una cuenta contable por codigo"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}

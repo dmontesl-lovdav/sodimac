@@ -1,0 +1,132 @@
+/* ----- Tabla general ----- */
+
+.cgt-wrapper {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.cgt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.cgt-table thead {
+    background: #eaf5fc;
+    color: #002d4c;
+    font-weight: 600;
+}
+
+.cgt-table th,
+.cgt-table td {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.cgt-center {
+    text-align: center !important;
+}
+
+.cgt-row {
+    border-top: 1px solid #e5e7eb;
+}
+
+.cgt-row:hover {
+    background: #f8fafc;
+}
+
+.cgt-empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 24px 0;
+}
+
+/* ----- Acciones ----- */
+.cgt-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.cgt-actions button {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.cgt-actions img {
+    width: 20px;
+    height: 20px;
+}
+
+.cgt-actions button:hover img {
+    opacity: 0.7;
+}
+
+/* ----- Paginación ----- */
+
+.cgt-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 0;
+    font-size: 14px;
+}
+
+.cgt-perpage select,
+.cgt-goto input {
+    border: none;
+    border-bottom: 1px solid #002d4c;
+    padding: 2px 4px;
+    background: transparent;
+    text-align: center;
+    width: 50px;
+}
+
+.cgt-divider {
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ----- Numeric Pagination ----- */
+
+.cgt-pages {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #002d4c;
+}
+
+.cgt-page-btn {
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    border: none;
+}
+
+.cgt-page-btn.active {
+    background: #002d4c;
+    color: white;
+}
+
+.cgt-page-btn:hover {
+    color: #0284c7;
+}
+
+/* Flechas */
+
+.cgt-arrow {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+}
+
+.cgt-arrow:disabled {
+    color: #9ca3af;
+    cursor: default;
+}

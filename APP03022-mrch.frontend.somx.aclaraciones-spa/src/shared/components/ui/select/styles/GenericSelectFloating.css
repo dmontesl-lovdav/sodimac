@@ -1,0 +1,151 @@
+/* WRAPPER */
+.gs-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.gs-full {
+    width: 100%;
+}
+
+.gs-fixed {
+    width: 240px;
+}
+
+/* BUTTON FIELD */
+.gs-button {
+    width: 100%;
+    height: 56px;
+    /* h-14 */
+    padding: 28px 36px 8px 16px;
+    /* pt-7 pb-2 pr-9 pl-4 */
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.7);
+    /* slate-300/70 */
+    text-align: left;
+    font-size: 15px;
+    color: #1e293b;
+    /* slate-800 */
+    line-height: 1.85rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.gs-button:focus {
+    border-color: rgba(2, 132, 199, 0.8);
+    /* sky-600/80 */
+}
+
+.gs-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.gs-error {
+    border-color: #fb7185 !important;
+    /* rose-400 */
+}
+
+.gs-error:focus {
+    border-color: #f43f5e !important;
+    /* rose-500 */
+}
+
+/* CURRENT VALUE */
+.gs-value {
+    color: #0f172a;
+    /* slate-900 */
+}
+
+.gs-placeholder {
+    color: #94a3b8;
+    /* slate-400 */
+}
+
+/* LABEL */
+.gs-label {
+    position: absolute;
+    pointer-events: none;
+    top: 14px;
+    font-size: 14px;
+    color: #64748b;
+    /* slate-500 */
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.gs-label-floating {
+    top: 4px;
+    font-size: 12px;
+}
+
+.gs-label-open {
+    color: #0369a1;
+    /* sky-700 */
+}
+
+.gs-label-error {
+    color: #e11d48 !important;
+    /* rose-600 */
+}
+
+.gs-required {
+    color: #e11d48;
+}
+
+/* CARET */
+.gs-caret {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+}
+
+/* DROPDOWN */
+.gs-dropdown {
+    position: absolute;
+    z-index: 50;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 1px;
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.8);
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 12px 28px -8px rgba(2, 6, 23, 0.18);
+    max-height: 240px;
+    /* max-h-60 */
+    overflow: auto;
+}
+
+/* OPTIONS */
+.gs-option {
+    padding: 10px 16px;
+    font-size: 15px;
+    color: #1e293b;
+    background: white;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.gs-option:hover {
+    background: #f0f9ff;
+    /* sky-50 */
+}
+
+.gs-option-focused {
+    background: #f0f9ff;
+}
+
+.gs-option-selected {
+    color: #0369a1;
+    /* sky-800 */
+    font-weight: 600;
+}

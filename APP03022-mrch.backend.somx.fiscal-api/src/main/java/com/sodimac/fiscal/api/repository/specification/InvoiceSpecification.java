@@ -1,0 +1,236 @@
+package com.sodimac.fiscal.api.repository.specification;
+
+import com.sodimac.fiscal.api.model.dto.InvoiceSearchRequest;
+import com.sodimac.fiscal.api.model.entity.AddendumEntity;
+import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
+import com.sodimac.fiscal.api.model.entity.IssuerEntity;
+import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
+import jakarta.persistence.criteria.*;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Specification para búsqueda dinámica de facturas y notas de crédito (STM-338).
+ *
+ * Construye predicados dinámicamente según los filtros proporcionados:
+ * - Obligatorios: RFC Emisor, Fecha Inicio/Fin, Tipo Documento
+ * - Opcionales: RFC Receptor, ID Proveedor, Serie, Folio, UUID
+ *
+ * @author Sodimac Tech Team
+ * @since 2025-11-10
+ */
+public class InvoiceSpecification {
+
+    /**
+     * Construye la Specification completa a partir del request de búsqueda.
+     *
+     * @param searchRequest Filtros de búsqueda
+     * @return Specification para ejecutar la query
+     */
+    public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Join con Issuer para RFC Emisor
+            Join<InvoiceEntity, IssuerEntity> issuerJoin = root.join("issuer", JoinType.INNER);
+
+            // Join con Receiver para RFC Receptor (opcional)
+            Join<InvoiceEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.LEFT);
+
+            // ========== FILTROS OBLIGATORIOS ==========
+
+            // 1. RFC Emisor (Obligatorio)
+            if (searchRequest.getRfcEmisor() != null && !searchRequest.getRfcEmisor().isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                issuerJoin.get("rfc"),
+                                searchRequest.getRfcEmisor().toUpperCase()
+                        )
+                );
+            }
+
+            // 2. Fecha Inicio Recepción (Obligatorio)
+            if (searchRequest.getFechaInicioRecepcion() != null) {
+                LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
+                predicates.add(
+                        criteriaBuilder.greaterThanOrEqualTo(
+                                root.get("createdAt"),
+                                startOfDay
+                        )
+                );
+            }
+
+            // 3. Fecha Final Recepción (Obligatorio)
+            if (searchRequest.getFechaFinalRecepcion() != null) {
+                LocalDateTime endOfDay = searchRequest.getFechaFinalRecepcion().atTime(23, 59, 59);
+                predicates.add(
+                        criteriaBuilder.lessThanOrEqualTo(
+                                root.get("createdAt"),
+                                endOfDay
+                        )
+                );
+            }
+
+            // 4. Tipo de Documento (Obligatorio)
+            if (searchRequest.getTipoDocumento() != null && !searchRequest.getTipoDocumento().isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("documentType"),
+                                searchRequest.getTipoDocumento().toUpperCase()
+                        )
+                );
+            }
+
+            // ========== FILTROS OPCIONALES ==========
+
+            // 5. RFC Receptor (Opcional)
+            if (searchRequest.getRfcReceptor() != null && !searchRequest.getRfcReceptor().isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                receiverJoin.get("rfc"),
+                                searchRequest.getRfcReceptor().toUpperCase()
+                        )
+                );
+            }
+
+            // 6. ID Proveedor / Supplier Number (Opcional) - Busca en Addenda
+            if (searchRequest.getIdProveedor() != null) {
+                Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
+                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                        .where(criteriaBuilder.equal(
+                                addendumRoot.get("supplierNumber"),
+                                searchRequest.getIdProveedor()
+                        ));
+                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+            }
+
+            // 7. Serie (Opcional)
+            if (searchRequest.getSerie() != null && !searchRequest.getSerie().isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("series"),
+                                searchRequest.getSerie().toUpperCase()
+                        )
+                );
+            }
+
+            // 8. Folio (Opcional)
+            if (searchRequest.getFolio() != null && !searchRequest.getFolio().isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("folio"),
+                                searchRequest.getFolio()
+                        )
+                );
+            }
+
+            // 9. UUID Fiscal (Opcional)
+            if (searchRequest.getUuid() != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("fiscalUuid"),
+                                searchRequest.getUuid()
+                        )
+                );
+            }
+
+            // 10. Estatus (Opcional) - STM-771
+            if (searchRequest.getEstatus() != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("status"),
+                                searchRequest.getEstatus()
+                        )
+                );
+            }
+
+            // 11. Numero de Orden de Compra (Opcional) - STM-338
+            if (searchRequest.getNoOrdenCompra() != null && !searchRequest.getNoOrdenCompra().isBlank()) {
+                Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
+                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                        .where(criteriaBuilder.equal(
+                                addendumRoot.get("purchaseOrderNumber"),
+                                searchRequest.getNoOrdenCompra()
+                        ));
+                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+            }
+
+            // 12. Numero de Recepcion (Opcional) - STM-338
+            if (searchRequest.getNoRecepcion() != null && !searchRequest.getNoRecepcion().isBlank()) {
+                Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
+                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                        .where(criteriaBuilder.equal(
+                                addendumRoot.get("receptionNumber"),
+                                searchRequest.getNoRecepcion()
+                        ));
+                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+            }
+
+            // Combinar todos los predicados con AND
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
+     * Specification para buscar por RFC Emisor.
+     */
+    public static Specification<InvoiceEntity> hasRfcEmisor(String rfcEmisor) {
+        return (root, query, criteriaBuilder) -> {
+            if (rfcEmisor == null || rfcEmisor.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+            Join<InvoiceEntity, IssuerEntity> issuerJoin = root.join("issuer", JoinType.INNER);
+            return criteriaBuilder.equal(issuerJoin.get("rfc"), rfcEmisor.toUpperCase());
+        };
+    }
+
+    /**
+     * Specification para buscar por RFC Receptor.
+     */
+    public static Specification<InvoiceEntity> hasRfcReceptor(String rfcReceptor) {
+        return (root, query, criteriaBuilder) -> {
+            if (rfcReceptor == null || rfcReceptor.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+            Join<InvoiceEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.INNER);
+            return criteriaBuilder.equal(receiverJoin.get("rfc"), rfcReceptor.toUpperCase());
+        };
+    }
+
+    /**
+     * Specification para buscar por tipo de documento.
+     */
+    public static Specification<InvoiceEntity> hasTipoDocumento(String tipoDocumento) {
+        return (root, query, criteriaBuilder) -> {
+            if (tipoDocumento == null || tipoDocumento.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("documentType"), tipoDocumento.toUpperCase());
+        };
+    }
+
+    /**
+     * Specification para buscar por rango de fechas de recepción.
+     */
+    public static Specification<InvoiceEntity> hasCreatedAtBetween(LocalDateTime from, LocalDateTime to) {
+        return (root, query, criteriaBuilder) -> {
+            if (from == null && to == null) {
+                return criteriaBuilder.conjunction();
+            }
+            if (from != null && to != null) {
+                return criteriaBuilder.between(root.get("createdAt"), from, to);
+            }
+            if (from != null) {
+                return criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), from);
+            }
+            return criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), to);
+        };
+    }
+}

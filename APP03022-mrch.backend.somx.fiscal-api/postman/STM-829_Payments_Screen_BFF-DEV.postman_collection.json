@@ -1,0 +1,300 @@
+{
+  "info": {
+    "_postman_id": "stm-829-payments-bff-dev",
+    "name": "STM-829 - Pantalla de Pagos (BFF DEV)",
+    "description": "Coleccion para probar los servicios de consulta de pagos en el BFF de desarrollo.\n\nURL Base: https://dev.fbusinesscenter.com/ppsomx/fiscal\n\nEndpoints disponibles:\n- GET /payments - Lista de pagos individuales\n- GET /payments/{uuid} - Detalle de pago por UUID\n- GET /payment-documents - Lista de documentos de pago (complementos)\n\nCriterios de Aceptacion STM-829:\n- CA-02: Fechas inicio y fin obligatorias (validar en frontend)\n- CA-03: Numero de proveedor solo visible para admin\n- CA-04: Paginacion de 10 registros\n- CA-06: Exportacion de informacion (manejo en frontend)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Consulta de Pagos",
+      "item": [
+        {
+          "name": "1.1 Listar todos los pagos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payments",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payments"]
+            },
+            "description": "Obtiene la lista de todos los pagos registrados.\n\nRetorna:\n- paymentUuid: ID unico del pago\n- paymentsUuid: ID del complemento de pago\n- paymentDate: Fecha del pago\n- paymentMethod: Metodo de pago (03=Transferencia, etc)\n- currency: Moneda (MXN, USD)\n- amount: Importe del pago\n- operationNumber: Numero de operacion"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Listar pagos con paginacion (10 registros)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payments?page=0&size=10",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Numero de pagina (base 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "CA-04: 10 registros por pagina"
+                }
+              ]
+            },
+            "description": "CA-04: Grid con paginacion de 10 registros.\n\nEl parametro size=10 cumple con el requerimiento de mostrar 10 registros por pagina."
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Pagina 2 (siguientes 10 registros)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payments?page=1&size=10",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Segunda pagina"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Navegacion a la segunda pagina de resultados."
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Obtener pago por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payments/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payments", "bbbbbbbb-cccc-dddd-eeee-ffffffffffff"]
+            },
+            "description": "Obtiene el detalle de un pago especifico por su UUID.\n\nUtil para ver informacion detallada al seleccionar un registro en el grid."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Documentos de Pago (Complementos)",
+      "item": [
+        {
+          "name": "2.1 Listar documentos de pago",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payment-documents",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payment-documents"]
+            },
+            "description": "Obtiene la lista de documentos de complemento de pago.\n\nRetorna:\n- paymentsUuid: ID del complemento\n- version: Version del complemento (2.0)\n- paymentDate: Fecha de pago\n- folio: Numero de folio\n- series: Serie del documento\n- status: Estado (1=Vigente, 0=Cancelado)\n- xmlContent: Contenido XML del CFDI"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Listar documentos con paginacion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payment-documents?page=0&size=10",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payment-documents"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "CA-04: 10 registros por pagina"
+                }
+              ]
+            },
+            "description": "Lista de documentos de pago con paginacion de 10 registros."
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Obtener documento por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/payment-documents/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "payment-documents", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]
+            },
+            "description": "Obtiene un documento de complemento de pago especifico por UUID.\n\nIncluye el XML completo del CFDI."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Consulta de Facturas (Navegacion CA-05)",
+      "item": [
+        {
+          "name": "3.1 Buscar facturas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"SOD970101ABC\",\n  \"fechaInicioRecepcion\": \"2024-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "invoices", "search"]
+            },
+            "description": "CA-05: Navegacion a factura.\n\nAl seleccionar 'Ver factura' en el grid de pagos, se debe redirigir a la pantalla de facturacion usando:\n- Numero de documento (folio del pago)\n- Id del proveedor\n\nEste endpoint busca la factura relacionada."
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Buscar factura por folio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"folio\": \"001\",\n  \"rfcEmisor\": \"SOD970101ABC\",\n  \"fechaInicioRecepcion\": \"2024-01-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "invoices", "search"]
+            },
+            "description": "Busca una factura especifica por su numero de folio.\n\nUtil para la navegacion desde el grid de pagos."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Escenarios de Prueba",
+      "item": [
+        {
+          "name": "4.1 Health Check - Verificar servicio activo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/actuator/health",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "actuator", "health"]
+            },
+            "description": "Verifica que el servicio este activo y funcionando correctamente."
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Endpoint no existente (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://dev.fbusinesscenter.com/ppsomx/fiscal/endpoint-inexistente",
+              "protocol": "https",
+              "host": ["dev", "fbusinesscenter", "com"],
+              "path": ["ppsomx", "fiscal", "endpoint-inexistente"]
+            },
+            "description": "Prueba de error 404 - Endpoint no definido.\n\nEsperado: HTTP 404 con mensaje 'The current request is not defined by this API.'"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2118 @@
+swagger: "2.0"
+info:
+  contact:
+    email: jrcastillo@falabella.cl
+    name: Arquitectura Falabella Tecnologia Corp.
+  description:
+    "Support RESTful operations for finanzas flow. This BFF provides access to
+    financial operations including accounts payable, rebates, fiscal payments,
+    shipping guides, and vendor management."
+  title: Finanzas BFF API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: finanzas
+  x-consumer-segments: retail
+  x-service-name: finanzas
+host: ${DOMAIN_OPENAPI}
+schemes:
+  - https
+paths:
+  # ==================== ACCOUNTS PAYABLE ====================
+  /accounts-payable:
+    get:
+      tags:
+        - accounts-payable
+      summary: List accounts payable
+      operationId: listAccountsPayable
+      produces:
+        - application/json
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Status code (e.g. 1=open, 2=closed)
+          type: integer
+          format: int32
+        - name: vendorNumber
+          in: query
+          required: false
+          description: Vendor number identifier
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: List of accounts payable
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/AccountsPayableDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - accounts-payable
+      summary: Create account payable
+      operationId: createAccountPayable
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateAccountsPayableDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/AccountsPayableDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /accounts-payable/{uuid}:
+    get:
+      tags:
+        - accounts-payable
+      summary: Get account payable by ID
+      operationId: getAccountPayableById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Account payable UUID
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/AccountsPayableDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - accounts-payable
+      summary: Update account payable
+      operationId: updateAccountPayable
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Account payable UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateAccountsPayableDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/AccountsPayableDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - accounts-payable
+      summary: Delete account payable
+      operationId: deleteAccountPayable
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Account payable UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== FISCAL PAYMENTS ====================
+  /fiscal-payments:
+    get:
+      tags:
+        - fiscal-payments
+      summary: List fiscal payments
+      operationId: listFiscalPayments
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of fiscal payments
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/FiscalPaymentDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - fiscal-payments
+      summary: Create fiscal payment
+      operationId: createFiscalPayment
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateFiscalPaymentDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/FiscalPaymentDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /fiscal-payments/{uuid}:
+    get:
+      tags:
+        - fiscal-payments
+      summary: Get fiscal payment by ID
+      operationId: getFiscalPaymentById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Fiscal payment UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/FiscalPaymentDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - fiscal-payments
+      summary: Update fiscal payment
+      operationId: updateFiscalPayment
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Fiscal payment UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateFiscalPaymentDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/FiscalPaymentDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - fiscal-payments
+      summary: Delete fiscal payment
+      operationId: deleteFiscalPayment
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Fiscal payment UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== REBATES ====================
+  /rebates:
+    get:
+      tags:
+        - rebates
+      summary: List rebates
+      operationId: listRebates
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of rebates
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RebateDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - rebates
+      summary: Create rebate
+      operationId: createRebate
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateRebateDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/RebateDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/published:
+    get:
+      tags:
+        - rebates
+      summary: Get published rebates
+      operationId: getPublishedRebates
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of published rebates
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RebateDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/published/export/csv:
+    get:
+      tags:
+        - rebates
+      summary: Export published rebates to CSV
+      operationId: exportPublishedRebatesToCsv
+      produces:
+        - text/csv
+      responses:
+        "200":
+          description: CSV file with published rebates
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/search:
+    get:
+      tags:
+        - rebates
+      summary: Search rebates
+      operationId: searchRebates
+      produces:
+        - application/json
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search query
+          type: string
+        - name: vendorNumber
+          in: query
+          required: false
+          description: Vendor number
+          type: integer
+        - name: status
+          in: query
+          required: false
+          description: Rebate status
+          type: integer
+      responses:
+        "200":
+          description: Search results
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RebateDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/export/csv:
+    get:
+      tags:
+        - rebates
+      summary: Export filtered rebates to CSV
+      operationId: exportFilteredRebatesToCsv
+      produces:
+        - text/csv
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter by status
+          type: integer
+        - name: vendorNumber
+          in: query
+          required: false
+          description: Filter by vendor
+          type: integer
+      responses:
+        "200":
+          description: CSV file with filtered rebates
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/vendor/{vendorNumber}:
+    get:
+      tags:
+        - rebates
+      summary: Get rebates by vendor
+      operationId: getRebatesByVendor
+      produces:
+        - application/json
+      parameters:
+        - name: vendorNumber
+          in: path
+          required: true
+          description: Vendor number
+          type: integer
+      responses:
+        "200":
+          description: List of vendor rebates
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RebateDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /rebates/{uuid}:
+    get:
+      tags:
+        - rebates
+      summary: Get rebate by ID
+      operationId: getRebateById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Rebate UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/RebateDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - rebates
+      summary: Update rebate
+      operationId: updateRebate
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Rebate UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateRebateDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/RebateDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - rebates
+      summary: Delete rebate
+      operationId: deleteRebate
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Rebate UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== STAMPED REBATES ====================
+  /stamped-rebates:
+    get:
+      tags:
+        - stamped-rebates
+      summary: List stamped rebates
+      operationId: listStampedRebates
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of stamped rebates
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/StampedRebateDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - stamped-rebates
+      summary: Create stamped rebate
+      operationId: createStampedRebate
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateStampedRebateDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/StampedRebateDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /stamped-rebates/export/csv:
+    get:
+      tags:
+        - stamped-rebates
+      summary: Export stamped rebates to CSV
+      operationId: exportStampedRebatesToCsv
+      produces:
+        - text/csv
+      responses:
+        "200":
+          description: CSV file with stamped rebates
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /stamped-rebates/{uuid}:
+    get:
+      tags:
+        - stamped-rebates
+      summary: Get stamped rebate by ID
+      operationId: getStampedRebateById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Stamped rebate UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/StampedRebateDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - stamped-rebates
+      summary: Update stamped rebate
+      operationId: updateStampedRebate
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Stamped rebate UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateStampedRebateDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/StampedRebateDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - stamped-rebates
+      summary: Delete stamped rebate
+      operationId: deleteStampedRebate
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Stamped rebate UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== SAP DOCUMENTS ====================
+  /sap-documents:
+    get:
+      tags:
+        - sap-documents
+      summary: List SAP documents
+      operationId: listSapDocuments
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of SAP documents
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/SapDocumentDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - sap-documents
+      summary: Create SAP document
+      operationId: createSapDocument
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateSapDocumentDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/SapDocumentDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /sap-documents/{uuid}:
+    get:
+      tags:
+        - sap-documents
+      summary: Get SAP document by ID
+      operationId: getSapDocumentById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: SAP document UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/SapDocumentDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - sap-documents
+      summary: Update SAP document
+      operationId: updateSapDocument
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: SAP document UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateSapDocumentDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/SapDocumentDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - sap-documents
+      summary: Delete SAP document
+      operationId: deleteSapDocument
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: SAP document UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== SHIPPING GUIDES ====================
+  /shipping-guides:
+    get:
+      tags:
+        - shipping-guides
+      summary: List shipping guides
+      operationId: listShippingGuides
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of shipping guides
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ShippingGuideDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - shipping-guides
+      summary: Create shipping guide
+      operationId: createShippingGuide
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateShippingGuideDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/ShippingGuideDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /shipping-guides/csv:
+    get:
+      tags:
+        - shipping-guides
+      summary: Export shipping guides to CSV
+      operationId: exportShippingGuidesToCsv
+      produces:
+        - text/csv
+      responses:
+        "200":
+          description: CSV file with shipping guides
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /shipping-guides/{uuid}:
+    get:
+      tags:
+        - shipping-guides
+      summary: Get shipping guide by ID
+      operationId: getShippingGuideById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Shipping guide UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/ShippingGuideDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - shipping-guides
+      summary: Update shipping guide
+      operationId: updateShippingGuide
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Shipping guide UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateShippingGuideDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/ShippingGuideDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - shipping-guides
+      summary: Delete shipping guide
+      operationId: deleteShippingGuide
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Shipping guide UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== VENDOR BLOCKS ====================
+  /vendor-blocks:
+    get:
+      tags:
+        - vendor-blocks
+      summary: List vendor blocks
+      operationId: listVendorBlocks
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of vendor blocks
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/VendorBlockDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - vendor-blocks
+      summary: Create vendor block
+      operationId: createVendorBlock
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateVendorBlockDto"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/VendorBlockDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /vendor-blocks/{uuid}:
+    get:
+      tags:
+        - vendor-blocks
+      summary: Get vendor block by ID
+      operationId: getVendorBlockById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Vendor block UUID
+          type: string
+      responses:
+        "200":
+          description: Found
+          schema:
+            $ref: "#/definitions/VendorBlockDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - vendor-blocks
+      summary: Update vendor block
+      operationId: updateVendorBlock
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Vendor block UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateVendorBlockDto"
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: "#/definitions/VendorBlockDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - vendor-blocks
+      summary: Delete vendor block
+      operationId: deleteVendorBlock
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Vendor block UUID
+          type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  # ==================== PURCHASE ORDERS ====================
+  /purchase-orders:
+    get:
+      tags:
+        - purchase-orders
+      summary: List purchase orders
+      operationId: listPurchaseOrders
+      produces:
+        - application/json
+      parameters:
+        - name: criteria
+          in: query
+          required: false
+          description: Search criteria
+          type: string
+        - name: dateFrom
+          in: query
+          required: false
+          description: Start date (YYYY-MM-DD)
+          type: string
+          format: date
+        - name: dateTo
+          in: query
+          required: false
+          description: End date (YYYY-MM-DD)
+          type: string
+          format: date
+        - name: status
+          in: query
+          required: false
+          description: Status filter
+          type: integer
+      responses:
+        "200":
+          description: List of purchase orders with receipts
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PurchaseOrderDto"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+  /purchase-orders/{uuid}:
+    get:
+      tags:
+        - purchase-orders
+      summary: Get purchase order by ID
+      operationId: getPurchaseOrderById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Purchase order UUID
+          type: string
+      responses:
+        "200":
+          description: Purchase order with receipts
+          schema:
+            $ref: "#/definitions/PurchaseOrderDto"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - purchase-orders
+      summary: Update purchase order (status only)
+      operationId: updatePurchaseOrderStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Purchase order UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdatePurchaseOrderDto"
+      responses:
+        "200":
+          description: Updated purchase order
+          schema:
+            $ref: "#/definitions/PurchaseOrderDto"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      security:
+        - bearerAuth: []
+
+definitions:
+  ExceptionWrapper:
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 401
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Unauthorized
+        type: string
+    type: object
+
+  # ==================== ACCOUNTS PAYABLE DTOs ====================
+  AccountsPayableDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      orderNumber:
+        type: string
+        description: Purchase order number
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      sourceId:
+        type: integer
+        description: Source system identifier
+      totalAmount:
+        type: string
+        description: Total amount
+      currency:
+        type: string
+        description: Currency code
+      status:
+        type: integer
+        description: Status code
+      orderDate:
+        type: string
+        format: date-time
+        description: Order date
+      deliveryDate:
+        type: string
+        format: date-time
+        description: Delivery date
+      terms:
+        type: string
+        description: Payment terms
+      createdBy:
+        type: integer
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateAccountsPayableDto:
+    type: object
+    required:
+      - orderNumber
+      - vendorNumber
+      - totalAmount
+    properties:
+      orderNumber:
+        type: string
+      vendorNumber:
+        type: integer
+      sourceId:
+        type: integer
+      totalAmount:
+        type: string
+      currency:
+        type: string
+      status:
+        type: integer
+      orderDate:
+        type: string
+        format: date-time
+      deliveryDate:
+        type: string
+        format: date-time
+      terms:
+        type: string
+      createdBy:
+        type: integer
+
+  UpdateAccountsPayableDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      totalAmount:
+        type: string
+      deliveryDate:
+        type: string
+        format: date-time
+      terms:
+        type: string
+      updatedBy:
+        type: integer
+
+  # ==================== FISCAL PAYMENT DTOs ====================
+  FiscalPaymentDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      paymentNumber:
+        type: string
+        description: Payment number
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      amount:
+        type: string
+        description: Payment amount
+      currency:
+        type: string
+        description: Currency code
+      paymentDate:
+        type: string
+        format: date-time
+        description: Payment date
+      status:
+        type: integer
+        description: Payment status
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateFiscalPaymentDto:
+    type: object
+    required:
+      - paymentNumber
+      - vendorNumber
+      - amount
+    properties:
+      paymentNumber:
+        type: string
+      vendorNumber:
+        type: integer
+      amount:
+        type: string
+      currency:
+        type: string
+      paymentDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+
+  UpdateFiscalPaymentDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      amount:
+        type: string
+      paymentDate:
+        type: string
+        format: date-time
+
+  # ==================== REBATE DTOs ====================
+  RebateDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      rebateNumber:
+        type: string
+        description: Rebate number
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      amount:
+        type: string
+        description: Rebate amount
+      status:
+        type: integer
+        description: Rebate status
+      effectiveDate:
+        type: string
+        format: date-time
+        description: Effective date
+      expirationDate:
+        type: string
+        format: date-time
+        description: Expiration date
+      published:
+        type: boolean
+        description: Published status
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateRebateDto:
+    type: object
+    required:
+      - rebateNumber
+      - vendorNumber
+      - amount
+    properties:
+      rebateNumber:
+        type: string
+      vendorNumber:
+        type: integer
+      amount:
+        type: string
+      status:
+        type: integer
+      effectiveDate:
+        type: string
+        format: date-time
+      expirationDate:
+        type: string
+        format: date-time
+      published:
+        type: boolean
+
+  UpdateRebateDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      amount:
+        type: string
+      effectiveDate:
+        type: string
+        format: date-time
+      expirationDate:
+        type: string
+        format: date-time
+      published:
+        type: boolean
+
+  # ==================== STAMPED REBATE DTOs ====================
+  StampedRebateDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      rebateId:
+        type: string
+        description: Related rebate ID
+      stampDate:
+        type: string
+        format: date-time
+        description: Stamp date
+      certificateNumber:
+        type: string
+        description: Certificate number
+      status:
+        type: integer
+        description: Status
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateStampedRebateDto:
+    type: object
+    required:
+      - rebateId
+      - certificateNumber
+    properties:
+      rebateId:
+        type: string
+      stampDate:
+        type: string
+        format: date-time
+      certificateNumber:
+        type: string
+      status:
+        type: integer
+
+  UpdateStampedRebateDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      certificateNumber:
+        type: string
+
+  # ==================== SAP DOCUMENT DTOs ====================
+  SapDocumentDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      documentNumber:
+        type: string
+        description: SAP document number
+      documentType:
+        type: string
+        description: Document type
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      amount:
+        type: string
+        description: Document amount
+      postingDate:
+        type: string
+        format: date-time
+        description: Posting date
+      status:
+        type: integer
+        description: Document status
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateSapDocumentDto:
+    type: object
+    required:
+      - documentNumber
+      - documentType
+      - vendorNumber
+    properties:
+      documentNumber:
+        type: string
+      documentType:
+        type: string
+      vendorNumber:
+        type: integer
+      amount:
+        type: string
+      postingDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+
+  UpdateSapDocumentDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      amount:
+        type: string
+      postingDate:
+        type: string
+        format: date-time
+
+  # ==================== SHIPPING GUIDE DTOs ====================
+  ShippingGuideDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      guideNumber:
+        type: string
+        description: Shipping guide number
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      shipmentDate:
+        type: string
+        format: date-time
+        description: Shipment date
+      deliveryDate:
+        type: string
+        format: date-time
+        description: Expected delivery date
+      origin:
+        type: string
+        description: Origin location
+      destination:
+        type: string
+        description: Destination location
+      status:
+        type: integer
+        description: Shipping status
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateShippingGuideDto:
+    type: object
+    required:
+      - guideNumber
+      - vendorNumber
+      - shipmentDate
+    properties:
+      guideNumber:
+        type: string
+      vendorNumber:
+        type: integer
+      shipmentDate:
+        type: string
+        format: date-time
+      deliveryDate:
+        type: string
+        format: date-time
+      origin:
+        type: string
+      destination:
+        type: string
+      status:
+        type: integer
+
+  UpdateShippingGuideDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      deliveryDate:
+        type: string
+        format: date-time
+      destination:
+        type: string
+
+  # ==================== VENDOR BLOCK DTOs ====================
+  VendorBlockDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      blockType:
+        type: string
+        description: Type of block
+      blockReason:
+        type: string
+        description: Reason for blocking
+      effectiveDate:
+        type: string
+        format: date-time
+        description: Block effective date
+      expirationDate:
+        type: string
+        format: date-time
+        description: Block expiration date
+      status:
+        type: integer
+        description: Block status
+      createdBy:
+        type: integer
+        description: User who created the block
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  CreateVendorBlockDto:
+    type: object
+    required:
+      - vendorNumber
+      - blockType
+      - blockReason
+    properties:
+      vendorNumber:
+        type: integer
+      blockType:
+        type: string
+      blockReason:
+        type: string
+      effectiveDate:
+        type: string
+        format: date-time
+      expirationDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+      createdBy:
+        type: integer
+
+  UpdateVendorBlockDto:
+    type: object
+    properties:
+      status:
+        type: integer
+      blockReason:
+        type: string
+      expirationDate:
+        type: string
+        format: date-time
+
+  # ==================== PURCHASE ORDER DTOs ====================
+  PurchaseOrderDto:
+    type: object
+    properties:
+      purchaseOrderId:
+        type: string
+        format: uuid
+        description: Unique identifier
+      orderNumber:
+        type: string
+        description: Order number
+      vendorNumber:
+        type: integer
+        description: Vendor identifier
+      orderDate:
+        type: string
+        format: date-time
+        description: Order date
+      totalAmount:
+        type: string
+        description: Total amount
+      status:
+        type: integer
+        description: Order status
+      receipts:
+        type: array
+        description: Associated receipts
+        items:
+          $ref: "#/definitions/ReceiptDto"
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  UpdatePurchaseOrderDto:
+    type: object
+    properties:
+      status:
+        type: integer
+        description: New status value
+
+  ReceiptDto:
+    type: object
+    properties:
+      receiptId:
+        type: string
+        format: uuid
+        description: Receipt unique identifier
+      receiptNumber:
+        type: string
+        description: Receipt number
+      purchaseOrderUuid:
+        type: string
+        format: uuid
+        description: Related purchase order
+      amount:
+        type: string
+        description: Receipt amount
+      receiptDate:
+        type: string
+        format: date-time
+        description: Receipt date
+      status:
+        type: integer
+        description: Receipt status
+
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
+    x-google-jwks_uri: ${JWKS_URL}
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+security:
+  - bearerAuth: []
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

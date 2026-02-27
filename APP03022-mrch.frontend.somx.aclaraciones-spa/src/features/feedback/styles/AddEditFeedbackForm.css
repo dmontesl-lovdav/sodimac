@@ -1,0 +1,99 @@
+/* ==== Layout general ==== */
+.ff-layout {
+    padding: 8px 16px 16px;
+}
+
+.ff-breadcrumb {
+    margin-left: -16px;
+    margin-top: -4px;
+}
+
+/* ==== Contenedor principal ==== */
+.ff-box {
+    margin-left: -16px;
+    margin-right: -16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.ff-inner {
+    padding: 16px;
+}
+
+.ff-loader {
+    margin-bottom: 24px;
+}
+
+/* ==== Contenido ==== */
+.ff-content {
+    max-width: 700px;
+}
+
+.ff-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.ff-input {
+    margin-top: 8px;
+}
+
+/* ==== Respuestas ==== */
+.ff-add-row {
+    margin-top: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.ff-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ff-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ff-answer-input {
+    flex: 1;
+}
+
+/* icon delete */
+.ff-delete-btn {
+    height: 44px;
+    width: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.ff-delete-btn:hover {
+    background: #f3f4f6;
+}
+
+.ff-delete-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+}
+
+/* ==== Footer ==== */
+.ff-footer {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}

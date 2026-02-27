@@ -1,0 +1,415 @@
+# ========================================================================
+# CONFIGURACIÓN BFF (Backend for Frontend) - FISCAL API
+# ========================================================================
+# Este archivo define el contrato de API Gateway usando OpenAPI/Swagger 2.0
+# Actúa como punto de entrada único para los clientes frontend,
+# abstrayendo la complejidad de los servicios backend internos.
+# ========================================================================
+
+# ESPECIFICACIÓN OPENAPI 2.0 (Swagger)
+swagger: '2.0'
+
+# INFORMACIÓN GENERAL DE LA API
+info:
+  description: >-
+    API for managing authorized receiver RFCs. Provides endpoints to register, query, search, and update receiver RFCs.
+  title: Receiver RFC API
+  version: 1.0.0
+
+# CONFIGURACIÓN DEL HOST Y RUTAS BASE
+# host: Define el servidor donde corre el BFF
+# basePath: Prefijo común para todas las rutas (/api)
+# schemes: Protocolos soportados (http en desarrollo, https en producción)
+host: localhost:8081
+basePath: /api
+schemes:
+  - http
+# ========================================================================
+# DEFINICIÓN DE ENDPOINTS (PATHS)
+# ========================================================================
+# Aquí se definen todos los endpoints que expone el BFF.
+# El BFF actúa como fachada, orquestando llamadas a servicios internos
+# (repositorios, validaciones, servicios de PAC, etc.)
+# ========================================================================
+paths:
+
+  # ENDPOINT: Gestión de RFCs de Receptores Autorizados
+  # Ruta completa: http://localhost:8081/api/receiver-rfc
+  /receiver-rfc:
+
+    # POST - Crear un nuevo RFC autorizado
+    # Este endpoint permite registrar un nuevo RFC de receptor autorizado
+    # El BFF valida, transforma y persiste la información
+    post:
+      summary: Creates a new authorized receiver RFC
+      operationId: addReceiverRfc
+
+      # Formato de entrada/salida
+      consumes:
+        - application/json
+      produces:
+        - application/json
+
+      # PARÁMETROS DEL ENDPOINT
+      parameters:
+        # SEGURIDAD: Token OAuth2 de KeyCloak
+        # El BFF valida este token antes de procesar la solicitud
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: KeyCloak OAuth2 token
+          x-example: "Bearer XXXXXXXXX"
+
+        # BODY: Datos del RFC a registrar
+        # El BFF valida estos datos contra las reglas de negocio
+        - in: body
+          name: body
+          description: Receiver RFC registration data
+          required: true
+          schema:
+            $ref: '#/definitions/AddReceiverRfcRequestDTO'
+
+      # RESPUESTAS POSIBLES
+      responses:
+        '200':
+          description: Receiver RFC has been successfully created
+          schema:
+            $ref: '#/definitions/ReceiverRfcViewDTO'
+        '400':
+          description: Bad request - validation error
+        '401':
+          description: The request requires user authentication
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden
+        '404':
+          description: The server has not found anything matching the Request-URI
+        '500':
+          description: Internal error
+    # GET - Obtener todos los RFCs autorizados
+    # El BFF consulta la BD y devuelve una lista completa
+    # Este endpoint NO tiene paginación (para listas grandes usar /search)
+    get:
+      summary: Retrieve all authorized receiver RFCs
+      operationId: getAllReceiverRfcs
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: KeyCloak OAuth2 token
+          x-example: "Bearer XXXXXXXXX"
+      responses:
+        '200':
+          description: List of authorized receiver RFCs returned
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverRfcViewDTO'
+        '401':
+          description: The request requires user authentication
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden
+        '404':
+          description: The server has not found anything matching the Request-URI
+        '500':
+          description: Internal error
+
+  # ENDPOINT: Búsqueda avanzada de RFCs con filtros y paginación
+  # Ruta completa: http://localhost:8081/api/receiver-rfc/search
+  # Este endpoint es ideal para interfaces con tablas grandes
+  /receiver-rfc/search:
+    # GET - Búsqueda con múltiples criterios
+    # El BFF construye queries dinámicas según los filtros recibidos
+    # Implementa paginación para optimizar el rendimiento
+    get:
+      summary: Search receiver RFCs by multiple criteria
+      operationId: searchReceiverRfcsByCriteria
+      produces:
+        - application/json
+
+      # PARÁMETROS DE BÚSQUEDA Y PAGINACIÓN
+      parameters:
+        # Token de autenticación
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: KeyCloak OAuth2 token
+          x-example: "Bearer XXXXXXXXX"
+
+        # FILTROS OPCIONALES (Query Parameters)
+        # El BFF permite combinar múltiples filtros
+        - name: rfc
+          in: query
+          required: false
+          type: string
+          description: RFC filter (optional)
+        - name: businessName
+          in: query
+          required: false
+          type: string
+          description: Business name filter (optional)
+        - name: taxRegime
+          in: query
+          required: false
+          type: string
+          description: Tax regime filter (optional)
+        - name: status
+          in: query
+          required: false
+          type: integer
+          description: Status filter (optional)
+
+        # PAGINACIÓN
+        # limit: Controla el tamaño de página (default 50)
+        # offset: Controla desde qué registro empezar (default 0)
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          default: 50
+          description: Maximum number of results
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          default: 0
+          description: Pagination offset
+
+      responses:
+        '200':
+          description: Filtered list of receiver RFCs returned
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceiverRfcViewDTO'
+        '400':
+          description: Bad request - validation error
+        '401':
+          description: The request requires user authentication
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden
+        '404':
+          description: The server has not found anything matching the Request-URI
+        '500':
+          description: Internal error
+
+  # ENDPOINT: Actualización de RFC por ID
+  # Ruta completa: http://localhost:8081/api/receiver-rfc/{id}
+  # El BFF permite actualizar el estado de un RFC específico
+  /receiver-rfc/{id}:
+
+    # PUT - Actualizar un RFC existente
+    # Actualmente solo permite actualizar el campo 'status'
+    # El BFF valida permisos y existencia antes de actualizar
+    put:
+      summary: Update status or details of an authorized receiver RFC
+      operationId: updateReceiverRfc
+      consumes:
+        - application/json
+      produces:
+        - application/json
+
+      parameters:
+        # Token de autenticación
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          description: KeyCloak OAuth2 token
+          x-example: "Bearer XXXXXXXXX"
+
+        # PATH PARAMETER: ID del RFC a actualizar
+        # El BFF busca por este ID en la base de datos
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+          description: RFC entity ID
+
+        # BODY: Nuevos datos (solo status por ahora)
+        - in: body
+          name: body
+          description: Updated receiver RFC data
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateReceiverRfcDTO'
+
+      responses:
+        '200':
+          description: Receiver RFC has been successfully updated
+          schema:
+            $ref: '#/definitions/ReceiverRfcViewDTO'
+        '400':
+          description: Bad request - validation error
+        '401':
+          description: The request requires user authentication
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden
+        '404':
+          description: The server has not found anything matching the Request-URI
+        '500':
+          description: Internal error
+
+# ========================================================================
+# DEFINICIONES DE MODELOS (DTOs)
+# ========================================================================
+# Estos son los esquemas de datos que el BFF utiliza para:
+# 1. Validar las peticiones entrantes
+# 2. Transformar datos entre capas (frontend <-> backend)
+# 3. Documentar el contrato de API
+# ========================================================================
+definitions:
+
+  # DTO: AddReceiverRfcRequestDTO
+  # Modelo de entrada para crear un nuevo RFC
+  # El BFF valida este objeto antes de persistir en la base de datos
+  AddReceiverRfcRequestDTO:
+    type: object
+
+    # CAMPOS OBLIGATORIOS
+    # El BFF rechazará peticiones que no incluyan estos campos
+    required:
+      - businessName
+      - rfc
+      - taxRegime
+      - validFrom
+      - validTo
+
+    properties:
+      # Razón social del receptor
+      businessName:
+        type: string
+        maxLength: 255
+        description: Receiver's business name
+        example: "Sodimac S.A. de C.V."
+
+      # RFC (Registro Federal de Contribuyentes)
+      # El BFF valida el formato con regex:
+      # - Personas morales: 4 letras + 6 dígitos + 3 alfanuméricos (13 chars)
+      # - Personas físicas: 3 letras + 6 dígitos + 3 alfanuméricos (12 chars)
+      rfc:
+        type: string
+        minLength: 12
+        maxLength: 13
+        pattern: "^([A-Z]{4}[0-9]{6}[A-Z0-9]{3})|([A-Z]{3}[0-9]{6}[A-Z0-9]{3})$"
+        description: Receiver's RFC (12 chars for individuals, 13 chars for companies)
+        example: "ABC123456XYZ"
+
+      # Régimen fiscal (catálogo SAT)
+      # Ejemplos: 601 (General), 603 (Persona Física), etc.
+      taxRegime:
+        type: string
+        maxLength: 3
+        description: Fiscal regime
+        example: "601"
+
+      # Rango de vigencia del RFC autorizado
+      # El BFF validará que validFrom < validTo
+      validFrom:
+        type: string
+        format: date
+        description: Start of validity
+        example: "2025-01-01"
+      validTo:
+        type: string
+        format: date
+        description: End of validity
+        example: "2025-12-31"
+
+  # DTO: UpdateReceiverRfcDTO
+  # Modelo de entrada para actualizar un RFC existente
+  # Actualmente solo permite cambiar el estado (activar/desactivar)
+  UpdateReceiverRfcDTO:
+    type: object
+    required:
+      - status
+    properties:
+      # Estado del RFC
+      # 0 = Inactivo (no autorizado para facturar)
+      # 1 = Activo (autorizado para facturar)
+      status:
+        type: integer
+        minimum: 0
+        maximum: 1
+        description: New status value (must be 0 or 1)
+        example: 1
+
+  # DTO: ReceiverRfcViewDTO
+  # Modelo de salida que devuelve el BFF al frontend
+  # Incluye metadata de auditoría (creado por, actualizado por, timestamps)
+  ReceiverRfcViewDTO:
+    type: object
+    properties:
+      # ID único generado por la base de datos
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier
+
+      # Datos del receptor
+      businessName:
+        type: string
+        description: Receiver's business name
+      rfc:
+        type: string
+        description: Receiver's RFC
+      taxRegime:
+        type: string
+        description: Fiscal regime
+
+      # Estado actual
+      status:
+        type: integer
+        description: Status (0=inactive, 1=active)
+
+      # Vigencia
+      validFrom:
+        type: string
+        format: date
+        description: Start of validity
+      validTo:
+        type: string
+        format: date
+        description: End of validity
+
+      # METADATA DE AUDITORÍA
+      # El BFF extrae esta información del token JWT y timestamps de BD
+      createdByUserEmail:
+        type: string
+        description: Email of user who created the record
+      createdAt:
+        type: string
+        format: date-time
+        description: Creation timestamp
+      updatedByUserEmail:
+        type: string
+        description: Email of user who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+        description: Last update timestamp
+
+# ========================================================================
+# CONFIGURACIÓN DE SEGURIDAD
+# ========================================================================
+# Define cómo el BFF maneja la autenticación/autorización
+# ========================================================================
+
+securityDefinitions:
+  # OAuth2 con KeyCloak
+  # El BFF valida tokens Bearer en cada petición
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+
+# Aplicar seguridad global a todos los endpoints
+# Cada endpoint requiere un token válido de KeyCloak
+security:
+  - bearerAuth: []
+

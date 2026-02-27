@@ -1,0 +1,4 @@
+@omnichannel-retail:registry=https://us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/
+//us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/:always-auth=true
+@ui-kit:registry=https://us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/
+//us-central1-npm.pkg.dev/fal-corp-mrch-ops-prod/ui-kit-packages/:always-auth=true

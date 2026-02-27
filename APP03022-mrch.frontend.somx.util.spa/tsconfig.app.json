@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    /* ---------- Build info ---------- */
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    /* ---------- Target & libs ---------- */
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    /* ---------- Module / bundler ---------- */
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    /* ---------- NEW ---------- */
+    "allowJs": false,
+    /* ---------- Linting / strictness ---------- */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    /* ---------- Interop ---------- */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    /* ---------- Paths / aliases ---------- */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@features/*": [
+        "src/features/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ]
+    }
+  },
+  /* ---------- incluye .tsx, .ts, .jsx, .js dentro de src ---------- */
+  "include": [
+    "src"
+  ]
+}

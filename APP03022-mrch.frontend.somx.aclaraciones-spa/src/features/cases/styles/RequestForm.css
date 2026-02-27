@@ -1,0 +1,83 @@
+.rf-mt-1 {
+    margin-top: 0.25rem;
+}
+
+.rf-mt-2 {
+    margin-top: 0.5rem;
+}
+
+.rf-mt-4 {
+    margin-top: 1rem;
+}
+
+.rf-mt-6 {
+    margin-top: 1.5rem;
+}
+
+.rf-mt-10 {
+    margin-top: 2.5rem;
+}
+
+.rf-mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+.rf-mb-10 {
+    margin-bottom: 2.5rem;
+}
+
+.rf-pt-5 {
+    padding-top: 1.25rem;
+}
+
+.rf-pt-15 {
+    padding-top: 3.75rem;
+}
+
+/* Text sizes */
+.rf-title {
+    font-size: 1.5rem;
+    /* text-2xl */
+    font-weight: 500;
+    /* font-medium */
+}
+
+.rf-font-semibold {
+    font-weight: 600;
+}
+
+.rf-subtitle {
+    font-size: 1rem;
+}
+
+/* Borders */
+.rf-border-bottom {
+    border-bottom: 1px solid #e5e7eb;
+    /* border-gray-200 */
+}
+
+/* Width */
+.rf-w-lg {
+    width: 32rem;
+    /* Tailwind w-lg = 32rem */
+}
+
+/* Submit section */
+.rf-submit-bar {
+    padding-top: 1.25rem;
+    /* pt-5 */
+    height: 2.5rem;
+    /* h-10 */
+    text-align: right;
+}
+
+.rf-back-link {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.rf-submit-btn {
+    display: inline-block;
+}

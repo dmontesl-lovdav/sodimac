@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROJECT_NAME}
+spec:
+  template:
+    spec:
+      containers:
+        - name: ${PROJECT_NAME}
+          resources:
+            requests:
+              memory: "90Mi"
+              cpu: "50m"
+            limits:
+              memory: "1024Mi"
+              cpu: "250m"

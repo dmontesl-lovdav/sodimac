@@ -1,0 +1,7 @@
+CatTipoOrigenRecepciónSodimac
+idEstatus	Valor	descripción	External
+1	Mercancia	Proveedor SLI	SLI
+2	Transporte	Proveedor TRA	TRA
+3	Indirectos	Proveedor IND	IND
+4	Servicios	Proveedor SOT	SOT
+1	Mercancia	Proveedor ODMBS	Blanco

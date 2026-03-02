@@ -1,0 +1,15 @@
+INSERT INTO tenant_finance.reception (reception_id,purchase_order_uuid,origin_id,destination_id,amount,status,"comment",reception_date,created_by,created_at,updated_by,updated_at,reception_number,guide_number) VALUES
+	 ('fec06048-cf28-4ce8-b782-6ee860fabc45'::uuid,'00495d8c-b8a6-4d78-bf4a-7d7da9938727'::uuid,1,2,25000.50,2,'Razón 1','2024-02-05',1,'2025-11-10 09:04:52.026742',NULL,'2025-11-26 22:13:54.906457','REC-002',NULL),
+	 ('fb983b00-58d0-4cda-a39d-c2a02117d89a'::uuid,'38df751e-ab17-4e2c-9e23-6b01e38bdb55'::uuid,2,2,8500.75,2,'Test','2024-02-10',1,'2025-11-10 09:04:52.026742',NULL,'2025-11-27 16:39:00.277168','REC-045',NULL),
+	 ('3f500d8b-7b53-420c-ab38-54f7c4d75e42'::uuid,'a242376b-d7a5-416d-b025-15fbfa858551'::uuid,1,2,7695.25,0,'Recepción completa - Términos estándar cumplidos','2024-02-15',1,'2025-11-10 09:04:52.026742',NULL,NULL,'REC-010',NULL),
+	 ('60af47d9-c04f-402a-8f79-42985e205f74'::uuid,'e50b38d4-5341-4037-8be7-82df62f349de'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2025-12-26 19:51:46.841895',NULL,NULL,'REC-066',NULL),
+	 ('e10f1955-8dd1-4152-b2c4-f66298fb8096'::uuid,'9cf43ca5-acc2-4d20-8fa7-8067f14974f6'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2025-12-26 19:46:18.307974',NULL,NULL,'REC-0106',NULL),
+	 ('4c580801-4a57-4669-accd-87b21607802c'::uuid,'ee672afc-1055-413c-b50f-69f68bc51762'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 17:49:23.011202',NULL,NULL,NULL,'LG602871012202510441'),
+	 ('a5c2ec22-592f-40ba-8251-44d8a44b2731'::uuid,'aeab568a-1cea-4416-b606-edc0cd224e6d'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 17:56:29.522818',NULL,NULL,NULL,'LG602871012202510441'),
+	 ('b9112254-5f5f-4ed3-8215-70b8f10563a5'::uuid,'08ac4887-b7c5-4793-9931-fc07a08cc072'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 22:12:23.064648',NULL,NULL,'recep58CP.xml','LG602871012202510441'),
+	 ('547ab6d8-d055-418a-82bc-dfa945c85234'::uuid,'08ac4887-b7c5-4793-9931-fc07a08cc072'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 22:13:52.519789',NULL,NULL,'recep59CP.xml','LG602871012202510441'),
+	 ('5eb8c95e-f751-439a-85b3-c7c9fa99f9d5'::uuid,'6c5dd626-1c0a-4fd7-8de9-d7e5e992df97'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 22:49:41.723222',NULL,NULL,'recep60CP.xml','LG602871012202510441');
+INSERT INTO tenant_finance.reception (reception_id,purchase_order_uuid,origin_id,destination_id,amount,status,"comment",reception_date,created_by,created_at,updated_by,updated_at,reception_number,guide_number) VALUES
+	 ('146f8222-32b3-4445-b164-4286d15e1f36'::uuid,'6c5dd626-1c0a-4fd7-8de9-d7e5e992df97'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-24 22:50:57.085198',NULL,NULL,'recep61CP.xml','LG602871012202510441'),
+	 ('c2931db4-a811-4b70-92d7-1b0e821d7dd7'::uuid,'9b1c2b5e-9269-49bf-aa54-bf7cbae68087'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-25 14:38:52.390739',NULL,NULL,'61','LG602871012202510441'),
+	 ('f39c77d0-d386-44cd-bea2-6b902ed39fb4'::uuid,'9b1c2b5e-9269-49bf-aa54-bf7cbae68087'::uuid,1,1,10.00,0,'NO COMMENTS','2025-05-23',1,'2026-02-25 14:40:35.061217',NULL,NULL,'612','LG602871012202510441');

@@ -1,0 +1,2 @@
+INSERT INTO tenant_finance.account_statement_reception (account_statement_reception_uuid,account_statement_uuid,reception_number,order_number,document_date,reception_date,due_date,currency,amount,exchange_rate,base_currency,base_amount,status,source_id,created_by,created_at,updated_by,updated_at) VALUES
+	 ('be5a8543-8eb1-4b7b-a150-7fd282e542a2'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,800001,900001,'2026-01-10','2026-01-12','2026-02-12','MXN',25000.00,1.000000,'MXN',25000.00,'Completa',NULL,1,'2026-02-09 12:22:42.162639',NULL,NULL);

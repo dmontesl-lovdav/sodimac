@@ -4,15 +4,20 @@ _Consultas mas recientes primero_
 
 ---
 
-## 2026-02-27 | internalStatus null en API de catalogos (estatus EFA)
+## 2026-03-02 | internalStatus null + catalog_detail vacio en DEV (estatus EFA)
 
-**Contexto**: Fer consume la API de catalogos para obtener estatus de facturas. Necesita el ID numerico para mandarlo al endpoint `POST /invoices/search` en el campo `status`, pero el catalogo devuelve `internalStatus: null`.
-**Problema**: La columna `internal_status` en `shared_catalogs.catalog_detail` no estaba poblada para las entradas EFA (header_id=15, catalogo `CatEstatusComplemento`). El codigo (Entity -> Mapper -> DTO) estaba correcto, el problema era de datos.
-**Causa**: Al poblar el catalogo de estatus EFA nunca se lleno la columna `internal_status`. Otros catalogos como `CatEstatusCartaPorteFBC` si la tenian poblada.
-**Solucion**: Se poblo `internal_status = sort_order - 1` para las 14 entradas EFA. Mapeo: EFA001=0, EFA002=1, ..., EFA014=13. Fer debe usar el campo `internalStatus` de la respuesta del catalogo como valor para `status` en fiscal.
-**Archivos**: `docs/db/catalogs/fix_efa_internal_status.sql`
+**Contexto**: Fer consume la API de catalogos para obtener estatus de facturas. Necesita el ID numerico (`internalStatus`) para mandarlo al endpoint `POST /invoices/search` en el campo `status`, pero el catalogo devuelve `internalStatus: null`. Ademas, en DEV el endpoint regresa `[]` (array vacio).
+**Problema dual**:
+1. En local: `internal_status` no estaba poblado en `catalog_detail` para las entradas EFA → se corrigio con UPDATE
+2. En DEV: el header `CatEstatusComplemento` existe (id=19) pero NO tiene registros en `catalog_detail` → los 14 estatus EFA nunca se insertaron
+**Causa raiz**: Los scripts de insert exportados con DBeaver tenian `header_id=15` hardcodeado (id en local). En DEV el autoincremento asigno `id=19` al header, entonces los inserts de detail apuntaban al header equivocado.
+**Solucion**: Se creo script portable `seed_efa_completo.sql` que usa subqueries en lugar de IDs hardcodeados. Inserta dictionary_lang (42 traducciones) + catalog_detail (14 entradas) con `internal_status = sort_order - 1`. Mapeo: EFA001=0, EFA002=1, ..., EFA014=13.
+**Archivos**:
+- `docs/db/catalogs/fix_efa_internal_status.sql` — fix para local (UPDATE internal_status)
+- `docs/db/catalogs/seed_efa_completo.sql` — seed portable para DEV (inserts completos)
+**Diagnostico adicional**: Si el endpoint regresa `[]`, verificar: `status=1` (activos), `valid_from`/`valid_to` (vigencia). Query de repositorio filtra por las 3 condiciones.
 **Jira**: -
-**Estado**: Resuelto en local. Pendiente aplicar fix en DEV cuando levanten la VM.
+**Estado**: Resuelto en local. Fer debe ejecutar `seed_efa_completo.sql` en DEV via DBeaver.
 
 ---
 

@@ -212,3 +212,26 @@ UPDATE shared_catalogs.catalog_detail
 SET status = 1
 WHERE header_id = (SELECT id FROM shared_catalogs.catalog_header WHERE code = 'CatEstatusComplemento')
 AND status = 0;
+
+Fer, ya encontre la causa raiz del problema en DEV.
+
+En la base de datos de DEV, el catalogo CatEstatusComplemento existe en catalog_header (con id=19), pero NO tiene registros en catalog_detail. Es decir, el header esta pero los 14 estatus EFA nunca se insertaron.
+
+La causa fue que los scripts de insert originales (exportados con DBeaver) tenian el header_id hardcodeado como 15 (que es el id que tiene en mi local). En DEV, el autoincremento le asigno id=19, entonces los inserts de detail apuntaban a un header diferente.
+
+Ya cree un script portable que no depende de IDs hardcodeados. Ejecuta este script en DBeaver contra la BD de DEV:
+
+docs/db/catalogs/seed_efa_completo.sql
+
+El script hace lo siguiente:
+1. Verifica que el header CatEstatusComplemento exista
+2. Inserta las 42 traducciones en dictionary_lang (14 estatus x 3 idiomas) si no existen
+3. Inserta los 14 registros en catalog_detail usando subquery para obtener el header_id correcto
+4. Pobla internal_status = sort_order - 1 desde el inicio
+5. Al final muestra los resultados para verificar
+
+Una vez ejecutado, levanta catalogos-api y verifica con:
+
+curl -s "http://localhost:8083/CatEstatusComplemento/details?lang=1" | python -m json.tool
+
+Deberias ver las 14 entradas con internalStatus poblado (0 a 13).

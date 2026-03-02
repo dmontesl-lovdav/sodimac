@@ -1,0 +1,2 @@
+INSERT INTO tenant_finance.account_statement_credit_note (account_statement_credit_note_uuid,account_statement_uuid,document_number,series,folio,"uuid",issue_date,accounting_date,currency,amount,exchange_rate,base_currency,base_amount,status,created_by,created_at,updated_by,updated_at) VALUES
+	 ('f9c5edc9-342b-458b-8c69-1f9d9f96882b'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,'NC-001','NC','0001','UUID-NC-001-2026','2026-01-22 11:00:00','2026-01-23 08:00:00','MXN',3000.00,1.000000,'MXN',3000.00,'Aplicada',1,'2026-02-09 12:22:42.162639',NULL,NULL);

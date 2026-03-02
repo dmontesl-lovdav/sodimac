@@ -348,6 +348,7 @@ El BFF de finanzas (`ppsomx.finanzas/cloud-endpoint/openapi.yaml`) expone endpoi
 - [x] Analisis tecnico completado (consulta directa a BD)
 - [ ] Preguntas abiertas resueltas
 - [ ] Diseno aprobado por el equipo
+- [ ] **PENDIENTE**: Homologar esquema de tablas con lo que ya subieron en produccion/DEV (alguien se adelanto con el cambio). Revisar diferencias y alinear.
 
 ### Base de Datos
 - [ ] Script DDL para crear `payment_header`

@@ -5,3 +5,21 @@ idEstatus	Valor	descripción	External
 3	Indirectos	Proveedor IND	IND
 4	Servicios	Proveedor SOT	SOT
 1	Mercancia	Proveedor ODMBS	Blanco
+
+Listo, ya esta creado el catalogo CatTipoOrigenRecepcionSodimac.
+
+Tiene 5 entradas con prefijo TOS:
+
+TOS001: Mercancia / Proveedor SLI / external=SLI / internalStatus=1
+TOS002: Transporte / Proveedor TRA / external=TRA / internalStatus=2
+TOS003: Indirectos / Proveedor IND / external=IND / internalStatus=3
+TOS004: Servicios / Proveedor SOT / external=SOT / internalStatus=4
+TOS005: Mercancia / Proveedor ODMBS / external=Blanco / internalStatus=1
+
+Para consultar:
+GET /CatTipoOrigenRecepcionSodimac/details?lang=1
+
+En local ya esta probado y funciona. Para DEV hay que ejecutar el script:
+docs/db/catalogs/seed_CatTipoOrigenRecepcionSodimac.sql
+
+El script es portable, no depende de IDs hardcodeados.

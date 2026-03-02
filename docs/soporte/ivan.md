@@ -4,6 +4,19 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-02 | Nuevo catalogo CatTipoOrigenRecepcionSodimac
+
+**Contexto**: Ivan y Josue solicitaron un nuevo catalogo de tipos de origen de recepcion especifico para Sodimac, con 5 entradas y external keys.
+**Problema**: No existia el catalogo. Ya existia `CatTipoOrigenRecepcion` (id=20) pero necesitaban uno con datos especificos.
+**Solucion**: Se creo script portable `seed_CatTipoOrigenRecepcionSodimac.sql`. Probado en local.
+**Datos**: TOS001=SLI(Mercancia), TOS002=TRA(Transporte), TOS003=IND(Indirectos), TOS004=SOT(Servicios), TOS005=Blanco(Mercancia/ODMBS)
+**Endpoint**: `GET /CatTipoOrigenRecepcionSodimac/details?lang=1`
+**Archivos**: `docs/db/catalogs/seed_CatTipoOrigenRecepcionSodimac.sql`
+**Jira**: -
+**Estado**: Resuelto en local. Pendiente ejecutar en Sodimac DEV.
+
+---
+
 ## 2026-03-02 | Estructura de tablas de pagos (payment_header / payment_detail)
 
 **Contexto**: Ivan pidio la estructura y nombre de las tablas de pagos del esquema `tenant_finance`

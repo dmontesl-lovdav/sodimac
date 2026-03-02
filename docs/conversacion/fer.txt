@@ -190,3 +190,25 @@ Deberias ver internalStatus con valor numerico en cada entrada, por ejemplo:
   "color": "Amarillo",
   "sortOrder": 2
 }
+
+Fer, si el endpoint te regresa [] (array vacio), no es problema de autenticacion. Revise el codigo y la query del repositorio filtra por 3 condiciones:
+
+1. status = 1 (solo registros activos)
+2. valid_from <= hoy (o NULL)
+3. valid_to >= hoy (o NULL)
+
+Si en DEV los registros EFA tienen status = 0 o fechas de vigencia expiradas, la API regresa [].
+
+Para diagnosticar ejecuta este SQL en DBeaver contra la BD de DEV:
+
+SELECT key, status, valid_from, valid_to
+FROM shared_catalogs.catalog_detail
+WHERE header_id = (SELECT id FROM shared_catalogs.catalog_header WHERE code = 'CatEstatusComplemento')
+ORDER BY sort_order;
+
+Si status = 0, hay que activarlos:
+
+UPDATE shared_catalogs.catalog_detail
+SET status = 1
+WHERE header_id = (SELECT id FROM shared_catalogs.catalog_header WHERE code = 'CatEstatusComplemento')
+AND status = 0;

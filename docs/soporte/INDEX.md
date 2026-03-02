@@ -8,6 +8,7 @@
 | Persona | Archivo | Ultima consulta |
 |---------|---------|-----------------|
 | Fernando (Fer) | [fer.md](fer.md) | - |
+| Ivan | [ivan.md](ivan.md) | - |
 | Jose Luis | [jose-luis.md](jose-luis.md) | - |
 
 ## Como usar este registro

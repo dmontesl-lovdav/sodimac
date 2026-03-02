@@ -1,0 +1,56 @@
+Hola David, un super favor, me puedes pasar la estructura y nombre de tablas de pagos por favor
+
+Claro Ivan, aqui va.
+
+Tablas de pagos - esquema tenant_finance (STM-399)
+
+Estructura cabecera-detalle:
+
+payment_header (1) ──── (N) payment_detail
+
+
+TABLA: payment_header (Cabecera - deposito total al proveedor)
+
+| Columna               | Tipo           | Null | Default           | Descripcion                    |
+|---------------------- |--------------- |------|-------------------|-------------------------------|
+| payment_header_uuid   | UUID           | NO   | gen_random_uuid() | PK                            |
+| company               | INTEGER        | NO   |                   | Empresa SAP                   |
+| vendor_number         | INTEGER        | NO   |                   | Numero de proveedor           |
+| currency              | VARCHAR(3)     | NO   | 'MXN'             | Moneda                        |
+| total_amount          | NUMERIC(15,2)  | NO   |                   | Monto total del deposito      |
+| payment_date          | DATE           | NO   |                   | Fecha de pago                 |
+| status                | INTEGER        | NO   | 1                 | Estado                        |
+| created_by            | BIGINT         | SI   |                   | Usuario creador               |
+| created_at            | TIMESTAMP      | NO   | CURRENT_TIMESTAMP | Fecha creacion                |
+| updated_by            | BIGINT         | SI   |                   | Usuario actualizador          |
+| updated_at            | TIMESTAMP      | SI   |                   | Fecha actualizacion           |
+
+Indices: vendor_number, company, payment_date, status
+
+
+TABLA: payment_detail (Detalle - lineas de pago aplicadas a facturas)
+Nota: antes se llamaba finanzas_payments, se renombro por el STM-399
+
+| Columna               | Tipo           | Null | Default           | Descripcion                    |
+|---------------------- |--------------- |------|-------------------|-------------------------------|
+| finanzas_payment_uuid | UUID           | NO   | gen_random_uuid() | PK                            |
+| payment_header_uuid   | UUID           | NO   |                   | FK → payment_header           |
+| company               | INTEGER        | NO   |                   | Empresa SAP                   |
+| document_number       | VARCHAR(100)   | NO   |                   | Numero de documento           |
+| document_reference    | VARCHAR(100)   | NO   |                   | Referencia del documento      |
+| vendor_number         | INTEGER        | NO   |                   | Numero de proveedor           |
+| amount                | NUMERIC(15,2)  | NO   |                   | Monto del pago                |
+| currency              | VARCHAR(3)     | NO   | 'MXN'             | Moneda                        |
+| document_type         | VARCHAR(5)     | NO   |                   | Tipo de documento             |
+| sap_document          | VARCHAR(50)    | NO   |                   | Documento SAP                 |
+| payment_date          | DATE           | NO   |                   | Fecha de pago                 |
+| status                | INTEGER        | NO   | 1                 | Estado (0-3)                  |
+| created_by            | BIGINT         | SI   |                   | Usuario creador               |
+| created_at            | TIMESTAMP      | NO   | CURRENT_TIMESTAMP | Fecha creacion                |
+| updated_by            | BIGINT         | SI   |                   | Usuario actualizador          |
+| updated_at            | TIMESTAMP      | SI   |                   | Fecha actualizacion           |
+
+Indices: document_number, vendor_number, sap_document, payment_date, status, payment_header_uuid
+Check constraints: amount >= 0, status IN (0,1,2,3)
+
+Relacion: Un payment_header agrupa N payment_detail del mismo deposito/transferencia al proveedor.

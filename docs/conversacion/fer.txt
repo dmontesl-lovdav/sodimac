@@ -129,12 +129,23 @@ POST con este payload:
  
 Deja lo reviso y te paso una respuesta
 
-Listo Fer, ya encontre el problema. El campo `internalStatus` venia null porque no estaba poblado en la base de datos. Ya lo corregi.
+Listo Fer, ya encontre el problema. Estas consultando el catalogo equivocado.
 
-Ahora la API de catalogos te va a devolver algo asi:
+Los estatus de factura (EFA001-EFA014) estan en `CatEstatusFactura`, no en `CatEstatusComplemento`.
+
+En la base de datos:
+- CatEstatusFactura (id=15, prefix=EFA, status=1) → tiene los 14 estatus EFA con internalStatus poblado
+- CatEstatusComplemento (id=19, prefix=ECM, status=-1) → vacio, aun no esta configurado
+
+Cambia tu consulta de:
+  GET /CatEstatusComplemento/details?lang=1  (regresa [])
+a:
+  GET /CatEstatusFactura/details?lang=1  (regresa los 14 estatus)
+
+La API te va a devolver algo asi:
 {
   "key": "EFA002",
-  "internalStatus": 1,
+  "internalStatus": 2,
   "description": "Pendiente Addenda",
   "color": "Amarillo",
   "sortOrder": 2
@@ -142,20 +153,20 @@ Ahora la API de catalogos te va a devolver algo asi:
 
 El campo `internalStatus` es el que debes mandar en el campo `status` del endpoint `POST /invoices/search`. El mapeo es:
 
-EFA001 = 0 (Rechazo Comercial)
-EFA002 = 1 (Pendiente Addenda)
-EFA003 = 2 (Recibido Parcial)
-EFA004 = 3 (Pendiente de Contabilizar)
-EFA005 = 4 (En proceso de descarga)
-EFA006 = 5 (Desglose de factura)
-EFA007 = 6 (Pendiente de envio a contabilizar)
-EFA008 = 7 (Pendiente de Pago)
-EFA009 = 8 (Pagado)
-EFA010 = 9 (Pendiente de complemento)
-EFA011 = 10 (Completado)
-EFA012 = 11 (Rechazo Contable)
-EFA013 = 12 (No valido fiscal)
-EFA014 = 13 (Pago Manual)
+EFA001 = 1 (Rechazo Comercial)
+EFA002 = 2 (Pendiente Addenda)
+EFA003 = 3 (Recibido Parcial)
+EFA004 = 4 (Pendiente de Contabilizar)
+EFA005 = 5 (En proceso de descarga)
+EFA006 = 6 (Desglose de factura)
+EFA007 = 7 (Pendiente de envio a contabilizar)
+EFA008 = 8 (Pendiente de Pago)
+EFA009 = 9 (Pagado)
+EFA010 = 10 (Pendiente de complemento)
+EFA011 = 11 (Completado)
+EFA012 = 12 (Rechazo Contable)
+EFA013 = 13 (No valido fiscal)
+EFA014 = 14 (Pago Manual)
 
 Ejemplo de uso:
 POST /invoices/search
@@ -166,72 +177,16 @@ POST /invoices/search
   "tipoDocumento": "i",
   "page": 0,
   "size": 10,
-  "status": 1
+  "status": 2
 }
 
-Nada mas avísame cuando levanten la VM para aplicar el fix en DEV.
-
-Para levantar catalogos-api:
+Para levantar catalogos-api y verificar:
 
 cd APP03022-mrch.backend.somx.catalogos-api
 mvn spring-boot:run
 
 Levanta en puerto 8083, perfil dev (localhost:5434, usuario wwwb2bportal).
 
-Para verificar despues del fix, ejecuta este curl:
+curl -s "http://localhost:8083/CatEstatusFactura/details?lang=1" | python -m json.tool
 
-curl -s "http://localhost:8083/CatEstatusComplemento/details?lang=1" | python -m json.tool
-
-Deberias ver internalStatus con valor numerico en cada entrada, por ejemplo:
-{
-  "key": "EFA002",
-  "internalStatus": 1,
-  "description": "Pendiente Addenda",
-  "color": "Amarillo",
-  "sortOrder": 2
-}
-
-Fer, si el endpoint te regresa [] (array vacio), no es problema de autenticacion. Revise el codigo y la query del repositorio filtra por 3 condiciones:
-
-1. status = 1 (solo registros activos)
-2. valid_from <= hoy (o NULL)
-3. valid_to >= hoy (o NULL)
-
-Si en DEV los registros EFA tienen status = 0 o fechas de vigencia expiradas, la API regresa [].
-
-Para diagnosticar ejecuta este SQL en DBeaver contra la BD de DEV:
-
-SELECT key, status, valid_from, valid_to
-FROM shared_catalogs.catalog_detail
-WHERE header_id = (SELECT id FROM shared_catalogs.catalog_header WHERE code = 'CatEstatusComplemento')
-ORDER BY sort_order;
-
-Si status = 0, hay que activarlos:
-
-UPDATE shared_catalogs.catalog_detail
-SET status = 1
-WHERE header_id = (SELECT id FROM shared_catalogs.catalog_header WHERE code = 'CatEstatusComplemento')
-AND status = 0;
-
-Fer, ya encontre la causa raiz del problema en DEV.
-
-En la base de datos de DEV, el catalogo CatEstatusComplemento existe en catalog_header (con id=19), pero NO tiene registros en catalog_detail. Es decir, el header esta pero los 14 estatus EFA nunca se insertaron.
-
-La causa fue que los scripts de insert originales (exportados con DBeaver) tenian el header_id hardcodeado como 15 (que es el id que tiene en mi local). En DEV, el autoincremento le asigno id=19, entonces los inserts de detail apuntaban a un header diferente.
-
-Ya cree un script portable que no depende de IDs hardcodeados. Ejecuta este script en DBeaver contra la BD de DEV:
-
-docs/db/catalogs/seed_efa_completo.sql
-
-El script hace lo siguiente:
-1. Verifica que el header CatEstatusComplemento exista
-2. Inserta las 42 traducciones en dictionary_lang (14 estatus x 3 idiomas) si no existen
-3. Inserta los 14 registros en catalog_detail usando subquery para obtener el header_id correcto
-4. Pobla internal_status = sort_order - 1 desde el inicio
-5. Al final muestra los resultados para verificar
-
-Una vez ejecutado, levanta catalogos-api y verifica con:
-
-curl -s "http://localhost:8083/CatEstatusComplemento/details?lang=1" | python -m json.tool
-
-Deberias ver las 14 entradas con internalStatus poblado (0 a 13).
+Deberias ver las 14 entradas con internalStatus poblado (1 a 14).

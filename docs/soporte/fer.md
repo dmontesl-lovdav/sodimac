@@ -4,20 +4,16 @@ _Consultas mas recientes primero_
 
 ---
 
-## 2026-03-02 | internalStatus null + catalog_detail vacio en DEV (estatus EFA)
+## 2026-03-02 | internalStatus null + endpoint regresa [] (estatus EFA)
 
-**Contexto**: Fer consume la API de catalogos para obtener estatus de facturas. Necesita el ID numerico (`internalStatus`) para mandarlo al endpoint `POST /invoices/search` en el campo `status`, pero el catalogo devuelve `internalStatus: null`. Ademas, en DEV el endpoint regresa `[]` (array vacio).
-**Problema dual**:
-1. En local: `internal_status` no estaba poblado en `catalog_detail` para las entradas EFA → se corrigio con UPDATE
-2. En DEV: el header `CatEstatusComplemento` existe (id=19) pero NO tiene registros en `catalog_detail` → los 14 estatus EFA nunca se insertaron
-**Causa raiz**: Los scripts de insert exportados con DBeaver tenian `header_id=15` hardcodeado (id en local). En DEV el autoincremento asigno `id=19` al header, entonces los inserts de detail apuntaban al header equivocado.
-**Solucion**: Se creo script portable `seed_efa_completo.sql` que usa subqueries en lugar de IDs hardcodeados. Inserta dictionary_lang (42 traducciones) + catalog_detail (14 entradas) con `internal_status = sort_order - 1`. Mapeo: EFA001=0, EFA002=1, ..., EFA014=13.
-**Archivos**:
-- `docs/db/catalogs/fix_efa_internal_status.sql` — fix para local (UPDATE internal_status)
-- `docs/db/catalogs/seed_efa_completo.sql` — seed portable para DEV (inserts completos)
-**Diagnostico adicional**: Si el endpoint regresa `[]`, verificar: `status=1` (activos), `valid_from`/`valid_to` (vigencia). Query de repositorio filtra por las 3 condiciones.
+**Contexto**: Fer consume la API de catalogos para obtener estatus de facturas. El catalogo devuelve `internalStatus: null` y en DEV el endpoint regresa `[]` (array vacio).
+**Causa raiz**: Fer consultaba `CatEstatusComplemento` (id=19, prefix=ECM, status=-1) que esta vacio y sin configurar. Los estatus EFA en realidad pertenecen a `CatEstatusFactura` (id=15, prefix=EFA, status=1).
+**Problema adicional**: En local los datos estaban con IDs diferentes porque los exports de DBeaver no incluian PKs. Se re-exporto con "Include generated columns" activado para tener datos identicos.
+**Solucion**: Fer debe cambiar su consulta de `CatEstatusComplemento` a `CatEstatusFactura`. El `internalStatus` ya viene poblado (1-14) y es el valor que debe mandar en `status` del `POST /invoices/search`.
+**Mapeo**: EFA001=1 (Rechazo Comercial), EFA002=2 (Pendiente Addenda), ..., EFA014=14 (Pago Manual)
+**Archivos**: `docs/db/catalogs/v2/` — exports con PKs desde Sodimac
 **Jira**: -
-**Estado**: Resuelto en local. Fer debe ejecutar `seed_efa_completo.sql` en DEV via DBeaver.
+**Estado**: Resuelto. Fer debe usar `CatEstatusFactura` en lugar de `CatEstatusComplemento`.
 
 ---
 

@@ -1,0 +1,44 @@
+INSERT INTO shared_catalogs.status_train (id,option_id,source_status,target_status,created_by,created_at,updated_by,updated_at) VALUES
+	 (1,2,1,2,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (2,2,1,3,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (3,2,2,3,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (4,2,3,4,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (5,2,4,5,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (6,2,4,11,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (7,2,5,6,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (8,2,5,11,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (9,2,6,7,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (10,2,6,11,1,'2026-01-15 10:02:49.278115',NULL,NULL);
+INSERT INTO shared_catalogs.status_train (id,option_id,source_status,target_status,created_by,created_at,updated_by,updated_at) VALUES
+	 (11,2,7,8,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (12,2,11,7,1,'2026-01-15 10:02:49.278115',NULL,NULL),
+	 (13,1,3,4,1,'2026-01-15 10:33:38.812665',NULL,NULL),
+	 (14,1,1,2,1,'2026-01-15 10:34:33.367484',NULL,NULL),
+	 (15,1,1,3,1,'2026-01-15 10:34:33.994132',NULL,NULL),
+	 (16,1,1,13,1,'2026-01-15 10:34:34.914905',NULL,NULL),
+	 (17,1,2,3,1,'2026-01-15 10:34:35.618824',NULL,NULL),
+	 (18,1,2,13,1,'2026-01-15 10:34:36.29626',NULL,NULL),
+	 (19,1,4,5,1,'2026-01-15 10:34:37.172536',NULL,NULL),
+	 (20,1,4,11,1,'2026-01-15 10:34:37.869215',NULL,NULL);
+INSERT INTO shared_catalogs.status_train (id,option_id,source_status,target_status,created_by,created_at,updated_by,updated_at) VALUES
+	 (21,1,5,6,1,'2026-01-15 10:34:38.556516',NULL,NULL),
+	 (22,1,5,11,1,'2026-01-15 10:34:39.190819',NULL,NULL),
+	 (23,1,6,7,1,'2026-01-15 10:34:40.065278',NULL,NULL),
+	 (24,1,6,11,1,'2026-01-15 10:34:40.79302',NULL,NULL),
+	 (25,1,7,8,1,'2026-01-15 10:34:41.412887',NULL,NULL),
+	 (26,1,8,9,1,'2026-01-15 10:34:42.117383',NULL,NULL),
+	 (27,1,9,10,1,'2026-01-15 10:34:42.823585',NULL,NULL),
+	 (28,1,11,7,1,'2026-01-15 10:34:43.549883',NULL,NULL),
+	 (30,5,0,1,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (31,5,0,2,1,'2026-01-30 10:00:00',NULL,NULL);
+INSERT INTO shared_catalogs.status_train (id,option_id,source_status,target_status,created_by,created_at,updated_by,updated_at) VALUES
+	 (34,5,1,3,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (35,5,1,4,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (36,5,2,3,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (37,5,2,4,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (38,5,3,5,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (39,5,4,5,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (40,5,5,6,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (32,5,0,7,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (33,5,0,8,1,'2026-01-30 10:00:00',NULL,NULL),
+	 (41,5,9,8,1,'2026-01-30 10:00:00',NULL,NULL);

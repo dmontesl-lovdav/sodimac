@@ -1,3 +1,0 @@
-INSERT INTO tenant_finance.account_statement_purchase_order (account_statement_purchase_order_uuid,account_statement_uuid,order_number,document_date,due_date,currency,amount,exchange_rate,base_currency,base_amount,status,source_id,created_by,created_at,updated_by,updated_at) VALUES
-	 ('0fa2089e-7cc1-40df-9183-6ce04493398f'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,900001,'2026-01-10','2026-02-10','MXN',25000.00,1.000000,'MXN',25000.00,'Recibida',NULL,1,'2026-02-09 12:22:42.162639',NULL,NULL),
-	 ('80372935-b8bd-4788-bdb3-bc5730112818'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,900002,'2026-01-18','2026-02-18','USD',500.00,17.500000,'MXN',8750.00,'Pendiente',NULL,1,'2026-02-09 12:22:42.162639',NULL,NULL);

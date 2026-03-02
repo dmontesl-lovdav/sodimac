@@ -1,3 +1,0 @@
-INSERT INTO tenant_finance.account_statement_payment (account_statement_payment_uuid,account_statement_uuid,payment_id,document_number,reference_number,payment_date,currency,amount,exchange_rate,base_currency,base_amount,status,created_by,created_at,updated_by,updated_at) VALUES
-	 ('2404cb3c-b6d5-410b-b6b0-42e0d91d87a9'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,5001,'PAG-001','TRANSF-001','2026-01-25 16:00:00','MXN',8000.00,1.000000,'MXN',8000.00,'Aplicado',1,'2026-02-09 12:22:42.162639',NULL,NULL),
-	 ('be32e6f9-18be-4df9-9622-85196b6fada7'::uuid,'3dd32c11-6357-4de0-9090-d2729195ee0f'::uuid,5002,'PAG-002','TRANSF-002','2026-01-30 14:00:00','MXN',2000.00,1.000000,'MXN',2000.00,'Aplicado',1,'2026-02-09 12:22:42.162639',NULL,NULL);

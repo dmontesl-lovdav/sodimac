@@ -7,6 +7,7 @@
 
 | Persona | Archivo | Ultima consulta |
 |---------|---------|-----------------|
+| Bonelli | [bonelli.md](bonelli.md) | 2026-03-02 |
 | Fernando (Fer) | [fer.md](fer.md) | 2026-03-02 |
 | Ivan | [ivan.md](ivan.md) | 2026-03-02 |
 | Josue | [josue.md](josue.md) | 2026-03-02 |

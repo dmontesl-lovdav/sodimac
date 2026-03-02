@@ -1,0 +1,32 @@
+Bonelli, revise tu v3 del esquema tenant_finance. Buen avance, estas son las observaciones:
+
+Lo que esta bien:
+- Renombraste finanzas_payments → payment_detail ✓
+- Agregaste FK constraint de payment_detail hacia la cabecera ✓
+- Agregaste UNIQUE constraint en la cabecera (company, anio, vendor_number, currency, payment_date) ✓
+- Agregaste FKs en todo el esquema (account_statement hijos, reception, rebate, etc.) ✓
+
+Lo que hay que corregir (ya tengo el script listo):
+
+1. Tabla cabecera: renombrar finanzas_payment_headers → payment_header
+   - "finanzas_payment_headers" es inconsistente con "payment_detail"
+   - Deben seguir la misma convencion: payment_header / payment_detail
+
+2. Columnas en español mezcladas con ingles:
+   - id_referencia_pago → payment_header_uuid (en ambas tablas)
+   - importe → total_amount
+   - anio se mantiene (evita usar "year" que es palabra reservada)
+
+3. Constraints e indices obsoletos: payment_detail todavia tiene nombres con "finanzas_payments_*"
+   - finanzas_payments_pkey → pk_payment_detail
+   - chk_finanzas_payments_amount → chk_payment_detail_amount
+   - chk_finanzas_payments_status → chk_payment_detail_status
+   - idx_finanzas_payments_* → idx_payment_detail_*
+   - Lo mismo en la cabecera: finanzas_payment_headers_pkey → pk_payment_header
+
+4. FK nullable: se queda asi por ahora porque hay 3 registros sin cabecera. Se hara NOT NULL cuando la app los vincule.
+
+El script esta en: docs/jiras/STM-399/STM-399_fix_naming.sql
+Son puros ALTER/RENAME, no destruye datos. Ya lo probe en local y pasa limpio.
+
+Avisame cuando lo quieras aplicar en DEV.

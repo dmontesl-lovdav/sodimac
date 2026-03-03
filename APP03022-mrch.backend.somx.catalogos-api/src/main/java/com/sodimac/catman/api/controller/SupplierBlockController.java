@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sodimac.catman.api.exception.ExceptionWrapper;
 import com.sodimac.catman.api.model.dto.SupplierBlockCreateDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockDto;
+import com.sodimac.catman.api.model.dto.SupplierBlockResponseDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockUpdateDto;
 import com.sodimac.catman.api.service.SupplierBlockService;
 
@@ -160,17 +161,17 @@ public class SupplierBlockController {
         summary = "Crea un nuevo bloqueo de proveedor",
         responses = {
             @ApiResponse(responseCode = "201", description = "Bloqueo creado",
-                content = @Content(schema = @Schema(implementation = SupplierBlockDto.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos o bloqueo solapado",
+                content = @Content(schema = @Schema(implementation = SupplierBlockResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos, proveedor no existe o bloqueo solapado",
                 content = @Content(schema = @Schema(implementation = ExceptionWrapper.class))),
             @ApiResponse(responseCode = "500", description = "Error interno",
                 content = @Content(schema = @Schema(implementation = ExceptionWrapper.class)))
         })
     @PostMapping
-    public ResponseEntity<SupplierBlockDto> createSupplierBlock(
+    public ResponseEntity<SupplierBlockResponseDto> createSupplierBlock(
             @Valid @RequestBody SupplierBlockCreateDto dto,
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
-        SupplierBlockDto created = supplierBlockService.create(dto, userId);
+        SupplierBlockResponseDto created = supplierBlockService.create(dto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -179,7 +180,7 @@ public class SupplierBlockController {
         summary = "Actualiza un bloqueo existente",
         responses = {
             @ApiResponse(responseCode = "200", description = "Bloqueo actualizado",
-                content = @Content(schema = @Schema(implementation = SupplierBlockDto.class))),
+                content = @Content(schema = @Schema(implementation = SupplierBlockResponseDto.class))),
             @ApiResponse(responseCode = "404", description = "Bloqueo no encontrado",
                 content = @Content(schema = @Schema(implementation = ExceptionWrapper.class))),
             @ApiResponse(responseCode = "400", description = "Datos invalidos o bloqueo solapado",
@@ -188,7 +189,7 @@ public class SupplierBlockController {
                 content = @Content(schema = @Schema(implementation = ExceptionWrapper.class)))
         })
     @PutMapping("/{id}")
-    public ResponseEntity<SupplierBlockDto> updateSupplierBlock(
+    public ResponseEntity<SupplierBlockResponseDto> updateSupplierBlock(
             @Parameter(description = "ID del bloqueo", required = true)
             @PathVariable Integer id,
             @Valid @RequestBody SupplierBlockUpdateDto dto,

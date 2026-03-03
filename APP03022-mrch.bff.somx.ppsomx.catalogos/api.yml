@@ -752,9 +752,9 @@ paths:
         "201":
           description: Bloqueo creado
           schema:
-            $ref: '#/definitions/SupplierBlockDto'
+            $ref: '#/definitions/SupplierBlockResponseDto'
         "400":
-          description: Datos invalidos o bloqueo solapado
+          description: Datos invalidos, proveedor no existe o bloqueo solapado
           schema:
             $ref: '#/definitions/ExceptionWrapper'
         "500":
@@ -820,7 +820,7 @@ paths:
         "200":
           description: Bloqueo actualizado
           schema:
-            $ref: '#/definitions/SupplierBlockDto'
+            $ref: '#/definitions/SupplierBlockResponseDto'
         "404":
           description: Bloqueo no encontrado
           schema:
@@ -1951,6 +1951,17 @@ definitions:
         type: string
         example: "admin"
         description: Usuario que actualizo el registro
+
+  SupplierBlockResponseDto:
+    type: object
+    description: "Respuesta de operacion de bloqueo de proveedor (STM-605)"
+    properties:
+      message:
+        type: string
+        example: "El registro del proveedor PROV001 se realizó exitosamente."
+        description: Mensaje de la operacion (del catalogo de mensajes)
+      data:
+        $ref: '#/definitions/SupplierBlockDto'
 
   SupplierBlockCreateDto:
     type: object

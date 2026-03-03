@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.sodimac.catman.api.model.dto.SupplierBlockCreateDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockDto;
+import com.sodimac.catman.api.model.dto.SupplierBlockResponseDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockUpdateDto;
 
 /**
@@ -51,13 +52,15 @@ public interface SupplierBlockService {
 
     /**
      * Crea un nuevo bloqueo de proveedor.
+     * STM-605: Retorna respuesta con mensaje del catalogo.
      */
-    SupplierBlockDto create(SupplierBlockCreateDto dto, String createdBy);
+    SupplierBlockResponseDto create(SupplierBlockCreateDto dto, String createdBy);
 
     /**
      * Actualiza un bloqueo existente.
+     * STM-605: Retorna respuesta con mensaje del catalogo.
      */
-    Optional<SupplierBlockDto> update(Integer id, SupplierBlockUpdateDto dto, String updatedBy);
+    Optional<SupplierBlockResponseDto> update(Integer id, SupplierBlockUpdateDto dto, String updatedBy);
 
     /**
      * Elimina (desactiva) un bloqueo.

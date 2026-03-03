@@ -1,0 +1,528 @@
+{
+	"info": {
+		"_postman_id": "stm-605-supplier-block",
+		"name": "STM-605 - Bloqueo de Proveedores (API + BFF)",
+		"description": "Coleccion para validar los endpoints de bloqueo de proveedores.\n\nJIRA: STM-605\nBase: STM-1224 (CRUD original)\n\nIncluye pruebas via API directa (puerto 8083) y via BFF (puerto 3000).\nNo requiere variables de ambiente, ejecutar directamente.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "API Directa (8083)",
+			"item": [
+				{
+					"name": "GET - Listar todos los bloqueos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Obtiene todos los bloqueos activos"
+					}
+				},
+				{
+					"name": "GET - Listar bloqueos por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks?status=1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"],
+							"query": [
+								{
+									"key": "status",
+									"value": "1",
+									"description": "1=Activo, 0=Inactivo"
+								}
+							]
+						},
+						"description": "Obtiene bloqueos filtrados por estado"
+					}
+				},
+				{
+					"name": "GET - Obtener bloqueo por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Obtiene un bloqueo especifico por su ID"
+					}
+				},
+				{
+					"name": "GET - Bloqueos de un proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/supplier/0000100025",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "supplier", "0000100025"]
+						},
+						"description": "Obtiene todos los bloqueos de un proveedor"
+					}
+				},
+				{
+					"name": "GET - Bloqueos vigentes de un proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/supplier/0000100025/active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "supplier", "0000100025", "active"]
+						},
+						"description": "Obtiene los bloqueos activos vigentes (fecha actual dentro del rango)"
+					}
+				},
+				{
+					"name": "GET - Verificar si proveedor esta bloqueado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/supplier/0000100025/is-blocked",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "supplier", "0000100025", "is-blocked"]
+						},
+						"description": "Retorna {supplierNumber, blocked: true/false}"
+					}
+				},
+				{
+					"name": "GET - Bloqueos a fecha especifica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/supplier/0000100025/at-date?date=2026-06-15",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "supplier", "0000100025", "at-date"],
+							"query": [
+								{
+									"key": "date",
+									"value": "2026-06-15",
+									"description": "Fecha a consultar (yyyy-MM-dd)"
+								}
+							]
+						},
+						"description": "Obtiene los bloqueos activos a una fecha especifica"
+					}
+				},
+				{
+					"name": "POST - Crear bloqueo (exito)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"0000100025\",\n    \"validFrom\": \"2026-08-01\",\n    \"validTo\": \"2026-08-31\",\n    \"blockReason\": \"Prueba STM-605 - bloqueo agosto\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Crea un bloqueo exitosamente. Respuesta: 201 con message (RES001) + data"
+					}
+				},
+				{
+					"name": "POST - Error: proveedor no existe",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"99999\",\n    \"validFrom\": \"2026-01-01\",\n    \"validTo\": \"2026-12-31\",\n    \"blockReason\": \"Prueba proveedor inexistente\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Proveedor 99999 no existe. Respuesta: 400 con mensaje BUS215"
+					}
+				},
+				{
+					"name": "POST - Error: fecha inicio > fecha fin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"0000100025\",\n    \"validFrom\": \"2026-12-31\",\n    \"validTo\": \"2026-01-01\",\n    \"blockReason\": \"Prueba fechas invertidas\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Fecha inicio mayor a fecha fin. Respuesta: 400 con mensaje WRN001"
+					}
+				},
+				{
+					"name": "POST - Error: bloqueo solapado",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"0000100025\",\n    \"validFrom\": \"2026-08-15\",\n    \"validTo\": \"2026-09-15\",\n    \"blockReason\": \"Prueba solapamiento\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Se solapa con el bloqueo de agosto creado anteriormente. Respuesta: 400 con mensaje BUS216. Ejecutar despues de 'Crear bloqueo (exito)'"
+					}
+				},
+				{
+					"name": "PUT - Actualizar bloqueo",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"validTo\": \"2026-09-30\",\n    \"blockReason\": \"Bloqueo extendido a septiembre\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Actualiza un bloqueo existente. Ajustar el ID segun el bloqueo creado. Respuesta: 200 con message + data"
+					}
+				},
+				{
+					"name": "DELETE - Eliminar (desactivar) bloqueo",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8083/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8083",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Desactiva (soft-delete) un bloqueo. Ajustar el ID. Respuesta: 204 No Content"
+					}
+				}
+			]
+		},
+		{
+			"name": "BFF (3000)",
+			"item": [
+				{
+					"name": "GET - Listar todos los bloqueos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Via BFF. Proxy transparente a catalogos-api"
+					}
+				},
+				{
+					"name": "GET - Bloqueos por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks?status=1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks"],
+							"query": [
+								{
+									"key": "status",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "GET - Obtener bloqueo por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "GET - Bloqueos de un proveedor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/supplier/0000100025",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "supplier", "0000100025"]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "GET - Bloqueos vigentes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/supplier/0000100025/active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "supplier", "0000100025", "active"]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "GET - Verificar si esta bloqueado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/supplier/0000100025/is-blocked",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "supplier", "0000100025", "is-blocked"]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "GET - Bloqueos a fecha especifica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/supplier/0000100025/at-date?date=2026-06-15",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "supplier", "0000100025", "at-date"],
+							"query": [
+								{
+									"key": "date",
+									"value": "2026-06-15"
+								}
+							]
+						},
+						"description": "Via BFF"
+					}
+				},
+				{
+					"name": "POST - Crear bloqueo (exito)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"0000100025\",\n    \"validFrom\": \"2026-10-01\",\n    \"validTo\": \"2026-10-31\",\n    \"blockReason\": \"Prueba STM-605 via BFF - bloqueo octubre\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Via BFF. Respuesta: 201 con message (RES001) + data"
+					}
+				},
+				{
+					"name": "POST - Error: proveedor no existe",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"99999\",\n    \"validFrom\": \"2026-01-01\",\n    \"validTo\": \"2026-12-31\",\n    \"blockReason\": \"Prueba proveedor inexistente via BFF\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Via BFF. Respuesta: 400 con mensaje BUS215"
+					}
+				},
+				{
+					"name": "POST - Error: fecha inicio > fecha fin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"supplierNumber\": \"0000100025\",\n    \"validFrom\": \"2026-12-31\",\n    \"validTo\": \"2026-01-01\",\n    \"blockReason\": \"Prueba fechas invertidas via BFF\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks"]
+						},
+						"description": "Via BFF. Respuesta: 400 con mensaje WRN001"
+					}
+				},
+				{
+					"name": "PUT - Actualizar bloqueo",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"validTo\": \"2026-11-30\",\n    \"blockReason\": \"Bloqueo extendido via BFF\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Via BFF. Ajustar el ID. Respuesta: 200 con message + data"
+					}
+				},
+				{
+					"name": "DELETE - Eliminar bloqueo",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-User-Id",
+								"value": "postman-test"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/supplier-blocks/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["supplier-blocks", "1"]
+						},
+						"description": "Via BFF. Ajustar el ID. Respuesta: 204 No Content"
+					}
+				}
+			]
+		}
+	]
+}

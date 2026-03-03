@@ -10,25 +10,43 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sodimac.catman.api.model.dto.CatalogDetailDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockCreateDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockDto;
+import com.sodimac.catman.api.model.dto.SupplierBlockResponseDto;
 import com.sodimac.catman.api.model.dto.SupplierBlockUpdateDto;
 import com.sodimac.catman.api.model.entity.SupplierBlock;
 import com.sodimac.catman.api.repository.SupplierBlockRepository;
+import com.sodimac.catman.api.repository.SupplierRepository;
 
 /**
  * Implementacion del servicio de bloqueos de proveedores.
  * STM-1224: Bloqueo de proveedores por rango de fechas.
+ * STM-605: Integracion con catalogo de mensajes y validacion de proveedor.
  */
 @Service
 public class SupplierBlockServiceImpl implements SupplierBlockService {
 
     private static final Logger log = LoggerFactory.getLogger(SupplierBlockServiceImpl.class);
 
-    private final SupplierBlockRepository supplierBlockRepository;
+    // STM-605: Codigos de mensajes del catalogo
+    private static final String MSG_DATE_INVALID = "WRN001";
+    private static final String MSG_SUPPLIER_NOT_FOUND = "BUS215";
+    private static final String MSG_BLOCK_OVERLAP = "BUS216";
+    private static final String MSG_BLOCK_CREATED = "RES001";
+    private static final Integer DEFAULT_LANG_ID = 1;
 
-    public SupplierBlockServiceImpl(SupplierBlockRepository supplierBlockRepository) {
+    private final SupplierBlockRepository supplierBlockRepository;
+    private final SupplierRepository supplierRepository;
+    private final CatalogHeaderService catalogHeaderService;
+
+    public SupplierBlockServiceImpl(
+            SupplierBlockRepository supplierBlockRepository,
+            SupplierRepository supplierRepository,
+            CatalogHeaderService catalogHeaderService) {
         this.supplierBlockRepository = supplierBlockRepository;
+        this.supplierRepository = supplierRepository;
+        this.catalogHeaderService = catalogHeaderService;
     }
 
     @Override
@@ -80,19 +98,24 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
 
     @Override
     @Transactional
-    public SupplierBlockDto create(SupplierBlockCreateDto dto, String createdBy) {
+    public SupplierBlockResponseDto create(SupplierBlockCreateDto dto, String createdBy) {
         log.info("Creando bloqueo para proveedor: {}", dto.getSupplierNumber());
+
+        // STM-605: Validar que el proveedor exista
+        if (!supplierRepository.existsBySupplierNumber(dto.getSupplierNumber())) {
+            throw new IllegalArgumentException(getMessage(MSG_SUPPLIER_NOT_FOUND, dto.getSupplierNumber()));
+        }
 
         // Validar fechas
         if (dto.getValidTo().isBefore(dto.getValidFrom())) {
-            throw new IllegalArgumentException("La fecha de fin debe ser mayor o igual a la fecha de inicio");
+            throw new IllegalArgumentException(getMessage(MSG_DATE_INVALID));
         }
 
         // Verificar si hay bloqueos que se solapan
         List<SupplierBlock> overlapping = supplierBlockRepository.findOverlappingBlocks(
                 dto.getSupplierNumber(), dto.getValidFrom(), dto.getValidTo());
         if (!overlapping.isEmpty()) {
-            throw new IllegalArgumentException("Ya existe un bloqueo activo que se solapa con el rango de fechas especificado");
+            throw new IllegalArgumentException(getMessage(MSG_BLOCK_OVERLAP, dto.getSupplierNumber()));
         }
 
         SupplierBlock block = SupplierBlock.builder()
@@ -107,12 +130,15 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
         SupplierBlock saved = supplierBlockRepository.save(block);
         log.info("Bloqueo creado con ID: {}", saved.getId());
 
-        return toDto(saved);
+        return SupplierBlockResponseDto.builder()
+                .message(getMessage(MSG_BLOCK_CREATED, dto.getSupplierNumber()))
+                .data(toDto(saved))
+                .build();
     }
 
     @Override
     @Transactional
-    public Optional<SupplierBlockDto> update(Integer id, SupplierBlockUpdateDto dto, String updatedBy) {
+    public Optional<SupplierBlockResponseDto> update(Integer id, SupplierBlockUpdateDto dto, String updatedBy) {
         log.info("Actualizando bloqueo ID: {}", id);
 
         return supplierBlockRepository.findById(id)
@@ -122,7 +148,7 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
 
                     // Validar fechas
                     if (validTo.isBefore(validFrom)) {
-                        throw new IllegalArgumentException("La fecha de fin debe ser mayor o igual a la fecha de inicio");
+                        throw new IllegalArgumentException(getMessage(MSG_DATE_INVALID));
                     }
 
                     // Verificar solapamiento si cambian las fechas (excluyendo el bloqueo actual)
@@ -131,7 +157,7 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
                                 block.getSupplierNumber(), validFrom, validTo);
                         overlapping.removeIf(b -> b.getId().equals(id));
                         if (!overlapping.isEmpty()) {
-                            throw new IllegalArgumentException("Ya existe un bloqueo activo que se solapa con el rango de fechas especificado");
+                            throw new IllegalArgumentException(getMessage(MSG_BLOCK_OVERLAP, block.getSupplierNumber()));
                         }
                     }
 
@@ -152,7 +178,10 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
                     SupplierBlock saved = supplierBlockRepository.save(block);
                     log.info("Bloqueo actualizado: {}", saved.getId());
 
-                    return toDto(saved);
+                    return SupplierBlockResponseDto.builder()
+                            .message(getMessage(MSG_BLOCK_CREATED, block.getSupplierNumber()))
+                            .data(toDto(saved))
+                            .build();
                 });
     }
 
@@ -170,6 +199,17 @@ public class SupplierBlockServiceImpl implements SupplierBlockService {
                     return true;
                 })
                 .orElse(false);
+    }
+
+    /**
+     * Obtiene un mensaje del catalogo con sustitucion de parametros.
+     * STM-605: Patron copiado de SupplierServiceImpl.
+     */
+    private String getMessage(String key, String... params) {
+        Optional<CatalogDetailDto> detail = catalogHeaderService.findDetailByKeyFormatted(
+                key, DEFAULT_LANG_ID, List.of(params));
+        return detail.map(CatalogDetailDto::getDescription)
+                .orElse("Error: " + key);
     }
 
     /**

@@ -30,3 +30,16 @@ El script esta en: docs/jiras/STM-399/STM-399_fix_naming.sql
 Son puros ALTER/RENAME, no destruye datos. Ya lo probe en local y pasa limpio.
 
 Avisame cuando lo quieras aplicar en DEV.
+
+
+
+Buenas David en un chance que tengas agregas esos mensajes porfa :
+Solicitar a David Montes el alta de los mensajes WRN7024 y WRN7025 en el repositorio de mensajes del sistema. 
+ 
+Deje listo el back end para poder recibirlos 
+
+WRN7024
+Mensaje: “El valor del pago total no es igual al desglose del pago, favor de validar.”
+
+WRN7025
+Mensaje: “El desglose del pago no contiene un ingreso, favor de validar.”

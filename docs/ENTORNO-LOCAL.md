@@ -285,6 +285,49 @@ Los scripts SQL estan en `docs/db/batch_dev/`:
 - `batch-dev-dll.sql` → DDL (tablas, indices, FK)
 - `insert-batch_dev-*.sql` → Datos seed
 
+## SQL Server - SODIMAC_SAP_DEV (Docker)
+
+BD de desglose CFDI (STM-719). Almacena el desglose de facturas y NC descargadas del portal FBC.
+
+### Datos de conexion
+
+| Parametro | Valor |
+|-----------|-------|
+| **Host** | `localhost` |
+| **Puerto** | `1433` |
+| **Base de datos** | `SODIMAC_SAP_DEV` |
+| **Usuario** | `SA` |
+| **Password** | `Sodimac2026#Dev` |
+
+### Tablas
+
+| Tabla | Descripcion |
+|-------|-------------|
+| `Comprobante` | Documento principal CFDI (factura/NC) |
+| `Emisor` | Datos del proveedor emisor |
+| `Receptor` | Datos de la empresa receptora |
+| `Concepto` | Lineas/conceptos del comprobante |
+| `Impuestos` | Totales de impuestos a nivel comprobante |
+| `Traslado` | IVA y otros traslados a nivel comprobante |
+| `Retencion` | Retenciones a nivel comprobante |
+| `DetalleImpuesto` | Impuestos a nivel concepto/linea |
+
+### Reconstruir desde cero
+
+Los scripts SQL estan en `docs/db/sap_dev/`:
+- `sap-dev-dll.sql` → DDL (tablas, indices, FK)
+
+```bash
+# Crear BD
+MSYS_NO_PATHCONV=1 docker exec sodimac-mssql /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U SA -P 'Sodimac2026#Dev' -C -Q "CREATE DATABASE SODIMAC_SAP_DEV"
+
+# Copiar y ejecutar DDL
+docker cp docs/db/sap_dev/sap-dev-dll.sql sodimac-mssql:/tmp/sap-dev-dll.sql
+MSYS_NO_PATHCONV=1 docker exec sodimac-mssql /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U SA -P 'Sodimac2026#Dev' -C -d SODIMAC_SAP_DEV -I -i /tmp/sap-dev-dll.sql
+```
+
 ---
 
 ## Proyectos Backend
@@ -311,6 +354,7 @@ java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 | `finanzas-api` | - | dev | pendiente verificar |
 | `util-api` | - | dev | pendiente verificar |
 | `auditoria-api` | - | dev | pendiente verificar |
+| `batch-process` | 8090 | dev | http://localhost:8090/swagger-ui/index.html |
 
 ### Verificar que un proyecto esta corriendo
 

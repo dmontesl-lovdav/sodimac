@@ -33,7 +33,7 @@ public enum InvoiceStatus {
 
     PROCESO_DESCARGA(4, "Proceso de descarga",
             "Factura descargada para ser enviada a SODIMAC SAP PROD",
-            true, new Integer[]{5, 11}),
+            true, new Integer[]{5, 11, 14}),
 
     DESGLOSE_FACTURA(5, "Desglose de factura",
             "Factura desglosada para ser enviada a SAPITO",
@@ -69,7 +69,11 @@ public enum InvoiceStatus {
 
     PAGO_MANUAL(13, "Pago Manual",
             "Orden de compra pagada manualmente",
-            false, new Integer[]{});
+            false, new Integer[]{}),
+
+    ERROR_DESGLOSE_FACTURA(14, "Error en el desglose de la factura",
+            "Error al intentar desglosar la factura descargada (STM-719)",
+            true, new Integer[]{3});
 
     private final Integer codigo;
     private final String nombre;

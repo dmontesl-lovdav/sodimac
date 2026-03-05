@@ -190,3 +190,47 @@ Levanta en puerto 8083, perfil dev (localhost:5434, usuario wwwb2bportal).
 curl -s "http://localhost:8083/CatEstatusFactura/details?lang=1" | python -m json.tool
 
 Deberias ver las 14 entradas con internalStatus poblado (1 a 14).
+
+
+1.- Validar el estatus de las facturas y notas de crédito, si se manda el uuid que no son obligatorias las fechas
+ 
+post
+https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search
+{
+    "rfcEmisor": "",
+    "fechaInicioRecepcion": "2022-08-07",
+    "fechaFinalRecepcion": "2025-12-26",
+    "tipoDocumento": "I",
+    "page": 0,
+    "size": 10,
+    "serie": "",
+    "uuid": "f0000011-a011-4b11-c011-000000000011",
+    "folio": "",
+    "status": 4
+}
+ 
+2.- Que mandamos al momento de ver el detalle de las facturas relacionadas, si el uuid del registro o el uuid fiscal de la factura, 
+ 
+ 
+{
+    "rfcEmisor": "",
+    "tipoDocumento": "I",
+    "page": 0,
+    "size": 10,
+    "serie": "",
+    "uuid": "f0000011-a011-4b11-c011-000000000011",
+    "folio": ""
+}
+ 
+ 
+Es el mismo end point, pero sin fechas
+ 
+3.- En el payload de complemento de pagos se manda en el resultado el total, pero no el subtotal
+ 
+ 
+https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&page=0&size=10
+ 
+GET
+ 
+REvisar si están iguales los uuid de fiscal, parece que están iguales
+ 

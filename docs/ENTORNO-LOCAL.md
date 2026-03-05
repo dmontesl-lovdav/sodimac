@@ -228,6 +228,65 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO wwwb2bportal;
 "
 ```
 
+## SQL Server - SODIMAC_BATCH_DEV (Docker)
+
+BD de monitoreo/trazabilidad de procesos batch (STM-1167). En Sodimac corre en SQL Server `10.138.150.124:5319`.
+
+### Iniciar SQL Server
+
+```bash
+docker start sodimac-mssql
+```
+
+Si el container no existe, crearlo con volumen persistente:
+
+```bash
+docker volume create sodimac-mssqldata
+docker run -d --name sodimac-mssql \
+  -e "ACCEPT_EULA=Y" \
+  -e 'MSSQL_SA_PASSWORD=Sodimac2026#Dev' \
+  -p 1433:1433 \
+  -v sodimac-mssqldata:/var/opt/mssql \
+  mcr.microsoft.com/mssql/server:2022-latest
+```
+
+### Datos de conexion
+
+| Parametro | Valor |
+|-----------|-------|
+| **Host** | `localhost` |
+| **Puerto** | `1433` |
+| **Base de datos** | `SODIMAC_BATCH_DEV` |
+| **Usuario** | `SA` |
+| **Password** | `Sodimac2026#Dev` |
+
+### Tablas
+
+| Tabla | Registros | Descripcion |
+|-------|-----------|-------------|
+| `catCatalogo` | 5 | Catalogos del sistema (procesos, estatus, niveles, fases, tipos) |
+| `adminCatalogo` | 27 | Valores de los catalogos |
+| `ctrlProcesoCab` | 0 | Control de ejecucion (registros origen/destino, estatus) |
+| `ctrlProcesoDet` | 0 | Secuencia de pasos del proceso |
+| `ctrlProcesoElemento` | 0 | Documentos procesados (UUID como valor) |
+| `ctrlLog` | 0 | Logs tecnicos y funcionales |
+
+### Ejecutar consultas
+
+```bash
+MSYS_NO_PATHCONV=1 docker exec sodimac-mssql /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U SA -P 'Sodimac2026#Dev' -C -d SODIMAC_BATCH_DEV \
+  -Q "SELECT name FROM sys.tables ORDER BY name"
+```
+
+### Reconstruir desde cero
+
+Los scripts SQL estan en `docs/db/batch_dev/`:
+- `batch-dev-dll.sql` → DDL (tablas, indices, FK)
+- `insert-batch_dev-*.sql` → Datos seed
+
+---
+
 ## Proyectos Backend
 
 ### Compilar un proyecto

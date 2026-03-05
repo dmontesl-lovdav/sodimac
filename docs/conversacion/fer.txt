@@ -296,15 +296,15 @@ En resumen: no necesitas mandar ningún UUID extra. Solo busca NCs y los datos d
 
 Si quieres verificar directo en BD las relaciones:
 
-SELECT
-  i_nc.series AS nc_serie, i_nc.folio AS nc_folio, i_nc.fiscal_uuid AS nc_fiscal_uuid,
-  rc.relation_type,
-  i_rel.series AS fac_serie, i_rel.folio AS fac_folio, i_rel.fiscal_uuid AS fac_fiscal_uuid,
-  i_rel.subtotal AS fac_subtotal, i_rel.total AS fac_total
-FROM tenant_fiscal.related_cfdi rc
-JOIN tenant_fiscal.invoice i_nc ON rc.invoice_uuid = i_nc.invoice_uuid
-JOIN tenant_fiscal.invoice i_rel ON rc.related_invoice_uuid = i_rel.invoice_uuid
-ORDER BY i_nc.folio;
+    SELECT
+      i_nc.series AS nc_serie, i_nc.folio AS nc_folio, i_nc.fiscal_uuid AS nc_fiscal_uuid,
+      rc.relation_type,
+      i_rel.series AS fac_serie, i_rel.folio AS fac_folio, i_rel.fiscal_uuid AS fac_fiscal_uuid,
+      i_rel.subtotal AS fac_subtotal, i_rel.total AS fac_total
+    FROM tenant_fiscal.related_cfdi rc
+    JOIN tenant_fiscal.invoice i_nc ON rc.invoice_uuid = i_nc.invoice_uuid
+    JOIN tenant_fiscal.invoice i_rel ON rc.related_invoice_uuid = i_rel.invoice_uuid
+    ORDER BY i_nc.folio;
 
 ---
 
@@ -317,3 +317,16 @@ Esto es correcto para complementos de pago CFDI 4.0: el nodo Comprobante de un c
 curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&page=0&size=3"
 
 Si necesitas un campo subtotal adicional en el response sería un cambio nuevo, coordínalo con Iván.
+
+
+1.- buscar un escenario de Facturas con NC relacionadas, 
+Se el esta pasando el estatus y no regresa Resultados 
+Según la conversación estamos utilizando este catálogo:
+curl -s "http://localhost:8083/CatEstatusFactura/details?lang=1"
+
+https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search
+
+{"rfcEmisor":" ","fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-10","tipoDocumento":"I","page":0,"size":10,"serie":"","uuid":"","folio":"","status":"12"}
+
+2.- Confirmar que el mismo end point que registra la factura se utilice para complementos
+

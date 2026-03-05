@@ -1,0 +1,370 @@
+{
+	"info": {
+		"name": "STM-339 - Actualizar Factura o Nota de Crédito",
+		"description": "Colección de Postman para probar la funcionalidad de actualización de facturas y notas de crédito.\n\n**JIRA:** STM-339\n\n**Endpoint:** PUT /api/invoices\n\n**Validaciones implementadas:**\n1. Documento debe existir (por UUID fiscal)\n2. Documento debe tener addenda registrada\n3. El proveedor del request debe coincidir con el de la addenda\n4. La transición de estatus debe ser válida\n\n**Códigos de error:**\n- BUS3101: Documento no encontrado\n- BUS3102: Documento no pertenece al proveedor\n- BUS3103: Documento sin addenda\n- BUS3201: Estatus no válido para el tipo de documento\n- BUS3203: Transición de estatus no permitida",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Actualizar Factura - Caso Exitoso",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso exitoso:** Actualizar estatus de una factura existente.\n\n**Campos obligatorios:**\n- `uuid`: UUID fiscal del documento (TimbreFiscalDigital)\n- `numeroProveedor`: Número del proveedor (debe coincidir con addenda.supplier_number)\n- `estatus`: Nuevo código de estatus\n- `idUsuarioActualizacion`: ID del usuario que realiza la actualización\n\n**Validaciones que se ejecutan:**\n1. ✅ Buscar documento por UUID fiscal\n2. ✅ Validar que existe addenda para el documento\n3. ✅ Validar que numeroProveedor coincide con addenda.supplier_number\n4. ✅ Validar que la transición de estatus es permitida\n5. ✅ Actualizar estatus y updated_by\n\n**Response exitoso (HTTP 200):**\n```json\n{\n  \"success\": true,\n  \"code\": \"BUS3001\",\n  \"message\": \"Factura actualizada exitosamente\",\n  \"invoiceUuid\": \"123e4567-...\",\n  \"fiscalUuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"documentType\": \"I\",\n  \"estatusAnterior\": 1,\n  \"estatusNuevo\": 2,\n  \"estatusNuevoNombre\": \"Recibido Parcial\",\n  \"addendaActualizada\": false,\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```\n\n**NOTA:** Reemplaza el UUID con uno real de tu base de datos."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Actualizar NC - Caso Exitoso",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"A12B2040-D8F8-4FCE-AB9D-37A636F8E59E\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso exitoso:** Actualizar estatus de una Nota de Crédito existente.\n\n**Códigos de éxito para NC:**\n- `BUS3003`: Nota de Crédito actualizada exitosamente\n- `BUS3004`: Nota de Crédito actualizada exitosamente - Addenda actualizada\n\n**Response exitoso (HTTP 200):**\n```json\n{\n  \"success\": true,\n  \"code\": \"BUS3003\",\n  \"message\": \"Nota de Crédito actualizada exitosamente\",\n  \"invoiceUuid\": \"987e6543-...\",\n  \"fiscalUuid\": \"A12B2040-D8F8-4FCE-AB9D-37A636F8E59E\",\n  \"documentType\": \"E\",\n  \"estatusAnterior\": 1,\n  \"estatusNuevo\": 2,\n  \"estatusNuevoNombre\": \"Por Contabilizar\",\n  \"addendaActualizada\": false,\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Actualizar con Addenda",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 3,\n  \"idUsuarioActualizacion\": 12345,\n  \"addenda\": {\n    \"idProveedor\": \"1234567890\",\n    \"serie\": \"A\",\n    \"folio\": \"12345\",\n    \"rfc\": \"ABC123456789\",\n    \"idGuiaEntrega\": \"GE-001\",\n    \"idViaje\": \"VJ-001\",\n    \"noOC\": \"OC-2025-001\",\n    \"noRecepcion\": \"REC-001\",\n    \"tipoAddenda\": 1,\n    \"tipoProveedor\": \"NACIONAL\"\n  }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso:** Actualizar estatus Y datos de addenda.\n\n**Campos de addenda para Factura:**\n- `idProveedor`: ID del proveedor\n- `serie`: Serie del documento\n- `folio`: Folio del documento\n- `rfc`: RFC del emisor\n- `idGuiaEntrega`: ID de guía de entrega\n- `idViaje`: ID del viaje\n- `noOC`: Número de Orden de Compra\n- `noRecepcion`: Número de recepción\n- `tipoAddenda`: Tipo de addenda\n- `tipoProveedor`: Tipo de proveedor\n\n**Response con addenda actualizada:**\n```json\n{\n  \"success\": true,\n  \"code\": \"BUS3002\",\n  \"message\": \"Factura actualizada exitosamente - Addenda actualizada\",\n  \"addendaActualizada\": true,\n  ...\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Error - Documento No Encontrado (BUS3101)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"00000000-0000-0000-0000-000000000000\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** UUID que no existe en la base de datos.\n\n**Response esperado (HTTP 404):**\n```json\n{\n  \"success\": false,\n  \"code\": \"BUS3101\",\n  \"message\": \"El documento con UUID 00000000-0000-0000-0000-000000000000 no se encuentra registrado en el sistema\",\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Error - Sin Addenda (BUS3103)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"UUID-DE-DOCUMENTO-SIN-ADDENDA\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** Documento existe pero NO tiene addenda registrada.\n\n**Regla de negocio (confirmada por Ivan):**\n> \"Cuando una factura no tenga addenda eso es un error, no debe ocurrir ya que esto indica que subieron una factura sin relacionar la OC\"\n\n**Response esperado (HTTP 400):**\n```json\n{\n  \"success\": false,\n  \"code\": \"BUS3103\",\n  \"message\": \"La addenda del documento no se encuentra registrada en el sistema\",\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```\n\n**NOTA:** Usa un UUID de un documento que exista pero que NO tenga registro en la tabla `addendum`."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Error - Proveedor Incorrecto (BUS3102)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"numeroProveedor\": 9999999999,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** El numeroProveedor del request NO coincide con el supplier_number de la addenda.\n\n**Validación:**\n```java\nif (addendum.getSupplierNumber().compareTo(numeroProveedorRequest) != 0) {\n    // Error BUS3102\n}\n```\n\n**Response esperado (HTTP 400):**\n```json\n{\n  \"success\": false,\n  \"code\": \"BUS3102\",\n  \"message\": \"El documento con UUID 50E9F895-F12E-4D28-8BA3-5D9B58FF10FF no pertenece al proveedor especificado\",\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```\n\n**NOTA:** Para probar este caso:\n1. Usa un UUID de documento real que tenga addenda\n2. Usa un numeroProveedor DIFERENTE al que está en addendum.supplier_number"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Error - Estatus Inválido (BUS3201)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 999,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** Código de estatus que no existe en el catálogo.\n\n**Response esperado (HTTP 400):**\n```json\n{\n  \"success\": false,\n  \"code\": \"BUS3201\",\n  \"message\": \"El estatus 999 no es válido para el tipo de documento Factura (I)\",\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "8. Error - Transición No Permitida (BUS3203)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"UUID-DOCUMENTO-EN-ESTATUS-FINAL\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 1,\n  \"idUsuarioActualizacion\": 12345\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** Intentar una transición de estatus no permitida.\n\n**Ejemplo:** Si un documento está en estatus \"Pagado\" (final), no puede regresar a \"Pendiente\".\n\n**Response esperado (HTTP 400):**\n```json\n{\n  \"success\": false,\n  \"code\": \"BUS3203\",\n  \"message\": \"La transición del estatus 5 (Pagado) al estatus 1 (Pendiente Addenda) no está permitida\",\n  \"fechaActualizacion\": \"2025-11-13T10:30:00\"\n}\n```\n\n**NOTA:** Usa un documento que esté en un estatus final para probar este caso."
+			},
+			"response": []
+		},
+		{
+			"name": "9. Error - Campos Obligatorios Faltantes",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso de error:** Request sin campos obligatorios.\n\n**Campos obligatorios:**\n- `uuid` (NotNull)\n- `numeroProveedor` (NotNull)\n- `estatus` (NotNull)\n- `idUsuarioActualizacion` (NotNull)\n\n**Response esperado (HTTP 400):**\n```json\n{\n  \"status\": 400,\n  \"error\": \"Validation Error\",\n  \"message\": \"Error de validación en los campos del request\",\n  \"errors\": {\n    \"numeroProveedor\": \"Número de proveedor es obligatorio\",\n    \"estatus\": \"Estatus es obligatorio\",\n    \"idUsuarioActualizacion\": \"ID de usuario actualización es obligatorio\"\n  }\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "10. Actualizar Factura con Addenda Completa",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 3,\n  \"idUsuarioActualizacion\": 12345,\n  \"addenda\": {\n    \"idProveedor\": 1234567890,\n    \"tipoProveedor\": \"NACIONAL\",\n    \"noRecepcion\": \"REC-2025-001\",\n    \"noOc\": \"OC-2025-00123\",\n    \"idGuiaEntrega\": \"GE-2025-001\",\n    \"tipoAddenda\": 1\n  }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso exitoso:** Actualizar estatus de Factura Y todos los campos de addenda.\n\n**Mapeo de campos AddendaUpdateDto -> AddendumEntity:**\n\n| Request (AddendaUpdateDto) | BD (AddendumEntity) | Descripción |\n|----------------------------|---------------------|-------------|\n| `idProveedor` | `supplier_number` | Número de proveedor |\n| `tipoProveedor` | `supplier_type` | Tipo de proveedor |\n| `noRecepcion` | `reception_number` | Número de recepción |\n| `noOc` | `purchase_order_number` | Número de orden de compra |\n| `idGuiaEntrega` | `shipping_guide_number` | Número de guía de entrega |\n| `tipoAddenda` | `addenda_type` | Tipo de addenda |\n\n**Response esperado (HTTP 200):**\n```json\n{\n  \"success\": true,\n  \"code\": \"BUS3002\",\n  \"message\": \"Factura actualizada exitosamente - Addenda actualizada\",\n  \"invoiceUuid\": \"123e4567-...\",\n  \"fiscalUuid\": \"50E9F895-F12E-4D28-8BA3-5D9B58FF10FF\",\n  \"documentType\": \"I\",\n  \"estatusAnterior\": 2,\n  \"estatusNuevo\": 3,\n  \"estatusNuevoNombre\": \"Recibido Total\",\n  \"addendaActualizada\": true,\n  \"fechaActualizacion\": \"2025-11-27T10:30:00\"\n}\n```\n\n**SQL para validar addendum DESPUÉS de ejecutar:**\n```sql\nSELECT \n  supplier_number,\n  supplier_type,\n  reception_number,\n  purchase_order_number,\n  shipping_guide_number,\n  addenda_type,\n  user_id,\n  update_date\nFROM addendum\nWHERE invoice_uuid = (\n  SELECT invoice_uuid FROM invoice \n  WHERE fiscal_uuid = '50E9F895-F12E-4D28-8BA3-5D9B58FF10FF'\n);\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "11. Actualizar NC con Addenda",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"uuid\": \"A12B2040-D8F8-4FCE-AB9D-37A636F8E59E\",\n  \"numeroProveedor\": 1234567890,\n  \"estatus\": 2,\n  \"idUsuarioActualizacion\": 12345,\n  \"addenda\": {\n    \"idProveedor\": 1234567890,\n    \"tipoProveedor\": \"NACIONAL\"\n  }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"invoices"
+					]
+				},
+				"description": "**Caso exitoso:** Actualizar estatus de Nota de Crédito Y campos de addenda.\n\n**Campos de addenda para NC (solo estos aplican):**\n\n| Request (AddendaUpdateDto) | BD (AddendumEntity) | Descripción |\n|----------------------------|---------------------|-------------|\n| `idProveedor` | `supplier_number` | Número de proveedor |\n| `tipoProveedor` | `supplier_type` | Tipo de proveedor |\n\n**NOTA:** Los campos `noRecepcion`, `noOc`, `idGuiaEntrega`, `tipoAddenda` son específicos de Factura y NO se actualizan para NC.\n\n**Response esperado (HTTP 200):**\n```json\n{\n  \"success\": true,\n  \"code\": \"BUS3004\",\n  \"message\": \"Nota de Crédito actualizada exitosamente - Addenda actualizada\",\n  \"invoiceUuid\": \"987e6543-...\",\n  \"fiscalUuid\": \"A12B2040-D8F8-4FCE-AB9D-37A636F8E59E\",\n  \"documentType\": \"E\",\n  \"estatusAnterior\": 1,\n  \"estatusNuevo\": 2,\n  \"estatusNuevoNombre\": \"Por Contabilizar\",\n  \"addendaActualizada\": true,\n  \"fechaActualizacion\": \"2025-11-27T10:30:00\"\n}\n```"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "fiscal_api_url",
+			"value": "http://localhost:8082",
+			"type": "string"
+		},
+		{
+			"key": "invoice_fiscal_uuid",
+			"value": "50E9F895-F12E-4D28-8BA3-5D9B58FF10FF",
+			"type": "string",
+			"description": "UUID fiscal de la factura (del FacturaIngreso.xml)"
+		},
+		{
+			"key": "nc_fiscal_uuid",
+			"value": "A12B2040-D8F8-4FCE-AB9D-37A636F8E59E",
+			"type": "string",
+			"description": "UUID fiscal de la Nota de Crédito (del NotaCredito.xml)"
+		},
+		{
+			"key": "supplier_number",
+			"value": "1234567890",
+			"type": "string",
+			"description": "Número del proveedor (debe coincidir con addendum.supplier_number)"
+		},
+		{
+			"key": "user_id",
+			"value": "12345",
+			"type": "string",
+			"description": "ID del usuario que realiza la actualización"
+		}
+	]
+}

@@ -4,6 +4,21 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-05 | Fechas obligatorias con UUID, UUID fiscal vs interno, subtotal en complementos
+
+**Contexto**: Fer hizo 3 preguntas sobre el endpoint `POST /invoices/search` y complementos de pago.
+**Pregunta 1**: Si mando UUID, las fechas dejan de ser obligatorias?
+**Respuesta 1**: No. `fechaInicioRecepcion` y `fechaFinalRecepcion` tienen `@NotNull` en `InvoiceSearchRequest.java`. Son siempre obligatorias.
+**Pregunta 2**: Que UUID mando para ver detalle de facturas relacionadas?
+**Respuesta 2**: No necesita endpoint aparte. `POST /invoices/search` con `tipoDocumento=E` (Notas de Credito) ya incluye los datos de la factura relacionada: `relatedInvoiceUuid`, `relatedInvoiceSeries`, `relatedInvoiceFolio`, `relatedInvoiceSubtotal`, `relatedInvoiceTotal`. El campo `uuid` del request mapea a `fiscal_uuid` (TimbreFiscalDigital del SAT), no al UUID interno.
+**Pregunta 3**: En complementos de pago falta el subtotal
+**Respuesta 3**: Correcto, no existe campo subtotal en BD ni en DTO para complementos de pago. Por especificacion SAT CFDI 4.0, el nodo Comprobante de un complemento de pago tiene SubTotal=0 y Total=0. El `totalAmount` que devolvemos es la suma de los pagos individuales.
+**Nota adicional**: Los UUIDs no son duplicados - `invoiceUuid` (PK interno) y `fiscalUuid` (SAT) son campos distintos. Si se ven iguales en el grid, revisar binding en el front.
+**Jira**: -
+**Estado**: Resuelto (informado a Fer)
+
+---
+
 ## 2026-03-02 | internalStatus null + endpoint regresa [] (estatus EFA)
 
 **Contexto**: Fer consume la API de catalogos para obtener estatus de facturas. El catalogo devuelve `internalStatus: null` y en DEV el endpoint regresa `[]` (array vacio).
@@ -11,7 +26,7 @@ _Consultas mas recientes primero_
 **Problema adicional**: En local los datos estaban con IDs diferentes porque los exports de DBeaver no incluian PKs. Se re-exporto con "Include generated columns" activado para tener datos identicos.
 **Solucion**: Fer debe cambiar su consulta de `CatEstatusComplemento` a `CatEstatusFactura`. El `internalStatus` ya viene poblado (1-14) y es el valor que debe mandar en `status` del `POST /invoices/search`.
 **Mapeo**: EFA001=1 (Rechazo Comercial), EFA002=2 (Pendiente Addenda), ..., EFA014=14 (Pago Manual)
-**Archivos**: `docs/db/catalogs/v2/` — exports con PKs desde Sodimac
+**Archivos**: `docs/db/catalogs/` — exports con PKs desde Sodimac
 **Jira**: -
 **Estado**: Resuelto. Fer debe usar `CatEstatusFactura` en lugar de `CatEstatusComplemento`.
 

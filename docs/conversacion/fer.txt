@@ -233,4 +233,87 @@ https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rf
 GET
  
 REvisar si están iguales los uuid de fiscal, parece que están iguales
- 
+
+---
+
+Sobre tu duda 1: "Si mando el UUID, las fechas dejan de ser obligatorias?"
+
+No, las fechas son siempre obligatorias (tienen @NotNull en el backend). No es posible modificar esa validación ya que afectaría otros jiras que dependen del rango de fechas.
+
+Pero en realidad no necesitas hacer otra consulta por UUID. El mismo endpoint /invoices/search con tipoDocumento=E ya te trae las NCs con toda la info de la factura relacionada (relatedInvoiceUuid, relatedInvoiceSeries, relatedInvoiceFolio, relatedInvoiceSubtotal, relatedInvoiceTotal). No hace falta una segunda llamada.
+
+---
+
+Fer, revisé los UUIDs. En nuestra base y en el API son DIFERENTES:
+
+- invoiceUuid = UUID interno (PK de la tabla invoice, auto-generado)
+- fiscalUuid = UUID fiscal del SAT (TimbreFiscalDigital)
+
+Ejemplo real del search:
+  invoiceUuid: a0000032-b032-4c32-d032-000000000032
+  fiscalUuid:  f0000032-a032-4b32-c032-000000000032
+
+El BFF fiscal es proxy transparente, no transforma nada. Si en tu grid se ven iguales, revisa el binding de las columnas en el front.
+
+Para que lo valides directo con el ejemplo que me pasaste:
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"rfcEmisor\":\"\",\"fechaInicioRecepcion\":\"2025-08-07\",\"fechaFinalRecepcion\":\"2025-12-26\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":3,\"uuid\":\"f0000011-a011-4b11-c011-000000000011\"}"
+
+En el response busca los campos invoiceUuid y fiscalUuid, deberían ser distintos. Si son iguales el problema es en los datos de DEV.
+
+---
+
+Sobre tu duda 2: "Qué mandamos al ver el detalle de las facturas relacionadas, el uuid del registro o el uuid fiscal?"
+
+No necesitas un endpoint aparte. El mismo /invoices/search ya te trae las facturas relacionadas cuando buscas Notas de Crédito (tipoDocumento=E). Cada NC incluye estos campos:
+
+- relationType: tipo de relación SAT (01=Nota de crédito, 04=Sustitución, etc.)
+- relationTypeName: descripción del tipo de relación
+- relatedInvoiceUuid: UUID fiscal de la factura relacionada
+- relatedInvoiceSeries / relatedInvoiceFolio: serie y folio de la factura
+- relatedInvoiceSubtotal / relatedInvoiceTotal: montos de la factura relacionada
+
+Ejemplo con la NC 50001 que tiene factura FA-10002 relacionada:
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"rfcEmisor\":\"\",\"fechaInicioRecepcion\":\"2025-08-01\",\"fechaFinalRecepcion\":\"2025-12-31\",\"tipoDocumento\":\"E\",\"page\":0,\"size\":5}"
+
+En el response de la NC 50001 vas a ver:
+{
+  "invoiceUuid": "e0000001-0001-4001-e001-000000000001",    ← UUID interno de la NC
+  "fiscalUuid": "e0000001-a001-4001-e001-000000000001",     ← UUID fiscal de la NC
+  "series": "NC",
+  "folio": "50001",
+  "relationType": "01",
+  "relationTypeName": "Nota de crédito de los documentos relacionados",
+  "relatedInvoiceUuid": "f0000010-a010-4010-b010-000000000010",  ← UUID fiscal de la factura relacionada
+  "relatedInvoiceSeries": "FA",
+  "relatedInvoiceFolio": "10002",
+  "relatedInvoiceSubtotal": 81896.55,
+  "relatedInvoiceTotal": 95000.00
+}
+
+En resumen: no necesitas mandar ningún UUID extra. Solo busca NCs y los datos de la factura relacionada vienen incluidos en la respuesta.
+
+Si quieres verificar directo en BD las relaciones:
+
+SELECT
+  i_nc.series AS nc_serie, i_nc.folio AS nc_folio, i_nc.fiscal_uuid AS nc_fiscal_uuid,
+  rc.relation_type,
+  i_rel.series AS fac_serie, i_rel.folio AS fac_folio, i_rel.fiscal_uuid AS fac_fiscal_uuid,
+  i_rel.subtotal AS fac_subtotal, i_rel.total AS fac_total
+FROM tenant_fiscal.related_cfdi rc
+JOIN tenant_fiscal.invoice i_nc ON rc.invoice_uuid = i_nc.invoice_uuid
+JOIN tenant_fiscal.invoice i_rel ON rc.related_invoice_uuid = i_rel.invoice_uuid
+ORDER BY i_nc.folio;
+
+---
+
+Sobre tu duda 3: "En complemento de pagos se manda el total pero no el subtotal"
+
+Correcto, el endpoint GET /fiscal/complementos-pago/buscar solo devuelve totalAmount. No existe campo subtotal ni en el response, ni en la tabla de BD, ni en el DTO.
+
+Esto es correcto para complementos de pago CFDI 4.0: el nodo Comprobante de un complemento de pago siempre tiene SubTotal="0" y Total="0" por especificación del SAT. El monto real está en los pagos individuales (tabla payment.amount), y el totalAmount que devolvemos es la suma de esos pagos.
+
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&page=0&size=3"
+
+Si necesitas un campo subtotal adicional en el response sería un cambio nuevo, coordínalo con Iván.

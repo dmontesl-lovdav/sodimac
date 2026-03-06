@@ -1,6 +1,8 @@
 package com.sodimac.fiscal.api.service.impl;
 
 import com.sodimac.fiscal.api.model.dto.StatusTrainValidationResult;
+import com.sodimac.fiscal.api.model.enums.CreditNoteStatus;
+import com.sodimac.fiscal.api.model.enums.InvoiceStatus;
 import com.sodimac.fiscal.api.service.StatusTrainApiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,12 +41,16 @@ public class StatusTrainApiServiceImpl implements StatusTrainApiService {
         this.restTemplate = restTemplate;
     }
 
+    // optionId: 1=Factura, 2=NC
+    private static final int OPTION_FACTURA = 1;
+    private static final int OPTION_NC = 2;
+
     @Override
     @SuppressWarnings("unchecked")
     public StatusTrainValidationResult validateTransition(Integer optionId, Integer sourceStatus, Integer targetStatus) {
         if (!statusTrainEnabled) {
-            log.warn("Status Train API deshabilitado - todas las transiciones serán permitidas");
-            return StatusTrainValidationResult.valid();
+            log.warn("Status Train API deshabilitado - validando con enums locales como fallback");
+            return validateWithLocalEnums(optionId, sourceStatus, targetStatus);
         }
 
         String url = String.format("%s/status-train/validate?optionId=%d&sourceStatus=%d&targetStatus=%d",
@@ -107,5 +113,35 @@ public class StatusTrainApiServiceImpl implements StatusTrainApiService {
     @Override
     public boolean isEnabled() {
         return statusTrainEnabled;
+    }
+
+    /**
+     * Validación local usando enums cuando el servicio externo no está disponible.
+     * Verifica que ambos estatus existan y que la transición esté permitida.
+     */
+    private StatusTrainValidationResult validateWithLocalEnums(Integer optionId, Integer sourceStatus, Integer targetStatus) {
+        try {
+            if (OPTION_FACTURA == optionId) {
+                InvoiceStatus source = InvoiceStatus.fromCodigo(sourceStatus);
+                InvoiceStatus.fromCodigo(targetStatus); // valida que exista
+                if (!source.puedeTransicionarA(targetStatus)) {
+                    log.warn("Transición local no permitida (Factura): {} -> {}", sourceStatus, targetStatus);
+                    return StatusTrainValidationResult.transitionNotAllowed();
+                }
+            } else if (OPTION_NC == optionId) {
+                CreditNoteStatus source = CreditNoteStatus.fromCodigo(sourceStatus);
+                CreditNoteStatus.fromCodigo(targetStatus); // valida que exista
+                if (!source.puedeTransicionarA(targetStatus)) {
+                    log.warn("Transición local no permitida (NC): {} -> {}", sourceStatus, targetStatus);
+                    return StatusTrainValidationResult.transitionNotAllowed();
+                }
+            } else {
+                log.warn("optionId no reconocido: {}. Permitiendo transición por defecto.", optionId);
+            }
+            return StatusTrainValidationResult.valid();
+        } catch (IllegalArgumentException e) {
+            log.warn("Estatus no válido en validación local: {}", e.getMessage());
+            return StatusTrainValidationResult.sourceNotFound();
+        }
     }
 }

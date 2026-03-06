@@ -330,3 +330,258 @@ https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search
 
 2.- Confirmar que el mismo end point que registra la factura se utilice para complementos
 
+---
+
+Sobre tu duda 1: "Buscar facturas con NC relacionadas, paso el estatus y no regresa resultados"
+
+Fer, el problema es tu payload. Tienes dos errores:
+
+a) El campo se llama `estatus` (con E), no `status`. El backend lo ignora si mandas "status".
+b) Lo estás mandando como String ("12") en vez de Integer (12).
+
+Tu payload actual (incorrecto):
+{"rfcEmisor":" ","fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-10","tipoDocumento":"I","page":0,"size":10,"serie":"","uuid":"","folio":"","status":"12"}
+
+Payload corregido:
+{"rfcEmisor":"","fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-10","tipoDocumento":"I","page":0,"size":10,"estatus":12}
+
+Cambios:
+1. "status":"12" → "estatus":12 (nombre correcto + tipo Integer)
+2. Quité los campos vacíos innecesarios (serie, uuid, folio) — si están vacíos no hace falta enviarlos
+3. rfcEmisor: quité el espacio en blanco, manda "" o no lo mandes
+
+Nota: el estatus 12 es "Rechazo Contable". Si no hay facturas con ese estatus en el rango de fechas, va a regresar vacío. Prueba con estatus 4 (Pendiente de Contabilizar) que es el que más datos tiene en DEV.
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-10\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":10,\"estatus\":4}"
+
+---
+
+Sobre tu duda 2: "El mismo endpoint que registra la factura se usa para complementos?"
+
+No, son endpoints diferentes:
+
+- Facturas y NC: POST /invoices/register (multipart/form-data con archivo XML)
+- Complementos de pago: POST /fiscal/complementos-pago/registrar (multipart/form-data con archivo XML)
+
+Los complementos de pago tienen su propio controlador (PaymentRegistrationController) con endpoints separados:
+- Registrar: POST /fiscal/complementos-pago/registrar
+- Buscar: GET /fiscal/complementos-pago/buscar?rfcEmisor=...&fechaPagoInicio=...&fechaPagoFin=...
+
+No puedes registrar un complemento de pago por /invoices/register, te va a dar error de validación porque el TipoDeComprobante="P" no es factura (I) ni NC (E).
+
+
+3.- Quiero ver facturas con notas de crédito relacionadas, ¿cómo?
+
+4.- El estatus sigue dando problemas, a veces mando un valor y no regresa nada
+
+---
+
+Sobre tu duda 3: "Facturas con NCs relacionadas"
+
+No necesitas un endpoint especial. El mismo POST /invoices/search con tipoDocumento=I ya incluye las NCs relacionadas en el campo `notasCreditoRelacionadas`.
+
+Ejemplo — buscar facturas del emisor SOD970101ABC que tienen NCs:
+
+curl -s -X POST "http://localhost:8082/invoices/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fechaInicioRecepcion":"2025-05-30",
+    "fechaFinalRecepcion":"2025-11-30",
+    "tipoDocumento":"I",
+    "rfcEmisor":"SOD970101ABC",
+    "page":0,
+    "size":10
+  }'
+
+En DEV, la factura Serie A / Folio 001 tiene una NC relacionada. El response se ve así:
+
+{
+  "invoiceUuid": "66666666-6666-6666-6666-666666666666",
+  "fiscalUuid": "aaaaaaaa-1111-2222-3333-444444444444",
+  "series": "A",
+  "folio": "001",
+  "total": 1000.00,
+  "status": 1,
+  "statusName": "Pendiente Addenda",
+  "notasCreditoRelacionadas": [
+    {
+      "invoiceUuid": "77777777-7777-7777-7777-777777777777",
+      "fiscalUuid": "bbbbbbbb-1111-2222-3333-444444444444",
+      "serie": "A",
+      "folio": "002",
+      "subtotal": 2000.00,
+      "total": 1800.00,
+      "tipoRelacion": "04",
+      "tipoRelacionNombre": "Sustitución de los CFDI previos",
+      "status": 1,
+      "statusNombre": "Pendiente Addenda",
+      "fechaEmision": "2025-11-19",
+      "fechaRecepcion": "2025-11-20T15:44:36.165578"
+    }
+  ]
+}
+
+Lo mismo aplica al revés — si buscas NCs (tipoDocumento=E), cada NC trae los datos de la factura relacionada en los campos:
+- relatedInvoiceUuid
+- relatedInvoiceSeries / relatedInvoiceFolio
+- relatedInvoiceSubtotal / relatedInvoiceTotal
+- relationType / relationTypeName
+
+Para ver la relación directa en BD:
+
+SELECT
+  i_fac.series AS fac_serie, i_fac.folio AS fac_folio,
+  i_fac.total AS fac_total, i_fac.status AS fac_status,
+  rc.relation_type,
+  i_nc.series AS nc_serie, i_nc.folio AS nc_folio,
+  i_nc.total AS nc_total, i_nc.status AS nc_status
+FROM tenant_fiscal.related_cfdi rc
+JOIN tenant_fiscal.invoice i_nc ON rc.invoice_uuid = i_nc.invoice_uuid
+JOIN tenant_fiscal.invoice i_fac ON rc.related_invoice_uuid = i_fac.invoice_uuid
+ORDER BY i_fac.folio;
+
+---
+
+Sobre tu duda 4: "El estatus sigue dando problemas"
+
+Agregamos validación de estatus en el search. Ahora si mandas un estatus que no existe, el API te responde con error claro en vez de regresar [] vacío.
+
+Ejemplo — estatus 99 no existe para facturas:
+
+curl -s -X POST "http://localhost:8082/invoices/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fechaInicioRecepcion":"2025-05-30",
+    "fechaFinalRecepcion":"2025-11-30",
+    "tipoDocumento":"I",
+    "estatus":99,
+    "page":0,
+    "size":10
+  }'
+
+Response (400 Bad Request):
+{
+  "errorCode": "BUS049",
+  "errorType": "BUSINESS",
+  "message": "El estatus no es válido para el tipo de documento",
+  "additionalInfo": "Estatus: 99, Tipo: Factura (I)",
+  "httpStatus": 400,
+  "path": "/invoices/search"
+}
+
+También valida por tipo de documento. El estatus 13 (Pago Manual) existe para facturas pero NO para NCs:
+
+curl -s -X POST "http://localhost:8082/invoices/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fechaInicioRecepcion":"2025-05-30",
+    "fechaFinalRecepcion":"2025-11-30",
+    "tipoDocumento":"E",
+    "estatus":13,
+    "page":0,
+    "size":10
+  }'
+
+Response (400 Bad Request):
+{
+  "errorCode": "BUS049",
+  "message": "El estatus no es válido para el tipo de documento",
+  "additionalInfo": "Estatus: 13, Tipo: Nota de Crédito (E)"
+}
+
+--- RECORDATORIO DEL PAYLOAD CORRECTO ---
+
+El campo se llama `estatus` (Integer), NO `status` (String).
+
+Estatus válidos para Facturas (tipoDocumento=I):
+  0  = Rechazo Comercial
+  1  = Pendiente Addenda
+  2  = Recibido Parcial
+  3  = Pendiente de Contabilizar
+  4  = Proceso de descarga
+  5  = Desglose de factura
+  6  = Pendiente de envío a contabilizar
+  7  = Pendiente de Pago
+  8  = Pagado
+  9  = Pendiente de complemento
+  10 = Completado
+  11 = Rechazo Contable
+  12 = No valido fiscal
+  13 = Pago Manual
+  14 = Error en el desglose de la factura
+
+Estatus válidos para Notas de Crédito (tipoDocumento=E):
+  0  = Rechazo Comercial
+  1  = Pendiente Addenda
+  2  = Recibido Parcial
+  3  = Pendiente de Contabilizar
+  4  = Proceso de descarga
+  5  = Desglose de NC
+  6  = Pendiente de envío a contabilizar
+  7  = Aplicado
+  8  = Completado
+  11 = Rechazo Contable
+  12 = No valido fiscal
+
+Nota: NC no tiene estatus 9, 10, 13, 14. Si mandas alguno de esos con tipoDocumento=E, te dará error BUS049.
+
+--- CURLS DE REFERENCIA RÁPIDA (formato bash/linux) ---
+
+# Todas las facturas (sin filtro de estatus)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d '{"fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-30","tipoDocumento":"I","page":0,"size":10}'
+
+# Facturas con estatus específico (ej: 3 = Pendiente de Contabilizar)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d '{"fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-30","tipoDocumento":"I","estatus":3,"page":0,"size":10}'
+
+# Facturas por RFC emisor (para ver las que tienen NCs relacionadas)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d '{"fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-30","tipoDocumento":"I","rfcEmisor":"SOD970101ABC","page":0,"size":10}'
+
+# Notas de crédito (con datos de factura relacionada)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d '{"fechaInicioRecepcion":"2025-05-30","fechaFinalRecepcion":"2025-11-30","tipoDocumento":"E","page":0,"size":10}'
+
+# Cambiar estatus de un documento
+curl -s -X PUT "http://localhost:8082/invoices/{UUID}/status" -H "Content-Type: application/json" -d '{"numeroProveedor":12345,"estatusOrigen":1,"estatusDestino":3,"idUsuarioActualizacion":1}'
+
+# Para ambiente DEV de Sodimac, cambiar localhost:8082 por:
+# https://dev.fbusinesscenter.com/ppsomx/fiscal
+
+
+--- CURLS PARA CMD / POWERSHELL (copiar y pegar directo) ---
+
+REM Todas las facturas (sin filtro de estatus)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":10}"
+
+REM Facturas con estatus 3 (Pendiente de Contabilizar)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"estatus\":3,\"page\":0,\"size\":10}"
+
+REM Facturas por RFC emisor (para ver las que tienen NCs relacionadas)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"rfcEmisor\":\"SOD970101ABC\",\"page\":0,\"size\":10}"
+
+REM Notas de credito (con datos de factura relacionada)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"E\",\"page\":0,\"size\":10}"
+
+REM Cambiar estatus de un documento (reemplazar {UUID} por el uuid real)
+curl -s -X PUT "http://localhost:8082/invoices/{UUID}/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":12345,\"estatusOrigen\":1,\"estatusDestino\":3,\"idUsuarioActualizacion\":1}"
+
+REM Estatus invalido (debe regresar error BUS049)
+curl -s -X POST "http://localhost:8082/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"estatus\":99,\"page\":0,\"size\":10}"
+
+REM Para ambiente DEV de Sodimac, cambiar localhost:8082 por:
+REM https://dev.fbusinesscenter.com/ppsomx/fiscal
+
+
+--- CURLS APUNTANDO AL BFF DEV (copiar y pegar directo en CMD) ---
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":10}"
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"estatus\":3,\"page\":0,\"size\":10}"
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"rfcEmisor\":\"SOD970101ABC\",\"page\":0,\"size\":10}"
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"E\",\"page\":0,\"size\":10}"
+
+curl -s -X PUT "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/{UUID}/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":12345,\"estatusOrigen\":1,\"estatusDestino\":3,\"idUsuarioActualizacion\":1}"
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"estatus\":99,\"page\":0,\"size\":10}"
+
+

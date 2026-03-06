@@ -4,6 +4,35 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-05 | Facturas con NCs relacionadas + validación de estatus en search
+
+**Contexto**: Fer necesita ver facturas con NCs relacionadas y sigue teniendo problemas con estatus.
+**Pregunta 1**: Como ver facturas con sus NCs relacionadas?
+**Respuesta 1**: No se necesita endpoint adicional. `POST /invoices/search` con `tipoDocumento=I` ya incluye `notasCreditoRelacionadas[]` en cada factura. En DEV, factura Serie A / Folio 001 (emisor SOD970101ABC) tiene una NC relacionada.
+**Pregunta 2**: El estatus sigue dando problemas, a veces mando un valor y regresa vacio
+**Causa raiz**: El API no validaba que el estatus existiera — simplemente filtraba y regresaba `[]`. No habia forma de saber si el estatus era invalido o si no habia datos.
+**Solucion 2**: Se agrego validacion de estatus contra el catalogo local (enum InvoiceStatus/CreditNoteStatus). Ahora si mandas un estatus que no existe (ej: 99) o uno que no corresponde al tipo de documento (ej: 13 con tipoDocumento=E), regresa error BUS049 con mensaje claro.
+**Cambios en codigo**:
+- `InvoiceServiceImpl.java`: nuevo metodo `validateStatusExists()` que se ejecuta antes del search
+- `StatusTrainApiServiceImpl.java`: cuando `status-train.api.enabled=false`, ahora valida transiciones con enums locales en vez de permitir todo
+**Jira**: -
+**Estado**: Resuelto (cambios en fiscal-api, pendiente deploy)
+
+---
+
+## 2026-03-05 | Campo "status" incorrecto en search + endpoint registro complementos
+
+**Contexto**: Fer reporta que `POST /invoices/search` no regresa resultados al pasar estatus, y pregunta si el endpoint de registro de facturas sirve para complementos.
+**Pregunta 1**: Paso el estatus y no regresa resultados
+**Causa raiz**: Dos errores en el payload: (a) el campo se llama `estatus` no `status`, (b) lo manda como String "12" en vez de Integer 12. Tambien tenia `rfcEmisor:" "` con espacio en blanco.
+**Solucion 1**: Corregir payload: `"estatus":12` (nombre correcto + tipo Integer). Quitar campos vacios innecesarios.
+**Pregunta 2**: El mismo endpoint de registro de facturas sirve para complementos?
+**Respuesta 2**: No, son endpoints distintos. Facturas/NC: `POST /invoices/register`. Complementos de pago: `POST /fiscal/complementos-pago/registrar`. Ambos reciben multipart XML pero con validaciones diferentes (TipoDeComprobante I/E vs P).
+**Jira**: -
+**Estado**: Resuelto (informado a Fer)
+
+---
+
 ## 2026-03-05 | Fechas obligatorias con UUID, UUID fiscal vs interno, subtotal en complementos
 
 **Contexto**: Fer hizo 3 preguntas sobre el endpoint `POST /invoices/search` y complementos de pago.

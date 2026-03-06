@@ -948,6 +948,23 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
+     * Valida que un código de estatus exista en el enum correspondiente al tipo de documento.
+     * Se usa para validar filtros de búsqueda y evitar retornar resultados vacíos silenciosamente.
+     */
+    private void validateStatusExists(Integer estatus, String documentType) {
+        try {
+            if ("I".equals(documentType)) {
+                InvoiceStatus.fromCodigo(estatus);
+            } else if ("E".equals(documentType)) {
+                CreditNoteStatus.fromCodigo(estatus);
+            }
+        } catch (IllegalArgumentException e) {
+            messageCatalog.throwException(FiscalMessageCode.BUS049,
+                    "Estatus: " + estatus + ", Tipo: " + ("I".equals(documentType) ? "Factura (I)" : "Nota de Crédito (E)"));
+        }
+    }
+
+    /**
      * Actualiza la addenda asociada al invoice (STM-339).
      *
      * Mapeo de campos según tipo de documento:
@@ -1112,6 +1129,11 @@ public class InvoiceServiceImpl implements InvoiceService {
         // === PASO 0: VALIDAR RANGO DE FECHAS (STM-393) ===
         log.info("Paso 0: Validando rango de fechas");
         validateDateRange(searchRequest.getFechaInicioRecepcion(), searchRequest.getFechaFinalRecepcion());
+
+        // === PASO 0.5: VALIDAR ESTATUS CONTRA ENUM LOCAL ===
+        if (searchRequest.getEstatus() != null) {
+            validateStatusExists(searchRequest.getEstatus(), searchRequest.getTipoDocumento());
+        }
 
         // === PASO 1: CONSTRUIR SPECIFICATION CON FILTROS (JPA CRITERIA) ===
         log.info("Paso 1: Construyendo Specification con filtros usando JPA Criteria");

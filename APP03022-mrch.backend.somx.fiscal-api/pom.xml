@@ -58,15 +58,28 @@
 		</dependency>
 
 		<!-- Xalan for XSL transformations (PDF generation) -->
+		<!-- Excluir xml-apis para evitar conflicto SAXException con devtools/STS (Java 17 ya incluye estas clases) -->
 		<dependency>
 			<groupId>xalan</groupId>
 			<artifactId>xalan</artifactId>
 			<version>2.7.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>xml-apis</groupId>
+					<artifactId>xml-apis</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>xalan</groupId>
 			<artifactId>serializer</artifactId>
 			<version>2.7.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>xml-apis</groupId>
+					<artifactId>xml-apis</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!--  SPRING  -->

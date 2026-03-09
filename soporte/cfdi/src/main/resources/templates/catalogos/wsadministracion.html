@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:include="fragments/general :: headGeneric">
+	<title id="pageTitle">INICIO</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<!-- Load elements from fragments/general -->
+</head>
+
+<body>
+
+
+	
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<div class="mask rgba-gradient">
+			<div class="container h-100 mt-5 mb-5">
+
+	             <div class="text-center">
+	             	<div id="spinner" class="hide loading"></div>
+	             </div>
+	                             
+
+				<div class="row pt-2 mt-2">
+					<div class="card container bg-light text-center">
+			    		<div>
+			    			<i style="font-size:x-large" class="fa fa-business-time"></i>&nbsp&nbsp
+			    			<span class="card-title pt-2 mb-0" style="font-weight: bold;  font-size:xx-large">Catálogos WSADMINISTRACION</span>
+						</div>
+					</div>
+					<div class="container">
+						<ul class="nav nav-tabs" id="myTab" role="tablist">
+						  <li class="nav-item" role="presentation">
+						    <button class="nav-link active" id="home-tab" data-toggle="tab" data-target="#tiendas" type="button" role="tab" aria-controls="tiendas" aria-selected="true">Tiendas</button>
+						  </li>
+						  <li class="nav-item" role="presentation" style="display: none;">
+						    <button class="nav-link" id="profile-tab" data-toggle="tab" data-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Profile</button>
+						  </li>
+						</ul>
+						<div class="tab-content pl-0 pr-0" id="myTabContent" style="padding-top: 0.1rem;">
+						  <div class="tab-pane fade show active" id="tiendas" role="tabpanel" aria-labelledby="home-tab">
+						  	<div th:insert="fragments/wsadministracion/catConfDatosEmisorTienda :: fragmentTable" id="fragmentDiv" class="col-md-12 pl-0 pr-0">
+						  	</div>
+						  </div>
+						  <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">2...</div>
+						</div>
+					</div>
+					<!--Grid column-->
+					<!--div th:insert="fragments/wsadministracion/catConfDatosEmisorTienda :: fragmentTable" id="fragmentDiv" class="col-md-12">
+					</div-->
+					<!--Grid column-->
+
+				</div>
+			
+	        </div>
+	    </div>
+		
+
+	</section>
+	<!-- /.Start your project here-->
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+<!-- Script section -->
+
+
+
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/catalogos/wsadministracion.js}"></script>
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/variables.js}"></script>
+
+
+	<script>
+	$(document).ready(function() {
+		
+		// Clean notify message
+		toastr.clear();
+		// Styles for navigation bar.
+		//$(".nav-item").removeClass("active");
+		//$(".dropdown-item").removeClass("active");
+		//$("#navCfdi").addClass("active");
+		
+	});
+
+		
+	</script>
+<!-- /.Script section -->
+
+</body>
+
+</html>

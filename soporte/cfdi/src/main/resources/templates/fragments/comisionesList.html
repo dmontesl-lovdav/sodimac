@@ -1,0 +1,113 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Comisiones Bancarias</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="complementosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 5%;">Fecha&nbsp;Trx</th>
+					<th style="width: 5%;">Tipo&nbsp;Trx</th>
+					<th style="width: 5%;">Num&nbsp;Tienda</th>
+					<th style="width: 5%;">Num&nbsp;Trx</th>
+					<th style="width: 5%;">Num&nbsp;Caja</th>
+					<th style="width: 5%;">Monto&nbsp;Pago</th>
+					<th style="width: 5%;">Cod&nbsp;Comercio</th>
+					<th style="width: 5%;">Num&nbsp;Tarjeta</th>
+					<th style="width: 5%;">Num&nbsp;Cuotas</th>
+					<th style="width: 5%;">Cod&nbsp;Autorizaci&oacute;n</th>
+					<th style="width: 5%;">Tipo&nbsp;Tarjeta</th>
+					<th style="width: 5%;">Pasarela</th>
+					<th style="width: 5%;">Cod&nbsp;Banco&nbsp;Emisor</th>
+					<th style="width: 5%;">Cod&nbsp;Marca&nbsp;Tarjeta</th>
+					<th style="width: 5%;">Comisi&oacute;n&nbsp;Uso&nbsp;Porc</th>
+					<th style="width: 5%;">Comisi&oacute;n&nbsp;Uso&nbsp;Monto</th>
+					<th style="width: 5%;">Porc&nbsp;Descto</th>
+					<th style="width: 5%;">Porc&nbsp;Sodimac&nbsp;Descto</th>
+					<th style="width: 5%;">Porc&nbsp;Emisor&nbsp;Descto</th>
+					<th style="width: 5%;">Sobretasa</th>
+					<th style="width: 5%;">Ind&nbsp;Promoci&oacute;n</th>
+					<th style="width: 5%;">Factor&nbsp;Cambio&nbsp;Moneda</th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	        	<tr th:each="item: ${listComisiones}">
+		        	<td><span th:text="${item.getFechaTrxStr}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.tipoTrx}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numTienda}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numTrx}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numCaja}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.montoPago}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.codComercio}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numTarjeta}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numCuotas}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.codAutorizacion}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.tipoTarjeta}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.pasarela}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.codBancoEmisor}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.codMarcaTarjeta}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.comisionUsoPorc}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.comisionUsoMonto}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.porcDescto}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.porcSodimacDescto}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.porcEmisorDescto}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.sobretasa}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.indPromocion}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.factorCambioMoneda}" style="white-space: nowrap"></span></td>
+		        </tr>
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,111 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Documentos</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="dovumentoTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 20%;">Nombre&nbsp;de&nbsp;Documento</th>
+		            <th style="width: 20%;">Tipo&nbsp;de&nbsp;Documento</th>
+		            <th style="width: 5%;">Fecha&nbsp;Registro</th>
+		            <th style="width: 10%;">N&uacute;mero&nbsp;de&nbsp;Registro</th>
+		            <th style="width: 10%;">Peso&nbsp;MB</th>
+		            <th style="width: 10%;">Estatus</th>
+		            <th style="width: 20%;">Mensaje</th>
+		            <th style="width: 5%;" class="text-center">Borrar</th>
+		            <th style="width: 01%; display: none"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listDocumentos}">
+	        	<td><span th:text="${item.nombreArchivo}"></span></td>
+	            <td><span th:text="${item.tipoDocumento}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            <td><span th:text="${item.fechaCreacion}"></span></td>
+	            <td><span th:text="${item.numeroRegistrosStr}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.peso}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.estatusDocumento}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.mensajeDescripcion}"></span></td>
+	            <td class="py-0 pr-0" style="padding: 0px;">
+	                
+                	<div class="d-flex justify-content-center" th:if="${item.idEstatusDocumento} == 3">
+	                	<button type="button" style="opacity: 0.4;"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Borrar">
+	                        	<i class="ti-na"></i>
+	                        </div>
+	                    </button>
+                	</div>
+                	
+                	<div class="d-flex justify-content-center" th:if="${item.idEstatusDocumento} != 3">
+	                	<button type="button" th:onClick="borrarArchivoOnClick([[${item.idDocumentoPublicado}]])"
+                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divRechazar">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Borrar">
+	                        	<i class="ti-na" style="color: black;"></i>
+	                        </div>
+                    	</button>
+                	</div>
+	
+	            </td>
+	            
+	            <input type="hidden" th:id="${'hdnIdDocumento' + item.idDocumentoPublicado}" th:value="${item.idDocumentoPublicado}" />
+	            <td style="display: none"><input type="text" th:id="${'docPublicado' + item.idDocumentoPublicado}" th:value="${item.idDocumentoPublicado}" class="hiddIdComprobante" /></td>
+	        </tr>
+	        
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<!-- <head th:include="fragments/header :: headGeneric">
+	<title id="pageTitle">CFDI</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	Load elements from fragments/general
+</head>
+ -->
+ 
+ <head>
+
+<title id="pageTitle">CFDI</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<link rel="shortcut icon" th:href="@{/img/favicon.ico}" mce_href="favicon.ico"
+	type="image/x-icon">
+
+<!-- CSS styles -->
+
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/bootstrap-reboot.min.css}" rel="stylesheet">
+<link th:href="@{/css/sweetalert2.min.css}" rel="stylesheet">
+<link th:href="@{/js/datepicker/bootstrap-datepicker.standalone.min.css}" rel="stylesheet">
+<link th:href="@{/css/fontawesome/css/all.css}" rel="stylesheet">
+<link th:href="@{/css/app.css}" rel="stylesheet">
+<link th:href="@{/css/custom.css}" rel="stylesheet">
+<link th:href="@{/css/dataTables.checkboxes.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.css}" rel="stylesheet">
+<link th:href="@{/css/spinner.css}" rel="stylesheet">
+
+<!-- <link href="vendors/ionicons/css/ionicons.min.css" rel="stylesheet"> -->
+<!-- <link href="css/all.css" rel="stylesheet"> -->
+<!-- <link href="css/spinner.css" rel="stylesheet"> -->
+
+<script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/mdb.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/addons/dataTables.fixedColumns.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/addons/dataTables.checkboxes.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/sweetalert2.min.js}"></script>
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/jquery.mask.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/datepicker/bootstrap-datepicker.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/datepicker/bootstrap-datepicker.es.min.js}"></script>
+
+</head>
+
+<body>
+
+	<!-- Header -->
+	<!-- <header>
+	Navigation bar
+		<nav class="mb-1 navbar navbar-expand-lg fixed-top scrolling-navbar navbar-light grey lighten-5">
+				<a class="navbar-brand" th:href="@{/consultar}"><img src="img/svg/logo.png" alt=""></a>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent-4"
+					aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+				
+				         <div th:remove="tag" th:utext="${navbar}"></div>
+				
+				</div>
+		</nav>
+	/.Navigation bar
+	</header> -->
+	<!-- /.Header -->
+	
+	
+	
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<div class="mask rgba-gradient">
+			<div class="container h-100 mt-5 mb-5">
+
+			<div class="text-center">
+             	<div id="spinner" class="hide loading"></div>
+            </div>
+
+				<!--Grid row-->
+				<div class="row pt-5 mt-5">
+
+					<!--Grid column-->
+					<div th:include="fragments/complementoList :: fragmentStart" id="fragmentDiv" class="col-md-10">
+					</div>
+					<!--Grid column-->
+
+
+		            <div class="col-md-2">
+		                <div class="card">
+		                    <div class="card-body">
+		                        <div class="row m-b-0">
+
+		                            <div class="col-12 col-sm-12 col-md-12" id="date-container">
+		                                <div class="input-daterange input-group" id="datepicker">
+		                                    <div class="form-group w-100">
+		                                        <input type="text" id="dateDesde" class="input-sm form-control w-100 full" autocomplete="off" name="start" 
+		                                        placeholder="dd/mm/aaaa" data-date-format="dd/mm/yyyy" tabindex="2" onblur="isValidDate('dateDesde', 'date_desde_validation', 'dateHasta', 'date_hasta_validation')">
+		                                        <label for="·" class="control-label">
+		                                            <span class="text-danger">*</span>Desde:
+		                                        </label>
+		                                        <div  id="date_desde_validation">
+		                                        </div>
+		                                    </div>
+		                                </div>
+		                            </div>
+	
+		                            <div class="col-12 col-sm-12 col-md-12" id="date-container">
+		                                <div class="input-daterange input-group" id="datepicker">
+		                                    <div class="form-group w-100">
+		                                        <input type="text" id="dateHasta" class="input-sm form-control w-100 full" autocomplete="off" name="end" data-date-format="dd/mm/yyyy"
+		                                         tabindex="3" onblur="isValidDate('dateDesde', 'date_desde_validation','dateHasta', 'date_hasta_validation')">
+		                                        <label for="·" class="control-label">
+		                                            <span class="text-danger">*</span>Hasta:
+		                                        </label>
+		                                        <div  id="date_hasta_validation">
+		                                        </div>
+		                                    </div>
+		                                </div>
+		                            </div>
+		                            
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="txt-assist m-neutralize-form-group2">
+		                                    Rango de fechas entre los que se buscarán los complementos de pago <strong>( dd/mm/yyyy )</strong>
+		                                </div>
+		                            </div>
+		                            
+		                        </div><!-- /.row -->
+
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+											<select id="listEstatusComple" class="btn btn-light text-left w-100">
+											</select>		                                
+		                                </div>
+		                            </div>    
+		                        </div>
+		                        
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="rfcInput" value="" type="text" class="form-control text-uppercase" maxlength="14" onkeypress="rfcInput_onkeypress();" onblur="releaseEventrfcInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="rfcInput" class="control-label">
+		                                        RFC Receptor:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="rfcInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: EJEM880326 XXX
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+		                        
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="montoInput" value="" type="text" class="form-control text-uppercase" maxlength="19" onkeypress="montoInput_onkeypress();" onblur="releaseEventMontoInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="montoInput" class="control-label">
+		                                        Monto:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="montoInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: 450.12
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+
+	                            <div class="row m-t-0 m-b-0 ">
+	                                <div class="col-10 text-left ">
+	                                	<span class="title-2 m-b-0 "><span class="text-danger" style="font-size: 1.5rem; vertical-align: middle;">*</span> Campos obligatorios</span>
+	                                </div>
+	                            </div>
+		                        
+		                        <div class="row text-center">
+		                        	 <div class="col-12 col-sm-12 col-md-12">
+		                                <button id="btnBuscarComplementos" type="button" class="btn btn-primary btn-block" onclick="consultarOnClick()" tabindex="1">
+		                                    Consultar
+		                                </button>
+		                            </div>
+			                        <div id="messages_consultas_multiples" style="margin-left: 20px;">
+			                        </div>
+		                        </div>
+		                        
+		                        <div class="row text-center" style="padding-top: 5%;">
+		                        	 <div class="col-12 col-sm-12 col-md-12">
+		                                <button id="btnDescargaxlsx" type="button" class="btn btn-primary btn-block" style="padding-left: 0 !important; padding-right: 0 !important;" onclick="descargaxlsxOnClick()" tabindex="1">
+		                                    Exportar a Excel
+		                                </button>
+		                            </div>
+			                        <div id="messages_consultas_multiples" style="margin-left: 20px;">
+			                        </div>
+		                        </div>
+		                        
+		                        
+		                    </div><!-- /.card-body -->
+		                </div><!-- /.card -->
+		            </div><!-- /.col-12 -->
+
+
+				</div>
+				<!--Grid row-->
+
+			</div>
+		</div>
+		
+		<div class="modal" tabindex="-1" id="modalDescargarExcelComplemento">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		      	<h4 class="modal-title" th:text="#{COMPLEMENTO_FOLIOS.TITULO}"></h4>
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		      </div>
+		      <div class="modal-body">
+		        <div id="divWarningExcelComplemento" class="alert alert-warning"></div>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-primary" data-dismiss="modal">
+		        	<i class="fa fa-floppy-o"></i> <span th:text="#{COMUN.ACEPTAR}"></span>
+                </button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+		<div class="modal fade modal-pdf-viewer" tabindex="-1" role="dialog" id="divModalPDF">
+		    <div class="modal-dialog modal-lg modal-xl mt-2" role="document" >
+		        <div class="modal-content mt-0">
+		            <div class="modal-header p-0">
+		                <h5 class="titulo-left-modal">Ver documento <span id="uuid-pdf"></span></h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <span aria-hidden="true">&times;</span>
+		                </button>
+		            </div>
+		            <div class="modal-body p-0">
+		                <div id="divAjaxPDF">
+		                    <iframe id="FramePDF" src="" style="border: 1px solid black; width:100%; height:500px"></iframe>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+
+
+		<div class="modal pullDown" id="responsive2" tabindex="-1" role="dialog" aria-hidden="true">
+		    <div class="modal-dialog modal-lg" role="document">
+		        <div class="modal-content">
+		            <div class="modal-header">
+		                <h5 class="modal-title" id="responsivemodal">Reenvío de correo</h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <i class="ti-close"></i>
+		                </button>
+		            </div>
+		            <div class="modal-body">
+		                <div class="row">
+		                    <div class="col-12">
+		                        <form id="reenvioMail">
+		                            <div class="form-group">
+		                            	<input type="hidden" id="idComplemento" value=""/>
+		                            	<input type="hidden" id="uuid" value=""/>
+		                            	<input type="hidden" id="rfcReenvio" value=""/>
+		                                <input type="text" class="form-control" id="correo_electronico_anterior" name="correo_electronico_anterior" autocomplete="off">
+		                                <label for="correo_electronico_anterior" class="">
+		                                    <span class="text-danger">*</span>Correo electrónico:
+		                                </label>
+		                                <div>
+		                                    <div id="correo_electronico_anterior_validation"></div>
+		                                </div>
+		                            </div>
+		                            <div class="form-group">
+		                                <input type="text" class="form-control " id="correo_electronico_nuevo" name="correo_electronico_nuevo" maxlength="50" autocomplete="off">
+		                                <label for="correo_electronico_nuevo" class="">
+		                                    <span class="text-danger">*</span>Con copia para:
+		                                </label>
+		                                <div>
+		                                    <div id="correo_electronico_nuevo_validation"></div>
+		                                </div>
+		                            </div>
+		                            <div class="">
+		                                <div class="col text-right px-0">
+		                                    <button type="button" id="enviarUserDate" onClick="reenviarFactura()" class="btn btn-primary">Enviar</button>
+		                                </div>
+		                            </div>
+		
+		                        </form>
+		                    </div>
+		                </div>
+		            </div>
+		            <!-- /.modal-body-->
+		        </div>
+		        <!-- /.modal-content-->
+		    </div>
+		    <!-- /.modal-dialog-->
+		</div>
+		
+		<!-- BEGIN FOLIO FACTURA-->
+		<div class="modal pullDown" id="modalFolioFactura" tabindex="-1" role="dialog" aria-hidden="true">
+		    <div class="modal-dialog modal-xl" role="document">
+		        <div class="modal-content">
+		            <div class="modal-header">
+		                <h5 class="modal-title" id="tituloFolioFactura"><span th:text="#{COMPLEMENTO_FOLIOS.ASIGNAR}"></span></h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <i class="ti-close"></i>
+		                </button>
+		            </div>
+		            <div class="modal-body">
+		                <div class="row">
+		                    <div class="col-12">
+		                        <form id="frmRefacturar">
+									
+									<div id="divBusquedaFolio" class="row">
+			                            <div class="col-4 col-sm-4 col-md-4 m-b-25">
+			                                <div class="form-group m-b-0">
+			                                	<input id="txtFolioFactura"
+			                                		   class="form-control"
+			                                		   type="text"
+			                                		   maxlength="14"
+			                                		   tabindex="1"
+			                                		   onkeypress="folioInput_onkeypress();"
+			                                		   autocomplete="off" />
+			                                    <div>
+			                                        <div class="col-12" id="folioFacturaInput_validation"></div>
+			                                    </div>
+			                                    <div class="txt-assist">
+			                                        Folio Factura: 000010
+			                                    </div>
+			                                </div><!-- /.form-group -->
+			                            </div>
+			                            <div class="col-8 col-sm-8 col-md-8">
+			                            	<button id="btnBuscarFolioFacturasPago" 	
+			                            			type="button" 
+			                            			class="btn btn-primary" 
+			                            			onclick="consultarFoliosOnClick()" 
+			                            			tabindex="2">Buscar
+			                            	</button>
+			                            </div>
+		                        	</div>
+									<dl class="row">
+									  <dt class="col-sm-2">RFC:</dt>
+									  <dd class="col-sm-10"><span id="spanRFC" /></dd>
+									  <dt class="col-sm-2">Razón&nbsp;Social:</dt>
+									  <dd class="col-sm-10"><span id="spanNombre" /></dd>
+									</dl>
+									<dl class="row">
+									  <dt class="col-sm-2">Folio&nbsp;Pago:</dt>
+									  <dd class="col-sm-1"><span id="spanFolioFactura" /></dd>
+									  <dt class="col-sm-1"></dt>
+									  
+									  <dt class="col-sm-2">Total&nbsp;folio&nbsp;pago:</dt>
+									  <dd class="col-sm-1"><span id="spanTotalFolioFactura" /></dd>
+									  <dt class="col-sm-1"></dt>
+									 
+									  <dt class="col-sm-2">Total&nbsp;otros&nbsp;pagos:</dt>
+									  <dd class="col-sm-1"><span id="spanTotalOtrosPagos" /></dd>
+									  <dd class="col-sm-1"><span id="spanOtrosPagos" /></dd>
+									
+									
+									  <dt class="col-sm-2">Importe&nbsp;Pago:</dt>
+									  <dd class="col-sm-1"><span id="spanImportePago" /></dd>
+									  <dt class="col-sm-1"></dt>
+									  
+									  <dt class="col-sm-2">Remanente&nbsp;folio&nbsp;Pago:</dt>
+									  <dd class="col-sm-1"><span id="spanTotalRemanente" /></dd>
+									  <dt class="col-sm-1"></dt>
+									  
+									  <dt class="col-sm-4"><span id="spanValidacion" class="alert alert-warning">El total de importe es mayor a la factura</span></dt>
+									</dl>
+									
+									<div class="row">
+										<div class="view overlay">
+	    									<div class="card h-100 list-group" id="foliosFacturaTable">
+												<div class="table-responsive table-responsive-1 table-bordered mb-5">
+													
+													<table class="table" id="folio-table">
+														<thead>
+															<tr>
+																<th>Registro</th>
+																<th>Orden</th>
+													        	<th>Complemento&nbsp;Pago</th>
+													        	<th>Pago</th>
+													        	<th>Factura</th>
+													        	<th>Monto&nbsp;Total&nbsp;Factura</th>
+																<th>Monto&nbsp;Total&nbsp;NC</th>
+																<th>Monto&nbsp;Por&nbsp;Pagar</th>
+																<th>Importe&nbsp;Saldo&nbsp;Anterior</th>
+													        	<th>Importe&nbsp;Pagado</th>
+													        	<th>Importe&nbsp;Saldo&nbsp;Posterior</th>
+													        	<th>Parcialidad</th>
+													        	<th>Moneda&nbsp;de&nbsp;Pago</th>
+													        	<th>Equivalencia</th>
+															</tr>
+														</thead>
+													</table>
+											      </div>
+	    									</div>
+										</div>
+									</div>
+		                        </form>
+		                    </div>
+		                </div>
+		            </div>
+		            <div class="modal-footer">
+				    	<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				        <button type="button" class="btn btn-primary" onclick="desvincularComplementoFolioOnClick()" id="btnDesvincular">Desvincular Folio</button>
+				        <button type="button" class="btn btn-primary" onclick="asignarComplementoFolioOnClick()" id="btnGuardarPagoComp">Guardar</button>
+				    </div>
+		        </div>
+		    </div> <!-- <div class="modal-dialog modal-lg" role="document"> -->
+		</div>
+		<!-- END FOLIO FACTURA-->
+		
+		<!-- BEGIN MODAL VICULAR-->
+		<div class="modal" tabindex="-1" id="modalConfirmarVincular">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		      	<h4 class="modal-title" th:text="#{COMPLEMENTO_FOLIOS.TITULO}"></h4>
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		      </div>
+		      <div class="modal-body">
+		        <div id="divWarningConfirmarVincular" class="alert alert-warning"></div>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-danger" data-dismiss="modal">
+                    <i class="fa fa-times"></i> <span th:text="#{COMUN.CANCELAR}"></span>
+                </button>
+                <button type="button" class="btn btn-primary has-spinner" id="btn-asignar-complementoFolio" onclick="asignarComplementoFolioConfirmOnClick()">
+                    <i class="fa fa-floppy-o"></i> <span th:text="#{COMUN.GUARDAR}"></span>
+                </button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+		<!-- END MODAL VICULAR-->
+		
+		<!-- BEGIN MODAL DESVICULAR-->
+		<div class="modal" tabindex="-1" id="modalConfirmarDesvincular">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		      	<h4 class="modal-title" th:text="#{COMPLEMENTO_FOLIOS.TITULO}"></h4>
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		      </div>
+		      <div class="modal-body">
+		        <div id="divWarningConfirmarDesVincular" class="alert alert-warning"></div>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-danger" data-dismiss="modal">
+                    <i class="fa fa-times"></i> <span th:text="#{COMUN.CANCELAR}"></span>
+                </button>
+                <button type="button" class="btn btn-primary has-spinner" id="btn-desvincular-complementoFolio" onclick="desvincularComplementoFolioConfirmOnClick()">
+                    <i class="fa fa-floppy-o"></i> <span th:text="#{COMUN.GUARDAR}"></span>
+                </button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+		<!-- END MODAL DESVICULAR-->
+		
+		<!-- BEGIN MODAL TIMBRAR-->
+		<div class="modal" tabindex="-1" id="modalConfirmarTimbrar">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		      	<h4 class="modal-title" th:text="#{COMPLEMENTO_FOLIOS.TIMBRAR}"></h4>
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		      </div>
+		      <div class="modal-body">
+		        <div id="divWarningConfirmarTimbrar" class="alert alert-warning"></div>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-danger" data-dismiss="modal">
+                    <i class="fa fa-times"></i> <span th:text="#{COMUN.CANCELAR}"></span>
+                </button>
+                <button type="button" class="btn btn-primary has-spinner" id="btn-timbrar-complementoPago" onclick="timbrarComplementoPagoConfirmOnClick()">
+                    <i class="fa fa-floppy-o"></i> <span th:text="#{COMUN.ACEPTAR}"></span>
+                </button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+		<!-- END MODAL TIMBRAR-->
+
+		<input type="hidden" id="hdnExpresionRegularRfcCaracteres" value=""/>
+		<input type="hidden" id="hdnExpresionRegularRfc" value=""/>
+		<input type="hidden" id="hdnExpresionRegularEmail" value=""/>
+		<input type="hidden" id="hdnExpresionRegularRZ" value=""/>
+		<input type="hidden" id="hdnExpresionRegularObra" value=""/>
+		<input type="hidden" id="hdnExpresionRegularResponsableObra" value=""/>
+		<input type="hidden" id="hdnIdPagoComplemento" value=""/>
+		<input type="hidden" id="hdEstatusComplemento" value=""/>
+	</section>
+	<!-- /.Start your project here-->
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+<!-- Script section -->
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/ajaxComplemento.js}"></script>
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/complemento.js}"></script>
+<script type="text/javascript" charset="UTF-8" th:src="@{/js/variables.js}"></script>
+<script>
+		
+		$(document).ready(function() {
+		
+			// Clean notify message
+			toastr.clear();
+			// Styles for navigation bar.
+			$(".nav-item").removeClass("active");
+			$(".dropdown-item").removeClass("active");
+			$("#navComplemento").addClass("active");
+			
+		});
+		
+	</script>
+<!-- /.Script section -->
+
+</body>
+
+</html>

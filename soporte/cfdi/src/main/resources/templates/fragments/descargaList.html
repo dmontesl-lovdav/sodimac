@@ -1,0 +1,126 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Reportes en Proceso para Descarga</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los reportes pendientes por descargar.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existen reportes por descargar con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="descargaTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 10%;">Id Ejecución</th>
+		            <th style="width: 20%;">Fecha Solicitud</th>
+		            <th style="width: 20%;">Fecha Generación</th>
+		            <th style="width: 10%;">Parametros</th>
+		            <th style="width: 10%;">Modulo</th>
+		            <th style="width: 10%;">Usuario</th>
+		            <th style="width: 5%;">Estatus</th>
+		            <th style="width: 10%;">Mensaje</th>
+		            <th style="width: 5%;">Acciones</th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listDescarga}">
+	        	<td><span th:text="${item.idEjecucion}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.fechaSolicitud}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.fechaGeneracion}" style="display: flex;flex-wrap: nowrap"></span></td>	        	
+	        	<td><span th:text="${item.parametros}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.modulo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.usuario}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.estatus}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.mensaje}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td class="py-0 pr-0" style="padding: 0px;">
+	                <div id="actions">
+	                
+	                	<div class="d-flex justify-content-center" th:if="${item.estatus} == 1">
+		                	<a th:href="@{./descarga/descargarArchivo/{file}(file=${item.idEjecucion})}"
+		                       class="btn btn-secondary no-shadow no-line float-right p-0" id="icons">
+		                       <div class="d-block-btn" data-toggle="tooltip" title="Descargar">
+		                       		<i class="ti-download" style="color: black;"></i>
+		                       </div>
+		                    </a>
+	                	</div>
+	                	
+	                	<div class="d-flex justify-content-center" th:if="${item.estatus} == 0">
+	                		
+		                    <div class="d-block-btn" data-toggle="tooltip" title="Espere un momento">
+		                       	<i class="ti-download"></i>
+		                    </div>
+	                	</div>
+	                	
+	                	<div class="d-flex justify-content-center" th:if="${item.estatus} == 2 or ${item.estatus} == 4">
+	                		
+		                    <div class="d-block-btn" data-toggle="tooltip" title="No disponible">
+		                       	<i class="ti-na" style="color: red;"></i>
+		                    </div>
+	                	</div>
+	                	
+	                    <div class="d-flex justify-content-center" th:if="${item.estatus} == 3">
+	                		
+		                    <div class="d-block-btn" data-toggle="tooltip" title="Descargado">
+		                       	<i class="ti-check" style="color: green;"></i>
+		                    </div>
+	                	</div> 	             
+	                </div>
+	
+	            </td>
+	        		                
+	            
+	            <input type="hidden" th:id="${item.idEjecucion}" th:value="${item.idEjecucion}" class="hiddIdEjecucion" />
+	        </tr>
+	        
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

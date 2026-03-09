@@ -1,0 +1,155 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Facturaci&oacute;n Venta Empresa</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="facturacionVveeTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 5%;">Num&nbsp;Trx</th>
+					<th style="width: 5%;">Num&nbsp;Doc&nbsp;Canal</th>
+					<th style="width: 5%;">Nro&nbsp;Guia</th>
+					<th style="width: 5%;">Nro&nbsp;Guia&nbsp;Prov</th>
+					<th style="width: 5%;">Tipo&nbsp;Factura</th>
+					<th style="width: 5%;">Nom&nbsp;Obra</th>
+					<th style="width: 5%;">Contacto&nbsp;Obra</th>
+					<th style="width: 5%;">Email</th>
+					<th style="width: 5%;">Cfdi</th>
+					<th style="width: 5%;">Rfc</th>
+					<th style="width: 5%;">Orden</th>
+					<th style="width: 5%;">R&nbsp;Social</th>
+					<th style="width: 5%;">C&oacute;digo&nbsp;Postal</th>
+					<th style="width: 5%;">Regimen&nbsp;Fiscal</th>
+					<th style="width: 5%;">Fecha</th>
+					<th style="width: 5%;">Num&nbsp;Factura</th>
+					<th style="width: 5%;">Num&nbsp;Ticket</th>
+					<th style="width: 5%;">Nro&nbsp;Serie</th>
+					<th style="width: 5%;">Nro&nbsp;Folio</th>
+					<th style="width: 5%;">Num&nbsp;Tienda</th>
+					<th style="width: 10%;" class="text-center">Acciones</th>
+		            <th style="width: 01%; display: none"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	        	<tr th:each="item: ${listFacturas}">
+		        	<td><span th:text="${item.numTrx}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numDocCanal}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.nroGuia}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.nroGuiaProv}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.tipoFactura}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.nomObra}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.contactoObra}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.email}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.cfdi}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.rfc}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.orden}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.rSocial}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.codigoPostal}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.regimenFiscal}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.fechaStr}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numFactura}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numTicket}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.nroSerie}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.nroFolio}" style="white-space: nowrap"></span></td>
+					<td><span th:text="${item.numTienda}" style="white-space: nowrap"></span></td>
+					<td class="py-0 pr-0" style="padding: 0px;">
+		                <div id="actions" class="btn-group">	
+		                    
+		                    <div class="d-flex justify-content-center" th:if="${item.timbrado} == false">    
+		                		
+		                		<button type="button" style="opacity: 0.4;"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divVer">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Ver documento">
+			                        	<i class="ti-eye"></i>
+			                        </div>
+			                    </button>
+			                    <button type="button" style="opacity: 0.4;"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Enviar">
+			                        	<i class="ti-email"></i>
+			                        </div>
+			                    </button>
+		                		
+		                    </div>
+		                    
+		                    <div class="d-flex justify-content-center" th:if="${item.timbrado} == true">
+			                	 
+			                    <button type="button" th:onClick="visualizarPDF([[${item.numFactura}]])"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divVer">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Ver documento">
+			                        	<i class="ti-eye"></i>
+			                        </div>
+			                    </button>
+			                    
+			                    <button type="button" th:onClick="obtenerCorreo([[${item.numFactura}]], [[${item.email}]])"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Enviar">
+			                        	<i class="ti-email"></i>
+			                        </div>
+			                    </button>	             
+		                    </div>
+		                     	             
+		                </div>
+		
+		            </td>
+		            <td style="display: none">
+		            	<input type="hidden" th:id="${'idVentaEE_' + item.idFacturacionVvee}" th:value="${item.idFacturacionVvee}" />
+		            </td>
+					
+		        </tr>
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

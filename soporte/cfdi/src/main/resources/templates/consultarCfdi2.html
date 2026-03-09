@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:include="fragments/general :: headGeneric">
+	<title id="pageTitle">CFDI</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<!-- Load elements from fragments/general -->
+</head>
+
+<body>
+
+	<!-- Header -->
+	<!-- <header>
+	Navigation bar
+		<nav class="mb-1 navbar navbar-expand-lg fixed-top scrolling-navbar navbar-light grey lighten-5">
+				<a class="navbar-brand" th:href="@{/consultar}"><img src="img/svg/logo.png" alt=""></a>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent-4"
+					aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+				
+				         <div th:remove="tag" th:utext="${navbar}"></div>
+				
+				</div>
+		</nav>
+	/.Navigation bar
+	</header> -->
+	<!-- /.Header -->
+	
+	
+	
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<div class="mask rgba-gradient">
+			<div class="container h-100 mt-5 mb-5">
+
+	                                 <div class="text-center">
+	                                 	<div id="spinner" class="hide loading"></div>
+	                                 </div>
+
+				<!--Grid row-->
+				<div class="row pt-5 mt-5">
+
+					<!--Grid column-->
+					<div th:include="fragments/cfdiList :: fragmentStart" id="fragmentDiv" class="col-md-10">
+					</div>
+					<!--Grid column-->
+
+
+		            <div class="col-md-2">
+		                <div class="card">
+		                    <div class="card-body">
+		                        <div class="row m-b-0">
+
+		                            <div class="col-12 col-sm-12 col-md-12" id="date-container">
+		                                <div class="input-daterange input-group" id="datepicker">
+		                                    <div class="form-group w-100">
+		                                        <input type="text" id="dateDesde" class="input-sm form-control w-100 full" autocomplete="off" name="start" 
+		                                        placeholder="dd/mm/aaaa" data-date-format="dd/mm/yyyy" tabindex="2" onblur="isValidDate('dateDesde', 'date_desde_validation', 'dateHasta', 'date_hasta_validation')">
+		                                        <label for="·" class="control-label">
+		                                            <span class="text-danger">*</span>Desde:
+		                                        </label>
+		                                        <div  id="date_desde_validation">
+		                                        </div>
+		                                    </div>
+		                                </div>
+		                            </div>
+	
+		                            <div class="col-12 col-sm-12 col-md-12" id="date-container">
+		                                <div class="input-daterange input-group" id="datepicker">
+		                                    <div class="form-group w-100">
+		                                        <input type="text" id="dateHasta" class="input-sm form-control w-100 full" autocomplete="off" name="end" data-date-format="dd/mm/yyyy"
+		                                         tabindex="3" onblur="isValidDate('dateDesde', 'date_desde_validation','dateHasta', 'date_hasta_validation')">
+		                                        <label for="·" class="control-label">
+		                                            <span class="text-danger">*</span>Hasta:
+		                                        </label>
+		                                        <div  id="date_hasta_validation">
+		                                        </div>
+		                                    </div>
+		                                </div>
+		                            </div>
+		                            
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="txt-assist m-neutralize-form-group2">
+		                                    Rango de fechas entre los que se buscarán los cfdi <strong>( dd/mm/yyyy )</strong>
+		                                </div>
+		                            </div>
+		                            
+		                        </div><!-- /.row -->
+	
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="rfcInput" value="" type="text" class="form-control text-uppercase" maxlength="14" onkeypress="rfcInput_onkeypress();" onblur="releaseEventrfcInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="rfcInput" class="control-label">
+		                                        RFC:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="rfcInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: EJEM880326 XXX
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+		                        
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="uuidInput" value="" type="text" class="form-control text-uppercase" maxlength="36" onkeypress="uuidInput_onkeypress();" onblur="releaseEventuuidInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="uuidInput" class="control-label">
+		                                        UUID:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="uuidInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: 64EFDFA6-31D0-458D-B044-DB81648AD27F
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="ticketVentaInput" value="" type="text" class="form-control" maxlength="19" onkeypress="ticketVentaInput_onkeypress();" onblur="releaseEventticketVentaInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="ticketVentaInput" class="control-label">
+		                                        Ticket de venta:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="ticketVentaInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: 2021041410100063842
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+		                        
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+		                                    <input id="montoInput" value="" type="text" class="form-control" maxlength="19" onkeypress="montoInput_onkeypress();" onblur="releaseEventMontoInputEmpty();" autocomplete="off"  tabindex="1">
+	
+		                                    <label for="montoInput" class="control-label">
+		                                        Monto:
+		                                    </label>
+		                                    <div>
+		                                        <div class="col-12" id="montoInput_validation">
+		                                        </div>
+		                                    </div>
+		                                    <div class="txt-assist">
+		                                        Ejemplo: 450.12
+		                                    </div>
+		                                </div><!-- /.form-group -->
+		                            </div>
+		                        </div>
+
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+											<select id="listTipTicket" class="btn btn-light text-left w-100">
+											</select>		                                
+		                                </div>
+		                            </div>    
+		                        </div>
+		                        
+		                        <div class="row">
+		                            <div class="col-12 col-sm-12 col-md-12 m-b-25">
+		                                <div class="form-group m-b-0">
+											<select id="listOrigen" class="btn btn-light text-left w-100">
+											</select>		                                
+		                                </div>
+		                            </div>    
+		                        </div>
+
+	                            <div class="row m-t-0 m-b-0 ">
+	                                <div class="col-10 text-left ">
+	                                	<span class="title-2 m-b-0 "><span class="text-danger" style="font-size: 1.5rem; vertical-align: middle;">*</span> Campos obligatorios</span>
+	                                </div>
+	                            </div>
+		                        
+		                        <div class="row text-center">
+		                        	 <div class="col-12 col-sm-12 col-md-12">
+		                                <button id="btnBuscarFacturas" type="button" class="btn btn-primary btn-block" onclick="consultarOnClick()" tabindex="1">
+		                                    Consultar
+		                                </button>
+		                            </div>
+			                        <div id="messages_consultas_multiples" style="margin-left: 20px;">
+			                        </div>
+		                        </div>
+		                        
+		                        <div class="row text-center" style="padding-top: 5%;">
+		                        	 <div class="col-12 col-sm-12 col-md-12">
+		                                <button id="btnDescargaxlsx" type="button" class="btn btn-primary btn-block" style="padding-left: 0 !important; padding-right: 0 !important;" onclick="descargaxlsxOnClick()" tabindex="1">
+		                                    Exportar a Excel
+		                                </button>
+		                            </div>
+			                        <div id="messages_consultas_multiples" style="margin-left: 20px;">
+			                        </div>
+		                        </div>		                        
+	
+		                    </div><!-- /.card-body -->
+		                </div><!-- /.card -->
+		            </div><!-- /.col-12 -->
+
+
+				</div>
+				<!--Grid row-->
+
+			</div>
+		</div>
+		
+		<div class="modal" tabindex="-1" id="modalDescargarExcelClientes">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		      	<h4 class="modal-title" th:text="#{PAGOS.CLIENTES}"></h4>
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		      </div>
+		      <div class="modal-body">
+		        <div id="divWarningExcelClientes" class="alert alert-warning"></div>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-primary" data-dismiss="modal">
+		        	<i class="fa fa-floppy-o"></i> <span th:text="#{COMUN.ACEPTAR}"></span>
+                </button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+		<div class="modal fade modal-pdf-viewer" tabindex="-1" role="dialog" id="divModalPDF">
+		    <div class="modal-dialog modal-lg modal-xl mt-2" role="document" >
+		        <div class="modal-content mt-0">
+		            <div class="modal-header p-0">
+		                <h5 class="titulo-left-modal">Ver documento <span id="uuid-pdf"></span></h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <span aria-hidden="true">&times;</span>
+		                </button>
+		            </div>
+		            <div class="modal-body p-0">
+		                <div id="divAjaxPDF">
+		                    <iframe id="FramePDF" src="" style="border: 1px solid black; width:100%; height:500px"></iframe>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+
+
+		<div class="modal pullDown" id="responsive2" tabindex="-1" role="dialog" aria-hidden="true">
+		    <div class="modal-dialog modal-lg" role="document">
+		        <div class="modal-content">
+		            <div class="modal-header">
+		                <h5 class="modal-title" id="responsivemodal">Reenvío de correo</h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <i class="ti-close"></i>
+		                </button>
+		            </div>
+		            <div class="modal-body">
+		                <div class="row">
+		                    <div class="col-12">
+		                        <form id="reenvioMail">
+		                            <div class="form-group">
+		                            	<input type="hidden" id="uuid" class="uuid" value=""/>
+		                            	<input type="hidden" id="rfcReenvio" value=""/>
+		                                <input type="text" class="form-control" id="correo_electronico_anterior" name="correo_electronico_anterior" readonly autocomplete="off">
+		                                <label for="correo_electronico_anterior" class="">
+		                                    <span class="text-danger">*</span>Correo electrónico:
+		                                </label>
+		                                <div>
+		                                    <div id="correo_electronico_anterior_validation"></div>
+		                                </div>
+		                            </div>
+		                            <div class="form-group">
+		                                <input type="text" class="form-control " id="correo_electronico_nuevo" name="correo_electronico_nuevo" maxlength="50" autocomplete="off">
+		                                <label for="correo_electronico_nuevo" class="">
+		                                    <span class="text-danger">*</span>Con copia para:
+		                                </label>
+		                                <div>
+		                                    <div id="correo_electronico_nuevo_validation"></div>
+		                                </div>
+		                            </div>
+		                            <div class="">
+		                                <div class="col text-right px-0">
+		                                    <button type="button" id="enviarUserDate" onClick="reenviarFactura()" class="btn btn-primary">Enviar</button>
+		                                </div>
+		                            </div>
+		
+		                        </form>
+		                    </div>
+		                </div>
+		            </div>
+		            <!-- /.modal-body-->
+		        </div>
+		        <!-- /.modal-content-->
+		    </div>
+		    <!-- /.modal-dialog-->
+		</div>
+
+		<div class="modal pullDown" id="refacturarModal" tabindex="-1" role="dialog" aria-hidden="true">
+		    <div class="modal-dialog modal-lg" role="document">
+		        <div class="modal-content">
+		            <div class="modal-header">
+		                <h5 class="modal-title" id="tituloRefacturarModal">Re-facturar</h5>
+		                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		                    <i class="ti-close"></i>
+		                </button>
+		            </div>
+		            <div class="modal-body">
+		                <div class="row">
+		                    <div class="col-12">
+		                        <form id="frmRefacturar">
+		                        	<input type="hidden" id="hdnIdFacturaPac" value=""/>
+
+		                            <div class="form-group">
+		                                <input  id="rfcRefact" type="text" class="form-control text-uppercase" maxlength="14" onblur="rfcRefactOnblur();" onkeypress="rfcRefactOnkeypress(event);" autocomplete="off">
+		                                <label for="rfcRefact" class="">
+		                                    <span class="text-danger">*</span>RFC receptor:
+		                                </label>
+		                                <div>
+		                                    <div id="rfcRefact_validation"></div>
+		                                </div>
+		                            </div>
+
+		                            <div class="form-group">
+		                                <input  id="razonSocialRefact" type="text" class="form-control" maxlength="180" onblur="razonSocialRefactOnblur();" onkeypress="razonSocialRefactOnkeypress(event);" autocomplete="off">
+		                                <label for="razonSocialRefact" class="">
+		                                    <span class="text-danger">*</span>Razón social:
+		                                </label>
+		                                <div>
+		                                    <div id="razonSocialRefact_validation"></div>
+		                                </div>
+		                            </div>
+
+                                       <div class="form-group">
+                                           <label for="subCfdiDown" class="control-label">
+                                               <span class="text-danger">*</span>Uso de CFDI:
+                                           </label>
+                                           <select id="subCfdiDown" class="btn btn-light text-left w-100">
+                                           	<option value="">Seleccione uso de CFDI</option>
+                                           </select>
+                                           <div><!-- Begins validation -->
+                                              <div class="col-12" id="cfdi_validation">
+                                               </div>
+                                           </div><!-- ENDS validation -->
+                                       </div>
+
+                                       <div class="form-group">
+                                           <label for="selMetodoPago" class="control-label">
+                                               <span class="text-danger">*</span>Método de pago:
+                                           </label>
+                                           <select id="selMetodoPago" class="btn btn-light text-left w-100">
+                                           	<option value="">Seleccione método de pago</option>
+                                           </select>
+                                           <div><!-- Begins validation -->
+                                              <div class="col-12" id="selMetodoPago_validation">
+                                               </div>
+                                           </div><!-- ENDS validation -->
+                                       </div>
+
+		                            <div class="form-group">
+		                                <input  id="correoRefact" type="text" class="form-control" maxlength="50" onblur="correoRefactOnblur();" autocomplete="off">
+		                                <label for="correoRefact" class="">
+		                                    <span class="text-danger">*</span>Correo:
+		                                </label>
+		                                <div>
+		                                    <div id="correoRefact_validation"></div>
+		                                </div>
+		                            </div>
+
+		                            <div class="form-group">
+		                                <input  id="obraRefact" type="text" class="form-control" maxlength="50" onblur="obraRefactOnblur();" onkeypress="obraRefactOnkeypress(event);" autocomplete="off">
+		                                <label for="obraRefact" class="">
+		                                    Nombre obra:
+		                                </label>
+		                                <div>
+		                                    <div id="obraRefact_validation"></div>
+		                                </div>
+		                            </div>
+
+		                            <div class="form-group">
+		                                <input  id="responsableRefact" type="text" class="form-control" maxlength="50" onblur="responsableRefactOnblur();" onkeypress="responsableRefactOnkeypress(event);" autocomplete="off">
+		                                <label for="responsableRefact" class="">
+		                                    Responsable obra:
+		                                </label>
+		                                <div>
+		                                    <div id="responsableRefact_validation"></div>
+		                                </div>
+		                            </div>
+
+		                            <div class="">
+		                                <div class="col text-right px-0">
+		                                    <button type="button" id="btnRefacturar" onClick="refacturarOnClick()" class="btn btn-primary">Enviar</button>
+		                                </div>
+		                            </div>
+		
+		                        </form>
+		                    </div>
+		                </div>
+		            </div>
+		            <!-- /.modal-body-->
+		        </div>
+		        <!-- /.modal-content-->
+		    </div>
+		    <!-- /.modal-dialog-->
+		</div>
+
+		<input type="hidden" id="hdnExpresionRegularRfcCaracteres" value=""/>
+		<input type="hidden" id="hdnExpresionRegularRfc" value=""/>
+		<input type="hidden" id="hdnExpresionRegularEmail" value=""/>
+		<input type="hidden" id="hdnExpresionRegularRZ" value=""/>
+		<input type="hidden" id="hdnExpresionRegularObra" value=""/>
+		<input type="hidden" id="hdnExpresionRegularResponsableObra" value=""/>
+
+	</section>
+	<!-- /.Start your project here-->
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+<!-- Script section -->
+<script type="text/javascript" charset="UTF-8" src="./js/ajax.js"></script>
+<script type="text/javascript" charset="UTF-8" src="./js/factura-multiple.js"></script>
+<script type="text/javascript" charset="UTF-8" src="./js/variables.js"></script>
+
+
+	<script>
+		
+		$(document).ready(function() {
+		
+			// Clean notify message
+			toastr.clear();
+			// Styles for navigation bar.
+			$(".nav-item").removeClass("active");
+			$(".dropdown-item").removeClass("active");
+			//$("#navCfdi").addClass("active");
+			
+		});
+		
+	</script>
+<!-- /.Script section -->
+
+</body>
+
+</html>

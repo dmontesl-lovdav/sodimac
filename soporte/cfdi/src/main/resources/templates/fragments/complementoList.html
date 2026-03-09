@@ -1,0 +1,218 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Complementos de Pagos</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="complementosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 03%;"></th>
+		            <th style="width: 07%;">Numero de cuenta</th>
+		            <th style="width: 14%;">Fecha movimiento</th>
+		            <th style="width: 07%;">Folio Bancario</th>
+		            <th style="width: 14%;">Concepto</th>
+		            <th style="width: 14%;">Leyenda</th>
+		            <th style="width: 03%;">Referencia Interbancaria</th>
+		            <th style="width: 07%;">Folio Cliente</th>
+		            <th style="width: 07%;">Divisa</th>
+		            <th style="width: 07%;">Folio&nbsp;de&nbsp;operación</th>
+ 		            <th style="width: 14%;">Forma&nbsp;de pago</th>
+ 		            <th style="width: 14%;">RFC</th>
+ 		            <!--<th style="width: 14%;">List TX</th>-->
+ 		            <th style="width: 05%;">Saldo&nbsp;Total Factura</th>
+ 		            <!--<th style="width: 05%;">Total Transacción</th>-->
+ 		            <!--<th style="width: 05%;">Saldo Anterior</th>-->
+ 		            <th style="width: 05%;">Importe</th>
+ 		            <th style="width: 05%;">Saldo&nbsp;Pendiente</th>
+ 		            <th style="width: 14%;">UUID</th>
+ 		            <th style="width: 14%;">Estatus</th>
+		            <th style="width: 17%;" class="text-center">Acciones</th>
+		            <th style="width: 01%; display: none"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listComplementos}">
+	        	<td><span></span></td>
+	        	<td><span th:text="${item.numeroCuenta}"></span></td>
+	            <td><span th:text="${item.fechaHoraMovimiento}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            <td><span th:text="${item.folioBanco}"></span></td>
+	            <td><span th:text="${item.concepto}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.leyenda}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.refInterbancaria}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.folioCliente}"></span></td>
+	            <td><span th:text="${item.tipoDivisa}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.folioOperacion}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.formaPago}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.rfc}" style="white-space: nowrap"></span></td>
+	            <!--<td><span th:text="${item.transaccion}" style="white-space: nowrap"></span></td>-->
+	            <td><span th:text="${item.granTotal}"></span></td>
+	            <!--<td><span th:text="${item.totalTransaccion}"></span></td>-->
+	            <!--<td><span th:text="${item.saldoAnterior}"></span></td>-->
+	            <td><span th:text="${item.importe}"></span></td>
+	            <td><span th:text="${item.saldoPendiente}"></span></td>
+ 	            <td><span th:text="${item.uuidRelacionado}" style="white-space: nowrap"></span></td>
+ 	            <td><span th:text="${item.descEstatus}" style="white-space: nowrap"></span></td>
+	            <td class="py-0 pr-0" style="padding: 0px;">
+	                <div id="actions" class="btn-group">
+	                
+	                	<div class="d-flex justify-content-center" th:if="${item.estatus} == 'C'">
+		                	<button type="button" style="opacity: 0.4;"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Asociar folio factura">
+		                        	<i class="ti-files"></i>
+		                        </div>
+		                    </button>
+	                	</div>
+	                	
+	                	<div class="d-flex justify-content-center" th:if="${item.estatus} != 'C'">
+		                	<button type="button" th:onClick="asociarFolioFacturaOnclick([[${item.id}]],[[${item.estatus}]])"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Asociar folio factura">
+		                        	<i class="ti-files"></i>
+		                        </div>
+		                    </button>
+	                	</div>
+	                    
+	                    <div class="d-flex justify-content-center" th:if="${item.estatusTimbrado} == 0">
+	                    
+		                    <div class="d-flex justify-content-center" th:if="${item.complementoAsignado} == 0">
+			                    <button type="button" style="opacity: 0.4;"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Asociar folio factura">
+			                        	<i class="ti-write"></i>
+			                        </div>
+			                    </button>
+	                		</div>
+		                    
+		                    <div class="d-flex justify-content-center" th:if="${item.complementoAsignado} > 0">
+			                    <button type="button" th:onClick="timbrarComplementoPagoOnClick([[${item.id}]])"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Generar complemento">
+			                        	<i class="ti-write"></i>
+			                        </div>
+			                    </button>
+	                		</div>
+	                		
+	                		<a href="#"
+		                       class="btn btn-secondary no-shadow no-line float-right p-0" style="opacity: 0.4;" id="icons">
+		                       <div class="d-block-btn" data-toggle="tooltip" title="Descargar">
+		                       		<i class="ti-download"></i>
+		                       </div>
+		                    </a>
+		                    <button type="button" style="opacity: 0.4;"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divVer">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Ver documento">
+		                        	<i class="ti-eye"></i>
+		                        </div>
+		                    </button>
+		                    <button type="button" style="opacity: 0.4;"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Enviar">
+		                        	<i class="ti-email"></i>
+		                        </div>
+		                    </button>
+	                		
+	                    </div>
+	                    
+	                    <div class="d-flex justify-content-center" th:if="${item.estatusTimbrado} == 1">
+		                	 <button type="button"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Complemento facturado">
+		                        	<i class="ti-write" style="color: green;"></i>
+		                        </div>
+		                    </button>
+		                    
+		                    <a th:href="@{/complementoPagos/descargarArchivo/{file}(file=${item.id})}"
+		                       class="btn btn-secondary no-shadow no-line float-right p-0" id="icons">
+		                       <div class="d-block-btn" data-toggle="tooltip" title="Descargar">
+		                       		<i class="ti-download"></i>
+		                       </div>
+		                    </a>
+		                    <button type="button" th:onClick="visualizarPDF([[${item.id}]])"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divVer">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Ver documento">
+		                        	<i class="ti-eye"></i>
+		                        </div>
+		                    </button>
+		                    
+		                    <!--button type="button" style="opacity: 0.4;"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Enviar">
+		                        	<i class="ti-email"></i>
+		                        </div>
+		                    </button-->
+		                    
+		                    <button type="button" th:onClick="obtenerCorreo ([[${item.uuidRelacionado}]], [[${item.rfc}]], [[${item.id}]])"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Enviar">
+		                        	<i class="ti-email"></i>
+		                        </div>
+		                    </button>	             
+	                    </div>
+	                     	             
+	                </div>
+	
+	            </td>
+	            
+	            <input type="hidden" th:id="${'idComple2_' + item.id}" th:value="${item.id}" class="hiddIdComple2" />
+	            
+	            <td style="display: none"><input type="text" th:id="${'idComprobante_' + item.id}" th:value="${item.id}" class="hiddIdComprobante" /></td>
+	        </tr>
+	        
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

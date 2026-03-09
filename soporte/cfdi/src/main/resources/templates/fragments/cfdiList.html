@@ -1,0 +1,330 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de CFDI's de clientes</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="altaUsuario">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+
+
+
+
+
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 03%;"></th>
+		            <th style="width: 07%;">RFC</th>
+		            <th style="width: 14%;">UUID</th>
+<!-- 		            <th style="width: 10%;">Ticket u Orden</th> -->
+		            <th style="width: 14%;">Ticket&nbsp;Vta</th>
+		            <th style="width: 05%;">Factura&nbsp;Id</th>
+		            <th style="width: 07%;">Fecha&nbsp;timbrado</th>
+		            <th style="width: 03%;">Ver.</th>
+		            <th style="width: 07%;">Fecha&nbsp;Compra</th>
+		            <th style="width: 07%;">Nombre&nbsp;Obra</th>
+		            <th style="width: 07%;">Responsable&nbsp;Obra</th>
+ 		            <th style="width: 14%;">Tipo&nbsp;de&nbsp;Ticket</th>
+ 		            <th style="width: 14%;">Origen</th>
+ 		            <th style="width: 10%;">Total</th>
+		            <th style="width: 26%;" class="text-center">Acciones</th>
+		            <th style="width: 01%; display: none"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${dClientesMultiple}">
+	        	<td><span th:text="${item.nombreArchivo}"></span></td>
+	            <td><span th:text="${item.rfc}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            <td><span th:text="${item.uuid}" style="white-space: nowrap"></span></td>
+<!-- 	            <td><span th:text="${item.ticket}"></span></td> -->
+	            <td><span th:text="${item.ticketBct}"></span></td>
+	            <td><span th:text="${item.idFacturaPac}"></span></td>
+	            <td><span th:text="${item.fechaTimbrado}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.versionFacturacionSat}"></span></td>
+	            <td><span th:text="${item.fechaCompra}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.nombreObra}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.responsableObra}" style="white-space: nowrap"></span></td>
+ 	            <td><span th:text="${item.descripcionTimbrado}" style="white-space: nowrap"></span></td>
+ 	            <td><span th:text="${item.descripcionOrigen}" style="white-space: nowrap"></span></td>
+ 	            <td><span th:text="${item.total}" style="white-space: nowrap"></span></td>
+	            <td class="py-0 pr-0" style="padding: 0px;">
+	                <div id="actions" class="btn-group">
+	                    <button type="button" th:onClick="obtenerCorreo ([[${item.uuid}]], [[${item.rfc}]])"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="responsive2">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Reenviar">
+	                        	<i class="ti-email"></i>
+	                        </div>
+	                    </button>
+	                    
+	                    <a th:href="@{/consultar/descargarArchivo/{file}(file=${item.nombreArchivo})}"
+	                       class="btn btn-secondary no-shadow no-line float-right p-0" id="icons">
+	                       <div class="d-block-btn" data-toggle="tooltip" title="Descargar">
+	                       		<i class="ti-download"></i>
+	                       </div>
+	                    </a>
+	                                        
+<!-- 	                    <button type="button" onClick="imprimirFactura('${item.nombreArchivo}')" -->
+<!-- 	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-dismiss="modal"> -->
+<!-- 	                        <div class="d-block-btn" data-toggle="tooltip" title="Imprimir"> -->
+<!-- 	                        	<i class="ti-printer"></i> -->
+<!-- 	                        </div> -->
+<!-- 	                    </button> -->
+	                    <button type="button" th:onClick="visualizarPDF([[${item.nombreArchivo}]])"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divModalPDF">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Ver documento">
+	                        	<i class="ti-eye"></i>
+	                        </div>
+	                    </button>
+	                    <button type="button" disabled@@@ th:onClick="solicitarDatosRefacturacion ([[${item.uuid}]], [[${item.rfc}]], [[${item.idFacturaPac}]])"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="refacturarModal">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Re-facturar">
+	                        	<i class="fas fa-file-invoice"></i>
+	                        </div>
+	                    </button>	                    
+<!-- 	                </div> -->
+<!-- 	                <div style="display:none;margin-left:10px;" class="alert p-0 alert-dismissible alert_warning_border fade show m-t-10" role="alert" id="messageStatus"> -->
+<!-- 	                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"> -->
+<!-- 	                        <span aria-hidden="true">&times;</span> -->
+<!-- 	                    </button> -->
+<!-- 	                    <div class="alert_icon2 bg-success"> -->
+<!-- 	                        <i class="ti-check"></i> -->
+<!-- 	                    </div> -->
+<!-- 	                    <div class="alert_data p-2"> -->
+<!-- 	                        Se ha solicitado el documento del ticket, le será enviado en un lapso de N-horas. -->
+<!-- 	                    </div> -->
+	                </div>
+	
+	
+	            </td>
+	            
+	            <input type="hidden" th:id="${'idComprobante2_' + item.uuid}" th:value="${item.nombreArchivo}" class="hiddIdComprobante2" />
+	            
+	            <td style="display: none"><input type="text" th:id="${'idComprobante_' + item.uuid}" th:value="${item.idComprobante}" class="hiddIdComprobante" /></td>
+	        </tr>
+	        
+	    </tbody>
+	</table>
+
+<div th:if="${#arrays.length(dClientesMultiple)} gt 1">
+	<div class="row" style="display:contents;">
+	    <div class="d-inline-flex p-2 text">
+<!-- 	        <button id="reenviar" disabled type="button" onClick="obtenerCorreoMultiple()" -->
+<!-- 	                class="btn btn-secondary no-shadow no-line float-right" data-toggle="modal" data-target="modalReenvioMultiple"> -->
+<!-- 	            <i class="ti-email"></i> -->
+<!-- 	            <span class="d-none d-md-block">Reenviar</span> -->
+<!-- 	        </button> -->
+	        <button id="btnDescargaMultiple" type="button" onclick="btnDescargaMultiple_onClick()"
+	                class="btn btn-secondary no-shadow no-line float-right" data-dismiss="modal">
+	            <i class="ti-download"></i>
+	            <span class="d-none d-md-block">Descargar</span>
+	        </button>
+	    </div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </div>
+
+
+  </div>
+</div>
+<!------------ Fragment Create Users Devices -------------->
+<div th:fragment="createUserDev" th:remove="tag">
+  <div class="card h-100" id="altaUsuario">
+    <div class="view overlay">
+      <div style="background-color: #efefef; border-bottom: 1px solid #BCBCBC;">
+        <div class="container">
+          <div class="row">
+            <div class="offset-lg-2 col-lg-10 offset-md-0 col-md-12">
+              <h3 class="h3 m-3"><strong><i class="fas fa-plus fa-sm mr-1" style="opacity: 1;" aria-hidden="true"></i>
+                  Dar
+                  de alta usuario dispositivo</strong>
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="row">
+        <div class="offset-lg-2 col-lg-10 offset-md-0 col-md-12">
+          <!--Grid row-->
+          <div>
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="md-form form-sm mt-3 position-relative">
+                  <input type="text" th:id="create-input-name" class="form-control form-control-sm inputs-gcis "
+                    autocomplete="off" minlength="2" maxlength="18" onclick="clean_required('create');" required>
+                  <label class="label-gcis active" for="create-input-name"></i>Nombre</label>
+                  <div th:id="required-create-name" class="dialog-validation-pop width-180px">
+                    <p>
+                      <svg viewBox="0 2 40 40">
+                        <path fill="#FFA300" d="M0 0h40v40H0z" />
+                        <path d="M23.1 28.1v6.1h-6.3v-6.1h6.3zm-1.7-2.4h-2.8L17 13.4V5.8h5.9v7.6l-1.5 12.3z"
+                          fill="#fff" />
+                      </svg>
+                      Complete este campo
+                    </p>
+                  </div>
+                </div>
+                <div class="md-form form-sm mt-3 position-relative">
+                  <input type="text" th:id="create-input-lastnameP" class="form-control form-control-sm inputs-gcis"
+                    autocomplete="off" minlength="2" maxlength="18" onclick="clean_required('create');" required>
+                  <label class="label-gcis " for="create-input-lastnameP"></i>Apellido paterno</label>
+                  <div th:id="required-create-lastnameP" class="dialog-validation-pop width-180px">
+                    <p>
+                      <svg viewBox="0 2 40 40">
+                        <path fill="#FFA300" d="M0 0h40v40H0z" />
+                        <path d="M23.1 28.1v6.1h-6.3v-6.1h6.3zm-1.7-2.4h-2.8L17 13.4V5.8h5.9v7.6l-1.5 12.3z"
+                          fill="#fff" />
+                      </svg>
+                      Complete este campo
+                    </p>
+                  </div>
+                </div>
+                <div class="md-form form-sm mt-3 position-relative">
+                  <input type="text" th:id="create-input-lastnameM" class="form-control form-control-sm inputs-gcis "
+                    autocomplete="off" minlength="2" maxlength="18" onclick="clean_required('create');" required>
+                  <label class="label-gcis " for="create-input-lastnameM"></i>Apellido materno</label>
+                  <div th:id="required-create-lastnameM" class="dialog-validation-pop width-180px">
+                    <p>
+                      <svg viewBox="0 2 40 40">
+                        <path fill="#FFA300" d="M0 0h40v40H0z" />
+                        <path d="M23.1 28.1v6.1h-6.3v-6.1h6.3zm-1.7-2.4h-2.8L17 13.4V5.8h5.9v7.6l-1.5 12.3z"
+                          fill="#fff" />
+                      </svg>
+                      Complete este campo
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="offset-lg-1 col-lg-5">
+                <div class="row">
+                  <div class="col-12">
+                    <h3 class=" h4 text-default mt-2">Generación automática de usuario / contraseña</h3>
+                  </div>
+                  <div class="col-10">
+                    <div class="md-form form-sm mt-4">
+                      <input type="text" th:id="create-read-user" value="" class="form-control form-control-sm"
+                        readonly>
+                      <label id="create-label-user" class="" for="create-read-user"></i>Usuario</label>
+                    </div>
+                  </div>
+                  <div class="col-2">
+                    <div id="copyUser-1" class="copyClipboard"><i class="far fa-clone"></i></div>
+                  </div>
+                  <div class="col-10">
+                    <div class="md-form form-sm mt-4">
+                      <input type="password" th:id="create-read-password" value="" class="form-control form-control-sm"
+                        readonly>
+                      <button id="btn-create-pass" onclick="psw_create()" class="btn-toggle-pass"><i
+                          class="fa fa-eye"></i></button>
+                      <label id="create-label-password" class="" for="create-read-password"></i>Contraseña</label>
+                    </div>
+                  </div>
+                  <div class="col-2">
+                    <div id="copyPass-1" class="copyClipboard"><i class="far fa-clone"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--Grid row-->
+        </div>
+        <div class="col-lg-12">
+          <div class="md-form d-flex justify-content-center mt-5">
+            <button id="btn-resetAlta" type="button" class="btn btn-outline-primary btn-sm inline waves-effect"
+              onclick="cancel_create()">Cancelar</button>
+            <button id="btn-AltaUsuario" type="button" class="btn btn-default btn-sm inline waves-effect"
+              onclick="save_create('createpost')">Guardar</button>
+            <button id="btn-NuevoUsuario" type="button" class="btn btn-default btn-sm inline waves-effect"
+              onclick="create_userdev('create')" hidden>Agrega Nuevo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" th:inline="javascript">
+		/*<![CDATA[*/
+			//validate fields
+			$("#create-input-name").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-zÑñÁáÉéÍíÓóÚú ]/g, function(str) {
+					toastr.warning("Puedes ingresar sólo letras y acentos (Aa-Zz, Ññ, ´)");
+					return '';
+				}));
+			});
+			$("#create-input-lastnameP").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-zÑñÁáÉéÍíÓóÚú ]/g, function(str) {
+					toastr.warning("Puedes ingresar sólo letras y acentos (Aa-Zz, Ññ, ´)");
+					return '';
+				}));
+			});
+			$("#create-input-lastnameM").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-zÑñÁáÉéÍíÓóÚú ]/g, function(str) {
+					toastr.warning("Puedes ingresar sólo letras y acentos (Aa-Zz, Ññ, ´)");
+					return '';
+				}));
+			});
+    	/*]]>*/
+	</script>
+</div>

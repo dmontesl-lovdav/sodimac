@@ -1,0 +1,60 @@
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="altaUsuario">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 07%;">Id</th>
+		            <th style="width: 14%;">Nombre</th>
+		            <th style="width: 14%;">Descripci�n</th>
+		            <th style="width: 05%;">Fecha&nbsp;Creaci�n</th>
+		            <th style="width: 07%;">Fecha&nbsp;Actualuzaci�n</th>
+		            <th style="width: 26%;" class="text-center">Acciones</th>
+
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+		        <tr th:each="item: ${catPerfiles}">
+		        	<td><span th:text="${item.id}"></span></td>
+		            <td><span th:text="${item.nombre}" style="display: flex;flex-wrap: nowrap"></span></td>
+		            <td><span th:text="${item.descripcion}" style="white-space: nowrap"></span></td>
+		            <td><span th:text="${item.fechaCreacion}" style="white-space: nowrap"></span></td>	        
+		        </tr>
+	        
+	    	</tbody>
+		</table>
+      </div>
+    </div>
+  </div>
+</div>

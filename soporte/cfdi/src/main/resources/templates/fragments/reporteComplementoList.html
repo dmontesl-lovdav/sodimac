@@ -1,0 +1,107 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta el Reporte de Complementos de Pagos Historico</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="complementosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		        	<th style="width: 01%;"></th>
+		            <th style="width: 03%;">RFC</th>
+		            <th style="width: 14%;">Nombre Cliente</th>
+		            <th style="width: 14%;">UUID Complemento</th>
+		            <th style="width: 07%;">Serie</th>
+		            <th style="width: 07%;">Folio</th>
+		            <th style="width: 14%;">Fecha Timbrado Complemento</th>
+		            <th style="width: 07%;">Deposito</th>
+		            <th style="width: 14%;">Fecha Deposito</th>
+		            <th style="width: 07%;">Ticket</th>
+ 		            <th style="width: 14%;">UUID Factura</th>
+ 		            <th style="width: 07%;">Importe Fact</th>
+ 		            <th style="width: 14%;">Fecha timbrado Factura</th>
+ 		            <th style="width: 07%;">Importe Nota Credito</th>
+ 		            <th style="width: 07%;">Importe Neto Factura</th>
+ 		            <th style="width: 07%;">Parcialidad</th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listReporteComplementos}">
+	        	<td><span></span></td>
+	        	<td><span th:text="${item.rfc}"></span></td>
+	            <td><span th:text="${item.nombreCliente}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            <td><span th:text="${item.uuidComplemento}"></span></td>
+	            <td><span th:text="${item.serie}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.folio}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.fechaTimbradoComplemento}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.deposito}"></span></td>
+	            <td><span th:text="${item.fechaDeposito}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.ticket}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.uuidFactura}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.importeFactura}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.fechaTimbradoFactura}"></span></td>
+	            <td><span th:text="${item.importeNotaCredito}"></span></td>
+	            <td><span th:text="${item.importeNetoFactura}"></span></td>
+	            <td><span th:text="${item.parcialidad}"></span></td>
+	            
+	            <!-- <input type="hidden" th:id="${'idComple2_' + item.id}" th:value="${item.id}" class="hiddIdComple2" /> -->
+	            
+	            <!-- <td style="display: none"><input type="text" th:id="${'idComprobante_' + item.id}" th:value="${item.id}" class="hiddIdComprobante" /></td> -->
+	        </tr>
+	        
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

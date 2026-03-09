@@ -1,0 +1,167 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Folios</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+	<form class="form-horizontal" role="form" method="post" id="formFolios">
+		<input type="hidden" id="hdIdFactura" value=""/>
+		
+	  <div class="card h-100" id="foliosFacturaTable">
+	    <div class="view overlay">
+	      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+		  	<table id="data" class="table table-striped" >
+			    <thead class="table-header">
+			        <tr>
+			        	<th>Seleccione</th>
+			        	<th>Orden</th>
+			        	<th>Id&nbsp;Factura</th>
+			        	<th>Folio&nbsp;Factura</th>
+			        	<th>UUID</th>
+			        	<th>RFC</th>
+			            <th>&nbsp;&nbsp;Razón&nbsp;Social&nbsp;&nbsp;</th>
+			            <th>Serie</th>
+	 		            <th>Folio</th>
+	 		            <th>Monto&nbsp;Total&nbsp;Factura</th>
+	 		            <th>Monto&nbsp;por&nbsp;Pagar</th>
+			            <th>Fecha&nbsp;Timbrado</th>
+			            <th>Pago&nbsp;Relacionado</th>
+			            <th class="text-center">Desvincular</th>
+			            <th class="text-center">Notas&nbsp;Cr&eacute;dito</th>
+			        </tr>
+			    </thead>
+		   		 <tbody>
+		    
+					<tr th:each="item: ${listFoliosFactura}">
+						<td>
+							<div class="checkbox d-flex justify-content-center">
+								<input type="checkbox" name="chkIdFactura" th:id="${'chekFactura_' + item.idFactura}" th:value="${item.idFactura}" 
+									   th:checked="${item.checked}"
+									   th:onClick="habilitarFolioCliente([[${item.idFactura}]])" />
+							</div>
+							<input type="hidden" th:value="${item.estatus}" />
+						</td>
+						<td>
+							<input th:id="${'txtOrden_' + item.idFactura}" 
+		        			   th:name="${'txtOrden_' + item.idFactura}" 
+		        			   type="text" 
+		        			   th:value="${item.orden}"
+		        			   onkeypress="return onlyNumberKey(event);"
+		        			   autocomplete="off"
+		        			   disabled="true"
+		        			   size="3"
+		        			   maxlength="3"
+		        			    />
+						</td>
+						<td><span th:text="${item.idFactura}"></span></td>
+						<td><span th:text="${item.folioFactura}" style="display: flex;flex-wrap: nowrap"></span ></td>
+						<td><span th:text="${item.uuid}" style="display: flex;flex-wrap: nowrap"></span ></td>
+						<td><san th:text="${item.rfc}"></span></td>
+						<td><san th:text="${item.razonSocial}"></span></td>
+		            	<td><span th:text="${item.serie}" style="white-space: nowrap"></span></td>
+		            	<td><span th:text="${item.folio}" style="white-space: nowrap"></span></td>
+		            	<td><span th:text="${item.montoFacturaStr}" style="white-space: nowrap"></span></td>
+		            	<td><span th:text="${item.montoTotalNetoStr}" style="white-space: nowrap"></span></td>
+		            	<td><span th:text="${item.fechaRegistro}" style="white-space: nowrap"></span></td>
+		            	<td><span th:text="${item.estatusDescripcion}" style="white-space: nowrap"></span></td>
+		            	<td class="py-0 pr-0" style="padding: 0px;">
+							<div class="d-flex justify-content-center" th:if="${item.estatus} == 1">
+							   <button type="button"
+	                            	class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar" style="opacity: 0.4;">
+			                        <div class="d-block-btn" data-toggle="tooltip" th:title="${item.estatusDescripcion}">
+			                        	<i class="fa fa-link"></i>
+			                        </div>
+			                    </button>
+							</div>
+							<div class="d-flex justify-content-center" th:if="${item.estatus} >= 2">
+								<div class="d-flex justify-content-center" th:if="${item.facturaAsignada} == 0">
+									<button type="button"
+		                            	class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar" th:onClick="desvincularOnClick([[${item.idFactura}]])">
+				                        <div class="d-block-btn" data-toggle="tooltip" title="Desvincular">
+				                        	<i class="fa fa-link"></i>
+				                        </div>
+				                    </button>   
+								</div>
+								<div class="d-flex justify-content-center" th:if="${item.facturaAsignada} > 0">
+									<button type="button"
+		                            	class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divEnviar">
+				                        <div class="d-block-btn" data-toggle="tooltip" title="La factura ya se encuentra asociada a un complemento">
+				                        	<i class="fa fa-link" style="color:green"></i>
+				                        </div>
+				                    </button>   
+								</div>
+							</div>
+		            	</td>
+		            	<td class="py-0 pr-0" style="padding: 0px;">
+		            		<div class="d-flex justify-content-center" th:if="${item.relacionado} == false">
+			            		<button type="button"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar" style="opacity: 0.4;">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Ver notas de cr&eacute;dito relacionadas">
+			                        	<i class="ti-files"></i>
+			                        </div>
+			                    </button>
+			               	</div>
+			               	
+			               	<div class="d-flex justify-content-center" th:if="${item.relacionado} == true">
+			            		<button type="button" th:onClick="facturasRelacionadasOnclick([[${item.uuid}]])"
+			                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+			                        <div class="d-block-btn" data-toggle="tooltip" title="Ver notas de cr&eacute;dito relacionadas">
+			                        	<i class="ti-files"></i>
+			                        </div>
+			                    </button>
+			               	</div>
+		            	</td>
+			        </tr>
+		        
+		   		 </tbody>
+			</table>
+	
+	      </div>
+	    </div>
+	  </div>
+	</form>
+</div>

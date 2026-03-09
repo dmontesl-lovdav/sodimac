@@ -1,0 +1,154 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong th:text="#{INCIDENTES.TITULO}"></strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para poder ver los datos de facturación, datos de la factura ó bien los errores que se tuvieron al intentar timbrar el ticket/OC.<br>
+              Para volver intentar timbrar un ticket/OC que se fue a 24 hrs presiona el botón <strong>"Eliminar error de timbrado"</strong> para que te permita volver a timbrarlo.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+	<input type="hidden" id="hdIdPago" value=""/>
+	
+  <div class="card h-100" id="pagosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+<h3>Datos capturados por el cliente en tienda</h3>
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 10%; text-align: center;">Ticket/OC</th>
+		            <th style="width: 05%; text-align: right;">Monto</th>
+		            <th style="width: 10%; text-align: center;">RFC</th>
+		            <th style="width: 30%;">Razón social</th>
+		            <th style="width: 05%; text-align: center;">Uso de cfdi</th>
+		            <th style="width: 15%;">Correo</th>
+		            <th style="width: 05%; text-align: center;">Regimen fiscal</th>
+		            <th style="width: 05%; text-align: center;">Código postal</th>
+		            <th style="width: 15%; text-align: center;">Fecha creación</th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="parametro: ${listParametros}">
+					<td th:text="${parametro.ticket}"></td>
+					<td style="text-align: right;" th:text="${#numbers.formatDecimal(parametro.total,3,'COMMA',2,'POINT')}"></td>
+					<td style="text-align: center;" th:text="${parametro.rfc}"></td>
+					<td th:text="${parametro.razonSocial}"></td>
+					<td style="text-align: center;" th:text="${parametro.usoCfdi}"></td>
+					<td th:text="${parametro.email}"></td>
+					<td style="text-align: center;" th:text="${parametro.regimenFiscal}"></td>
+					<td style="text-align: center;" th:text="${parametro.codigoPostal}"></td>
+					<td style="text-align: center;" th:text="${parametro.fechaCreacion}"></td>
+	        </tr>	        
+		    </tbody>
+		</table>
+      </div>
+
+      
+      <div th:if="${hayFactura eq 1}" class="table-responsive table-responsive-1 table-bordered mb-5">
+<h3>Datos de la factura</h3>
+	  	<table id="data" class="table table-striped" style="width:75%" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 15%; text-align: center;">IdFacturaPac</th>
+		            <th style="width: 35%; text-align: center;">UUID</th>
+		            <th style="width: 25%; text-align: center;">Fecha timbrado</th>
+		            <th style="width: 20%; text-align: center;">Facturado en</th>
+		            <th style="width: 05%; text-align: center;"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="parametro: ${listParametros}">
+	        		<td style="text-align: center;" th:text="${parametro.idFacturaPac}"></td>
+	        		<td style="text-align: center;" th:text="${parametro.uuid}"></td>
+	        		<td style="text-align: center;" th:text="${parametro.fechaTimbrado}"></td>
+	        		<td style="text-align: center;" th:text="${parametro.facturadoEn}"></td>
+
+		            <td class="py-0 pr-0">
+		                <div id="actions" class="container-fluid">
+		                    <button type="button" th:onClick="obtenerCorreo ([[${parametro.uuid}]], [[${parametro.email}]])"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="responsive2">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Reenviar">
+		                        	<i class="ti-email"></i>
+		                        </div>
+		                    </button>
+		                </div>	
+		            </td>
+
+	        </tr>	        
+		    </tbody>
+		</table>
+      </div>      
+
+      <div th:if="${hayError eq 1}" class="table-responsive table-responsive-1 table-bordered mb-5">
+	  	<table id="data" class="table table-striped" style="width:75%" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 85%;">Mensaje de error</th>
+		            <th style="width: 05%; text-align: center;">Intentos de timbrado</th>
+		            <th style="width: 05%; text-align: center;">Atiende</th>
+		            <th style="width: 05%;"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="parametro: ${listParametros}">
+	        		<td th:text="${parametro.mensajeError}"></td>
+	        		<td style="text-align: center;" th:text="${parametro.intentos}"></td>
+	        		<td style="text-align: center;" th:text="${parametro.atiende}"></td>
+	        		<td>
+                	 	<!-- Aqui se indica el rol de Lupita (Finanzas) y de Gaby (Soporte) -->
+                        <button th:if="${not #strings.contains(parametro.mensajeError,'ya fue facturado') and ((idRol eq 6 and nivel eq 1) or (idRol eq 3))}" id="btnEliminarTicket" type="button" class="btn btn-primary btn-block" style="padding-left: 0 !important; padding-right: 0 !important;" data-toggle="modal" onclick="showDeleteTicketModalForm()" tabindex="1" disabled>
+                            Eliminar error de timbrado
+                        </button>	        		
+	        		</td>
+	        </tr>	        
+		    </tbody>
+		</table>
+      </div>      
+            
+    </div>
+  </div>
+</div>

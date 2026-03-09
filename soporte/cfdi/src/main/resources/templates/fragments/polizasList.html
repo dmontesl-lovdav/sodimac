@@ -1,0 +1,135 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Polizas Contables</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+	<input type="hidden" id="hdIdPago" value=""/>
+	
+  <div class="card h-100" id="pagosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+					<th style="width: 3%;"></th>
+					<th style="width: 3%;"></th>					
+		            <th style="display: none;">Id</th>
+		            <th style="width: 3%;">Id Módulo</th>
+		            <th style="width: 3%;">Empresa</th>
+		            <th style="width: 3%;">Cabecera</th>
+		            <th style="width: 3%;">Posición</th>
+		            <th style="width: 6%;">Cuenta Contable</th>
+		            <th style="width: 3%;">Débito / Crédito</th>
+		            <th style="width: 18%;">Descripción</th>
+		            <th style="width: 3%;">Moneda</th>
+		            <th style="width: 3%;">Tipo Cambio</th>
+		            <th style="width: 3%;">Sistema Origen</th>
+		            <th style="width: 3%;">Origen ETL</th>
+		            <th style="width: 3%;">Tipo Uso</th>
+		            <th style="width: 3%;">Indicador Impuesto</th>
+		            <th style="width: 3%;">Tipo Transacción</th>
+		            <th style="width: 3%;">Clase Documento</th>
+		            <th style="width: 3%;">Sucursal</th>
+		            <th style="width: 3%;">Impuesto</th>
+		            <th style="width: 3%;">Tipo Impuesto</th>
+		            <th style="width: 3%;">Tasa Impuesto</th>
+		            <th style="width: 3%;">Tipo Transacción Contable</th>
+		            <th style="width: 3%;">Estatus</th>
+		            <th style="width: 3%;">Usuario</th>
+		            <th style="width: 5%;">Fecha Registro</th>
+		            <th style="width: 5%;">Fecha Actualización</th>
+		            
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="parametro: ${listPolizas}">
+				<td>
+					<button type="button" class="btn btn-sm btn-secondary" style="padding: 0.6rem 0.8rem;" value="update">
+					  <img src="../img/pencil.svg" alt="Pencil Icon">
+					  <span class="hover-text">Editar Póliza</span>
+					</button>        			
+				</td>
+				<td>
+					<button type="button" class="btn btn-danger btn-sm" style="padding: 0.6rem 0.8rem;" value="delete">
+        				<i class="fa fa-trash"></i>
+        				<span class="hover-text">Eliminar Póliza</span>
+        			</button>
+				</td>
+				<td style="display: none;" th:text="${parametro.idConfigContable}"></td>
+	        	<td th:text="${parametro.idModulo}"></td>
+	        	<td th:text="${parametro.empresa}"></td>
+	        	<td th:text="${parametro.cabecera}"></td>
+	        	<td th:text="${parametro.posicion}"></td>
+	        	<td th:text="${parametro.cuentaContable}"></td>
+	        	<td th:text="${parametro.debitoCredito}"></td>
+	        	<td th:text="${parametro.descripcion}"></td>
+	        	<td th:text="${parametro.moneda}"></td>
+	        	<td th:text="${parametro.tipoCambio}"></td>
+				<td th:text="${parametro.sistemaOrigen}"></td>
+				<td th:text="${parametro.origenEtl}"></td>
+	        	<td th:text="${parametro.tipoUso}"></td>
+	        	<td th:text="${parametro.indicadorImpuesto}"></td>
+	        	<td th:text="${parametro.tipoTransaccion}"></td>
+	        	<td th:text="${parametro.claseDoc}"></td>
+	        	<td th:text="${parametro.sucursal}"></td>
+	        	<td th:text="${parametro.impuesto}"></td>
+	        	<td th:text="${parametro.tipoImpuesto}"></td>
+	        	<td th:text="${parametro.tasaImpuesto}"></td>
+	        	<td th:text="${parametro.tipoTransaccionContable}"></td>
+	        	<td th:text="${parametro.estatus}"></td>
+	        	<td th:text="${parametro.usuario}"></td>
+	        	<td th:text="${parametro.fechaRegistro}"></td>
+	        	<td th:text="${parametro.fechaActualizacion}"></td>
+	        </tr>	        
+		    </tbody>
+		</table>
+      </div>
+    </div>
+  </div>
+</div>

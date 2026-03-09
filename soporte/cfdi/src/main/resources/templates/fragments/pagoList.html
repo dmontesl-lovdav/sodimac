@@ -1,0 +1,168 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Pagos</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+	<input type="hidden" id="hdIdPago" value=""/>
+	
+  <div class="card h-100" id="pagosTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 25%;">Numero&nbsp;de&nbsp;cuenta</th>
+		            <th style="width: 14%;">Fecha&nbsp;movimiento</th>
+		            <th style="width: 14%;">Concepto</th>
+		            <th style="width: 14%;">Importe</th>
+		            <th style="width: 07%;">Folio&nbsp;Bancario</th>
+		            <th style="width: 03%;">Referencia Interbancaria</th>
+		            <th style="width: 07%;">&nbsp;Folio&nbsp;Cliente&nbsp;</th>
+		            <th style="width: 07%;">Divisa</th>
+		            <th style="width: 07%;">Folio&nbsp;de operación</th>
+ 		            <th style="width: 14%;">Forma&nbsp;de pago</th>
+ 		            <th style="width: 14%;">Estatus</th>
+		            <th style="width: 17%;" class="text-center">Acciones</th>
+		            <th style="width: 01%; display: none"></th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listPagos}">
+	        	<td><span th:text="${item.numeroCuenta}"></span></td>
+	            <td><span th:text="${item.fechaHoraMovimiento}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            <td><span th:text="${item.concepto}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.importe}"></span></td>
+	            <td><span th:text="${item.folioBanco}"></span></td>
+	            <td><span th:text="${item.refInterbancaria}" style="white-space: nowrap"></span></td>
+	            <td>
+	            	<span th:id="${'spanFolioCliente_' + item.idPago}" 
+	        			  th:name="${'spanFolioCliente_' + item.idPago}"
+	        			  th:text="${item.folioCliente}" 
+	        			  style="white-space: nowrap"></span>
+	        		
+	        		<input th:id="${'txtFolioCliente_' + item.idPago}" 
+	        			   th:name="${'txtFolioCliente_' + item.idPago}" 
+	        			   type="text" 
+	        			   th:value="${item.folioCliente}"
+	        			   onkeypress="folioClienteInput_onkeypress();"
+	        			   autocomplete="off"
+	        			   hidden="true"
+	        			   size="25"
+	        			   maxlength="25"
+	        			    />
+	            </td>
+	            <td><span th:text="${item.tipoDivisa}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.folioOperacion}" style="white-space: nowrap"></span></td>
+	            <td><span th:text="${item.formaPago}" style="white-space: nowrap"></span></td>
+ 	            <td><span th:text="${item.descEstatus}" style="white-space: nowrap"></span></td>
+	            <td class="py-0 pr-0" style="padding: 0px;">
+	                <div th:if="${item.estatus == 'PL'}" id="actions" class="btn-group">
+	                	
+	                	<!--div th:if="${item.spei}"-->
+							  <button type="button" 
+		                			th:id="${'btnEditfolioCliente_' + item.idPago}"
+		                			th:name="${'btnEditfolioCliente_' + item.idPago}"
+		                			th:onClick="editarFolioCliente([[${item.idPago}]], true)"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="Modificar folio del cliente">
+		                        	<i class="ti-pencil-alt" style="color: black;"></i>
+		                        </div>
+		                    </button>
+						<!-- /div -->
+						<!--div th:unless="${item.spei}">
+						  	<button type="button"
+						  		style="opacity: 0.4;"
+		                            class="btn btn-secondary no-shadow no-line float-right p-0">
+		                        <div class="d-block-btn" data-toggle="tooltip" title="No es pago con SPEI">
+		                        	<i class="ti-pencil-alt"></i>
+		                        </div>
+	                    	</button>
+						</!div-->
+	                    
+	                    <button type="button" ondblclick="false"
+	                			th:id="${'btnGuardarfolioCliente_' + item.idPago}"
+	                			th:name="${'btnGuardarfolioCliente_' + item.idPago}"
+	                			th:onClick="modificarFolioCliente([[${item.idPago}]])"
+	                			hidden="true"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Guardar">
+	                        	<i class="ti-save" style="color: green;"></i>
+	                        </div>
+	                    </button>
+	                    
+	                    <button type="button" th:onClick="cambiarEstatusPago([[${item.idPago}]], 'A')"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divLiberar">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Liberar">
+	                        	<i class="ti-unlock" style="color: orange;"></i>
+	                        </div>
+	                    </button>
+	                    <button type="button" th:onClick="cambiarEstatusPago([[${item.idPago}]], 'R')"
+	                            class="btn btn-secondary no-shadow no-line float-right p-0" data-toggle="modal" data-target="divRechazar">
+	                        <div class="d-block-btn" data-toggle="tooltip" title="Rechazar">
+	                        	<i class="ti-na" style="color: red;"></i>
+	                        </div>
+	                    </button>	                    
+	                     	             
+	                </div>
+	
+					
+	            </td>
+	            
+	            <input type="hidden" th:id="${'idPago2_' + item.idPago}" th:value="${item.idPago}" class="hiddIdPago2" />
+	            
+	            <td style="display: none"><input type="text" th:id="${'idComprobante_' + item.idPago}" th:value="${item.idPago}" class="hiddIdComprobante" /></td>
+
+	        </tr>	        
+		    </tbody>
+		</table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,137 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+    <div class="card-body ">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+              <strong>Consulta de Reportes</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              Presione el botón <strong>"Consultar"</strong> para traer todos los registros.<br>
+              Para una búsqueda específica, ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!------------ Fragment Table Users Devices -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+  <div class="card h-100" id="reportesTable">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 20%;">Fecha Ticket</th>
+		            <th style="width: 07%;">Tienda</th>
+		            <th style="width: 07%;">Canal</th>
+		            
+		            <th style="width: 07%;">Subtotal Pos</th>
+		            <th style="width: 07%;">Numero Ticket Pos</th>
+		            <th style="width: 07%;">Subtotal Fac Glo</th>
+		            <th style="width: 07%;">Numero Ticket Fac Glo</th>
+		            <th style="width: 07%;">Dif Subtotal Pos Fac Glo</th>
+		            <th style="width: 07%;">Dif Ticket Pos Fac Glo</th>
+		            <th style="width: 07%;">Subtotal Fac Cli</th>
+ 		            <th style="width: 07%;">Numero Ticket Fac Cli</th>
+ 		            <th style="width: 07%;">Subtotal Fac Cli Nc Glo</th>
+ 		            <th style="width: 07%;">Numero Ticket Fac Cli Nc Glo</th>
+ 		            <th style="width: 07%;">Dif Subtotal Fac Cli Nc Glo</th>
+ 		            <th style="width: 07%;">Dif Ticket Fac Cli Nc Glo</th>
+ 		            
+ 		            <th style="width: 07%;">Subtotal Pos Dev</th>
+ 		            <th style="width: 07%;">Numero Ticket Pos Dev</th>
+		            <th style="width: 07%;">Subtotal Nc Glo</th>
+		            <th style="width: 07%;">Numero Ticket Nc Glo</th>
+		            <th style="width: 07%;">Dif Subtotal Pos Dev Nc Glo</th>
+		            <th style="width: 07%;">Dif Ticket Pos Dev Nc Glo</th>
+		            <th style="width: 07%;">Subtotal Nc Cli</th>
+ 		            <th style="width: 07%;">Numero Ticket Nc Cli</th>
+ 		            <th style="width: 07%;">Subtotal Fac Glo Nc Cli</th>
+ 		            <th style="width: 07%;">Numero Ticket Fac Glo Nc Cli</th>
+ 		            <th style="width: 07%;">Dif Subtotal Fac Glo Nc Cli</th>
+ 		            <th style="width: 07%;">Dif Ticket Fac Glo Nc Cli</th>
+ 		            
+ 		            <th style="width: 20%;">Fecha Registro</th>
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+	        <tr th:each="item: ${listTablero}">
+	        	<td><span th:text="${item.fechaTicketTienda.fechaTicket}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.fechaTicketTienda.tienda}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.canal}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	
+	        	<td><span th:text="${item.subtotalPos}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketPos}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalFacGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketFacGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difSubtotalPosFacGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difTicketPosFacGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalFacCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketFacClie}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalFacCliNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketFacCliNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difSubtotalFacCliNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difTicketFacCliNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	
+	        	<td><span th:text="${item.subtotalPosDev}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketPosDev}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difSubtotalPosDevNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difTicketPosDevNcGlo}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.subtotalFacGloNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.numeroTicketFacGloNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difSubtotalFacGloNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	<td><span th:text="${item.difTicketFacGloNcCli}" style="display: flex;flex-wrap: nowrap"></span></td>
+	        	
+	        	<td><span th:text="${item.fechaRegistro}" style="display: flex;flex-wrap: nowrap"></span></td>
+	            
+ 	                    
+	            
+	            <input type="hidden" th:id="${'idTablero_' + item.fechaTicketTienda.fechaTicket + '_' + item.fechaTicketTienda.tienda}" th:value="${item.fechaTicketTienda.fechaTicket + '_' + item.fechaTicketTienda.tienda}" class="hiddIdTablero" />
+	        </tr>
+	        
+	   		 </tbody>
+		</table>
+
+      </div>
+    </div>
+  </div>
+</div>

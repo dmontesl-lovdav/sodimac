@@ -1,0 +1,300 @@
+<div th:fragment="fragmentStart" th:remove="tag">
+  <div class="card" id="inicio">
+  </div>
+</div>
+<!------------ Fragment No Results -------------->
+<div th:fragment="noResults" th:remove="tag">
+  <div class="card" id="sinRegistro">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <!--Grid row-->
+          <div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+            <h1 class="h1 text-center mb-4">
+              <i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+                class="text-primary">Sin
+                registros</strong>
+            </h1>
+            <h5 class="p1 small text-center mb-3">
+              No existe información con los filtros seleccionados.<br>
+              Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar"</strong>.
+            </h5>
+          </div>
+          <!--Grid row-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!------------ Fragment Table Emisor Tienda -------------->
+<div th:fragment="fragmentTable" th:remove="tag">
+	<!--div class="card container bg-dark">
+		<div style="color: white;">
+			<i style="font-size:large" class="fa fa-book"></i>&nbsp&nbsp
+			<span class="card-title pt-2 mb-0" style="font-weight: bold;  font-size:large">Emisor - Tienda (Tabla confdatosemisortienda)</span>
+		</div>
+	</div-->
+
+  <div class="row">
+  		<div class="col ">
+			<div class="card container mt-1">
+				<div >
+					<i style="font-size:large" class="fa fa-store"></i>&nbsp&nbsp
+					<span class="card-title pt-2 mb-0 text-right" style="font-weight: bold;  font-size:large; color: rgba(33,150,243,1);">Catálogo Tiendas</span>						
+				</div>
+			</div>
+  		</div>
+		<div class="col">
+		  	<div class="mt-1">
+		      <button type="button" class="btn btn-primary" style="padding: 0rem 0.75rem;" onClick="emisorTiendaCreateOnClick(0)">Nueva Tienda</button>		
+			</div>
+		</div>
+		<div class="col">
+		</div>
+  </div>
+  <body>
+   <div id="list"></div>
+</body>
+  <div class="card h-100" id="condDatorEmisorTiendaTbl">
+    <div class="view overlay">
+      <div class="table-responsive table-responsive-1 table-bordered mb-5">
+	  	<table id="data" class="table table-striped" >
+		    <thead class="table-header">
+		        <tr>
+		            <th style="width: 2px;" >Id</th>
+		            <th >Emisor</th>
+		            <th> Tienda</th>
+		            <th style="width: 2px;"  >descripción</th>
+		            <th style="width: 2px;" >Calle</th>
+		            <th style="width: 2px; padding: 0.1rem 0.1rem;" >No </br> Exterior</th>
+		            <th style="width: 2px;" >No </br> Interior</th>
+		            <th >Colonia</th>
+		            <th >Referencia</th>
+		            <th >Estado</th>
+		            <th >CP</th>
+		            <th >Tipo Tienda</th>
+		            <th >Estatus</th>
+		            <th  class="text-center" style="width: 200px;">Acciones</th>
+
+		        </tr>
+		    </thead>
+	   		 <tbody>
+	    
+		        <tr th:each="item: ${confDatosEmisorTienda}">
+		        	<td><span th:text="${item.id}"></span></td>
+		            <td><span th:text="${item.emisor}" style="display: flex;flex-wrap: nowrap"></span></td>
+		            <td><span th:text="${item.idTienda}" style="white-space: nowrap"></span></td>
+		            <td><span th:text="${item.descripcion}" style="display: flex;flex-wrap: nowrap"></span></td>
+	             	<td><span th:text="${item.calle}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>
+	             	<td style="width: 2px; padding: 0.1rem 0.1rem;"><span th:text="${item.noExterior}" style="display: flex;flex-wrap: nowrap; white-space: wrap; "></span></td>
+	             	<td><span th:text="${item.noInterior}" style="display: flex;flex-wrap: nowrap; white-space: wrap; width: 2px;"></span></td>
+	                <td><span th:text="${item.colonia}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>
+	             	<td><span th:text="${item.referencia}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>
+		            <td><span th:text="${item.estado}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>
+		            <td><span th:text="${item.idCatCodigoPostal}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>	 
+		            <td><span th:text="${item.tipoTienda}" style="display: flex;flex-wrap: nowrap; white-space: wrap"></span></td>	  
+		            <td>
+		            	<span th:if="${item.activo}" style="display: flex;flex-wrap: nowrap; white-space: wrap">Activa</span>
+		            	<span th:unless="${item.activo}" style="display: flex;flex-wrap: nowrap; white-space: wrap">Desactivada</span>
+		            
+		            </td>
+		            <!--td><a th:href="@{/edit/{id}(id=${item.id})}">Edit</a></td-->
+		             <td style="text-align: center;"><button type="button" class="btn btn-primary" style="padding: 0.15rem 0.5rem; font-stretch: extra-condensed" th:attr="onClick=|emisorTiendaEditOnClick(${item.id})|">Editar</button>
+		             
+		            
+		             </td>
+		   
+		        </tr>
+	        
+	    	</tbody>
+		</table>
+      </div>
+    </div>
+  </div>
+  
+	<div class="modal" tabindex="-1" id="modalEmisorTiendaEdit" >
+	  <div class="modal-dialog modal-lg" style="max-width: 90%;" >
+	    <div class="modal-content">
+	      <div class="modal-header" style="padding: 0.1rem 1rem;">
+	      	<h5 class="modal-title" style="font-weight: bold;" >Edición Emisor-Tienda</h5>
+	        <button type="button" class="close" data-dismiss="modal">&times;</button>
+	      </div>
+	      <div class="modal-body pt-0 pb-0">
+	        <div id="divEmisorTiendaEdit"></div>
+	      </div>
+	      <div class="modal-footer">
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	
+	<div class="modal" tabindex="-1" id="modalmsg" data-backdrop="static" role="dialog" >
+	  <div class="modal-dialog modal-dialog-centered"  >
+	    <div class="modal-content">
+	      <div class="modal-header" style="padding: 0.1rem 1rem;">
+	      	<h5 class="modal-title" style="font-weight: bold;" >Edición Emisor-Tienda</h5>
+	        <button type="button" class="close" data-dismiss="modal">&times;</button>
+	      </div>
+	      <div class="modal-body pt-0 pb-0">
+	        <div id="divMsg">
+	        <h1 th:text="${modalMsg}" >
+
+				</h1>
+	        </div>
+	      </div>
+	      <div class="modal-footer">
+	      <button type="button" class="btn btn-primary" style="padding: 0.15rem 0.5rem;" data-dismiss="modal">Cerrar</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+  
+</div>
+
+
+<!------------ Fragment Table Edit Emisor Tienda-------------->
+<div th:fragment="fragmentEdit" th:remove="tag">
+  <div class="card" id="inicioEdit">
+  	<form id="myForm" action="#" th:action="@{/wsadministracion/update}"  th:object="${confDatosEmisorTiendaEdit}" method="post" onsubmit="runMyFunction()">
+	  	 <div class="form-group row mb-3">
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-1">
+	        	<label for="id" class="col-sm-3 col-form-label text-right" style="color:black;">Id</label>
+	        	 <input  class="form-control w-auto" style="height: auto;" readonly type="text" th:value="${confDatosEmisorTiendaEdit.id}" id="id" name="id" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	    	<div class="input-group mb-1">
+	        	<label for="idTienda" class="col-sm-3 col-form-label text-right" style="color:black;">IdTienda</label>
+	        	 <input th:if="${readonly} == 'readonly'"  class="form-control w-auto" style="height: auto;" readonly type="number" th:value="${confDatosEmisorTiendaEdit.idTienda}" id="idTienda" name="idTienda" />
+				 <input th:unless="${readonly} == 'readonly'"  class="form-control w-auto" style="height: auto;"  type="number" th:value="${confDatosEmisorTiendaEdit.idTienda}" id="idTienda" name="idTienda" />	    	
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+    		 <div class="input-group mb-1">
+	        	<label for="emisor" class="col-sm-3 col-form-label text-right" style="color:black;">Emisor</label>
+	        	<select th:field="${confDatosEmisorTiendaEdit.emisor}"   class="form-control pt-0 pb-0">
+	        		<option value="0">Seleccione el emisor</option>
+				    <option th:each="i : ${datosEmisor}" th:value="${i.rfc}" th:text="${i.rfc}" 
+				       th:selected="${i.rfc == confDatosEmisorTiendaEdit.emisor}" > </option>
+				</select>
+    		</div>
+	      </div>
+	    </div>
+		
+	    <div class="form-group row mb-3">
+	      <div class="col-md-4">
+	      	     <div class="input-group mb-1">
+		        	<label for="tipo" class="col-sm-3 col-form-label text-right" style="color:black;">Tipo</label>
+		        	<select th:field="${confDatosEmisorTiendaEdit.idCatTipoTienda}"   class="form-control pt-0 pb-0">
+		        		<option value="0">Seleccione Tipo de Tienda</option>
+					    <option th:each="i : ${catTipoTienda}" th:value="${i.id}" th:text="${i.tipotienda}" 
+					       th:selected="${i.id==confDatosEmisorTiendaEdit.idCatTipoTienda}"></option>
+					</select>
+	    		</div>
+	      </div>
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-3">
+	        	<label for="descripcion" class="col-sm-3 col-form-label text-right" style="color:black;">Descripción</label>
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.descripcion}" id="descripcion" name="descripcion" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	      		<div class="input-group mb-3">
+	        	<label for="calle" class="col-sm-3 col-form-label text-right" style="color:black;">Calle</label>
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.calle}" id="calle" name="calle" />
+	    	</div>
+	      </div>
+	    </div>
+
+	    <div class="form-group row mb-3">
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-3">
+	        	<label for="noExterior" class="col-sm-3 col-form-label text-right" style="color:black;">noExterior</label>
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.noExterior}" id="noExterior" name="noExterior" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-3">
+	        	<label for="noInterior" class="col-sm-3 col-form-label text-right" style="color:black;">noInterior</label>
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.noInterior}" id="noInterior" name="noInterior" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	      		<div class="input-group mb-3">
+	        	<label for="colonia" class="col-sm-3 col-form-label text-right" style="color:black;">Colonia</label>
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.colonia}" id="colonia" name="colonia" />
+	    	</div>
+	      </div>
+	    </div>
+	    
+	    <div class="form-group row mb-3">
+	      <div class="col-md-1">
+	  	    <div class="input-group mb-3">
+	        	<label for="referencia" class="col-sm-2 col-form-label text-right" style="color:black;">Referencia</label>
+
+	    	</div>
+	      </div>
+	      <div class="col-md-7">
+	      	 <div class="input-group mb-3">
+	        	 <input class="form-control w-auto" style="height: auto;"  type="text" th:value="${confDatosEmisorTiendaEdit.referencia}" id="referencia" name="referencia" />
+	    	</div>
+	      </div>
+	    </div>
+	    
+	        
+	    <div class="form-group row mb-3">
+	      <div class="col-md-4">
+	      	    <div class="input-group mb-3">
+	        		<label for="idCatCodigoPostal" class="col-sm-3 col-form-label text-right" style="color:black;">Codigo Postal</label>
+	        	 	<input class="form-control w-auto" style="height: auto;"  type="number" th:value="${confDatosEmisorTiendaEdit.idCatCodigoPostal}" th:attr="onBlur=|buscarCodigoPostalOnClick()|" id="idCatCodigoPostal" name="idCatCodigoPostal" />
+	    		</div>
+	      </div>
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-3">
+				<button type="button" class="btn btn-info" style="padding: 0.15rem 0.5rem; font-stretch: extra-condensed" th:attr="onClick=|buscarCodigoPostalOnClick()|">Buscar Codigo Postal</button>
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+      	      <div class="input-group mb-3">
+        		<label for="activo" class="col-sm-3 col-form-label text-right" style="color:black;">Activo</label>
+        	 	<input class="form-control w-auto" style="height: auto;"  type="checkbox"  th:field="${confDatosEmisorTiendaEdit.activo}"  id="activo" name="activo" />
+    			
+    		</div>
+	      </div>
+	    </div>
+	    
+	    <div class="form-group row mb-3">
+	      <div class="col-md-4">
+	      	  <div class="input-group mb-3">
+	        	<label for="estado" class="col-sm-3 col-form-label text-right" style="color:black;">Localidad</label>
+	        	 <input  class="form-control w-auto" style="height: auto;" readonly  type="text" th:value="${confDatosEmisorTiendaEdit.localidad}" id="localidad" name="localidad" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	  	    <div class="input-group mb-3">
+	        	<label for="estado" class="col-sm-3 col-form-label text-right" style="color:black;">Muninipio</label>
+	        	 <input  class="form-control w-auto" style="height: auto;" readonly  type="text" th:value="${confDatosEmisorTiendaEdit.municipio}" id="municipio" name="municipio" />
+	    	</div>
+	      </div>
+	      <div class="col-md-4">
+	      	  <div class="input-group mb-3">
+	        	<label for="estado" class="col-sm-3 col-form-label text-right" style="color:black;">Estado</label>
+	        	 <input  class="form-control w-auto" style="height: auto;" readonly  type="text" th:value="${confDatosEmisorTiendaEdit.estado}" id="estado" name="estado" />
+	    	</div>
+	      </div>
+	    </div>
+	    <div class="modal-footer">
+	        <button th:if="${confDatosEmisorTiendaEdit.id} != 0" type="submit" name="action" value="update" id="btnUpdCrt" class="btn btn-primary" style="padding: 0.15rem 0.5rem;">
+	      	Actualizar
+	        </button>
+	        <button th:unless="${confDatosEmisorTiendaEdit.id} != 0" type="submit" name="action" value="create" id="btnUpdCrt" class="btn btn-primary" style="padding: 0.15rem 0.5rem;">
+	      	Crear
+	        </button>
+	     </div>
+	    
+	     <input  class="form-control w-auto" style="height: auto;"   type="hidden" th:value="${confDatosEmisorTiendaEdit.fechaInicio}" id="fechaInicio" name="fechaInicio" />
+    </form>
+  </div>
+</div>

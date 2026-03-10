@@ -592,4 +592,325 @@ curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" 
 hola David buenas tardes qué tal, una duda que me quedó pero no recuerdo si me la respondiste en la sesión o ya no la tocamos, es cómo puedo ver las facturas (array de facturas) de un complemento de pago? actualmente el endpoint que hace la búsqueda me retorna la antidad de documentos relaiconados pero no un array de invoices relacionados 
 endpoint GET: https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&status=3&page=0&size=10 
 
-buenas David qué tal! yo de nuevo jaja, pregunta, tendrás un xml válido para complemento de pago? lo que pasa es que el que está en la bd al querer procesarlo me dice que es inválido armé otro y también me dice que tiene mal la estructura, solo me falta validar la happy path 
+buenas David qué tal! yo de nuevo jaja, pregunta, tendrás un xml válido para complemento de pago? lo que pasa es que el que está en la bd al querer procesarlo me dice que es inválido armé otro y también me dice que tiene mal la estructura, solo me falta validar la happy path
+
+---
+
+Sobre tu duda de facturas de un complemento de pago:
+
+El endpoint GET /fiscal/complementos-pago/buscar solo devuelve el conteo (relatedDocumentsCount). Para obtener el array de facturas/documentos relacionados hay un endpoint aparte:
+
+GET /related-documents/by-payment/{paymentsUuid}?page=0
+
+Donde {paymentsUuid} es el UUID del complemento de pago que te devuelve el search.
+
+Ejemplo:
+1. Buscar complementos:
+GET /fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&page=0&size=10
+
+En el response tomas el paymentsUuid de cada complemento.
+
+2. Obtener facturas de ese complemento:
+GET /related-documents/by-payment/{paymentsUuid}?page=0
+
+Esto te devuelve un Page con los documentos relacionados. Cada documento tiene:
+- documentUuid: UUID de la factura que se esta pagando
+- series / folio: serie y folio de la factura
+- amountPaid: monto pagado a esa factura
+- previousBalance: saldo anterior
+- remainingBalance: saldo restante
+- installmentNumber: numero de parcialidad
+- currency / exchangeRate: moneda y tipo de cambio
+
+La relacion de tablas es:
+  payments (complemento) --> payment (pagos individuales) --> related_documents (facturas pagadas)
+
+En BFF DEV:
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/related-documents/by-payment/{paymentsUuid}?page=0"
+
+---
+
+Sobre el XML valido de complemento de pago:
+
+Te paso un XML de ejemplo que pasa la validacion XSD. Lo tenemos en los tests del proyecto:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                  xmlns:pago20="http://www.sat.gob.mx/Pagos20"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd
+                                    http://www.sat.gob.mx/Pagos20 http://www.sat.gob.mx/sitio_internet/cfd/Pagos/Pagos20.xsd"
+                  Version="4.0"
+                  Serie="P"
+                  Folio="001"
+                  Fecha="2025-01-15T14:30:00"
+                  Sello="MockSelloPagos"
+                  NoCertificado="00001000000789123456"
+                  Certificado="MockCertificadoPagos"
+                  SubTotal="0"
+                  Moneda="XXX"
+                  Total="0"
+                  TipoDeComprobante="P"
+                  Exportacion="01"
+                  LugarExpedicion="06000">
+
+    <cfdi:Emisor Rfc="EKU9003173C9"
+                 Nombre="Empresa Pagadora S.A. de C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="LAN7008173R5"
+                   Nombre="Empresa Beneficiaria S.A. de C.V."
+                   DomicilioFiscalReceptor="64000"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="CP01"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="84111506"
+                       Cantidad="1"
+                       ClaveUnidad="ACT"
+                       Descripcion="Pago"
+                       ValorUnitario="0"
+                       Importe="0"
+                       ObjetoImp="01"/>
+    </cfdi:Conceptos>
+
+    <cfdi:Complemento>
+        <pago20:Pagos Version="2.0">
+            <pago20:Totales TotalRetencionesIVA="0.00"
+                           TotalRetencionesISR="0.00"
+                           TotalRetencionesIEPS="0.00"
+                           TotalTrasladosBaseIVA16="5000.00"
+                           TotalTrasladosImpuestoIVA16="800.00"
+                           TotalTrasladosBaseIVA8="0.00"
+                           TotalTrasladosImpuestoIVA8="0.00"
+                           TotalTrasladosBaseIVA0="0.00"
+                           TotalTrasladosImpuestoIVA0="0.00"
+                           TotalTrasladosBaseIVAExento="0.00"
+                           MontoTotalPagos="5800.00"/>
+
+            <pago20:Pago FechaPago="2025-01-15T14:30:00"
+                        FormaDePagoP="03"
+                        MonedaP="MXN"
+                        TipoCambioP="1"
+                        Monto="5800.00"
+                        NumOperacion="OP123456789"
+                        RfcEmisorCtaOrd="XEXX010101000"
+                        NomBancoOrdExt="NOMBRE BANCO EXTRANJERO"
+                        CtaOrdenante="1234567890123456"
+                        RfcEmisorCtaBen="BBA830831LJ2"
+                        CtaBeneficiario="6543210987654321">
+
+                <pago20:DoctoRelacionado IdDocumento="12345678-1234-1234-1234-123456789012"
+                                        Serie="A"
+                                        Folio="123"
+                                        MonedaDR="MXN"
+                                        EquivalenciaDR="1"
+                                        NumParcialidad="1"
+                                        ImpSaldoAnt="5800.00"
+                                        ImpPagado="5800.00"
+                                        ImpSaldoInsoluto="0.00"
+                                        ObjetoImpDR="02">
+
+                    <pago20:ImpuestosDR>
+                        <pago20:TrasladosDR>
+                            <pago20:TrasladoDR BaseDR="5000.00"
+                                              ImpuestoDR="002"
+                                              TipoFactorDR="Tasa"
+                                              TasaOCuotaDR="0.160000"
+                                              ImporteDR="800.00"/>
+                        </pago20:TrasladosDR>
+                    </pago20:ImpuestosDR>
+                </pago20:DoctoRelacionado>
+
+                <pago20:ImpuestosP>
+                    <pago20:TrasladosP>
+                        <pago20:TrasladoP BaseP="5000.00"
+                                         ImpuestoP="002"
+                                         TipoFactorP="Tasa"
+                                         TasaOCuotaP="0.160000"
+                                         ImporteP="800.00"/>
+                    </pago20:TrasladosP>
+                </pago20:ImpuestosP>
+            </pago20:Pago>
+        </pago20:Pagos>
+
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="11111111-2222-3333-4444-555555555555"
+                                FechaTimbrado="2025-01-15T14:35:00"
+                                RfcProvCertif="SFE0807172W8"
+                                SelloCFD="MockSelloCFDPagos"
+                                NoCertificadoSAT="00001000000456123789"
+                                SelloSAT="NHN/a1lZlbcYwh321cRYYlVP"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>
+
+Puntos clave del XML:
+1. TipoDeComprobante="P" (Pagos)
+2. SubTotal="0" y Total="0" (siempre para complementos)
+3. Moneda="XXX" (por especificacion SAT)
+4. UsoCFDI="CP01" (Pagos)
+5. Version="4.0" (CFDI) y Version="2.0" (Pagos)
+6. El IdDocumento en DoctoRelacionado debe ser el UUID fiscal de la factura que se esta pagando
+7. Debe tener nodo TimbreFiscalDigital con UUID unico
+
+Para registrar el complemento:
+POST /fiscal/complementos-pago/registrar (multipart/form-data)
+Parametros:
+- idProveedor: (numero de proveedor)
+- tipoAddenda: 5
+- tipoProveedor: (tipo de proveedor)
+- idUsuario: (ID del usuario)
+- xmlFile: (archivo XML)
+
+Importante: El RFC del Receptor (LAN7008173R5 en el ejemplo) debe estar autorizado en el catalogo de receptores. Si usas un RFC que no esta, te dara error de validacion.
+
+
+=== PRUEBAS VALIDADAS EN LOCAL (2026-03-09) ===
+
+Se valido todo en fiscal-api corriendo en localhost:8082 con datos reales de la base local (identicos a DEV).
+
+--- TEST 1: Busqueda de complementos de pago (PASSED) ---
+
+Localhost:
+curl -s "http://localhost:8082/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+BFF DEV (copiar y pegar):
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+Resultado: 200 OK, devuelve los complementos registrados con su informacion (paymentsUuid, fiscalUuid, folio, series, status, issuerRfc, receiverRfc, totalAmount, relatedDocumentsCount).
+
+--- TEST 2: Documentos relacionados de un complemento (PASSED) ---
+
+IMPORTANTE: La ruta correcta NO lleva /api. Es /related-documents/by-payment/{uuid}, NO /api/related-documents/by-payment/{uuid}.
+
+Localhost:
+curl -s "http://localhost:8082/related-documents/by-payment/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee?page=0"
+
+BFF DEV (copiar y pegar):
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/related-documents/by-payment/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee?page=0"
+
+Resultado: 200 OK, devuelve Page con los documentos:
+{
+  "content": [
+    {
+      "relatedDocumentUuid": "cccccccc-dddd-eeee-ffff-000000000001",
+      "paymentUuid": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+      "documentUuid": "77777777-7777-7777-7777-777777777777",
+      "amountPaid": 1800.00,
+      "previousBalance": 1800.00,
+      "remainingBalance": 0.00,
+      "installmentNumber": 1,
+      "series": "A",
+      "folio": "002",
+      "currency": "MXN",
+      "exchangeRate": 1.000000
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1
+}
+
+--- TEST 3: Registro de complemento de pago (PASSED) ---
+
+Se genero un XML de prueba (docs/test/complemento-pago-test.xml) y se registro exitosamente.
+
+Curl de registro (localhost):
+curl -s -X POST "http://localhost:8082/fiscal/complementos-pago/registrar" -F "xmlFile=@docs/test/complemento-pago-test.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"
+
+Curl de registro (BFF DEV, copiar y pegar):
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/registrar" -F "xmlFile=@complemento-pago-test.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"
+
+Parametros obligatorios (multipart/form-data):
+- xmlFile: archivo XML del complemento (CFDI 4.0 + Pagos 2.0)
+- tipoAddenda: 5 (siempre para complementos de pago)
+- idProveedor: numero de proveedor (Long)
+- tipoProveedor: tipo de proveedor (String, ej: "SLI")
+- idUsuario: ID del usuario que registra (Long)
+
+Resultado exitoso:
+{
+  "paymentsUuid": "abcd13a4-5c57-474e-9dc8-7e2e1d97d7f6",
+  "fileName": "complemento-pago-test.xml",
+  "processingStatus": "SUCCESS",
+  "responseCode": "200",
+  "message": "Complemento de pago registrado exitosamente",
+  "folio": "TEST001",
+  "serie": "P",
+  "rfcEmisor": "EKU9003173C9",
+  "rfcReceptor": "LAN7008173R5"
+}
+
+--- TEST 4: Buscar complemento recien registrado (PASSED) ---
+
+Localhost:
+curl -s "http://localhost:8082/fiscal/complementos-pago/buscar?rfcEmisor=EKU9003173C9&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+BFF DEV (copiar y pegar):
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=EKU9003173C9&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+Resultado: El complemento aparece con status=1 (Vigente), folio=TEST001, serie=P.
+
+--- NOTAS DEL XML DE PRUEBA ---
+
+El XML de prueba esta en: docs/test/complemento-pago-test.xml
+
+Datos del XML:
+- RFC Emisor: EKU9003173C9 (Empresa Pagadora Test S.A. de C.V.)
+- RFC Receptor: LAN7008173R5 (SODIMAC MEXICO S.A. DE C.V.) — este RFC esta autorizado en BD
+- UUID TimbreFiscalDigital: 99990001-ae01-4000-a000-000000000001
+- Folio: TEST001, Serie: P
+- MontoTotalPagos: 13,920.00 (12,000 base + 1,920 IVA 16%)
+- DoctoRelacionado: f0000011-a011-4b11-c011-000000000011 (factura FA-10011)
+
+IMPORTANTE para generar XMLs de prueba:
+- El UUID del TimbreFiscalDigital debe usar SOLO caracteres hexadecimales (0-9, a-f). No usar letras como "s", "t", "g", etc.
+- El RFC del Receptor debe estar en el catalogo de receptores autorizados
+- TipoDeComprobante="P", SubTotal="0", Total="0", Moneda="XXX"
+- Debe tener nodos: Emisor, Receptor, Conceptos, Complemento (con Pagos 2.0 y TimbreFiscalDigital)
+
+--- RESUMEN DE ENDPOINTS DE COMPLEMENTOS DE PAGO ---
+
+1. Buscar complementos:
+   GET /fiscal/complementos-pago/buscar?rfcEmisor={rfc}&fechaPagoInicio={fecha}&fechaPagoFin={fecha}&page=0&size=10
+
+2. Ver facturas de un complemento:
+   GET /related-documents/by-payment/{paymentsUuid}?page=0
+
+3. Registrar complemento:
+   POST /fiscal/complementos-pago/registrar (multipart: xmlFile, tipoAddenda=5, idProveedor, tipoProveedor, idUsuario)
+
+Base URL localhost: http://localhost:8082
+Base URL BFF DEV: https://dev.fbusinesscenter.com/ppsomx/fiscal
+
+
+--- CURLS COMPLEMENTOS DE PAGO - COPIAR Y PEGAR ---
+
+== LOCALHOST ==
+
+REM Buscar todos los complementos de pago
+curl -s "http://localhost:8082/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+REM Buscar complementos por RFC emisor
+curl -s "http://localhost:8082/fiscal/complementos-pago/buscar?rfcEmisor=EKU9003173C9&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+REM Ver facturas/documentos relacionados de un complemento (reemplazar el UUID)
+curl -s "http://localhost:8082/related-documents/by-payment/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee?page=0"
+
+REM Registrar complemento de pago (el archivo XML debe existir en la ruta)
+curl -s -X POST "http://localhost:8082/fiscal/complementos-pago/registrar" -F "xmlFile=@complemento-pago-test.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"
+
+== BFF DEV ==
+
+REM Buscar todos los complementos de pago
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+REM Buscar complementos por RFC emisor
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=EKU9003173C9&fechaPagoInicio=2025-01-01&fechaPagoFin=2026-12-31&page=0&size=10"
+
+REM Ver facturas/documentos relacionados de un complemento (reemplazar el UUID)
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/related-documents/by-payment/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee?page=0"
+
+REM Registrar complemento de pago (el archivo XML debe existir en la ruta)
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/registrar" -F "xmlFile=@complemento-pago-test.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"

@@ -4,6 +4,19 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-09 | Facturas de un complemento de pago + XML valido para registro
+
+**Contexto**: Fer pregunta como ver las facturas (array) de un complemento de pago y pide un XML valido para probar el happy path de registro.
+**Pregunta 1**: El endpoint GET /fiscal/complementos-pago/buscar devuelve `relatedDocumentsCount` pero no el array de facturas
+**Respuesta 1**: Existe endpoint aparte: `GET /related-documents/by-payment/{paymentsUuid}?page=0` (sin prefijo /api). Devuelve Page con documentos relacionados (documentUuid, series, folio, amountPaid, previousBalance, remainingBalance, installmentNumber, currency).
+**Pregunta 2**: XML valido para complemento de pago
+**Respuesta 2**: Se genero XML de test (`docs/test/complemento-pago-test.xml`). Puntos clave: TipoDeComprobante="P", SubTotal=0, Total=0, Moneda="XXX", UsoCFDI="CP01", Version CFDI 4.0 + Pagos 2.0. Endpoint de registro: `POST /fiscal/complementos-pago/registrar` (multipart: xmlFile, tipoAddenda=5, idProveedor, tipoProveedor, idUsuario). RFC receptor debe estar autorizado en catalogo. UUID en el XML debe usar solo caracteres hex validos (0-9, a-f).
+**Pruebas validadas**: Todos los endpoints probados en localhost:8082 con datos reales. Busqueda, documentos relacionados, registro y re-busqueda — todos OK. Curls documentados en `docs/conversacion/fer.txt`.
+**Jira**: -
+**Estado**: Resuelto (informado a Fer, pruebas validadas)
+
+---
+
 ## 2026-03-05 | Facturas con NCs relacionadas + validación de estatus en search
 
 **Contexto**: Fer necesita ver facturas con NCs relacionadas y sigue teniendo problemas con estatus.

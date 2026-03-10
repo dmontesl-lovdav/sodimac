@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +29,9 @@ import com.sodimac.cfdi.util.enums.EFacturaComplemento;
 
 @Service
 public class ComplementoPagoServiceImpl implements ComplementoPagoService {
-	
+
+	private Logger logger = LoggerFactory.getLogger(ComplementoPagoServiceImpl.class);
+
 	private NumberFormat df = NumberFormat.getCurrencyInstance(new Locale("en", "US"));
 	
 	private static final String MONEDA_MX = "MXN";
@@ -342,7 +346,9 @@ public class ComplementoPagoServiceImpl implements ComplementoPagoService {
 		
 		
 		if (listPagoComplementos.size() == 0) {
-			
+			logger.info("merge() - primer complemento para idPagoComplemento: {}, idFolioFactura: {}, importePago: {}, totalFolio: {}, facturas: {}",
+					idPagoComplemento, idFolioFactura, importePago, totalFolio, listFoliosFactura.size());
+
 			PagoComplementoFolioFacturaModel pagoComplemento = new PagoComplementoFolioFacturaModel();
 			pagoComplemento.setIdPagoComplemento( idPagoComplemento );
 			pagoComplemento.setIdFolioFactura( idFolioFactura );
@@ -484,14 +490,18 @@ public class ComplementoPagoServiceImpl implements ComplementoPagoService {
 			pagoComplemento.setMontoPago( importePago );
 			
 			List<PagoComplementoFolioFacturaDetalleModel> listPagosComplementoDet = new ArrayList<PagoComplementoFolioFacturaDetalleModel>();
-			
+
 			boolean complementaOtraFactura = false;
 			Double montoTotalFacturas = 0.0;
-			int parcialidad = 1;
-			
+			// FIX parcialidad: se calcula como numero de complementos previos + 1
+			// (antes se incrementaba por cada registro de detalle, generando valores incorrectos)
+			int parcialidad = listPagoComplementos.size() + 1;
+			logger.info("merge() - idPagoComplemento: {}, complementos previos: {}, nueva parcialidad: {}",
+					idPagoComplemento, listPagoComplementos.size(), parcialidad);
+
 			sigFactura:
 			for (FolioFacturaModel facturaTotal : listFoliosFactura) {
-				
+
 				Double montoFactura = facturaTotal.getMontoFactura();
 				Double montoFacturaAux = 0.0;
 				Double montoTotalNC = facturaTotal.getMontoTotalNC();
@@ -500,7 +510,7 @@ public class ComplementoPagoServiceImpl implements ComplementoPagoService {
 				Double importePosterior = 0.0;
 				Double importePosteriorAux = 0.0;
 				Double importePagado = 0.0;
-				
+
 				Double remanenteFactura = 0.0;
 				boolean facturaUtilizada = false;
 				List<PagoComplementoFolioFacturaDetalleModel> listFacturtasAsignadas = complementoFolioFacturaDetalleService.obtenerFacturasByIdFactura(facturaTotal.getIdFactura());
@@ -508,14 +518,15 @@ public class ComplementoPagoServiceImpl implements ComplementoPagoService {
 					facturaUtilizada = true;
 					for (int i=0; i<listFacturtasAsignadas.size(); i++) {
 						PagoComplementoFolioFacturaDetalleModel pagoComplementoFolioFacturaDetalle = listFacturtasAsignadas.get(i);
-						
+
 						pagoComplementoFolioFacturaDetalle.setOrden( facturaTotal.getOrden() );
 						pagoComplementoFolioFacturaDetalle.setColorPagoComplemento(false);
-						pagoComplementoFolioFacturaDetalle.setParcialidad(parcialidad);
-						
+						// Se mantiene la parcialidad original del registro existente (no se reasigna)
+						logger.info("merge() - factura existente idFactura: {}, parcialidad original: {}",
+								facturaTotal.getIdFactura(), pagoComplementoFolioFacturaDetalle.getParcialidad());
+
 						listPagosComplementoDet.add(pagoComplementoFolioFacturaDetalle);
-						parcialidad ++;
-						
+
 						if (i == listFacturtasAsignadas.size() -1) {
 							remanenteFactura = pagoComplementoFolioFacturaDetalle.getImportePosterior();
 							importePosteriorAux = pagoComplementoFolioFacturaDetalle.getImportePosterior();
@@ -623,16 +634,18 @@ public class ComplementoPagoServiceImpl implements ComplementoPagoService {
 					pagoComplementoFolioFacturaDetalle.setColorPagoComplemento(true);
 					pagoComplementoFolioFacturaDetalle.setEstatusFactura(EFacturaComplemento.COMPLETO);
 					listPagosComplementoDet.add(pagoComplementoFolioFacturaDetalle);
-					
+
 					complementaOtraFactura = true;
-					parcialidad ++;
+					// parcialidad ya no se incrementa aqui, es fija para todo el complemento
 				}
-				
+
 			}//for (FolioFacturaModel facturaTotal : listFoliosFactura)
-			
+
+			logger.info("merge() - total registros detalle generados: {}, parcialidad asignada: {}",
+					listPagosComplementoDet.size(), parcialidad);
 			pagoComplemento.setPagosComplementoFolioFacturaDet(listPagosComplementoDet);
 			listPagoComplementosRegistrar.add(pagoComplemento);
-			
+
 		}
 		return listPagoComplementosRegistrar;
 	}

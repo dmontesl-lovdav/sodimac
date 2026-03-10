@@ -30,6 +30,8 @@ La parcialidad debe representar el **número de complemento de pago** asignado a
 
 **¿Es correcto este entendimiento?**
 
+> **2026-03-10 - Eli confirmó que el planteamiento es correcto.** Parcialidad = número de complemento asignado al folio, no cantidad de registros de detalle.
+
 ### Análisis técnico
 
 **Archivo:** `ComplementoPagoServiceImpl.java` → método `merge()` (línea ~490)

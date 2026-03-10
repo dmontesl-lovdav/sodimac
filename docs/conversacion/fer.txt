@@ -585,3 +585,11 @@ curl -s -X PUT "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/{UUID}/st
 curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/invoices/search" -H "Content-Type: application/json" -d "{\"fechaInicioRecepcion\":\"2025-05-30\",\"fechaFinalRecepcion\":\"2025-11-30\",\"tipoDocumento\":\"I\",\"estatus\":99,\"page\":0,\"size\":10}"
 
 
+
+
+
+
+hola David buenas tardes qué tal, una duda que me quedó pero no recuerdo si me la respondiste en la sesión o ya no la tocamos, es cómo puedo ver las facturas (array de facturas) de un complemento de pago? actualmente el endpoint que hace la búsqueda me retorna la antidad de documentos relaiconados pero no un array de invoices relacionados 
+endpoint GET: https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/buscar?rfcEmisor=+&fechaPagoInicio=2025-04-30&fechaPagoFin=2026-02-21&status=3&page=0&size=10 
+
+buenas David qué tal! yo de nuevo jaja, pregunta, tendrás un xml válido para complemento de pago? lo que pasa es que el que está en la bd al querer procesarlo me dice que es inválido armé otro y también me dice que tiene mal la estructura, solo me falta validar la happy path 

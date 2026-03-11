@@ -4,6 +4,16 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-11 | Endpoint para relacionar complemento con factura
+
+**Contexto**: Fer logro registrar un complemento de pago y pregunta si hay un endpoint para relacionarlo con la factura o si el registro ya lo hace.
+**Pregunta**: Hay un endpoint donde pueda relacionar el complemento con la factura, o el mismo endpoint de registro ya lo hace?
+**Respuesta**: No hay endpoint separado. El diseño es que el registro lo haga automaticamente, PERO la dispersion de pagos individuales y documentos relacionados esta **pendiente de implementar**. Actualmente al registrar un complemento solo se crea la cabecera (`payments`) y la addenda, pero NO los pagos individuales (`payment`) ni los documentos relacionados (`related_documents`). El metodo `parsePagos()` en `PaymentXmlParserServiceImpl.java:288` tiene `setPagos(null)` con comentario "procesamiento pendiente". Para NCs si funciona completo (relacion via `related_cfdi`).
+**Jira**: -
+**Estado**: Pendiente — dispersion de pagos/documentos relacionados por implementar
+
+---
+
 ## 2026-03-09 | Facturas de un complemento de pago + XML valido para registro
 
 **Contexto**: Fer pregunta como ver las facturas (array) de un complemento de pago y pide un XML valido para probar el happy path de registro.

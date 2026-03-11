@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XML de ejemplo: Nota de Credito (TipoDeComprobante="E")
+  CFDI 4.0 + TimbreFiscalDigital 1.1
+
+  Notas:
+  - La factura relacionada (CfdiRelacionado UUID) DEBE estar registrada previamente
+  - TipoRelacion="01" = Nota de credito de los documentos relacionados
+  - Se usa el mismo endpoint POST /invoices/register
+-->
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"
+                  Version="4.0"
+                  Serie="NC"
+                  Folio="ETL001"
+                  Fecha="2025-07-15T09:00:00"
+                  Sello="MockSelloNCTest"
+                  NoCertificado="00001000000789654322"
+                  Certificado="MockCertificadoNCTest"
+                  SubTotal="2000.00"
+                  Descuento="0.00"
+                  Moneda="MXN"
+                  Total="2320.00"
+                  TipoDeComprobante="E"
+                  MetodoPago="PUE"
+                  FormaPago="03"
+                  Exportacion="01"
+                  LugarExpedicion="06000">
+
+    <!-- Relacion con la factura original -->
+    <cfdi:CfdiRelacionados TipoRelacion="01">
+        <cfdi:CfdiRelacionado UUID="aabb0001-ae01-4000-a000-000000000001"/>
+    </cfdi:CfdiRelacionados>
+
+    <cfdi:Emisor Rfc="EKU9003173C9"
+                 Nombre="ESCUELA KEMPER URGATE S.A. DE C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="LAN7008173R5"
+                   Nombre="SODIMAC MEXICO S.A. DE C.V."
+                   DomicilioFiscalReceptor="64000"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="G02"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="43232408"
+                       Cantidad="20"
+                       ClaveUnidad="H87"
+                       Unidad="Pieza"
+                       Descripcion="Devolucion parcial material electrico"
+                       ValorUnitario="100.00"
+                       Importe="2000.00"
+                       Descuento="0.00"
+                       ObjetoImp="02">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="2000.00"
+                                   Impuesto="002"
+                                   TipoFactor="Tasa"
+                                   TasaOCuota="0.160000"
+                                   Importe="320.00"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+    </cfdi:Conceptos>
+
+    <cfdi:Impuestos TotalImpuestosTrasladados="320.00">
+        <cfdi:Traslados>
+            <cfdi:Traslado Base="2000.00"
+                           Impuesto="002"
+                           TipoFactor="Tasa"
+                           TasaOCuota="0.160000"
+                           Importe="320.00"/>
+        </cfdi:Traslados>
+    </cfdi:Impuestos>
+
+    <cfdi:Complemento>
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="aabb0002-ae02-4000-a000-000000000002"
+                                FechaTimbrado="2025-07-15T09:05:00"
+                                RfcProvCertif="SFE0807172W8"
+                                SelloCFD="MockSelloCFDNCTest"
+                                NoCertificadoSAT="00001000000456789124"
+                                SelloSAT="MockSelloSATNCTest"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>

@@ -917,3 +917,32 @@ curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complement
 
 
 Buenas David, si funcionó pero no me jaló a la primera, si se validan varios escenarios la api, si ya fue registrado el documento, si tiene estructura correcta, etc. Una última duda, hay un endpoint donde yo lo pueda relacionar o ese mismo endpoint ya lo hace?
+
+---
+
+Fer, que bueno que funciono. Si, la API valida bastantes escenarios: XML vacio, estructura invalida, XSD, UUID duplicado, RFC no autorizado, etc.
+
+Sobre tu duda: "Hay un endpoint para relacionar o el mismo ya lo hace?"
+
+No hay endpoint separado para relacionar. El diseño es que el registro lo haga automaticamente. PERO hay que ser transparente:
+
+1. Complemento de pago (POST /fiscal/complementos-pago/registrar):
+   Actualmente la dispersion esta PARCIALMENTE implementada. Al registrar el complemento:
+   - SI se crea el registro en tabla payments (cabecera del complemento)
+   - SI se crea la addenda
+   - NO se crean los pagos individuales en tabla payment
+   - NO se crean los documentos relacionados en tabla related_documents
+
+   El parseo del nodo Pagos (pagos individuales y documentos relacionados) esta pendiente de implementar. El codigo tiene un "procesamiento pendiente" en esa parte. Esto significa que por ahora el endpoint GET /related-documents/by-payment/{paymentsUuid} va a regresar vacio aunque el complemento se haya registrado exitosamente.
+
+   Estoy trabajando en completar esa parte. Te aviso cuando este listo para que puedas probarlo.
+
+2. Nota de Credito (POST /invoices/register):
+   Esta SI esta completamente implementada. Al registrar la NC, la API:
+   - Busca la factura referenciada por su UUID fiscal
+   - Crea la relacion en tabla related_cfdi (vinculando NC → Factura)
+   - Si la factura no existe, regresa error BUS043
+
+En resumen:
+- NCs: la relacion SI se crea automaticamente al registrar. Puedes verificar con POST /invoices/search tipoDocumento=E.
+- Complementos de pago: la cabecera se registra pero los pagos individuales y documentos relacionados aun NO se dispersan. Esta pendiente.

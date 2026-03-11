@@ -914,3 +914,6 @@ curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/related-documents/by-paym
 
 REM Registrar complemento de pago (el archivo XML debe existir en la ruta)
 curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/registrar" -F "xmlFile=@complemento-pago-test.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"
+
+
+Buenas David, si funcionó pero no me jaló a la primera, si se validan varios escenarios la api, si ya fue registrado el documento, si tiene estructura correcta, etc. Una última duda, hay un endpoint donde yo lo pueda relacionar o ese mismo endpoint ya lo hace?

@@ -4,13 +4,18 @@ _Consultas mas recientes primero_
 
 ---
 
-## 2026-03-11 | Endpoint para relacionar complemento con factura
+## 2026-03-11 | Dispersión de pagos en complementos - IMPLEMENTADA
 
 **Contexto**: Fer logro registrar un complemento de pago y pregunta si hay un endpoint para relacionarlo con la factura o si el registro ya lo hace.
 **Pregunta**: Hay un endpoint donde pueda relacionar el complemento con la factura, o el mismo endpoint de registro ya lo hace?
-**Respuesta**: No hay endpoint separado. El diseño es que el registro lo haga automaticamente, PERO la dispersion de pagos individuales y documentos relacionados esta **pendiente de implementar**. Actualmente al registrar un complemento solo se crea la cabecera (`payments`) y la addenda, pero NO los pagos individuales (`payment`) ni los documentos relacionados (`related_documents`). El metodo `parsePagos()` en `PaymentXmlParserServiceImpl.java:288` tiene `setPagos(null)` con comentario "procesamiento pendiente". Para NCs si funciona completo (relacion via `related_cfdi`).
+**Respuesta**: No hay endpoint separado. El registro lo hace automaticamente. Se implemento la dispersion completa:
+- `parsePagos()` en `PaymentXmlParserServiceImpl.java` ahora parsea el nodo `<Pagos>` con cada `<Pago>` y sus `<DoctoRelacionado>`
+- `savePaymentsAndRelatedDocuments()` en `PaymentRegistrationServiceImpl.java` persiste en tablas `payment` y `related_documents`
+- Flujo: `payments` (cabecera) → `payment` (pago individual) → `related_documents` (factura pagada)
+**Verificacion**: Probado con XML de complemento. Datos dispersados correctamente: monto, forma de pago, cuentas bancarias, saldos, parcialidad
+**Endpoint para consultar**: `GET /related-documents/by-payment/{paymentsUuid}?page=0`
 **Jira**: -
-**Estado**: Pendiente — dispersion de pagos/documentos relacionados por implementar
+**Estado**: Resuelto — dispersion implementada y probada, pendiente deploy
 
 ---
 

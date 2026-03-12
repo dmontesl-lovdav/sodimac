@@ -2,6 +2,7 @@ package com.sodimac.fiscal.api.service.impl;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,15 +20,21 @@ import com.sodimac.fiscal.api.model.dto.ParsedPaymentXmlDto;
 import com.sodimac.fiscal.api.model.dto.ResponseValidationDetecnoDto;
 import com.sodimac.fiscal.api.model.dto.request.PaymentRegistrationRequest;
 import com.sodimac.fiscal.api.model.dto.response.PaymentRegistrationResponse;
+import com.sodimac.fiscal.api.model.dto.invoicexml.DoctoRelacionadoDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.PagoDto;
 import com.sodimac.fiscal.api.model.entity.AddendumEntity;
 import com.sodimac.fiscal.api.model.entity.IssuerEntity;
+import com.sodimac.fiscal.api.model.entity.PaymentEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentFileRegistryEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
+import com.sodimac.fiscal.api.model.entity.RelatedDocumentsEntity;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.repository.AddendumRepository;
 import com.sodimac.fiscal.api.repository.PaymentFileRegistryRepository;
+import com.sodimac.fiscal.api.repository.PaymentRepository;
 import com.sodimac.fiscal.api.repository.PaymentsRepository;
+import com.sodimac.fiscal.api.repository.RelatedDocumentsRepository;
 import com.sodimac.fiscal.api.service.IssuerService;
 import com.sodimac.fiscal.api.service.LogService;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
@@ -65,6 +72,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
     private final IssuerService issuerService;
     private final ReceiverService receiverService;
     private final PaymentsRepository paymentsRepository;
+    private final PaymentRepository paymentRepository;
+    private final RelatedDocumentsRepository relatedDocumentsRepository;
     private final AddendumRepository addendumRepository;
 
     /**
@@ -82,6 +91,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             IssuerService issuerService,
             ReceiverService receiverService,
             PaymentsRepository paymentsRepository,
+            PaymentRepository paymentRepository,
+            RelatedDocumentsRepository relatedDocumentsRepository,
             AddendumRepository addendumRepository) {
         this.xmlParserService = xmlParserService;
         this.validationService = validationService;
@@ -93,6 +104,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         this.issuerService = issuerService;
         this.receiverService = receiverService;
         this.paymentsRepository = paymentsRepository;
+        this.paymentRepository = paymentRepository;
+        this.relatedDocumentsRepository = relatedDocumentsRepository;
         this.addendumRepository = addendumRepository;
     }
 
@@ -283,10 +296,13 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             payments = paymentsRepository.save(payments);
             log.info("Payments guardado con UUID: {}", payments.getPaymentsUuid());
 
-            // 4. Crear y guardar Addenda
+            // 4. Dispersar pagos y documentos relacionados
+            savePaymentsAndRelatedDocuments(payments, parsedXml, request);
+
+            // 5. Crear y guardar Addenda
             createAndSaveAddenda(payments, parsedXml, request);
 
-            // 5. Crear respuesta
+            // 6. Crear respuesta
             return PaymentRegistrationResponse.builder()
                     .paymentsUuid(payments.getPaymentsUuid())
                     .fileName(fileName)
@@ -357,6 +373,69 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         payments.setCreatedBy(request.getIdUsuario());
 
         return payments;
+    }
+
+    /**
+     * Dispersa los pagos individuales y sus documentos relacionados.
+     * Parsea cada nodo Pago del complemento y lo persiste en la tabla payment,
+     * luego cada DoctoRelacionado en la tabla related_documents.
+     */
+    private void savePaymentsAndRelatedDocuments(
+            PaymentsEntity payments,
+            ParsedPaymentXmlDto parsedXml,
+            PaymentRegistrationRequest request) {
+
+        if (parsedXml.getPagos() == null || parsedXml.getPagos().getPagos() == null) {
+            log.warn("No se encontraron pagos para dispersar");
+            return;
+        }
+
+        for (PagoDto pagoDto : parsedXml.getPagos().getPagos()) {
+            // Crear PaymentEntity
+            PaymentEntity payment = new PaymentEntity();
+            payment.setPaymentsUuid(payments.getPaymentsUuid());
+            payment.setPaymentDate(LocalDate.parse(pagoDto.getFechaPago().substring(0, 10)));
+            payment.setPaymentMethod(pagoDto.getFormaDePagoP());
+            payment.setCurrency(pagoDto.getMonedaP() != null ? pagoDto.getMonedaP() : "MXN");
+            payment.setAmount(new BigDecimal(pagoDto.getMonto()));
+            payment.setOperationNumber(pagoDto.getNumOperacion());
+            payment.setExchangeRate(pagoDto.getTipoCambioP() != null && !pagoDto.getTipoCambioP().isEmpty()
+                    ? new BigDecimal(pagoDto.getTipoCambioP()) : BigDecimal.ONE);
+            payment.setPayerBankRfc(pagoDto.getRfcEmisorCtaOrd());
+            payment.setPayerAccount(pagoDto.getCtaOrdenante());
+            payment.setBeneficiaryBankRfc(pagoDto.getRfcEmisorCtaBen());
+            payment.setBeneficiaryAccount(pagoDto.getCtaBeneficiario());
+            payment.setCreatedBy(request.getIdUsuario());
+
+            payment = paymentRepository.save(payment);
+            log.debug("Payment guardado: UUID={}, monto={}", payment.getPaymentUuid(), payment.getAmount());
+
+            // Dispersar documentos relacionados de este pago
+            if (pagoDto.getDoctosRelacionados() != null) {
+                for (DoctoRelacionadoDto docto : pagoDto.getDoctosRelacionados()) {
+                    RelatedDocumentsEntity relDoc = new RelatedDocumentsEntity();
+                    relDoc.setPaymentUuid(payment.getPaymentUuid());
+                    relDoc.setDocumentUuid(UUID.fromString(docto.getIdDocumento()));
+                    relDoc.setAmountPaid(new BigDecimal(docto.getImpPagado()));
+                    relDoc.setPreviousBalance(new BigDecimal(docto.getImpSaldoAnt()));
+                    relDoc.setRemainingBalance(new BigDecimal(docto.getImpSaldoInsoluto()));
+                    relDoc.setInstallmentNumber(docto.getNumParcialidad() != null && !docto.getNumParcialidad().isEmpty()
+                            ? new BigDecimal(docto.getNumParcialidad()) : null);
+                    relDoc.setSeries(docto.getSerie());
+                    relDoc.setFolio(docto.getFolio());
+                    relDoc.setCurrency(docto.getMonedaDR() != null ? docto.getMonedaDR() : "MXN");
+                    relDoc.setExchangeRate(docto.getEquivalenciaDR() != null && !docto.getEquivalenciaDR().isEmpty()
+                            ? new BigDecimal(docto.getEquivalenciaDR()) : BigDecimal.ONE);
+                    relDoc.setCreatedBy(request.getIdUsuario());
+
+                    relatedDocumentsRepository.save(relDoc);
+                    log.debug("RelatedDocument guardado: docUuid={}, pagado={}, saldo={}",
+                            docto.getIdDocumento(), docto.getImpPagado(), docto.getImpSaldoInsoluto());
+                }
+            }
+        }
+
+        log.info("Dispersión completada: {} pagos procesados", parsedXml.getPagos().getPagos().size());
     }
 
     /**

@@ -288,16 +288,16 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // === PASO 3: VALIDAR TRANSICIÓN DE ESTATUS ===
             log.info("Paso 3: Validando transicion de estatus");
-            Integer estatusActual = invoice.getStatus();
-            Integer nuevoEstatus = request.getEstatus();
+            Integer currentStatusCode = invoice.getStatus();
+            Integer newStatusCode = request.getEstatus();
             String documentType = invoice.getDocumentType();
 
-            validateStatusTransition(estatusActual, nuevoEstatus, documentType);
-            log.info("Transicion de estatus validada: {} -> {}", estatusActual, nuevoEstatus);
+            validateStatusTransition(currentStatusCode, newStatusCode, documentType);
+            log.info("Transicion de estatus validada: {} -> {}", currentStatusCode, newStatusCode);
 
             // === PASO 4: ACTUALIZAR ESTATUS ===
             log.info("Paso 4: Actualizando estatus");
-            invoice.setStatus(nuevoEstatus);
+            invoice.setStatus(newStatusCode);
             invoice.setUpdatedBy(request.getIdUsuarioActualizacion());
             // Nota: BaseEntity maneja updated_at automáticamente con @PreUpdate
 
@@ -321,8 +321,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("Paso 6: Construyendo respuesta de actualizacion");
             InvoiceUpdateResponse response = buildUpdateSuccessResponse(
                     invoice,
-                    estatusActual,
-                    nuevoEstatus,
+                    currentStatusCode,
+                    newStatusCode,
                     documentType,
                     addendaActualizada
             );
@@ -345,7 +345,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("ACTUALIZACION COMPLETADA EXITOSAMENTE");
             log.info("========================================");
             log.info("Codigo de respuesta: {}", response.getCode());
-            log.info("Estatus anterior: {}, Estatus nuevo: {}", estatusActual, nuevoEstatus);
+            log.info("Estatus anterior: {}, Estatus nuevo: {}", currentStatusCode, newStatusCode);
 
             return response;
 
@@ -901,42 +901,47 @@ public class InvoiceServiceImpl implements InvoiceService {
     /**
      * Valida la transición de estatus según el tipo de documento.
      */
-    private void validateStatusTransition(Integer estatusActual, Integer nuevoEstatus, String documentType) {
-        log.debug("Validando transicion de estatus: {} -> {} para tipo: {}", estatusActual, nuevoEstatus, documentType);
+    private void validateStatusTransition(Integer currentStatusCode, Integer newStatusCode, String documentType) {
+        log.debug("Validando transicion de estatus: {} -> {} para tipo: {}", currentStatusCode, newStatusCode, documentType);
 
         // Validar según tipo de documento
         if ("I".equals(documentType)) {
             // Factura
             try {
-                InvoiceStatus currentStatus = InvoiceStatus.fromCodigo(estatusActual);
-                InvoiceStatus newStatus = InvoiceStatus.fromCodigo(nuevoEstatus);
+                InvoiceStatus currentStatus = InvoiceStatus.fromCodigo(currentStatusCode);
+                InvoiceStatus newStatus = InvoiceStatus.fromCodigo(newStatusCode);
 
-                if (!currentStatus.puedeTransicionarA(nuevoEstatus)) {
+                if (!currentStatus.puedeTransicionarA(newStatusCode)) {
                     messageCatalog.throwException(FiscalMessageCode.BUS051,
                             String.format("De: %d (%s) a: %d (%s)",
-                                    estatusActual, currentStatus.getNombre(),
-                                    nuevoEstatus, newStatus.getNombre()));
+                                    currentStatusCode, currentStatus.getNombre(),
+                                    newStatusCode, newStatus.getNombre()));
                 }
             } catch (IllegalArgumentException e) {
                 messageCatalog.throwException(FiscalMessageCode.BUS049,
-                        "Estatus: " + nuevoEstatus + ", Tipo: Factura (I)");
+                        "Estatus: " + newStatusCode + ", Tipo: Factura (I)");
             }
 
         } else if ("E".equals(documentType)) {
             // Nota de Crédito
             try {
-                CreditNoteStatus currentStatus = CreditNoteStatus.fromCodigo(estatusActual);
-                CreditNoteStatus newStatus = CreditNoteStatus.fromCodigo(nuevoEstatus);
+                CreditNoteStatus currentStatus = CreditNoteStatus.fromCodigo(currentStatusCode);
+                CreditNoteStatus newStatus = CreditNoteStatus.fromCodigo(newStatusCode);
 
-                if (!currentStatus.puedeTransicionarA(nuevoEstatus)) {
-                    messageCatalog.throwException(FiscalMessageCode.BUS051,
-                            String.format("De: %d (%s) a: %d (%s)",
-                                    estatusActual, currentStatus.getNombre(),
-                                    nuevoEstatus, newStatus.getNombre()));
+                // STM-335: Validar transición usando enum (incluye cancelación)
+                if (!currentStatus.puedeTransicionarA(newStatusCode)) {
+                    if (newStatus == CreditNoteStatus.CANCELADA) {
+                        messageCatalog.throwException(FiscalMessageCode.WRN7023);
+                    } else {
+                        messageCatalog.throwException(FiscalMessageCode.BUS051,
+                                String.format("De: %d (%s) a: %d (%s)",
+                                        currentStatusCode, currentStatus.getNombre(),
+                                        newStatusCode, newStatus.getNombre()));
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 messageCatalog.throwException(FiscalMessageCode.BUS049,
-                        "Estatus: " + nuevoEstatus + ", Tipo: Nota de Crédito (E)");
+                        "Estatus: " + newStatusCode + ", Tipo: Nota de Crédito (E)");
             }
 
         } else {
@@ -1274,6 +1279,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .xmlContent(invoice.getXmlContent())
                 // ========== NOTAS DE CRÉDITO RELACIONADAS (STM-1168) ==========
                 .notasCreditoRelacionadas(notasCreditoRelacionadas)
+                .creditNotesCount(notasCreditoRelacionadas != null ? notasCreditoRelacionadas.size() : 0)
                 // ========== DATOS DE FACTURA RELACIONADA (STM-396) - Solo para NC ==========
                 .relationType(relationType)
                 .relationTypeName(relationTypeName)

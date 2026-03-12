@@ -946,3 +946,113 @@ No hay endpoint separado para relacionar. El diseño es que el registro lo haga 
 En resumen:
 - NCs: la relacion SI se crea automaticamente al registrar. Puedes verificar con POST /invoices/search tipoDocumento=E.
 - Complementos de pago: la cabecera se registra pero los pagos individuales y documentos relacionados aun NO se dispersan. Esta pendiente.
+
+
+=== ACTUALIZACIÓN 2026-03-11: DISPERSIÓN DE PAGOS IMPLEMENTADA ===
+
+Fer, ya quedo implementada la dispersión completa de pagos y documentos relacionados en complementos de pago.
+
+Ahora al registrar un complemento de pago (POST /fiscal/complementos-pago/registrar), la API:
+1. Crea la cabecera en tabla `payments` (como antes)
+2. Crea la addenda (como antes)
+3. **NUEVO** - Crea los pagos individuales en tabla `payment` (fecha, monto, forma de pago, cuentas bancarias)
+4. **NUEVO** - Crea los documentos relacionados en tabla `related_documents` (factura pagada, monto pagado, saldo anterior, saldo restante, parcialidad)
+
+Esto significa que el endpoint GET /related-documents/by-payment/{paymentsUuid} ahora SI devuelve las facturas relacionadas al complemento.
+
+--- EJEMPLO COMPLETO PARA PROBAR ---
+
+Paso 1: Registrar un complemento de pago con el XML de prueba:
+
+curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal/fiscal/complementos-pago/registrar" -F "xmlFile=@complemento-pago.xml" -F "tipoAddenda=5" -F "idProveedor=12345" -F "tipoProveedor=SLI" -F "idUsuario=1"
+
+El response te da el paymentsUuid:
+{
+  "paymentsUuid": "4669c41e-8bfb-4ea0-bc90-5d8be24853c5",
+  "processingStatus": "SUCCESS",
+  "message": "Complemento de pago registrado exitosamente"
+}
+
+Paso 2: Consultar las facturas relacionadas de ese complemento:
+
+curl -s "https://dev.fbusinesscenter.com/ppsomx/fiscal/related-documents/by-payment/4669c41e-8bfb-4ea0-bc90-5d8be24853c5?page=0"
+
+Ahora SI devuelve los documentos:
+{
+  "content": [
+    {
+      "documentUuid": "aabb0001-ae01-4000-a000-000000000001",
+      "amountPaid": 11600.00,
+      "previousBalance": 11600.00,
+      "remainingBalance": 0.00,
+      "installmentNumber": 1,
+      "series": "FA",
+      "folio": "ETL001",
+      "currency": "MXN",
+      "exchangeRate": 1.000000
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1
+}
+
+--- CONSULTAS SQL PARA VERIFICAR EN BD ---
+
+-- 1. Ver la cabecera del complemento (tabla payments)
+SELECT payments_uuid, fiscal_uuid, payment_date, folio, series, status
+FROM tenant_fiscal.payments
+WHERE payments_uuid = '{paymentsUuid}';
+
+-- 2. Ver los pagos individuales (tabla payment)
+SELECT payment_uuid, payments_uuid, payment_date, payment_method, currency, amount,
+       operation_number, payer_bank_rfc, payer_account, beneficiary_bank_rfc, beneficiary_account
+FROM tenant_fiscal.payment
+WHERE payments_uuid = '{paymentsUuid}';
+
+-- 3. Ver los documentos relacionados / facturas pagadas (tabla related_documents)
+SELECT rd.document_uuid, rd.amount_paid, rd.previous_balance, rd.remaining_balance,
+       rd.installment_number, rd.series, rd.folio, rd.currency, rd.exchange_rate
+FROM tenant_fiscal.related_documents rd
+JOIN tenant_fiscal.payment p ON p.payment_uuid = rd.payment_uuid
+WHERE p.payments_uuid = '{paymentsUuid}';
+
+-- 4. Consulta completa: complemento → pagos → facturas pagadas (JOIN de las 3 tablas)
+SELECT
+  py.fiscal_uuid AS complemento_uuid,
+  py.folio AS complemento_folio,
+  py.series AS complemento_serie,
+  p.payment_date AS fecha_pago,
+  p.payment_method AS forma_pago,
+  p.amount AS monto_pago,
+  p.operation_number AS num_operacion,
+  rd.document_uuid AS factura_uuid,
+  rd.series AS factura_serie,
+  rd.folio AS factura_folio,
+  rd.amount_paid AS monto_pagado,
+  rd.previous_balance AS saldo_anterior,
+  rd.remaining_balance AS saldo_restante,
+  rd.installment_number AS parcialidad
+FROM tenant_fiscal.payments py
+JOIN tenant_fiscal.payment p ON p.payments_uuid = py.payments_uuid
+JOIN tenant_fiscal.related_documents rd ON rd.payment_uuid = p.payment_uuid
+WHERE py.payments_uuid = '{paymentsUuid}'
+ORDER BY p.payment_date, rd.folio;
+
+--- RELACIÓN DE TABLAS ---
+
+payments (cabecera complemento)
+  └── payment (pago individual: monto, forma de pago, cuentas bancarias)
+        └── related_documents (factura pagada: monto pagado, saldo, parcialidad)
+
+--- ENDPOINTS RESUMIDOS ---
+
+1. Registrar complemento:
+   POST /fiscal/complementos-pago/registrar (multipart: xmlFile, tipoAddenda=5, idProveedor, tipoProveedor, idUsuario)
+
+2. Buscar complementos:
+   GET /fiscal/complementos-pago/buscar?rfcEmisor={rfc}&fechaPagoInicio={fecha}&fechaPagoFin={fecha}&page=0&size=10
+
+3. Ver facturas de un complemento:
+   GET /related-documents/by-payment/{paymentsUuid}?page=0
+
+Nota: El paymentsUuid lo obtienes del response del registro (paso 1) o del response de búsqueda (paso 2).

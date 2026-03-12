@@ -29,7 +29,7 @@ public enum CreditNoteStatus {
 
     PENDIENTE_CONTABILIZAR(3, "Pendiente de Contabilizar",
             "Nota de crédito registrada pendiente de contabilizar en SAP",
-            false, new Integer[]{4}),
+            false, new Integer[]{4, 10}),
 
     PROCESO_DESCARGA(4, "Proceso de descarga",
             "NC descargada para ser enviada a SODIMAC SAP PROD",
@@ -51,9 +51,13 @@ public enum CreditNoteStatus {
             "Nota de crédito completada",
             false, new Integer[]{}),
 
+    CANCELADA(10, "Cancelada",
+            "Nota de crédito cancelada",
+            false, new Integer[]{}),
+
     RECHAZO_CONTABLE(11, "Rechazo Contable",
             "NC pendiente por contabilizar, rechazado por temas contables",
-            true, new Integer[]{7}),
+            true, new Integer[]{7, 10}),
 
     NO_VALIDO_FISCAL(12, "No valido fiscal",
             "Nota de crédito invalida",

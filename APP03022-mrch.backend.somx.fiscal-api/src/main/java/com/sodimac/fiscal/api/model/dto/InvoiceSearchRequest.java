@@ -121,6 +121,15 @@ public class InvoiceSearchRequest {
     )
     private String noRecepcion;
 
+    // ========== FILTRO NC POR FACTURA (STM-335) ==========
+
+    @Schema(
+            description = "UUID interno de la factura para filtrar sus NCs relacionadas (solo aplica con tipoDocumento=E)",
+            required = false,
+            example = "66666666-6666-6666-6666-666666666666"
+    )
+    private UUID relatedInvoiceUuid;
+
     // ========== PAGINACIÓN ==========
 
     @Schema(

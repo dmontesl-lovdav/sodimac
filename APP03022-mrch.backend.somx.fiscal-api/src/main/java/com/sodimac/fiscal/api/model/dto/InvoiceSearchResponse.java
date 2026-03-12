@@ -164,6 +164,9 @@ public class InvoiceSearchResponse {
     @Schema(description = "Lista de Notas de Crédito relacionadas a esta Factura (solo aplica para documentType='I')")
     private List<NotaCreditoRelacionadaDto> notasCreditoRelacionadas;
 
+    @Schema(description = "Cantidad de Notas de Crédito relacionadas a esta Factura (solo aplica para documentType='I')")
+    private Integer creditNotesCount;
+
     // ========== DATOS DE FACTURA RELACIONADA (STM-396) - Solo para NC (documentType='E') ==========
 
     @Schema(description = "Tipo de relación de la NC con la factura (01=NC bienes, 02=NC servicios, etc.) - Solo para NC")

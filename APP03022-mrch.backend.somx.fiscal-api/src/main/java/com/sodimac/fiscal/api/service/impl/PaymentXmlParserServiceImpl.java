@@ -2,6 +2,7 @@ package com.sodimac.fiscal.api.service.impl;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -20,6 +21,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sodimac.fiscal.api.model.dto.ParsedPaymentXmlDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.DoctoRelacionadoDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.PagoDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.PagosDto;
 import com.sodimac.fiscal.api.model.dto.invoicexml.TimbreFiscalDigitalDto;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
@@ -278,16 +282,61 @@ public class PaymentXmlParserServiceImpl implements PaymentXmlParserService {
     }
 
     private void parsePagos(Element complemento, ParsedPaymentXmlDto parsed) {
-        NodeList pagosNodes = complemento.getElementsByTagNameNS("http://www.sat.gob.mx/Pagos20", "Pagos");
+        String ns = "http://www.sat.gob.mx/Pagos20";
+        NodeList pagosNodes = complemento.getElementsByTagNameNS(ns, "Pagos");
         if (pagosNodes.getLength() == 0) {
             messageCatalog.throwError(FiscalMessageCode.ERR024);
         }
 
-        // Usar el servicio PagosXmlProcessorService para parsear el nodo Pagos
-        // Por ahora dejamos null y lo procesaremos en el servicio de registro
-        parsed.setPagos(null);
+        Element pagosElement = (Element) pagosNodes.item(0);
+        PagosDto pagosDto = new PagosDto();
 
-        log.debug("Nodo Pagos encontrado, procesamiento pendiente");
+        // Parsear cada nodo <pago20:Pago>
+        NodeList pagoNodes = pagosElement.getElementsByTagNameNS(ns, "Pago");
+        ArrayList<PagoDto> pagos = new ArrayList<>();
+
+        for (int i = 0; i < pagoNodes.getLength(); i++) {
+            Element pagoEl = (Element) pagoNodes.item(i);
+            PagoDto pago = new PagoDto();
+            pago.setFechaPago(pagoEl.getAttribute("FechaPago"));
+            pago.setFormaDePagoP(pagoEl.getAttribute("FormaDePagoP"));
+            pago.setMonedaP(pagoEl.getAttribute("MonedaP"));
+            pago.setTipoCambioP(pagoEl.getAttribute("TipoCambioP"));
+            pago.setMonto(pagoEl.getAttribute("Monto"));
+            pago.setNumOperacion(pagoEl.getAttribute("NumOperacion"));
+            pago.setRfcEmisorCtaOrd(pagoEl.getAttribute("RfcEmisorCtaOrd"));
+            pago.setNomBancoOrdExt(pagoEl.getAttribute("NomBancoOrdExt"));
+            pago.setCtaOrdenante(pagoEl.getAttribute("CtaOrdenante"));
+            pago.setRfcEmisorCtaBen(pagoEl.getAttribute("RfcEmisorCtaBen"));
+            pago.setCtaBeneficiario(pagoEl.getAttribute("CtaBeneficiario"));
+
+            // Parsear cada nodo <pago20:DoctoRelacionado>
+            NodeList doctoNodes = pagoEl.getElementsByTagNameNS(ns, "DoctoRelacionado");
+            ArrayList<DoctoRelacionadoDto> doctos = new ArrayList<>();
+
+            for (int j = 0; j < doctoNodes.getLength(); j++) {
+                Element doctoEl = (Element) doctoNodes.item(j);
+                DoctoRelacionadoDto docto = new DoctoRelacionadoDto();
+                docto.setIdDocumento(doctoEl.getAttribute("IdDocumento"));
+                docto.setSerie(doctoEl.getAttribute("Serie"));
+                docto.setFolio(doctoEl.getAttribute("Folio"));
+                docto.setMonedaDR(doctoEl.getAttribute("MonedaDR"));
+                docto.setEquivalenciaDR(doctoEl.getAttribute("EquivalenciaDR"));
+                docto.setNumParcialidad(doctoEl.getAttribute("NumParcialidad"));
+                docto.setImpSaldoAnt(doctoEl.getAttribute("ImpSaldoAnt"));
+                docto.setImpPagado(doctoEl.getAttribute("ImpPagado"));
+                docto.setImpSaldoInsoluto(doctoEl.getAttribute("ImpSaldoInsoluto"));
+                docto.setObjetoImpDR(doctoEl.getAttribute("ObjetoImpDR"));
+                doctos.add(docto);
+            }
+            pago.setDoctosRelacionados(doctos);
+            pagos.add(pago);
+        }
+
+        pagosDto.setPagos(pagos);
+        parsed.setPagos(pagosDto);
+
+        log.debug("Pagos parseados: {} pagos con documentos relacionados", pagos.size());
     }
 
     private void parseAddenda(Element root, ParsedPaymentXmlDto parsed) {

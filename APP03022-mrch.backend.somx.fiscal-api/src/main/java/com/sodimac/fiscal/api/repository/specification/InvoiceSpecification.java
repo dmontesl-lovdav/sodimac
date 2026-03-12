@@ -5,6 +5,7 @@ import com.sodimac.fiscal.api.model.entity.AddendumEntity;
 import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
 import com.sodimac.fiscal.api.model.entity.IssuerEntity;
 import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
+import com.sodimac.fiscal.api.model.entity.RelatedCfdiEntity;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -171,6 +172,18 @@ public class InvoiceSpecification {
                                 searchRequest.getNoRecepcion()
                         ));
                 predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+            }
+
+            // 13. NCs relacionadas a una factura específica (Opcional) - STM-335
+            if (searchRequest.getRelatedInvoiceUuid() != null) {
+                Subquery<UUID> relatedCfdiSubquery = query.subquery(UUID.class);
+                Root<RelatedCfdiEntity> relatedCfdiRoot = relatedCfdiSubquery.from(RelatedCfdiEntity.class);
+                relatedCfdiSubquery.select(relatedCfdiRoot.get("invoiceUuid"))
+                        .where(criteriaBuilder.equal(
+                                relatedCfdiRoot.get("relatedInvoiceUuid"),
+                                searchRequest.getRelatedInvoiceUuid()
+                        ));
+                predicates.add(root.get("invoiceUuid").in(relatedCfdiSubquery));
             }
 
             // Combinar todos los predicados con AND

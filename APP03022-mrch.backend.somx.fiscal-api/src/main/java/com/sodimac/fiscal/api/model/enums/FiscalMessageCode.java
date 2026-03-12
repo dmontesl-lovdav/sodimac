@@ -166,7 +166,10 @@ public enum FiscalMessageCode {
     // ========== ADVERTENCIAS - VALIDACIÓN NOTA DE CRÉDITO (WRN7015-WRN7017) - STM-397 ==========
     WRN7015("WRN7015", "La nota de crédito requiere una serie y folio para publicar el documento. Por favor, valide la información antes de continuar."),
     WRN7016("WRN7016", "La nota de crédito se encuentra previamente registrada con la misma serie y folio. Por favor, valide la información antes de continuar."),
-    WRN7017("WRN7017", "La nota de crédito se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar.");
+    WRN7017("WRN7017", "La nota de crédito se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar."),
+
+    // ========== ADVERTENCIAS - CANCELACIÓN NC (WRN7023) - STM-335 ==========
+    WRN7023("WRN7023", "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable.");
 
     private final String code;
     private final String message;

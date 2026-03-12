@@ -1,0 +1,299 @@
+{
+  "info": {
+    "name": "STM-335 - NC y Facturas (Conteo, Filtro, Cancelacion)",
+    "description": "Coleccion para probar las 3 tareas de STM-335:\n1. Conteo de NCs por factura (creditNotesCount)\n2. Filtrar NCs por factura especifica (relatedInvoiceUuid)\n3. Cancelacion de NCs con validacion de estatus (WRN7023)\n\nEndpoint search: POST /invoices/search\nEndpoint status: PUT /invoices/{uuid}/status\nPuerto: 8082 (fiscal-api local)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TAREA 1 - Conteo NCs por Factura",
+      "item": [
+        {
+          "name": "1.1 Buscar Facturas - Verificar creditNotesCount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca todas las facturas.\n\nVerificar en el response:\n- Cada factura debe tener el campo 'creditNotesCount' (Integer)\n- Las facturas con NCs relacionadas deben mostrar creditNotesCount > 0\n- Las facturas sin NCs deben mostrar creditNotesCount = 0\n\nFacturas con NCs en BD local:\n- FA/ETL001 -> 1 NC\n- FA/10002 -> 1 NC\n- MC/10003 -> 1 NC\n- FA/10004 -> 1 NC"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Buscar Facturas por RFC - Verificar creditNotesCount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfcEmisor\": \"JOH120507FU9\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca facturas del emisor JOH120507FU9.\nLa factura FA/10002 (total 95,000) debe tener creditNotesCount=1."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TAREA 2 - Filtrar NCs por Factura",
+      "item": [
+        {
+          "name": "2.1 Buscar NCs de factura FA/10002",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000010-0010-4010-a010-000000000010\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Filtra NCs relacionadas a la factura FA/10002.\n\nEsperado: 1 resultado\n- NC/50001 (total 15,000, estatus 3)"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Buscar NCs de factura MC/10003",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000011-0011-4011-a011-000000000011\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Filtra NCs relacionadas a la factura MC/10003.\n\nEsperado: 1 resultado\n- NC/50002 (total 8,500, estatus 7)"
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Buscar NCs de factura FA/ETL001",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"41c5d355-4089-41d1-896a-1f9f9da73798\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Filtra NCs relacionadas a la factura FA/ETL001.\n\nEsperado: 1 resultado\n- NC/ETL001 (total 2,320, estatus 1)"
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Buscar NCs de factura inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"00000000-0000-0000-0000-000000000000\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Filtra NCs de una factura que no existe.\n\nEsperado: 0 resultados (lista vacia, sin error)"
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Buscar todas las NCs (sin filtro relatedInvoiceUuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/search",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "search"]
+            },
+            "description": "Busca todas las NCs sin filtro de factura.\n\nEsperado: Todas las NCs del sistema (6 en BD local)\nVerifica que el campo relatedInvoiceUuid es opcional y no rompe nada."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TAREA 3 - Cancelacion de NCs",
+      "item": [
+        {
+          "name": "3.1 EXITO - Cancelar NC estatus 3 (Pend. Contabilizar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 12345,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Cancelacion de NC desde estatus 3 (Pendiente de Contabilizar)\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/e0000001-0001-4001-e001-000000000001/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "e0000001-0001-4001-e001-000000000001", "status"]
+            },
+            "description": "Cancela la NC/50001 que esta en estatus 3 (Pendiente de Contabilizar).\nProveedor: 12345 (JOH120507FU9)\n\nEsperado: HTTP 200 - Cancelacion exitosa\n- El estatus debe cambiar a 10 (Cancelada)\n\nNOTA: Esta prueba modifica datos. Ejecutar query 8 del SQL para verificar."
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 ERROR - Cancelar NC estatus 7 (Aplicado) -> WRN7023",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 67890,\n  \"estatusOrigen\": 7,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC con afectacion contable\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/e0000002-0002-4002-e002-000000000002/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "e0000002-0002-4002-e002-000000000002", "status"]
+            },
+            "description": "Intenta cancelar la NC/50002 que esta en estatus 7 (Aplicado).\n\nEsperado: ERROR con codigo WRN7023\nMensaje: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 ERROR - Cancelar NC estatus 1 (Pend. Addenda) -> WRN7023",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 1,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC en estatus Pendiente Addenda\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/e0000004-0004-4004-e004-000000000004/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "e0000004-0004-4004-e004-000000000004", "status"]
+            },
+            "description": "Intenta cancelar la NC/50004 que esta en estatus 1 (Pendiente Addenda).\n\nEsperado: ERROR con codigo WRN7023\nMensaje: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 ERROR - Cancelar NC ya cancelada (estatus 10)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroProveedor\": 54321,\n  \"estatusOrigen\": 10,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC que ya esta cancelada\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/invoices/e0000003-0003-4003-e003-000000000003/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["invoices", "e0000003-0003-4003-e003-000000000003", "status"]
+            },
+            "description": "Intenta cancelar la NC/50003 que ya esta en estatus 10 (Cancelada).\n\nEsperado: ERROR con codigo WRN7023\nLa NC ya esta cancelada, no puede cancelarse de nuevo."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

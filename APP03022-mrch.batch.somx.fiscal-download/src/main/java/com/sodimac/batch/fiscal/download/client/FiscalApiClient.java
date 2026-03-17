@@ -50,7 +50,7 @@ public class FiscalApiClient {
 
             try {
                 ResponseEntity<PageResponseDto<InvoiceSearchResponseDto>> response = restTemplate.exchange(
-                        baseUrl + "/api/invoices/search",
+                        baseUrl + "/invoices/search",
                         HttpMethod.POST,
                         new HttpEntity<>(request, jsonHeaders()),
                         new ParameterizedTypeReference<PageResponseDto<InvoiceSearchResponseDto>>() {}
@@ -83,7 +83,7 @@ public class FiscalApiClient {
 
         try {
             ResponseEntity<StatusUpdateResponseDto> response = restTemplate.exchange(
-                    baseUrl + "/api/invoices/" + fiscalUuid + "/status",
+                    baseUrl + "/invoices/" + fiscalUuid + "/status",
                     HttpMethod.PUT,
                     new HttpEntity<>(request, jsonHeaders()),
                     StatusUpdateResponseDto.class

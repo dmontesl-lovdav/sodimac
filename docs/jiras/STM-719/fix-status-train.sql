@@ -3,6 +3,9 @@
 -- Motivo: El batch necesita mover facturas a estatus 14
 --         (Error en el desglose) cuando falla el XML
 -- BD: b2b_portal (PostgreSQL) - esquema shared_catalogs
+-- Columnas: option_id, source_status, target_status
+--   option_id=1 → Facturas (tipo I)
+--   option_id=2 → NC / otros
 -- ============================================================
 
 
@@ -11,35 +14,30 @@
 -- ============================================================
 SELECT *
 FROM shared_catalogs.status_train
-WHERE source_status_id = 4
-  AND target_status_id = 14;
+WHERE source_status = 4
+  AND target_status = 14;
 
 
 -- ============================================================
 -- PASO 2: Si no existe, insertar
 -- ============================================================
-INSERT INTO shared_catalogs.status_train (source_status_id, target_status_id, document_type)
-SELECT 4, 14, 'I'
+INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by, created_at)
+SELECT 1, 4, 14, 1, NOW()
 WHERE NOT EXISTS (
     SELECT 1 FROM shared_catalogs.status_train
-    WHERE source_status_id = 4
-      AND target_status_id = 14
-      AND document_type = 'I'
+    WHERE option_id = 1
+      AND source_status = 4
+      AND target_status = 14
 );
 
 
 -- ============================================================
 -- PASO 3: Verificar todas las transiciones del estatus 4
 -- ============================================================
-SELECT st.id,
-       s_src.nombre AS estatus_origen,
-       s_tgt.nombre AS estatus_destino,
-       st.document_type
-FROM shared_catalogs.status_train st
-JOIN shared_catalogs.status s_src ON s_src.id = st.source_status_id
-JOIN shared_catalogs.status s_tgt ON s_tgt.id = st.target_status_id
-WHERE st.source_status_id = 4
-ORDER BY st.target_status_id;
+SELECT id, option_id, source_status, target_status
+FROM shared_catalogs.status_train
+WHERE source_status = 4
+ORDER BY option_id, target_status;
 
 
 -- ============================================================

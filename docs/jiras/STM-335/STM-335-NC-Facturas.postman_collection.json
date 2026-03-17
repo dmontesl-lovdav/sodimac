@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "STM-335 - NC y Facturas (Conteo, Filtro, Cancelacion)",
-    "description": "Coleccion para probar las 3 tareas de STM-335:\n1. Conteo de NCs por factura (creditNotesCount)\n2. Filtrar NCs por factura especifica (relatedInvoiceUuid)\n3. Cancelacion de NCs con validacion de estatus (WRN7023)\n\nEndpoint search: POST /invoices/search\nEndpoint status: PUT /invoices/{uuid}/status\nPuerto: 8082 (fiscal-api local)",
+    "description": "Coleccion para probar las 3 tareas de STM-335:\n1. Conteo de NCs por factura (creditNotesCount)\n2. Filtrar NCs por factura especifica (relatedInvoiceUuid)\n3. Cancelacion de NCs con validacion de estatus (WRN7023)\n\nEndpoint search: POST /invoices/search\nEndpoint status: PUT /invoices/{fiscalUuid}/status\nPuerto: 8082 (fiscal-api local)\n\nIMPORTANTE:\n- Rango de fechas maximo 6 meses (WRN7000 si se excede)\n- El PUT usa fiscal_uuid (UUID del timbre fiscal), NO invoice_uuid\n- Requiere catalogos-api levantado en puerto 8083 para Tarea 3\n\nProbado y validado: 2026-03-17",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +20,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-10-01\",\n  \"fechaFinalRecepcion\": \"2026-03-17\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20,\n  \"sortBy\": \"createdAt\",\n  \"sortDirection\": \"DESC\"\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -29,7 +29,7 @@
               "port": "8082",
               "path": ["invoices", "search"]
             },
-            "description": "Busca todas las facturas.\n\nVerificar en el response:\n- Cada factura debe tener el campo 'creditNotesCount' (Integer)\n- Las facturas con NCs relacionadas deben mostrar creditNotesCount > 0\n- Las facturas sin NCs deben mostrar creditNotesCount = 0\n\nFacturas con NCs en BD local:\n- FA/ETL001 -> 1 NC\n- FA/10002 -> 1 NC\n- MC/10003 -> 1 NC\n- FA/10004 -> 1 NC"
+            "description": "Busca todas las facturas (max 6 meses).\n\nVerificar en el response:\n- Cada factura debe tener el campo 'creditNotesCount' (Integer)\n- Facturas con NCs: creditNotesCount > 0\n- Facturas sin NCs: creditNotesCount = 0\n\nFacturas con NCs en BD local:\n- FA/ETL001 -> 1 NC\n- FA/10002 -> 1 NC\n- MC/10003 -> 1 NC\n- FA/10004 -> 1 NC"
           },
           "response": []
         },
@@ -45,7 +45,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rfcEmisor\": \"JOH120507FU9\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"rfcEmisor\": \"JOH120507FU9\",\n  \"fechaInicioRecepcion\": \"2025-04-01\",\n  \"fechaFinalRecepcion\": \"2025-09-30\",\n  \"tipoDocumento\": \"I\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -75,7 +75,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000010-0010-4010-a010-000000000010\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-07-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000010-0010-4010-a010-000000000010\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -84,7 +84,7 @@
               "port": "8082",
               "path": ["invoices", "search"]
             },
-            "description": "Filtra NCs relacionadas a la factura FA/10002.\n\nEsperado: 1 resultado\n- NC/50001 (total 15,000, estatus 3)"
+            "description": "Filtra NCs relacionadas a la factura FA/10002.\n\nEsperado: 1 resultado\n- NC/50001 (total 15,000, estatus 3)\n\nNota: relatedInvoiceUuid usa el invoice_uuid de la factura padre."
           },
           "response": []
         },
@@ -100,7 +100,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000011-0011-4011-a011-000000000011\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-07-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"f0000011-0011-4011-a011-000000000011\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -125,7 +125,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"41c5d355-4089-41d1-896a-1f9f9da73798\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-10-01\",\n  \"fechaFinalRecepcion\": \"2026-03-17\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"41c5d355-4089-41d1-896a-1f9f9da73798\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -150,7 +150,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"00000000-0000-0000-0000-000000000000\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-07-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"relatedInvoiceUuid\": \"00000000-0000-0000-0000-000000000000\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -175,7 +175,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2026-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"fechaInicioRecepcion\": \"2025-07-01\",\n  \"fechaFinalRecepcion\": \"2025-12-31\",\n  \"tipoDocumento\": \"E\",\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "http://localhost:8082/invoices/search",
@@ -184,7 +184,7 @@
               "port": "8082",
               "path": ["invoices", "search"]
             },
-            "description": "Busca todas las NCs sin filtro de factura.\n\nEsperado: Todas las NCs del sistema (6 en BD local)\nVerifica que el campo relatedInvoiceUuid es opcional y no rompe nada."
+            "description": "Busca todas las NCs sin filtro de factura.\n\nVerifica que el campo relatedInvoiceUuid es opcional y no rompe nada.\nEsperado: Todas las NCs del rango de fechas."
           },
           "response": []
         }
@@ -192,6 +192,7 @@
     },
     {
       "name": "TAREA 3 - Cancelacion de NCs",
+      "description": "REQUISITO: catalogos-api debe estar levantado en puerto 8083.\nEl endpoint PUT usa el fiscal_uuid (UUID del timbre fiscal), NO el invoice_uuid.",
       "item": [
         {
           "name": "3.1 EXITO - Cancelar NC estatus 3 (Pend. Contabilizar)",
@@ -208,13 +209,13 @@
               "raw": "{\n  \"numeroProveedor\": 12345,\n  \"estatusOrigen\": 3,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Cancelacion de NC desde estatus 3 (Pendiente de Contabilizar)\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8082/invoices/e0000001-0001-4001-e001-000000000001/status",
+              "raw": "http://localhost:8082/invoices/e0000001-a001-4001-e001-000000000001/status",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8082",
-              "path": ["invoices", "e0000001-0001-4001-e001-000000000001", "status"]
+              "path": ["invoices", "e0000001-a001-4001-e001-000000000001", "status"]
             },
-            "description": "Cancela la NC/50001 que esta en estatus 3 (Pendiente de Contabilizar).\nProveedor: 12345 (JOH120507FU9)\n\nEsperado: HTTP 200 - Cancelacion exitosa\n- El estatus debe cambiar a 10 (Cancelada)\n\nNOTA: Esta prueba modifica datos. Ejecutar query 8 del SQL para verificar."
+            "description": "Cancela la NC/50001 que esta en estatus 3 (Pendiente de Contabilizar).\nfiscal_uuid: e0000001-a001-4001-e001-000000000001\nProveedor: 12345 (JOH120507FU9)\n\nEsperado: HTTP 200 - Cancelacion exitosa\n- success: true\n- code: BUS3010\n- estatusAnterior: 3\n- estatusNuevo: 10\n- estatusNuevoNombre: Cancelada\n\nNOTA: Esta prueba MODIFICA datos. Ejecutar query 8 del SQL para verificar."
           },
           "response": []
         },
@@ -233,13 +234,13 @@
               "raw": "{\n  \"numeroProveedor\": 67890,\n  \"estatusOrigen\": 7,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC con afectacion contable\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8082/invoices/e0000002-0002-4002-e002-000000000002/status",
+              "raw": "http://localhost:8082/invoices/e0000002-a002-4002-e002-000000000002/status",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8082",
-              "path": ["invoices", "e0000002-0002-4002-e002-000000000002", "status"]
+              "path": ["invoices", "e0000002-a002-4002-e002-000000000002", "status"]
             },
-            "description": "Intenta cancelar la NC/50002 que esta en estatus 7 (Aplicado).\n\nEsperado: ERROR con codigo WRN7023\nMensaje: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
+            "description": "Intenta cancelar la NC/50002 que esta en estatus 7 (Aplicado).\nfiscal_uuid: e0000002-a002-4002-e002-000000000002\n\nEsperado: ERROR\n- success: false\n- code: WRN7023\n- message: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
           },
           "response": []
         },
@@ -258,13 +259,13 @@
               "raw": "{\n  \"numeroProveedor\": 1,\n  \"estatusOrigen\": 1,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC en estatus Pendiente Addenda\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8082/invoices/e0000004-0004-4004-e004-000000000004/status",
+              "raw": "http://localhost:8082/invoices/e0000004-a004-4004-e004-000000000004/status",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8082",
-              "path": ["invoices", "e0000004-0004-4004-e004-000000000004", "status"]
+              "path": ["invoices", "e0000004-a004-4004-e004-000000000004", "status"]
             },
-            "description": "Intenta cancelar la NC/50004 que esta en estatus 1 (Pendiente Addenda).\n\nEsperado: ERROR con codigo WRN7023\nMensaje: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
+            "description": "Intenta cancelar la NC/50004 que esta en estatus 1 (Pendiente Addenda).\nfiscal_uuid: e0000004-a004-4004-e004-000000000004\n\nEsperado: ERROR\n- success: false\n- code: WRN7023\n- message: La nota de credito no puede cancelarse porque ya cuenta con una afectacion contable."
           },
           "response": []
         },
@@ -283,13 +284,13 @@
               "raw": "{\n  \"numeroProveedor\": 54321,\n  \"estatusOrigen\": 10,\n  \"estatusDestino\": 10,\n  \"idUsuarioActualizacion\": 99999,\n  \"comentario\": \"STM-335: Intento cancelar NC que ya esta cancelada\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8082/invoices/e0000003-0003-4003-e003-000000000003/status",
+              "raw": "http://localhost:8082/invoices/e0000003-a003-4003-e003-000000000003/status",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8082",
-              "path": ["invoices", "e0000003-0003-4003-e003-000000000003", "status"]
+              "path": ["invoices", "e0000003-a003-4003-e003-000000000003", "status"]
             },
-            "description": "Intenta cancelar la NC/50003 que ya esta en estatus 10 (Cancelada).\n\nEsperado: ERROR con codigo WRN7023\nLa NC ya esta cancelada, no puede cancelarse de nuevo."
+            "description": "Intenta cancelar la NC/50003 que ya esta en estatus 10 (Cancelada).\nfiscal_uuid: e0000003-a003-4003-e003-000000000003\n\nEsperado: ERROR\n- success: false\n- code: WRN7010\n- message: Estatus origen no catalogado: 10\n(El estatus 10 no tiene transiciones de salida en el tren de estatus)"
           },
           "response": []
         }

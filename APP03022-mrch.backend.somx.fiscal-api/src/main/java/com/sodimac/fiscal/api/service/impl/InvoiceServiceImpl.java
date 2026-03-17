@@ -2192,6 +2192,12 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if ("WRN7010".equals(validationResult.getErrorCode())) {
                     return InvoiceStatusUpdateResponse.sourceNotCataloged(request.getEstatusOrigen());
                 } else if ("WRN7011".equals(validationResult.getErrorCode())) {
+                    // STM-335: Mensaje específico para cancelación de NC
+                    if ("E".equals(invoice.getDocumentType())
+                            && CreditNoteStatus.CANCELADA.getCodigo().equals(request.getEstatusDestino())) {
+                        return InvoiceStatusUpdateResponse.error("WRN7023",
+                                "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable.");
+                    }
                     return InvoiceStatusUpdateResponse.transitionNotAllowed(
                             request.getEstatusOrigen(), request.getEstatusDestino());
                 } else if ("ERR5001".equals(validationResult.getErrorCode())) {

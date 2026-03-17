@@ -326,3 +326,20 @@
 2026-03-17T14:28:59.915-06:00  INFO 14496 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Pagina actual: 0
 2026-03-17T14:29:00.004-06:00  INFO 14496 --- [fiscal-api] [nio-8082-exec-6] c.s.f.api.controller.InvoiceController   : Busqueda completada. Resultados: 0 de 0 totales
 2026-03-17T16:02:19.932-06:00  WARN 14496 --- [fiscal-api] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h9m7s749ms232Ás400ns).
+
+
+
+
+
+2026-03-17 16:58:27.808  INFO 4816 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Inicio batch-fiscal-download ===
+2026-03-17 16:58:27.810  INFO 4816 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : === Inicio proceso batch: Descarga de Facturas ===
+2026-03-17 16:58:28.284  INFO 4816 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=27 proceso=5
+2026-03-17 16:58:29.242  INFO 4816 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 0 documentos tipo=I estatus=3
+2026-03-17 16:58:29.364  INFO 4816 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : No hay facturas pendientes de procesar
+2026-03-17 16:58:29.435  INFO 4816 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=27 estatus=SUCCESS origen=0 destino=0
+2026-03-17 16:58:29.515  INFO 4816 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : === Inicio proceso batch: Descarga de Notas de Credito ===
+2026-03-17 16:58:29.565  INFO 4816 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=28 proceso=6
+2026-03-17 16:58:30.057  INFO 4816 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 0 documentos tipo=E estatus=3
+2026-03-17 16:58:30.154  INFO 4816 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : No hay notas de credito pendientes de procesar
+2026-03-17 16:58:30.202  INFO 4816 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=28 estatus=SUCCESS origen=0 destino=0
+2026-03-17 16:58:30.275  INFO 4816 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Fin batch-fiscal-download ===

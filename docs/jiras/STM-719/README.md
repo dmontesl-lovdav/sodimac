@@ -7,12 +7,12 @@ desglosa el XML CFDI 4.0, almacena en SODIMAC_SAP_DEV y registra trazabilidad en
 
 ## Proyecto creado
 
-`APP03022-mrch.backend.somx.batch-fiscal-download` — Puerto 8090
+`APP03022-mrch.batch.somx.fiscal-download` — Puerto 8090
 
 ## Arquitectura
 
 ```
-[batch-fiscal-download :8090]
+[fiscal-download :8090]
     |
     +-- fiscal-api :8082 (buscar documentos + actualizar estatus)
     +-- SODIMAC_BATCH_DEV (SQL Server :1433 - trazabilidad)
@@ -59,11 +59,11 @@ DDL: `docs/db/sap_dev/sap-dev-dll.sql`
 
 ```bash
 # Compilar
-cd APP03022-mrch.backend.somx.batch-fiscal-download
+cd APP03022-mrch.batch.somx.fiscal-download
 mvn clean package -DskipTests -q
 
 # Ejecutar
-java -jar target/batch-fiscal-download-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+java -jar target/fiscal-download-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 
 # Health
 curl http://localhost:8090/actuator/health

@@ -10,10 +10,10 @@ Exporta un proyecto limpio (sin carpeta `.git`) para compartir o desplegar:
 
 ```bash
 # Exportar como ZIP
-git archive --format=zip --output=../batch-fiscal-download.zip HEAD
+git archive --format=zip --output=../fiscal-download.zip HEAD
 
 # Exportar como TAR.GZ
-git archive --format=tar.gz --output=../batch-fiscal-download.tar.gz HEAD
+git archive --format=tar.gz --output=../fiscal-download.tar.gz HEAD
 
 # Exportar solo una carpeta especifica
 git archive --format=zip --output=../solo-src.zip HEAD src/

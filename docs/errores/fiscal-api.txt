@@ -3344,3 +3344,14 @@ C:\Users\g_dco018>curl -s -X POST "https://dev.fbusinesscenter.com/ppsomx/fiscal
   "empty": true
 }
 C:\Users\g_dco018>
+
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add .
+error: short read while indexing nul
+error: nul: failed to insert into database
+error: unable to index file 'nul'
+fatal: adding files failed
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>

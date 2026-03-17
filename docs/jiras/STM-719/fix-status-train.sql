@@ -1,12 +1,35 @@
 -- ============================================================
 -- STM-719: Agregar transicion 4 -> 14 en status_train
+--          y agregar estatus 14 al CHECK constraint de invoice
 -- Motivo: El batch necesita mover facturas a estatus 14
 --         (Error en el desglose) cuando falla el XML
--- BD: b2b_portal (PostgreSQL) - esquema shared_catalogs
--- Columnas: option_id, source_status, target_status
+-- BD: b2b_portal (PostgreSQL)
+--   shared_catalogs.status_train: Columnas option_id, source_status, target_status
+--   tenant_fiscal.invoice: CHECK constraint chk_invoice_status
 --   option_id=1 → Facturas (tipo I)
 --   option_id=2 → NC / otros
 -- ============================================================
+
+
+-- ============================================================
+-- PRE-REQUISITO: Agregar estatus 14 al CHECK constraint
+-- BD: b2b_portal - tenant_fiscal.invoice
+-- ============================================================
+
+-- Verificar constraint actual
+SELECT pg_get_constraintdef(oid)
+FROM pg_constraint
+WHERE conname = 'chk_invoice_status';
+
+-- Ampliar constraint para incluir estatus 14
+ALTER TABLE tenant_fiscal.invoice DROP CONSTRAINT chk_invoice_status;
+ALTER TABLE tenant_fiscal.invoice ADD CONSTRAINT chk_invoice_status
+    CHECK (status = ANY (ARRAY[1,2,3,4,5,6,7,8,9,10,11,12,13,14]));
+
+-- Verificar resultado
+SELECT pg_get_constraintdef(oid)
+FROM pg_constraint
+WHERE conname = 'chk_invoice_status';
 
 
 -- ============================================================
@@ -38,6 +61,39 @@ SELECT id, option_id, source_status, target_status
 FROM shared_catalogs.status_train
 WHERE source_status = 4
 ORDER BY option_id, target_status;
+
+
+-- ============================================================
+-- PRUEBAS: Resetear facturas y NC para re-ejecutar el batch
+-- BD: b2b_portal - tenant_fiscal.invoice
+-- NOTA: Ejecutar solo en ambiente de pruebas, no en produccion
+-- ============================================================
+
+-- Ver cuantas facturas estan atascadas en estatus 4
+SELECT COUNT(*), document_type
+FROM tenant_fiscal.invoice
+WHERE status = 4
+GROUP BY document_type;
+
+-- Resetear Facturas (tipo I) a estatus 3 para re-procesar
+UPDATE tenant_fiscal.invoice
+SET status = 3
+WHERE status = 4
+  AND document_type = 'I';
+
+-- Ver cuantas NC estan en estatus 3 (para proceso NC)
+SELECT COUNT(*)
+FROM tenant_fiscal.invoice
+WHERE status = 3
+  AND document_type = 'E';
+
+-- Si no hay NC en estatus 3, resetear algunas para probar
+-- (ajustar el IN con los fiscal_uuid que se quieran probar)
+-- UPDATE tenant_fiscal.invoice
+-- SET status = 3
+-- WHERE document_type = 'E'
+--   AND status IN (5, 11)
+-- LIMIT 5;
 
 
 -- ============================================================

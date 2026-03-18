@@ -1,55 +1,22 @@
-2026-03-18 10:33:40.342  INFO 21716 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Inicio batch-fiscal-download ===
-2026-03-18 10:33:40.346  INFO 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : === Inicio proceso batch: Descarga de Facturas ===
-2026-03-18 10:33:40.679  INFO 21716 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=46 proceso=5
-2026-03-18 10:33:45.684  INFO 21716 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 6 documentos tipo=I estatus=3
-2026-03-18 10:33:49.071 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000003-a003-4b03-c003-000000000003: XML no disponible para factura f0000003-a003-4b03-c003-000000000003
-2026-03-18 10:33:51.938 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000061-a061-4b61-c061-000000000061: XML no disponible para factura f0000061-a061-4b61-c061-000000000061
-2026-03-18 10:33:54.809 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000004-a004-4b04-c004-000000000004: XML no disponible para factura f0000004-a004-4b04-c004-000000000004
-2026-03-18 10:33:57.775 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000098-a098-4b98-c098-000000000098: XML no disponible para factura f0000098-a098-4b98-c098-000000000098
-2026-03-18 10:34:01.257 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000083-a083-4b83-c083-000000000083: XML no disponible para factura f0000083-a083-4b83-c083-000000000083
-2026-03-18 10:34:04.225 ERROR 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000078-a078-4b78-c078-000000000078: XML no disponible para factura f0000078-a078-4b78-c078-000000000078
-2026-03-18 10:34:05.273  INFO 21716 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=46 estatus=FAILED origen=6 destino=0
-2026-03-18 10:34:05.858  INFO 21716 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : === Fin proceso batch: Facturas — origen=6 destino=0 errores=6 ===
-2026-03-18 10:34:05.859  INFO 21716 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : === Inicio proceso batch: Descarga de Notas de Credito ===
-2026-03-18 10:34:06.063  INFO 21716 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=47 proceso=6
-2026-03-18 10:34:07.165  INFO 21716 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 0 documentos tipo=E estatus=3
-2026-03-18 10:34:07.440  INFO 21716 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : No hay notas de credito pendientes de procesar
-2026-03-18 10:34:07.600  INFO 21716 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=47 estatus=SUCCESS origen=0 destino=0
-2026-03-18 10:34:07.914  INFO 21716 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Fin batch-fiscal-download ===
+2026-03-18 11:52:51.253  INFO 21024 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Inicio batch-fiscal-download ===
+2026-03-18 11:52:51.254  INFO 21024 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : === Inicio proceso batch: Descarga de Facturas ===
+2026-03-18 11:52:51.473  INFO 21024 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=50 proceso=5
+2026-03-18 11:52:53.414  INFO 21024 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 2 documentos tipo=I estatus=3
+2026-03-18 11:52:55.439 ERROR 21024 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'fiscal_uuid'.
+2026-03-18 11:52:56.126 ERROR 21024 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000091-a091-4b91-c091-000000000091: Error en desglose CFDI: could not extract ResultSet; SQL [n/a]; nested exception is org.hibernate.exception.SQLGrammarException: could not extract ResultSet
+2026-03-18 11:52:57.214 ERROR 21024 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'fiscal_uuid'.
+2026-03-18 11:52:57.909 ERROR 21024 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : Error procesando factura uuid=f0000072-a072-4b72-c072-000000000072: Error en desglose CFDI: could not extract ResultSet; SQL [n/a]; nested exception is org.hibernate.exception.SQLGrammarException: could not extract ResultSet
+2026-03-18 11:52:58.369  INFO 21024 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=50 estatus=FAILED origen=2 destino=0
+2026-03-18 11:52:58.864  INFO 21024 --- [           main] .s.b.f.d.s.i.InvoiceDownloadBatchService : === Fin proceso batch: Facturas — origen=2 destino=0 errores=2 ===
+2026-03-18 11:52:58.865  INFO 21024 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : === Inicio proceso batch: Descarga de Notas de Credito ===
+2026-03-18 11:52:58.942  INFO 21024 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion iniciada: id=51 proceso=6
+2026-03-18 11:52:59.603  INFO 21024 --- [           main] c.s.b.f.download.client.FiscalApiClient  : Encontrados 0 documentos tipo=E estatus=3
+2026-03-18 11:52:59.764  INFO 21024 --- [           main] b.f.d.s.i.CreditNoteDownloadBatchService : No hay notas de credito pendientes de procesar
+2026-03-18 11:52:59.846  INFO 21024 --- [           main] c.s.b.f.d.service.BatchTraceService      : Ejecucion finalizada: id=51 estatus=SUCCESS origen=0 destino=0
+2026-03-18 11:52:59.965  INFO 21024 --- [           main] c.s.b.f.d.BatchFiscalDownloadApplication : === Fin batch-fiscal-download ===
 
 
 
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>mvn spring-boot:run
-[INFO] Scanning for projects...
-[INFO]
-[INFO] -----------------< com.sodimac.fiscal.api:fiscal-api >------------------
-[INFO] Building fiscal-api 0.0.1-SNAPSHOT
-[INFO]   from pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO]
-[INFO] >>> spring-boot:3.4.2:run (default-cli) > test-compile @ fiscal-api >>>
-[INFO]
-[INFO] --- jaxb2:3.1.0:xjc (default) @ fiscal-api ---
-[INFO] Ignored given or default xjbSources [C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\xjb], since it is not an existent file or directory.
-[INFO] No changes detected in schema or binding files - skipping JAXB generation.
-[INFO]
-[INFO] --- resources:3.3.1:resources (default-resources) @ fiscal-api ---
-[INFO] Copying 3 resources from src\main\resources to target\classes
-[INFO] Copying 12 resources from src\main\resources to target\classes
-[INFO]
-[INFO] --- compiler:3.13.0:compile (default-compile) @ fiscal-api ---
-[INFO] Nothing to compile - all classes are up to date.
-[INFO]
-[INFO] --- resources:3.3.1:testResources (default-testResources) @ fiscal-api ---
-[INFO] Copying 4 resources from src\test\resources to target\test-classes
-[INFO]
-[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ fiscal-api ---
-[INFO] Nothing to compile - all classes are up to date.
-[INFO]
-[INFO] <<< spring-boot:3.4.2:run (default-cli) < test-compile @ fiscal-api <<<
-[INFO]
-[INFO]
 [INFO] --- spring-boot:3.4.2:run (default-cli) @ fiscal-api ---
 [INFO] Attaching agents: []
 Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
@@ -64,32 +31,32 @@ Standard Commons Logging discovery in action with spring-jcl: please remove comm
 
  :: Spring Boot ::                (v3.4.2)
 
-2026-03-18T10:32:47.237-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Starting FiscalApiApplication using Java 17.0.12 with PID 26804 (C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\target\classes started by g_dco018 in C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api)
-2026-03-18T10:32:47.241-06:00 DEBUG 26804 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Running with Spring Boot v3.4.2, Spring v6.2.2
-2026-03-18T10:32:47.244-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : The following 1 profile is active: "dev"
-2026-03-18T10:32:47.364-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in C:\Users\g_dco018\.m2\repository\xalan\xalan\2.7.3\xalan-2.7.3.jar referenced one or more files that do not exist: file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/xercesImpl.jar,file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/xml-apis.jar,file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/serializer.jar
-2026-03-18T10:32:47.365-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in C:\Users\g_dco018\.m2\repository\xalan\serializer\2.7.3\serializer-2.7.3.jar referenced one or more files that do not exist: file:/C:/Users/g_dco018/.m2/repository/xalan/serializer/2.7.3/xml-apis.jar
-2026-03-18T10:32:47.367-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-03-18T10:32:47.368-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-03-18T10:32:53.023-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-03-18T10:32:53.852-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 803 ms. Found 18 JPA repository interfaces.
-2026-03-18T10:32:54.691-06:00  WARN 26804 --- [fiscal-api] [  restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.ws.config.annotation.DelegatingWsConfiguration' of type [org.springframework.ws.config.annotation.DelegatingWsConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [annotationActionEndpointMapping] is declared through a non-static factory method on that class; consider declaring it as static instead.
-2026-03-18T10:32:54.896-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .w.s.a.s.AnnotationActionEndpointMapping : Supporting [WS-Addressing August 2004, WS-Addressing 1.0]
-2026-03-18T10:32:56.586-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
-2026-03-18T10:32:56.620-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-03-18T10:32:56.621-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.34]
-2026-03-18T10:32:56.777-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-03-18T10:32:56.777-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 9406 ms
+2026-03-18T11:51:59.402-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Starting FiscalApiApplication using Java 17.0.12 with PID 26084 (C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\target\classes started by g_dco018 in C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api)
+2026-03-18T11:51:59.404-06:00 DEBUG 26084 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Running with Spring Boot v3.4.2, Spring v6.2.2
+2026-03-18T11:51:59.405-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : The following 1 profile is active: "dev"
+2026-03-18T11:51:59.443-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in C:\Users\g_dco018\.m2\repository\xalan\xalan\2.7.3\xalan-2.7.3.jar referenced one or more files that do not exist: file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/xercesImpl.jar,file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/xml-apis.jar,file:/C:/Users/g_dco018/.m2/repository/xalan/xalan/2.7.3/serializer.jar
+2026-03-18T11:51:59.443-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in C:\Users\g_dco018\.m2\repository\xalan\serializer\2.7.3\serializer-2.7.3.jar referenced one or more files that do not exist: file:/C:/Users/g_dco018/.m2/repository/xalan/serializer/2.7.3/xml-apis.jar
+2026-03-18T11:51:59.443-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-03-18T11:51:59.444-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-03-18T11:52:00.986-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-18T11:52:01.268-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 276 ms. Found 18 JPA repository interfaces.
+2026-03-18T11:52:01.685-06:00  WARN 26084 --- [fiscal-api] [  restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.ws.config.annotation.DelegatingWsConfiguration' of type [org.springframework.ws.config.annotation.DelegatingWsConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [annotationActionEndpointMapping] is declared through a non-static factory method on that class; consider declaring it as static instead.
+2026-03-18T11:52:01.742-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .w.s.a.s.AnnotationActionEndpointMapping : Supporting [WS-Addressing August 2004, WS-Addressing 1.0]
+2026-03-18T11:52:02.455-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
+2026-03-18T11:52:02.469-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-18T11:52:02.471-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-18T11:52:02.588-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-18T11:52:02.589-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3145 ms
 Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
-2026-03-18T10:32:57.483-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-03-18T10:32:57.655-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.5.Final
-2026-03-18T10:32:57.735-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-03-18T10:32:58.399-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-03-18T10:32:58.508-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-03-18T10:33:00.652-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@a085268
-2026-03-18T10:33:00.660-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-03-18T10:33:00.957-06:00  WARN 26804 --- [fiscal-api] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-03-18T10:33:01.292-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2026-03-18T11:52:02.913-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-18T11:52:02.976-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.5.Final
+2026-03-18T11:52:03.001-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-18T11:52:03.274-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-18T11:52:03.305-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-18T11:52:04.711-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4c9f139e
+2026-03-18T11:52:04.712-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-18T11:52:04.822-06:00  WARN 26084 --- [fiscal-api] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-18T11:52:05.015-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
         Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
         Database driver: undefined/unknown
         Database version: 18.1
@@ -97,350 +64,186 @@ Standard Commons Logging discovery in action with spring-jcl: please remove comm
         Isolation level: undefined/unknown
         Minimum pool size: undefined/unknown
         Maximum pool size: undefined/unknown
-2026-03-18T10:33:04.171-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-03-18T10:33:04.179-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-03-18T10:33:05.613-06:00 DEBUG 26804 --- [fiscal-api] [  restartedMain] c.s.f.a.s.impl.PacCatalogServiceImpl     : Finding all PAC catalogs
-2026-03-18T10:33:06.761-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.ws.soap.saaj.SaajSoapMessageFactory  : Creating SAAJ 1.3 MessageFactory with SOAP 1.1 Protocol
-2026-03-18T10:33:06.870-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.ws.soap.saaj.SaajSoapMessageFactory  : Creating SAAJ 1.3 MessageFactory with SOAP 1.1 Protocol
-2026-03-18T10:33:08.155-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] c.s.f.a.s.i.CfdiXmlProcessorServiceImpl  : JAXB Context inicializado para CFDI v4.0
-2026-03-18T10:33:08.725-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-03-18T10:33:10.314-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] .a.s.i.CartaPorteXmlProcessorServiceImpl : JAXB Context inicializado para CartaPorte v3.1
-2026-03-18T10:33:10.387-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] c.s.f.a.s.i.PagosXmlProcessorServiceImpl : JAXB Context inicializado para Pagos v2.0
-2026-03-18T10:33:10.788-06:00  WARN 26804 --- [fiscal-api] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-03-18T10:33:12.419-06:00  WARN 26804 --- [fiscal-api] [  restartedMain] o.s.x.transform.TransformerFactoryUtils  : http://javax.xml.XMLConstants/property/accessExternalDTD property not supported by org.apache.xalan.processor.TransformerFactoryImpl
-2026-03-18T10:33:12.420-06:00  WARN 26804 --- [fiscal-api] [  restartedMain] o.s.x.transform.TransformerFactoryUtils  : http://javax.xml.XMLConstants/property/accessExternalStylesheet property not supported by org.apache.xalan.processor.TransformerFactoryImpl
-2026-03-18T10:33:12.770-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
-2026-03-18T10:33:12.795-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 15 endpoints beneath base path '/actuator'
-2026-03-18T10:33:13.030-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path '/'
-2026-03-18T10:33:13.066-06:00  INFO 26804 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Started FiscalApiApplication in 26.818 seconds (process running for 28.595)
-2026-03-18T10:33:42.105-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-03-18T10:33:42.107-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-03-18T10:33:42.116-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 8 ms
-2026-03-18T10:33:42.166-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:42.168-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/search
-2026-03-18T10:33:42.671-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Solicitud de busqueda de facturas/NC recibida. RFC Emisor: null, Tipo: I, Fechas: 2025-09-18 - 2026-03-18
-2026-03-18T10:33:42.818-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:42.819-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO BUSQUEDA DE FACTURAS/NOTAS DE CREDITO
-2026-03-18T10:33:42.820-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:42.821-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Emisor: null
-2026-03-18T10:33:42.822-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Inicio: 2025-09-18
-2026-03-18T10:33:42.822-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Final: 2026-03-18
-2026-03-18T10:33:42.823-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Tipo Documento: I
-2026-03-18T10:33:42.824-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Receptor: null
-2026-03-18T10:33:42.825-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Serie: null
-2026-03-18T10:33:42.826-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Folio: null
-2026-03-18T10:33:42.827-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: null
-2026-03-18T10:33:42.828-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3
-2026-03-18T10:33:42.829-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Orden Compra: null
-2026-03-18T10:33:42.830-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Recepcion: null
-2026-03-18T10:33:42.830-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 0: Validando rango de fechas
-2026-03-18T10:33:42.831-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando rango de fechas: 2025-09-18 - 2026-03-18
-2026-03-18T10:33:42.832-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.UtilsApiServiceImpl       : Consultando utils-api: http://localhost:3712/api/parameters?name=MAX_SEARCH_MONTHS
-2026-03-18T10:33:43.055-06:00  WARN 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.UtilsApiServiceImpl       : Error consultando utils-api para parßmetro MAX_SEARCH_MONTHS: I/O error on GET request for "http://localhost:3712/api/parameters": null. Usando valor por defecto: 6
-2026-03-18T10:33:43.056-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Parßmetro MAX_SEARCH_MONTHS: 6 meses
-2026-03-18T10:33:43.058-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Diferencia en meses entre fechas: 6
-2026-03-18T10:33:43.058-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Validaci¾n de rango de fechas completada exitosamente
-2026-03-18T10:33:43.069-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 1: Construyendo Specification con filtros usando JPA Criteria
-2026-03-18T10:33:43.078-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Specification construida exitosamente
-2026-03-18T10:33:43.079-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 2: Configurando paginacion y ordenamiento
-2026-03-18T10:33:43.081-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paginacion configurada: page=0, size=100, sort=createdAt ASC
-2026-03-18T10:33:43.082-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 3: Ejecutando busqueda con JPA Criteria API
-2026-03-18T10:33:43.390-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Busqueda completada. Resultados encontrados: 6, Total paginas: 1
-2026-03-18T10:33:43.391-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 4: Mapeando resultados a InvoiceSearchResponse (incluyendo Addenda)
-2026-03-18T10:33:43.393-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000003-b003-4c03-d003-000000000003 a InvoiceSearchResponse
-2026-03-18T10:33:43.542-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000003-b003-4c03-d003-000000000003
-2026-03-18T10:33:43.639-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:43.847-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000061-b061-4c61-d061-000000000061 a InvoiceSearchResponse
-2026-03-18T10:33:43.949-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000061-b061-4c61-d061-000000000061
-2026-03-18T10:33:44.049-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:44.252-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000004-b004-4c04-d004-000000000004 a InvoiceSearchResponse
-2026-03-18T10:33:44.353-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000004-b004-4c04-d004-000000000004
-2026-03-18T10:33:44.457-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:44.560-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000098-b098-4c98-d098-000000000098 a InvoiceSearchResponse
-2026-03-18T10:33:44.664-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000098-b098-4c98-d098-000000000098
-2026-03-18T10:33:44.749-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:44.753-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000083-b083-4c83-d083-000000000083 a InvoiceSearchResponse
-2026-03-18T10:33:44.870-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000083-b083-4c83-d083-000000000083
-2026-03-18T10:33:44.970-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:44.971-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000078-b078-4c78-d078-000000000078 a InvoiceSearchResponse
-2026-03-18T10:33:45.177-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000078-b078-4c78-d078-000000000078
-2026-03-18T10:33:45.277-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
-2026-03-18T10:33:45.379-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:45.380-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : BUSQUEDA COMPLETADA EXITOSAMENTE
-2026-03-18T10:33:45.381-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:45.382-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Total elementos: 6
-2026-03-18T10:33:45.382-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Elementos en pagina: 6
-2026-03-18T10:33:45.383-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Total paginas: 1
-2026-03-18T10:33:45.384-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Pagina actual: 0
-2026-03-18T10:33:45.482-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Busqueda completada. Resultados: 6 de 6 totales
-2026-03-18T10:33:45.526-06:00  WARN 26804 --- [fiscal-api] [nio-8082-exec-1] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+2026-03-18T11:52:06.277-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-18T11:52:06.279-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-18T11:52:06.892-06:00 DEBUG 26084 --- [fiscal-api] [  restartedMain] c.s.f.a.s.impl.PacCatalogServiceImpl     : Finding all PAC catalogs
+2026-03-18T11:52:07.475-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.ws.soap.saaj.SaajSoapMessageFactory  : Creating SAAJ 1.3 MessageFactory with SOAP 1.1 Protocol
+2026-03-18T11:52:07.535-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.ws.soap.saaj.SaajSoapMessageFactory  : Creating SAAJ 1.3 MessageFactory with SOAP 1.1 Protocol
+2026-03-18T11:52:08.088-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] c.s.f.a.s.i.CfdiXmlProcessorServiceImpl  : JAXB Context inicializado para CFDI v4.0
+2026-03-18T11:52:08.338-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-18T11:52:09.175-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] .a.s.i.CartaPorteXmlProcessorServiceImpl : JAXB Context inicializado para CartaPorte v3.1
+2026-03-18T11:52:09.210-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] c.s.f.a.s.i.PagosXmlProcessorServiceImpl : JAXB Context inicializado para Pagos v2.0
+2026-03-18T11:52:09.392-06:00  WARN 26084 --- [fiscal-api] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-18T11:52:10.110-06:00  WARN 26084 --- [fiscal-api] [  restartedMain] o.s.x.transform.TransformerFactoryUtils  : http://javax.xml.XMLConstants/property/accessExternalDTD property not supported by org.apache.xalan.processor.TransformerFactoryImpl
+2026-03-18T11:52:10.111-06:00  WARN 26084 --- [fiscal-api] [  restartedMain] o.s.x.transform.TransformerFactoryUtils  : http://javax.xml.XMLConstants/property/accessExternalStylesheet property not supported by org.apache.xalan.processor.TransformerFactoryImpl
+2026-03-18T11:52:10.239-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-03-18T11:52:10.247-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 15 endpoints beneath base path '/actuator'
+2026-03-18T11:52:10.361-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path '/'
+2026-03-18T11:52:10.377-06:00  INFO 26084 --- [fiscal-api] [  restartedMain] c.s.fiscal.api.FiscalApiApplication      : Started FiscalApiApplication in 11.333 seconds (process running for 12.077)
+2026-03-18T11:52:52.126-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-18T11:52:52.141-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-18T11:52:52.144-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-03-18T11:52:52.161-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:52.163-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/search
+2026-03-18T11:52:52.386-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Solicitud de busqueda de facturas/NC recibida. RFC Emisor: null, Tipo: I, Fechas: 2025-09-18 - 2026-03-18
+2026-03-18T11:52:52.458-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:52.459-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO BUSQUEDA DE FACTURAS/NOTAS DE CREDITO
+2026-03-18T11:52:52.459-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:52.460-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Emisor: null
+2026-03-18T11:52:52.460-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Inicio: 2025-09-18
+2026-03-18T11:52:52.461-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Final: 2026-03-18
+2026-03-18T11:52:52.462-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Tipo Documento: I
+2026-03-18T11:52:52.462-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Receptor: null
+2026-03-18T11:52:52.463-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Serie: null
+2026-03-18T11:52:52.464-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Folio: null
+2026-03-18T11:52:52.464-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: null
+2026-03-18T11:52:52.465-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3
+2026-03-18T11:52:52.465-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Orden Compra: null
+2026-03-18T11:52:52.466-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Recepcion: null
+2026-03-18T11:52:52.467-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 0: Validando rango de fechas
+2026-03-18T11:52:52.467-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando rango de fechas: 2025-09-18 - 2026-03-18
+2026-03-18T11:52:52.468-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.UtilsApiServiceImpl       : Consultando utils-api: http://localhost:3712/api/parameters?name=MAX_SEARCH_MONTHS
+2026-03-18T11:52:52.580-06:00  WARN 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.UtilsApiServiceImpl       : Error consultando utils-api para parßmetro MAX_SEARCH_MONTHS: I/O error on GET request for "http://localhost:3712/api/parameters": null. Usando valor por defecto: 6
+2026-03-18T11:52:52.581-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Parßmetro MAX_SEARCH_MONTHS: 6 meses
+2026-03-18T11:52:52.582-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Diferencia en meses entre fechas: 6
+2026-03-18T11:52:52.582-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Validaci¾n de rango de fechas completada exitosamente
+2026-03-18T11:52:52.587-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 1: Construyendo Specification con filtros usando JPA Criteria
+2026-03-18T11:52:52.592-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Specification construida exitosamente
+2026-03-18T11:52:52.592-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 2: Configurando paginacion y ordenamiento
+2026-03-18T11:52:52.593-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paginacion configurada: page=0, size=100, sort=createdAt ASC
+2026-03-18T11:52:52.593-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 3: Ejecutando busqueda con JPA Criteria API
+2026-03-18T11:52:52.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Busqueda completada. Resultados encontrados: 2, Total paginas: 1
+2026-03-18T11:52:52.751-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 4: Mapeando resultados a InvoiceSearchResponse (incluyendo Addenda)
+2026-03-18T11:52:52.752-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000091-b091-4c91-d091-000000000091 a InvoiceSearchResponse
+2026-03-18T11:52:52.841-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000091-b091-4c91-d091-000000000091
+2026-03-18T11:52:52.916-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
+2026-03-18T11:52:53.071-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Mapeando invoice UUID: a0000072-b072-4c72-d072-000000000072 a InvoiceSearchResponse
+2026-03-18T11:52:53.151-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Buscando NC relacionadas para Factura UUID: a0000072-b072-4c72-d072-000000000072
+2026-03-18T11:52:53.224-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : No se encontraron NC relacionadas
+2026-03-18T11:52:53.225-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:53.226-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : BUSQUEDA COMPLETADA EXITOSAMENTE
+2026-03-18T11:52:53.226-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:53.227-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Total elementos: 2
+2026-03-18T11:52:53.227-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Elementos en pagina: 2
+2026-03-18T11:52:53.227-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Total paginas: 1
+2026-03-18T11:52:53.228-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Pagina actual: 0
+2026-03-18T11:52:53.297-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Busqueda completada. Resultados: 2 de 2 totales
+2026-03-18T11:52:53.328-06:00  WARN 26084 --- [fiscal-api] [nio-8082-exec-1] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
         For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
         or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
 
-2026-03-18T10:33:46.446-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:46.447-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000003-a003-4b03-c003-000000000003/status
-2026-03-18T10:33:46.479-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000003-a003-4b03-c003-000000000003, Transici¾n: 3 -> 4
-2026-03-18T10:33:46.607-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:46.608-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:46.609-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:46.610-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000003-a003-4b03-c003-000000000003
-2026-03-18T10:33:46.610-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:33:46.818-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:46.820-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:33:47.421-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:33:47.430-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:47.511-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:33:47.513-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:47.514-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:47.515-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000003-a003-4b03-c003-000000000003
-2026-03-18T10:33:47.517-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:33:47.519-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:48.040-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000003-a003-4b03-c003-000000000003, Nuevo estatus: 4
-2026-03-18T10:33:48.058-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:48.059-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000003-a003-4b03-c003-000000000003/status
-2026-03-18T10:33:48.066-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000003-a003-4b03-c003-000000000003, Transici¾n: 4 -> 14
-2026-03-18T10:33:48.067-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:48.068-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:48.070-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:48.071-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000003-a003-4b03-c003-000000000003
-2026-03-18T10:33:48.072-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:33:48.155-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:48.157-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:33:48.678-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:33:48.679-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:48.686-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:33:48.687-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:48.687-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:48.688-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000003-a003-4b03-c003-000000000003
-2026-03-18T10:33:48.688-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:33:48.689-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:49.065-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000003-a003-4b03-c003-000000000003, Nuevo estatus: 14
-2026-03-18T10:33:50.007-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:50.009-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000061-a061-4b61-c061-000000000061/status
-2026-03-18T10:33:50.015-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000061-a061-4b61-c061-000000000061, Transici¾n: 3 -> 4
-2026-03-18T10:33:50.084-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.085-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:50.086-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.086-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000061-a061-4b61-c061-000000000061
-2026-03-18T10:33:50.087-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:33:50.167-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:50.169-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:33:50.573-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:33:50.574-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:50.577-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:33:50.577-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.578-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:50.578-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000061-a061-4b61-c061-000000000061
-2026-03-18T10:33:50.580-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:33:50.581-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.908-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000061-a061-4b61-c061-000000000061, Nuevo estatus: 4
-2026-03-18T10:33:50.922-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:50.923-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000061-a061-4b61-c061-000000000061/status
-2026-03-18T10:33:50.931-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000061-a061-4b61-c061-000000000061, Transici¾n: 4 -> 14
-2026-03-18T10:33:50.932-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.933-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:50.934-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:50.935-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000061-a061-4b61-c061-000000000061
-2026-03-18T10:33:50.935-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:33:51.116-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:51.116-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:33:51.597-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:33:51.598-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:51.602-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:33:51.602-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:51.603-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:51.603-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000061-a061-4b61-c061-000000000061
-2026-03-18T10:33:51.604-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:33:51.605-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:51.932-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-5] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000061-a061-4b61-c061-000000000061, Nuevo estatus: 14
-2026-03-18T10:33:52.756-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:52.757-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000004-a004-4b04-c004-000000000004/status
-2026-03-18T10:33:52.765-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000004-a004-4b04-c004-000000000004, Transici¾n: 3 -> 4
-2026-03-18T10:33:52.956-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:52.957-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:52.957-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:52.958-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000004-a004-4b04-c004-000000000004
-2026-03-18T10:33:52.960-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:33:53.060-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:53.061-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:33:53.474-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:33:53.474-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:53.480-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:33:53.481-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:53.481-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:53.482-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000004-a004-4b04-c004-000000000004
-2026-03-18T10:33:53.482-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:33:53.483-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:53.775-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-6] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000004-a004-4b04-c004-000000000004, Nuevo estatus: 4
-2026-03-18T10:33:53.786-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:53.787-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000004-a004-4b04-c004-000000000004/status
-2026-03-18T10:33:53.794-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000004-a004-4b04-c004-000000000004, Transici¾n: 4 -> 14
-2026-03-18T10:33:53.796-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:53.796-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:53.797-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:53.797-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000004-a004-4b04-c004-000000000004
-2026-03-18T10:33:53.798-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:33:53.983-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:53.984-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:33:54.501-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:33:54.501-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:54.505-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:33:54.506-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:54.507-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:54.508-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000004-a004-4b04-c004-000000000004
-2026-03-18T10:33:54.508-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:33:54.508-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:54.801-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-7] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000004-a004-4b04-c004-000000000004, Nuevo estatus: 14
-2026-03-18T10:33:55.725-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:55.726-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000098-a098-4b98-c098-000000000098/status
-2026-03-18T10:33:55.733-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000098-a098-4b98-c098-000000000098, Transici¾n: 3 -> 4
-2026-03-18T10:33:55.824-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:55.824-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:55.825-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:55.825-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000098-a098-4b98-c098-000000000098
-2026-03-18T10:33:55.826-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:33:55.928-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:55.930-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:33:56.443-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:33:56.444-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:56.447-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:33:56.448-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:56.448-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:56.449-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000098-a098-4b98-c098-000000000098
-2026-03-18T10:33:56.450-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:33:56.450-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:56.747-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-9] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000098-a098-4b98-c098-000000000098, Nuevo estatus: 4
-2026-03-18T10:33:56.764-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:56.765-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000098-a098-4b98-c098-000000000098/status
-2026-03-18T10:33:56.771-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000098-a098-4b98-c098-000000000098, Transici¾n: 4 -> 14
-2026-03-18T10:33:56.784-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:56.784-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:56.785-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:56.786-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000098-a098-4b98-c098-000000000098
-2026-03-18T10:33:56.787-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:33:56.953-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:56.971-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:33:57.466-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:33:57.468-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:57.475-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:33:57.476-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:57.477-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:57.478-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000098-a098-4b98-c098-000000000098
-2026-03-18T10:33:57.478-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:33:57.479-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:57.769-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-8] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000098-a098-4b98-c098-000000000098, Nuevo estatus: 14
-2026-03-18T10:33:58.695-06:00 DEBUG 26804 --- [fiscal-api] [io-8082-exec-10] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:33:58.696-06:00 DEBUG 26804 --- [fiscal-api] [io-8082-exec-10] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000083-a083-4b83-c083-000000000083/status
-2026-03-18T10:33:58.703-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000083-a083-4b83-c083-000000000083, Transici¾n: 3 -> 4
-2026-03-18T10:33:58.772-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:58.773-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:33:58.773-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:58.774-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000083-a083-4b83-c083-000000000083
-2026-03-18T10:33:58.774-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:33:59.315-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:33:59.316-06:00 DEBUG 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:33:59.822-06:00 DEBUG 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:33:59.824-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:33:59.827-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:33:59.827-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:33:59.828-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:33:59.828-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000083-a083-4b83-c083-000000000083
-2026-03-18T10:33:59.829-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:33:59.829-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:00.225-06:00  INFO 26804 --- [fiscal-api] [io-8082-exec-10] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000083-a083-4b83-c083-000000000083, Nuevo estatus: 4
-2026-03-18T10:34:00.236-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:34:00.237-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000083-a083-4b83-c083-000000000083/status
-2026-03-18T10:34:00.243-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000083-a083-4b83-c083-000000000083, Transici¾n: 4 -> 14
-2026-03-18T10:34:00.245-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:00.245-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:34:00.245-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:00.246-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000083-a083-4b83-c083-000000000083
-2026-03-18T10:34:00.246-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:34:00.331-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:34:00.332-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:34:00.949-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:34:00.950-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:34:00.952-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:34:00.954-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:00.955-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:34:00.956-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000083-a083-4b83-c083-000000000083
-2026-03-18T10:34:00.957-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:34:00.957-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:01.250-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-1] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000083-a083-4b83-c083-000000000083, Nuevo estatus: 14
-2026-03-18T10:34:02.174-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:34:02.175-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000078-a078-4b78-c078-000000000078/status
-2026-03-18T10:34:02.179-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000078-a078-4b78-c078-000000000078, Transici¾n: 3 -> 4
-2026-03-18T10:34:02.247-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:02.247-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:34:02.247-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:02.249-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000078-a078-4b78-c078-000000000078
-2026-03-18T10:34:02.250-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
-2026-03-18T10:34:02.378-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:34:02.379-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
-2026-03-18T10:34:02.790-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
-2026-03-18T10:34:02.791-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:34:02.794-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
-2026-03-18T10:34:02.795-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:02.795-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:34:02.796-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000078-a078-4b78-c078-000000000078
-2026-03-18T10:34:02.796-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
-2026-03-18T10:34:02.796-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:03.093-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000078-a078-4b78-c078-000000000078, Nuevo estatus: 4
-2026-03-18T10:34:03.104-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:34:03.104-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000078-a078-4b78-c078-000000000078/status
-2026-03-18T10:34:03.108-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000078-a078-4b78-c078-000000000078, Transici¾n: 4 -> 14
-2026-03-18T10:34:03.110-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:03.110-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
-2026-03-18T10:34:03.111-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:03.111-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000078-a078-4b78-c078-000000000078
-2026-03-18T10:34:03.111-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
-2026-03-18T10:34:03.299-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
-2026-03-18T10:34:03.300-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
-2026-03-18T10:34:03.872-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
-2026-03-18T10:34:03.872-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
-2026-03-18T10:34:03.875-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
-2026-03-18T10:34:03.876-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:03.876-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
-2026-03-18T10:34:03.876-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000078-a078-4b78-c078-000000000078
-2026-03-18T10:34:03.878-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
-2026-03-18T10:34:03.878-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:04.220-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000078-a078-4b78-c078-000000000078, Nuevo estatus: 14
-2026-03-18T10:34:06.843-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
-2026-03-18T10:34:06.844-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/search
-2026-03-18T10:34:06.849-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Solicitud de busqueda de facturas/NC recibida. RFC Emisor: null, Tipo: E, Fechas: 2025-09-18 - 2026-03-18
-2026-03-18T10:34:06.920-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:06.921-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO BUSQUEDA DE FACTURAS/NOTAS DE CREDITO
-2026-03-18T10:34:06.922-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:06.922-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Emisor: null
-2026-03-18T10:34:06.922-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Inicio: 2025-09-18
-2026-03-18T10:34:06.923-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Final: 2026-03-18
-2026-03-18T10:34:06.923-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Tipo Documento: E
-2026-03-18T10:34:06.923-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Receptor: null
-2026-03-18T10:34:06.924-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Serie: null
-2026-03-18T10:34:06.925-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Folio: null
-2026-03-18T10:34:06.925-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: null
-2026-03-18T10:34:06.926-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3
-2026-03-18T10:34:06.926-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Orden Compra: null
-2026-03-18T10:34:06.926-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Recepcion: null
-2026-03-18T10:34:06.927-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 0: Validando rango de fechas
-2026-03-18T10:34:06.929-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando rango de fechas: 2025-09-18 - 2026-03-18
-2026-03-18T10:34:06.931-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.impl.UtilsApiServiceImpl       : Consultando utils-api: http://localhost:3712/api/parameters?name=MAX_SEARCH_MONTHS
-2026-03-18T10:34:06.946-06:00  WARN 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.impl.UtilsApiServiceImpl       : Error consultando utils-api para parßmetro MAX_SEARCH_MONTHS: I/O error on GET request for "http://localhost:3712/api/parameters": null. Usando valor por defecto: 6
-2026-03-18T10:34:06.948-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Parßmetro MAX_SEARCH_MONTHS: 6 meses
-2026-03-18T10:34:06.949-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Diferencia en meses entre fechas: 6
-2026-03-18T10:34:06.949-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Validaci¾n de rango de fechas completada exitosamente
-2026-03-18T10:34:06.955-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 1: Construyendo Specification con filtros usando JPA Criteria
-2026-03-18T10:34:06.955-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Specification construida exitosamente
-2026-03-18T10:34:06.955-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 2: Configurando paginacion y ordenamiento
-2026-03-18T10:34:06.955-06:00 DEBUG 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paginacion configurada: page=0, size=100, sort=createdAt ASC
-2026-03-18T10:34:06.956-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 3: Ejecutando busqueda con JPA Criteria API
-2026-03-18T10:34:07.087-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Busqueda completada. Resultados encontrados: 0, Total paginas: 0
-2026-03-18T10:34:07.088-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 4: Mapeando resultados a InvoiceSearchResponse (incluyendo Addenda)
-2026-03-18T10:34:07.088-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:07.090-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : BUSQUEDA COMPLETADA EXITOSAMENTE
-2026-03-18T10:34:07.090-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
-2026-03-18T10:34:07.091-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Total elementos: 0
-2026-03-18T10:34:07.091-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Elementos en pagina: 0
-2026-03-18T10:34:07.092-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Total paginas: 0
-2026-03-18T10:34:07.092-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Pagina actual: 0
-2026-03-18T10:34:07.160-06:00  INFO 26804 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Busqueda completada. Resultados: 0 de 0 totales
+2026-03-18T11:52:53.792-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:53.792-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000091-a091-4b91-c091-000000000091/status
+2026-03-18T11:52:53.804-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000091-a091-4b91-c091-000000000091, Transici¾n: 3 -> 4
+2026-03-18T11:52:53.805-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:53.805-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
+2026-03-18T11:52:53.805-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:53.806-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000091-a091-4b91-c091-000000000091
+2026-03-18T11:52:53.806-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
+2026-03-18T11:52:53.883-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
+2026-03-18T11:52:53.884-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
+2026-03-18T11:52:54.727-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
+2026-03-18T11:52:54.729-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000091-a091-4b91-c091-000000000091
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
+2026-03-18T11:52:54.750-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:55.048-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-2] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000091-a091-4b91-c091-000000000091, Nuevo estatus: 4
+2026-03-18T11:52:55.520-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:55.520-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000091-a091-4b91-c091-000000000091/status
+2026-03-18T11:52:55.523-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000091-a091-4b91-c091-000000000091, Transici¾n: 4 -> 14
+2026-03-18T11:52:55.524-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:55.524-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
+2026-03-18T11:52:55.524-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:55.525-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000091-a091-4b91-c091-000000000091
+2026-03-18T11:52:55.525-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
+2026-03-18T11:52:55.602-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
+2026-03-18T11:52:55.603-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
+2026-03-18T11:52:55.899-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
+2026-03-18T11:52:55.900-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
+2026-03-18T11:52:55.902-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
+2026-03-18T11:52:55.902-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:55.903-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
+2026-03-18T11:52:55.903-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000091-a091-4b91-c091-000000000091
+2026-03-18T11:52:55.904-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
+2026-03-18T11:52:55.904-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:56.121-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-3] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000091-a091-4b91-c091-000000000091, Nuevo estatus: 14
+2026-03-18T11:52:56.492-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:56.492-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000072-a072-4b72-c072-000000000072/status
+2026-03-18T11:52:56.496-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000072-a072-4b72-c072-000000000072, Transici¾n: 3 -> 4
+2026-03-18T11:52:56.497-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:56.497-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
+2026-03-18T11:52:56.497-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:56.498-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000072-a072-4b72-c072-000000000072
+2026-03-18T11:52:56.498-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 3 -> 4
+2026-03-18T11:52:56.575-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
+2026-03-18T11:52:56.576-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=3 -> targetStatus=4
+2026-03-18T11:52:56.867-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 3 -> 4
+2026-03-18T11:52:56.867-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
+2026-03-18T11:52:56.869-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 3 -> 4
+2026-03-18T11:52:56.869-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:56.870-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
+2026-03-18T11:52:56.870-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000072-a072-4b72-c072-000000000072
+2026-03-18T11:52:56.870-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3 -> 4 (Proceso de descarga)
+2026-03-18T11:52:56.870-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:57.084-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-4] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000072-a072-4b72-c072-000000000072, Nuevo estatus: 4
+2026-03-18T11:52:57.296-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:57.297-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/f0000072-a072-4b72-c072-000000000072/status
+2026-03-18T11:52:57.301-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.api.controller.InvoiceController   : Solicitud de actualizaci¾n de estatus recibida. UUID: f0000072-a072-4b72-c072-000000000072, Transici¾n: 4 -> 14
+2026-03-18T11:52:57.302-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:57.302-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO ACTUALIZACIËN ESTATUS (STM-410)
+2026-03-18T11:52:57.302-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:57.303-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000072-a072-4b72-c072-000000000072
+2026-03-18T11:52:57.303-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n: 4 -> 14
+2026-03-18T11:52:57.381-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando transici¾n con servicio de tren de estatus...
+2026-03-18T11:52:57.382-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Validando transici¾n: optionId=1, sourceStatus=4 -> targetStatus=14
+2026-03-18T11:52:57.669-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.s.i.StatusTrainApiServiceImpl    : Transici¾n permitida: 4 -> 14
+2026-03-18T11:52:57.670-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Transici¾n validada correctamente
+2026-03-18T11:52:57.672-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Historial de cambio de estatus guardado. 4 -> 14
+2026-03-18T11:52:57.673-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:57.673-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ACTUALIZACIËN ESTATUS COMPLETADA
+2026-03-18T11:52:57.673-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: f0000072-a072-4b72-c072-000000000072
+2026-03-18T11:52:57.674-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 4 -> 14 (Error en el desglose de la factura)
+2026-03-18T11:52:57.674-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:57.904-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-5] c.s.f.api.controller.InvoiceController   : Actualizaci¾n de estatus exitosa. UUID: f0000072-a072-4b72-c072-000000000072, Nuevo estatus: 14
+2026-03-18T11:52:59.353-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.fiscal.api.filter.LocaleFilter       : No se detect¾ idioma, usando default: es
+2026-03-18T11:52:59.354-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /invoices/search
+2026-03-18T11:52:59.355-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.api.controller.InvoiceController   : Solicitud de busqueda de facturas/NC recibida. RFC Emisor: null, Tipo: E, Fechas: 2025-09-18 - 2026-03-18
+2026-03-18T11:52:59.424-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:59.424-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : INICIO BUSQUEDA DE FACTURAS/NOTAS DE CREDITO
+2026-03-18T11:52:59.424-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:59.425-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Emisor: null
+2026-03-18T11:52:59.425-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Inicio: 2025-09-18
+2026-03-18T11:52:59.426-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Fecha Final: 2026-03-18
+2026-03-18T11:52:59.426-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Tipo Documento: E
+2026-03-18T11:52:59.427-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : RFC Receptor: null
+2026-03-18T11:52:59.427-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Serie: null
+2026-03-18T11:52:59.428-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Folio: null
+2026-03-18T11:52:59.428-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : UUID: null
+2026-03-18T11:52:59.428-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Estatus: 3
+2026-03-18T11:52:59.428-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Orden Compra: null
+2026-03-18T11:52:59.430-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : No. Recepcion: null
+2026-03-18T11:52:59.431-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 0: Validando rango de fechas
+2026-03-18T11:52:59.431-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Validando rango de fechas: 2025-09-18 - 2026-03-18
+2026-03-18T11:52:59.431-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.s.impl.UtilsApiServiceImpl       : Consultando utils-api: http://localhost:3712/api/parameters?name=MAX_SEARCH_MONTHS
+2026-03-18T11:52:59.440-06:00  WARN 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.s.impl.UtilsApiServiceImpl       : Error consultando utils-api para parßmetro MAX_SEARCH_MONTHS: I/O error on GET request for "http://localhost:3712/api/parameters": null. Usando valor por defecto: 6
+2026-03-18T11:52:59.441-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Parßmetro MAX_SEARCH_MONTHS: 6 meses
+2026-03-18T11:52:59.441-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Diferencia en meses entre fechas: 6
+2026-03-18T11:52:59.442-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Validaci¾n de rango de fechas completada exitosamente
+2026-03-18T11:52:59.446-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 1: Construyendo Specification con filtros usando JPA Criteria
+2026-03-18T11:52:59.447-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Specification construida exitosamente
+2026-03-18T11:52:59.447-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 2: Configurando paginacion y ordenamiento
+2026-03-18T11:52:59.448-06:00 DEBUG 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paginacion configurada: page=0, size=100, sort=createdAt ASC
+2026-03-18T11:52:59.448-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 3: Ejecutando busqueda con JPA Criteria API
+2026-03-18T11:52:59.525-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Busqueda completada. Resultados encontrados: 0, Total paginas: 0
+2026-03-18T11:52:59.525-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Paso 4: Mapeando resultados a InvoiceSearchResponse (incluyendo Addenda)
+2026-03-18T11:52:59.526-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:59.526-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : BUSQUEDA COMPLETADA EXITOSAMENTE
+2026-03-18T11:52:59.527-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : ========================================
+2026-03-18T11:52:59.527-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Total elementos: 0
+2026-03-18T11:52:59.528-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Elementos en pagina: 0
+2026-03-18T11:52:59.528-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Total paginas: 0
+2026-03-18T11:52:59.529-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.a.service.impl.InvoiceServiceImpl  : Pagina actual: 0
+2026-03-18T11:52:59.599-06:00  INFO 26084 --- [fiscal-api] [nio-8082-exec-6] c.s.f.api.controller.InvoiceController   : Busqueda completada. Resultados: 0 de 0 totales

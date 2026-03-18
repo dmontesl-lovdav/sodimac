@@ -33,8 +33,8 @@ LIMIT 10;
 -- ============================================================
 SELECT i.fiscal_uuid, i.created_at, i.status, i.document_type
 FROM tenant_fiscal.invoice i
-INNER JOIN tenant_fiscal.issuer iss ON iss.invoice_uuid = i.invoice_uuid
-LEFT  JOIN tenant_fiscal.receiver rec ON rec.invoice_uuid = i.invoice_uuid
+INNER JOIN tenant_fiscal.issuer iss ON iss.issuer_uuid = i.issuer_uuid
+LEFT  JOIN tenant_fiscal.receiver rec ON rec.receiver_uuid = i.receiver_uuid
 WHERE i.created_at >= '2025-09-18 00:00:00'
   AND i.created_at <= '2026-03-18 23:59:59'
   AND i.document_type = 'I'

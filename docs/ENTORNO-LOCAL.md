@@ -245,7 +245,7 @@ docker volume create sodimac-mssqldata
 docker run -d --name sodimac-mssql \
   -e "ACCEPT_EULA=Y" \
   -e 'MSSQL_SA_PASSWORD=Sodimac2026#Dev' \
-  -p 1433:1433 \
+  -p 1434:1433 \
   -v sodimac-mssqldata:/var/opt/mssql \
   mcr.microsoft.com/mssql/server:2022-latest
 ```
@@ -255,7 +255,7 @@ docker run -d --name sodimac-mssql \
 | Parametro | Valor |
 |-----------|-------|
 | **Host** | `localhost` |
-| **Puerto** | `1433` |
+| **Puerto** | `1434` |
 | **Base de datos** | `SODIMAC_BATCH_DEV` |
 | **Usuario** | `SA` |
 | **Password** | `Sodimac2026#Dev` |
@@ -294,7 +294,7 @@ BD de desglose CFDI (STM-719). Almacena el desglose de facturas y NC descargadas
 | Parametro | Valor |
 |-----------|-------|
 | **Host** | `localhost` |
-| **Puerto** | `1433` |
+| **Puerto** | `1434` |
 | **Base de datos** | `SODIMAC_SAP_DEV` |
 | **Usuario** | `SA` |
 | **Password** | `Sodimac2026#Dev` |

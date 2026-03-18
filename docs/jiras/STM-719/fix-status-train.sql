@@ -42,8 +42,10 @@ WHERE source_status = 4
 
 
 -- ============================================================
--- PASO 2: Si no existe, insertar
+-- PASO 2: Si no existe, insertar transiciones de estatus 4
 -- ============================================================
+
+-- 4 -> 14 (Error en el desglose)
 INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by, created_at)
 SELECT 1, 4, 14, 1, NOW()
 WHERE NOT EXISTS (
@@ -51,6 +53,36 @@ WHERE NOT EXISTS (
     WHERE option_id = 1
       AND source_status = 4
       AND target_status = 14
+);
+
+-- 4 -> 1 (Pendiente Addenda - Facturas, cuando addenda es invalida o falta)
+INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by, created_at)
+SELECT 1, 4, 1, 1, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM shared_catalogs.status_train
+    WHERE option_id = 1
+      AND source_status = 4
+      AND target_status = 1
+);
+
+-- 4 -> 14 (Error desglose - NC)
+INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by, created_at)
+SELECT 2, 4, 14, 1, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM shared_catalogs.status_train
+    WHERE option_id = 2
+      AND source_status = 4
+      AND target_status = 14
+);
+
+-- 4 -> 1 (Pendiente Addenda - NC, cuando addenda es invalida o falta)
+INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by, created_at)
+SELECT 2, 4, 1, 1, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM shared_catalogs.status_train
+    WHERE option_id = 2
+      AND source_status = 4
+      AND target_status = 1
 );
 
 

@@ -301,6 +301,10 @@ public class CfdiDesgloseService {
     // ── Utilidades ──────────────────────────────────────────────
 
     private Document parseXml(String xmlContent) throws Exception {
+        // Strip BOM (UTF-8 \uFEFF) que algunos proveedores incluyen en el XML
+        if (xmlContent != null && xmlContent.startsWith("\uFEFF")) {
+            xmlContent = xmlContent.substring(1);
+        }
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();

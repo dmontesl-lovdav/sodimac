@@ -97,6 +97,44 @@ Batch ejecuta correctamente una vez aplicados los fixes:
 - Facturas: `origen=9 destino=9 errores=0 — SUCCESS`
 - NC: `origen=3 destino=3 errores=0 — SUCCESS`
 
+## Resumen ejecutivo para Jira Sodimac
+
+**Analisis y correcciones realizadas — batch-fiscal-download**
+
+**Problema inicial:** El batch encontraba 0 documentos al ejecutarse.
+
+---
+
+**Causas encontradas y fixes aplicados:**
+
+**1. Fecha fuera de rango (datos)**
+Las facturas de prueba tenian `created_at` anterior al rango de busqueda de 6 meses. Se actualizaron las fechas en BD.
+
+**2. XML con BOM (codigo)**
+`FacturaIngreso.xml` almacenado con UTF-8 BOM (`\uFEFF`) causaba `Content is not allowed in prolog` en el parser Java.
+Fix: `CfdiDesgloseService.parseXml()` — strip BOM antes de parsear.
+
+**3. Transiciones de estatus faltantes en `status_train` (datos BD)**
+El batch intenta mover facturas/NCs por `3→4→5` (exito), `3→4→14` (error desglose), `3→4→1` (addenda invalida). Faltaban las transiciones `4→1` y `4→14` para `option_id=2` (NCs).
+Fix: Script `fix-status-train.sql` — agregar las 4 transiciones faltantes.
+
+**4. XML de addenda con formato incorrecto (datos)**
+Los XML de prueba tenian addenda de otro proveedor (BovedaFiscal), no el formato Sodimac. El batch valida `IdProveedor`, `TipoProveedor`, `OrdenCompra`, `Recepcion` (facturas) y `TipoNC` (NCs).
+Fix: Nuevos XMLs de prueba `test-factura-sodimac.xml` y `test-nc-sodimac.xml` con addenda Sodimac correcta.
+
+**5. Columnas `fiscal_uuid` e `invoice_uuid` ausentes en `SODIMAC_SAP_DEV` (BD SQL Server — pendiente)**
+El batch falla al intentar el desglose con `Invalid column name 'fiscal_uuid'`. La tabla `Comprobante` en `SODIMAC_SAP_DEV` no tiene estas columnas que el batch requiere para deduplicacion y trazabilidad.
+Fix pendiente: Ejecutar `migration-sap-comprobante.sql` en `SODIMAC_SAP_DEV`:
+```sql
+ALTER TABLE Comprobante ADD fiscal_uuid VARCHAR(36) NOT NULL DEFAULT '';
+ALTER TABLE Comprobante ADD invoice_uuid VARCHAR(36) NULL;
+```
+Script disponible en: `docs/jiras/STM-719/migration-sap-comprobante.sql`
+
+---
+
+**Resultado en local:** Batch ejecuta correctamente — Facturas 9/9 SUCCESS, NCs 3/3 SUCCESS — una vez aplicada la migracion en Sodimac el batch quedara funcional end-to-end.
+
 ## Preguntas pendientes (Ivan)
 
 1. NC: Filtrar con estatus 2 o 3? (nuestro enum NC(2)="Recibido Parcial", no "Pendiente Contabilizar")

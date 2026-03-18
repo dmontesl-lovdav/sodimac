@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
+
+	<display-name>Facturacion</display-name>
+	<servlet>
+		<servlet-name>application-dispatcher</servlet-name>
+		<servlet-class>
+			org.springframework.web.servlet.DispatcherServlet
+		</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>/WEB-INF/application-context.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>application-dispatcher</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+<!-- Esto es para cuando se implemente el filtro de session	 -->
+<!-- 	<filter> -->
+<!-- 		<filter-name>anonymousUserFilter</filter-name> -->
+<!-- 		<filter-class>com.sodimac.facturacion.filter.AnonymousUserFilter</filter-class> -->
+<!-- 	</filter> -->
+<!-- 	<filter-mapping> -->
+<!-- 		<filter-name>anonymousUserFilter</filter-name> -->
+<!-- 		<url-pattern>/GuardarTicket</url-pattern> -->
+<!-- 		<url-pattern>/EliminarTicket</url-pattern> -->
+<!-- 		<url-pattern>/GenerarFactura</url-pattern> -->
+<!-- 		<url-pattern>/ValidarRfc</url-pattern> -->
+<!-- 		<url-pattern>/VisualizarPdf</url-pattern> -->
+<!-- 		<url-pattern>/ValidarRfcConsulta</url-pattern> -->
+<!-- 		<url-pattern>/ObtenerCliente</url-pattern> -->
+<!-- 		<url-pattern>/ReenvioFactura</url-pattern> -->
+<!-- 		<url-pattern>/GenerarToken</url-pattern> -->
+		
+<!-- 	</filter-mapping> -->
+	
+	
+	<session-config>
+	<session-timeout>10</session-timeout>
+	</session-config>
+
+	<error-page>
+		<location>/errors</location>
+	</error-page>
+	
+</web-app>

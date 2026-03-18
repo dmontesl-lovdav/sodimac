@@ -1,0 +1,112 @@
+### Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### STS (Spring Tool Suite) ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Eclipse ###
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Windows ###
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+### Logs (sin considerar logs específicos como solicitaste) ###
+*.log
+logs/
+temp/logs/
+
+### Spring Boot ###
+!**/src/main/**
+!**/src/test/**
+
+### Archivos de configuración sensibles ###
+# Solo ignorar archivos locales, NO los versionados con credenciales encriptadas
+application-local.properties
+application-dev.properties
+application-test.properties
+*.env
+.env.local
+.env.*.local
+
+# Archivos de configuración versionados (con credenciales encriptadas)
+# application.properties - VERSIONADO
+# databaseConfig.properties - VERSIONADO
+# cifrado.properties - VERSIONADO
+
+### Archivos temporales ###
+*.class
+*.jar
+!**/libs/*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+### Claude Code ###
+.claude/

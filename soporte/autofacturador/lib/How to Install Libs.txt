@@ -1,0 +1,35 @@
+1. INSTALACION DE Crypto-0.0.1-SNAPSHOT.jar
+
+mvn install:install-file -Dfile=crypto-0.0.1-SNAPSHOT.jar -DpomFile=pom.xml
+
+		<dependency>
+			<groupId>com.sodimac.lib</groupId>
+			<artifactId>crypto</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>compile</scope>
+	   </dependency>
+	   
+	   
+2. INSTALACION DE cifrado-0.0.1-SNAPSHOT.jar
+
+mvn install:install-file -Dfile=cifrado-0.0.1-SNAPSHOT.jar -DpomFile=pom.xml
+
+		<dependency>
+			<groupId>com.sodimac.lib</groupId>
+			<artifactId>cifrado</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>compile</scope>
+	   </dependency>
+	   
+	   
+
+3. INSTALACION DE ojdbc6.jar
+mvn install:install-file -Dfile=C:\workspace_sts\autofacturador\lib\ojdbc6\ojdbc6.jar -DgroupId=com.oracle -DartifactId=ojdbc6 -Dversion=10.2.0.4.0 -Dpackaging=jar
+mvn install:install-file -Dfile=C:\workspace_sts\autofacturador\lib\crypto-0.0.1-SNAPSHOT.jar -DgroupId=com.sodimac.lib -DartifactId=crypto -Dversion=0.0.1-SNAPSHOT -Dpackaging=jar
+
+y la dependencia en el POM:
+		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc6</artifactId>
+			<version>10.2.0.4.0</version>
+		</dependency>

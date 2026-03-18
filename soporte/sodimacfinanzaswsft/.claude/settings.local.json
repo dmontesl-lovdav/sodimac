@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/g_dco018/Downloads/classes/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

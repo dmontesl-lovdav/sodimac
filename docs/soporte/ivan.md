@@ -4,6 +4,20 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-18 | Candado 60 días autofacturador no bloquea timbrado
+
+**Contexto**: Iván reporta que al timbrar desde el autofacturador, el sistema deja pasar tickets que deberían estar bloqueados por el candado de 60 días.
+**Análisis**:
+- El parámetro `Aplicacion.DiasPermitidosFacturar` está correctamente configurado en 60 (consultado vía WS de parámetros)
+- La validación está en `autofacturador/TicketsServiceImpl.validarTicketWS()` líneas 138-157
+- **Posible causa**: si el ticket no existe en BD Oracle BCT (`ticketRepository.findByTicket()` retorna `null`), el método devuelve "OK" en línea 143 y se salta el candado
+- El WSFT (`/timbrarVersion`) NO tiene candado de días propio, solo `/retimbrarTicket` lo tiene
+- Iván va a debuggear línea 142 de `TicketsServiceImpl.java` para verificar si `ticketBctHdrVal` llega como `null`
+**Proyectos involucrados**: `soporte/autofacturador`, `soporte/sodimacfinanzaswsft`
+**Estado**: En investigación por Iván
+
+---
+
 ## 2026-03-02 | Nuevo catalogo CatTipoOrigenRecepcionSodimac
 
 **Contexto**: Ivan y Josue solicitaron un nuevo catalogo de tipos de origen de recepcion especifico para Sodimac, con 5 entradas y external keys.

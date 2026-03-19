@@ -47,6 +47,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
@@ -84,6 +85,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final UtilsApiService utilsApiService;
     private final StatusTrainApiService statusTrainApiService;
     private final ActivityLogService activityLogService;
+    private final AuditoriaApiService auditoriaApiService;
 
     // Repositories
     private final InvoiceRepository invoiceRepository;
@@ -109,12 +111,21 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
-    public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile) {
+    public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion) {
+        final String SERVICE_NAME = "InvoiceService.registerInvoice";
+        long startTime = System.currentTimeMillis();
+
         log.info("========================================");
         log.info("INICIO REGISTRO FACTURA/NOTA DE CREDITO");
         log.info("========================================");
-        log.info("Archivo: {}", xmlFile.getOriginalFilename());
+        log.info("Archivo: {}, idTransaccion: {}", xmlFile.getOriginalFilename(), idTransaccion);
         log.info("Tamano del archivo: {} bytes", xmlFile.getSize());
+
+        // Registrar request en bitácora (STM-704)
+        auditoriaApiService.logActivity(idTransaccion, "REGISTRO_REQUEST", SERVICE_NAME,
+                "system", false, "Inicio de registro de factura/NC",
+                "Archivo: " + xmlFile.getOriginalFilename() + ", Tamano: " + xmlFile.getSize() + " bytes",
+                Map.of("fileName", xmlFile.getOriginalFilename(), "fileSize", xmlFile.getSize()), null);
 
         String xmlContent = null;
         InvoiceXmlDto invoiceDto = null;
@@ -125,6 +136,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("Paso 1: Leyendo contenido del archivo XML");
             xmlContent = readXmlFile(xmlFile);
             log.debug("Archivo XML leido correctamente. Longitud: {} caracteres", xmlContent.length());
+            auditoriaApiService.logActivity(idTransaccion, "LEER_ARCHIVO_XML", SERVICE_NAME,
+                    "system", false, "Archivo XML leido correctamente",
+                    "Longitud: " + xmlContent.length() + " caracteres", null, null);
 
             // === PASO 2: DETECTAR TIPO DE DOCUMENTO ===
             log.info("Paso 2: Detectando tipo de documento fiscal (I=Factura, E=Nota de Credito)");
@@ -135,31 +149,51 @@ public class InvoiceServiceImpl implements InvoiceService {
             // Validar que sea solo I o E (no T, P, N)
             if (tipoDocumento != TipoDocumentoFiscal.FACTURA && tipoDocumento != TipoDocumentoFiscal.NOTA_CREDITO) {
                 log.error("Tipo de documento no permitido: {}", tipoDocumento.getCodigo());
+                auditoriaApiService.logActivity(idTransaccion, "DETECTAR_TIPO_DOCUMENTO", SERVICE_NAME,
+                        "system", true, "Tipo de documento no permitido: " + tipoDocumento.getCodigo(),
+                        "Solo se permiten tipos I (Factura) y E (Nota de Credito)", null, null);
                 messageCatalog.throwException(FiscalMessageCode.BUS023);
             }
+            auditoriaApiService.logActivity(idTransaccion, "DETECTAR_TIPO_DOCUMENTO", SERVICE_NAME,
+                    "system", false, "Tipo de documento detectado: " + tipoDocumento.getDescripcion(),
+                    "Codigo: " + tipoDocumento.getCodigo(), null, null);
 
             // === PASO 3: PROCESAR Y PARSEAR XML CFDI ===
             log.info("Paso 3: Procesando y validando estructura del XML CFDI");
             invoiceDto = cfdiProcessor.processCfdi(xmlContent, tipoDocumento);
             log.info("XML procesado exitosamente. Serie: {}, Folio: {}, Total: {}",
                     invoiceDto.getSerie(), invoiceDto.getFolio(), invoiceDto.getTotal());
-            log.debug("RFC Emisor: {}, RFC Receptor: {}",
-                    invoiceDto.getEmisorRfc(), invoiceDto.getReceptorRfc());
+            auditoriaApiService.logActivity(idTransaccion, "PROCESAR_XML_CFDI", SERVICE_NAME,
+                    "system", false, "XML CFDI procesado exitosamente",
+                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio() + ", Total: " + invoiceDto.getTotal(),
+                    Map.of("serie", String.valueOf(invoiceDto.getSerie()),
+                            "folio", String.valueOf(invoiceDto.getFolio()),
+                            "rfcEmisor", String.valueOf(invoiceDto.getEmisorRfc()),
+                            "rfcReceptor", String.valueOf(invoiceDto.getReceptorRfc())), null);
 
             // === PASO 3.1: VALIDAR SERIE Y FOLIO (STM-395/STM-397) ===
             log.info("Paso 3.1: Validando que el documento tenga serie y folio");
             validateSeriesAndFolio(invoiceDto, tipoDocumento);
             log.info("Serie y folio validados correctamente");
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_SERIE_FOLIO", SERVICE_NAME,
+                    "system", false, "Serie y folio validados correctamente",
+                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio(), null, null);
 
             // === PASO 4: VALIDAR VERSION CFDI VIGENTE ===
             log.info("Paso 4: Validando version CFDI vigente");
             validateCfdiVersion(invoiceDto, tipoDocumento);
             log.info("Version CFDI {} validada correctamente", invoiceDto.getVersion());
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_VERSION_CFDI", SERVICE_NAME,
+                    "system", false, "Version CFDI validada correctamente",
+                    "Version: " + invoiceDto.getVersion(), null, null);
 
             // === PASO 5: VALIDAR RFC RECEPTOR AUTORIZADO ===
             log.info("Paso 5: Validando RFC receptor autorizado");
             validateAuthorizedReceiver(invoiceDto.getReceptorRfc());
             log.info("RFC receptor {} autorizado y vigente", invoiceDto.getReceptorRfc());
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_RFC_RECEPTOR", SERVICE_NAME,
+                    "system", false, "RFC receptor autorizado y vigente",
+                    "RFC: " + invoiceDto.getReceptorRfc(), null, null);
 
             // === PASO 6: OBTENER EMISOR Y VALIDAR DUPLICIDAD (STM-395/STM-397) ===
             log.info("Paso 6: Obteniendo emisor para validaciones de duplicidad");
@@ -169,12 +203,18 @@ public class InvoiceServiceImpl implements InvoiceService {
                     invoiceDto.getEmisorRegimenFiscal()
             );
             log.debug("Emisor obtenido. UUID: {}", issuer.getIssuerUuid());
+            auditoriaApiService.logActivity(idTransaccion, "OBTENER_EMISOR", SERVICE_NAME,
+                    "system", false, "Emisor obtenido correctamente",
+                    "RFC: " + invoiceDto.getEmisorRfc() + ", Issuer UUID: " + issuer.getIssuerUuid(), null, null);
 
             // === PASO 6.1: VALIDAR DUPLICADO POR SERIE+FOLIO (STM-395/STM-397) ===
             log.info("Paso 6.1: Validando duplicado por serie+folio del proveedor");
             validateNoDuplicateBySeriesAndFolio(invoiceDto.getSerie(), invoiceDto.getFolio(),
                     issuer.getIssuerUuid(), tipoDocumento);
             log.info("No existe documento duplicado por serie+folio");
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_DUPLICADO_SERIE_FOLIO", SERVICE_NAME,
+                    "system", false, "No existe documento duplicado por serie+folio",
+                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio(), null, null);
 
             // === PASO 6.2: EXTRAER UUID FISCAL Y VALIDAR DUPLICADO (STM-395/STM-397) ===
             log.info("Paso 6.2: Extrayendo UUID fiscal y validando duplicado por UUID");
@@ -183,6 +223,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             validateNoDuplicateByUuid(fiscalUuid, issuer.getIssuerUuid(), tipoDocumento);
             log.info("Documento no duplicado. UUID unico: {}", fiscalUuid);
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_DUPLICADO_UUID", SERVICE_NAME,
+                    "system", false, "Documento no duplicado, UUID unico",
+                    "UUID fiscal: " + fiscalUuid, null, null);
 
             // === PASO 7: VALIDAR ADDENDA ===
             log.info("Paso 7: Validando estructura y contenido de addenda");
@@ -193,14 +236,12 @@ public class InvoiceServiceImpl implements InvoiceService {
             } else {
                 log.info("Documento sin addenda. Sera marcado como PENDIENTE DE ADDENDA");
             }
+            auditoriaApiService.logActivity(idTransaccion, "VALIDAR_ADDENDA", SERVICE_NAME,
+                    "system", false,
+                    hasValidAddenda ? "Addenda validada exitosamente" : "Documento sin addenda, pendiente de addenda",
+                    "hasValidAddenda: " + hasValidAddenda, null, null);
 
-            // === PASO 8: VALIDAR CON SAT (OPCIONAL - COMENTADO POR AHORA) ===
-            // TODO: Implementar validación SAT mediante PAC cuando esté disponible
-            // log.info("Paso 8: Validando documento con SAT via PAC");
-            // validateWithSat(xmlContent, invoiceDto);
-            // log.info("Validacion SAT completada exitosamente");
-
-            // === PASO 9: PERSISTIR EN BASE DE DATOS ===
+            // === PASO 8: PERSISTIR EN BASE DE DATOS ===
             log.info("Paso 8: Persistiendo documento en base de datos");
             InvoiceEntity savedInvoice = saveInvoiceToDatabase(
                     invoiceDto,
@@ -211,8 +252,13 @@ public class InvoiceServiceImpl implements InvoiceService {
                     issuer
             );
             log.info("Documento persistido exitosamente. Invoice UUID: {}", savedInvoice.getInvoiceUuid());
+            auditoriaApiService.logActivity(idTransaccion, "PERSISTIR_DOCUMENTO", SERVICE_NAME,
+                    "system", false, "Documento persistido exitosamente en base de datos",
+                    "Invoice UUID: " + savedInvoice.getInvoiceUuid(),
+                    Map.of("invoiceUuid", savedInvoice.getInvoiceUuid().toString(),
+                            "fiscalUuid", fiscalUuid.toString()), null);
 
-            // === PASO 10: CONSTRUIR RESPUESTA ===
+            // === PASO 9: CONSTRUIR RESPUESTA ===
             log.info("Paso 9: Construyendo respuesta de registro exitoso");
             InvoiceRegistrationResponse response = buildRegistrationSuccessResponse(
                     savedInvoice,
@@ -222,29 +268,54 @@ public class InvoiceServiceImpl implements InvoiceService {
                     invoiceDto
             );
 
+            long duration = System.currentTimeMillis() - startTime;
             log.info("========================================");
             log.info("REGISTRO COMPLETADO EXITOSAMENTE");
             log.info("========================================");
             log.info("Codigo de respuesta: {}", response.getCode());
             log.info("Invoice UUID: {}", response.getInvoiceUuid());
             log.info("Fiscal UUID: {}", response.getFiscalUuid());
-            log.info("Tiene addenda: {}", response.isHasAddenda());
-            log.info("Pendiente de addenda: {}", response.isPendingAddenda());
+            log.info("Duracion: {} ms", duration);
+
+            // Registrar response exitoso en bitácora (STM-704)
+            auditoriaApiService.logActivity(idTransaccion, "REGISTRO_RESPONSE", SERVICE_NAME,
+                    "system", false, "Registro completado exitosamente",
+                    "Codigo: " + response.getCode() + ", Invoice UUID: " + response.getInvoiceUuid(),
+                    Map.of("code", response.getCode(),
+                            "invoiceUuid", String.valueOf(response.getInvoiceUuid()),
+                            "fiscalUuid", String.valueOf(response.getFiscalUuid()),
+                            "hasAddenda", response.isHasAddenda(),
+                            "pendingAddenda", response.isPendingAddenda()), duration);
 
             return response;
 
         } catch (FiscalException e) {
+            long duration = System.currentTimeMillis() - startTime;
             log.error("Error de validacion de negocio: [{}] {}", e.getCode(), e.getMessage());
             log.error("========================================");
             log.error("REGISTRO FALLIDO - ERROR DE NEGOCIO");
             log.error("========================================");
+
+            // Registrar error de negocio en bitácora (STM-704)
+            auditoriaApiService.logActivity(idTransaccion, "REGISTRO_ERROR_NEGOCIO", SERVICE_NAME,
+                    "system", true, "Error de validacion: " + e.getMessage(),
+                    "Codigo: " + e.getCode() + ", Mensaje: " + e.getMessage(),
+                    Map.of("errorCode", e.getCode(), "errorMessage", e.getMessage()), duration);
+
             return InvoiceRegistrationResponse.error(e.getCode(), e.getMessage());
 
         } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
             log.error("Error inesperado durante el registro", e);
             log.error("========================================");
             log.error("REGISTRO FALLIDO - ERROR TECNICO");
             log.error("========================================");
+
+            // Registrar error técnico en bitácora (STM-704)
+            auditoriaApiService.logActivity(idTransaccion, "REGISTRO_ERROR_TECNICO", SERVICE_NAME,
+                    "system", true, "Error inesperado durante el registro",
+                    e.getClass().getName() + ": " + e.getMessage(), null, duration);
+
             return InvoiceRegistrationResponse.error(
                     FiscalMessageCode.ERR003.getCode(),
                     "Error inesperado: " + e.getMessage()
@@ -266,6 +337,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("Usuario Actualizacion: {}", request.getIdUsuarioActualizacion());
 
         // Variables para bitácora
+        final String SERVICE_NAME_UPDATE = "InvoiceService.updateInvoice";
+        String traceId = UUID.randomUUID().toString();
+        long startTimeMs = System.currentTimeMillis();
         LocalDateTime startTime = LocalDateTime.now();
         String requestDataJson = buildRequestDataJson(request);
         UUID invoiceUuid = null;  // Se asigna cuando se encuentra la factura (para log con FK correcta)
@@ -327,19 +401,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                     addendaActualizada
             );
 
-            // === PASO 7: REGISTRAR EN BITÁCORA (STM-339) ===
-            // Usa transacción independiente para que errores de log no afecten la operación
-            log.info("Paso 7: Registrando actividad en bitacora");
-            activityLogService.saveActivityLog(
-                    "UPDATE",
-                    invoiceUuid,  // Usar invoiceUuid (PK) en lugar de fiscalUuid para FK correcta
-                    startTime,
-                    response.getCode(),
-                    response.getMessage(),
-                    requestDataJson,
-                    buildResponseDataJson(response),
-                    request.getIdUsuarioActualizacion()
-            );
+            // === PASO 7: REGISTRAR EN BITÁCORA (estandarizado via auditoria-api) ===
+            long durationMs = System.currentTimeMillis() - startTimeMs;
+            log.info("Paso 7: Registrando actividad en bitacora (auditoria-api)");
+            auditoriaApiService.logActivity(traceId, "ACTUALIZACION_FACTURA", SERVICE_NAME_UPDATE,
+                    String.valueOf(request.getIdUsuarioActualizacion()), false,
+                    "Actualizacion completada exitosamente",
+                    "Codigo: " + response.getCode() + ", Estatus: " + currentStatusCode + " -> " + newStatusCode,
+                    Map.of("invoiceUuid", invoiceUuid.toString(),
+                            "uuid", request.getUuid(),
+                            "estatusAnterior", currentStatusCode,
+                            "estatusNuevo", newStatusCode,
+                            "request", requestDataJson,
+                            "response", buildResponseDataJson(response)), durationMs);
 
             log.info("========================================");
             log.info("ACTUALIZACION COMPLETADA EXITOSAMENTE");
@@ -355,22 +429,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.error("ACTUALIZACION FALLIDA - ERROR DE NEGOCIO");
             log.error("========================================");
 
-            // Registrar error en bitácora (solo si tenemos invoiceUuid válido)
-            // Usa transacción independiente para que errores de log no afecten la respuesta
-            if (invoiceUuid != null) {
-                activityLogService.saveActivityLog(
-                        "UPDATE",
-                        invoiceUuid,  // Usar invoiceUuid (PK) para FK correcta
-                        startTime,
-                        e.getCode(),
-                        e.getMessage(),
-                        requestDataJson,
-                        null,
-                        request.getIdUsuarioActualizacion()
-                );
-            } else {
-                log.warn("No se pudo registrar en bitácora: invoiceUuid no disponible (documento no encontrado)");
-            }
+            // Registrar error en bitácora (auditoria-api)
+            long durationMs = System.currentTimeMillis() - startTimeMs;
+            auditoriaApiService.logActivity(traceId, "ACTUALIZACION_ERROR_NEGOCIO", SERVICE_NAME_UPDATE,
+                    String.valueOf(request.getIdUsuarioActualizacion()), true,
+                    "Error de validacion: " + e.getMessage(),
+                    "Codigo: " + e.getCode(),
+                    Map.of("errorCode", e.getCode(), "errorMessage", e.getMessage(),
+                            "uuid", request.getUuid(), "request", requestDataJson), durationMs);
 
             return InvoiceUpdateResponse.error(e.getCode(), e.getMessage());
 
@@ -380,22 +446,13 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.error("ACTUALIZACION FALLIDA - ERROR TECNICO");
             log.error("========================================");
 
-            // Registrar error en bitácora (solo si tenemos invoiceUuid válido)
-            // Usa transacción independiente para que errores de log no afecten la respuesta
-            if (invoiceUuid != null) {
-                activityLogService.saveActivityLog(
-                        "UPDATE",
-                        invoiceUuid,  // Usar invoiceUuid (PK) para FK correcta
-                        startTime,
-                        FiscalMessageCode.ERR003.getCode(),
-                        e.getMessage(),
-                        requestDataJson,
-                        null,
-                        request.getIdUsuarioActualizacion()
-                );
-            } else {
-                log.warn("No se pudo registrar en bitácora: invoiceUuid no disponible");
-            }
+            // Registrar error en bitácora (auditoria-api)
+            long durationMs = System.currentTimeMillis() - startTimeMs;
+            auditoriaApiService.logActivity(traceId, "ACTUALIZACION_ERROR_TECNICO", SERVICE_NAME_UPDATE,
+                    String.valueOf(request.getIdUsuarioActualizacion()), true,
+                    "Error inesperado durante la actualizacion",
+                    e.getClass().getName() + ": " + e.getMessage(),
+                    Map.of("uuid", request.getUuid(), "request", requestDataJson), durationMs);
 
             return InvoiceUpdateResponse.error(
                     FiscalMessageCode.ERR003.getCode(),

@@ -153,9 +153,22 @@ public class InvoiceController {
     })
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<InvoiceRegistrationResponse> registerInvoice(
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "idTransaccion", required = false) String idTransaccion) {
 
-        log.info("Solicitud de registro de factura/NC recibida. Archivo: {}", file.getOriginalFilename());
+        log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}",
+                file.getOriginalFilename(), idTransaccion);
+
+        // Validar idTransaccion obligatorio (STM-704)
+        if (idTransaccion == null || idTransaccion.isBlank()) {
+            log.error("idTransaccion no proporcionado");
+            return ResponseEntity
+                    .badRequest()
+                    .body(InvoiceRegistrationResponse.error(
+                            "FISCAL-ERR-102",
+                            "El idTransaccion es obligatorio para el registro"
+                    ));
+        }
 
         // Validaciones básicas del archivo
         if (file.isEmpty()) {
@@ -179,7 +192,7 @@ public class InvoiceController {
         }
 
         // Procesar registro
-        InvoiceRegistrationResponse response = invoiceService.registerInvoice(file);
+        InvoiceRegistrationResponse response = invoiceService.registerInvoice(file, idTransaccion);
 
         // Determinar código HTTP según resultado
         if (response.isSuccess()) {

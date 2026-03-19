@@ -45,9 +45,10 @@ public interface InvoiceService {
      * - Registro en base de datos
      *
      * @param xmlFile Archivo XML del CFDI
+     * @param idTransaccion ID de transacción para trazabilidad en bitácora (STM-704)
      * @return Respuesta del registro con código de negocio (BUS1xxx o BUS2xxx)
      */
-    InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile);
+    InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion);
 
     /**
      * Actualiza una factura o nota de crédito existente (STM-339).

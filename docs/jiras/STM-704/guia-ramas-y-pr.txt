@@ -1,0 +1,250 @@
+================================================================================
+ STM-704: GUIA PARA CREAR RAMAS Y SOLICITAR PR EN SODIMAC
+================================================================================
+
+NOTA: Este workspace (dmontesl-lovdav/sodimac) es un mono-repo personal.
+En Sodimac cada proyecto tiene su propio repositorio en GitHub/GitLab.
+Por lo tanto, los cambios deben replicarse en cada repo de Sodimac por separado.
+
+================================================================================
+ PROYECTOS AFECTADOS Y ARCHIVOS MODIFICADOS
+================================================================================
+
+PROYECTO 1: APP03022-mrch.backend.somx.fiscal-api
+-------------------------------------------------
+Archivos NUEVOS:
+  - src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+  - src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+
+Archivos MODIFICADOS:
+  - src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+      > Agregado @EnableAsync
+  - src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+      > Nuevo parametro idTransaccion (query param) con @Parameter de Swagger
+      > Validacion FISCAL-ERR-102 si no viene
+  - src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+      > Firma actualizada: registerInvoice(MultipartFile, String idTransaccion)
+  - src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+      > 13 puntos de auditoria en registerInvoice()
+      > Migracion de updateInvoice() de activityLogService a auditoriaApiService
+  - src/main/resources/application-dev.properties
+      > Nuevas propiedades: auditoria.api.enabled, auditoria.api.url
+
+Total: 2 archivos nuevos + 5 archivos modificados = 7 archivos
+
+
+PROYECTO 2: APP03022-mrch.bff.somx.ppsomx.fiscal
+-------------------------------------------------
+Archivos MODIFICADOS:
+  - cloud-endpoint/openapi.yaml
+      > Agregado parametro idTransaccion (query, required) en /invoices/register
+  - cloud-endpoint/openapi.json
+      > Mismo cambio en formato JSON
+  - cloud-endpoint/openapi-bundled.yaml
+      > Mismo cambio en version bundled
+
+Total: 3 archivos modificados
+
+
+PROYECTO 3: docs (documentacion, no requiere PR)
+-------------------------------------------------
+Archivos NUEVOS:
+  - docs/jiras/STM-704/README.md (transcripcion JIRA)
+  - docs/jiras/STM-704/STM-704.xml (export JIRA)
+  - docs/jiras/STM-704/analisis.md (analisis tecnico)
+  - docs/jiras/STM-704/jira-update.md (resumen para actualizar JIRA)
+  - docs/jiras/STM-704/STM-704-Register-Invoice-Auditoria.postman_collection.json
+  - docs/test/factura-stm704-test.xml (XML de prueba)
+
+Total: 6 archivos (solo documentacion, no va en PR de codigo)
+
+
+================================================================================
+ PASO A PASO: PROYECTO 1 - fiscal-api
+================================================================================
+
+1. Clonar el repositorio de Sodimac (si no lo tienes):
+   git clone https://github.com/sodimac/APP03022-mrch.backend.somx.fiscal-api.git
+   cd APP03022-mrch.backend.somx.fiscal-api
+
+2. Asegurarte de estar en develop y actualizado:
+   git checkout develop
+   git pull origin develop
+
+3. Crear rama feature desde develop:
+   git checkout -b feature/STM-704-bitacora-auditoria-registro-facturas
+
+4. Copiar/aplicar los cambios de los 7 archivos listados arriba.
+   (Desde el workspace personal copiar los archivos al repo clonado)
+
+5. Verificar que compila:
+   mvn clean package -DskipTests -q
+
+6. Agregar archivos al staging:
+   git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+   git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+   git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+   git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+   git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+   git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+   git add src/main/resources/application-dev.properties
+
+7. Crear commit:
+   git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro y actualizacion de facturas
+
+   - Crear AuditoriaApiService + AuditoriaApiServiceImpl (cliente HTTP fire-and-forget)
+   - Agregar idTransaccion como query param obligatorio en POST /invoices/register
+   - 13 puntos de auditoria en registerInvoice() (request, validaciones, response)
+   - Migrar updateInvoice() de activityLogService a auditoriaApiService
+   - Nuevas variables: AUDITORIA_API_ENABLED, AUDITORIA_API_URL
+   - Agregar @Parameter de Swagger para documentacion de idTransaccion"
+
+8. Push de la rama:
+   git push origin feature/STM-704-bitacora-auditoria-registro-facturas
+
+9. Crear Pull Request en GitHub/GitLab:
+   - Base: develop
+   - Compare: feature/STM-704-bitacora-auditoria-registro-facturas
+   - Titulo: feat(STM-704): Integrar bitacora auditoria-api en registro de facturas
+   - Descripcion:
+
+     ## Resumen
+     - Se integra el servicio auditoria-api para registrar trazabilidad en
+       el flujo de registro de facturas y notas de credito (registerInvoice)
+     - Se migra updateInvoice() del log interno (tenant_fiscal.log) al
+       servicio centralizado auditoria-api
+     - Nuevo parametro obligatorio: idTransaccion (query param)
+
+     ## Archivos nuevos
+     - AuditoriaApiService.java (interface)
+     - AuditoriaApiServiceImpl.java (implementacion con RestTemplate)
+
+     ## Archivos modificados
+     - InvoiceController.java (idTransaccion + @Parameter Swagger)
+     - InvoiceService.java (firma actualizada)
+     - InvoiceServiceImpl.java (13 audit points + migracion updateInvoice)
+     - FiscalApiApplication.java (@EnableAsync)
+     - application-dev.properties (auditoria.api.enabled/url)
+
+     ## Variables de entorno nuevas
+     - AUDITORIA_API_ENABLED (default: true)
+     - AUDITORIA_API_URL (default: http://localhost:8091)
+
+     ## Pruebas realizadas
+     - Registro exitoso: 13 logs en auditoria
+     - Factura duplicada: 9 logs (8 OK + 1 error)
+     - Sin idTransaccion: HTTP 400, FISCAL-ERR-102
+
+     ## JIRA
+     STM-704
+
+10. Asignar revisores y esperar aprobacion.
+
+
+================================================================================
+ PASO A PASO: PROYECTO 2 - BFF fiscal
+================================================================================
+
+1. Clonar el repositorio de Sodimac (si no lo tienes):
+   git clone https://github.com/sodimac/APP03022-mrch.bff.somx.ppsomx.fiscal.git
+   cd APP03022-mrch.bff.somx.ppsomx.fiscal
+
+2. Asegurarte de estar en develop y actualizado:
+   git checkout develop
+   git pull origin develop
+
+3. Crear rama feature desde develop:
+   git checkout -b feature/STM-704-openapi-idTransaccion
+
+4. Copiar/aplicar los cambios en los 3 archivos OpenAPI:
+   - cloud-endpoint/openapi.yaml
+   - cloud-endpoint/openapi.json
+   - cloud-endpoint/openapi-bundled.yaml
+
+   El cambio en los 3 es el mismo: agregar el parametro idTransaccion
+   en el endpoint POST /invoices/register:
+
+   YAML:
+     - name: idTransaccion
+       in: query
+       required: true
+       type: string
+       description: UUID de transaccion para trazabilidad en auditoria (STM-704)
+       x-example: 550e8400-e29b-41d4-a716-446655440000
+
+   JSON:
+     {
+       "name": "idTransaccion",
+       "in": "query",
+       "required": true,
+       "type": "string",
+       "description": "UUID de transaccion para trazabilidad en auditoria (STM-704)",
+       "x-example": "550e8400-e29b-41d4-a716-446655440000"
+     }
+
+5. Agregar archivos:
+   git add cloud-endpoint/openapi.yaml
+   git add cloud-endpoint/openapi.json
+   git add cloud-endpoint/openapi-bundled.yaml
+
+6. Crear commit:
+   git commit -m "feat(STM-704): agregar idTransaccion en OpenAPI de /invoices/register
+
+   - Nuevo query param obligatorio idTransaccion (UUID) para trazabilidad
+   - Actualizado en openapi.yaml, openapi.json y openapi-bundled.yaml"
+
+7. Push de la rama:
+   git push origin feature/STM-704-openapi-idTransaccion
+
+8. Crear Pull Request en GitHub/GitLab:
+   - Base: develop
+   - Compare: feature/STM-704-openapi-idTransaccion
+   - Titulo: feat(STM-704): Agregar idTransaccion en OpenAPI de /invoices/register
+   - Descripcion:
+
+     ## Resumen
+     - Se agrega el parametro idTransaccion (query, required, string)
+       en el endpoint POST /invoices/register del OpenAPI del BFF fiscal
+     - Requerido por fiscal-api para trazabilidad en auditoria-api (STM-704)
+
+     ## Archivos modificados
+     - cloud-endpoint/openapi.yaml
+     - cloud-endpoint/openapi.json
+     - cloud-endpoint/openapi-bundled.yaml
+
+     ## Nota
+     El BFF es proxy transparente, no requiere cambios en codigo Node.js.
+     Solo se actualiza la especificacion OpenAPI.
+
+     ## JIRA
+     STM-704
+
+9. Asignar revisores y esperar aprobacion.
+
+
+================================================================================
+ ORDEN DE MERGE RECOMENDADO
+================================================================================
+
+1. PRIMERO: fiscal-api (es el backend que implementa la logica)
+2. SEGUNDO: BFF fiscal (solo actualiza OpenAPI, depende de que fiscal-api
+   ya tenga el parametro)
+
+NOTA: El frontend (InvoiceClient.ts) tambien necesita cambio para enviar
+idTransaccion, pero eso puede ir en un PR separado del equipo de frontend.
+
+
+================================================================================
+ RESUMEN RAPIDO
+================================================================================
+
++-------------------------------------------+----------+--------+-----------+
+| Proyecto                                  | Nuevos   | Modif. | Total     |
++-------------------------------------------+----------+--------+-----------+
+| APP03022-mrch.backend.somx.fiscal-api     |    2     |   5    |   7       |
+| APP03022-mrch.bff.somx.ppsomx.fiscal      |    0     |   3    |   3       |
++-------------------------------------------+----------+--------+-----------+
+| TOTAL                                     |    2     |   8    |  10       |
++-------------------------------------------+----------+--------+-----------+
+
+Documentacion (no requiere PR): 6 archivos en docs/

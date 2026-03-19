@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "STM-704 - Registro de Factura con Auditoria",
+    "description": "Colección para probar el registro de facturas con bitácora de auditoría (STM-704).\n\nEndpoint: POST /invoices/register\nPuerto: 8082\n\nCambio principal: Se agrega el parámetro obligatorio `idTransaccion` (query param) que se usa como traceId para la bitácora en auditoria-api.\n\nPrerequisitos:\n- fiscal-api corriendo en puerto 8082\n- auditoria-api corriendo en puerto 8091 (opcional, si está deshabilitado solo se loguea warning)\n- Archivo XML de prueba: docs/test/factura-stm704-test.xml",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Registro Exitoso (con idTransaccion)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Seleccionar archivo XML de prueba (docs/test/factura-stm704-test.xml)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/register?idTransaccion=aabb0704-0001-4000-a000-000000000001",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "register"],
+          "query": [
+            {
+              "key": "idTransaccion",
+              "value": "aabb0704-0001-4000-a000-000000000001",
+              "description": "UUID de transacción (obligatorio). Se usa como traceId en auditoria-api."
+            }
+          ]
+        },
+        "description": "Registra una factura con el nuevo parámetro idTransaccion.\n\nFlujo:\n1. fiscal-api recibe XML + idTransaccion\n2. Cada paso de validación se registra en auditoria-api con el traceId\n3. Se persiste la factura en tenant_fiscal.invoice\n4. Se registra el response final con duración total\n\nEsperado: HTTP 200 con código RES005\nAuditoria: 13 registros en core_audit.activity_logs con el traceId"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Error - Sin idTransaccion",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Seleccionar archivo XML de prueba"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "register"]
+        },
+        "description": "Prueba de validación: enviar registro SIN idTransaccion.\n\nEsperado: HTTP 400 con código FISCAL-ERR-102\nMensaje: El idTransaccion es obligatorio para el registro\nAuditoria: 0 registros (se rechaza antes de entrar al servicio)"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Error - idTransaccion vacío",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Seleccionar archivo XML de prueba"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/register?idTransaccion=",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "register"],
+          "query": [
+            {
+              "key": "idTransaccion",
+              "value": "",
+              "description": "idTransaccion vacío"
+            }
+          ]
+        },
+        "description": "Prueba de validación: enviar idTransaccion como string vacío.\n\nEsperado: HTTP 400 con código FISCAL-ERR-102\nMensaje: El idTransaccion es obligatorio para el registro\nAuditoria: 0 registros"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Error - Factura Duplicada (Serie+Folio)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Seleccionar el MISMO XML que ya se registró en el caso 1"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/register?idTransaccion=aabb0704-0002-4000-a000-000000000002",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "register"],
+          "query": [
+            {
+              "key": "idTransaccion",
+              "value": "aabb0704-0002-4000-a000-000000000002",
+              "description": "Nuevo UUID para esta transacción"
+            }
+          ]
+        },
+        "description": "Prueba de error de negocio: enviar XML ya registrado.\n\nFlujo: Las primeras validaciones pasan, pero falla en VALIDAR_DUPLICADO_SERIE_FOLIO o VALIDAR_DUPLICADO_UUID.\n\nEsperado: HTTP 400 con código WRN7013\nAuditoria: ~9 registros (8 OK + 1 error con isError=true)"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Error - Archivo vacío",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Seleccionar un archivo vacío (0 bytes)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/register?idTransaccion=aabb0704-0003-4000-a000-000000000003",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "register"],
+          "query": [
+            {
+              "key": "idTransaccion",
+              "value": "aabb0704-0003-4000-a000-000000000003",
+              "description": "UUID de transacción"
+            }
+          ]
+        },
+        "description": "Prueba de validación: archivo XML vacío.\n\nEsperado: HTTP 400 con código FISCAL-ERR-100\nMensaje: El archivo está vacío\nAuditoria: 0 registros (se rechaza en el controller antes de llegar al servicio)"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Consultar logs de auditoria por traceId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8091/api/activity-logs/?traceId=aabb0704-0001-4000-a000-000000000001&dateAtInitial=2025-01-01&dateAtEnd=2026-12-31&pageNumber=1&pageSize=50",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8091",
+          "path": ["api", "activity-logs", ""],
+          "query": [
+            {
+              "key": "traceId",
+              "value": "aabb0704-0001-4000-a000-000000000001",
+              "description": "Mismo traceId usado en el registro (caso 1)"
+            },
+            {
+              "key": "dateAtInitial",
+              "value": "2025-01-01",
+              "description": "Fecha inicio del rango"
+            },
+            {
+              "key": "dateAtEnd",
+              "value": "2026-12-31",
+              "description": "Fecha fin del rango"
+            },
+            {
+              "key": "pageNumber",
+              "value": "1",
+              "description": "Página (inicia en 1)"
+            },
+            {
+              "key": "pageSize",
+              "value": "50",
+              "description": "Registros por página"
+            }
+          ]
+        },
+        "description": "Consulta los registros de auditoría generados para una transacción específica.\n\nEndpoint de auditoria-api (puerto 8091).\nFiltra por traceId para ver todos los pasos del registro.\n\nEsperado: Lista de activity_logs con action, message, isError, durationms, etc."
+      },
+      "response": []
+    }
+  ]
+}

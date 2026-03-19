@@ -16,6 +16,7 @@ import com.sodimac.fiscal.api.model.dto.NCValidationResponse;
 import com.sodimac.fiscal.api.service.InvoiceService;
 import com.sodimac.fiscal.api.service.NCValidationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -154,6 +155,7 @@ public class InvoiceController {
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<InvoiceRegistrationResponse> registerInvoice(
             @RequestParam("file") MultipartFile file,
+            @Parameter(description = "UUID de transacción para trazabilidad en auditoría (STM-704)", required = true, example = "550e8400-e29b-41d4-a716-446655440000")
             @RequestParam(value = "idTransaccion", required = false) String idTransaccion) {
 
         log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}",

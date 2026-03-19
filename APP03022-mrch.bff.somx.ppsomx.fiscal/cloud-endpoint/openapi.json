@@ -598,6 +598,14 @@
             "required": true,
             "type": "file",
             "description": "Archivo XML del CFDI"
+          },
+          {
+            "name": "idTransaccion",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "UUID de transacción para trazabilidad en auditoría (STM-704)",
+            "x-example": "550e8400-e29b-41d4-a716-446655440000"
           }
         ],
         "responses": {

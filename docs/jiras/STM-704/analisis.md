@@ -148,18 +148,26 @@ Actualmente fiscal-api **NO tiene ningun cliente hacia auditoria-api**. No hay r
 - [x] Requerimientos entendidos (transcripcion en README.md)
 - [x] Analisis tecnico completado
 - [x] Servicio de bitacora identificado (auditoria-api)
-- [ ] Definir como llega el idTransaccion (header, query param, form field)
+- [x] Definir como llega el idTransaccion → query param `@RequestParam`
 
 ### Backend
-- [ ] Crear `AuditoriaApiService` + `AuditoriaApiServiceImpl`
-- [ ] Configurar URL y enabled en application-dev.yml
-- [ ] Modificar controller para recibir idTransaccion
-- [ ] Modificar `registerInvoice()` para registrar cada paso
-- [ ] Guardar request y response completos
-- [ ] Manejo de errores (auditoria no debe afectar registro)
+- [x] Crear `AuditoriaApiService` + `AuditoriaApiServiceImpl`
+- [x] Configurar URL y enabled en application-dev.properties
+- [x] Modificar controller para recibir idTransaccion (con validacion FISCAL-ERR-102)
+- [x] Modificar `registerInvoice()` para registrar cada paso (13 puntos de auditoria)
+- [x] Guardar request y response completos (con durationMs)
+- [x] Manejo de errores (auditoria no afecta registro, solo loguea warning)
+- [x] Migrar `updateInvoice()` de activityLogService a auditoriaApiService
+- [x] Anotacion @Parameter de Swagger para idTransaccion
 
 ### Testing
-- [ ] Pruebas con registro exitoso (verificar logs en auditoria)
-- [ ] Pruebas con error en validacion (verificar log parcial)
-- [ ] Pruebas con auditoria-api deshabilitado
-- [ ] Postman actualizado
+- [x] Pruebas con registro exitoso (13 logs en auditoria)
+- [x] Pruebas con error en validacion (9 logs: 8 OK + 1 error)
+- [x] Pruebas sin idTransaccion (HTTP 400, FISCAL-ERR-102, 0 logs)
+- [x] Postman collection creada (STM-704-Register-Invoice-Auditoria.postman_collection.json)
+
+### Documentacion
+- [x] Variables de entorno documentadas (AUDITORIA_API_ENABLED, AUDITORIA_API_URL)
+- [x] MD para actualizar JIRA (jira-update.md)
+- [x] OpenAPI BFF actualizado (openapi.yaml, openapi.json, openapi-bundled.yaml)
+- [x] Impacto en frontend identificado (InvoiceClient.ts necesita agregar idTransaccion)

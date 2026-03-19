@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XML de ejemplo: Factura (TipoDeComprobante="I")
+  CFDI 4.0 + TimbreFiscalDigital 1.1
+
+  Notas:
+  - UUID debe contener solo caracteres hexadecimales (0-9, a-f)
+  - RFC receptor debe estar autorizado en authorized_receiver_catalog
+  - Addenda_Sodimac es obligatoria para facturas de mercancia/servicios/transporte
+-->
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"
+                  Version="4.0"
+                  Serie="STM704"
+                  Folio="TEST001"
+                  Fecha="2025-07-10T14:30:00"
+                  Sello="MockSelloFacturaTest"
+                  NoCertificado="00001000000789654321"
+                  Certificado="MockCertificadoFacturaTest"
+                  SubTotal="10000.00"
+                  Descuento="0.00"
+                  Moneda="MXN"
+                  Total="11600.00"
+                  TipoDeComprobante="I"
+                  MetodoPago="PUE"
+                  FormaPago="03"
+                  CondicionesDePago="CONTADO"
+                  Exportacion="01"
+                  LugarExpedicion="06000">
+
+    <cfdi:Emisor Rfc="EKU9003173C9"
+                 Nombre="ESCUELA KEMPER URGATE S.A. DE C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="LAN7008173R5"
+                   Nombre="SODIMAC MEXICO S.A. DE C.V."
+                   DomicilioFiscalReceptor="64000"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="G03"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="43232408"
+                       Cantidad="100"
+                       ClaveUnidad="H87"
+                       Unidad="Pieza"
+                       Descripcion="Material electrico para instalacion"
+                       ValorUnitario="100.00"
+                       Importe="10000.00"
+                       Descuento="0.00"
+                       ObjetoImp="02">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="10000.00"
+                                   Impuesto="002"
+                                   TipoFactor="Tasa"
+                                   TasaOCuota="0.160000"
+                                   Importe="1600.00"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+    </cfdi:Conceptos>
+
+    <cfdi:Impuestos TotalImpuestosTrasladados="1600.00">
+        <cfdi:Traslados>
+            <cfdi:Traslado Base="10000.00"
+                           Impuesto="002"
+                           TipoFactor="Tasa"
+                           TasaOCuota="0.160000"
+                           Importe="1600.00"/>
+        </cfdi:Traslados>
+    </cfdi:Impuestos>
+
+    <cfdi:Complemento>
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="aabb0704-ae01-4000-a000-000000070401"
+                                FechaTimbrado="2025-07-10T14:35:00"
+                                RfcProvCertif="SFE0807172W8"
+                                SelloCFD="MockSelloCFDFacturaTest"
+                                NoCertificadoSAT="00001000000456789123"
+                                SelloSAT="MockSelloSATFacturaTest"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>

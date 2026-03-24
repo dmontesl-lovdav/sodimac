@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,12 +30,14 @@ import com.sodimac.fiscal.api.model.entity.PaymentFileRegistryEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
 import com.sodimac.fiscal.api.model.entity.RelatedDocumentsEntity;
+import com.sodimac.fiscal.api.model.enums.AuditAction;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.repository.AddendumRepository;
 import com.sodimac.fiscal.api.repository.PaymentFileRegistryRepository;
 import com.sodimac.fiscal.api.repository.PaymentRepository;
 import com.sodimac.fiscal.api.repository.PaymentsRepository;
 import com.sodimac.fiscal.api.repository.RelatedDocumentsRepository;
+import com.sodimac.fiscal.api.service.AuditoriaApiService;
 import com.sodimac.fiscal.api.service.IssuerService;
 import com.sodimac.fiscal.api.service.LogService;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
@@ -66,6 +69,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
     private final PacCatalogService pacCatalogService;
     private final LogService logService;
     private final MessageCatalogService messageCatalog;
+    private final AuditoriaApiService auditoriaApiService;
 
     // Repositories
     private final PaymentFileRegistryRepository fileRegistryRepository;
@@ -87,6 +91,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             PacCatalogService pacCatalogService,
             LogService logService,
             MessageCatalogService messageCatalog,
+            AuditoriaApiService auditoriaApiService,
             PaymentFileRegistryRepository fileRegistryRepository,
             IssuerService issuerService,
             ReceiverService receiverService,
@@ -100,6 +105,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         this.pacCatalogService = pacCatalogService;
         this.logService = logService;
         this.messageCatalog = messageCatalog;
+        this.auditoriaApiService = auditoriaApiService;
         this.fileRegistryRepository = fileRegistryRepository;
         this.issuerService = issuerService;
         this.receiverService = receiverService;
@@ -111,10 +117,24 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
 
     @Override
     @Transactional
-    public PaymentRegistrationResponse registerPayment(PaymentRegistrationRequest request) {
-        log.info("=== INICIO REGISTRO COMPLEMENTO DE PAGO ===");
-        log.info("Archivo: {}", request.getXmlFile().getOriginalFilename());
+    public PaymentRegistrationResponse registerPayment(PaymentRegistrationRequest request, String idTransaccion) {
+        final String SERVICE_NAME = "PaymentRegistrationService.registerPayment";
+        long startTime = System.currentTimeMillis();
+
+        log.info("========================================");
+        log.info("INICIO REGISTRO COMPLEMENTO DE PAGO");
+        log.info("========================================");
+        log.info("Archivo: {}, idTransaccion: {}", request.getXmlFile().getOriginalFilename(), idTransaccion);
         log.info("Proveedor: {}, Usuario: {}", request.getIdProveedor(), request.getIdUsuario());
+
+        // Registrar request en bitácora (STM-272)
+        auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_REQUEST.getCode(), SERVICE_NAME,
+                String.valueOf(request.getIdUsuario()), false, "Inicio de registro de complemento de pago",
+                "Archivo: " + request.getXmlFile().getOriginalFilename() + ", Proveedor: " + request.getIdProveedor(),
+                Map.of("fileName", request.getXmlFile().getOriginalFilename(),
+                        "fileSize", request.getXmlFile().getSize(),
+                        "idProveedor", request.getIdProveedor(),
+                        "tipoAddenda", request.getTipoAddenda()), null);
 
         String fileName = request.getXmlFile().getOriginalFilename();
         String xmlContent = null;
@@ -122,46 +142,90 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
 
         try {
             // === PASO 1: LEER ARCHIVO XML ===
+            log.info("Paso 1: Leyendo contenido del archivo XML");
             xmlContent = readXmlFile(request);
-            log.debug("XML leído exitosamente");
+            log.debug("XML leido exitosamente. Longitud: {} caracteres", xmlContent.length());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_LEER_ARCHIVO_XML.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Archivo XML leido correctamente",
+                    "Longitud: " + xmlContent.length() + " caracteres", null, null);
 
             // === PASO 2: VALIDAR TIPO DE ADDENDA ===
+            log.info("Paso 2: Validando tipo de addenda");
             validationService.validateAddendaType(request.getTipoAddenda());
-            log.debug("Tipo de addenda validado");
+            log.info("Tipo de addenda validado: {}", request.getTipoAddenda());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_TIPO_ADDENDA.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Tipo de addenda validado correctamente",
+                    "TipoAddenda: " + request.getTipoAddenda(), null, null);
 
             // === PASO 3: VALIDAR ESTRUCTURA XML contra XSD ===
+            log.info("Paso 3: Validando estructura XML contra XSD");
             if (!xmlParserService.validateXmlStructure(xmlContent)) {
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_ESTRUCTURA_XSD.getCode(), SERVICE_NAME,
+                        String.valueOf(request.getIdUsuario()), true, "Estructura XML no valida contra XSD",
+                        "El XML no cumple con el esquema XSD de Pagos 2.0", null, null);
                 messageCatalog.throwError(FiscalMessageCode.ERR007);
             }
             log.info("Estructura XML validada contra XSD");
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_ESTRUCTURA_XSD.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Estructura XML validada contra XSD",
+                    "Esquema XSD Pagos 2.0 cumplido", null, null);
 
             // === PASO 4: PARSEAR XML ===
+            log.info("Paso 4: Parseando XML de complemento de pago");
             parsedXml = xmlParserService.parsePaymentXml(xmlContent);
             log.info("XML parseado exitosamente - UUID: {}", parsedXml.getTimbreFiscalDigital().getUuid());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_PARSEAR_XML.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "XML de pago parseado exitosamente",
+                    "UUID: " + parsedXml.getTimbreFiscalDigital().getUuid() + ", Serie: " + parsedXml.getSerie() + ", Folio: " + parsedXml.getFolio(),
+                    Map.of("uuid", parsedXml.getTimbreFiscalDigital().getUuid(),
+                            "serie", String.valueOf(parsedXml.getSerie()),
+                            "folio", String.valueOf(parsedXml.getFolio()),
+                            "rfcEmisor", String.valueOf(parsedXml.getEmisorRfc()),
+                            "rfcReceptor", String.valueOf(parsedXml.getReceptorRfc())), null);
 
             // === PASO 5: VALIDAR TIPO DE COMPROBANTE ===
+            log.info("Paso 5: Validando tipo de comprobante (debe ser P)");
             validationService.validateComprobanteType(parsedXml.getTipoDeComprobante());
-            log.debug("Tipo de comprobante validado: P");
+            log.info("Tipo de comprobante validado: {}", parsedXml.getTipoDeComprobante());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_TIPO_COMPROBANTE.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Tipo de comprobante validado: P",
+                    "TipoDeComprobante: " + parsedXml.getTipoDeComprobante(), null, null);
 
             // === PASO 6: VALIDAR NO DUPLICADO ===
+            log.info("Paso 6: Validando que no exista duplicado por UUID fiscal");
             UUID fiscalUuid = UUID.fromString(parsedXml.getTimbreFiscalDigital().getUuid());
             validationService.validateNoDuplicate(fiscalUuid);
-            log.debug("Complemento no duplicado");
+            log.info("Complemento no duplicado. UUID: {}", fiscalUuid);
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_DUPLICADO.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Complemento no duplicado, UUID unico",
+                    "UUID fiscal: " + fiscalUuid, null, null);
 
             // === PASO 7: VALIDAR RECEPTOR AUTORIZADO ===
+            log.info("Paso 7: Validando receptor autorizado");
             validationService.validateAuthorizedReceiver(parsedXml.getReceptorRfc());
             log.info("Receptor autorizado: {}", parsedXml.getReceptorRfc());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_RECEPTOR.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Receptor autorizado y vigente",
+                    "RFC: " + parsedXml.getReceptorRfc(), null, null);
 
             // === PASO 8: VALIDAR VERSIÓN VIGENTE ===
-            // Validar la versión 2.0 del complemento Pagos
+            log.info("Paso 8: Validando version del complemento de pago");
             validationService.validatePaymentVersion("2.0", "P");
-            log.info("Versión del complemento validada: 2.0");
+            log.info("Version del complemento validada: 2.0");
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_VERSION.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Version Pagos 2.0 validada correctamente",
+                    "Version: 2.0, TipoComprobante: P", null, null);
 
             // === PASO 9: VALIDAR CON SAT VÍA MULTIPAC ===
-            //ResponseEntity<Object> satValidationResponse = validateWithSat(xmlContent, request);
-            log.info("Validación SAT completada");
+            // TODO: Implementar validación SAT mediante multipac (Detecno) cuando esté disponible
+            // ResponseEntity<Object> satValidationResponse = validateWithSat(xmlContent, request);
+            log.info("Paso 9: Validacion SAT omitida (pendiente de implementar via multipac)");
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_SAT.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Validacion SAT omitida (pendiente de implementar via multipac)",
+                    "Este paso se habilitara cuando se integre el servicio multipac (Detecno)", null, null);
 
             // === PASO 10: REGISTRAR EN BASE DE DATOS ===
+            log.info("Paso 10: Registrando complemento de pago en base de datos");
             PaymentRegistrationResponse response = savePaymentToDatabase(
                     parsedXml,
                     request,
@@ -169,18 +233,52 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     xmlContent,
                     fiscalUuid
             );
+            log.info("Complemento persistido exitosamente. UUID: {}", response.getPaymentsUuid());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_PERSISTIR_BD.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Complemento de pago persistido exitosamente",
+                    "Payments UUID: " + response.getPaymentsUuid(),
+                    Map.of("paymentsUuid", response.getPaymentsUuid().toString(),
+                            "fiscalUuid", fiscalUuid.toString()), null);
 
             // === PASO 11: REGISTRAR ARCHIVO PROCESADO ===
+            log.info("Paso 11: Registrando archivo procesado");
             saveFileRegistry(fileName, response.getPaymentsUuid(), "SUCCESS", null, null, request);
             log.info("Registro de archivo completado");
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_ARCHIVO.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Archivo procesado registrado exitosamente",
+                    "Archivo: " + fileName + ", Status: SUCCESS", null, null);
 
-            log.info("=== COMPLEMENTO DE PAGO REGISTRADO EXITOSAMENTE ===");
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("========================================");
+            log.info("COMPLEMENTO DE PAGO REGISTRADO EXITOSAMENTE");
+            log.info("========================================");
             log.info("UUID: {}", response.getPaymentsUuid());
+            log.info("Duracion: {} ms", duration);
+
+            // Registrar response exitoso en bitácora (STM-272)
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_RESPONSE.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Registro de complemento de pago completado exitosamente",
+                    "UUID: " + response.getPaymentsUuid() + ", Serie: " + response.getSerie() + ", Folio: " + response.getFolio(),
+                    Map.of("paymentsUuid", response.getPaymentsUuid().toString(),
+                            "serie", String.valueOf(response.getSerie()),
+                            "folio", String.valueOf(response.getFolio()),
+                            "rfcEmisor", String.valueOf(response.getRfcEmisor()),
+                            "rfcReceptor", String.valueOf(response.getRfcReceptor())), duration);
 
             return response;
 
         } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
             log.error("Error registrando complemento de pago: {}", e.getMessage(), e);
+            log.error("========================================");
+            log.error("REGISTRO FALLIDO - ERROR");
+            log.error("========================================");
+
+            // Registrar error en bitácora (STM-272)
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_ERROR.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), true, "Error en registro de complemento de pago: " + e.getMessage(),
+                    e.getClass().getName() + ": " + e.getMessage(),
+                    Map.of("idProveedor", request.getIdProveedor(), "fileName", fileName), duration);
 
             // Registrar archivo con error
             try {

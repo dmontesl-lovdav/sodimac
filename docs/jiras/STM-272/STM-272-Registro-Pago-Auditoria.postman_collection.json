@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "STM-272 - Registro Complemento de Pago con Auditoría",
+    "description": "Pruebas del registro de complemento de pago con bitácora de auditoría (STM-272)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8082" },
+    { "key": "auditoriaUrl", "value": "http://localhost:8091" }
+  ],
+  "item": [
+    {
+      "name": "01 - Registro exitoso",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/fiscal/complementos-pago/registrar?idTransaccion=bb272001-0001-4000-a000-000000000001",
+          "host": ["{{baseUrl}}"],
+          "path": ["fiscal", "complementos-pago", "registrar"],
+          "query": [{ "key": "idTransaccion", "value": "bb272001-0001-4000-a000-000000000001" }]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "xmlFile", "type": "file", "src": "test-files/01-pago-registro-exitoso.xml" },
+            { "key": "idProveedor", "value": "12345", "type": "text" },
+            { "key": "tipoAddenda", "value": "5", "type": "text" },
+            { "key": "tipoProveedor", "value": "SLI", "type": "text" },
+            { "key": "idUsuario", "value": "1", "type": "text" }
+          ]
+        },
+        "description": "Registro exitoso de complemento de pago con auditoría.\nEsperado: 200, processingStatus=SUCCESS, 13 logs en auditoría."
+      }
+    },
+    {
+      "name": "02 - Sin idTransaccion",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/fiscal/complementos-pago/registrar",
+          "host": ["{{baseUrl}}"],
+          "path": ["fiscal", "complementos-pago", "registrar"]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "xmlFile", "type": "file", "src": "test-files/01-pago-registro-exitoso.xml" },
+            { "key": "idProveedor", "value": "12345", "type": "text" },
+            { "key": "tipoAddenda", "value": "5", "type": "text" },
+            { "key": "tipoProveedor", "value": "SLI", "type": "text" },
+            { "key": "idUsuario", "value": "1", "type": "text" }
+          ]
+        },
+        "description": "Sin idTransaccion.\nEsperado: 400, FISCAL-ERR-102."
+      }
+    },
+    {
+      "name": "03 - idTransaccion vacio",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/fiscal/complementos-pago/registrar?idTransaccion=",
+          "host": ["{{baseUrl}}"],
+          "path": ["fiscal", "complementos-pago", "registrar"],
+          "query": [{ "key": "idTransaccion", "value": "" }]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "xmlFile", "type": "file", "src": "test-files/01-pago-registro-exitoso.xml" },
+            { "key": "idProveedor", "value": "12345", "type": "text" },
+            { "key": "tipoAddenda", "value": "5", "type": "text" },
+            { "key": "tipoProveedor", "value": "SLI", "type": "text" },
+            { "key": "idUsuario", "value": "1", "type": "text" }
+          ]
+        },
+        "description": "idTransaccion vacio.\nEsperado: 400, FISCAL-ERR-102."
+      }
+    },
+    {
+      "name": "04 - Pago duplicado",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/fiscal/complementos-pago/registrar?idTransaccion=bb272002-0002-4000-a000-000000000002",
+          "host": ["{{baseUrl}}"],
+          "path": ["fiscal", "complementos-pago", "registrar"],
+          "query": [{ "key": "idTransaccion", "value": "bb272002-0002-4000-a000-000000000002" }]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "xmlFile", "type": "file", "src": "test-files/02-pago-duplicado.xml" },
+            { "key": "idProveedor", "value": "12345", "type": "text" },
+            { "key": "tipoAddenda", "value": "5", "type": "text" },
+            { "key": "tipoProveedor", "value": "SLI", "type": "text" },
+            { "key": "idUsuario", "value": "1", "type": "text" }
+          ]
+        },
+        "description": "Complemento duplicado (mismo UUID fiscal que test 01).\nEsperado: 422, 7 logs en auditoría (6 OK + 1 error).\nNota: Ejecutar DESPUES del test 01."
+      }
+    },
+    {
+      "name": "05 - Consultar logs auditoria",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{auditoriaUrl}}/api/activity-logs/",
+          "host": ["{{auditoriaUrl}}"],
+          "path": ["api", "activity-logs", ""]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dateAtInitial\": \"2026-03-24\",\n  \"dateAtEnd\": \"2026-03-25\",\n  \"traceId\": \"bb272001-0001-4000-a000-000000000001\",\n  \"pageNumber\": 1,\n  \"pageSize\": 50\n}"
+        },
+        "description": "Consulta los logs de auditoría para el test 01.\nEsperado: 13 registros con acciones PAGO_*."
+      }
+    }
+  ]
+}

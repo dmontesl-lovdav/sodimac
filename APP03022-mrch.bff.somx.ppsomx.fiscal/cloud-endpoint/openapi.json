@@ -1221,6 +1221,14 @@
             "x-example": "Bearer XXXXXXXXX"
           },
           {
+            "name": "idTransaccion",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "UUID de transaccion para trazabilidad en auditoria (STM-272)",
+            "x-example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
             "name": "file",
             "in": "formData",
             "required": true,

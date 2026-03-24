@@ -8,6 +8,7 @@ import com.sodimac.fiscal.api.service.PaymentQueryService;
 import com.sodimac.fiscal.api.service.PaymentRegistrationService;
 import org.springframework.data.domain.Page;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -83,16 +84,32 @@ public class PaymentRegistrationController {
             )
     })
     public ResponseEntity<PaymentRegistrationResponse> registrarComplementoPago(
-            @Valid @ModelAttribute PaymentRegistrationRequest request) {
+            @Valid @ModelAttribute PaymentRegistrationRequest request,
+            @Parameter(description = "UUID de transacción para trazabilidad en auditoría (STM-272)", required = true, example = "550e8400-e29b-41d4-a716-446655440000")
+            @RequestParam(value = "idTransaccion", required = false) String idTransaccion) {
+
+        log.info("Recibida solicitud de registro de complemento de pago - " +
+                        "Proveedor: {}, Usuario: {}, Archivo: {}, idTransaccion: {}",
+                request.getIdProveedor(),
+                request.getIdUsuario(),
+                request.getXmlFile().getOriginalFilename(),
+                idTransaccion);
+
+        // Validar idTransaccion obligatorio (STM-272)
+        if (idTransaccion == null || idTransaccion.isBlank()) {
+            log.error("idTransaccion no proporcionado");
+            return ResponseEntity
+                    .badRequest()
+                    .body(PaymentRegistrationResponse.builder()
+                            .processingStatus("FAILED")
+                            .responseCode("FISCAL-ERR-102")
+                            .message("El idTransaccion es obligatorio para el registro")
+                            .fileName(request.getXmlFile().getOriginalFilename())
+                            .build());
+        }
 
         try {
-            log.info("Recibida solicitud de registro de complemento de pago - " +
-                            "Proveedor: {}, Usuario: {}, Archivo: {}",
-                    request.getIdProveedor(),
-                    request.getIdUsuario(),
-                    request.getXmlFile().getOriginalFilename());
-
-            PaymentRegistrationResponse response = paymentRegistrationService.registerPayment(request);
+            PaymentRegistrationResponse response = paymentRegistrationService.registerPayment(request, idTransaccion);
 
             log.info("Complemento de pago registrado exitosamente - UUID: {}, Archivo: {}",
                     response.getPaymentsUuid(),

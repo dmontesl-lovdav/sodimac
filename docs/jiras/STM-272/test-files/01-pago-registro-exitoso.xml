@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test 01: Complemento de Pago - Registro exitoso
+  Esperado: 200, processingStatus=SUCCESS
+  idTransaccion: bb272001-0001-4000-a000-000000000001
+  Params: idProveedor=12345, tipoAddenda=5, tipoProveedor=SLI, idUsuario=1
+-->
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                  xmlns:pago20="http://www.sat.gob.mx/Pagos20"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd
+                                    http://www.sat.gob.mx/Pagos20 http://www.sat.gob.mx/sitio_internet/cfd/Pagos/Pagos20.xsd"
+                  Version="4.0"
+                  Serie="P"
+                  Folio="STM272001"
+                  Fecha="2026-03-24T10:00:00"
+                  Sello="MockSelloPago272"
+                  NoCertificado="00001000000789123456"
+                  Certificado="MockCertificadoPago272"
+                  SubTotal="0"
+                  Moneda="XXX"
+                  Total="0"
+                  TipoDeComprobante="P"
+                  Exportacion="01"
+                  LugarExpedicion="06000">
+
+    <cfdi:Emisor Rfc="EKU9003173C9"
+                 Nombre="ESCUELA KEMPER URGATE S.A. DE C.V."
+                 RegimenFiscal="601"/>
+
+    <cfdi:Receptor Rfc="LAN7008173R5"
+                   Nombre="SODIMAC MEXICO S.A. DE C.V."
+                   DomicilioFiscalReceptor="64000"
+                   RegimenFiscalReceptor="601"
+                   UsoCFDI="CP01"/>
+
+    <cfdi:Conceptos>
+        <cfdi:Concepto ClaveProdServ="84111506"
+                       Cantidad="1"
+                       ClaveUnidad="ACT"
+                       Descripcion="Pago"
+                       ValorUnitario="0"
+                       Importe="0"
+                       ObjetoImp="01"/>
+    </cfdi:Conceptos>
+
+    <cfdi:Complemento>
+        <pago20:Pagos Version="2.0">
+            <pago20:Totales TotalRetencionesIVA="0.00"
+                           TotalRetencionesISR="0.00"
+                           TotalRetencionesIEPS="0.00"
+                           TotalTrasladosBaseIVA16="10000.00"
+                           TotalTrasladosImpuestoIVA16="1600.00"
+                           TotalTrasladosBaseIVA8="0.00"
+                           TotalTrasladosImpuestoIVA8="0.00"
+                           TotalTrasladosBaseIVA0="0.00"
+                           TotalTrasladosImpuestoIVA0="0.00"
+                           TotalTrasladosBaseIVAExento="0.00"
+                           MontoTotalPagos="11600.00"/>
+
+            <pago20:Pago FechaPago="2026-03-24T10:00:00"
+                        FormaDePagoP="03"
+                        MonedaP="MXN"
+                        TipoCambioP="1"
+                        Monto="11600.00"
+                        NumOperacion="OP272-20260324-001"
+                        RfcEmisorCtaOrd="XEXX010101000"
+                        NomBancoOrdExt="BANCO TEST"
+                        CtaOrdenante="1234567890123456"
+                        RfcEmisorCtaBen="BBA830831LJ2"
+                        CtaBeneficiario="6543210987654321">
+
+                <pago20:DoctoRelacionado IdDocumento="aa704001-ae01-4000-a000-000000000001"
+                                        Serie="STM704"
+                                        Folio="FAC001"
+                                        MonedaDR="MXN"
+                                        EquivalenciaDR="1"
+                                        NumParcialidad="1"
+                                        ImpSaldoAnt="11600.00"
+                                        ImpPagado="11600.00"
+                                        ImpSaldoInsoluto="0.00"
+                                        ObjetoImpDR="02">
+                    <pago20:ImpuestosDR>
+                        <pago20:TrasladosDR>
+                            <pago20:TrasladoDR BaseDR="10000.00"
+                                              ImpuestoDR="002"
+                                              TipoFactorDR="Tasa"
+                                              TasaOCuotaDR="0.160000"
+                                              ImporteDR="1600.00"/>
+                        </pago20:TrasladosDR>
+                    </pago20:ImpuestosDR>
+                </pago20:DoctoRelacionado>
+
+                <pago20:ImpuestosP>
+                    <pago20:TrasladosP>
+                        <pago20:TrasladoP BaseP="10000.00"
+                                         ImpuestoP="002"
+                                         TipoFactorP="Tasa"
+                                         TasaOCuotaP="0.160000"
+                                         ImporteP="1600.00"/>
+                    </pago20:TrasladosP>
+                </pago20:ImpuestosP>
+            </pago20:Pago>
+        </pago20:Pagos>
+
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+                                xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+                                Version="1.1"
+                                UUID="bb272001-ae01-4000-a000-000000000001"
+                                FechaTimbrado="2026-03-24T10:05:00"
+                                RfcProvCertif="SFE0807172W8"
+                                SelloCFD="MockSelloCFD272001"
+                                NoCertificadoSAT="00001000000456123789"
+                                SelloSAT="MockSelloSAT272001"/>
+    </cfdi:Complemento>
+</cfdi:Comprobante>

@@ -29,5 +29,5 @@ public interface PaymentRegistrationService {
      * @param request DTO con los parámetros de entrada
      * @return DTO con la respuesta del registro
      */
-    PaymentRegistrationResponse registerPayment(PaymentRegistrationRequest request);
+    PaymentRegistrationResponse registerPayment(PaymentRegistrationRequest request, String idTransaccion);
 }

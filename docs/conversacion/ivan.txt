@@ -54,3 +54,37 @@ Indices: document_number, vendor_number, sap_document, payment_date, status, pay
 Check constraints: amount >= 0, status IN (0,1,2,3)
 
 Relacion: Un payment_header agrupa N payment_detail del mismo deposito/transferencia al proveedor.
+
+
+
+
+
+
+en el portal hay dos imágenes solo que están en modo carrucel
+ 
+seria la segunda la que hace referencia a la OC
+ 
+cuando le das click en las fechas cambia la imagen
+ 
+Vale 
+ 
+a ver intentale de nuevo
+ 
+Hola David como estas?
+ 
+Hola Ivan, todo bien y tú?
+ 
+bien gracias, aquí dandole
+ 
+una pregunta sobre el tema de la imagen
+ 
+que no se veía sombreada lograste darle un ojo para que el brillo se quede arriba de la imange
+ 
+No, solo reemplace la imagen
+ 
+Entonces modifico la imagen o el css ?
+ 
+creo que es solo el css la imagen no se toca y el brillo lo da el css para identificar la Oc y el monto
+ 
+Ok, deja lo reviso
+ 

@@ -143,7 +143,7 @@ input {
   height: 22px;
   position: absolute;
   bottom: 61%;
-  z-index: 0;
+  z-index: 2;
   transform: translate(32px, 3px);
   cursor:pointer;
 
@@ -162,7 +162,7 @@ input {
   position: absolute;
   bottom: 43%;
   right: 24%;
-  z-index: 0;
+  z-index: 2;
   transform: translate(32px, 3px);
   cursor:pointer;
 
@@ -176,15 +176,17 @@ input {
 
 .monto-pulse-order {
 	width: 70px;
-    bottom: 64%;
-    left: 68%;
+    bottom: 11.1%;
+    left: auto;
+    right: 24.4%;
 }
 
 .y-two,
 .y-three{
   background: rgba(2, 187, 244, 0.41);
-  width: 120px;
-  transform: translate(16px, 33px);
+  width: 138px;
+  bottom: 49%;
+  transform: translate(165px, 3px);
   -webkit-animation: cd-pulse2 2s infinite;
      -moz-animation: cd-pulse2 2s infinite;
           animation: cd-pulse2 2s infinite;

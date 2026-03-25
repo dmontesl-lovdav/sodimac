@@ -29,6 +29,9 @@ Ejecutar desde la raiz del proyecto que se quiere exportar.
 # Ver rama actual
 git branch
 
+# Ver todas las ramas (locales y remotas) con ultimo commit, autor y fecha
+git branch -a -v --sort=-committerdate
+
 # Cambiar de rama
 git checkout dmontes
 
@@ -62,8 +65,20 @@ git commit -m "feat: descripcion del cambio"
 # Ver historial de commits
 git log --oneline -10
 
+# Ver historial con grafico de ramas
+git log --oneline --all --graph
+
+# Ver historial detallado (quien, cuando, que)
+git log --format="%h %an %ci %s" -10
+
+# Ver quien subio lo ultimo en cada rama
+git for-each-ref --sort=-committerdate refs/heads/ --format="%(refname:short) | %(committerdate:short) | %(authorname) | %(subject)"
+
 # Ver cambios de un commit especifico
 git show abc1234
+
+# Ver los archivos modificados en un commit
+git show --stat abc1234
 ```
 
 ---
@@ -97,6 +112,9 @@ git diff --staged
 
 # Comparar con otra rama
 git diff main..dmontes
+
+# Ver commits que tiene una rama y otra no
+git log main..dmontes --oneline
 
 # Comparar un archivo especifico
 git diff -- src/main/java/MiClase.java
@@ -140,6 +158,21 @@ git revert abc1234
 
 ---
 
+## Buscar en el historial
+
+```bash
+# Buscar commits por mensaje
+git log --all --grep="STM-704" --oneline
+
+# Buscar quien modifico una linea de un archivo (blame)
+git blame src/main/java/MiClase.java
+
+# Buscar un texto en todo el historial de commits
+git log --all -S "DiasPermitidosFacturar" --oneline
+```
+
+---
+
 ## Problemas comunes en Windows
 
 ```bash
@@ -149,6 +182,9 @@ git add --all -- ':!nul'
 
 # O agregar archivos especificos en lugar de --all
 git add src/ docs/ pom.xml
+
+# Error de line endings (CRLF vs LF)
+git config core.autocrlf true
 ```
 
 ---

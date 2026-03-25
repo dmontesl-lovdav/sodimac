@@ -244,6 +244,22 @@ git log --all -S "DiasPermitidosFacturar" --oneline
 
 ---
 
+## Eliminar referencias .git de un proyecto externo
+
+Cuando copias un proyecto que tiene su propio historial git y quieres subirlo a otro repo,
+primero elimina las carpetas `.git` de forma recursiva.
+
+Abrir **PowerShell**, navegar al directorio del proyecto y ejecutar:
+
+```powershell
+Get-ChildItem -Path . -Filter ".git" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+```
+
+> Nota: El comando `find . -name ".git" -type d -exec rm -rf {} +` no funciona
+> correctamente en Windows. Usar PowerShell.
+
+---
+
 ## Problemas comunes en Windows
 
 ```bash

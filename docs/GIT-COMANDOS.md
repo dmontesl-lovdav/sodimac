@@ -32,17 +32,52 @@ git branch
 # Ver todas las ramas (locales y remotas) con ultimo commit, autor y fecha
 git branch -a -v --sort=-committerdate
 
-# Cambiar de rama
-git checkout dmontes
-
-# Crear rama y cambiar a ella
-git checkout -b nueva-rama
-
 # Ver ramas remotas
 git branch -r
+```
 
-# Eliminar rama local
+### Crear rama
+
+```bash
+# Crear rama nueva a partir de la rama actual y cambiar a ella
+git checkout -b mi-nueva-rama
+
+# Crear rama a partir de otra rama especifica
+git checkout -b mi-nueva-rama origin/main
+
+# Subir la rama nueva al remoto por primera vez
+git push -u origin mi-nueva-rama
+```
+
+### Cambiar de rama
+
+```bash
+# Cambiar a una rama existente
+git checkout dmontes
+
+# Cambiar a main
+git checkout main
+
+# IMPORTANTE: antes de cambiar de rama, asegurate de no tener cambios sin commit
+# Puedes verificar con:
+git status
+
+# Si tienes cambios y no quieres hacer commit aun, guardalos con stash:
+git stash
+git checkout otra-rama
+# Cuando regreses, recupera tus cambios:
+git checkout dmontes
+git stash pop
+```
+
+### Eliminar rama
+
+```bash
+# Eliminar rama local (solo si ya fue mergeada)
 git branch -d nombre-rama
+
+# Eliminar rama remota
+git push origin --delete nombre-rama
 ```
 
 ---
@@ -79,6 +114,42 @@ git show abc1234
 
 # Ver los archivos modificados en un commit
 git show --stat abc1234
+```
+
+---
+
+## Merge (unir ramas)
+
+```bash
+# Ejemplo: traer los cambios de dmontes a main
+# Paso 1: Cambiar a la rama destino (la que recibe los cambios)
+git checkout main
+
+# Paso 2: Asegurar que esta actualizada
+git pull origin main
+
+# Paso 3: Hacer el merge
+git merge dmontes
+
+# Paso 4: Subir el resultado
+git push origin main
+
+# Paso 5: Regresar a tu rama de trabajo
+git checkout dmontes
+```
+
+### Si hay conflictos en el merge
+
+```bash
+# Git te indicara los archivos con conflicto
+# Abrir cada archivo, buscar las marcas <<<<<<<, =======, >>>>>>>
+# Resolver manualmente y luego:
+git add archivo-resuelto.java
+git commit -m "fix: resolver conflictos del merge dmontes a main"
+git push origin main
+
+# Si quieres cancelar el merge y regresar al estado anterior
+git merge --abort
 ```
 
 ---

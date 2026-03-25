@@ -1056,3 +1056,14 @@ payments (cabecera complemento)
    GET /related-documents/by-payment/{paymentsUuid}?page=0
 
 Nota: El paymentsUuid lo obtienes del response del registro (paso 1) o del response de búsqueda (paso 2).
+
+
+
+buenas David qué tal, una duda rápida, tengo este ticket: 
+Pantalla para relacionar un descuento comercial con una nota de crédito
+entiendo el endpoint para subir nc es /api/fiscal/xml/process/file y ese retorna el uuid y la cuestión, correcto,
+aquí cómo puedo relacionar el descuento con esa nc? hay un endpoint adicional? o aún no se cuenta con él
+ 
+Hola Fer buenos días, 
+Si, me parece que si tengo un end point, deja lo reviso y te comparto un ejemplo, 
+ 

@@ -1064,6 +1064,26 @@ Pantalla para relacionar un descuento comercial con una nota de crédito
 entiendo el endpoint para subir nc es /api/fiscal/xml/process/file y ese retorna el uuid y la cuestión, correcto,
 aquí cómo puedo relacionar el descuento con esa nc? hay un endpoint adicional? o aún no se cuenta con él
  
-Hola Fer buenos días, 
-Si, me parece que si tengo un end point, deja lo reviso y te comparto un ejemplo, 
- 
+Hola Fer buenos días,
+Si, me parece que si tengo un end point, deja lo reviso y te comparto un ejemplo,
+
+Si, recuerdo que en un daily se había comentado que se tenía una tarea para eso. Revisando a más detalle, el endpoint que necesitas no está en fiscal-api sino en finanzas-api:
+
+POST /rebates/relate
+Content-Type: multipart/form-data
+
+Parámetros:
+- uuid: UUID fiscal de la factura original
+- numeroDocumento: Número del documento de rebate/descuento
+- referenciaDocumento: Referencia del documento
+- numeroProveedor: Número del proveedor
+- usuario: ID del usuario
+- xmlFile: Archivo XML de la Nota de Crédito
+
+El flujo sería:
+1. Subir la NC → POST /api/fiscal/xml/process/file (fiscal-api) → obtienes el UUID
+2. Relacionar descuento con NC → POST /rebates/relate (finanzas-api) → envías el UUID + datos del descuento + XML de la NC
+
+Internamente el endpoint de finanzas-api valida la NC contra fiscal-api y crea los registros de StampedRebate y Rebate.
+
+De cualquier forma acércate con Josué para que te dé más contexto sobre el flujo completo y los detalles del ticket.

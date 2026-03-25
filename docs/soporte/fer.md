@@ -4,6 +4,15 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-03-25 | Relacionar descuento comercial con nota de crédito
+
+**Contexto**: Fer tiene un ticket para pantalla de relacionar descuento comercial con NC. Ya sabe que el endpoint de subir NC es `/api/fiscal/xml/process/file` pero pregunta cómo relacionar el descuento con la NC.
+**Respuesta**: El endpoint no está en fiscal-api sino en finanzas-api: `POST /rebates/relate` (multipart: uuid, numeroDocumento, referenciaDocumento, numeroProveedor, usuario, xmlFile). Internamente valida la NC contra fiscal-api y crea registros StampedRebate y Rebate.
+**Referencia**: Se le sugirió acercarse con Josué para más contexto del flujo completo.
+**Estado**: Resuelto (información entregada)
+
+---
+
 ## 2026-03-11 | Dispersión de pagos en complementos - IMPLEMENTADA
 
 **Contexto**: Fer logro registrar un complemento de pago y pregunta si hay un endpoint para relacionarlo con la factura o si el registro ya lo hace.

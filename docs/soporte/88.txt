@@ -1,0 +1,34 @@
+[root@somxvladmfiscwebp bin]# cat setenv.sh
+#!/bin/bash
+# Configuración de JVM para wsft - Producción
+
+# Memoria
+export JAVA_OPTS="$JAVA_OPTS -Xms512m -Xmx2048m"
+export JAVA_OPTS="$JAVA_OPTS -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m"
+
+# Configuración general
+export JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true"
+export JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
+export JAVA_OPTS="$JAVA_OPTS -Duser.timezone=America/Mexico_City"
+export JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true"
+
+# Garbage Collector
+export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
+export JAVA_OPTS="$JAVA_OPTS -XX:MaxGCPauseMillis=200"
+
+# Logs de GC (Java 11)
+#export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*:file=$CATALINA_BASE/logs/gc.log:time,uptime:filecount=5,filesize=10M"
+export JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDetails"
+export JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps"
+export JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCTimeStamps"
+export JAVA_OPTS="$JAVA_OPTS -Xloggc:$CATALINA_BASE/logs/gc.log"
+export JAVA_OPTS="$JAVA_OPTS -XX:+UseGCLogFileRotation"
+export JAVA_OPTS="$JAVA_OPTS -XX:NumberOfGCLogFiles=5"
+export JAVA_OPTS="$JAVA_OPTS -XX:GCLogFileSize=10M"
+
+echo "========================================"
+echo "Tomcat JVM Configuration"
+echo "========================================"
+echo "JAVA_OPTS: $JAVA_OPTS"
+echo "========================================"
+[root@somxvladmfiscwebp bin]#

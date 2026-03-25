@@ -29,8 +29,8 @@ Ejecutar desde la raiz del proyecto que se quiere exportar.
 # Ver rama actual
 git branch
 
-# Ver todas las ramas (locales y remotas) con ultimo commit, autor y fecha
-git branch -a -v --sort=-committerdate
+# Ver todas las ramas con ultimo commit, autor y fecha
+git for-each-ref --sort=-committerdate refs/heads/ refs/remotes/ --format="%(refname:short) | %(committerdate:short) | %(authorname) | %(subject)"
 
 # Ver ramas remotas
 git branch -r

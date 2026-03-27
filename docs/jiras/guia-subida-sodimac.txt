@@ -35,11 +35,31 @@ git checkout -b feature/STM-704-bitacora-auditoria-registro-facturas
 
 mvn clean package -DskipTests -q
 
-git add .
+# IMPORTANTE: No usar "git add ." si hay archivos raros (ej: nul en Windows).
+# Agregar archivos uno por uno:
+git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git add src/main/resources/application-dev.properties
+git add src/main/resources/application-prod.properties
+
 git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
 git push origin feature/STM-704-bitacora-auditoria-registro-facturas
 
 # Crear PR → base: develop → esperar aprobacion → MERGE
+
+# --- VERIFICACION (si algo falla en cloud) ---
+# Verificar que todos los archivos estan en el commit:
+git log --name-only -1
+# Si falta algun archivo (ej: AuditAction.java), desde la misma rama:
+git checkout feature/STM-704-bitacora-auditoria-registro-facturas
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git commit --amend --no-edit
+git push origin feature/STM-704-bitacora-auditoria-registro-facturas --force
 
 
 ================================================================================
@@ -87,7 +107,12 @@ git checkout -b feature/STM-272-bitacora-auditoria-complemento-pago
 
 mvn clean package -DskipTests -q
 
-git add .
+# Agregar archivos uno por uno (evitar git add .):
+git add src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+git add src/main/java/com/sodimac/fiscal/api/service/PaymentRegistrationService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+
 git commit -m "feat(STM-272): integrar bitacora auditoria-api en complemento de pago"
 git push origin feature/STM-272-bitacora-auditoria-complemento-pago
 

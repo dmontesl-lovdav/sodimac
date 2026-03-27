@@ -1,19 +1,28 @@
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git merge develop
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api
+ * branch            develop    -> FETCH_HEAD
 Already up to date.
 
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout feature/STM-272-bitacora-auditoria-complemento-pago
+Switched to branch 'feature/STM-272-bitacora-auditoria-complemento-pago'
 
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git commit -m "merge develop into STM-272"
-On branch feature/STM-272-bitacora-auditoria-complemento-pago
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-        nul
-        postman/Fiscal-API_Facturas_NC.postman_collection.json
-        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
-        postman/STM-829_Payments_Screen.postman_collection.json
-        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>.classpathgit merge develop
+".classpathgit" no se reconoce como un comando interno o externo,
+programa o archivo por lotes ejecutable.
 
-nothing added to commit but untracked files present (use "git add" to track)
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout feature/STM-272-bitacora-auditoria-complemento-pago
+Already on 'feature/STM-272-bitacora-auditoria-complemento-pago'
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git merge develop
+Already up to date.
 
 C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>mvn clean package -DskipTests -q
 [ERROR] COMPILATION ERROR :
@@ -55,25 +64,5 @@ C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>mvn clean package 
 [ERROR]
 [ERROR] For more information about the errors and possible solutions, please read the following articles:
 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
-
-
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout develop
-Switched to branch 'develop'
-Your branch is up to date with 'origin/develop'.
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git pull origin develop
-From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api
- * branch            develop    -> FETCH_HEAD
-Already up to date.
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log --oneline -5
-bebf877 (HEAD -> develop, origin/develop) fix: STM-335 WRN7023 en flujo StatusTrainService
-0e3971d feat: STM-335 relación de facturas-NC
-e6a06f3 update invoice-api Se corrige Error en el desglose de la factura
-40af234 fix: corregir error 500 al retornar codigo BUS048 en actualizacion de facturas
-03ecc78 feat(STM-410): agregar historial de cambios de estatus de facturas
 
 C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>

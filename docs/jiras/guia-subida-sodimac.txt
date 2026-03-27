@@ -49,6 +49,40 @@ git diff develop --name-only
 
 
 ================================================================================
+ PASOS PARA SUBIR STM-272 DESPUES DE MERGEAR STM-704
+================================================================================
+
+IMPORTANTE: NO crear PR de STM-272 hasta que STM-704 este mergeado en develop.
+Si lo creas antes, el build fallara porque AuditoriaApiService no existe en develop.
+
+# 1. Mergear STM-704 (facturacion) desde GitHub
+#    - Ir al PR de STM-704 en GitHub
+#    - Clic en "Merge pull request"
+
+# 2. Actualizar develop en local (ya tiene STM-704 mergeado)
+git checkout develop
+git pull origin develop
+
+# 3. Ir a la rama de STM-272 y traer los cambios de develop
+git checkout feature/STM-272-bitacora-auditoria-complemento-pago
+git merge develop
+
+# 4. Si hay conflictos en AuditAction.java (ambas ramas lo modificaron):
+#    - Abrir el archivo en el editor
+#    - Resolver los conflictos (dejar todas las constantes REGISTRO_* + PAGO_*)
+#    - Guardar y luego:
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git commit -m "merge develop into STM-272"
+
+# 5. Verificar que compila
+mvn clean package -DskipTests -q
+
+# 6. Push y crear PR
+git push origin feature/STM-272-bitacora-auditoria-complemento-pago
+# Crear PR en GitHub → base: develop
+
+
+================================================================================
  DIAGNOSTICO GENERAL: Si el build en cloud falla o git diff no muestra cambios
 ================================================================================
 

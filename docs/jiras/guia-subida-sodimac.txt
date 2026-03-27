@@ -2,12 +2,71 @@
  GUIA PARA SUBIR STM-704 Y STM-272 EN SODIMAC
 ================================================================================
 
-ORDEN OBLIGATORIO: STM-704 primero, STM-272 despues.
-STM-272 depende de AuditoriaApiService que se crea en STM-704.
+
+================================================================================
+ SOLUCION DIRECTA: Todo en develop, sin ramas
+================================================================================
+
+cd APP03022-mrch.backend.somx.fiscal-api
+
+# 1. Borrar ramas viejas si existen
+git checkout develop
+git branch -D feature/STM-704-bitacora-auditoria-registro-facturas
+git branch -D feature/STM-272-bitacora-auditoria-complemento-pago
+
+# 2. Actualizar develop
+git pull origin develop
+
+# 3. Copiar los 11 archivos desde el workspace personal al proyecto
+#
+# NUEVOS (2):
+#   src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+#   src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+#
+# MODIFICADOS (9):
+#   src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+#   src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+#   src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+#   src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+#   src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+#   src/main/java/com/sodimac/fiscal/api/service/PaymentRegistrationService.java
+#   src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java
+#   src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+#   src/main/resources/application-dev.properties
+
+# 4. Verificar que compila
+mvn clean package -DskipTests -q
+
+# 5. Agregar archivos uno por uno
+git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+git add src/main/java/com/sodimac/fiscal/api/service/PaymentRegistrationService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git add src/main/resources/application-dev.properties
+
+# 6. Commit y push directo a develop
+git commit -m "feat(STM-704/STM-272): integrar bitacora auditoria-api en facturas y complemento de pago"
+git push origin develop
+
+# 7. Verificar
+git log --name-only -1
 
 
 ================================================================================
- FIX ACTUAL: Archivos copiados en rama equivocada (STM-272 en vez de STM-704)
+ HISTORIAL - Intentos anteriores con ramas (referencia)
+================================================================================
+
+Lo siguiente es referencia de lo que se intento antes.
+Ya no es necesario seguir estos pasos.
+
+================================================================================
+ FIX ANTERIOR: Archivos copiados en rama equivocada
 ================================================================================
 
 Problema: Los archivos AuditoriaApiService.java y AuditoriaApiServiceImpl.java

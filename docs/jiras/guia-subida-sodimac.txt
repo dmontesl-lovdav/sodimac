@@ -63,7 +63,11 @@ Si lo creas antes, el build fallara porque AuditoriaApiService no existe en deve
 git checkout develop
 git pull origin develop
 
-# 3. Ir a la rama de STM-272 y traer los cambios de develop
+# 3. Verificar que AuditoriaApiService ya esta en develop
+git show develop:src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+# Si muestra el contenido del archivo, continuar. Si dice "does not exist", STM-704 no se mergeo.
+
+# 4. Ir a la rama de STM-272 y traer los cambios de develop
 git checkout feature/STM-272-bitacora-auditoria-complemento-pago
 git merge develop
 
@@ -74,12 +78,20 @@ git merge develop
 git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
 git commit -m "merge develop into STM-272"
 
-# 5. Verificar que compila
+# 5. Si hay conflictos en AuditAction.java:
+#    - Abrir el archivo en el editor
+#    - Resolver los conflictos (dejar todas las constantes REGISTRO_* + PAGO_*)
+#    - Guardar y luego:
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git commit -m "merge develop into STM-272"
+
+# 6. Verificar que compila
 mvn clean package -DskipTests -q
 
-# 6. Push y crear PR
+# 7. Push
 git push origin feature/STM-272-bitacora-auditoria-complemento-pago
-# Crear PR en GitHub → base: develop
+
+# 8. Crear PR en GitHub → base: develop
 
 
 ================================================================================

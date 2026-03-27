@@ -1,55 +1,10 @@
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git stash --include-untracked
-Ignoring path nul
-warning: in the working copy of 'postman/Fiscal-API_Facturas_NC.postman_collection.json', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'postman/STM-829_Payments_Screen.postman_collection.json', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json', LF will be replaced by CRLF the next time Git touches it
-Saved working directory and index state WIP on feature/STM-272-bitacora-auditoria-complemento-pago: 35dc0c5 feat(STM-272): integrar bitacora auditoria-api en complemento de pago
-Unlink of file 'nul' failed. Should I try again? (y/n) y
-Unlink of file 'nul' failed. Should I try again? (y/n) y
-Unlink of file 'nul' failed. Should I try again? (y/n)
-Sorry, I did not understand your answer. Please type 'y' or 'n'
-Unlink of file 'nul' failed. Should I try again? (y/n) n
-warning: failed to remove nul: Permission denied
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout feature/STM-704-bitacora-auditoria-registro-facturas
-Switched to branch 'feature/STM-704-bitacora-auditoria-registro-facturas'
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git stash pop
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git merge develop
 Already up to date.
-src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java already exists, no checkout
-src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java already exists, no checkout
-error: could not restore untracked files from stash
-On branch feature/STM-704-bitacora-auditoria-registro-facturas
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-        nul
-        postman/Fiscal-API_Facturas_NC.postman_collection.json
-        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
-        postman/STM-829_Payments_Screen.postman_collection.json
-        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
-
-nothing added to commit but untracked files present (use "git add" to track)
-The stash entry is kept in case you need it again.
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
 
 C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
 
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/resources/application-dev.properties
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git status
-On branch feature/STM-704-bitacora-auditoria-registro-facturas
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git commit -m "merge develop into STM-272"
+On branch feature/STM-272-bitacora-auditoria-complemento-pago
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
         nul
@@ -60,47 +15,45 @@ Untracked files:
 
 nothing added to commit but untracked files present (use "git add" to track)
 
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
-On branch feature/STM-704-bitacora-auditoria-registro-facturas
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-        nul
-        postman/Fiscal-API_Facturas_NC.postman_collection.json
-        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
-        postman/STM-829_Payments_Screen.postman_collection.json
-        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
-
-nothing added to commit but untracked files present (use "git add" to track)
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git push origin feature/STM-704-bitacora-auditoria-registro-facturas
-Everything up-to-date
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log --name-only -1
-commit f2f504dc386ee5f15b9d77b3d8bd9a10eb4b8126 (HEAD -> feature/STM-704-bitacora-auditoria-registro-facturas, origin/feature/STM-704-bitacora-auditoria-registro-facturas)
-Author: g_dco018 <g_dco018@sodimac.com.mx>
-Date:   Tue Mar 24 00:24:38 2026 -0600
-
-    feat(STM-704): integrar bitacora auditoria-api en registro y actualizacion de facturas
-
-src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
-src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
-src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
-src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
-src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
-src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
-src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
-src/main/resources/application-dev.properties
-src/main/resources/application-prod.properties
-
-C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git diff develop --name-only
-src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
-src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
-src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
-src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
-src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
-src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
-src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
-src/main/resources/application-dev.properties
-src/main/resources/application-prod.properties
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>mvn clean package -DskipTests -q
+[ERROR] COMPILATION ERROR :
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java:[89,19] cannot find symbol
+  symbol:   class AuditoriaApiService
+  location: class com.sodimac.fiscal.api.service.impl.InvoiceServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java:[69,1] cannot find symbol
+  symbol:   class AuditoriaApiService
+  location: class com.sodimac.fiscal.api.service.impl.InvoiceServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[40,38] cannot find symbol
+  symbol:   class AuditoriaApiService
+  location: package com.sodimac.fiscal.api.service
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[72,19] cannot find symbol
+  symbol:   class AuditoriaApiService
+  location: class com.sodimac.fiscal.api.service.impl.PaymentRegistrationServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[94,13] cannot find symbol
+  symbol:   class AuditoriaApiService
+  location: class com.sodimac.fiscal.api.service.impl.PaymentRegistrationServiceImpl
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project fiscal-api: Compilation failure: Compilation failure:
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java:[89,19] cannot find symbol
+[ERROR]   symbol:   class AuditoriaApiService
+[ERROR]   location: class com.sodimac.fiscal.api.service.impl.InvoiceServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java:[69,1] cannot find symbol
+[ERROR]   symbol:   class AuditoriaApiService
+[ERROR]   location: class com.sodimac.fiscal.api.service.impl.InvoiceServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[40,38] cannot find symbol
+[ERROR]   symbol:   class AuditoriaApiService
+[ERROR]   location: package com.sodimac.fiscal.api.service
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[72,19] cannot find symbol
+[ERROR]   symbol:   class AuditoriaApiService
+[ERROR]   location: class com.sodimac.fiscal.api.service.impl.PaymentRegistrationServiceImpl
+[ERROR] /C:/workspace-fbc-github/APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java:[94,13] cannot find symbol
+[ERROR]   symbol:   class AuditoriaApiService
+[ERROR]   location: class com.sodimac.fiscal.api.service.impl.PaymentRegistrationServiceImpl
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
 
 C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>

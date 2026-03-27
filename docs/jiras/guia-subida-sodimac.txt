@@ -1,0 +1,142 @@
+================================================================================
+ GUIA PARA SUBIR STM-704 Y STM-272 EN SODIMAC
+================================================================================
+
+ORDEN OBLIGATORIO: STM-704 primero, STM-272 despues.
+STM-272 depende de AuditoriaApiService que se crea en STM-704.
+
+================================================================================
+ PARTE 1: fiscal-api — STM-704 (facturas)
+================================================================================
+
+cd APP03022-mrch.backend.somx.fiscal-api
+
+git checkout develop
+git pull origin develop
+
+git checkout -b feature/STM-704-bitacora-auditoria-registro-facturas
+
+# Copiar los archivos de STM-704:
+#
+# NUEVOS (2):
+#   src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+#   src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+#
+# MODIFICADOS (6):
+#   src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java         → @EnableAsync
+#   src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java → idTransaccion + @Parameter
+#   src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java       → firma registerInvoice(file, idTransaccion)
+#   src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java → 14 audit points
+#   src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java      → NUEVO enum con constantes REGISTRO_* y UPDATE_*
+#   src/main/resources/application-dev.properties                          → auditoria.api.enabled/url
+#
+# OPCIONAL (si prod lo requiere):
+#   src/main/resources/application-prod.properties                         → homologado con dev
+
+mvn clean package -DskipTests -q
+
+git add .
+git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
+git push origin feature/STM-704-bitacora-auditoria-registro-facturas
+
+# Crear PR → base: develop → esperar aprobacion → MERGE
+
+
+================================================================================
+ PARTE 2: BFF fiscal — STM-704 (OpenAPI facturas)
+================================================================================
+
+cd APP03022-mrch.bff.somx.ppsomx.fiscal
+
+git checkout develop
+git pull origin develop
+
+git checkout -b feature/STM-704-openapi-idTransaccion
+
+# Copiar los 3 archivos OpenAPI (agregar parametro idTransaccion en /invoices/register):
+#   cloud-endpoint/openapi.yaml
+#   cloud-endpoint/openapi.json
+#   cloud-endpoint/openapi-bundled.yaml
+
+git add .
+git commit -m "feat(STM-704): agregar idTransaccion en OpenAPI de /invoices/register"
+git push origin feature/STM-704-openapi-idTransaccion
+
+# Crear PR → base: develop → MERGE
+
+
+================================================================================
+ PARTE 3: fiscal-api — STM-272 (complemento de pago)
+ *** ESPERAR A QUE STM-704 ESTE MERGEADO EN DEVELOP ***
+================================================================================
+
+cd APP03022-mrch.backend.somx.fiscal-api
+
+git checkout develop
+git pull origin develop       ← aqui ya tiene AuditoriaApiService de STM-704
+
+git checkout -b feature/STM-272-bitacora-auditoria-complemento-pago
+
+# Copiar los 4 archivos de STM-272:
+#
+# MODIFICADOS (4):
+#   src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java → idTransaccion + @Parameter
+#   src/main/java/com/sodimac/fiscal/api/service/PaymentRegistrationService.java       → firma registerPayment(request, idTransaccion)
+#   src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java → 14 audit points
+#   src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java                 → agregar constantes PAGO_*
+
+mvn clean package -DskipTests -q
+
+git add .
+git commit -m "feat(STM-272): integrar bitacora auditoria-api en complemento de pago"
+git push origin feature/STM-272-bitacora-auditoria-complemento-pago
+
+# Crear PR → base: develop → MERGE
+
+
+================================================================================
+ PARTE 4: BFF fiscal — STM-272 (OpenAPI pago)
+================================================================================
+
+cd APP03022-mrch.bff.somx.ppsomx.fiscal
+
+git checkout develop
+git pull origin develop
+
+git checkout -b feature/STM-272-openapi-idTransaccion-pago
+
+# Copiar los 3 archivos OpenAPI (agregar parametro idTransaccion en /fiscal/complementos-pago/registrar):
+#   cloud-endpoint/openapi.yaml
+#   cloud-endpoint/openapi.json
+#   cloud-endpoint/openapi-bundled.yaml
+
+git add .
+git commit -m "feat(STM-272): agregar idTransaccion en OpenAPI de complemento de pago"
+git push origin feature/STM-272-openapi-idTransaccion-pago
+
+# Crear PR → base: develop → MERGE
+
+
+================================================================================
+ RESUMEN DE ORDEN
+================================================================================
+
+  #  | Que                      | Repo        | Base    | Depende de
+ --- | ------------------------ | ----------- | ------- | ----------
+  1  | STM-704 fiscal-api       | fiscal-api  | develop | nada
+  2  | STM-704 BFF              | bff fiscal  | develop | nada
+     | >>> MERGE STM-704 <<<    |             |         |
+  3  | STM-272 fiscal-api       | fiscal-api  | develop | STM-704 mergeado
+  4  | STM-272 BFF              | bff fiscal  | develop | nada
+     | >>> MERGE STM-272 <<<    |             |         |
+
+
+================================================================================
+ ARCHIVOS TOTALES
+================================================================================
+
+ STM-704 fiscal-api:  2 nuevos + 6 modificados = 8 archivos
+ STM-704 BFF:         3 modificados
+ STM-272 fiscal-api:  4 modificados (0 nuevos, usa lo de STM-704)
+ STM-272 BFF:         3 modificados
+                                           TOTAL: 18 archivos

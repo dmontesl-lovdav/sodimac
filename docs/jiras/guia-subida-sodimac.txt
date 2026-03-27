@@ -59,6 +59,35 @@ git log --name-only -1
 
 
 ================================================================================
+ BFF FISCAL: Directo a develop, sin ramas
+================================================================================
+
+cd APP03022-mrch.bff.somx.ppsomx.fiscal
+
+# 1. Actualizar develop
+git checkout develop
+git pull origin develop
+
+# 2. Copiar los 3 archivos OpenAPI desde el workspace personal
+#    (tienen idTransaccion en /invoices/register y /fiscal/complementos-pago/registrar):
+#
+#   cloud-endpoint/openapi.yaml
+#   cloud-endpoint/openapi.json
+#   cloud-endpoint/openapi-bundled.yaml
+
+# 3. Agregar, commit y push
+git add cloud-endpoint/openapi.yaml
+git add cloud-endpoint/openapi.json
+git add cloud-endpoint/openapi-bundled.yaml
+
+git commit -m "feat(STM-704/STM-272): agregar idTransaccion en OpenAPI de facturas y complemento de pago"
+git push origin develop
+
+# 4. Verificar
+git log --name-only -1
+
+
+================================================================================
  HISTORIAL - Intentos anteriores con ramas (referencia)
 ================================================================================
 

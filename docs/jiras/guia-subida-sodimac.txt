@@ -5,6 +5,49 @@
 ORDEN OBLIGATORIO: STM-704 primero, STM-272 despues.
 STM-272 depende de AuditoriaApiService que se crea en STM-704.
 
+
+================================================================================
+ DIAGNOSTICO: Si el build en cloud falla o git diff no muestra cambios
+================================================================================
+
+Ejecutar desde tu rama feature (ej: feature/STM-704-bitacora-auditoria-registro-facturas):
+
+# 1. Confirmar en que rama estas
+git branch
+
+# 2. Ver si hay commits diferentes a develop
+git log develop..HEAD --oneline
+
+# 3. Si no hay commits, los archivos no se commitearon. Verificar:
+git status
+
+# 4. Si git status muestra archivos untracked/modified, agregarlos y commitear:
+git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git add src/main/resources/application-dev.properties
+git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
+git push origin feature/STM-704-bitacora-auditoria-registro-facturas
+
+# 5. Verificar que los archivos estan en el commit:
+git log --name-only -1
+
+# 6. Verificar diferencias con develop:
+git diff develop --name-only
+
+# Si todo esta vacio, puede que copiaste los archivos ANTES de crear la rama
+# (es decir, los copiaste sobre develop y luego creaste la rama, quedando iguales).
+# Solucion: borrar la rama, volver a develop, crear rama, copiar archivos de nuevo:
+git checkout develop
+git branch -D feature/STM-704-bitacora-auditoria-registro-facturas
+git checkout -b feature/STM-704-bitacora-auditoria-registro-facturas
+# Ahora copiar los archivos modificados desde el workspace personal
+# y repetir git add + git commit + git push
+
 ================================================================================
  PARTE 1: fiscal-api — STM-704 (facturas)
 ================================================================================

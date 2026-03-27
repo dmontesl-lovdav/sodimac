@@ -7,10 +7,50 @@ STM-272 depende de AuditoriaApiService que se crea en STM-704.
 
 
 ================================================================================
- DIAGNOSTICO: Si el build en cloud falla o git diff no muestra cambios
+ FIX ACTUAL: Archivos copiados en rama equivocada (STM-272 en vez de STM-704)
 ================================================================================
 
-Ejecutar desde tu rama feature (ej: feature/STM-704-bitacora-auditoria-registro-facturas):
+Problema: Los archivos AuditoriaApiService.java y AuditoriaApiServiceImpl.java
+estan como "untracked" en la rama STM-272, y git no deja cambiar a STM-704.
+
+Solucion paso a paso:
+
+# 1. Guardar todos los archivos sin commitear (incluidos untracked)
+git stash --include-untracked
+
+# 2. Cambiar a la rama de STM-704
+git checkout feature/STM-704-bitacora-auditoria-registro-facturas
+
+# 3. Recuperar los archivos guardados
+git stash pop
+
+# 4. Agregar los archivos de STM-704 uno por uno
+git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
+git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+git add src/main/resources/application-dev.properties
+
+# 5. Verificar que estan staged
+git status
+
+# 6. Commit y push
+git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
+git push origin feature/STM-704-bitacora-auditoria-registro-facturas
+
+# 7. Verificar que los archivos estan en el commit
+git log --name-only -1
+
+# 8. Verificar diferencias con develop
+git diff develop --name-only
+
+
+================================================================================
+ DIAGNOSTICO GENERAL: Si el build en cloud falla o git diff no muestra cambios
+================================================================================
 
 # 1. Confirmar en que rama estas
 git branch
@@ -21,27 +61,10 @@ git log develop..HEAD --oneline
 # 3. Si no hay commits, los archivos no se commitearon. Verificar:
 git status
 
-# 4. Si git status muestra archivos untracked/modified, agregarlos y commitear:
-git add src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
-git add src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
-git add src/main/java/com/sodimac/fiscal/api/FiscalApiApplication.java
-git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
-git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
-git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
-git add src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
-git add src/main/resources/application-dev.properties
-git commit -m "feat(STM-704): integrar bitacora auditoria-api en registro de facturas y NC"
-git push origin feature/STM-704-bitacora-auditoria-registro-facturas
-
-# 5. Verificar que los archivos estan en el commit:
-git log --name-only -1
-
-# 6. Verificar diferencias con develop:
-git diff develop --name-only
-
-# Si todo esta vacio, puede que copiaste los archivos ANTES de crear la rama
-# (es decir, los copiaste sobre develop y luego creaste la rama, quedando iguales).
-# Solucion: borrar la rama, volver a develop, crear rama, copiar archivos de nuevo:
+# 4. Si git status sale limpio y git diff develop --name-only sale vacio,
+#    puede que copiaste los archivos ANTES de crear la rama
+#    (los copiaste sobre develop y luego creaste la rama, quedando iguales).
+#    Solucion: borrar la rama, volver a develop, crear rama, copiar archivos de nuevo:
 git checkout develop
 git branch -D feature/STM-704-bitacora-auditoria-registro-facturas
 git checkout -b feature/STM-704-bitacora-auditoria-registro-facturas

@@ -2064,3 +2064,22 @@ Error: Process completed with exit code 1.
 0s
 0s
 0s
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git branch
+  develop
+* feature/STM-272-bitacora-auditoria-complemento-pago
+  feature/STM-395-STM-397
+  feature/STM-704-bitacora-auditoria-registro-facturas
+  main
+  uat
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout feature/STM-704-bitacora-auditoria-registro-facturas
+error: The following untracked working tree files would be overwritten by checkout:
+        src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+        src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+Please move or remove them before you switch branches.
+Aborting
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>c

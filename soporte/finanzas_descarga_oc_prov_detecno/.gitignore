@@ -1,0 +1,52 @@
+# Eclipse
+.project
+.classpath
+.settings/
+target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea
+.settings
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# Maven
+target/
+
+### VS Code ###
+.vscode/
+
+#Gradle
+.gradle
+
+
+
+# TestNG
+test-output/
+
+
+
+
+*.log
+
+#linux te files
+*~
+/bin/

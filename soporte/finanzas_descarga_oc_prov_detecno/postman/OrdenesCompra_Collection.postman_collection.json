@@ -1,0 +1,100 @@
+{
+	"info": {
+		"_postman_id": "ordenes-compra-detecno-collection",
+		"name": "Ordenes Compra - Detecno",
+		"description": "Colección para consultar órdenes de compra desde Detecno.\n\n## Flujo:\n1. Auth Token Detecno - Obtener token de acceso\n2. Consultar Ordenes de Compra - Obtener órdenes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Auth Token Detecno",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "UsrApi",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "3&&FMHfcse",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://detecnorecepcion.mx:447/Recepcion/Sodimac/apiSodimac_OrdenesCompra/auth/token",
+					"protocol": "https",
+					"host": [
+						"detecnorecepcion",
+						"mx"
+					],
+					"port": "447",
+					"path": [
+						"Recepcion",
+						"Sodimac",
+						"apiSodimac_OrdenesCompra",
+						"auth",
+						"token"
+					]
+				},
+				"description": "Obtiene el token de acceso de Detecno.\n\nContent-Type: application/x-www-form-urlencoded\n\nRespuesta esperada:\n{\n    \"success\": true,\n    \"acc_tkn\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"ref_tkn\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Consultar Ordenes de Compra",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "TOKEN_OBTENIDO_DEL_LOGIN",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://detecnorecepcion.mx:447/Recepcion/Sodimac/apiSodimac_OrdenesCompra/ordenes/consulta-ordenes?fechainicio=2026/01/01&fechaFin=2027/01/01",
+					"protocol": "https",
+					"host": [
+						"detecnorecepcion",
+						"mx"
+					],
+					"port": "447",
+					"path": [
+						"Recepcion",
+						"Sodimac",
+						"apiSodimac_OrdenesCompra",
+						"ordenes",
+						"consulta-ordenes"
+					],
+					"query": [
+						{
+							"key": "fechainicio",
+							"value": "2024/01/01"
+						},
+						{
+							"key": "fechaFin",
+							"value": "2024/01/31"
+						}
+					]
+				},
+				"description": "Consulta las órdenes de compra desde Detecno.\n\nParámetros:\n- fechainicio: yyyy/MM/dd\n- fechaFin: yyyy/MM/dd\n\nRespuesta esperada:\n{\n    \"totalCount\": 10,\n    \"data\": [\n        {\n            \"Id\": 1,\n            \"CodProvSAP\": \"1234567890\",\n            \"NoOC\": \"OC-001\",\n            \"NoRecepcion\": \"REC-001\",\n            \"Sucursal\": \"SUC-01\",\n            \"NoGuia\": \"GUIA-001\",\n            \"ImporteSinImpuestos\": 1500.50,\n            \"FechaRecepcion\": \"2024-01-15\",\n            \"Estatus\": \"ACTIVO\",\n            \"Origen\": \"SISTEMA\",\n            \"FechaMovimiento\": \"2024-01-15\",\n            \"MotivoCancelacion\": null\n        }\n    ]\n}"
+			},
+			"response": []
+		}
+	]
+}

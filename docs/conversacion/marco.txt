@@ -16,4 +16,16 @@ y distinguir si el corte viene del cliente o del upstream.
  
  
 eso es del BFF de finanzas
- 
+
+================================================================================
+RESPUESTA (2026-03-30)
+================================================================================
+
+Marco, revisé el BFF de fiscal-api y tiene el mismo comportamiento:
+la validación de JWT está comentada, el log del 200 se imprime antes
+de que termine la respuesta, y los headers se loguean completos
+incluyendo tokens.
+
+No es exclusivo de finanzas, todos los BFFs del proyecto están así.
+Josué ya está atendiendo lo de finanzas-api, pero es un tema general
+que aplica a todos los servicios. Por ahora ninguno valida autenticación.

@@ -1,0 +1,19 @@
+g_dco018, g_dti26 me ayudan a revisar esto que comenta Claudio por favor
+ 
+Lo más importante que encontré:
+ 
+El JWT no se está validando en la app Node. La validación está comentada en ￼App.js (line 48). Así que ese ECONNRESET no viene de este código por auth.
+El log STATUS: 200 es engañoso. Se imprime en el evento "request" del servidor, apenas entra la request, en ￼App.js (line 83). En ese momento response.statusCode vale 200 por defecto, aunque todavía no haya terminado la respuesta.
+El ECONNRESET sale del proxyErrorHandler de express-http-proxy en ￼App.js (line 56). O sea, el error lo está capturando el proxy cuando la conexión ya se cortó.
+Este BFF es realmente un passthrough muy fino: express + express-http-proxy hacia REMOTE_URL, sin lógica de negocio propia relevante para /finanzas-payment.
+En simple: el repo refuerza lo que ya veníamos viendo. No parece un problema de JWT ni de lógica del BFF; el punto más claro es que el log del 200 induce a error y el corte real ocurre después, en la conexión del proxy. También hay un problema serio de seguridad: están logueando todos los headers, incluyendo Authorization y cookie, en ￼App.js (line 84).
+ 
+el siguiente paso útil es ver exactamente cómo cambiar este archivo para:
+ 
+registrar finish / close correctamente,
+dejar de loguear tokens,
+y distinguir si el corte viene del cliente o del upstream.
+ 
+ 
+eso es del BFF de finanzas
+ 

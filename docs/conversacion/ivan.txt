@@ -88,3 +88,71 @@ creo que es solo el css la imagen no se toca y el brillo lo da el css para ident
  
 Ok, deja lo reviso
  
+ 
+ 
+ 
+ ----------------
+ un favor sobre el punto que te comente ayer
+ 
+me puedes ayudar a validar si el proceso de extracción de puntos CES para el tema de cancelación de puntos esta tomando la data de esta tabla SW_CEM.trx_points_bkp, actualmente tu vas por la información de la tabla SW_CEM.trx_points
+ 
+pero ahora para la cancelación la información se almacena en la BKP 
+ 
+échame la mano con este punto pf pf como prioridad porque cerramos el mes hoy p
+ 
+Si, solo lo que te decía ayer, si me dabas un poco más de contexto, que es este, pero ahora falta el proyecto, donde reviso para obtener el código y revisar la lógica, 
+ 
+No me acuerdo cual es :(
+ 
+pfff 
+ 
+asignación de puntos CES creo que así se llama el proyecto
+ 
+Deja ver si lo tengo, sino se lo pido a Marco
+ 
+te reenvie un correo con las reglas que se implementaron en su momento
+ 
+ 
+ 
+ --- Correo --
+ 
+ De: Oscar Andres Romero Gonzalez <ext_oaromerog@sodimac.com.mx>
+Enviado: miércoles, 14 de agosto de 2024 02:23 p. m.
+Para: IVAN SAUL CORTES ZAMORA <iscortesz@sodimac.com.mx>; g_dld018 <g_dld018@Sodimac.com.mx>
+Asunto: RE: Revisión de API - Registro, cancelación y provisión de puntos CES
+ 
+Buenas tardes
+
+Les comparto el acceso a la base de datos, y el detalle de las tablas que vimos en la mañana. 
+
+@g_dld018 David, las tablas de la BCT, donde se registran los impuestos, prefiero explicártelas en una llamada ya que son un poco mas complejas.
+
+Con este usuario pueden conectarse a la base de datos de test:
+usuario: USW_BCT
+password: ubct392sK7
+host: f8cloud1129.falabella.cl
+puerto: 1541
+sid: arsmxts
+Las tablas son las siguientes y deben usarse con el prefijo sw_cem:
+
+TRX_POINTS
+Tabla donde se registran los movimientos de puntos. Las columnas relevantes son:
+ID: Identificador único del movimiento de puntos.
+IDENTIFICATIONNUMBER: Identificador del cliente.
+DATE, BRANCH, POS, SEQUENCE: Corresponden a la fecha, tienda, caja y numero de ticket de la transacción en BCT.
+POINTS: La cantidad de puntos que generó la transacción.
+TRANSACTION_TYPE: Identifica el tipo de transacción de la siguiente forma:
+Transacciones que suman puntos al cliente:
+sale: El cliente realiza una compra y gana puntos.
+nc_ces: El cliente devuelve un producto que pagó con puntos.
+Transacciones que restan puntos al cliente:
+sale_ces: El cliente realiza una compra y paga con puntos.
+nc: El cliente devuelve la totalidad o parte de una compra donde ganó puntos.
+Expiración: Existen puntos en la cuenta del cliente que excedieron el periodo de vigencia.
+      La transacción destacada en amarillo se encuentra en revisión, por lo tanto no deben considerarla de momento.
+
+TRX_POINTS_SKU
+La tabla donde se guarda la distribución de puntos. Campos:
+ID: Identificador único del movimiento de puntos.
+SKU: Producto pagado con puntos
+POINTS: Cantidad de puntos con los que se pago el producto

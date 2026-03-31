@@ -1,0 +1,462 @@
+{"properties": [
+  {
+    "name": "factutas.to.bct.dias",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.bct.dias'"
+  },
+  {
+    "name": "factutas.to.bct.rango.fechas",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.bct.rango.fechas'"
+  },
+  {
+    "name": "factutas.to.bct.fecha.inicio",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.bct.fecha.inicio'"
+  },
+  {
+    "name": "factutas.to.bct.fecha.fin",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.bct.fecha.fin'"
+  },
+  {
+    "name": "jdbc.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.driverClassName'"
+  },
+  {
+    "name": "jdbc.url",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.url'"
+  },
+  {
+    "name": "jdbc.user",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.user'"
+  },
+  {
+    "name": "jdbc.pass",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.pass'"
+  },
+  {
+    "name": "hibernate.dialect",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.dialect'"
+  },
+  {
+    "name": "hibernate.show_sql",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.show_sql'"
+  },
+  {
+    "name": "hibernate.hbm2ddl.auto",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.hbm2ddl.auto'"
+  },
+  {
+    "name": "hibernate.cache.use_second_level_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.cache.use_second_level_cache'"
+  },
+  {
+    "name": "hibernate.cache.use_query_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.cache.use_query_cache'"
+  },
+  {
+    "name": "jdbc.bct.url",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.bct.url'"
+  },
+  {
+    "name": "jdbc.bct.user",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.bct.user'"
+  },
+  {
+    "name": "jdbc.bct.pass",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.bct.pass'"
+  },
+  {
+    "name": "hibernate.bct.dialect",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.bct.dialect'"
+  },
+  {
+    "name": "hibernate.bct.show_sql",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.bct.show_sql'"
+  },
+  {
+    "name": "hibernate.bct.hbm2ddl.auto",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.bct.hbm2ddl.auto'"
+  },
+  {
+    "name": "hibernate.bct.cache.use_second_level_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.bct.cache.use_second_level_cache'"
+  },
+  {
+    "name": "hibernate.bct.cache.use_query_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.bct.cache.use_query_cache'"
+  },
+  {
+    "name": "c3p0.bct.min_size",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.min_size'"
+  },
+  {
+    "name": "c3p0.bct.max_size",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.max_size'"
+  },
+  {
+    "name": "c3p0.bct.acquire_increment",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.acquire_increment'"
+  },
+  {
+    "name": "c3p0.bct.timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.timeout'"
+  },
+  {
+    "name": "c3p0.bct.testConnectionOnCheckout",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.testConnectionOnCheckout'"
+  },
+  {
+    "name": "c3p0.bct.preferredTestQuery",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.preferredTestQuery'"
+  },
+  {
+    "name": "c3p0.bct.idleConnectionTestPeriod",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.idleConnectionTestPeriod'"
+  },
+  {
+    "name": "c3p0.bct.privilegeSpawnedThreads",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.privilegeSpawnedThreads'"
+  },
+  {
+    "name": "c3p0.bct.contextClassLoaderSource",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.bct.contextClassLoaderSource'"
+  },
+  {
+    "name": "jdbc.bct.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.bct.driverClassName'"
+  },
+  {
+    "name": "jdbc.fiscal.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.fiscal.driverClassName'"
+  },
+  {
+    "name": "jdbc.fiscal.url",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.fiscal.url'"
+  },
+  {
+    "name": "jdbc.fiscal.user",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.fiscal.user'"
+  },
+  {
+    "name": "jdbc.fiscal.pass",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.fiscal.pass'"
+  },
+  {
+    "name": "hibernate.fiscal.dialect",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.fiscal.dialect'"
+  },
+  {
+    "name": "hibernate.fiscal.show_sql",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.fiscal.show_sql'"
+  },
+  {
+    "name": "hibernate.fiscal.hbm2ddl.auto",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.fiscal.hbm2ddl.auto'"
+  },
+  {
+    "name": "hibernate.fiscal.cache.use_second_level_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.fiscal.cache.use_second_level_cache'"
+  },
+  {
+    "name": "hibernate.fiscal.cache.use_query_cache",
+    "type": "java.lang.String",
+    "description": "A description for 'hibernate.fiscal.cache.use_query_cache'"
+  },
+  {
+    "name": "c3p0.fiscal.min_size",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.min_size'"
+  },
+  {
+    "name": "c3p0.fiscal.max_size",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.max_size'"
+  },
+  {
+    "name": "c3p0.fiscal.acquire_increment",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.acquire_increment'"
+  },
+  {
+    "name": "c3p0.fiscal.timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.timeout'"
+  },
+  {
+    "name": "c3p0.fiscal.testConnectionOnCheckout",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.testConnectionOnCheckout'"
+  },
+  {
+    "name": "c3p0.fiscal.preferredTestQuery",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.preferredTestQuery'"
+  },
+  {
+    "name": "c3p0.fiscal.idleConnectionTestPeriod",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.idleConnectionTestPeriod'"
+  },
+  {
+    "name": "c3p0.fiscal.privilegeSpawnedThreads",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.privilegeSpawnedThreads'"
+  },
+  {
+    "name": "c3p0.fiscal.contextClassLoaderSource",
+    "type": "java.lang.String",
+    "description": "A description for 'c3p0.fiscal.contextClassLoaderSource'"
+  },
+  {
+    "name": "venta.cab.dias",
+    "type": "java.lang.String",
+    "description": "A description for 'venta.cab.dias'"
+  },
+  {
+    "name": "venta.cab.rango.fechas",
+    "type": "java.lang.String",
+    "description": "A description for 'venta.cab.rango.fechas'"
+  },
+  {
+    "name": "venta.cab.fecha.inicio",
+    "type": "java.lang.String",
+    "description": "A description for 'venta.cab.fecha.inicio'"
+  },
+  {
+    "name": "venta.cab.fecha.fin",
+    "type": "java.lang.String",
+    "description": "A description for 'venta.cab.fecha.fin'"
+  },
+  {
+    "name": "factutas.to.fiscal.dias",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.fiscal.dias'"
+  },
+  {
+    "name": "factutas.to.fiscal.rango.fechas",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.fiscal.rango.fechas'"
+  },
+  {
+    "name": "factutas.to.fiscal.fecha.inicio",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.fiscal.fecha.inicio'"
+  },
+  {
+    "name": "factutas.to.fiscal.fecha.fin",
+    "type": "java.lang.String",
+    "description": "A description for 'factutas.to.fiscal.fecha.fin'"
+  },
+  {
+    "name": "global.ventaas.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.ventaas.file'"
+  },
+  {
+    "name": "global.ventas.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.ventas.file'"
+  },
+  {
+    "name": "global.ventas.sql",
+    "type": "java.lang.String",
+    "description": "A description for 'global.ventas.sql'"
+  },
+  {
+    "name": "global.anio.fijo",
+    "type": "java.lang.String",
+    "description": "A description for 'global.anio.fijo'"
+  },
+  {
+    "name": "global.devolucion.sql",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.sql'"
+  },
+  {
+    "name": "global.devolucion.sql",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.sql'"
+  },
+  {
+    "name": "global.nota.credito.sql",
+    "type": "java.lang.String",
+    "description": "A description for 'global.nota.credito.sql'"
+  },
+  {
+    "name": "global.devolucion.fdc.sql",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.fdc.sql'"
+  },
+  {
+    "name": "global.devolucion.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.file'"
+  },
+  {
+    "name": "global.devolucion.fdc.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.fdc.file'"
+  },
+  {
+    "name": "global.nota.credito",
+    "type": "java.lang.String",
+    "description": "A description for 'global.nota.credito'"
+  },
+  {
+    "name": "global.anio",
+    "type": "java.lang.String",
+    "description": "A description for 'global.anio'"
+  },
+  {
+    "name": "jdbc.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.driverClassName'"
+  },
+  {
+    "name": "jdbc.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.driverClassName'"
+  },
+  {
+    "name": "jdbc.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.driverClassName'"
+  },
+  {
+    "name": "jdbc.driverClassName",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.driverClassName'"
+  },
+  {
+    "name": "global.notacredito.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.notacredito.file'"
+  },
+  {
+    "name": "global.notacredito.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.notacredito.file'"
+  },
+  {
+    "name": "global.notacredito.file",
+    "type": "java.lang.String",
+    "description": "A description for 'global.notacredito.file'"
+  },
+  {
+    "name": "global.devolucion.activo",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.activo'"
+  },
+  {
+    "name": "global.ventas.activo",
+    "type": "java.lang.String",
+    "description": "A description for 'global.ventas.activo'"
+  },
+  {
+    "name": "global.devolucion.fdc.activo",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.fdc.activo'"
+  },
+  {
+    "name": "global.notacredito.activo",
+    "type": "java.lang.String",
+    "description": "A description for 'global.notacredito.activo'"
+  },
+  {
+    "name": "global.proceso.dias",
+    "type": "java.lang.String",
+    "description": "A description for 'global.proceso.dias'"
+  },
+  {
+    "name": "global.ventas.numtrimestre",
+    "type": "java.lang.String",
+    "description": "A description for 'global.ventas.numtrimestre'"
+  },
+  {
+    "name": "global.devolucion.numtrimestre",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.numtrimestre'"
+  },
+  {
+    "name": "global.devolucion.fdc.numtrimestre",
+    "type": "java.lang.String",
+    "description": "A description for 'global.devolucion.fdc.numtrimestre'"
+  },
+  {
+    "name": "global.notacredito.numtrimestre",
+    "type": "java.lang.String",
+    "description": "A description for 'global.notacredito.numtrimestre'"
+  },
+  {
+    "name": "jdbc.ces.url",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.ces.url'"
+  },
+  {
+    "name": "jdbc.ces.user",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.ces.user'"
+  },
+  {
+    "name": "jdbc.ces.pass",
+    "type": "java.lang.String",
+    "description": "A description for 'jdbc.ces.pass'"
+  },
+  {
+    "name": "puntos.ces.dias",
+    "type": "java.lang.String",
+    "description": "A description for 'puntos.ces.dias'"
+  },
+  {
+    "name": "puntos.ces.rango.fechas",
+    "type": "java.lang.String",
+    "description": "A description for 'puntos.ces.rango.fechas'"
+  },
+  {
+    "name": "puntos.ces.fecha.inicio",
+    "type": "java.lang.String",
+    "description": "A description for 'puntos.ces.fecha.inicio'"
+  },
+  {
+    "name": "puntos.ces.fecha.fin",
+    "type": "java.lang.String",
+    "description": "A description for 'puntos.ces.fecha.fin'"
+  }
+]}

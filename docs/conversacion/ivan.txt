@@ -156,3 +156,20 @@ La tabla donde se guarda la distribución de puntos. Campos:
 ID: Identificador único del movimiento de puntos.
 SKU: Producto pagado con puntos
 POINTS: Cantidad de puntos con los que se pago el producto
+
+
+ --- Respuesta David (2026-03-31) ---
+
+Ivan, ya revise el codigo del proyecto finanzas_bctfacturacion (ReplicarPuntosJob).
+
+El job consulta la tabla SW_CEM.TRX_POINTS en las 4 queries del repositorio TrxPointsRepository:
+- Devolucion de asignacion (tipo cn, transacciones 9/10)
+- Asignacion de puntos (transacciones 1/9/10, forma de pago != 2)
+- Cancelacion de provisiones (transacciones 1/9/10, forma de pago = 2)
+- Puntos expirados (tipo exp_ces, rango 365-380 dias atras)
+
+No hay ninguna referencia a SW_CEM.TRX_POINTS_BKP en todo el proyecto.
+
+Si la cancelacion ahora guarda datos en TRX_POINTS_BKP, habria que agregar una query adicional o modificar la existente para que tambien lea de esa tabla.
+
+Dime si quieres que haga el ajuste.

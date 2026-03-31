@@ -173,3 +173,139 @@ No hay ninguna referencia a SW_CEM.TRX_POINTS_BKP en todo el proyecto.
 Si la cancelacion ahora guarda datos en TRX_POINTS_BKP, habria que agregar una query adicional o modificar la existente para que tambien lea de esa tabla.
 
 Dime si quieres que haga el ajuste.
+
+
+ --- Analisis tecnico: Flujo de Puntos CES (2026-03-31) ---
+
+Proyecto: finanzas_bctfacturacion (GitLab: sodimac-corp/desarrollo-sodimac-mexico/finanzas_bctfacturacion)
+Job principal: ReplicarPuntosJob.java
+Repositorio de queries: TrxPointsRepository.java
+
+== QUE HACE ==
+
+El job ReplicarPuntosJob extrae movimientos de puntos CES desde la BCT (Oracle)
+y los replica en la BD CES (SQL Server) para contabilizacion.
+Procesa dia por dia dentro de un rango de fechas configurable.
+
+Configuracion (application.properties):
+  puntos.ces.dias=15              (dias hacia atras si no usa rango)
+  puntos.ces.rango.fechas=true    (true = usa fecha inicio/fin)
+  puntos.ces.fecha.inicio=2025-01-01
+  puntos.ces.fecha.fin=2025-02-23
+
+
+== FLUJO DETALLADO POR CADA FECHA ==
+
+PASO 1 - Control de procesamiento
+  Tabla: ControVentaCes (SQL Server CES - ESCRITURA)
+  - Verifica si ya existe un registro de control para la fecha
+  - Si estatus = CORRECTO → salta la fecha
+  - Si no existe o esta incompleta → continua al paso 2
+
+PASO 2 - Extraccion de puntos desde Oracle BCT
+  Metodo: TrxPointsRepository.findPuntosCes(fecha)
+  Tablas LECTURA (Oracle BCT):
+    - SW_CEM.TRX_POINTS       → movimientos de puntos (tabla principal)
+    - SW_CEM.TRX_POINTS_EXT   → factor de conversion (f_conv)
+    - TRX_HDR                 → cabecera de transaccion (ticket, tienda, montos)
+    - TRX_FRM_PAGO            → forma de pago (distingue asignacion vs cancelacion)
+
+  4 queries UNION:
+    Query 1 - Devolucion de asignacion
+      SW_CEM.TRX_POINTS.TRANSACTIONTYPE = 'cn'
+      TRX_HDR.TIPO_TRX IN (9, 10)
+
+    Query 2 - Asignacion de puntos
+      TRX_HDR.TIPO_TRX IN (1, 9, 10)
+      TRX_FRM_PAGO.TIPO_FORMA_PAGO != 2  (NO es pago con puntos)
+
+    Query 3 - Cancelacion de provisiones
+      TRX_HDR.TIPO_TRX IN (1, 9, 10)
+      TRX_FRM_PAGO.TIPO_FORMA_PAGO = 2   (SI es pago con puntos)
+
+    Query 4 - Puntos expirados
+      SW_CEM.TRX_POINTS.TRANSACTIONTYPE = 'exp_ces'
+      Rango: fecha - 380 dias a fecha - 365 dias
+
+  ** IMPORTANTE: Las 4 queries leen de SW_CEM.TRX_POINTS unicamente.
+     NO hay referencia a SW_CEM.TRX_POINTS_BKP en ninguna query. **
+
+PASO 3 - Registro de control (si es primera vez)
+  Tabla: ControVentaCes (SQL Server CES - ESCRITURA)
+  - Genera nuevo idControlCes
+  - Registra la fecha y total de registros a procesar
+
+PASO 4 - Por cada movimiento de puntos encontrado:
+
+  4a. Verificar duplicado
+    Tabla: AdminPuntosCes (SQL Server CES - LECTURA)
+    - Valida si ya existe el ticket + tipoTransaccionCes
+
+  4b. Obtener detalle de SKU
+    Tabla: SW_CEM.TRX_POINTS_SKU (Oracle BCT - LECTURA)
+    Metodo: TrxPointsRepository.findSkuPuntosById(idPuntos)
+    - Obtiene SKU y puntos por producto
+
+  4c. Guardar movimiento de puntos
+    Tabla: AdminPuntosCes (SQL Server CES - ESCRITURA)
+    - Guarda: ticket, fecha, tienda, tipo transaccion, montos, puntos
+
+  4d. Obtener ticket original de BCT (solo si tipo transaccion permitido)
+    Tabla: TRX_HDR (Oracle BCT - LECTURA)
+    Metodo: TrxPointsRepository.findByTicket(ticket)
+    - Obtiene cabecera del ticket original
+
+  4e. Guardar cabecera de venta
+    Tabla: VentaCab (SQL Server CES - ESCRITURA)
+    - Verifica si ya existe el ticket
+    - Si no existe: genera idVentaCab, asigna estatus NO_CONTABILIZADO
+    - Guarda cabecera con referencia al idPuntosCes
+
+  4f. Obtener impuestos del ticket
+    Tablas: TRX_DET + TRX_DET_IMPUESTO (Oracle BCT - LECTURA)
+    Metodo: TrxPointsRepository.findImpuestosByTicket(ticket)
+    - JOIN entre detalle de transaccion e impuestos por linea
+
+  4g. Guardar detalle de impuestos
+    Tabla: VentaDetImpuesto (SQL Server CES - ESCRITURA)
+    - Por cada linea de impuesto:
+      - Verifica si ya existe (ticket + numLinea)
+      - Cruza con TRX_POINTS_SKU para obtener puntos por SKU
+      - Calcula montoPuntos = puntos * factor (montoPuntos/puntos total)
+      - Guarda detalle
+
+PASO 5 - Marcar control como completado
+  Tabla: ControVentaCes (SQL Server CES - ESCRITURA)
+  - Actualiza estatus a CORRECTO con total de registros procesados
+
+
+== RESUMEN DE TABLAS ==
+
+ORACLE BCT (LECTURA):
+  - TRX_HDR              → Cabecera de transacciones (ticket, tienda, montos)
+  - TRX_DET              → Detalle de transacciones (SKU, descripcion)
+  - TRX_DET_IMPUESTO     → Impuestos por linea de detalle
+  - TRX_FRM_PAGO         → Formas de pago del ticket
+  - SW_CEM.TRX_POINTS    → Movimientos de puntos CES
+  - SW_CEM.TRX_POINTS_SKU → Distribucion de puntos por SKU
+  - SW_CEM.TRX_POINTS_EXT → Factor de conversion puntos-pesos
+
+SQL SERVER CES (ESCRITURA):
+  - AdminPuntosCes       → Registro de movimientos de puntos replicados
+  - VentaCab             → Cabecera de venta replicada
+  - VentaDetImpuesto     → Detalle de impuestos replicado
+  - ControVentaCes       → Control de procesamiento por fecha
+
+
+== CONEXIONES DE BD ACTIVAS ==
+
+BCT (Oracle):
+  Driver: oracle.jdbc.driver.OracleDriver
+  Credenciales: encriptadas en application.properties (jdbc.bct.*)
+  Test: f8cloud1129.falabella.cl:1541/arsmxts (usuario USW_BCT)
+
+CES (SQL Server):
+  Driver: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  Credenciales: encriptadas en application.properties (jdbc.ces.*)
+  Dev: 10.138.153.10 / SODIMAC_SAP_DEV
+  Prod: 10.138.150.124:5319 / SODIMAC_SAP_PROD

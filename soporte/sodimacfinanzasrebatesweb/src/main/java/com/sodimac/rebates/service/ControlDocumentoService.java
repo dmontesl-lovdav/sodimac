@@ -296,7 +296,7 @@ public class ControlDocumentoService implements IControlDocumentoService {
 				enviosAp.setEMPRESA(item.getEmpresa());
 				enviosAp.setFECHA_DOCUMENTO(new java.sql.Date(format.parse(item.getFechaDocumento()).getTime()));
 				enviosAp.setREFERENCIA_DOCUMENTO(item.getReferenciaDocumento());
-				enviosAp.setNUMERO_DOCUMENTO(item.getNumeroDocumento());
+				enviosAp.setNUMERO_DOCUMENTO(item.getNumeroDocumento().replaceAll("[\\r\\n]+", " ").trim());
 				enviosAp.setMONEDA(item.getMoneda());
 				enviosAp.setTIPO_CAMBIO(new BigDecimal(item.getTipoCambio()));
 				enviosAp.setDEBITO_CREDITO(item.getDebitoCredito());

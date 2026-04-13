@@ -1,0 +1,95 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="start" th:remove="tag">
+	<div class="card" id="inicio">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh"
+						class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+							<strong>Rebates</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							Bienvenido al portal de Rebates por favor elige una opción del menu.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!------------ Fragment Forbidden -------------->
+<div th:fragment="forbidden" th:remove="tag">
+	<div class="card" id="inicio">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh"
+						class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+							<strong>No autorizado</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							No cuenta con los permisos necesarios para ingresar a esa opción.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!------------ Fragment Not Found -------------->
+<div th:fragment="notFound" th:remove="tag">
+	<div class="card" id="inicio">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh"
+						class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+							<strong>No encontrado</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							El recurso al que intenta acceder no existe.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!------------ Fragment Internal Error -------------->
+<div th:fragment="internalError" th:remove="tag">
+	<div class="card" id="inicio">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh"
+						class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+							<strong>Ocurrio un error inesperado</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							Ocurrio un problema mientras se procesaba su solicitud: <span th:text="'Exception: ' + ${exception}">Exception</span>
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

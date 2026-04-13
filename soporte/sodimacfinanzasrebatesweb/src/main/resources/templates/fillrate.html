@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Home</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<header th:insert="fragments/header :: header-principal"> </header>
+
+	<!-- Start your project here-->
+
+	<section class="mt-5 animated fadeIn">
+		<form id="fillrates" th:action="@{/fillrate/consult}"
+			th:object="${periodo}" method="post" onsubmit="">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								<!-- Descripcion search -->
+								<div class="col-sm-12 col-md-2 col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="descripcion-periodo"
+											name="detallePeriodo" minlegth="2" maxlength="30"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="descripcion-periodo"><i
+											class="fa fa-search mr-2" style="opacity: .6;"
+											aria-hidden="true"></i>Descripción</label>
+									</div>
+								</div>
+								<!-- Tipo periodo search -->
+								<div class="col-lg-3 select-outline colis">
+									<select id="programaPago-idCatProgramaPago"
+										name="programaPago.idCatProgramaPago"
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar tipo de período</option>
+										<option value="">Cualquier período</option>
+										<option th:each="tipo: ${tiposPeriodo}"
+											th:value="${tipo.idCatProgramaPago}"
+											th:text="${tipo.idCatProgramaPago + ' - ' + tipo.programaPago}">
+										</option>
+									</select> <label>Tipo período</label>
+								</div>
+								<!-- Fecha inicio search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-from" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<!-- <input type="date" id="fechaIni" name="fechaIni" th:value="${fechaIni}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+										<input type="date" id="fechaIni" name="fechaIni"
+											th:value="${fechaIni}" class="form-control pickerDates"
+											autocomplete="off" style="color: rgb(73, 80, 87);" required>
+										<label for="fechaIni" class="active">Fecha inicio</label>
+									</div>
+								</div>
+								<!-- Fecha final search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-to" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<!-- <input type="date" id="fechaFin" name="fechaFin" th:value="${fechaFin}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+										<input type="date" id="fechaFin" name="fechaFin"
+											th:value="${fechaFin}" class="form-control pickerDates"
+											autocomplete="off" style="color: rgb(73, 80, 87);" required>
+										<label for="fechaFin" class="active">Fecha final</label>
+									</div>
+								</div>
+
+								<!-- <div class="col-sm-12 col-md-2 col-lg-1 colis"></div> -->
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<button th:href="@{/fillrate/consult}" id="btn-consultar"
+											type="submit"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar Período</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- ROW 2 -->
+						<div class="col-md-12">
+							<div class="form-row">
+
+								<div class="col-sm-12 col-md-2 col-lg-10 colis"></div>
+								<!-- Btn Agregar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="" sec:authorize="hasAuthority('EDIT_PERIODO')">
+										<a th:href="@{#}" id="btn-agregar" data-toggle="modal"
+										
+											data-target="#responsiveAddPeriodo" data-backdrop="static"
+											data-keyboard="false"
+											class="btn btn-default btn-sm btn-xs-block btn-sm-block waves-effect">Agregar Período</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!--Grid column-->
+						<div id="fragmentDiv" th:include="fragments/fillrate :: start"
+							class="col-md-12 py-3"></div>
+
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+	<div class="modal pullDown" id="responsiveAddPeriodo" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Agregar Período </strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddMateria" th:include="fragments/fillrate :: create">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal pullDown" id="responsiveEditPeriodoRebate"
+		tabindex="-1" role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Editar Periodo - Tipo
+							Rebate </strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div th:include="fragments/fillrate :: edit"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveEditPeriodo"
+		tabindex="-1" role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Editar Periodo</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div th:include="fragments/fillrate :: editFechas"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal"
+		class="page-footer font-small grey lighten-5 fixed-bottom"> </footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/dataTables.checkboxes.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+
+	<script>
+  	
+    $( document ).ready(function() {
+    
+    		// Clean notify message
+			toastr.clear();
+
+      		$('.mdb-select').materialSelect();
+      		$('.select-create').materialSelect();
+      		$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function () {
+      			$(this).closest('.select-outline').find('label').toggleClass('active');
+      			$(this).closest('.select-outline').find('.caret').toggleClass('active');
+      		});
+      		
+      		// Validate fields
+			$("#descripcion-periodo").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-z0-9Ññ ]/g, function(str) {
+					toastr.warning("Solo se permiten números y letras (0-9)(Aa-Zz, Ññ)");
+					return '';
+				}));
+			});
+			$("#create-descripcion").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-z0-9Ññ ]/g, function(str) {
+					toastr.warning("Solo se permiten números y letras (0-9)(Aa-Zz, Ññ)");
+					return '';
+				}));
+			});
+      		
+      		// Submit form consult
+      		$("form#fillrates").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormConsult();
+			});
+			
+			// Submit form create
+      		$("form#create-fillrate").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormCreate();
+			});
+			
+			// Cancel button
+			$( "#btn-resetPeriodo" ).on( "click", function() {
+			
+  				$("#create-descripcion").val("");
+  				$(".periodo-create").removeClass("active");
+  				$("#create-select-periodo").materialSelect('destroy');
+  				$("#create-select-periodo").val("").change();
+  				$("#create-select-periodo").materialSelect();
+  				$('#responsiveAddPeriodo').modal('toggle');
+			});
+			
+			// Cancel Relacion button
+			$( "#btn-resetRelacion" ).on( "click", function() {
+  				$('#responsiveEditPeriodoRebate').modal('toggle');
+			});
+			
+			$( "#btn-editRelPeriodoRebate" ).on( "click", function() {
+				ajaxSubmitFormEditRelacion();				
+			});
+			
+			// Cancel Relacion button
+			$( "#btn-resetEditFechas" ).on( "click", function() {
+  				$('#responsiveEditPeriodo').modal('toggle');
+			});
+			
+			$("#btn-editPeriodoFechas" ).on( "click", function() {
+				ajaxSubmitFormEditPeriodo();				
+			});
+
+     });
+     
+     
+     function ajaxSubmitFormConsult() {
+ 
+ 			var fInicio = new Date(Date.parse($("#fechaIni").val()));
+ 			var fFinal = new Date(Date.parse($("#fechaFin").val()));
+ 			
+ 			fInicio.setDate(fInicio.getDate());
+ 			fFinal.setDate(fFinal.getDate() + 1);
+ 			
+    		// construct consult object.
+			var objData = JSON.stringify({
+				detallePeriodo: $.trim($("#descripcion-periodo").val()),
+				programaPago: {
+					idCatProgramaPago : $("#programaPago-idCatProgramaPago").val()
+				},
+				fechaIni:  fInicio,
+				fechaFin: fFinal
+			});
+ 
+    		$("#btn-consultar").prop("disabled", true);
+    		
+			// const div: where information will be displayed.
+			const fragmentDiv = document.getElementById("fragmentDiv");
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../fillrate/consult",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+					$("#fragmentDiv").html(response);
+					$("#btn-consultar").prop("disabled", false);
+					
+					//config dataTable fillrate//
+        			$('#dtFillRate').DataTable({
+        			"lengthMenu": [ [5, 10, 20, 50, -1], [5, 10, 20, 50, "Todos"] ],
+          			"order": [4, "desc" ],
+          			"aaSorting": [],
+          			columnDefs: [{
+						orderable: false,
+						targets: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+					}],
+        			"searching": true,
+        			"paging": true,
+        			"pagingType": "simple_numbers",
+        			"pageLength": 5,
+        			"language": {
+          				"info":           "Mostrando _START_ de _END_ de un total de: _TOTAL_ registros",
+          				"lengthMenu":     "Mostrando _MENU_ registros",
+          				"loadingRecords": "Cargando...",
+          				"processing":     "Procesando...",
+          				"emptyTable":     "Sin registros en la tabla",
+          				"infoEmpty":      "Mostrando 0 de 0 de un total: 0 registros",
+          				"infoFiltered":   "(filtrado de _MAX_ entradas totales)",
+          				"search":         "Buscar:",
+          				"zeroRecords":    "Sin registros encontrados",
+            			"paginate": {
+              				"first":      "Primero",
+              				"last":       "Último",
+              				"previous": "Anterior",
+              				"next": "Siguiente",
+           		 			}
+          				}
+        			});
+        			$('.dataTables_length').addClass('bs-select');
+        			
+				},
+				error : function(e) {
+				
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-consultar").prop("disabled", true);
+				}
+			});
+ 
+		}
+		
+		function ajaxSubmitFormCreate() {
+ 
+ 			var fInicio = new Date(Date.parse($("#create-fechaIni").val()));
+ 			var fFinal = new Date(Date.parse($("#create-fechaFin").val()));
+ 			
+ 			fInicio.setDate(fInicio.getDate() + 1);
+ 			fFinal.setDate(fFinal.getDate() + 1);
+ 			
+    		// construct create object.
+			var objData = JSON.stringify({
+				detallePeriodo: $.trim($("#create-descripcion").val()),
+				programaPago: {
+					idCatProgramaPago : $("#create-select-periodo").val()
+				},
+				fechaIni:  fInicio,
+				fechaFin: fFinal
+			});
+ 
+    		$("#btn-createPeriodo").prop("disabled", true);
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../fillrate/create",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+				
+					var titulo = response.title;
+    				var message = response.message;
+    				var tipo = response.typeMessage;
+				
+					if(!response.code){
+						
+    					if(tipo == 2){
+    		
+    						toastr.warning(message, titulo);
+    			
+    					}else if(tipo == 3){
+    			
+    						toastr.error(message, titulo);
+    					}
+						
+						$("#btn-createPeriodo").prop("disabled", false);
+						
+						return false;
+					}
+					
+					$("#create-descripcion").val("");
+  					$(".periodo-create").removeClass("active");
+  					$("#create-select-periodo").materialSelect('destroy');
+  					$("#create-select-periodo").val("").change();
+  					$("#create-select-periodo").materialSelect();
+  					$('#responsiveAddPeriodo').modal('toggle');
+					
+					if(tipo == 1){
+    		
+    					toastr.success(message, titulo);
+    			
+    				}else if(tipo == 4){
+    			
+    					toastr.info(message, titulo);
+    				}
+				
+					$("#btn-createPeriodo").prop("disabled", false);
+					
+					ajaxSubmitFormConsult();
+					
+					// return false;
+        			
+				},
+				error : function(e) {
+				
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-createPeriodo").prop("disabled", false);
+				}
+			});
+ 
+			}
+			
+			function confirm_process(id, estatus, estatusDestino){
+
+			const swalSodimac = Swal.mixin({
+  			customClass: {
+    				confirmButton: 'btn btn-sodimac',
+    				cancelButton: 'btn btn-sodimac-red',
+    				html: true
+  				},
+  				buttonsStyling: false
+			})
+			
+			var _title = "";
+			var _text = "";
+			
+			if(estatusDestino == 0){
+				
+				_title = "¿Desea solicitar el reproceso de cálculo de rebate?";
+				_text = "El rebate " + id + " quedará con estado pendiente de calcular";
+				
+			} else if(estatusDestino == 1){
+			
+				_title = "¿Desea solicitar el cálculo de rebate?";
+				_text = "El rebate " + id + " comenzará a calcularse";
+				
+			}else if(estatusDestino == 4){
+			
+				_title = "¿Desea solicitar contabilización del rebate?";
+				_text = "El rebate " + id + " será enviado a solicitud";
+				
+			} else if(estatusDestino == 5){
+			
+				_title = "¿Desea solicitar autorización de contabilización?";
+				_text = "El rebate " + id + " será enviado a autorizar";
+				
+			}  else if(estatusDestino == 6){
+			
+				_title = "¿Desea mandar a contabilizar?";
+				_text = "El rebate " + id + " será enviado a contabilizar";
+				
+			} else{
+			
+				_title = "¿Desea iniciar el proceso de cálculo ó contabilidad?";
+				_text = "El rebate " + id + " comenzará el proceso";
+			}
+			
+
+			swalSodimac.fire({
+  				title: _title,
+  				text: _text,
+  				icon: 'question',
+  				showCancelButton: true,
+  				confirmButtonText: '¡procesar!',
+  				cancelButtonText: '¡cancelar!',
+  				allowOutsideClick: false,
+  				reverseButtons: false
+			}).then((result) => {
+  			if (result.isConfirmed) {
+
+    			// ajax request.
+				$.ajax({
+					type: "GET",
+					contentType: "application/json",
+					url: "../fillrate/process/" + id + "/" + estatusDestino,
+					timeout: 30000,
+					beforeSend: function() {
+        				swal.fire({
+            				html: '<h5>Cargando...</h5>',
+            				showConfirmButton: false,
+            				allowOutsideClick: false,
+            				didOpen: () => {
+    							Swal.showLoading()
+                			},
+        				});
+    				},
+					success: function(response) {
+					
+						var titulo = response.title;
+    					var message = response.message;
+    					var tipo = response.typeMessage;
+    					var strTipo = "";
+    					
+    					if(tipo == 1){
+    					
+    						strTipo = 'success';
+    					}else if(tipo == 2){
+    					
+    						strTipo = 'warning';
+    					}else if(tipo == 3){
+    						
+    						strTipo = 'error';
+    					}
+					
+						if(!response.code){
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						html: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						return false;
+    					});
+    					
+    					}
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						html: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						ajaxSubmitFormConsult();
+    					});
+    					 			
+					},
+					error : function(e) {
+				
+						console.log("ERROR: ", e);
+						// toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+						swalSodimac.fire(
+      						'Error de conexión',
+      						'No se pudo conectar con el servicio',
+      						'error'
+      					);
+						
+					}
+				});
+    			
+  			}
+  			
+		  });
+		}
+		
+		function confirm_reprocesado(id){
+
+			const swalSodimac = Swal.mixin({
+  			customClass: {
+    				confirmButton: 'btn btn-sodimac',
+    				cancelButton: 'btn btn-sodimac-red'
+  				},
+  				buttonsStyling: false
+			})
+
+			swalSodimac.fire({
+  			title: '¿Desea volver a calcular el rebate?',
+  			text: "El periodo quedará disponible para volver a calcular",
+  			icon: 'question',
+  			showCancelButton: true,
+  			confirmButtonText: '¡SI!',
+  			cancelButtonText: '¡NO!',
+  			allowOutsideClick: false,
+  			reverseButtons: false
+			}).then((result) => {
+  			if (result.isConfirmed) {
+    			
+    			// ajax request.
+				$.ajax({
+					type: "GET",
+					contentType: "application/json",
+					url: "../fillrate/reprocesado/" + id,
+					timeout: 30000,
+					beforeSend: function() {
+        				swal.fire({
+            				html: '<h5>Cargando...</h5>',
+            				showConfirmButton: false,
+            				allowOutsideClick: false,
+            				didOpen: () => {
+    							Swal.showLoading()
+                			},
+        				});
+    				},
+					success: function(response) {
+					
+						var titulo = response.title;
+    					var message = response.message;
+    					var tipo = response.typeMessage;
+    					var strTipo = "";
+    					
+    					if(tipo == 1){
+    					
+    						strTipo = 'success';
+    					}else if(tipo == 2){
+    					
+    						strTipo = 'warning';
+    					}else if(tipo == 3){
+    						
+    						strTipo = 'error';
+    					}
+					
+						if(!response.code){
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						return false;
+    					});
+    					
+    					}
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						ajaxSubmitFormConsult();
+    					});
+    					 			
+					},
+					error : function(e) {
+				
+						console.log("ERROR: ", e);
+						// toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+						swalSodimac.fire(
+      						'Error de conexión',
+      						'No se pudo conectar con el servicio',
+      						'error'
+      					);
+						
+					}
+				});
+    			
+  			}
+  			
+		  });
+		}
+		
+		function confirm_delete(id){
+
+			const swalSodimac = Swal.mixin({
+  			customClass: {
+    				confirmButton: 'btn btn-sodimac',
+    				cancelButton: 'btn btn-sodimac-red'
+  				},
+  				buttonsStyling: false
+			})
+
+			swalSodimac.fire({
+  			title: '¿Está seguro de eliminar el registro?',
+  			text: "Está acción no podrá revertirse",
+  			icon: 'warning',
+  			showCancelButton: true,
+  			confirmButtonText: '¡eliminar!',
+  			cancelButtonText: '¡cancelar!',
+  			allowOutsideClick: false,
+  			reverseButtons: false
+			}).then((result) => {
+  			if (result.isConfirmed) {
+    			
+    			// ajax request.
+				$.ajax({
+					type: "GET",
+					contentType: "application/json",
+					url: "../fillrate/delete/" + id,
+					timeout: 30000,
+					beforeSend: function() {
+        				swal.fire({
+            				html: '<h5>Cargando...</h5>',
+            				showConfirmButton: false,
+            				allowOutsideClick: false,
+            				didOpen: () => {
+    							Swal.showLoading()
+                			},
+        				});
+    				},
+					success: function(response) {
+					
+						var titulo = response.title;
+    					var message = response.message;
+    					var tipo = response.typeMessage;
+    					var strTipo = "";
+    					
+    					if(tipo == 1){
+    					
+    						strTipo = 'success';
+    					}else if(tipo == 2){
+    					
+    						strTipo = 'warning';
+    					}else if(tipo == 3){
+    						
+    						strTipo = 'error';
+    					}
+					
+						if(!response.code){
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						return false;
+    					});
+    					
+    					}
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						ajaxSubmitFormConsult();
+    					});
+    					 			
+					},
+					error : function(e) {
+				
+						console.log("ERROR: ", e);
+						// toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+						swalSodimac.fire(
+      						'Error de conexión',
+      						'No se pudo conectar con el servicio',
+      						'error'
+      					);
+						
+					}
+				});
+    			
+  			}
+  			
+		  });
+		}
+		
+		function editRebates(listRelacion, idPeriodo, descPeriodo, fechaIni, fechaFin, estatus) {
+			$('#hidden-edit-idPeriodo').val(idPeriodo);
+			$('#edit-idPeriodo').val(idPeriodo);
+			$('#edit-descPeriodo').val(descPeriodo);
+			$('#edit-fechaIni').val(fechaIni.substr(0, fechaIni.indexOf(" ")));
+			$('#edit-fechaFin').val(fechaFin.substr(0, fechaFin.indexOf(" ")));
+			$('#responsiveEditPeriodoRebate').modal('toggle');
+			$('#edit-fillrate .label-gcis').addClass('active');
+			$('tr').remove('.to-remove');
+			
+			addColumnsCheck(listRelacion);
+			
+			if(estatus != 0) {
+				$('#div-modificar-true').hide();
+				$('#div-modificar-false').show();
+				$('table#dtRelPeriodoRebate input[type=checkbox]').attr('disabled','true');
+			} else {
+				$('#div-modificar-true').show();
+				$('#div-modificar-false').hide();
+			}
+			
+		}
+		
+		function editPeriodo(idPeriodo, descPeriodo, fechaIni, fechaFin, estatus) {
+			$('#edit-fecha-idPeriodo').val(idPeriodo);
+			$('#edit-fecha-descPeriodo').val(descPeriodo);
+			$('#edit-fecha-fechaIni').val(fechaIni.substr(0, fechaIni.indexOf(" ")));
+			$('#edit-fecha-fechaFin').val(fechaFin.substr(0, fechaFin.indexOf(" ")));
+			$('#responsiveEditPeriodo').modal('toggle');
+			$('#edit-fillrate .label-gcis').addClass('active');
+			$('tr').remove('.to-remove');
+		}
+		
+		function check_togle(source) {
+
+			checkboxes = document.getElementsByName('checkbox-select');
+
+			for (var i = 0, n = checkboxes.length; i < n; i++) {
+
+				checkboxes[i].checked = source.checked;
+			}
+		}
+		
+		function addColumnsCheck(listRelacion) {
+			var content = "";
+			var object = JSON.parse(listRelacion);
+			var activos = [];
+			for (var rel of object) {
+				content += "<tr class='to-remove'>" + addCheckbox(rel, object.length);
+				content += addInfoColumns(rel) + "</tr>";
+				if(rel.activo) activos.push(rel);
+			}
+			console.log(content);
+			printTable(content, (object.length === activos.length));
+			
+		}
+		
+		function addCheckbox(rel, length) {
+			var tdCheck = "<td class='text-center dt-checkboxes-cell'>"
+			tdCheck += "<input type='checkbox' id='checkbox-"+ rel.catTipoRebate.idCatTipoRebate + "' value=" + rel.catTipoRebate.idCatTipoRebate + " class='checkbox-control' " + (rel.activo ? "checked " : " ") + "name='checkbox-select' autocomplete='off' style='position: relative' onchange='changeCheckAll(this, " + length + ");'>";
+			tdCheck += "</td>"
+			return tdCheck;
+		}
+		
+		function addInfoColumns(rel) {
+			var tdsInfo = "<td class='text-center'><span>" + rel.catTipoRebate.idCatTipoRebate + "</span></td>";
+			tdsInfo += "<td class='text-center'><span> " + rel.catTipoRebate.tipoRebate + " </span></td>";
+			return tdsInfo;
+		}
+		
+		function printTable(content, allActive) {
+			var table = "<div class='card h-100' id='listRelPeriodoRebate'><div class='view overlay'><div class='table-responsive table-responsive-1 table-bordered'>" + 
+				"<table id='dtRelPeriodoRebate' class='table table-striped table-hover table-sm' style='margin-bottom: 0 !important;'><thead><tr>" +
+				"<th style='width: 10%' class='text-center dt-checkboxes-cell dt-checkboxes-select-all sorting_disabled' rowspan='1' colspan='1' data-col='0' aria-label=''>" +
+				"<input id='check-all' type='checkbox' onclick='check_togle(this)' autocomplete='off' style='position: relative' " + (allActive ? "checked " : " ") +"></th>" +
+				"<th style='width: 30%'>Id Tipo Rebate</th><th style='width: 60%'>Nombre Rebate</th></tr></thead>" +
+				"<tbody>" + content +
+				"</tbody></table></div></div></div>";
+				
+			$('#container-table').html(table);
+		}
+		
+		function changeCheckAll(event, length) {
+			var activos = [];
+			checkboxes = document.getElementsByName('checkbox-select');
+			for (var i = 0, n = checkboxes.length; i < n; i++) {
+				if(checkboxes[i].checked) activos.push(checkboxes[i]);
+			}
+			
+			if (activos.length === length) {
+				$("#check-all").prop('checked', true);
+			} else {
+				$("#check-all").prop('checked', false);
+			}
+		}
+		
+		function ajaxSubmitFormEditRelacion() {
+ 			
+			var listRelacion = [];	
+			
+			$('#dtRelPeriodoRebate input.checkbox-control:checkbox').each(function() {
+				console.log(this);
+				console.log(this.value);
+				listRelacion.push( { "idRebate": this.value, "activo": this.checked });
+			});
+			
+    		// construct create object.
+			var objData = JSON.stringify({
+				idCatPeriodo: $("#hidden-edit-idPeriodo").val(),
+				tiposRebateRelacion: listRelacion
+			});
+ 
+    		$("#btn-editRelPeriodoRebate").prop("disabled", true);
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../fillrate/editRelacion",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+				
+					var titulo = response.title;
+    				var message = response.message;
+    				var tipo = response.typeMessage;
+				
+					if(!response.code){
+						
+    					if(tipo == 2){
+    		
+    						toastr.warning(message, titulo);
+    			
+    					}else if(tipo == 3){
+    			
+    						toastr.error(message, titulo);
+    					}
+						
+						$("#btn-editRelPeriodoRebate").prop("disabled", false);
+						
+						return false;
+					}
+					
+					$('#responsiveEditPeriodoRebate').modal('toggle');
+					
+					if(tipo == 1){
+    		
+    					toastr.success(message, titulo);
+    			
+    				}else if(tipo == 4){
+    			
+    					toastr.info(message, titulo);
+    				}
+				
+					$("#btn-editRelPeriodoRebate").prop("disabled", false);
+					
+					ajaxSubmitFormConsult();
+        			
+				},
+				error : function(e) {
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-createPeriodo").prop("disabled", false);
+				}
+			});
+		}
+		
+		function ajaxSubmitFormEditPeriodo() {
+			
+			var fInicio = getDate( $("#edit-fecha-fechaIni").val() );
+ 			var fFinal = getDate( $("#edit-fecha-fechaFin").val() );
+ 			
+ 			var objData = JSON.stringify({
+				idCatPeriodo: $("#edit-fecha-idPeriodo").val(),
+				fechaIni: fInicio,
+				fechaFin: fFinal
+			});
+ 
+    		$("#btn-editPeriodoFechas").prop("disabled", true);
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../fillrate/editPeriodo",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+				
+					var titulo = response.title;
+    				var message = response.message;
+    				var tipo = response.typeMessage;
+				
+					if(!response.code){
+						
+    					if(tipo == 2){
+    		
+    						toastr.warning(message, titulo);
+    			
+    					}else if(tipo == 3){
+    			
+    						toastr.error(message, titulo);
+    					}
+						
+						$("#btn-editPeriodoFechas").prop("disabled", false);
+						
+						return false;
+					}
+					
+					$('#responsiveEditPeriodo').modal('toggle');
+					
+					if(tipo == 1){
+    		
+    					toastr.success(message, titulo);
+    			
+    				}else if(tipo == 4){
+    			
+    					toastr.info(message, titulo);
+    				}
+				
+					$("#btn-editPeriodoFechas").prop("disabled", false);
+					
+					ajaxSubmitFormConsult();
+        			
+				},
+				error : function(e) {
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-createPeriodo").prop("disabled", false);
+				}
+			});
+ 
+		}
+		
+		function getDate(component) {
+			if (component != null && component.length > 0) {
+				var objFecha = new Date(Number(component.substring(0, 4))
+									  , Number(component.substring(5, 7))-1
+									  , Number(component.substring(8, 10))
+									  , 0, 0, 0, 0);
+				return objFecha;
+			}
+			return null;
+		}
+
+  </script>
+
+</body>
+</html>

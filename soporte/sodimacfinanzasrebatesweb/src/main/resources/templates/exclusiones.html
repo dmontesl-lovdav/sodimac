@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Exclusiones</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.css}" rel="stylesheet"> <!--DML Este css genera error con checkbox -->
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/dataTables.checkboxes.css}" type="text/css" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<header th:insert="fragments/header :: header-principal"> </header>
+
+	<!-- Start your project here-->
+
+	<section class="mt-5 animated fadeIn">
+		<form id="exclusiones" th:action="@{/exclusiones/consult}" th:object="${periodo}" method="post" onsubmit="">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5" style="max-width: 1540px">
+					
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+					
+					<div class="form-row">Exclusiones OC</div>
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								
+								<!-- Folio -->
+								<div class="col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-folio"
+											name="folio" 
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="txt-folio">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Folio
+										</label>
+									</div>
+								</div>
+								
+								<!-- Periodo -->
+								<div class="col-lg-3 select-outline colis">
+								
+									<select id="periodo-idCatPeriodo" name="periodo.idCatPeriodo" required
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value=0>Cualquier período</option>
+										<option th:each="periodoC: ${listPeriodos}"
+											th:value="${periodoC.idCatPeriodo}" th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+										</option>
+									</select> <label>Id período</label>
+								</div>
+								
+								<!-- Num Proveedor -->
+								<div class="col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-proveedor"
+											name="folio" 
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="txt-proveedor">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Número Proveedor
+										</label>
+									</div>
+								</div>
+								
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-3 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<button th:href="@{/exclusiones/consult}" id="btn-consultar"
+											type="submit"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar</button>
+										<a class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect" title="Limpiar filtros seleccionados" onclick="btnLimpiar()" >Limpiar</a>
+									</div>
+								</div>															
+								
+								
+								<!-- Excepcion -->
+								<div class="col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-exclusion"
+											name="txt-exclusion" 
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="txt-exclusion">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Comentario Exclusi&oacute;n
+										</label>
+									</div>
+								</div>
+								
+								<!-- Tipo Excepcion -->
+								<div class="col-lg-3 select-outline colis">
+								
+									<select id="exclusion-idTipoExclusion" name="tipoExclusion.idTipoExclusion" required
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value=0>Cualquier exclusi&oacute;n</option>
+										<option th:each="exclusionC: ${listTipoExclusiones}"
+											th:value="${exclusionC.idCatTipoExclusion}" th:text="${exclusionC.idCatTipoExclusion + ' - ' + exclusionC.descripcion}">
+										</option>
+									</select>
+									<label>exclusi&oacute;n</label>
+								</div>
+								
+								<!-- Num Proveedor -->
+								<div class="col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-ordenCompra"
+											name="folio" 
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="txt-ordenCompra">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Orden Compra
+										</label>
+									</div>
+								</div>
+								
+								<!-- Btn Agregar -->
+								<div class="col-sm-12 col-md-6 col-lg-3 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<a th:href="@{#}" id="btn-agregar" data-toggle="modal"
+											data-target="#responsiveAddExclusion" data-backdrop="static"
+											data-keyboard="false"
+											class="btn btn-default btn-sm btn-xs-block btn-sm-block waves-effect">Agregar Exclusi&oacute;n</a>
+									</div>
+								</div>
+								
+								<div class="col-sm-12 col-md-2 col-lg-9 colis"></div>
+								
+								<div class="col-lg-3 select-outline colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+										<div id="divVisible" class="">
+										<a th:href="@{/exclusiones/report}" id="btn-download"
+											type="button"
+											class="btn btn-sodimac btn-sm btn-xs-block btn-sm-block waves-effect">Reporte</a>
+									</div>
+								</div>
+								
+							</div>
+						</div>
+						
+						<!--Grid column-->
+						<div id="fragmentDiv" th:include="fragments/listExclusiones :: start" class="col-md-12 py-3"></div>
+						
+						<input type="hidden" id="hdIdCatTipoExclusionParent" />
+						<input type="hidden" id="hdIdExclusionParent" />
+						<input type="hidden" id="hdIdUserParent" th:value="${idUser}" />
+						
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+	<div class="modal pullDown" id="responsiveAddExclusion" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Agregar Exclusi&oacute;n</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusion" th:include="fragments/editExclusion :: create">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveEditExclusion" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Editar Exclusi&oacute;n</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divEditExclusion" th:include="fragments/editExclusion :: edit">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveSku" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Consulta SKU</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divEditSku" th:include="fragments/editExclusion :: sku" />
+							<div id="divEditSkuFamilia" th:include="fragments/editExclusion :: sku-familia" />
+							<div id="divEditSkuProveedor" th:include="fragments/editExclusion :: sku-proveedor" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	
+	
+	<div class="modal pullDown" id="responsiveAddSKU" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Agregar SKU</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusionSKU" th:include="fragments/editExclusion :: sku"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveOC" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Agregar Orden Compra</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusionOC" th:include="fragments/editExclusion :: oc"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveOcConsulta" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Consulta Orden Compra</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusionOC" th:include="fragments/editExclusion :: oc-consulta"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveFamilia" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Agregar Familia</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusionFamilia" th:include="fragments/editExclusion :: familia"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveProveedor" tabindex="-1" 
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Agregar Proveedor</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddExclusionProveedor" th:include="fragments/editExclusion :: proveedor"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveSkuDet" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i>Consulta SKU</strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divConsultaSkuFamilia" th:include="fragments/editExclusion :: sku-consulta-familia" />
+							<div id="divConsultaSkuArbol" th:include="fragments/editExclusion :: sku-consulta-arbol" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal"
+		class="page-footer font-small grey lighten-5 fixed-bottom"> </footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/exclusiones.js}"></script>
+	<script type="text/javascript" th:src="@{/js/exclusiones-oc.js}"></script>
+	<script type="text/javascript" th:src="@{/js/exclusiones-familia.js}"></script>
+	<script type="text/javascript" th:src="@{/js/exclusiones-sku.js}"></script>
+	<script type="text/javascript" th:src="@{/js/exclusiones-proveedor.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/dataTables.checkboxes.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+
+	<script>
+  	
+    $( document ).ready(function() {
+    
+		// Clean notify message
+		toastr.clear();
+    	
+    	var message = "[[${message}]]";
+		if(message) {
+			toastr.warning(message,"Advertencia");
+		}
+    	
+  		$('.mdb-select').materialSelect();
+  		$('.select-create').materialSelect();
+  		$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function () {
+  			$(this).closest('.select-outline').find('label').toggleClass('active');
+  			$(this).closest('.select-outline').find('.caret').toggleClass('active');
+  		});
+  		
+  		
+  		var idCatTipoExclusionParent = $("#hdIdCatTipoExclusionParent").val();
+  		var idExclusionParent = $("#hdIdExclusionParent").val();
+  		
+  		// Submit form consult
+  		$("form#exclusiones").submit(function(e) {
+			// Stop default form Submit.
+			e.preventDefault();
+				
+			// Call Ajax Submit.
+			ajaxSubmitFormConsult();
+		});
+		
+		// Submit form create
+		$("form#create-exclusion").submit(function(e) {
+    		// Stop default form Submit.
+    		e.preventDefault();
+ 
+        	// Call Ajax Submit.
+	      	ajaxSubmitForm();
+		});
+		
+		// Submit form create
+		$("form#form-create-exclusion-oc").submit(function(e) {
+    		// Stop default form Submit.
+    		e.preventDefault();
+ 
+ 			var form = this;
+    		var table = $('#exclusion-oc-table').DataTable();
+			var rows_selected = table.column(0).checkboxes.selected();
+
+			// Iterate over all selected checkboxes
+			$.each(rows_selected, function(index, rowId){
+				// Create a hidden element
+				$(form).append(
+				$('<input>')
+					.attr('type', 'hidden')
+					.attr('name', 'id[]')
+					.val(rowId)
+				);
+			});
+			
+			console.log(rows_selected.join(","));
+			var jsonId = rows_selected.join(",");
+ 			
+        	// Call Ajax Submit.
+	      	ajaxSubmitOCDetForm(jsonId);
+		});
+		
+		// Submit form create
+		$("form#form-create-exclusion-familia").submit(function(e) {
+    		// Stop default form Submit.
+    		e.preventDefault();
+ 
+ 			var form = this;
+    		var table = $('#exclusion-familia-table').DataTable();
+			var rows_selected = table.column(0).checkboxes.selected();
+
+			// Iterate over all selected checkboxes
+			$.each(rows_selected, function(index, rowId){
+				// Create a hidden element
+				$(form).append(
+				$('<input>')
+					.attr('type', 'hidden')
+					.attr('name', 'id[]')
+					.val(rowId)
+				);
+			});
+			
+			console.log(rows_selected.join(","));
+			var jsonId = rows_selected.join(",");
+ 			
+        	// Call Ajax Submit.
+	      	ajaxSubmitFamiliaDetForm(jsonId);
+		});
+		
+		
+		// Submit form create
+		$("form#form-create-exclusion-sku").submit(function(e) {
+    		// Stop default form Submit.
+    		e.preventDefault();
+    		
+			var form = this;
+    		var table = $('#exclusion-sku-table').DataTable();
+			var rows_selected = table.column(0).checkboxes.selected();
+
+			// Iterate over all selected checkboxes
+			$.each(rows_selected, function(index, rowId){
+				// Create a hidden element
+				$(form).append(
+				$('<input>')
+					.attr('type', 'hidden')
+					.attr('name', 'id[]')
+					.val(rowId)
+				);
+			});
+			
+			console.log(rows_selected.join(","));
+			var jsonId = rows_selected.join(",");
+ 
+        	// Call Ajax Submit.
+	      	ajaxSubmitSkuDetForm(jsonId);
+		});
+		
+		$("form#form-create-exclusion-proveedor").submit(function(e) {
+    		// Stop default form Submit.
+    		e.preventDefault();
+    		
+    		var form = this;
+    		var table = $('#exclusion-proveedor-table').DataTable();
+			var rows_selected = table.column(0).checkboxes.selected();
+
+			// Iterate over all selected checkboxes
+			$.each(rows_selected, function(index, rowId){
+				// Create a hidden element
+				$(form).append(
+				$('<input>')
+					.attr('type', 'hidden')
+					.attr('name', 'id[]')
+					.val(rowId)
+				);
+			});
+			
+			console.log(rows_selected.join(","));
+			var jsonId = rows_selected.join(",");
+ 
+        	// Call Ajax Submit.
+	      	ajaxSubmitProveedorDetForm(jsonId);
+		});
+		
+		// Cancel button
+		$( "#btn-resetExclusion" ).on( "click", function() {
+		
+			$("#txt-edit-exclusion").val("");
+			$("#txt-edit-numProveedor").val("");
+			$("#txt-comentario").val("");
+			$("#archivo").val("");
+			$("#layout").val("");
+			$("#create-select-periodo").materialSelect('destroy');
+			$("#create-select-periodo").val("").change();
+			$("#create-select-periodo").materialSelect();
+			$("#create-select-tipo-rebate").materialSelect('destroy');
+			$("#create-select-tipo-rebate").val("").change();
+			$("#create-select-tipo-rebate").materialSelect();
+			$("#create-select-tipo-exclusion").materialSelect('destroy');
+			$("#create-select-tipo-exclusion").val("").change();
+			$("#create-select-tipo-exclusion").materialSelect();
+			$('#responsiveAddExclusion').modal('hide');
+		});
+		
+		// Modificar comentario 
+		$( "#btn-comentario-exclusion" ).on( "click", function() {
+		
+			modificarComentarioExclusion ();			
+		});
+
+		// Cancel edit button
+		$( "#btn-cancel-exclusion" ).on( "click", function() {
+		
+			$("#edit-txt-comentario").val("");
+			
+			$("#edit-select-periodo").materialSelect();
+			$("#edit-select-periodo").materialSelect('destroy');
+			$("#edit-select-periodo").val("").change();
+			
+			$("#edit-select-tipo-rebate").materialSelect();
+			$("#edit-select-tipo-rebate").materialSelect('destroy');
+			$("#create-select-tipo-rebate").val("").change();
+			
+			$("#edit-select-tipo-exclusion").materialSelect();
+			$("#edit-select-tipo-exclusion").materialSelect('destroy');
+			$("#edit-select-tipo-exclusion").val("").change();
+			
+			$('#responsiveEditExclusion').modal('hide');
+		});
+		
+		// Agregar edit exclusion button
+		$("#btn-create-exclusion").on( "click", function() {
+			var idExclusion = $("#hdIdExclusion").val();
+			var idTipoExclusion = $("#hdIdCatTipoExclusion").val();
+			
+			if (idTipoExclusion == ID_ORDEN_COMPRA) {
+				lf_listarOrdenCompraDisponible(idExclusion);
+			} 
+			else if (idTipoExclusion == ID_SKU) {
+				lf_listarSkuDisponible(idExclusion);
+			}
+			else if (idTipoExclusion == ID_FAMILIA) {
+				lf_listarFamiliaDisponible(idExclusion);
+			}
+			else if (idTipoExclusion == ID_PROVEEDORES) {
+				lf_listarProveedorDisponible(idExclusion);
+			}
+		});
+		
+		// Agregar edit exclusion button
+		$("#btn-cancel-exclusion-oc").on( "click", function() {
+			$("#txt-oc-motivo").val("");
+			$('#responsiveOC').modal('hide');
+		});
+		
+		// Agregar edit exclusion button
+		$("#btn-cancel-exclusion-oc-consulta").on( "click", function() {
+			$('#responsiveOcConsulta').modal('hide');
+		});
+		
+		$("#btn-cancel-exclusion-familia").on( "click", function() {
+			$('#responsiveFamilia').modal('hide');
+		});
+		
+		// Cancel button sku
+		$("#btn-sku-cancel").on( "click", function() {
+		
+			$("#txt-sku-oc").val("");
+			$("#txt-sku-motivo").val("");
+			$('#responsiveSku').modal('hide');
+		});
+		
+		$("#btn-sku-aceptar").on( "click", function() {
+			$("#txt-sku-oc").val("");
+			$("#txt-sku-motivo").val("");
+			$('#responsiveSku').modal('hide');
+		});
+		
+		$("#btn-sku-familia-aceptar").on( "click", function() {
+			$("#txt-sku-familia-familia").val("");
+			$("#txt-sku-familia-motivo").val("");
+			$('#responsiveSku').modal('hide');
+		});
+		
+		$("#btn-sku-proveedor-aceptar").on( "click", function() {
+			$('#responsiveSku').modal('hide');
+		});
+		
+		$("#btn-sku-consulta-familia-aceptar").on( "click", function() {
+			$('#responsiveSkuDet').modal('hide');
+		});
+		
+		$("#btn-sku-consulta-arbol-aceptar").on( "click", function() {
+			$('#responsiveSkuDet').modal('hide');
+		});
+		
+		$( "#btn-sku-cancel" ).on( "click", function() {
+		
+			$("#txt-sku-oc").val("");
+			$("#txt-sku-motivo").val("");
+			$('#responsiveSku').modal('hide');
+		});
+		
+		$("#btn-proveedor-cancel").on( "click", function() {
+			$("#txt-proveedor-motivo").val("");
+			$('#responsiveProveedor').modal('hide');
+		});
+		
+		// SKU 
+		// Cancel button sku
+		$( "#btn-sku-det-cancel" ).on( "click", function() {
+			$("#txt-sku-det-motivo").val("");
+			$('#responsiveSkuDet').modal('hide');
+		});
+		
+		$('#divVisible').hide();
+      		
+     });
+  </script>
+
+</body>
+</html>

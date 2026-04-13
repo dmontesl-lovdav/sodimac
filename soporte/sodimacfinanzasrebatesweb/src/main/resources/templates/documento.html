@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Home</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.min.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<form id="documento" th:action="@{/documents/consult}" th:object="${controlDocumento}" method="post" onsubmit="">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5 mb-5">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								<!-- Nombre archivo search -->
+								<div class="col-sm-12 col-md-2 col-lg-6 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="nombre-archivo" name="nombreArchivo"
+											minlegth="2" maxlength="80"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="nombre-archivo"><i class="fa fa-search mr-2"
+											style="opacity: .6;" aria-hidden="true"></i>Nombre reporte</label>
+									</div>
+								</div>
+								<!-- Fecha inicio search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-from" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<!-- <input type="date" id="fechaIni" name="fechaIni" th:value="${fechaIni}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+										<input type="date" id="fechaIni" name="fechaCargaIni"
+											class="form-control pickerDates" autocomplete="off"
+											style="color: rgb(73, 80, 87);"> 
+										<label for="fechaIni" class="active">Fecha inicio</label>
+									</div>
+								</div>
+								<!-- Fecha final search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-to" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<!-- <input type="date" id="fechaFin" name="fechaFin" th:value="${fechaFin}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+										<input type="date" id="fechaFin" name="fechaCargaFin"
+											class="form-control pickerDates" autocomplete="off"
+											style="color: rgb(73, 80, 87);"> 
+										<label for="fechaFin" class="active">Fecha final</label>
+									</div>
+								</div>
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div>
+										<button th:href="@{/}" id="btn-consultar" type="submit"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar Documento</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- ROW 2 -->
+						<div class="col-md-12">
+							<div class="form-row">
+								<!-- List Periodo search -->
+								<div class="col-lg-3 select-outline colis position-relative">
+									<select id="periodo-idCatPeriodo" name="periodo.idCatPeriodo"
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar período</option>
+										<option value=null>Cualquier período</option>
+										<option th:each="periodoC: ${periodosConsult}"
+											th:value="${periodoC.idCatPeriodo}" th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+										</option>
+									</select> <label>Id período</label>
+								</div>
+								<!-- List Documento -->
+								<div class="col-lg-3 select-outline colis position-relative">
+									<select id="documento-idDocumento" name="documento.idDocumento"
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar tipo de documento</option>
+										<option value=null>Cualquier tipo</option>
+										<option th:each="documento: ${documentos}"
+											th:value="${documento.idDocumento}"
+											th:text="${documento.nombreDocumento}"></option>
+									</select> <label>Tipo documento</label>
+								</div>
+
+								<div class="col-sm-12 col-md-2 col-lg-4 colis"></div>
+
+								<!-- Btn Agregar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<a th:href="@{#}" id="btn-agregar" data-toggle="modal"
+											data-target="#responsiveAddDocumento" data-backdrop="static"
+											data-keyboard="false"
+											class="btn btn-default btn-sm btn-xs-block btn-sm-block waves-effect">Agregar Documento</a>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!--Grid column-->
+
+						<div id="fragmentDiv" th:include="${lista.size > 0} ? ~{fragments/documento :: table} : ~{fragments/documento :: noRecord}" class="col-md-12 py-3">
+						
+						</div>
+						<!-- 
+						<div id="fragmentDiv" th:include="fragments/documento :: noRecord" class="col-md-12 py-3">
+							
+						</div>
+						-->
+
+					</div>
+				</div>
+			</div>
+
+		</form>
+	</section>
+
+	<div class="modal pullDown" id="responsiveAddDocumento" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Agregar Documento </strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div id="divAddMateria" th:include="fragments/documento :: create">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	<script th:inline="javascript" th:if="${code == true}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+	<script th:inline="javascript" th:if="${code == false}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+
+	<script>
+		
+		$(document).ready(function() {
+		
+			// Clean notify message
+			toastr.clear();
+
+			$('.mdb-select').materialSelect();
+			$('.select-create').materialSelect();
+			$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function() {
+				$(this).closest('.select-outline').find('label').toggleClass('active');
+				$(this).closest('.select-outline').find('.caret').toggleClass('active');
+			});
+			
+			// Validate fields
+			$("#nombre-archivo").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-z0-9Ññ ]/g, function(str) {
+					toastr.warning("Solo se permiten números y letras (0-9)(Aa-Zz, Ññ)");
+					return '';
+				}));
+			});
+      		
+      		// Submit form consult
+      		$("form#documento").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormConsult();
+			});
+			
+			// Submit form create
+			$("form#create-documento").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+ 
+        		// Call Ajax Submit.
+        		ajaxSubmitForm();
+			});
+			
+			// Cancel button
+			$( "#btn-resetDocumento" ).on( "click", function() {
+			
+				$("#archivo").val("");
+  				$("#create-select-periodo").materialSelect('destroy');
+  				$("#create-select-periodo").val("").change();
+  				$("#create-select-periodo").materialSelect();
+  				$("#create-select-document").materialSelect('destroy');
+  				$("#create-select-document").val("").change();
+  				$("#create-select-document").materialSelect();
+  				$('#responsiveAddDocumento').modal('toggle');
+			});
+			
+			// Config dataTable Documento
+        	$('#dtDocuments').DataTable({
+        	"lengthMenu": [ [5, 10, 20, 50, -1], [5, 10, 20, 50, "Todos"] ],
+          	"order": [0, "desc" ],
+          	"aaSorting": [],
+          	columnDefs: [{
+				orderable: false,
+				targets: [4, 5, 6, 7, 8],
+			}],
+        	"searching": true,
+        	"paging": true,
+        	"pagingType": "simple_numbers",
+        	"pageLength": 5,
+        	"language": {
+          		"info":           "Mostrando _START_ de _END_ de un total de: _TOTAL_ registros",
+          		"lengthMenu":     "Mostrando _MENU_ registros",
+          		"loadingRecords": "Cargando...",
+          		"processing":     "Procesando...",
+          		"emptyTable":     "Sin registros en la tabla",
+          		"infoEmpty":      "Mostrando 0 de 0 de un total: 0 registros",
+          		"infoFiltered":   "(filtrado de _MAX_ entradas totales)",
+          		"search":         "Buscar:",
+          		"zeroRecords":    "Sin registros encontrados",
+            	"paginate": {
+              		"first":      "Primero",
+              		"last":       "Último",
+              		"previous": "Anterior",
+              		"next": "Siguiente",
+           	 		}
+          		}
+        	});
+        	$('.dataTables_length').addClass('bs-select');
+
+		});
+		
+		function ajaxSubmitFormConsult() {
+ 
+ 			var fInicio = new Date(Date.parse($("#fechaIni").val()));
+ 			var fFinal = new Date(Date.parse($("#fechaFin").val()));
+ 			
+ 			fInicio.setDate(fInicio.getDate());
+ 			fFinal.setDate(fFinal.getDate() + 1);
+ 			
+    		// construct consult object.
+			var objData = JSON.stringify({
+				nombreArchivo: $.trim($("#nombre-archivo").val()),
+				periodo: {
+					idCatPeriodo : $("#periodo-idCatPeriodo").val() 
+				},
+				documento: {
+					idDocumento : $("#documento-idDocumento").val()
+				},
+				fechaCargaIni:  fInicio,
+				fechaCargaFin: fFinal
+			});
+ 
+    		$("#btn-consultar").prop("disabled", true);
+    		
+			// const div: where information will be displayed.
+			const fragmentDiv = document.getElementById("fragmentDiv");
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../documents/consult",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+					$("#fragmentDiv").html(response);
+					$("#btn-consultar").prop("disabled", false);
+					
+					// Config dataTable Documento
+        			$('#dtDocuments').DataTable({
+        			"lengthMenu": [ [5, 10, 20, 50, -1], [5, 10, 20, 50, "Todos"] ],
+          			"order": [0, "desc" ],
+          			"aaSorting": [],
+          			columnDefs: [{
+						orderable: false,
+						targets: [4, 5, 6, 7, 8],
+					}],
+        			"searching": true,
+        			"paging": true,
+        			"pagingType": "simple_numbers",
+        			"pageLength": 5,
+        			"language": {
+          				"info":           "Mostrando _START_ de _END_ de un total de: _TOTAL_ registros",
+          				"lengthMenu":     "Mostrando _MENU_ registros",
+          				"loadingRecords": "Cargando...",
+          				"processing":     "Procesando...",
+          				"emptyTable":     "Sin registros en la tabla",
+          				"infoEmpty":      "Mostrando 0 de 0 de un total: 0 registros",
+          				"infoFiltered":   "(filtrado de _MAX_ entradas totales)",
+          				"search":         "Buscar:",
+          				"zeroRecords":    "Sin registros encontrados",
+            			"paginate": {
+              				"first":      "Primero",
+              				"last":       "Último",
+              				"previous": "Anterior",
+              				"next": "Siguiente",
+           	 				}
+          				}
+        			});
+        			$('.dataTables_length').addClass('bs-select');
+        			
+				},
+				error : function(e) {
+				
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-consultar").prop("disabled", true);
+				}
+			});
+ 
+		}
+		
+		function ajaxSubmitForm() {
+ 
+    		// Get form
+    		var form = $('#create-documento')[0];
+    		var data = new FormData(form);
+ 
+    		$("#btn-createDocumento").prop("disabled", true);
+ 
+    		$.ajax({
+        		type: "POST",
+        		enctype: "multipart/form-data",
+        		url: "../documents/create",
+        		data: data,
+        		processData: false,
+        		contentType: false,
+        		cache: false,
+        		timeout: 50000,
+        		beforeSend: function() {
+        				swal.fire({
+            				html: '<h5>Cargando...</h5>',
+            				showConfirmButton: false,
+            				allowOutsideClick: false,
+            				didOpen: () => {
+    							Swal.showLoading()
+                			},
+        				});
+    				},
+        		success: function(response) {
+        		
+        			var titulo = response.title;
+    				var message = response.message;
+    				var tipo = response.typeMessage;
+				
+					if(!response.code){
+						
+    					if(tipo == 2){
+    		
+    						toastr.warning(message, titulo);
+    			
+    					}else if(tipo == 3){
+    			
+    						toastr.error(message, titulo);
+    					}
+						
+						$("#btn-createDocumento").prop("disabled", false);
+						swal.close();
+						
+						return false;
+					}
+					
+					$("#archivo").val("");
+  					$("#create-select-periodo").materialSelect('destroy');
+  					$("#create-select-periodo").val("").change();
+  					$("#create-select-periodo").materialSelect();
+  					$("#create-select-document").materialSelect('destroy');
+  					$("#create-select-document").val("").change();
+  					$("#create-select-document").materialSelect();
+  					$('#responsiveAddDocumento').modal('toggle');
+					
+					if(tipo == 1){
+    		
+    					toastr.success(message, titulo);
+    			
+    				}else if(tipo == 4){
+    			
+    					toastr.info(message, titulo);
+    				}
+				
+					$("#btn-createDocumento").prop("disabled", false);
+					swal.close();
+					
+					setTimeout(() => {  ajaxSubmitFormConsult(); }, 1700);
+        		
+        		},
+				error : function(e) {
+				
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-createDocumento").prop("disabled", false);
+					swal.close();
+					
+				}
+    		});
+ 
+		}
+		
+		function validFile() {
+
+  			// Obtener nombre de archivo
+  			let archivo = document.getElementById('archivo'),
+ 			// Obtener extensión del archivo
+      		extension = archivo.value.substring(archivo.value.lastIndexOf('.'), archivo.value.length);
+  			
+  			// Si la extensión obtenida no está incluida en la lista de valores
+ 			// del atributo "accept", mostrar un error.
+  			if(archivo.getAttribute('accept').split(',').indexOf(extension) < 0) {
+    			toastr.warning("Archivo inválido. No se permite la extensión: " + extension);
+    			archivo.value = "";
+  			}
+  			
+  			let documento = document.getElementById('create-select-document');
+  			if (documento.value == '14') {// 14 - Envio AP  // Solo para Envios AP
+  			// Validando tamaño de archivo
+  	  			if (archivo.files.length == 1) { // length > 0 Si hay varios archivos
+  	  	            if (archivo.files.item(0)) {
+  	  				//for (let i = 0; i <= archivo.files.length - 1; i++) { // Solo si hay varios archivos se itera uno por uno
+  	  	                const fsize = archivo.files.item(0).size; // Tamaño del archivo
+  	  	                console.log(fsize);
+  	  	                const file = Math.ceil((fsize / 1024)); // entre bites
+  	  	                if (file == 0) {
+  	  	                	toastr.warning("El archivo esta vacío. Seleccione otro archivo.");
+  	  	                	archivo.value = "";
+  	  	                } /* else if (file >= 4096) {
+  	  	                	toastr.warning("Archivo demasiado grande. Tamaño máximo: 4MB");
+  	  	                	archivo.value = "";
+  	  	                }*/ else {
+  	  	                	//toastr.success("OK: " + file);
+  	  	                }
+  	  	            }
+  	  	        }
+  			}
+		}
+  			
+  		function changeDocument() {
+  			let documento = document.getElementById('create-select-document');
+  			let periodo = document.getElementById('create-select-periodo');
+  			
+  			if (documento.value == '14') {// 14 - Envio AP
+  				$("#create-select-periodo").materialSelect('destroy');
+  				$("#create-select-periodo").val("0").change();
+  				$("#create-select-periodo").prop("disabled", true);
+  				$("#create-select-periodo").materialSelect();
+  			} else {
+  				if (periodo.value == '0') {
+  					$("#create-select-periodo").materialSelect('destroy');
+  	  				$("#create-select-periodo").val("").change();
+	  	  			$("#create-select-periodo").prop("disabled", false);
+  	  				$("#create-select-periodo").materialSelect();	
+  				}
+  			}
+  		}
+		
+		function confirm_delete(id){
+			
+			const swalSodimac = Swal.mixin({
+  			customClass: {
+    				cancelButton: 'btn btn-sodimac-red',
+    				confirmButton: 'btn btn-sodimac'
+  				},
+  				buttonsStyling: false
+			})
+
+			swalSodimac.fire({
+  			title: '¿Está seguro de eliminar el registro?',
+  			text: "Está acción no podrá revertirse",
+  			icon: 'warning',
+  			showCancelButton: true,
+  			confirmButtonText: '¡eliminar!',
+  			cancelButtonText: '¡cancelar!',
+  			allowOutsideClick: false,
+  			reverseButtons: false
+			}).then((result) => {
+  			if (result.isConfirmed) {
+    			
+				$.ajax({
+					type: "GET",
+					contentType: "application/json",
+					url: "../documents/delete/" + id,
+					timeout: 30000,
+					beforeSend: function() {
+        				swal.fire({
+            				html: '<h5>Cargando...</h5>',
+            				showConfirmButton: false,
+            				allowOutsideClick: false,
+            				didOpen: () => {
+    							Swal.showLoading()
+                			},
+        				});
+    				},
+					success: function(response) {
+					
+						var titulo = response.title;
+    					var message = response.message;
+    					var tipo = response.typeMessage;
+    					var strTipo = "";
+    					
+    					if(tipo == 1){
+    					
+    						strTipo = 'success';
+    					}else if(tipo == 2){
+    					
+    						strTipo = 'warning';
+    					}else if(tipo == 3){
+    						
+    						strTipo = 'error';
+    					}
+						
+						if(!response.code){
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						return false;
+    					});
+    					
+    					}
+						
+						swalSodimac.fire({
+      						title: titulo,
+      						text: message,
+      						icon: strTipo,
+      						allowOutsideClick: false
+    					}).then((result) =>{
+    						ajaxSubmitFormConsult();
+    					});
+    					 			
+					},
+					error : function(e) {
+				
+						console.log("ERROR: ", e);
+						// toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+						swalSodimac.fire(
+      						'Error de conexión',
+      						'No se pudo conectar con el servicio',
+      						'error'
+      					);
+						
+					}
+				});
+    			
+  			}
+  			
+		  });
+		}
+		
+		
+	</script>
+
+</body>
+
+</html>

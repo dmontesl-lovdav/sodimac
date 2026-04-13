@@ -1,0 +1,914 @@
+<!------------ Fragment Create New -------------->
+<div th:fragment="create" th:remove="tag">
+	<div class="card-body" style="margin-top: -20px;">
+		<div class="card-border">
+			<div class="card-body">
+				<form id="create-exclusion"
+					  method="post" 
+					  onsubmit="" 
+					  enctype="multipart/form-data">
+					  
+					  <div class="row">
+						  <div class="col-lg-12 offset-md-0 col-md-12">
+								<!--Grid row-->
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- Tipo exclusion -->
+										<div class="mt-3 select-outline">
+											<select id="create-select-tipo-exclusion" name="catTipoExclusion.idCatTipoExclusion" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" onchange="changeTipoExclusion()" required>
+												<option value="" disabled="true" selected>Seleccionar exclusi&oacute;n</option>
+												<option th:each="exclusionC: ${listTipoExclusionesPerfil}"
+														th:value="${exclusionC.idCatTipoExclusion}" 
+														th:text="${exclusionC.idCatTipoExclusion + ' - ' + exclusionC.descripcion}">
+												</option>
+											</select> <label>Tipo exclusi&oacute;n</label>
+										</div>
+									</div>
+									<!-- Col-2 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- numero Proveedor -->
+										<div class="md-form form-sm">
+											<input type="text" id="txt-edit-numProveedor"
+												name="numeroProveedor" 
+												class="form-control form-control-sm inputs-gcis"
+												autocomplete="off" minlength="2" maxlength="10" /> 
+											<label class="label-gcis" for="txt-edit-numProveedor"></i>N&uacute;mero&nbsp;Proveedor</label>
+										</div>
+									</div>
+								</div>
+								
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- Tipo período -->
+										<div class="mt-3 select-outline">
+											<select id="create-select-periodo" name="periodo.idCatPeriodo" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+												<option value="">Seleccionar período</option>
+												<option th:each="periodoC: ${listPeriodosAbiertos}"
+														th:value="${periodoC.idCatPeriodo}" 
+														th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+												</option>
+											</select> <label>Id período</label>
+										</div>
+									</div>
+									
+									<!-- Col-2 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- comentario -->
+										<div class="md-form form-sm">
+											<input type="text" id="txt-edit-exclusion"
+												name="exclusion" 
+												class="form-control form-control-sm inputs-gcis"
+												autocomplete="off" minlength="2" maxlength="10" /> 
+											<label class="label-gcis" for="txt-edit-exclusion"></i>Exclusi&oacute;n</label>
+										</div>
+									</div>
+									
+								</div>
+								
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- Tipo rebate -->
+										<div class="mt-3 select-outline">
+											<select id="create-select-tipo-rebate" name="catTipoRebate.idCatTipoRebate" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+												<option value="" disabled selected>Seleccionar tipo de rebate</option>
+												<option th:each="rebate: ${listRebatesPerfil}"
+														th:value="${rebate.idCatTipoRebate}"
+														th:text="${rebate.idCatTipoRebate + ' - ' + rebate.nomenclatura}"></option>
+											</select> <label>Tipo rebate</label>
+										</div>
+									</div>
+									
+									<!-- Col-2 -->
+									<div class="offset-lg-1 col-lg-5">
+									</div>
+									
+								</div>
+								
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-11">
+										<div class="md-form form-sm">
+											<textarea class="form-control form-control-sm inputs-gcis" id="txt-comentario"
+											rows="2" autocomplete="off" name="comentario" maxlength="254" required></textarea>
+											<label class="label-gcis" for="txt-comentario"></i>Comentario</label>
+										</div>
+									</div>
+								</div>
+																
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- Archivo -->
+										<div class="mt-3 select-outline">
+											<label style="margin-bottom: -0.5rem !important; font-size: 0.65rem !important;" for="archivo"></i>Evidencia de exclusi&oacute;n</label>
+											<div style="font-size: .75rem !important;">
+												<input id="archivo" type="file" name="archivo" accept=".jpg,.JPG,.png,.PNG,.jpeg,.JPEG,.eml,.EML,.msg,.MSG,.pdf,.PDF" onchange="validFile()"
+														class="col-lg-12 col-md-12 col-xs-12 form-control form-control-sm cursor-pointer" style="height: calc(1.5em + 0.5rem + 10px);">
+											</div>
+										</div>
+									</div>
+									<!-- Col-2 -->
+									<div class="offset-lg-1 col-lg-5">
+										<!-- Layout -->
+										<div class="mt-3 select-outline">
+											<label style="margin-bottom: -0.5rem !important; font-size: 0.65rem !important;" for="layout"></i>Layout</label>
+											<div style="font-size: .75rem !important;">
+												<input id="layout" type="file" name="layout" accept=".xls,.xlsx,.txt,.csv" onchange="validFileLayout()"
+														class="col-lg-12 col-md-12 col-xs-12 form-control form-control-sm cursor-pointer" style="height: calc(1.5em + 0.5rem + 10px);">
+											</div>
+											<br/>
+											<div id="linkVisible" style="display:none;">
+												<a th:href="@{/exclusiones/download/layout?tipo=0}" id="btn-download-layout">Descarga un ejemplo del Layout</a>
+											</div>
+										</div>
+									</div>
+								</div>
+							  	<!--Grid row-->
+							  	<div class="col-lg-12">
+									<div class="md-form d-flex justify-content-center mt-4">
+										<button id="btn-resetExclusion" type="button"
+												class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+										<button id="btn-createExclusion" type="submit"
+												class="btn btn-default btn-sm inline waves-effect" onclick="">Guardar</button>
+												
+									</div>
+								</div>
+						  </div>
+					  </div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!------------ Fragment Editar -------------->
+<div th:fragment="edit" th:remove="tag">
+	<div class="card h-100" id="listDetExclusiones">
+		<div class="table-responsive table-responsive-1 table-bordered mb-5">
+			
+			<input type="hidden" id="hdIdCatTipoExclusion" />
+			<input type="hidden" id="hdIdExclusion" />
+			
+			<div class="row">
+				  <div class="col-lg-12 offset-md-0 col-md-12">
+						<!--Grid row-->
+						<div class="row">
+							<!-- Col-1 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- Tipo período -->
+								<div class="mt-3 select-outline">
+									<select disabled id="edit-select-periodo" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+										<option value="" disabled="true">Seleccionar período</option>
+										<option th:each="periodoC: ${listPeriodosAbiertos}"
+												th:value="${periodoC.idCatPeriodo}" 
+												th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+										</option>
+									</select> <label>Id período</label>
+								</div>
+							</div>
+							<!-- Col-2 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- Tipo rebate -->
+								<div class="mt-3 select-outline">
+									<select disabled id="edit-select-tipo-rebate" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+										<option value="" disabled selected>Seleccionar tipo de rebate</option>
+										<option th:each="rebate: ${listRebatesPerfil}"
+												th:value="${rebate.idCatTipoRebate}"
+												th:text="${rebate.idCatTipoRebate + ' - ' + rebate.nomenclatura}"></option>
+									</select> <label>Tipo rebate</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="row">
+							<!-- Col-1 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- Tipo exclusion -->
+								<div class="mt-3 select-outline">
+									<select disabled id="edit-select-tipo-exclusion" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+										<option value="" disabled>Seleccionar exclusi&oacute;n</option>
+										<option th:each="exclusionC: ${listTipoExclusionesPerfil}"
+												th:value="${exclusionC.idCatTipoExclusion}" 
+												th:text="${exclusionC.idCatTipoExclusion + ' - ' + exclusionC.descripcion}">
+										</option>
+									</select> <label>Tipo exclusi&oacute;n</label>
+								</div>
+							</div>
+							<!-- Col-2 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- comentario -->
+								<div class="md-form form-sm">
+									<input type="text" id="edit-txt-comentario"
+										class="form-control form-control-sm inputs-gcis"
+										autocomplete="off" minlength="2" maxlength="250" /> 
+									<label id="lbl-comentario" class="label-gcis" for="edit-txt-comentario"></i>Comentario</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-end">
+									<button id="btn-comentario-exclusion" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Modificar comentario</button>
+								</div>
+							</div>
+						</div>
+						
+						<div class="row">
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-4">
+									<button id="btn-cancel-exclusion" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+									<button id="btn-create-exclusion" type="submit"
+											class="btn btn-default btn-sm inline waves-effect" onclick="">Agregar</button>
+								</div>
+							</div>
+						</div>
+				  </div>
+			  </div>
+			
+			<!--Table-->
+			<div id="divDetExclusion" th:include="fragments/listDetExclusion" style="overflow-x: auto;"></div>
+			<!-- End Table -->
+		</div>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment SKU -------------->
+<div th:fragment="sku" th:remove="tag">
+	<div class="card h-100">
+		<form id="form-create-exclusion-sku"
+					  method="post" 
+					  onsubmit="">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusionSku" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input type="text" id="txt-sku-motivo" required
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-motivo" class="label-gcis" for="txt-sku-motivo"></i>Motivo</label>
+									</div>
+								</div>
+							</div>
+							
+						  	<!--Grid row-->
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-sku-cancel" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+									<button id="btn-sku-create" type="submit"
+											class="btn btn-default btn-sm inline waves-effect" onclick="">Agregar</button>
+								</div>
+							</div>
+					  </div>
+				  </div>
+					
+					<div class="row">					  
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<table id="exclusion-sku-table" class="table table-striped table-hover table-sm">
+										<!--Table head-->
+										<thead>
+											<tr>
+												<th>Id</th>
+												<th style="width: 10%">N&uacute;mero&nbsp;Proveedor</th>
+												<th style="width: 30%">Nombre&nbsp;Proveedor</th>
+												<th style="width: 10%">Orde&nbsp;Compra</th>
+												<th style="width: 10%">Familia</th>
+												<th style="width: 10%">Sku</th>
+												<th style="width: 20%">Descripci&oacute;n</th>
+											</tr>
+										</thead>
+									</table>
+
+								</div>
+							</div>
+							
+						</div>
+					</div>
+			</div>
+		</form>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment SKU - By Familia -------------->
+<div th:fragment="sku-familia" th:remove="tag">
+	<div class="card h-100" id="divSkuFamilia">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusionSku" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-familia-num-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-familia-num-proveedor" class="label-gcis" for="txt-sku-familia-num-proveedor"></i>N&uacute;mero Proveedor</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-familia-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-familia-proveedor" class="label-gcis" for="txt-sku-familia-proveedor"></i>Proveedor</label>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-familia-familia"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-familia-familia" class="label-gcis" for="txt-sku-familia-familia"></i>Familia</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-familia-motivo"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-familia-motivo" class="label-gcis" for="txt-sku-familia-motivo"></i>Motivo</label>
+									</div>
+								</div>
+							</div>
+							
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-sku-familia-aceptar" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Aceptar</button>
+								</div>
+							</div>
+					  </div>
+				  </div>
+					
+					<div class="row">					  
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<table id="exclusion-sku-familia-table" class="table table-striped table-hover table-sm">
+										<!--Table head-->
+										<thead>
+											<tr>
+												<th>Id</th>
+												<th style="width: 20%">Orden de Compra</th>
+												<th style="width: 20%">Sku</th>
+												<th style="width: 60%">Descripci&oacute;n</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+			</div>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment SKU - By Familia -------------->
+<div th:fragment="sku-proveedor" th:remove="tag">
+	<div class="card h-100" id="divSkuProveedor">
+		<form id="create-sku-proveedor-det"
+					  method="post" 
+					  onsubmit="">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusionSku" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-proveedor-num-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-proveedor-num-proveedor" class="label-gcis" for="txt-sku-proveedor-num-proveedor"></i>N&uacute;mero Proveedor</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-proveedor-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-proveedor-proveedor" class="label-gcis" for="txt-sku-proveedor-proveedor"></i>Proveedor</label>
+									</div>
+								</div>
+							</div>
+							
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-sku-proveedor-aceptar" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Aceptar</button>
+								</div>
+							</div>
+					  </div>
+				  </div>
+					
+					<div class="row">					  
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<table id="exclusion-sku-proveedor-table" class="table table-striped table-hover table-sm">
+										<!--Table head-->
+										<thead>
+											<tr>
+												<th style="width: 20%">Orden de Compra</th>
+												<th style="width: 20%">Familia</th>
+												<th style="width: 20%">Sku</th>
+												<th style="width: 60%">Descripci&oacute;n</th>
+											</tr>
+										</thead>
+									</table>
+
+								</div>
+							</div>
+							
+						</div>
+					</div>
+			</div>
+		</form>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment SKU CONSULTA FAMILIA -------------->
+<div th:fragment="sku-consulta-familia" th:remove="tag">
+	<div class="card h-100">
+		<form id="create-sku-consulta-familia-det"
+					  method="post" 
+					  onsubmit="">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				
+				<div class="row">
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-consulta-familia-num-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-consulta-familia-num-proveedor" class="label-gcis" for="txt-sku-consulta-familia-num-proveedor"></i>N&uacute;mero Proveedor</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-consulta-familia-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-consulta-familia-proveedor" class="label-gcis" for="txt-sku-consulta-familia-proveedor"></i>Proveedor</label>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-sku-consulta-familia-familia"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-sku-consulta-familia-familia" class="label-gcis" for="txt-sku-consulta-familia-familia"></i>Familia</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+									</div>
+								</div>
+							</div>
+							
+						  	<!--Grid row-->
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-sku-consulta-familia-aceptar" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Aceptar</button>
+								</div>
+							</div>
+					  </div>
+				</div>
+				
+				<div class="row">
+					<!-- Col-1 -->
+					<div class="offset-lg-1 col-lg-10">
+						<table id="exclusion-sku-consulta-familia-table" class="table table-striped table-hover table-sm">
+							<!--Table head-->
+							<thead>
+								<tr>
+									<th style="width: 20%">Sku</th>
+									<th style="width: 80%">Descripci&oacute;n</th>
+								</tr>
+							</thead>
+						</table>
+
+					</div>
+				</div>
+				
+			</div>
+		</form>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment SKU CONSULTA FAMILIA -------------->
+<div th:fragment="sku-consulta-arbol" th:remove="tag">
+	<div class="card h-100">
+		<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				
+			<div class="row">
+				  <div class="col-lg-12 offset-md-0 col-md-12">
+						<!--Grid row-->
+						<div class="row">
+							<!-- Col-1 -->
+							<div class="offset-lg-1 col-lg-4">
+								<!-- Tipo exclusion -->
+								<div class="md-form form-sm">
+									<input readonly type="text" id="txt-sku-consulta-arbol-num-proveedor"
+										class="form-control form-control-sm inputs-gcis"
+										autocomplete="off" minlength="2" maxlength="254" /> 
+									<label id="lbl-sku-consulta-arbol-num-proveedor" class="label-gcis" for="txt-sku-consulta-arbol-num-proveedor"></i>N&uacute;mero Proveedor</label>
+								</div>
+							</div>
+							<!-- Col-2 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- comentario -->
+								<div class="md-form form-sm">
+									<input readonly type="text" id="txt-sku-consulta-arbol-proveedor"
+										class="form-control form-control-sm inputs-gcis"
+										autocomplete="off" minlength="2" maxlength="254" /> 
+									<label id="lbl-sku-consulta-arbol-proveedor" class="label-gcis" for="txt-sku-consulta-arbol-proveedor"></i>Proveedor</label>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<!-- Col-1 -->
+							<div class="offset-lg-1 col-lg-4">
+								<!-- Tipo exclusion -->
+								<div class="md-form form-sm">
+									<input readonly type="text" id="txt-sku-consulta-arbol-oc"
+										class="form-control form-control-sm inputs-gcis"
+										autocomplete="off" minlength="2" maxlength="254" /> 
+									<label id="lbl-sku-consulta-arbol-oc" class="label-gcis" for="txt-sku-consulta-arbol-oc"></i>Orden Compra</label>
+								</div>
+							</div>
+							<!-- Col-2 -->
+							<div class="offset-lg-1 col-lg-5">
+								<!-- comentario -->
+								<div class="md-form form-sm">
+								</div>
+							</div>
+						</div>
+					  	<!--Grid row-->
+					  	<div class="col-lg-12">
+							<div class="md-form d-flex justify-content-center mt-2">
+								<button id="btn-sku-consulta-arbol-aceptar" type="button"
+										class="btn btn-outline-primary btn-sm inline waves-effect">Aceptar</button>
+							</div>
+						</div>
+				  </div>
+			</div>
+			
+			<div class="row">
+				<!-- Col-1 -->
+				<div class="offset-lg-1 col-lg-10">
+					<!--Table-->
+					<div id="divListExclusionSkuArbol">
+						<table id="exclusion-sku-consulta-arbol-table" class="table table-striped table-hover table-sm">
+							<!--Table head-->
+							<thead>
+								<tr>
+									<th style="width: 15%">Familia</th>
+									<th style="width: 15%">Sku</th>
+									<th style="width: 40%">Descripci&oacute;n</th>
+									<th style="width: 15%">Cantidad Ordenada</th>
+									<th style="width: 15%">Cantidad Recibida</th>
+								</tr>
+							</thead>
+						</table>						
+					</div>
+					<!-- End Table -->
+				</div>
+			</div>
+			
+		</div>
+		
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->
+
+<!------------ Fragment create orden compra -------------->
+<div th:fragment="oc" th:remove="tag">
+	<div class="card h-100">
+		<div class="card-border">
+			
+			<form id="form-create-exclusion-oc"
+					  method="post" 
+					  onsubmit="">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusion" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-oc-motivo" required
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-oc-motivo" class="label-gcis" for="txt-oc-motivo"></i>Motivo</label>
+									</div>
+								</div>
+							</div>
+							
+							<div class="row">
+							  	<!--Grid row-->
+							  	<div class="col-lg-12">
+									<div class="md-form d-flex justify-content-center mt-4">
+										<button id="btn-cancel-exclusion-oc" type="button"
+												class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+										<button id="btn-create-exclusion-oc" type="submit"
+												class="btn btn-default btn-sm inline waves-effect" onclick="">Agregar</button>
+									</div>
+								</div>
+							</div>
+							
+							<div class="row">
+							  	<!--Grid row-->
+							  	<div class="col-lg-12 offset-md-0 col-md-12">
+									<div class="row">
+										<div class="offset-lg-1 col-lg-10">
+											<!--Table-->
+											<div id="divListExclusionOC">
+												<table id="exclusion-oc-table" class="table table-striped table-hover table-sm">
+													<!--Table head-->
+													<thead>
+														<tr>
+															<th>Id</th>
+															<th style="width: 10%">N&uacute;mero&nbsp;Proveedor</th>
+															<th style="width: 60%">Nombre&nbsp;Proveedor</th>
+															<th style="width: 10%">Orden&nbsp;Compra</th>
+															<th style="width: 10%">Fecha Recepcion</th>
+															<th style="width: 5%">Art&iacute;culos</th>
+														</tr>
+													</thead>
+												</table>
+											</div>
+											
+										</div>
+									</div>
+							  	</div>
+							</div>
+							
+					  </div>
+					  
+				  </div>
+			</form>
+		</div>
+	</div>
+</div>
+<!------------ END Fragment create exclusion orden compra -------------->
+
+<!------------ Fragment create consulta orden compra -------------->
+<div th:fragment="oc-consulta" th:remove="tag">
+	<div class="card h-100">
+		<div class="card-border">
+			
+			<form id="form-create-exclusion-oc-consulta"
+					  method="post" 
+					  onsubmit="">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusion" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+						  	<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-4">
+									<!-- Tipo exclusion -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-oc-consulta-num-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-oc-consulta-num-proveedor" class="label-gcis" for="txt-oc-consulta-num-proveedor"></i>N&uacute;mero Proveedor</label>
+									</div>
+								</div>
+								<!-- Col-2 -->
+								<div class="offset-lg-1 col-lg-5">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input readonly type="text" id="txt-oc-consulta-proveedor"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-oc-consulta-proveedor" class="label-gcis" for="txt-oc-consulta-proveedor"></i>Proveedor</label>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-cancel-exclusion-oc-consulta" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Aceptar</button>
+								</div>
+							</div>
+							
+							<div class="row">
+							  	<!--Grid row-->
+							  	<div class="col-lg-12">
+									<div class="md-form d-flex justify-content-center mt-4">
+										<div id="divListExclusionOCConsulta">
+											<table id="exclusion-oc-consulta-table" class="table table-striped table-hover table-sm">
+												<!--Table head-->
+												<thead>
+													<tr>
+														<th style="width: 80%">Orden de Compra</th>
+														<th style="width: 5%">Art&iacute;culos</th>
+													</tr>
+												</thead>
+											</table>
+										</div>
+									</div>
+							  	</div>
+							</div>
+					  </div>
+					  
+				  </div>
+			</form>
+		</div>
+	</div>
+</div>
+<!------------ END Fragment create exclusion orden compra -------------->
+
+<!------------ Fragment create familia -------------->
+<div th:fragment="familia" th:remove="tag">
+	<div class="card h-100">
+		<div class="card-border">
+			
+			<form id="form-create-exclusion-familia"
+					  method="post" 
+					  onsubmit="">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusion" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+						  	<!--Grid row-->
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<div class="md-form form-sm">
+										<input type="text" id="txt-familia-motivo" required
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-familia-motivo" class="label-gcis" for="txt-familia-motivo"></i>Motivo</label>
+									</div>
+								</div>
+							</div>
+							
+							<div class="row">
+							  	<!--Grid row-->
+							  	<div class="col-lg-12">
+									<div class="md-form d-flex justify-content-center mt-4">
+										<button id="btn-cancel-exclusion-familia" type="button"
+												class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+										<button id="btn-create-exclusion-familia" type="submit"
+												class="btn btn-default btn-sm inline waves-effect" onclick="">Agregar</button>
+									</div>
+								</div>
+							</div>
+							
+							<div class="row">
+							  	<!--Grid row-->
+							  	<div class="col-lg-12 offset-md-0 col-md-12">
+									  	<div class="row">
+											<!-- Col-1 -->
+											<div class="offset-lg-1 col-lg-10">
+												<!--Table-->
+												<div id="divListExclusionFamilia">
+													<table id="exclusion-familia-table" class="table table-striped table-hover table-sm">
+														<thead>
+															<tr>
+																<th>Id</th>
+																<th style="width: 20%">N&uacute;mero&nbsp;Proveedor</th>
+																<th style="width: 40%">Nombre&nbsp;Proveedor</th>
+																<th style="width: 30%">Familia</th>
+																<th style="width: 5%">Art&iacute;culos</th>
+															</tr>
+														</thead>
+													</table>
+												</div>
+											</div>
+									  	</div>
+									</div>
+							  	</div>
+							  	
+							</div>
+					  </div>
+					  
+				  </div>
+			</form>
+		</div>
+	</div>
+</div>
+<!------------ END Fragment create exclusion Familia -------------->
+
+<!------------ Fragment PROVEEDOR -------------->
+<div th:fragment="proveedor" th:remove="tag">
+	<div class="card h-100" id="divProveedor">
+		<form id="form-create-exclusion-proveedor"
+					  method="post" 
+					  onsubmit="">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<div class="row">
+					  <input type="hidden" id="hdIdExclusionSku" />
+					  <div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<!-- comentario -->
+									<div class="md-form form-sm">
+										<input type="text" id="txt-proveedor-motivo" required
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" minlength="2" maxlength="254" /> 
+										<label id="lbl-proveedor-motivo" class="label-gcis" for="txt-proveedor-motivo"></i>Motivo</label>
+									</div>
+								</div>
+							</div>
+							
+						  	<!--Grid row-->
+						  	<div class="col-lg-12">
+								<div class="md-form d-flex justify-content-center mt-2">
+									<button id="btn-proveedor-cancel" type="button"
+											class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+									<button id="btn-proveedor-create" type="submit"
+											class="btn btn-default btn-sm inline waves-effect" onclick="">Agregar</button>
+								</div>
+							</div>
+					  </div>
+				  </div>
+					
+					<div class="row">					  
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="row">
+								<!-- Col-1 -->
+								<div class="offset-lg-1 col-lg-10">
+									<!--Table-->
+									<div id="divListExclusionProveedor">
+										<table id="exclusion-proveedor-table" class="table table-striped table-hover table-sm">
+											<!--Table head-->
+											<thead>
+												<tr>
+													<th>Id</th>
+													<th style="width: 20%">N&uacute;mero Proveedor</th>
+													<th style="width: 70%">Proveedor</th>
+													<th style="width: 10%">Orden Compra</th>
+												</tr>
+											</thead>
+										</table>
+
+									</div>
+									<!-- End Table -->
+								</div>
+							</div>
+							
+						</div>
+					</div>
+			</div>
+		</form>
+	</div>
+</div>
+<!------------ END Fragment Editar -------------->

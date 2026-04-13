@@ -1,0 +1,68 @@
+<!------------ Comments -------------->
+<div th:fragment="comments" th:remove="tag">
+	<div class="card h-100" id="" >
+		<div class="view overlay">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<!--Table-->
+				<table id="dtComments" class="table table-striped table-hover table-sm">
+					<!--Table head-->
+					<thead>
+						<tr>
+							<th style="display: none;">Id</th>
+							<th style="width: 8%">GUID documento</th>
+							<th style="width: 8%">Documento SAP</th>
+							<th style="width: 20%">Numero documento</th>
+							<th style="width: 8%">Id proveedor</th>
+							<th style="width: 6%">Estado</th>
+							<th style="width: 20%">Mensaje</th>
+							<th style="width: 5%">Consecutivo error</th>
+							<th style="width: 5%">Enviado</th>
+							<th style="width: 20%">Fecha recepción</th>
+						</tr>
+					</thead>
+					<!--Table head-->
+					<!--Table body-->
+					<tbody>
+						<tr th:each="element : ${_lista}">
+							<td class="text-center" style="display: none;" ><span th:text="${element._rowNum}"></span></td>
+							<td><span th:text="${element._idProveedor}"></span></td>
+							<td><span th:text="${element._nombreProveedor}"></span></td>
+							<td class="text-center"><span th:text="${element._clacom}"></span></td>
+							<td class="text-center"><span th:text="${element._familia}"></span></td>
+							<td class="text-center"><span th:text="${'$' + #numbers.formatDecimal(element._montoRecibido, 0, 'COMMA', 2, 'POINT')}"></span></td>
+							<td class="text-center"><span th:text="${element._ordenCompra}"></span></td>
+							<td class="text-center"><span th:text="${#dates.format(element._fechaEmision, 'dd/MM/yyyy')}"></span></td>
+							<td class="text-center"><span th:text="${#dates.format(element._fechaRecepcion, 'dd/MM/yyyy')}"></span></td>
+							<td><span th:text="${element.tipodeRebate}"></span></td>
+						</tr>
+					</tbody>
+					<!--Table body-->
+				</table>
+				<!--Table-->
+			</div>
+		</div>
+	</div>
+</div>
+<!------------ Fragment No Records -------------->
+<div th:fragment="noRecord" th:remove="tag">
+	<div class="card" id="sinRegistro">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+								class="text-primary">Sin Registros</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							No se encuentran registros con los parámetros seleccionados.<br>
+							Ingrese diferentes parámetros y presione el botón: <strong>"Consultar"</strong>.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Home</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.min.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+
+<body>
+
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<form id="polizas">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5 mb-5">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+						<!-- COLUMN 1 -->
+						<div class="col-md-6 mt-1 mb-1">
+							<!-- ROW 2 -->
+							<div class="col-md-12 mt-1 mb-1">
+								<div class="form-row">
+									<!-- Fecha inicio search -->
+									<div class="col-lg-6 colis">
+										<div id="date-picker-from" class="md-form md-outline"
+											style="margin-bottom: 18px;">
+											<!-- <input type="date" id="fechaIni" name="fechaIni" th:value="${fechaIni}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+											<input type="date" id="fechaIni" name="fechaCargaIni"
+												class="form-control pickerDates" autocomplete="off"
+												style="color: rgb(73, 80, 87);"> 
+											<label for="fechaIni" class="active">Fecha inicio</label>
+										</div>
+									</div>
+									<!-- Fecha final search -->
+									<div class="col-lg-6 colis">
+										<div id="date-picker-to" class="md-form md-outline"
+											style="margin-bottom: 18px;">
+											<!-- <input type="date" id="fechaFin" name="fechaFin" th:value="${fechaFin}" th:attr="max=${fechaFin}" class="form-control pickerDates" autocomplete="off" required> -->
+											<input type="date" id="fechaFin" name="fechaCargaFin"
+												class="form-control pickerDates" autocomplete="off"
+												style="color: rgb(73, 80, 87);"> 
+											<label for="fechaFin" class="active">Fecha final</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- ROW 3 -->
+							<div class="col-md-12 mt-1 mb-1">
+								<div class="form-row">
+									<!-- Periodo -->
+									<div class="col-lg-6 select-outline colis">
+										<select id="periodo-idCatPeriodo" name="periodo.idCatPeriodo" required
+											class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+											<option value="" disabled selected>Seleccionar período</option>
+											<option value=null>Cualquier período</option>
+											<option th:each="periodoC: ${listPeriodos}"
+												th:value="${periodoC.idCatPeriodo}" th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+											</option>
+										</select> <label>Id período</label>
+									</div>
+									<!-- Tipo rebate search -->
+									<div class="col-lg-6 select-outline colis">
+										<select id="tipoRebate" name="tipoRebate"
+											class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+											<option value="" disabled selected>Seleccionar tipo de rebate</option>
+											<option value="">Cualquier rebate</option>
+											<option th:each="rebate: ${listRebates}"
+												th:value="${rebate.idCatTipoRebate}"
+												th:text="${rebate.tipoRebate}"></option>
+										</select> <label>Tipo rebate</label>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-md-12 mt-1 mb-1">
+								<div class="form-row">
+									<!-- Fecha inicio search -->
+									<div class="col-lg-6 colis">
+										<div class="md-form form-sm">
+											<input type="number" id="proveedor" name="proveedor"
+												min="1" max="2147483647"
+												class="form-control form-control-sm inputs-gcis"
+												autocomplete="off"> <label class="label-gcis"
+												for="proveedor"><i class="fa fa-search mr-2"
+												style="opacity: .6;" aria-hidden="true"></i>Proveedor</label>
+										</div>
+									</div>
+									<!-- Fecha final search -->
+									<div class="col-lg-6 colis">
+										<div>
+											<button th:href="@{/}" id="btn-consultar" type="button"
+												class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar Pólizas</button>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							
+							<!-- ROW 3 -->
+							<div class="col-md-12 mt-1 mb-1" id="divVisible">
+								<div class="form-row">
+									<div class="col-sm-12 col-md-6 col-lg-6 left-xs-0 colis" style="margin-top: 0px; position: relative; left: 10px;">
+										<a th:href="@{/polizas/report}" id="btn-download"
+										   type="button"
+										   class="btn btn-sodimac btn-sm btn-xs-block btn-sm-block waves-effect">Descargar Detalle</a>
+									</div>
+									<div class="col-sm-12 col-md-6 col-lg-6 left-xs-0 colis"
+										style="margin-top: 0px; position: relative; left: 10px;">
+										
+										<a th:href="@{/polizas/index}" id="btn-limpiar"
+										type="button"
+										class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Limpiar</a>
+										
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- COLUMN 2 -->
+						<div class="col-md-6 mt-1 mb-1">
+							<!-- ROW 1 -->
+							<div class="col-md-12 mt-1 mb-1">
+								<div id="piechart" style="width: 100%; height: 100%;"></div>
+							</div>
+						</div>
+						
+
+						<!--Grid column-->
+						<div id="fragmentDiv"
+							th:include="fragments/polizas :: start"
+							class="col-md-12 py-3"></div>
+
+					</div>
+				</div>
+			</div>
+
+		</form>
+	</section>
+
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/polizas.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	<script th:inline="javascript" th:if="${code == true}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+	<script th:inline="javascript" th:if="${code == false}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+
+	<script>
+		
+		$(document).ready(function() {
+		
+			// Clean notify message
+			toastr.clear();
+
+			$('.mdb-select').materialSelect();
+			$('.select-create').materialSelect();
+			$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function() {
+				$(this).closest('.select-outline').find('label').toggleClass('active');
+				$(this).closest('.select-outline').find('.caret').toggleClass('active');
+			});
+			
+			// Validate fields
+			$("#proveedor").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^0-9$]/g, function(str) {
+					toastr.warning("Solo se permiten números (0-9)");
+					return '';
+				}));
+			});
+			
+			$("#btn-consultar").click(function(e) {    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormConsult();
+			});
+			
+			$('#btn-download').prop('disabled', true);
+			$('#divVisible').hide();
+		});
+		
+	</script>
+
+</body>
+
+</html>

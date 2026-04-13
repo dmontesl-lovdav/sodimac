@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Home</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/dataTables.checkboxes.css}" type="text/css" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+
+	<!-- Start your project here-->
+
+	<section class="mt-5 animated fadeIn">
+		<form id="catalogos" th:action="@{/catalogos/consult}"
+			th:object="${catalogo}" method="post" onsubmit="">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								
+								<!-- Id catalogo search -->
+								<div class="col-lg-2 select-outline colis position-relative">
+									<div class="md-form form-sm">
+										<input type="number" id="id-catalogo"
+											name="periodo.idCatPeriodo" min="1" max="2147483647"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="periodo-idCatPeriodo"><i
+											class="fa fa-search mr-2" style="opacity: .6;"
+											aria-hidden="true"></i>Id catálogo</label>
+									</div>
+								</div>
+								<!-- Nombre catalogo search -->
+								<div class="col-sm-12 col-md-2 col-lg-4 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="nombre-catalogo" name="nombreCatalogo"
+											minlegth="2" maxlength="80"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="nombre-catalogo"><i class="fa fa-search mr-2"
+											style="opacity: .6;" aria-hidden="true"></i>Nombre catálogo</label>
+									</div>
+								</div>
+								<!-- Descripcion catalogo search -->
+								<div class="col-sm-12 col-md-2 col-lg-4 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="descripcion-catalogo"
+											name="descripcionCatalogo" minlegth="2" maxlength="30"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="descripcion-catalogo"><i
+											class="fa fa-search mr-2" style="opacity: .6;"
+											aria-hidden="true"></i>Descripción catálogo</label>
+									</div>
+								</div>
+								
+
+								<!-- <div class="col-sm-12 col-md-2 col-lg-1 colis"></div> -->
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<button th:href="@{/catalogos/consult}" id="btn-consultar"
+											type="submit"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar
+											Catálogos</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<!-- ROW 2 -->
+						<div class="col-md-12">
+							<div class="form-row">
+								<div class="col-sm-12 col-md-2 col-lg-10 colis"></div>
+								<!-- Btn Agregar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<a th:href="@{#}" id="btn-agregar" data-toggle="modal"
+											data-target="#responsiveAddCatalogo" data-backdrop="static"
+											data-keyboard="false"
+											class="btn btn-default btn-sm btn-xs-block btn-sm-block waves-effect">Agregar Catálogo</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<!--Grid column-->
+						<div id="fragmentDiv"
+							th:include="fragments/catalogos :: start"
+							class="col-md-12 py-3"></div>
+
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+	
+	<div class="modal pullDown" id="responsiveAddCatalogo" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Agregar Catálogo </strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div th:include="fragments/catalogos :: create">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal pullDown" id="responsiveEditCatalogo" tabindex="-1"
+		role="dialog" aria-hidden="false">
+		<div class="modal-dialog modal-lg mdl-table" role="dialog">
+			<div class="modal-content">
+				<div class="modal-header bg-sodimac-blue">
+					<h3 class="modal-title text-white h3 m-1" id="responsive-modal">
+						<strong><i class="fas fa-plus fa-sm mr-1"
+							style="opacity: 1;" aria-hidden="true"></i> Editar Catálogo </strong>
+					</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col">
+							<div th:include="fragments/catalogos :: edit">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal"
+		class="page-footer font-small grey lighten-5 fixed-bottom"> </footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.6.0.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/catalogos.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/dataTables.checkboxes.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	
+	<script>
+  	
+    $( document ).ready(function() {
+    
+    		// Clean notify message
+			toastr.clear();
+
+      		$('.mdb-select').materialSelect();
+      		$('.select-create').materialSelect();
+      		$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function () {
+      			$(this).closest('.select-outline').find('label').toggleClass('active');
+      			$(this).closest('.select-outline').find('.caret').toggleClass('active');
+      		});
+      		
+      		$("#nombre-catalogo").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-z0-9Ññ ]/g, function(str) {
+					toastr.warning("Solo se permiten números y letras (0-9)(Aa-Zz, Ññ)");
+					return '';
+				}));
+			});
+      		
+      		// Validate fields
+			$("#descripcion-catalogo").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^A-Za-z0-9Ññ ]/g, function(str) {
+					toastr.warning("Solo se permiten números y letras (0-9)(Aa-Zz, Ññ)");
+					return '';
+				}));
+			});
+      		
+      		// Submit form consult
+      		$("form#catalogos").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormConsult();
+			});
+			
+      		$("form#create-catalogo").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitForm();
+			});
+      		
+      		$("form#edit-catalogo").submit(function(e) {
+    			// Stop default form Submit.
+    			e.preventDefault();
+    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormEdit();
+			});
+      		
+      		// Cancel button
+			$( "#btn-resetCatalogo" ).on( "click", function() {
+				$("#create-select-status").materialSelect('destroy');
+				$("#create-select-status").val("").change();
+				$("#create-select-status").materialSelect();
+				$("#create-nombre").val("");
+				$("#create-descripcion").val("");
+				$('#responsiveAddCatalogo').modal('toggle');
+			});
+      		
+			// Cancel button
+			$( "#btn-resetCatalogoEdit" ).on( "click", function() {
+				$("#edit-select-status").materialSelect('destroy');
+				$("#edit-select-status").val("").change();
+				$("#edit-select-status").materialSelect();
+				$("#edit-nombre").val("");
+				$("#edit-descripcion").val("");
+				$('#responsiveEditCatalogo').modal('toggle');
+			});
+				
+     });
+		
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Exclusiones</title>
+
+	<!-- ↓ Navigation icon ↓ -->
+	<link th:href="@{/img/favicon.ico}" rel="shortcut icon" type="image/x-icon">
+	
+	<!-- ↓ Font awesome ↓ -->
+	<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+	<!-- ↓ Fonts Roboto ↓ -->
+	<link th:href="@{/css/roboto.css}" rel="stylesheet">
+
+	<!-- ↓ Bootstrap core CSS ↓ -->
+	<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+	<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+	
+	
+    <!-- Your custom styles (optional) -->
+	<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+	<link th:href="@{/css/dataTables.checkboxes.css}" type="text/css" rel="stylesheet">
+	<link th:href="@{/css/style.css}" rel="stylesheet">
+	
+	<link th:href="@{/css/mdb-pro.css}" rel="stylesheet"> <!--DML Este css genera error con checkbox -->
+	
+</head>
+<body>
+	<form id="frm-example" action="#" method="POST">
+		<div class="container">
+			<div class="col-md-12">
+				<h1 class="text-center text-muted">Curso Avanzado Datatables</h1>
+				
+				 <div class="well">
+					<table class="table" id="users-table">
+						<thead>
+							<tr>
+								<th>Id</th>
+								<th>Nombre</th>
+								<th>Email</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+				
+				<p><button>Submit</button></p>
+
+				<p><b>Selected rows data:</b></p>
+				<pre id="example-console-rows"></pre>
+				
+			</div>
+		</div>
+	</form>
+	
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal"
+		class="page-footer font-small grey lighten-5 fixed-bottom"> </footer>
+	
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/dataTables.checkboxes.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	
+	<script type="text/javascript" th:src="@{/js/datatable.js}"></script>
+	
+	
+	
+</body>
+</html>

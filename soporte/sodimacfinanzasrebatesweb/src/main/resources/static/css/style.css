@@ -1,0 +1,201 @@
+#btnSwitch {
+	cursor: pointer;
+}
+
+#iconSuccess, #iconDanger {
+	cursor: default !important;
+}
+
+.dialog-validation-pop {
+	position: absolute;
+	z-index: 10;
+	transform: translate(0, -12px);
+	transition: all 0.5s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+	padding: 0;
+	background: #fff;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+	box-shadow: 0 1px 8px rgba(0, 0, 0, 0.45), 0 0 1px 1px
+		rgba(0, 0, 0, 0.3);
+	border-radius: 0.25rem;
+	opacity: 0;
+	visibility: hidden;
+}
+
+.dialog-validation-pop.visible {
+	opacity: 1;
+	visibility: visible;
+}
+
+.dialog-validation-pop p {
+	margin: 0 auto;
+	font-size: 0.8rem;
+	color: rgba(0, 0, 0, 0.8);
+	padding: 0.5rem;
+	text-align: center;
+}
+
+.dialog-validation-pop svg {
+	width: 20px;
+	padding-bottom: 0.2rem !important;
+	padding-right: 0.2rem;
+}
+
+.dialog-validation-pop::before, .dialog-validation-pop::after {
+	position: absolute;
+	z-index: -1;
+	content: "";
+	right: calc(50% - 50px);
+	top: -8px;
+	border-style: solid;
+	border-width: 0 10px 10px 10px;
+	border-color: transparent transparent #ffffff transparent;
+	transition-duration: 0.3s;
+	transition-property: transform;
+}
+
+.dialog-validation-pop::before {
+	border-color: transparent transparent rgba(0, 0, 0, 0.5) transparent;
+	top: -10px;
+	filter: blur(1px);
+}
+
+.width-180px {
+	min-width: 180px;
+}
+
+.width-240px {
+	min-width: 240px;
+}
+
+.width-320px {
+	min-width: 320px;
+}
+
+.form-control.success-mac {
+	/*border-color: #63a70a !important;*/
+	border-bottom: solid #63a70a !important;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px
+		rgba(255, 0, 0, 0.6);
+}
+
+.form-control.error-mac {
+	/*border-color: #63a70a !important;*/
+	border-bottom: solid #dc3545 !important;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px
+		rgba(255, 0, 0, 0.6);
+}
+
+.prevent-click {
+	pointer-events: none !important;
+}
+
+/* Add a green text color and a checkmark when the requirements are right */
+.valid {
+	color: #63a70a;
+}
+
+/* Add a red text color and an "x" icon when the requirements are wrong */
+.invalid {
+	color: #dc3545;
+}
+
+.cursor-pointer {
+	cursor: pointer !important;
+}
+
+.bg-sodimac-blue {
+	background-color: #006AB4 !important;
+}
+
+.btn-sodimac {
+	background-color: #3085D6 !important;
+	color: white;
+	border-radius: 12px;
+	transition-duration: 0.4s;
+}
+
+.btn-sodimac:hover {
+	background-color: #2B74BD;
+	box-shadow: 0 0 5px 2.5px rgba(0, 0, 0, 0.15), 0 0 7.5px 5px
+		rgba(0, 0, 0, 0.25);
+	color: white !important;
+	font-weight: 500;
+}
+
+.btn-sodimac-red {
+	background-color: #DD3333 !important;
+	color: white;
+	border-radius: 12px;
+	transition-duration: 0.4s;
+}
+
+.btn-sodimac-red:hover {
+	background-color: #BD2727;
+	box-shadow: 0 0 5px 2.5px rgba(0, 0, 0, 0.15), 0 0 7.5px 5px
+		rgba(0, 0, 0, 0.25);
+	color: white;
+	font-weight: 500;
+}
+
+.fas-button {
+	font-weight: 900;
+	padding: 0.8em;
+	width: 50px; /** fix width ***/
+	text-align: center;
+	display: inline;
+	border-radius: 50%;
+	line-height: 30px; /** for vertical center - if needed **/
+}
+
+.fas.fa-eraser {
+	background: #FFCCCC;
+}
+
+.fas.fa-ban {
+	background: #FFE5CC;
+}
+
+.fas.fa-play {
+	background: #CDE5CD;
+}
+
+.fas.disable {
+	background: #E0E0E0;
+}
+
+.icon-eraser {
+	color: #C5033E;
+	line-height: 30px;
+	opacity: .8;
+}
+
+.icon-eraser:hover {
+	opacity: 1.5;
+}
+
+.icon-process {
+	color: #06B673;
+	line-height: 30px;
+	opacity: .8;
+}
+
+.icon-process:hover {
+	opacity: 1.5;
+}
+
+.icon-ban {
+	color: #999900;
+	line-height: 30px;
+	opacity: .8;
+}
+
+.icon-ban:hover {
+	opacity: 1.5;
+}
+
+/*.btn-link:hover {
+	box-shadow: 0 3px 3px rgba(0, 0, 0, 0.28);
+	-ms-transform: translateY(4px);
+	-webkit-transform: translateY(4px);
+	transform: translateY(4px);
+}*/

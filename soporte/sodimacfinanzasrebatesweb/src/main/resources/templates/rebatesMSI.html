@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Cálculo MSI</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.min.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<header th:insert="fragments/header :: header-principal"> </header>
+
+	<!-- Start your project here-->
+
+	<section class="mt-5 animated fadeIn">
+		<form id="rebatesMSI" th:action="@{/rebatesMSI/consult}"
+			th:object="${periodo}" method="post" onsubmit="">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5" style="max-width: 1540px">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								
+								<!-- Proveedor search -->
+								<div class="col-sm-12 col-md-2 col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="number" id="oc-proveedor"
+											name="oc-proveedor" min="1" max="9999999999"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="oc-proveedor">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Proveedor
+										</label>
+									</div>
+								</div>
+								
+								<!-- Número orden de compra search -->
+								<div class="col-sm-12 col-md-2 col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="oc-ticket"
+											name="oc-ticket" 
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off" /> 
+										<label class="label-gcis" for="oc-ticket">
+											<i class="fa fa-search mr-2" style="opacity: .6;" aria-hidden="true"></i>
+											Ticket de venta
+										</label>
+									</div>
+								</div>
+								<!-- Tienda search -->
+								<div class="col-lg-3 select-outline colis">
+								
+									<select id="periodo-idCatPeriodo" name="periodo.idCatPeriodo" required
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar período</option>
+										<option value=null>Cualquier período</option>
+										<option th:each="periodoC: ${periodosConsult}"
+											th:value="${periodoC.idCatPeriodo}" th:text="${periodoC.idCatPeriodo + ' - ' + periodoC.detallePeriodo + ' (' + periodoC.programaPago.programaPago + ')'}">
+										</option>
+									</select> <label>Id período</label>
+									
+								</div>
+								
+								<!-- Estado search -->
+								<div class="col-lg-3 select-outline colis">
+								</div>
+								
+								
+								
+								<!-- Fecha inicio search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-from" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<input type="date" id="fechaIni" name="fechaIni"
+											th:value="${fechaIni}" class="form-control pickerDates"
+											autocomplete="off" style="color: rgb(73, 80, 87);">
+										<label for="fechaIni" class="active">Fecha inicio recepción</label>
+									</div>
+								</div>
+								<!-- Fecha final search -->
+								<div class="col-lg-2 colis">
+									<div id="date-picker-to" class="md-form md-outline"
+										style="margin-bottom: 18px;">
+										<input type="date" id="fechaFin" name="fechaFin"
+											th:value="${fechaFin}" class="form-control pickerDates"
+											autocomplete="off" style="color: rgb(73, 80, 87);">
+										<label for="fechaFin" class="active">Fecha final recepción</label>
+									</div>
+								</div>
+
+								<!-- <div class="col-sm-12 col-md-2 col-lg-1 colis"></div> -->
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<button th:href="@{/rebatesMSI/consult}" id="btn-consultar"
+											type="submit"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar</button>
+									</div>
+								</div>
+								
+								<!-- Btn Descargar Reporte -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div id="divVisible" class="">
+										<a th:href="@{/rebatesMSI/report}" id="btn-download"
+											type="button"
+											class="btn btn-sodimac btn-sm btn-xs-block btn-sm-block waves-effect">Reporte</a>
+									</div>
+								</div>
+								
+								<!-- Tipo orden compra search -->
+								<div class="col-lg-3 select-outline colis">
+								</div>
+								
+							</div>
+						</div>
+						
+						<!--Grid column-->
+						<div id="fragmentDiv" th:include="fragments/rebatesMSI :: start"
+							class="col-md-12 py-3"></div>
+
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+	
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal"
+		class="page-footer font-small grey lighten-5 fixed-bottom"> </footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+
+	<script>
+  	
+    $( document ).ready(function() {
+    
+		// Clean notify message
+		toastr.clear();
+
+  		$('.mdb-select').materialSelect();
+  		$('.select-create').materialSelect();
+  		$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function () {
+  			$(this).closest('.select-outline').find('label').toggleClass('active');
+  			$(this).closest('.select-outline').find('.caret').toggleClass('active');
+  		});
+  		
+  		// Submit form consult
+  		$("form#rebatesMSI").submit(function(e) {
+			// Stop default form Submit.
+			e.preventDefault();
+				
+			// Call Ajax Submit.
+			ajaxSubmitFormConsult();
+		});
+		
+		$('#divVisible').hide();
+		
+		function ajaxSubmitFormConsult() {
+			
+			var idPeriodo = $("#periodo-idCatPeriodo").val();
+ 			if (!(idPeriodo != null && idPeriodo.length > 0)) {
+ 				toastr.warning("Validación", "Seleccionar un periodo de consulta");
+ 				return;
+ 			}
+ 
+ 			var fInicio = new Date(Date.parse($("#fechaIni").val()));
+ 			var fFinal = new Date(Date.parse($("#fechaFin").val()));
+ 			
+ 			fInicio.setDate(fInicio.getDate());
+ 			fFinal.setDate(fFinal.getDate() + 1);
+ 			
+    		// construct consult object.
+			var objData = JSON.stringify({
+				start: 0,
+				rowsPerPage:500,
+				proveedor: $("#oc-proveedor").val(),
+				ticket: $("#oc-ticket").val(),
+				idCatPeriodo : $("#periodo-idCatPeriodo").val(),
+				fechaIni:  fInicio,
+				fechaFin: fFinal
+			});
+ 
+    		$("#btn-consultar").prop("disabled", true);
+    		
+			// const div: where information will be displayed.
+			const fragmentDiv = document.getElementById("fragmentDiv");
+			
+			// ajax request.
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				url: "../rebatesMSI/consult",
+				data: objData,
+				timeout: 30000,
+				success: function(response) {
+					$("#fragmentDiv").html(response);
+					$("#btn-consultar").prop("disabled", false);
+					
+					//config dataTable dtRebatesMSI//
+        			$('#dtRebatesMSI').DataTable({
+        			"lengthMenu": [ [5, 10, 20, 50, -1], [5, 10, 20, 50, "Todos"] ],
+          			"order": [4, "desc" ],
+          			"aaSorting": [],
+          			columnDefs: [{
+						orderable: false,
+						targets: [5, 6, 7, 8],
+					}],
+        			"searching": true,
+        			"paging": true,
+        			"pagingType": "simple_numbers",
+        			"pageLength": 5,
+        			"language": {
+          				"info":           "Mostrando _START_ de _END_ de un total de: _TOTAL_ registros",
+          				"lengthMenu":     "Mostrando _MENU_ registros",
+          				"loadingRecords": "Cargando...",
+          				"processing":     "Procesando...",
+          				"emptyTable":     "Sin registros en la tabla",
+          				"infoEmpty":      "Mostrando 0 de 0 de un total: 0 registros",
+          				"infoFiltered":   "(filtrado de _MAX_ entradas totales)",
+          				"search":         "Buscar:",
+          				"zeroRecords":    "Sin registros encontrados",
+            			"paginate": {
+              				"first":      "Primero",
+              				"last":       "Último",
+              				"previous": "Anterior",
+              				"next": "Siguiente",
+           		 			}
+          				}
+        			});
+        			$('.dataTables_length').addClass('bs-select');
+        			
+        			swal.close();
+        			
+        			var control = 0;
+			
+					$('#dtRebatesMSI TBODY TR').each(function() {
+						control ++;
+					})
+			
+					if(control >= 1){
+				
+						$('#btn-download').prop('disabled', false);
+						$('#divVisible').show();
+				
+					}else{
+					
+						$('#btn-download').prop('disabled', true);
+						$('#divVisible').hide();
+					}
+				},
+				error : function(e) {
+				
+					console.log("ERROR: ", e);
+					toastr.error("No se pudo conectar con el servicio", "Error de conexión");
+					$("#btn-consultar").prop("disabled", true);
+				}
+			});
+ 
+		}
+      		
+      		
+     });
+  </script>
+
+</body>
+</html>

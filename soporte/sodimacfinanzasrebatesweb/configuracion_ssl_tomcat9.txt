@@ -1,0 +1,225 @@
+================================================================================
+CONFIGURACIÓN SSL PARA TOMCAT 9.0.104
+================================================================================
+FECHA: 28-Oct-2025
+SERVIDOR: 10.138.150.77
+KEYSTORE: tomcat_ssl.keystore
+PASSWORD: Sodimac2023
+================================================================================
+
+PASO 1: COPIAR Y PEGAR EN server.xml
+================================================================================
+
+Ubicación del archivo:
+C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\conf\server.xml
+
+BUSCA esta sección (la que tienes actualmente):
+-------------------------------------------------------
+<Connector port="443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+           keystoreFile="C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore"
+           keystorePass="Sodimac2023"
+           keyPass="Sodimac2023"
+           clientAuth="false" sslProtocol="TLS" />
+-------------------------------------------------------
+
+REEMPLÁZALA con esta configuración:
+-------------------------------------------------------
+<Connector port="443"
+           protocol="org.apache.coyote.http11.Http11NioProtocol"
+           maxThreads="150"
+           SSLEnabled="true"
+           scheme="https"
+           secure="true"
+           clientAuth="false"
+           sslProtocol="TLS">
+    <SSLHostConfig protocols="TLSv1.2,TLSv1.3">
+        <Certificate certificateKeystoreFile="C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore"
+                     certificateKeystorePassword="Sodimac2023"
+                     certificateKeyPassword="Sodimac2023"
+                     certificateKeystoreType="JKS"
+                     type="RSA" />
+    </SSLHostConfig>
+</Connector>
+-------------------------------------------------------
+
+
+================================================================================
+PASO 2: COMANDOS PARA EJECUTAR EN CMD (Copiar línea por línea)
+================================================================================
+
+REM 1. Verificar que el keystore existe
+dir "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore"
+
+REM 2. Listar contenido del keystore (para verificar que es válido)
+keytool -list -keystore "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore" -storepass Sodimac2023
+
+REM 3. Respaldar el server.xml actual
+copy "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\conf\server.xml" "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\conf\server.xml.backup"
+
+REM 4. Editar el server.xml (se abrirá Notepad)
+notepad "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\conf\server.xml"
+
+REM 5. Detener Tomcat
+net stop Tomcat9
+
+REM 6. Esperar 5 segundos
+timeout /t 5
+
+REM 7. Iniciar Tomcat
+net start Tomcat9
+
+REM 8. Ver los logs para verificar que arrancó correctamente
+type "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\logs\catalina.*.log" | findstr /i "ssl 443 error grave"
+
+
+================================================================================
+PASO 3: SI EL KEYSTORE ESTÁ CORRUPTO (OPCIONAL)
+================================================================================
+
+Si el paso 2 (keytool -list) da error "Invalid keystore format",
+ejecuta estos comandos para recrear el keystore:
+
+cd "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104"
+
+ren tomcat_ssl.keystore tomcat_ssl.keystore.old
+
+keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -validity 365 -keystore tomcat_ssl.keystore -storepass Sodimac2023 -keypass Sodimac2023 -dname "CN=10.138.150.77, OU=IT, O=SODIMAC, L=CDMX, ST=CDMX, C=MX"
+
+keytool -list -keystore tomcat_ssl.keystore -storepass Sodimac2023
+
+
+================================================================================
+PASO 4: VERIFICACIÓN FINAL
+================================================================================
+
+1. Abrir navegador web
+2. Ir a: https://10.138.150.77
+3. Si aparece advertencia de "Certificado no confiable", es NORMAL (certificado autofirmado)
+4. Click en "Avanzado" > "Aceptar riesgo y continuar"
+5. Deberías ver tu aplicación web funcionando
+
+
+================================================================================
+DIAGNÓSTICO DE PROBLEMAS
+================================================================================
+
+Si sigue sin funcionar, ejecuta estos comandos de diagnóstico:
+
+REM Ver logs en tiempo real
+powershell Get-Content "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\logs\catalina.*.log" -Wait -Tail 50
+
+REM Verificar que el puerto 443 no esté ocupado por otro proceso
+netstat -ano | findstr ":443"
+
+REM Ver versión de Java
+java -version
+
+REM Verificar permisos del keystore
+icacls "C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore"
+
+
+================================================================================
+CONFIGURACIÓN ALTERNATIVA: USAR PUERTO 8443 EN VEZ DE 443
+================================================================================
+
+Si tienes problemas con permisos en el puerto 443, puedes usar 8443:
+
+Cambia en el server.xml:
+  port="443"  →  port="8443"
+
+Luego accede con:
+  https://10.138.150.77:8443
+
+
+================================================================================
+NOTAS IMPORTANTES
+================================================================================
+
+1. El conector anterior usaba sintaxis de Tomcat 8.x (deprecada)
+2. Tomcat 9.x requiere usar <SSLHostConfig> y <Certificate>
+3. El password del keystore es: Sodimac2023
+4. El certificado es autofirmado (navegador mostrará advertencia)
+5. Para producción, considera usar un certificado válido de una CA
+
+
+================================================================================
+CONFIGURACIÓN COMPLETA DE server.xml (REFERENCIA)
+================================================================================
+
+Si quieres reemplazar TODO el server.xml, aquí está la configuración completa:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="8005" shutdown="SHUTDOWN">
+
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+
+  <Service name="Catalina">
+
+    <!-- Conector HTTP en puerto 8080 (redirige a HTTPS 443) -->
+    <Connector port="8080"
+               protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="443" />
+
+    <!-- Conector HTTPS en puerto 443 -->
+    <Connector port="443"
+               protocol="org.apache.coyote.http11.Http11NioProtocol"
+               maxThreads="150"
+               SSLEnabled="true"
+               scheme="https"
+               secure="true"
+               clientAuth="false"
+               sslProtocol="TLS">
+        <SSLHostConfig protocols="TLSv1.2,TLSv1.3">
+            <Certificate certificateKeystoreFile="C:\Program Files\Apache Software Foundation\Tomcat 9.0.104\tomcat_ssl.keystore"
+                         certificateKeystorePassword="Sodimac2023"
+                         certificateKeyPassword="Sodimac2023"
+                         certificateKeystoreType="JKS"
+                         type="RSA" />
+        </SSLHostConfig>
+    </Connector>
+
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+
+      <Host name="localhost"
+            appBase="webapps"
+            unpackWARs="true"
+            autoDeploy="true">
+
+        <Valve className="org.apache.catalina.valves.AccessLogValve"
+               directory="logs"
+               prefix="localhost_access_log"
+               suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
+Creado: 28-Oct-2025
+Autor: Claude
+Propósito: Migración de sintaxis Tomcat 8.x a 9.x para SSL
+================================================================================

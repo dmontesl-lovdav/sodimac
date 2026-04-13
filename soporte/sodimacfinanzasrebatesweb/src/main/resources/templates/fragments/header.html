@@ -1,0 +1,120 @@
+<!------------ Header Login -------------->
+<nav th:fragment="header-login" class="mb-1 navbar navbar-expand-lg fixed-top scrolling-navbar navbar-light grey lighten-5">
+	<a class="navbar-brand" th:href="@{/}"><img th:src="@{/img/svg/logo.png}" alt=""></a>
+</nav>
+<!------------ Header Principal -------------->
+<nav th:fragment="header-principal" class="mb-1 navbar navbar-expand-lg fixed-top scrolling-navbar navbar-light grey lighten-5">
+
+	<style>
+		.dropdown-submenu {
+			position: relative;
+		}
+		
+		.dropdown-submenu a::after {
+			transform: rotate(-90deg);
+			position: absolute;
+			right: 6px;
+			top: .8em;
+		}
+		
+		.dropdown-submenu .dropdown-menu {
+			top: 0;
+			left: 100%;
+			margin-left: .1rem;
+			margin-right: .1rem;
+		}
+	</style>
+
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}">
+		$(document).ready(function() {
+			$('.dropdown-menu a.dropdown-toggle').on('click', function(e) {
+				if (!$(this).next().hasClass('show')) {
+					$(this).parents('.dropdown-menu').first().find('.show').removeClass("show");
+				}
+
+				var $subMenu = $(this).next(".dropdown-menu");
+				$subMenu.toggleClass('show');
+
+				$(this).parents('li.nav-item.dropdown.show').on('hidden.bs.dropdown', function(e) {
+					$('.dropdown-submenu .show').removeClass("show");
+				});
+
+				return false;
+			});
+		});
+	</script>
+
+	<a class="navbar-brand" th:href="@{/inicio}"><img th:src="@{/img/svg/logo.png}" alt=""></a>
+	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent-4" 
+		aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+	</button>
+	<div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+		<ul class="navbar-nav ml-auto">
+			<li class="nav-item dropdown" sec:authorize="hasAnyAuthority('AUTHORIZATION_INDEX','DOCUMENTOS_INDEX','FILLRATE_INDEX','EXCLUSIONES_INDEX','ORDER_COMPRA_INDEX','ORDER_COMPRA_FILL_INDEX','POLIZAS_INDEX','ACUERDOS_INDEX','REBASTES_MSI_INDEX','REBATES_MSI3_INDEX','REBATES_USUARIO_FILLRATE_INDEX','REBATES_USUARIO_INDEX','REPORTE_FINANCIERO_INDEX')">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> 
+					Menú 
+				</a>
+				<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+					<li class="dropdown-submenu" sec:authorize="hasAnyAuthority('AUTHORIZATION_INDEX','DOCUMENTOS_INDEX','FILLRATE_INDEX','EXCLUSIONES_INDEX','ORDER_COMPRA_INDEX','ORDER_COMPRA_FILL_INDEX')">
+						<a class="dropdown-item dropdown-toggle" href="#">Cálculo</a>
+						<ul class="dropdown-menu">
+							<li sec:authorize="hasAuthority('AUTHORIZATION_INDEX')"><a class="dropdown-item" th:href="@{/authorization/index}">Autorización</a></li>
+							<li sec:authorize="hasAuthority('DOCUMENTOS_INDEX')"><a class="dropdown-item" th:href="@{/documents/index}">Carga documentos</a></li>
+							<li sec:authorize="hasAuthority('FILLRATE_INDEX')"><a class="dropdown-item" th:href="@{/fillrate/index}">Calcular Rebates</a></li>
+							<li sec:authorize="hasAuthority('EXCLUSIONES_INDEX')"><a class="dropdown-item" th:href="@{/exclusiones/index}">Exclusiones OC</a></li>
+							<li sec:authorize="hasAuthority('ORDER_COMPRA_INDEX')"><a class="dropdown-item" th:href="@{/ordenCompra/index}">Ordenes de Compra</a></li>
+							<li sec:authorize="hasAuthority('ORDER_COMPRA_FILL_INDEX')"><a class="dropdown-item" th:href="@{/ordenCompraFill/index}">Ordenes de Compra Fill</a></li>
+						</ul>
+					</li>
+					<li class="dropdown-submenu" sec:authorize="hasAnyAuthority('POLIZAS_INDEX','REPORTE_FINANCIERO_INDEX')">
+						<a class="dropdown-item dropdown-toggle" href="#">Contabilidad</a>
+						<ul class="dropdown-menu">
+							<li sec:authorize="hasAuthority('POLIZAS_INDEX')"><a class="dropdown-item" th:href="@{/polizas/index}">Póliza contable</a></li>
+							<li sec:authorize="hasAuthority('REPORTE_FINANCIERO_INDEX')"><a class="dropdown-item" th:href="@{/reporteFinanciero/index}">Reporte Financiero</a></li>
+						</ul>
+					</li>
+					<li class="dropdown-submenu" sec:authorize="hasAnyAuthority('ACUERDOS_INDEX')">
+						<a class="dropdown-item dropdown-toggle" href="#">Datos Maestros</a>
+						<ul class="dropdown-menu">
+							<li sec:authorize="hasAuthority('ACUERDOS_INDEX')"><a class="dropdown-item" th:href="@{/acuerdos/index}">Acuerdos Comerciales</a></li>
+						</ul>
+					</li>
+					<li class="dropdown-submenu" sec:authorize="hasAnyAuthority('REBASTES_MSI_INDEX','REBATES_MSI3_INDEX','REBATES_USUARIO_FILLRATE_INDEX','REBATES_USUARIO_INDEX')">
+						<a class="dropdown-item dropdown-toggle" href="#">Reportes</a>
+						<ul class="dropdown-menu">
+							<li sec:authorize="hasAuthority('REBASTES_MSI_INDEX')"><a class="dropdown-item" th:href="@{/rebatesMSI/index}">Reporte MSI</a></li>
+							<li sec:authorize="hasAuthority('REBATES_MSI3_INDEX')"><a class="dropdown-item" th:href="@{/rebatesMSI3/index}">Reporte MSI 3</a></li>
+							<li sec:authorize="hasAuthority('REBATES_USUARIO_INDEX')"><a class="dropdown-item" th:href="@{/rebateUsuario/index}">Reporte Usuario</a></li>
+							<li sec:authorize="hasAuthority('REBATES_USUARIO_FILLRATE_INDEX')"><a class="dropdown-item" th:href="@{/usuarioFillRate/index}">Reporte Usuario FillRate</a></li>
+							<li><a class="dropdown-item" href="http://migrafana.sodmx.com.mx:3000/d/d6938561-c829-41c1-9046-0487c2f4f287/dashboard-calculo-fillrate?orgId=1&from=1711951200000&to=1717221599000" target="_blank">Dashboard Fill Rate</a></li>
+						</ul>
+					</li>
+				</ul>
+			</li>
+
+			<li class="nav-item dropdown" sec:authorize="hasAnyAuthority('CATALOGOS_INDEX')">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdminisLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> 
+					Administración 
+				</a>
+				<ul class="dropdown-menu" aria-labelledby="navbarDropdownAdminisLink">
+					<li sec:authorize="hasAuthority('CATALOGOS_INDEX')"><a class="dropdown-item" th:href="@{/catalogos/index}">Catálogos</a></li>
+				</ul>
+			</li>
+
+			<li id="navUser" class="nav-item" style="padding-left: 1rem !important;">
+				<div style="text-align: center">
+					<i class="fas fa-user"></i> <span th:text="${usuario}">Usuario</span>
+				</div>
+				<div style="text-align: center">
+					<span style="font-size: 12px !important; display: block;" th:each="perfil: ${perfiles}" th:text="${perfil}">Usuario</span>
+				</div>
+			</li>
+
+			<li class="nav-item">
+				<a class="nav-link" th:href="@{/logout}">Cerrar sesión</a>
+			</li>
+		</ul>
+
+	</div>
+</nav>

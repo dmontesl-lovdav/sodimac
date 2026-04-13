@@ -1,0 +1,250 @@
+-- ====================================================================
+-- DIAGNOSTICO DIRECTO - COMPARACION DE TAMAÑOS
+-- ====================================================================
+-- Este script compara directamente los tamaños de los datos vs los límites
+-- ====================================================================
+
+PRINT '========================================';
+PRINT 'DIAGNOSTICO DIRECTO DE TRUNCAMIENTO';
+PRINT '========================================';
+PRINT '';
+
+-- ====================================================================
+-- Comparar longitud real vs longitud permitida
+-- ====================================================================
+PRINT '--- Campos que EXCEDEN el tamaño permitido ---';
+PRINT '';
+
+-- Verificar cada campo contra su límite en SODIMAC_SAP_PROD.Envios_Ap
+-- Basado en la estructura que vimos: EMPRESA(5), REFERENCIA_DOCUMENTO(20), etc.
+
+-- EMPRESA (límite: 5)
+SELECT 'EMPRESA' AS Campo, 5 AS LimiteDestino, MAX(LEN(ISNULL(EMPRESA, ''))) AS LongitudActual,
+       CASE WHEN MAX(LEN(ISNULL(EMPRESA, ''))) > 5 THEN 'EXCEDE LIMITE' ELSE 'OK' END AS Estado
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- REFERENCIA_DOCUMENTO (límite: 20)
+SELECT 'REFERENCIA_DOCUMENTO', 20, MAX(LEN(ISNULL(LTRIM(RTRIM(REFERENCIA_DOCUMENTO)), ''))),
+       CASE WHEN MAX(LEN(ISNULL(LTRIM(RTRIM(REFERENCIA_DOCUMENTO)), ''))) > 20 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- NUMERO_DOCUMENTO (límite: 30)
+SELECT 'NUMERO_DOCUMENTO', 30, MAX(LEN(ISNULL(LTRIM(RTRIM(NUMERO_DOCUMENTO)), ''))),
+       CASE WHEN MAX(LEN(ISNULL(LTRIM(RTRIM(NUMERO_DOCUMENTO)), ''))) > 30 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- MONEDA (límite: 3)
+SELECT 'MONEDA', 3, MAX(LEN(ISNULL(LTRIM(RTRIM(MONEDA)), ''))),
+       CASE WHEN MAX(LEN(ISNULL(LTRIM(RTRIM(MONEDA)), ''))) > 3 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- DEBITO_CREDITO (límite: 1)
+SELECT 'DEBITO_CREDITO', 1, MAX(LEN(ISNULL(DEBITO_CREDITO, ''))),
+       CASE WHEN MAX(LEN(ISNULL(DEBITO_CREDITO, ''))) > 1 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CUENTA_CONTABLE (límite: 12)
+SELECT 'CUENTA_CONTABLE', 12, MAX(LEN(ISNULL(CUENTA_CONTABLE, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CUENTA_CONTABLE, ''))) > 12 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CODIGO_PROVEEDOR (límite: 10)
+SELECT 'CODIGO_PROVEEDOR', 10, MAX(LEN(ISNULL(CODIGO_PROVEEDOR, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CODIGO_PROVEEDOR, ''))) > 10 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- SUCURSAL (límite: 5)
+SELECT 'SUCURSAL', 5, MAX(LEN(ISNULL(SUCURSAL, ''))),
+       CASE WHEN MAX(LEN(ISNULL(SUCURSAL, ''))) > 5 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CONDICION_PAGO (límite: 4)
+SELECT 'CONDICION_PAGO', 4, MAX(LEN(ISNULL(CONDICION_PAGO, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CONDICION_PAGO, ''))) > 4 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- SISTEMA_ORIGEN (límite: 30)
+SELECT 'SISTEMA_ORIGEN', 30, MAX(LEN(ISNULL(SISTEMA_ORIGEN, ''))),
+       CASE WHEN MAX(LEN(ISNULL(SISTEMA_ORIGEN, ''))) > 30 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CLASE_DOCUMENTO (límite: 2)
+SELECT 'CLASE_DOCUMENTO', 2, MAX(LEN(ISNULL(CLASE_DOCUMENTO, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CLASE_DOCUMENTO, ''))) > 2 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- NUMERO_REFERENCIA (límite: 18)
+SELECT 'NUMERO_REFERENCIA', 18, MAX(LEN(ISNULL(NUMERO_REFERENCIA, ''))),
+       CASE WHEN MAX(LEN(ISNULL(NUMERO_REFERENCIA, ''))) > 18 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CENTRO_COSTO (límite: 10)
+SELECT 'CENTRO_COSTO', 10, MAX(LEN(ISNULL(CENTRO_COSTO, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CENTRO_COSTO, ''))) > 10 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- CENTRO_BENEFICIO (límite: 10)
+SELECT 'CENTRO_BENEFICIO', 10, MAX(LEN(ISNULL(CENTRO_BENEFICIO, ''))),
+       CASE WHEN MAX(LEN(ISNULL(CENTRO_BENEFICIO, ''))) > 10 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- NUMERO_UUID (límite: 36)
+SELECT 'NUMERO_UUID', 36, MAX(LEN(ISNULL(LTRIM(RTRIM(NUMERO_UUID)), ''))),
+       CASE WHEN MAX(LEN(ISNULL(LTRIM(RTRIM(NUMERO_UUID)), ''))) > 36 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+UNION ALL
+
+-- TIPO_DOCUMENTO (límite: 20)
+SELECT 'TIPO_DOCUMENTO', 20, MAX(LEN(ISNULL(LTRIM(RTRIM(TIPO_DOCUMENTO)), ''))),
+       CASE WHEN MAX(LEN(ISNULL(LTRIM(RTRIM(TIPO_DOCUMENTO)), ''))) > 20 THEN 'EXCEDE LIMITE' ELSE 'OK' END
+FROM [dbo].[Envios_Ap_Temp] WHERE FLAG_ENVIADO = 0
+
+ORDER BY Estado DESC, Campo;
+
+PRINT '';
+PRINT '========================================';
+PRINT '';
+PRINT '--- Registros que causan el problema ---';
+PRINT '';
+
+-- Mostrar registros específicos para cada campo que exceda
+DECLARE @TieneProblema BIT = 0;
+
+-- Verificar CODIGO_PROVEEDOR > 10
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(CODIGO_PROVEEDOR, '')) > 10 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: CODIGO_PROVEEDOR excede 10 caracteres';
+    SELECT TOP 5 ID, CODIGO_PROVEEDOR, LEN(CODIGO_PROVEEDOR) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(CODIGO_PROVEEDOR, '')) > 10 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar NUMERO_REFERENCIA > 18
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(NUMERO_REFERENCIA, '')) > 18 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: NUMERO_REFERENCIA excede 18 caracteres';
+    SELECT TOP 5 ID, NUMERO_REFERENCIA, LEN(NUMERO_REFERENCIA) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(NUMERO_REFERENCIA, '')) > 18 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar REFERENCIA_DOCUMENTO > 20
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(LTRIM(RTRIM(REFERENCIA_DOCUMENTO)), '')) > 20 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: REFERENCIA_DOCUMENTO excede 20 caracteres';
+    SELECT TOP 5 ID, REFERENCIA_DOCUMENTO, LEN(LTRIM(RTRIM(REFERENCIA_DOCUMENTO))) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(LTRIM(RTRIM(REFERENCIA_DOCUMENTO)), '')) > 20 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar CENTRO_COSTO > 10
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(CENTRO_COSTO, '')) > 10 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: CENTRO_COSTO excede 10 caracteres';
+    SELECT TOP 5 ID, CENTRO_COSTO, LEN(CENTRO_COSTO) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(CENTRO_COSTO, '')) > 10 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar CENTRO_BENEFICIO > 10
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(CENTRO_BENEFICIO, '')) > 10 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: CENTRO_BENEFICIO excede 10 caracteres';
+    SELECT TOP 5 ID, CENTRO_BENEFICIO, LEN(CENTRO_BENEFICIO) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(CENTRO_BENEFICIO, '')) > 10 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar CUENTA_CONTABLE > 12
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(CUENTA_CONTABLE, '')) > 12 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: CUENTA_CONTABLE excede 12 caracteres';
+    SELECT TOP 5 ID, CUENTA_CONTABLE, LEN(CUENTA_CONTABLE) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(CUENTA_CONTABLE, '')) > 12 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar NUMERO_UUID > 36
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(LTRIM(RTRIM(NUMERO_UUID)), '')) > 36 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: NUMERO_UUID excede 36 caracteres';
+    SELECT TOP 5 ID, NUMERO_UUID, LEN(LTRIM(RTRIM(NUMERO_UUID))) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(LTRIM(RTRIM(NUMERO_UUID)), '')) > 36 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar NUMERO_DOCUMENTO > 30
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(LTRIM(RTRIM(NUMERO_DOCUMENTO)), '')) > 30 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: NUMERO_DOCUMENTO excede 30 caracteres';
+    SELECT TOP 5 ID, NUMERO_DOCUMENTO, LEN(LTRIM(RTRIM(NUMERO_DOCUMENTO))) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(LTRIM(RTRIM(NUMERO_DOCUMENTO)), '')) > 30 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+-- Verificar CONDICION_PAGO > 4
+IF EXISTS (SELECT 1 FROM [dbo].[Envios_Ap_Temp] WHERE LEN(ISNULL(CONDICION_PAGO, '')) > 4 AND FLAG_ENVIADO = 0)
+BEGIN
+    SET @TieneProblema = 1;
+    PRINT 'PROBLEMA: CONDICION_PAGO excede 4 caracteres';
+    SELECT TOP 5 ID, CONDICION_PAGO, LEN(CONDICION_PAGO) AS Longitud
+    FROM [dbo].[Envios_Ap_Temp]
+    WHERE LEN(ISNULL(CONDICION_PAGO, '')) > 4 AND FLAG_ENVIADO = 0;
+    PRINT '';
+END
+
+IF @TieneProblema = 0
+BEGIN
+    PRINT 'No se encontraron campos que excedan los límites.';
+    PRINT 'El problema puede estar en la tabla Envios_Ap_Manual (línea 176 del SP).';
+    PRINT '';
+END
+
+PRINT '========================================';
+PRINT 'FIN DIAGNOSTICO';
+PRINT '========================================';

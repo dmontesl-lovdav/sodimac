@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Home</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.min.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+
+<body>
+
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-principal" id="header">
+
+	</header>
+
+
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<form id="acuerdos">
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5 mb-5" style="max-width: 1400px">
+					<!--Grid row-->
+					<div class="row pt-5 mt-5">
+					
+					<div class="form-row">Acuerdos comerciales</div>
+						<!-- ROW 1 -->
+						<div class="col-md-12 mt-1 mb-1">
+							<div class="form-row">
+								<!-- Proveedor search -->
+								<div class="col-sm-12 col-md-12 col-lg-2 colis">
+									<div class="md-form form-sm">
+										<input type="number" id="proveedor" name="proveedor"
+											min="1" max="2147483647"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="proveedor"><i class="fa fa-search mr-2"
+											style="opacity: .6;" aria-hidden="true"></i>Proveedor</label>
+									</div>
+								</div>	
+								<!-- Razón Social search -->
+								<div class="col-sm-12 col-md-3 col-lg-3 colis">
+									<div class="md-form form-sm">
+										<input type="text" id="razon-social"
+											name="detallePeriodo" minlegth="2" maxlength="30"
+											class="form-control form-control-sm inputs-gcis"
+											autocomplete="off"> <label class="label-gcis"
+											for="descripcion-periodo"><i
+											class="fa fa-search mr-2" style="opacity: .6;"
+											aria-hidden="true"></i>Razón Social</label>
+									</div>
+								</div>
+								<!-- Tipo Acuerdo search -->
+								<div class="col-lg-3 select-outline colis">
+									<select id="tipoAcuerdo-idCatTipoAcuerdo"
+										name="tipoAcuerdo.idCatTipoAcuerdo" required
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar tipo de acuerdo</option>
+<!-- 										<option value="null">Cualquier Acuerdo</option> -->
+										<option th:each="acuerdo: ${listTipoAcuerdos}"
+											th:value="${acuerdo}"
+											th:text="${acuerdo}">
+										</option>
+									</select> <label>Tipo Acuerdo</label>
+								</div>
+								<!-- Programa Pago search -->
+								<div class="col-lg-2 select-outline colis">
+									<select id="programaPago-idCatProgramaPago"
+										name="programaPago.idCatProgramaPago"
+										class="mdb-select md-form md-outline form-control-sm colorful-select dropdown-primary">
+										<option value="" disabled selected>Seleccionar programa de pago</option>
+										<option value="null">Cualquier programa</option>
+										<option th:each="pago: ${listPagos}"
+											th:value="${pago.programaPago}"
+											th:text="${pago.idCatProgramaPago + ' - ' + pago.programaPago}">
+										</option>
+									</select> <label>Programa Pago</label>
+								</div>
+								<!-- <div class="col-sm-12 col-md-2 col-lg-1 colis"></div> -->
+								<!-- Btn Consultar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<button th:href="@{/}" id="btn-consultar"
+											type="button"
+											class="btn btn-outline-primary btn-sm btn-xs-block btn-sm-block waves-effect">Consultar Acuerdos</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- ROW 2 -->
+						<div class="col-md-12">
+							<div class="form-row">
+
+								<div class="col-sm-12 col-md-2 col-lg-10 colis"></div>
+								<!-- Btn Agregar -->
+								<div class="col-sm-12 col-md-6 col-lg-2 left-xs-0 colis"
+									style="margin-top: 0px; position: relative; left: 10px;">
+									<div class="">
+										<a th:href="@{/acuerdos/report}" id="btn-download" type="button"
+											class="btn btn-default btn-sm btn-xs-block btn-sm-block waves-effect">Descargar Acuerdos</a>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!--Grid column-->
+						<div id="fragmentDiv"
+							th:include="fragments/acuerdos :: start"
+							class="col-md-12 py-3"></div>
+
+					</div>
+				</div>
+			</div>
+
+		</form>
+	</section>
+
+
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/acuerdos.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	<script th:inline="javascript" th:if="${code == true}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+	<script th:inline="javascript" th:if="${code == false}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    					
+    			toastr.success(message, titulo);
+    		}else if(tipo == 2){
+    					
+    			toastr.warning(message, titulo);
+    		}else if(tipo == 3){
+    						
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+
+	<script>
+		
+		$(document).ready(function() {
+		
+			// Clean notify message
+			toastr.clear();
+
+			$('.mdb-select').materialSelect();
+			$('.select-create').materialSelect();
+			$('.select-wrapper.md-form.md-outline input.select-dropdown').bind('focus blur', function() {
+				$(this).closest('.select-outline').find('label').toggleClass('active');
+				$(this).closest('.select-outline').find('.caret').toggleClass('active');
+			});
+			
+			// Validate fields
+			$("#proveedor").keyup(function() {
+				var $th = $(this);
+				$th.val($th.val().replace(/[^0-9$]/g, function(str) {
+					toastr.warning("Solo se permiten números (0-9)");
+					return '';
+				}));
+			});
+			
+			$("#btn-consultar").click(function(e) {    				
+    			// Call Ajax Submit.
+        		ajaxSubmitFormConsult();
+			});
+		});
+		
+	</script>
+
+</body>
+
+</html>

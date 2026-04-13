@@ -1,0 +1,275 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="form-login" th:remove="tag">
+	<form id="form-login" th:action="@{/login}" th:object="${usuario}" method="post" onsubmit="">
+		<!-- Form login -->
+		<div>
+			<h1 class="h1-big">
+				<strong>Inicio de Sesión</strong>
+			</h1>
+		</div>
+		<div class="card" id="inicio-sesion">
+			<div class="view overlay">
+				<div style="background-color: #efefef; border-bottom: 1px solid #BCBCBC;">
+					<div class="container">
+						<div class="row">
+							<div class=" col-lg-12 col-md-12">
+								<h3 class="h3 m-3 text-left">
+									<strong> Ingresa tu usuario y contraseña <i
+											class="fas fa-exclamation-circle text-primary fa-sm mt-1 fa-pull-right"
+											data-placement="right" data-toggle="tooltip" title=""
+											data-original-title="Bienvenido al sistema Rebates"
+											style="cursor: pointer; opacity: 1;" aria-hidden="true"></i></strong>
+								</h3>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-lg-12">
+						<!-- Grid row -->
+						<div style="height: auto">
+							<!-- Usuario -->
+							<div class="md-form form-sm mt-3 position-relative">
+								<input type="text" id="username" name="username" 
+									class="form-control form-control-sm inputs-gcis "
+									minlegth="3" maxlength="100" autofocus="autofocus" required> <label
+									class="label-gcis active" for="input-login-user"></i>Usuario</label>
+							</div>
+							<!-- Password -->
+							<div class="md-form form-sm mt-5 position-relative">
+								<input type="password" id="password" name="password" 
+									class="form-control form-control-sm inputs-gcis"
+									maxlength="25" required>
+								<button type="button" id="btn-psw" th:attr="onclick=|psw_change()|"
+									class="btn-toggle-pass">
+									<i class="fa fa-eye"></i>
+								</button>
+								<label class="label-gcis active" for="input-login-password"></i>Contraseña</label>
+							</div>
+						</div>
+					</div>
+					<!-- Buttons -->
+					<div class="col-lg-12">
+						<div class="md-form d-flex justify-content-center mt-3">
+							<button id="btn-resetIngresar" type="reset"
+								class="btn btn-outline-primary btn-sm btn-block inline waves-effect mr-1">
+								Cancelar
+							</button>
+							<button id="btn-ingresar" type="submit"
+								class="btn btn-default btn-sm inline btn-block waves-effect ml-1">
+								Ingresar
+							</button>
+						</div>
+					</div>					
+				</div>
+			</div>
+		</div>
+	</form>
+	<div>
+		<h4 id="btn-actualizar-pass" class="h5 mt-2 text-primary btn btn-link">
+			<a>Actualizar contraseña</a>
+		</h4>
+	</div>
+</div>
+<!------------ Form Change Password -------------->
+<div th:fragment="formChange" th:remove="tag">
+<form id="form-change" th:action="@{/}" th:object="${usuario}" method="post" onsubmit="">
+	<div>
+		<h1 class="h1-big">
+			<strong>Inicio de Sesión</strong>
+		</h1>
+	</div>
+	<div class="row">
+		<div class="col-sm-6 mt-2 mb-2">
+			<div class="card" id="inicio-sesion">
+				<div class="view overlay">
+					<div style="background-color: #efefef; border-bottom: 1px solid #BCBCBC;">
+						<div class="container">
+							<div class="row">
+								<div class=" col-lg-12 col-md-12">
+									<h3 class="h3 m-3 text-left">
+										<strong> Nueva Contraseña <i data-placement="right" data-toggle="tooltip"
+												title=""
+												data-original-title="Se debe de validar que la nueva contraseña cumpla con los lineamientos"
+												class="fas fa-exclamation-circle text-primary fa-sm mt-1 fa-pull-right"
+												style="cursor: pointer; opacity: 1;" aria-hidden="true"></i></strong>
+									</h3>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-lg-12">
+							<!--Grid row-->
+							<div style="height: auto">
+								<p class="small text-left" style="font-size: 10pt; color: gray;">
+									Ingresa la contraseña que te enviamos a tu correo y luego crea
+									una nueva para tu cuenta.
+								</p>
+								<input th:value="${idUser}" th:id="hidden-input-idUser" type="hidden" />
+								<input th:value="${email}" th:id="hidden-input-email" type="hidden" />
+								<div class="md-form form-sm mt-4 position-relative">
+									<input th:id="input-changepass-passtemp" th:value="${passtemp}" type="password"
+										maxlength="25" class="form-control form-control-sm inputs-gcis " required />
+									<button type="button" th:id="btnPswTemp" th:attr="onclick=|psw_temp(1)|"
+										class="btn-toggle-pass">
+										<i class="fa fa-eye"></i>
+									</button>
+									<label class="label-gcis active" for="input-changepass-passtemp">
+										</i>Contraseña Temporal
+									</label>
+								</div>
+								<div class="md-form form-sm mt-4 position-relative">
+									<input th:id="input-changepass-newpass" type="password" minlength="11"
+										maxlength="25" class="form-control form-control-sm inputs-gcis " required />
+									<button type="button" th:id="btnPswNew" th:attr="onclick=|psw_temp(2)|"
+										class="btn-toggle-pass">
+										<i class="fa fa-eye"></i>
+									</button>
+									<label class="label-gcis " for="input-changepass-newpass">
+										</i>Contraseña nueva
+									</label>
+								</div>
+								<div class="md-form form-sm mt-4 position-relative">
+									<input th:id="input-changepass-newpassconf" type="password" minlength="11"
+										maxlength="25" class="form-control form-control-sm inputs-gcis " required />
+									<button type="button" th:id="btnPswConfirm" th:attr="onclick=|psw_temp(3)|"
+										class="btn-toggle-pass">
+										<i class="fa fa-eye"></i>
+									</button>
+									<label class="label-gcis " for="input-changepass-newpassconf">
+										</i>Confirmar contraseña nueva
+									</label>
+								</div>
+
+							</div>
+							<!--Grid row-->
+						</div>
+						<div class="col-lg-12">
+							<div class="md-form d-flex justify-content-center mt-3">
+								<a th:href="@{./}" id="btn-resetActualizarNueva" type="reset"
+									class="btn btn-outline-primary btn-sm btn-block inline waves-effect mr-1">Cancelar</a>
+								<button id="btn-actualizarNueva" type="submit"
+									class="btn btn-default btn-sm inline btn-block waves-effect ml-1">Actualizar</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-6 mt-2 mb-3">
+			<div class="card">
+				<div class="view overlay">
+					<div style="background-color: #efefef; border-bottom: 1px solid #BCBCBC;">
+						<div class="container">
+							<div class="row">
+								<div class=" col-lg-12 col-md-12">
+									<h3 class="h3 m-3 text-left">
+										<strong> Lineamientos </strong>
+									</h3>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-lg-12">
+							<!--Grid row-->
+							<div style="height: auto">
+								<p class="small text-left" style="font-size: 10pt; color: gray;">
+									<strong>Validar que la nueva contraseña cumpla con: </strong></br>
+
+									<span id="valid-legth">- Una longitud de 11 a 25 caracteres</span></br>
+									<span id="valid-number">- Por lo menos un número</span></br>
+									<!-- <span id="valid-number">- Por lo menos un número, no consecutivos (123)</span></br> -->
+									<span id="valid-minus">- Por lo menos una letra minúscula</span></br>
+									<!-- <span id="valid-minus">- Por lo menos una letra minúscula, no consecutivos (abc)</span></br> -->
+									<span id="valid-mayus">- Por lo menos una letra mayúscula</span></br>
+									<!-- <span id="valid-mayus">- Por lo menos una letra mayúscula, no consecutivos (DEF)</span></br> -->
+									<span id="valid-special">- Por lo menos 1 carácter especial: . # @ _ ( ) ; $ % &</span></br>
+									<span id="valid-conf">- Las contraseñas deben coincidir</span>
+								</p>
+								<p class="small text-left" style="font-size: 10pt; color: gray;">
+									<strong>No debe contener:</strong></br>
+									<span id="valid-email">- Tu correo electrónico</span></br>
+									<span id="valid-system">- El nombre de empresa / sistema (ej.: SODI, REBATES, SODIMAC)</span></br>
+									<span id="valid-store">- El nombre de la tienda (ej: IZCALLI, ARBOLEDAS, SAN MATEO)</span></br>
+									<span id="valid-combo">- Combinación de letras y/o números consecutivos: (ej.: AbC, 123)</span>
+									<!-- <span id="valid-combo">- Combinación de letras consecutivos (aBcc,AbC)</span> -->
+								</p>
+								<p class="small text-left" style="font-size: 10pt; color: gray;">
+									<span>Ni sus variantes o combinación de mayúsculas y minúsculas</span>
+								</p>
+							</div>
+						</div>
+						<!--Grid row-->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</form>
+</div>
+<!------------ Form Recover Password -------------->
+<div th:fragment="formRecover" th:remove="tag">
+<form id="form-recover" th:action="@{/}" th:object="${usuario}" method="post" onsubmit="">
+	<div>
+		<h1 class="h1-big">
+			<strong>Inicio de Sesión</strong>
+		</h1>
+	</div>
+	<div class="card" id="inicio-sesion">
+		<div class="view overlay">
+			<div style="background-color: #efefef; border-bottom: 1px solid #BCBCBC;">
+				<div class="container">
+					<div class="row">
+						<div class=" col-lg-12 col-md-12">
+							<h3 class="h3 m-3 text-left">
+								<strong> Actualizar contraseña <i data-placement="right" data-toggle="tooltip" title=""
+										data-original-title="Oprime 'Cancelar' para regresar a Inicio"
+										class="fas fa-exclamation-circle text-primary fa-sm mt-1 fa-pull-right"
+										style="cursor: pointer; opacity: 1;" aria-hidden="true"></i></strong>
+							</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: auto">
+						<p class="small text-center pb-3" style="font-size: 9pt; color: gray;">
+							Ingresa el correo electrónico que registraste <br>y sigue
+							las instrucciones.
+						</p>
+						<div class="md-form form-sm mt-4">
+							<input type="text" id="input-recover-email"
+								class="form-control form-control-sm inputs-gcis " minlength="3" maxlegth="254"
+								autofocus="autofocus" required>
+							<label class="label-gcis" for="input-recover-email">
+								</i>Correo electrónico
+							</label>
+						</div>
+					</div>
+					<!--Grid row-->
+				</div>
+				<div class="col-lg-12">
+					<div class="md-form d-flex justify-content-center mt-3">
+						<a th:href="@{./}" id="btn-resetActualizarNueva" type="reset"
+							class="btn btn-outline-primary btn-sm btn-block inline waves-effect mr-1">Cancelar</a>
+						<button id="btn-actualizar" type="submit"
+							class="btn btn-default btn-sm inline btn-block waves-effect ml-1">Actualizar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</form>
+</div>

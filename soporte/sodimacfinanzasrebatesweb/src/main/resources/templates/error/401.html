@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+<head>
+<style>
+table td {
+	vertical-align: top;
+	border: solid 1px #888;
+	padding: 10px;
+}
+</style>
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body id="error-body">
+	<!-- <h1>Error 400</h1> -->
+
+
+	<script type="text/javascript" th:src="@{/js/jquery-3.6.0.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+	<script>
+		$(document).ready(function() {
+		
+			// window.alert("Sesión expirada");
+			
+			function getContextPath() {
+			   return window.location.pathname.substring(0, window.location.pathname.indexOf("/",2));
+			}
+			
+			const swalSodimac = Swal.mixin({
+				customClass: {
+					confirmButton: 'btn btn-sodimac',
+					cancelButton: 'btn btn-sodimac-red',
+					html: true
+				},
+				buttonsStyling: false
+			})
+			
+			var titulo = "Sesión expirada";
+			var message = "La sesión expiró, favor de ingresar al sistema";
+			var strTipo = "warning";
+			
+			swalSodimac.fire({
+							title: titulo,
+							html: message,
+							icon: strTipo,
+							allowOutsideClick: false
+						}).then((result) => {
+							
+							setTimeout(() => {  document.location.href= getContextPath() + "/"; }, 300);
+						});
+
+		});
+	</script>
+</body>
+</html>

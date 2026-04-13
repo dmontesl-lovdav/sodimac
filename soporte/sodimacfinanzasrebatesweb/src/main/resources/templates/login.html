@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+<meta charset="utf-8">
+
+<!-- ↓ Meta content ↓ -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<!-- ↓ Page title ↓ -->
+<title>Rebates - Login</title>
+
+<!-- ↓ Navigation icon ↓ -->
+<link th:href="@{/img/favicon.ico}" rel="shortcut icon"
+	type="image/x-icon">
+
+<!-- ↓ Font awesome ↓ -->
+<link th:href="@{/fontawesome-5.15.1/css/all.min.css}" rel="stylesheet">
+<!-- ↓ Fonts Roboto ↓ -->
+<link th:href="@{/css/roboto.css}" rel="stylesheet">
+<!-- ↓ Bootstrap core CSS ↓ -->
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<link th:href="@{/css/mdb-pro.min.css}" rel="stylesheet">
+<link th:href="@{/css/addons/datatables.css}" rel="stylesheet">
+
+<!-- Your custom styles (optional) -->
+<link th:href="@{/css/jquery-ui.css}" rel="stylesheet">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+
+	<!-- Header -->
+	<header th:insert="fragments/header :: header-login" id="header">
+		
+	</header>
+	
+	<!-- Start your project here-->
+	<section class="mt-5 animated fadeIn">
+		<!-- <form id="documento" th:action="@{/}" th:object="${usuario}" method="post" onsubmit=""> -->
+			<div class="mask rgba-gradient">
+				<div class="container h-100 mt-5 mb-5">
+
+					<!-- Grid row -->
+					<div class="row pt-5 mt-5">
+
+						<!-- Grid column -->
+						<div id="fragmentDiv" th:include="fragments/login :: form-login" class="col-md-4 offset-md-4 col-sm-12 offset-sm-0 d-flex flex-column justify-content-center align-items-center">
+						
+						<!-- Load login/formLogin -->
+
+						</div>
+
+					</div>
+
+				</div>
+			</div>
+		<!-- </form> -->
+	</section>
+	
+	<!-- Footer -->
+	<footer th:insert="fragments/footer :: footer-principal" class="page-footer font-small grey lighten-5 fixed-bottom">
+
+	</footer>
+
+	<!-- Script section -->
+	<script type="text/javascript" th:src="@{/js/jquery-3.4.1.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/popper.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/mdb.js}"></script>
+	<script type="text/javascript" th:src="@{/js/login.js}"></script>
+	<script type="text/javascript" th:src="@{/js/addons/datatables.min.js}"></script>
+	<script type="text/javascript" th:src="@{/js/sweetalert2.all.min.js}"></script>
+
+	<script>
+		
+		$(document).ready(function() {
+		
+			var error = "[[${error}]]";
+			if(error) {
+				toastr.error(error,"Advertencia");
+			}
+			
+			// Clean notify message
+			toastr.clear();
+			$('[data-toggle="tooltip"]').tooltip();
+			//active eye password.
+			$(".btn-toggle-pass i").click(function() {
+				if ($(this).hasClass("fa-eye")) {
+					$(this).removeClass("fa-eye");
+					$(this).addClass("fa-eye-slash");
+				} else if ($(this).hasClass("fa-eye-slash")) {
+					$(this).removeClass("fa-eye-slash");
+					$(this).addClass("fa-eye");
+				}
+			});
+			
+			$("#btn-actualizar-pass").click(function() {
+
+				//ajax request.
+				$.ajax({
+					type: "GET",
+					contentType: "application/json",
+					url: "./recover",
+					timeout: 30000,
+					success: function(response) {
+						
+						$("#fragmentDiv").html(response);
+
+						$('[data-toggle="tooltip"]').tooltip();
+						$("#input-recover-email").keyup(function() {
+							var $th = $(this);
+							$th.val($th.val().replace(/[^A-Za-z0-9.\#\_\-\$\%\&\(\)\+\@]/g, function(str) {
+								toastr.warning("El correo electrónico debe tener el formato  nombre@dominio. Se aceptan letras y números (Aa-Zz, 0-9) y los siguientes caracteres  especiales: _ - . # $ %& ( ) + ");
+								return '';
+							}));
+						});
+						$("#input-recover-email").focus();
+						
+						// Submit form recover
+						$("form#form-recover").submit(function(e) {
+    						// Stop default form Submit.
+    						e.preventDefault();
+ 
+        					// Call Ajax Submit.
+        					ajaxSubmitFormRecover();
+						});
+
+					},
+					error : function(e) {
+				
+						console.log("ERROR: ", e);
+						
+					}
+				});
+
+			});
+			
+			
+
+		});
+		
+		function psw_change() {
+
+			var inp_psw = $('#input-login-password');
+			var btn_psw = $('#btn-psw i');
+			var btn_active = $('#btn-psw');
+
+			if (btn_psw.hasClass("fa-eye")) {
+
+				inp_psw.attr('type', 'password');
+				btn_active.removeClass("active");
+
+			} else if (btn_psw.hasClass("fa-eye-slash")) {
+
+				inp_psw.attr('type', 'text');
+				btn_active.addClass("active");
+			}
+
+		}
+		
+		
+	</script>
+	
+</body>
+
+</html>

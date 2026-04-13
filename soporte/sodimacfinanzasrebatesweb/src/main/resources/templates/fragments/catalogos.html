@@ -1,0 +1,281 @@
+<!------------ Fragment Start -------------->
+<div th:fragment="start" th:remove="tag">
+	<div class="card" id="inicio">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh"
+						class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-exclamation-circle fa-lg mb-3 text-black-80"></i><br>
+							<strong>Catálogos</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							Ingrese sus parámetros de consulta y presione el botón <strong>"Consultar Catálogos"</strong>.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+		
+	<script th:inline="javascript" th:if="${code == true}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 1){
+    		
+    			toastr.success(message, titulo);
+    			
+    		}else if(tipo == 4){
+    			
+    			toastr.info(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+	<script th:inline="javascript" th:if="${code == false}">
+   		 /*<![CDATA[*/
+   		 
+    		var titulo = /*[[${titulo}]]*/ 'default';
+    		var message = /*[[${msg}]]*/ 'default';
+    		var tipo = /*[[${tipo}]]*/ 'default';
+    		
+    		if(tipo == 2){
+    		
+    			toastr.warning(message, titulo);
+    			
+    		}else if(tipo == 3){
+    			
+    			toastr.error(message, titulo);
+    		}
+    		
+   		 /*]]>*/
+	</script>
+	</div>
+</div>
+<!------------ Fragment Table Discounts -------------->
+<div th:fragment="table" th:remove="tag">
+	<div class="card h-100" id="listCatalogos">
+		<div class="view overlay">
+			<div class="table-responsive table-responsive-1 table-bordered mb-5">
+				<!--Table-->
+				<table id="dtCatalogos" class="table table-striped table-hover table-sm">
+					<!--Table head-->
+					<thead>
+						<tr>
+							<th style="width: 5%">Id Catálogo</th>
+							<th style="width: 20%">Nombre</th>
+							<th style="width: 40%">Descripción</th>
+							<th style="width: 5%">Estatus</th>
+							<th style="width: 10%">Fecha Creación</th>
+							<th style="width: 10%">Fecha Actualización</th>
+							<th style="width: 5%">Editar</th>
+							<th style="width: 5%">Eliminar</th>
+						</tr>
+					</thead>
+					<!--Table head-->
+					<!--Table body-->
+					<tbody>
+						<tr th:each="element : ${lista}">
+							<td class="text-center"><span th:text="${element.idCatalogo}"></span></td>
+							<td><span th:text="${element.nombre}"></span></td>
+							<td><span th:text="${element.descripcion}"></span></td>
+							<td class="text-center"><span th:text=" ${element.activo} ? ACTIVO : INACTIVO"></span></td>
+							<td class="text-center"><span th:text="${#dates.format(element.fechaCreacion, 'dd/MM/yyyy HH:mm:ss')}"></span></td>
+							<td class="text-center"><span th:text="${#dates.format(element.fechaActualizacion, 'dd/MM/yyyy HH:mm:ss')}"></span></td>
+							<!-- Editar -->
+							<td class="text-center">
+								<button th:attr="onclick=|return edit(${element.idCatalogo}, '${element.nombre}', '${element.descripcion}', ${element.activo});|" th:id="edit-catalogo + '-' + ${element.idCatalogo}" type="button" title="Editar registro" class="blck btn btn-sm btn-link glow-on-hover" style="cursor: pointer">
+									<span class="fa-stack fa-lg">
+										<i class="fas fa-edit" aria-hidden="true"></i>
+									</span>
+								</button>
+							</td>
+							<td class="text-center">
+								<button th:attr="onclick=|return confirm_delete(${element.idCatalogo});|" th:id="delete-catalogo + '-' + ${element.idCatalogo}" type="button" title="Eliminar registro" class="blck btn btn-sm btn-link glow-on-hover" style="cursor: pointer">
+									<span class="fa-stack fa-lg icon-eraser">
+										<i class="fas fas-button fa-eraser" aria-hidden="true"></i>
+									</span>
+								</button>
+							</td>
+						</tr>
+
+					</tbody>
+				
+					<!--Table body-->
+				</table>
+				<!--Table-->
+			</div>
+		</div>
+	</div>
+</div>
+<!------------ Fragment No Records -------------->
+<div th:fragment="noRecord" th:remove="tag">
+	<div class="card" id="sinRegistro">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-lg-12">
+					<!--Grid row-->
+					<div style="height: 60vh" class="d-flex flex-column justify-content-center align-items-center">
+						<h1 class="h1 text-center mb-4">
+							<i class="fas fa-search fa-lg mb-3 text-primary" style="opacity: .5;"></i><br> <strong
+								class="text-primary">Sin Registros</strong>
+						</h1>
+						<h5 class="p1 small text-center mb-3">
+							No se encuentran registros con los parámetros seleccionados.<br>
+							Ingrese diferentes parámetros y presione el botón: <strong>"Consultar Catálogos"</strong>.
+						</h5>
+					</div>
+					<!--Grid row-->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!------------ Fragment Create New -------------->
+<div th:fragment="create" th:remove="tag">
+	<div class="card-body" style="margin-top: -20px;">
+		<div class="card-border">
+			<div class="card-body">
+				<form id="create-catalogo" th:action="@{/catalogos/create}" th:object="${catalogos}" method="post" onsubmit="" >
+					<div class="row">
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-4">
+										<!-- Nombre -->
+										<div class="md-form form-sm mt-3 pb-3">
+											<input type="text" id="create-nombre"
+												class="form-control form-control-sm inputs-gcis "
+												autocomplete="off" minlength="2" maxlength="30" required>
+											<label class="label-gcis" for="create-nombre"></i>Nombre</label>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-8">
+										<!-- Descripción -->
+										<div class="md-form form-sm mt-3 pb-3">
+											<input type="text" id="create-descripcion"
+												class="form-control form-control-sm inputs-gcis "
+												autocomplete="off" minlength="2" maxlength="250" required>
+											<label class="label-gcis" for="create-descripcion"></i>Descripción</label>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-4">
+										<!-- Estatus -->
+										<div class="mt-3 pb-3 select-outline">
+											<select id="create-select-status" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+												<option value="" disabled selected>Seleccionar estatus</option>
+												<option value="true" >Activo</option>
+												<option value="false" >Inactivo</option>
+											</select> <label>Estatus</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!--Grid row-->
+						</div>
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="md-form d-flex justify-content-center mt-4">
+								<button id="btn-resetCatalogo" type="button"
+									class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+								<button id="btn-createCatalogo" type="submit"
+									class="btn btn-default btn-sm inline waves-effect"
+									onclick="">Guardar</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<!------------ Fragment Editar -------------->
+<div th:fragment="edit" th:remove="tag">
+	<div class="card-body" style="margin-top: -20px;">
+		<div class="card-border">
+			<div class="card-body">
+				<form id="edit-catalogo" th:action="@{/catalogos/edit}" th:object="${catalogos}" method="post" onsubmit="" >
+					<div class="row">
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<!--Grid row-->
+							<div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-2">
+										<!-- Nombre -->
+										<div class="md-form form-sm mt-3 pb-3">
+											<input type="text" id="edit-id"
+												class="form-control form-control-sm inputs-gcis "
+												autocomplete="off" minlength="1" maxlength="30" required>
+											<label class="active label-gcis" for="edit-id"></i>Id Catálogo</label>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-4">
+										<!-- Nombre -->
+										<div class="md-form form-sm mt-3 pb-3">
+											<input type="text" id="edit-nombre"
+												class="form-control form-control-sm inputs-gcis "
+												autocomplete="off" minlength="2" maxlength="30" required>
+											<label class="active label-gcis" for="edit-nombre"></i>Nombre</label>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-8">
+										<!-- Descripción -->
+										<div class="md-form form-sm mt-3 pb-3">
+											<input type="text" id="edit-descripcion"
+												class="form-control form-control-sm inputs-gcis "
+												autocomplete="off" minlength="2" maxlength="250" required>
+											<label class="active label-gcis" for="create-descripcion"></i>Descripción</label>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<!-- Col-1 -->
+									<div class="offset-lg-1 col-lg-4">
+										<!-- Estatus -->
+										<div class="mt-3 pb-3 select-outline">
+											<select id="edit-select-status" class="select-create md-form md-outline form-sm colorful-select dropdown-primary" required>
+												<option value="" disabled>Seleccionar estatus</option>
+												<option value="true">Activo</option>
+												<option value="false">Inactivo</option>
+											</select> <label>Estatus</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!--Grid row-->
+						</div>
+						<div class="col-lg-12 offset-md-0 col-md-12">
+							<div class="md-form d-flex justify-content-center mt-4">
+								<button id="btn-resetCatalogoEdit" type="button"
+									class="btn btn-outline-primary btn-sm inline waves-effect">Cancelar</button>
+								<button id="btn-editCatalogo" type="submit"
+									class="btn btn-default btn-sm inline waves-effect"
+									onclick="">Guardar</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

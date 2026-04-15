@@ -36,15 +36,9 @@ localService.get(healthPath, (request, response) => {
   response.status(200).send({ message: "healthy" });
 });
 
-// INCREASING MAX PAYLOAD SIZE
-const maximumPayloadSize = '66mb';
-localService.use(bodyParser.json({ limit: maximumPayloadSize }));
-localService.use(bodyParser.raw({ limit: maximumPayloadSize }));
-localService.use(bodyParser.urlencoded({ limit: maximumPayloadSize, extended: true }));
-
 logger.info(" CONFIGURING PROXY ");
 const remoteResolver = proxy(remoteUrl, {
-  parseReqBody: false,
+  parseReqBody: true,
   proxyReqPathResolver: (request) => {
     const targetPath = request.originalUrl.replace(localContext, "");
     const normalizedPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
@@ -73,6 +67,12 @@ const remoteResolver = proxy(remoteUrl, {
 });
 
 localService.use(localContext, remoteResolver);
+
+// INCREASING MAX PAYLOAD SIZE (registrado DESPUES del proxy para no consumir el body)
+const maximumPayloadSize = '66mb';
+localService.use(bodyParser.json({ limit: maximumPayloadSize }));
+localService.use(bodyParser.raw({ limit: maximumPayloadSize }));
+localService.use(bodyParser.urlencoded({ limit: maximumPayloadSize, extended: true }));
 
 // STARTING PROXY
 localService.listen(localPort, () => {

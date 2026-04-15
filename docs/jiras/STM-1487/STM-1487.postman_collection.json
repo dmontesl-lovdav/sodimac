@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "STM-1487 - Auditoria via BFF Util (directo)",
+    "description": "Endpoints de activity-logs a traves del BFF Util (proxy transparente). Apuntan directamente al puerto 3800 sin pasar por Cloud Endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "stm-1487-bff-util-audit"
+  },
+  "item": [
+    {
+      "name": "Health BFF Util",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3800/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3800",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "GET /api/utils/activity-logs/uuid",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3800/api/utils/activity-logs/uuid",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3800",
+          "path": ["api", "utils", "activity-logs", "uuid"]
+        }
+      }
+    },
+    {
+      "name": "POST /api/utils/activity-logs",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "TraceFrontId",
+            "value": "99999999-9999-9999-9999-999999999999"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"traceId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"traceFrontId\": \"99999999-9999-9999-9999-999999999999\",\n  \"modulo\": \"finanzas\",\n  \"action\": \"CREATE_PAYMENT\",\n  \"serviceName\": \"bff-util\",\n  \"userId\": \"PROV001\",\n  \"isError\": false,\n  \"message\": \"Pago registrado\",\n  \"messageDetail\": \"monto 5000 MXN\",\n  \"details\": {\n    \"referencia\": \"PAY-0001\"\n  },\n  \"durationms\": 230,\n  \"timestamp\": \"2026-04-15T10:30:00Z\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3800/api/utils/activity-logs/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3800",
+          "path": ["api", "utils", "activity-logs", ""]
+        }
+      }
+    },
+    {
+      "name": "GET /api/utils/activity-logs (list)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dateAtInitial\": \"2026-04-01T00:00:00Z\",\n  \"dateAtEnd\": \"2026-04-15T23:59:59Z\",\n  \"pageNumber\": 1,\n  \"pageSize\": 20\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3800/api/utils/activity-logs/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3800",
+          "path": ["api", "utils", "activity-logs", ""]
+        }
+      }
+    },
+    {
+      "name": "GET /api/utils/activity-logs (filter by service)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dateAtInitial\": \"2026-04-01T00:00:00Z\",\n  \"dateAtEnd\": \"2026-04-15T23:59:59Z\",\n  \"serviceName\": \"bff-util\",\n  \"pageNumber\": 1,\n  \"pageSize\": 10\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3800/api/utils/activity-logs/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3800",
+          "path": ["api", "utils", "activity-logs", ""]
+        }
+      }
+    }
+  ]
+}

@@ -6,7 +6,7 @@ info:
   description: >
     Support RESTful operations for utils flow. This API provides access to
     parameters, modules, messages, application messages, processes, item types,
-    and items.
+    items, and activity logs.
   title: Utils API
   version: 2.0.0
   x-business-acronym: mrch
@@ -60,6 +60,11 @@ paths:
     $ref: "./paths/item.yaml#/items"
   /items/{id}:
     $ref: "./paths/item.yaml#/items-by-id"
+
+  /activity-logs:
+    $ref: "./paths/activity-logs.yaml#/activity-logs"
+  /activity-logs/uuid:
+    $ref: "./paths/activity-logs.yaml#/activity-logs-uuid"
 
 definitions:
   ExceptionWrapper:
@@ -159,6 +164,19 @@ definitions:
     $ref: "./definitions/parameter.yaml#/ParameterVersionsResponse"
   ParameterDeleteResponse:
     $ref: "./definitions/parameter.yaml#/ParameterDeleteResponse"
+
+  CreateActivityLogDto:
+    $ref: "./definitions/activity-logs.yaml#/CreateActivityLogDto"
+  ListActivityLogQueryDto:
+    $ref: "./definitions/activity-logs.yaml#/ListActivityLogQueryDto"
+  ActivityLogDto:
+    $ref: "./definitions/activity-logs.yaml#/ActivityLogDto"
+  ActivityLogListResponse:
+    $ref: "./definitions/activity-logs.yaml#/ActivityLogListResponse"
+  ActivityLogCreateResponse:
+    $ref: "./definitions/activity-logs.yaml#/ActivityLogCreateResponse"
+  ActivityLogUuidResponse:
+    $ref: "./definitions/activity-logs.yaml#/ActivityLogUuidResponse"
 
 securityDefinitions:
   api_key:

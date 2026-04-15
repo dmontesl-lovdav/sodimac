@@ -276,4 +276,127 @@ git config core.autocrlf true
 
 ---
 
+## Trabajo colaborativo - detectar cambios del equipo
+
+Comandos para usar cuando otros integrantes tocan el mismo proyecto (ej. util-api)
+y necesitas saber que cambio antes de integrar.
+
+### Ver commits remotos sin aplicar (sin hacer pull aun)
+
+```bash
+# Actualizar refs remotas sin tocar tu working dir
+git fetch origin
+
+# Commits que estan en remoto y tu no tienes (te vas a traer esto al pull)
+git log HEAD..origin/dmontes --oneline
+
+# Commits tuyos que aun no subiste
+git log origin/dmontes..HEAD --oneline
+
+# Ambos a la vez con grafico
+git log --oneline --graph --all --decorate HEAD origin/dmontes
+```
+
+### Ver archivos que cambiaron otros (antes de integrar)
+
+```bash
+git fetch origin
+
+# Resumen: archivos modificados + lineas +/-
+git diff --stat HEAD..origin/dmontes
+
+# Diff completo (solo un proyecto)
+git diff HEAD..origin/dmontes -- APP03022-mrch.backend.somx.util-api/
+
+# Ver solo nombres de archivo (con estado A/M/D)
+git diff --name-status HEAD..origin/dmontes
+```
+
+### Listar TODAS las ramas con ultima actividad (local + remoto)
+
+```bash
+git for-each-ref --sort=-committerdate refs/heads refs/remotes \
+  --format="%(refname:short) | %(committerdate:relative) | %(authorname) | %(subject)"
+```
+
+### Filtrar commits por autor
+
+```bash
+# Lo que subio un integrante especifico en el ultimo mes
+git log --all --author="Fernando" --oneline --since="1 month ago"
+
+# Todos los commits del equipo con dominio sodimac
+git log --all --author="@sodimac" --format="%h %an %ad %s" --date=short
+
+# Actividad por archivo especifico
+git log --follow --format="%h %an %ad %s" --date=short -- APP03022-mrch.backend.somx.util-api/src/routes/index.ts
+```
+
+### Detectar conflictos ANTES de hacer merge (dry-run)
+
+```bash
+git fetch origin
+
+# Si imprime bloques con <<<<<<< habra conflictos en el merge real
+git merge-tree $(git merge-base HEAD origin/dmontes) HEAD origin/dmontes
+```
+
+### Rebase (alternativa limpia al merge para integrar cambios remotos)
+
+```bash
+git fetch origin
+git rebase origin/dmontes
+
+# Si hay conflicto en un archivo:
+#   1. Abrir archivo, resolver marcas <<<<<<< ======= >>>>>>>
+#   2. git add archivo-resuelto.ts
+#   3. git rebase --continue
+#
+# Si quieres cancelar y regresar al estado previo al rebase:
+git rebase --abort
+```
+
+### Pull Requests en el remoto (usando gh CLI)
+
+```bash
+# Listar PRs abiertos del repo
+gh pr list
+
+# Ver archivos que toca un PR especifico
+gh pr view 123 --files
+
+# Ver diff completo de un PR
+gh pr diff 123
+
+# Checkout local de la rama de un PR para probarla
+gh pr checkout 123
+```
+
+### Flujo recomendado diario (antes de empezar a trabajar)
+
+```bash
+# 1. Ver en que rama estas y si tienes cambios pendientes
+git status
+
+# 2. Traer refs remotas sin aplicar
+git fetch origin
+
+# 3. Ver que hay nuevo en tu rama remota
+git log HEAD..origin/dmontes --oneline
+
+# 4. Si hay cambios, revisa archivos antes de pullear
+git diff --stat HEAD..origin/dmontes
+
+# 5. Si tienes cambios locales no commiteados, guardalos
+git stash
+
+# 6. Integrar (pull con rebase para historial lineal)
+git pull --rebase origin dmontes
+
+# 7. Recuperar tus cambios
+git stash pop
+```
+
+---
+
 *Este archivo se actualiza conforme se usen nuevos comandos utiles en el proyecto.*

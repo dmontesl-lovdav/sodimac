@@ -23,6 +23,7 @@ import { ApplicationMsg } from '../entities/ApplicationMsg.entity.js';
 import { CatProcess } from '../entities/CatProcess.entity.js';
 import { CatItemType } from '../entities/CatItemType.entity.js';
 import { CatItem } from '../entities/CatItem.entity.js';
+import { ActivityLogs } from '../entities/ActivityLogs.entity.js';
 
 // Registrar entidades
 const ENTITIES = [
@@ -32,7 +33,8 @@ const ENTITIES = [
     ApplicationMsg,
     CatProcess,
     CatItemType,
-    CatItem
+    CatItem,
+    ActivityLogs
 ];
 
 const dbHost = process.env.DB_HOST;

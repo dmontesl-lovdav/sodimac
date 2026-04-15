@@ -1,0 +1,105 @@
+========================================================================
+STM-1487 - Migrar el modulo de auditoria a utilerias BFF
+Pruebas con cURL (BFF util en puerto 3800, contexto /api/utils)
+========================================================================
+
+Prerequisito: util-api debe estar corriendo en 3712 (backend del BFF).
+
+# ------------------------------------------------------------------------
+# 1. Health local del BFF Util (no proxyea, responde el propio BFF)
+# ------------------------------------------------------------------------
+curl -s http://localhost:3800/health
+
+
+# ------------------------------------------------------------------------
+# 2. UUID via BFF (proxy a /api/activity-logs/uuid en util-api)
+# ------------------------------------------------------------------------
+curl -s http://localhost:3800/api/utils/activity-logs/uuid
+
+
+# ------------------------------------------------------------------------
+# 3. Crear log de actividad via BFF
+#    El header TraceFrontId se propaga y se registra en la BD.
+# ------------------------------------------------------------------------
+curl -sS -X POST http://localhost:3800/api/utils/activity-logs/ \
+  -H "Content-Type: application/json" \
+  -H "TraceFrontId: 99999999-9999-9999-9999-999999999999" \
+  -d '{
+    "traceId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "traceFrontId": "99999999-9999-9999-9999-999999999999",
+    "modulo": "finanzas",
+    "action": "CREATE_PAYMENT",
+    "serviceName": "bff-util",
+    "userId": "PROV001",
+    "isError": false,
+    "message": "Pago registrado",
+    "messageDetail": "monto 5000 MXN",
+    "details": {"referencia":"PAY-0001"},
+    "durationms": 230,
+    "timestamp": "2026-04-15T10:30:00Z"
+  }'
+
+
+# ------------------------------------------------------------------------
+# 4. Listar logs via BFF
+# ------------------------------------------------------------------------
+curl -sS -X GET http://localhost:3800/api/utils/activity-logs/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dateAtInitial": "2026-04-01T00:00:00Z",
+    "dateAtEnd": "2026-04-15T23:59:59Z",
+    "pageNumber": 1,
+    "pageSize": 20
+  }'
+
+
+# ------------------------------------------------------------------------
+# 5. Listar logs filtrando por serviceName (ver solo los que entraron via BFF)
+# ------------------------------------------------------------------------
+curl -sS -X GET http://localhost:3800/api/utils/activity-logs/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dateAtInitial": "2026-04-01T00:00:00Z",
+    "dateAtEnd": "2026-04-15T23:59:59Z",
+    "serviceName": "bff-util",
+    "pageNumber": 1,
+    "pageSize": 10
+  }'
+
+
+# ------------------------------------------------------------------------
+# 6. Validar en BD que el registro llego via BFF
+# ------------------------------------------------------------------------
+docker exec sodimac-pg psql -U wwwb2bportal -d b2b_portal \
+  -c "SELECT service_name, modulo, action, message, timestamp \
+      FROM core_audit.activity_logs \
+      WHERE service_name = 'bff-util' \
+      ORDER BY timestamp DESC LIMIT 5;"
+
+
+========================================================================
+Mensaje de commit sugerido
+========================================================================
+
+feat(bff-util): integrar auditoria en BFF y corregir orden de middlewares (STM-1487)
+
+Se integran las rutas de activity-logs en el BFF de utilerias que actua
+como proxy transparente hacia util-api (STM-1463). Ya no se requiere el
+BFF independiente de auditoria.
+
+Cambios en Cloud Endpoints OpenAPI:
+- definitions/activity-logs.yaml: DTOs de create, query, dto, responses.
+- paths/activity-logs.yaml: GET/POST /activity-logs, GET /uuid.
+- root.yaml: registradas rutas y definitions; descripcion actualizada.
+- openapi.yaml regenerado con swagger-cli bundle.
+
+Fix en src/App.js:
+- Body-parsers movidos DESPUES del proxy (antes consumian el stream y
+  los POST quedaban colgados esperando el cuerpo en el backend).
+- parseReqBody cambiado a true para reenvio explicito.
+
+Verificacion:
+- POST /api/utils/activity-logs/ responde 201 y el registro queda
+  insertado en core_audit.activity_logs con service_name bff-util.
+
+Referencias: Epic STM-1403, dependencia STM-1463.

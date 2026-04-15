@@ -1,0 +1,98 @@
+activity-logs:
+  get:
+    tags:
+      - activity-logs
+    summary: List activity logs
+    description: Paginated list of activity logs with date-range filters (max 30 days).
+    operationId: listActivityLogs
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        description: Filtros de busqueda
+        schema:
+          $ref: "../definitions/activity-logs.yaml#/ListActivityLogQueryDto"
+    responses:
+      "200":
+        description: List retrieved successfully
+        schema:
+          $ref: "../definitions/activity-logs.yaml#/ActivityLogListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - activity-logs
+    summary: Create activity log
+    description: Registers a new activity log (processed in background).
+    operationId: createActivityLog
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/activity-logs.yaml#/CreateActivityLogDto"
+    responses:
+      "201":
+        description: Accepted for background processing
+        schema:
+          $ref: "../definitions/activity-logs.yaml#/ActivityLogCreateResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+activity-logs-uuid:
+  get:
+    tags:
+      - activity-logs
+    summary: Generate UUID
+    description: Utility endpoint that returns a new UUID for trace correlation.
+    operationId: generateActivityLogUuid
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: UUID generated
+        schema:
+          $ref: "../definitions/activity-logs.yaml#/ActivityLogUuidResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

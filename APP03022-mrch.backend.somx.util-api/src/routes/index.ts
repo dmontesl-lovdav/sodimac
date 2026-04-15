@@ -7,6 +7,7 @@ import applicationMsgRouter from "./applicationMsg.routes.js";
 import processRouter from "./process.routes.js";
 import itemTypeRouter from "./itemType.routes.js";
 import itemRouter from "./item.routes.js";
+import activityLogsRouter from "./activityLogs.routes.js";
 
 const router: RouterType = Router();
 
@@ -18,5 +19,6 @@ router.use("/application-messages", applicationMsgRouter);
 router.use("/processes", processRouter);
 router.use("/item-types", itemTypeRouter);
 router.use("/items", itemRouter);
+router.use("/activity-logs", activityLogsRouter);
 
 export default router;

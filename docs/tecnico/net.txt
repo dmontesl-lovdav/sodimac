@@ -156,3 +156,48 @@ En línea: 1 Carácter: 1
     + FullyQualifiedErrorId : CommandNotFoundException
 
 PS C:\Users\g_dco018>
+
+
+
+
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqMgxuU2evsnBlX0QBJWPj3wndknkufMvaB8FIVS33d g_dco018@cd-rosas
+
+PS C:\Users\g_dco018> Test-NetConnection -ComputerName 192.168.0.121 -Port 22
+
+
+ComputerName     : 192.168.0.121
+RemoteAddress    : 192.168.0.121
+RemotePort       : 22
+InterfaceAlias   : Wi-Fi
+SourceAddress    : 192.168.0.141
+TcpTestSucceeded : True
+
+
+
+PS C:\Users\g_dco018> Test-Path $HOME\.ssh\id_ed25519.pub
+False
+PS C:\Users\g_dco018> ssh-keygen -t ed25519 -C "g_dco018@cd-rosas"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (C:\Users\g_dco018/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in C:\Users\g_dco018/.ssh/id_ed25519
+Your public key has been saved in C:\Users\g_dco018/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:fTSiNU6yv8D17LOOqMswjrKz/jiK/qyUHzOkQrj8AWA g_dco018@cd-rosas
+The key's randomart image is:
++--[ED25519 256]--+
+|                 |
+|                 |
+|.E      . = o    |
+|+        O + .   |
+|.o .    S + .    |
+|o.=    . o +     |
+|o= =o   o . o    |
+|*.=o=+   o +.    |
+|OX**. +o. o.+o   |
++----[SHA256]-----+
+PS C:\Users\g_dco018> Get-Content $HOME\.ssh\id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqMgxuU2evsnBlX0QBJWPj3wndknkufMvaB8FIVS33d g_dco018@cd-rosas
+PS C:\Users\g_dco018>

@@ -1,0 +1,158 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. Todos los derechos reservados.
+
+Instale la versión más reciente de PowerShell para obtener nuevas características y mejoras. https://aka.ms/PSWindows
+
+PS C:\Users\g_dco018> Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
+Get-WindowsCapability : La operación solicitada requiere elevación.
+En línea: 1 Carácter: 1
++ Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Get-WindowsCapability], COMException
+    + FullyQualifiedErrorId : Microsoft.Dism.Commands.GetWindowsCapabilityCommand
+
+PS C:\Users\g_dco018> Get-Service sshd -ErrorAction SilentlyContinue
+PS C:\Users\g_dco018> ssh -V
+OpenSSH_for_Windows_9.5p2, LibreSSL 3.8.2
+PS C:\Users\g_dco018> Get-SmbServerConfiguration | Select EnableSMB2Protocol
+
+EnableSMB2Protocol
+------------------
+              True
+
+
+PS C:\Users\g_dco018> Get-Service LanmanServer
+
+Status   Name               DisplayName
+------   ----               -----------
+Running  LanmanServer       Servidor
+
+
+PS C:\Users\g_dco018> Get-SmbShare
+
+Name   ScopeName Path       Description
+----   --------- ----       -----------
+ADMIN$ *         C:\WINDOWS Admin remota
+C$     *         C:\        Recurso predeterminado
+IPC$   *                    IPC remota
+
+
+PS C:\Users\g_dco018> Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Select DisplayName, Enabled
+Get-NetFirewallRule : No se encontraron objetos MSFT_NetFirewallRule cuya propiedad 'DisplayGroup' sea igual a 'File
+and Printer Sharing'. Compruebe el valor de la propiedad e inténtelo de nuevo.
+En línea: 1 Carácter: 1
++ Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Select ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (File and Printer Sharing:String) [Get-NetFirewallRule], CimJobException
+    + FullyQualifiedErrorId : CmdletizationQuery_NotFound_DisplayGroup,Get-NetFirewallRule
+
+PS C:\Users\g_dco018> Get-NetFirewallRule -DisplayGroup "OpenSSH Server" -ErrorAction SilentlyContinue | Select DisplayName, Enabled
+PS C:\Users\g_dco018> ipconfig | findstr IPv4
+   Direcci?n IPv4. . . . . . . . . . . . . . : 192.168.0.141
+PS C:\Users\g_dco018> Test-NetConnection -ComputerName 192.168.0.121 -Port 445
+ADVERTENCIA: TCP connect to (192.168.0.121 : 445) failed
+ADVERTENCIA: Ping to 192.168.0.121 failed with status: TimedOut
+PS C:\Users\g_dco018> ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+False
+PS C:\Users\g_dco018> Get-ChildItem "C:\Program Files","C:\Program Files (x86)" -Directory | Select Name
+
+Name
+----
+7-Zip
+Adobe
+Citrix
+Common Files
+DBeaver
+DbVisualizer
+ForeScout SecureConnector
+Fortinet
+Git
+Google
+Internet Explorer
+Java
+LAPS
+McAfee
+Microsoft Analysis Services
+Microsoft ControlConfig Extensibility Adapter
+Microsoft Device Inventory Agent
+Microsoft Policy Platform
+Microsoft SQL Server
+ModifiableWindowsApps
+Mozilla Firefox
+MSBuild
+NetBeans-24
+Netskope
+Notepad++
+PostgreSQL
+Python39
+Reference Assemblies
+TortoiseGit
+Trend Micro
+Windows Defender
+Windows Defender Advanced Threat Protection
+Windows Mail
+Windows Media Player
+Windows NT
+Windows Photo Viewer
+WindowsPowerShell
+Citrix
+Common Files
+dotnet
+Google
+Internet Explorer
+McAfee
+Microsoft
+Microsoft Analysis Services
+Microsoft Help Viewer
+Microsoft Intune Management Extension
+Microsoft SQL Server
+Microsoft SQL Server Management Studio 20
+Microsoft.NET
+Mozilla Maintenance Service
+MSBuild
+Netskope
+Reference Assemblies
+Trend Micro
+Windows Defender
+Windows Mail
+Windows Media Player
+Windows NT
+Windows Photo Viewer
+WindowsPowerShell
+WinSCP
+
+
+PS C:\Users\g_dco018> winget list 2>$null | findstr /I "sync ssh git vscode"
+Git                                      ARP\Machine\X64\Git_is1                  2.49.0
+TortoiseGit 2.17.0.2 (64 bit)            TortoiseGit.TortoiseGit                  2.17.0.2         2.18.0.1      winget
+GitHub Desktop                           GitHub.GitHubDesktop                     3.5.4            3.5.7         winget
+OneDrive                                 MSIX\Microsoft.OneDriveSync_26051.316.4??? 26051.316.4.0
+PS C:\Users\g_dco018> Get-SmbShare
+
+Name   ScopeName Path       Description
+----   --------- ----       -----------
+ADMIN$ *         C:\WINDOWS Admin remota
+C$     *         C:\        Recurso predeterminado
+IPC$   *                    IPC remota
+
+
+PS C:\Users\g_dco018> New-SmbShare -Name "workspace-sodimac" -Path "C:\workspace-sodimac" -FullAccess "$env:USERNAME"
+New-SmbShare : Acceso denegado.
+En línea: 1 Carácter: 1
++ New-SmbShare -Name "workspace-sodimac" -Path "C:\workspace-sodimac" - ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : PermissionDenied: (MSFT_SMBShare:ROOT/Microsoft/Windows/SMB/MSFT_SMBShare) [New-SmbShare], CimException
+    + FullyQualifiedErrorId : Windows System Error 5,New-SmbShare
+
+PS C:\Users\g_dco018> whoami
+cd-rosas\g_dco018
+PS C:\Users\g_dco018> et-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Where-Object Enabled -eq True | Select DisplayName
+et-NetFirewallRule : El término 'et-NetFirewallRule' no se reconoce como nombre de un cmdlet, función, archivo de script o programa ejecutable.
+Compruebe si escribió correctamente el nombre o, si incluyó una ruta de acceso, compruebe que dicha ruta es correcta e inténtelo de nuevo.
+En línea: 1 Carácter: 1
++ et-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Where-O ...
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (et-NetFirewallRule:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\g_dco018>

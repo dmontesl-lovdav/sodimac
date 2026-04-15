@@ -1,0 +1,393 @@
+parameters:
+  get:
+    tags:
+      - parameters
+    summary: List parameters
+    operationId: listParameters
+    produces:
+      - application/json
+    parameters:
+      - name: idModule
+        in: query
+        required: false
+        description: Module identifier
+        type: integer
+        format: int32
+      - name: idType
+        in: query
+        required: false
+        description: Parameter type identifier
+        type: integer
+        format: int32
+      - name: name
+        in: query
+        required: false
+        description: Parameter name
+        type: string
+      - name: status
+        in: query
+        required: false
+        description: Status code
+        type: integer
+        format: int32
+      - name: includeHistory
+        in: query
+        required: false
+        description: Include all versions history
+        type: boolean
+      - name: page
+        in: query
+        required: false
+        description: Page number
+        type: integer
+        format: int32
+      - name: limit
+        in: query
+        required: false
+        description: Page size
+        type: integer
+        format: int32
+      - name: sort
+        in: query
+        required: false
+        description: Sort field
+        type: string
+        enum:
+          - idParameter
+          - name
+          - createdAt
+          - updatedAt
+      - name: order
+        in: query
+        required: false
+        description: Sort order
+        type: string
+        enum:
+          - asc
+          - desc
+    responses:
+      "200":
+        description: List of parameters
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - parameters
+    summary: Create parameter
+    operationId: createParameter
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/parameter.yaml#/CreateParameterDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Parameter name already exists
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+parameters-by-id:
+  get:
+    tags:
+      - parameters
+    summary: Get parameter by ID
+    operationId: getParameterById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterSingleResponse"
+      "400":
+        description: Invalid parameter ID
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  patch:
+    tags:
+      - parameters
+    summary: Update parameter metadata
+    operationId: updateParameter
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/parameter.yaml#/UpdateParameterDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "403":
+        description: Only latest version can be updated
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - parameters
+    summary: Delete parameter
+    operationId: deleteParameter
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterDeleteResponse"
+      "400":
+        description: Invalid parameter ID
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+parameters-versions:
+  get:
+    tags:
+      - parameters
+    summary: Get parameter versions history
+    operationId: getParameterVersions
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Versions history
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterVersionsResponse"
+      "400":
+        description: Invalid parameter ID
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - parameters
+    summary: Create new parameter version
+    operationId: createParameterVersion
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/parameter.yaml#/CreateParameterVersionDto"
+    responses:
+      "201":
+        description: Version created
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "403":
+        description: Only latest version can be versioned
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Version already exists
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+parameters-status:
+  patch:
+    tags:
+      - parameters
+    summary: Update parameter status
+    operationId: updateParameterStatus
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Parameter identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/parameter.yaml#/UpdateParameterStatusDto"
+    responses:
+      "200":
+        description: Status updated
+        schema:
+          $ref: "../definitions/parameter.yaml#/ParameterSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "403":
+        description: Only latest version can change status
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Parameter not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

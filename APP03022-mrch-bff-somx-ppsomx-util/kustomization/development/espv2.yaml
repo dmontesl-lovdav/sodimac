@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROJECT_NAME}
+spec:
+  template:
+    spec:
+      containers:
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:2.52.0
+        args: [
+          "--listener_port", "8081",
+          "--backend", "127.0.0.1:8080",
+          "--service", "mrch-bff-somx-ppsomx-util.endpoints.fal-corp-mrch-foundational-dev.cloud.goog",
+          "--rollout_strategy", "managed",
+          "--healthz=/healthz",
+          "--http_request_timeout_s=360",
+        ]
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        resources:
+          requests:
+            cpu: 25m
+            memory: 0.5Gi

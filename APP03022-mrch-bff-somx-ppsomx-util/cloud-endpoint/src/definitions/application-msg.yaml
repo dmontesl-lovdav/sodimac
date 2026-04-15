@@ -1,0 +1,72 @@
+ApplicationMsgDto:
+  type: object
+  properties:
+    idApplicationMsg:
+      type: integer
+      format: int32
+      description: Unique identifier of the application-message relation
+    idMessage:
+      type: integer
+      format: int32
+      description: Message identifier
+    idApplication:
+      type: integer
+      format: int32
+      description: Application identifier
+    createdBy:
+      type: integer
+      format: int64
+      description: User who created the record
+    createdAt:
+      type: string
+      format: date-time
+      description: Creation timestamp
+
+CreateApplicationMsgDto:
+  type: object
+  required:
+    - idMessage
+    - idApplication
+  properties:
+    idMessage:
+      type: integer
+      format: int32
+    idApplication:
+      type: integer
+      format: int32
+    createdBy:
+      type: integer
+      format: int64
+
+ApplicationMsgListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ApplicationMsgDto"
+    count:
+      type: integer
+      format: int32
+
+ApplicationMsgSingleResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/ApplicationMsgDto"
+
+ApplicationMsgDeleteResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: Relacion eliminada exitosamente

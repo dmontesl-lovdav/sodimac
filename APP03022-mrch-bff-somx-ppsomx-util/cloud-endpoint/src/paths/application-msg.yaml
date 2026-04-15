@@ -1,0 +1,140 @@
+application-messages:
+  get:
+    tags:
+      - application-messages
+    summary: List application-message relations
+    operationId: listApplicationMessages
+    produces:
+      - application/json
+    parameters:
+      - name: idApplication
+        in: query
+        required: false
+        description: Application identifier
+        type: integer
+        format: int32
+      - name: idMessage
+        in: query
+        required: false
+        description: Message identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List of application-message relations
+        schema:
+          $ref: "../definitions/application-msg.yaml#/ApplicationMsgListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - application-messages
+    summary: Create application-message relation
+    operationId: createApplicationMessage
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/application-msg.yaml#/CreateApplicationMsgDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/application-msg.yaml#/ApplicationMsgSingleResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Relation already exists
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+application-messages-by-id:
+  get:
+    tags:
+      - application-messages
+    summary: Get application-message relation by ID
+    operationId: getApplicationMessageById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Relation identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/application-msg.yaml#/ApplicationMsgSingleResponse"
+      "404":
+        description: Relation not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - application-messages
+    summary: Delete application-message relation
+    operationId: deleteApplicationMessage
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Relation identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/application-msg.yaml#/ApplicationMsgDeleteResponse"
+      "404":
+        description: Relation not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

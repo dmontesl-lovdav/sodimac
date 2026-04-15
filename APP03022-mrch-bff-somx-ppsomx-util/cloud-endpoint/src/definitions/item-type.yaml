@@ -1,0 +1,84 @@
+ItemTypeDto:
+  type: object
+  properties:
+    idItemType:
+      type: integer
+      format: int32
+      description: Unique identifier
+    name:
+      type: string
+      description: Item type name
+    description:
+      type: string
+      description: Item type description
+    createdBy:
+      type: integer
+      format: int64
+      description: User who created the record
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      format: int64
+      description: User who last updated the record
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateItemTypeDto:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    createdBy:
+      type: integer
+      format: int64
+
+UpdateItemTypeDto:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    updatedBy:
+      type: integer
+      format: int64
+
+ItemTypeListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ItemTypeDto"
+    count:
+      type: integer
+      format: int32
+
+ItemTypeSingleResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/ItemTypeDto"
+
+ItemTypeDeleteResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: Tipo de elemento eliminado exitosamente

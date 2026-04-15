@@ -1,0 +1,95 @@
+MessageDto:
+  type: object
+  properties:
+    idMessage:
+      type: integer
+      format: int32
+      description: Unique identifier
+    messageCode:
+      type: string
+      description: Message code
+    idMessageType:
+      type: integer
+      format: int32
+      description: Message type identifier
+    description:
+      type: string
+      description: Message description
+    createdBy:
+      type: integer
+      format: int64
+      description: User who created the record
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      format: int64
+      description: User who last updated the record
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateMessageDto:
+  type: object
+  required:
+    - messageCode
+    - idMessageType
+  properties:
+    messageCode:
+      type: string
+    idMessageType:
+      type: integer
+      format: int32
+    description:
+      type: string
+    createdBy:
+      type: integer
+      format: int64
+
+UpdateMessageDto:
+  type: object
+  properties:
+    messageCode:
+      type: string
+    idMessageType:
+      type: integer
+      format: int32
+    description:
+      type: string
+    updatedBy:
+      type: integer
+      format: int64
+
+MessageListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/MessageDto"
+    count:
+      type: integer
+      format: int32
+
+MessageSingleResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/MessageDto"
+
+MessageDeleteResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: Mensaje eliminado exitosamente

@@ -1,0 +1,201 @@
+ParameterDto:
+  type: object
+  properties:
+    idParameter:
+      type: integer
+      format: int32
+      description: Unique identifier
+    idModule:
+      type: integer
+      format: int32
+      description: Module identifier
+    idType:
+      type: integer
+      format: int32
+      description: Parameter type identifier
+    name:
+      type: string
+      description: Parameter name
+    description:
+      type: string
+      description: Parameter description
+    value:
+      type: string
+      description: Parameter value
+    version:
+      type: number
+      format: double
+      description: Parameter version
+    startDate:
+      type: string
+      format: date-time
+      description: Version start date
+    endDate:
+      type: string
+      format: date-time
+      description: Version end date
+    status:
+      type: integer
+      format: int32
+      description: Status code (1=Activo, 0=Inactivo)
+    createdBy:
+      type: integer
+      format: int64
+      description: User who created the record
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      format: int64
+      description: User who last updated the record
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateParameterDto:
+  type: object
+  required:
+    - idModule
+    - idType
+    - name
+    - value
+  properties:
+    idModule:
+      type: integer
+      format: int32
+    idType:
+      type: integer
+      format: int32
+    name:
+      type: string
+    description:
+      type: string
+    value:
+      type: string
+    version:
+      type: number
+      format: double
+    startDate:
+      type: string
+      format: date-time
+    endDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+      format: int32
+    createdBy:
+      type: integer
+      format: int64
+
+UpdateParameterDto:
+  type: object
+  properties:
+    idModule:
+      type: integer
+      format: int32
+    idType:
+      type: integer
+      format: int32
+    description:
+      type: string
+    startDate:
+      type: string
+      format: date-time
+    endDate:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      format: int64
+
+CreateParameterVersionDto:
+  type: object
+  required:
+    - value
+  properties:
+    value:
+      type: string
+    startDate:
+      type: string
+      format: date-time
+    endDate:
+      type: string
+      format: date-time
+    changeReason:
+      type: string
+    createdBy:
+      type: integer
+      format: int64
+
+UpdateParameterStatusDto:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: integer
+      format: int32
+      description: Status code (1=Activo, 0=Inactivo)
+    updatedBy:
+      type: integer
+      format: int64
+
+ParameterListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ParameterDto"
+    total:
+      type: integer
+      format: int32
+    page:
+      type: integer
+      format: int32
+    limit:
+      type: integer
+      format: int32
+    totalPages:
+      type: integer
+      format: int32
+
+ParameterSingleResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/ParameterDto"
+    message:
+      type: string
+
+ParameterVersionsResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ParameterDto"
+    count:
+      type: integer
+      format: int32
+
+ParameterDeleteResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: Parameter with id 1 deleted successfully

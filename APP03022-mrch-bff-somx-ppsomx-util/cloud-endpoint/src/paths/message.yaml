@@ -1,0 +1,222 @@
+messages:
+  get:
+    tags:
+      - messages
+    summary: List messages
+    operationId: listMessages
+    produces:
+      - application/json
+    parameters:
+      - name: messageCode
+        in: query
+        required: false
+        description: Partial message code
+        type: string
+      - name: idMessageType
+        in: query
+        required: false
+        description: Message type identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List of messages
+        schema:
+          $ref: "../definitions/message.yaml#/MessageListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - messages
+    summary: Create message
+    operationId: createMessage
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/message.yaml#/CreateMessageDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/message.yaml#/MessageSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Message code already exists
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+messages-by-code:
+  get:
+    tags:
+      - messages
+    summary: Get message by code
+    operationId: getMessageByCode
+    produces:
+      - application/json
+    parameters:
+      - name: code
+        in: path
+        required: true
+        description: Message code
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/message.yaml#/MessageSingleResponse"
+      "404":
+        description: Message not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+messages-by-id:
+  get:
+    tags:
+      - messages
+    summary: Get message by ID
+    operationId: getMessageById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Message identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/message.yaml#/MessageSingleResponse"
+      "404":
+        description: Message not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  patch:
+    tags:
+      - messages
+    summary: Update message
+    operationId: updateMessage
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Message identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/message.yaml#/UpdateMessageDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/message.yaml#/MessageSingleResponse"
+      "404":
+        description: Message not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Message code already exists
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - messages
+    summary: Delete message
+    operationId: deleteMessage
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Message identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/message.yaml#/MessageDeleteResponse"
+      "404":
+        description: Message not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

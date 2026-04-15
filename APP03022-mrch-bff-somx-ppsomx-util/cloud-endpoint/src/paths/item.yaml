@@ -1,0 +1,174 @@
+items:
+  get:
+    tags:
+      - items
+    summary: List items
+    operationId: listItems
+    produces:
+      - application/json
+    parameters:
+      - name: name
+        in: query
+        required: false
+        description: Partial item name
+        type: string
+    responses:
+      "200":
+        description: List of items
+        schema:
+          $ref: "../definitions/item.yaml#/ItemListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - items
+    summary: Create item
+    operationId: createItem
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/item.yaml#/CreateItemDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/item.yaml#/ItemSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+items-by-id:
+  get:
+    tags:
+      - items
+    summary: Get item by ID
+    operationId: getItemById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/item.yaml#/ItemSingleResponse"
+      "404":
+        description: Item not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  patch:
+    tags:
+      - items
+    summary: Update item
+    operationId: updateItem
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/item.yaml#/UpdateItemDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/item.yaml#/ItemSingleResponse"
+      "404":
+        description: Item not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - items
+    summary: Delete item
+    operationId: deleteItem
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/item.yaml#/ItemDeleteResponse"
+      "404":
+        description: Item not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

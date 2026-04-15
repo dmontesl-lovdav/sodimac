@@ -1,0 +1,174 @@
+processes:
+  get:
+    tags:
+      - processes
+    summary: List processes
+    operationId: listProcesses
+    produces:
+      - application/json
+    parameters:
+      - name: name
+        in: query
+        required: false
+        description: Partial process name
+        type: string
+    responses:
+      "200":
+        description: List of processes
+        schema:
+          $ref: "../definitions/process.yaml#/ProcessListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - processes
+    summary: Create process
+    operationId: createProcess
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/process.yaml#/CreateProcessDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/process.yaml#/ProcessSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+processes-by-id:
+  get:
+    tags:
+      - processes
+    summary: Get process by ID
+    operationId: getProcessById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Process identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/process.yaml#/ProcessSingleResponse"
+      "404":
+        description: Process not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  patch:
+    tags:
+      - processes
+    summary: Update process
+    operationId: updateProcess
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Process identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/process.yaml#/UpdateProcessDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/process.yaml#/ProcessSingleResponse"
+      "404":
+        description: Process not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - processes
+    summary: Delete process
+    operationId: deleteProcess
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Process identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/process.yaml#/ProcessDeleteResponse"
+      "404":
+        description: Process not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

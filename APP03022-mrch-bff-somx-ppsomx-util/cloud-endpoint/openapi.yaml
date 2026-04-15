@@ -1,0 +1,2143 @@
+swagger: '2.0'
+info:
+  contact:
+    email: jrcastillo@falabella.cl
+    name: Arquitectura Falabella Tecnologia Corp.
+  description: |
+    Support RESTful operations for utils flow. This API provides access to parameters, modules, messages, application messages, processes, item types, and items.
+  title: Utils API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: utils
+  x-consumer-segments: retail
+  x-service-name: utils
+host: '${DOMAIN_OPENAPI}'
+schemes:
+  - https
+paths:
+  /parameters:
+    get:
+      tags:
+        - parameters
+      summary: List parameters
+      operationId: listParameters
+      produces:
+        - application/json
+      parameters:
+        - name: idModule
+          in: query
+          required: false
+          description: Module identifier
+          type: integer
+          format: int32
+        - name: idType
+          in: query
+          required: false
+          description: Parameter type identifier
+          type: integer
+          format: int32
+        - name: name
+          in: query
+          required: false
+          description: Parameter name
+          type: string
+        - name: status
+          in: query
+          required: false
+          description: Status code
+          type: integer
+          format: int32
+        - name: includeHistory
+          in: query
+          required: false
+          description: Include all versions history
+          type: boolean
+        - name: page
+          in: query
+          required: false
+          description: Page number
+          type: integer
+          format: int32
+        - name: limit
+          in: query
+          required: false
+          description: Page size
+          type: integer
+          format: int32
+        - name: sort
+          in: query
+          required: false
+          description: Sort field
+          type: string
+          enum:
+            - idParameter
+            - name
+            - createdAt
+            - updatedAt
+        - name: order
+          in: query
+          required: false
+          description: Sort order
+          type: string
+          enum:
+            - asc
+            - desc
+      responses:
+        '200':
+          description: List of parameters
+          schema:
+            $ref: '#/definitions/ParameterListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - parameters
+      summary: Create parameter
+      operationId: createParameter
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateParameterDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ParameterSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Parameter name already exists
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/parameters/{id}':
+    get:
+      tags:
+        - parameters
+      summary: Get parameter by ID
+      operationId: getParameterById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ParameterSingleResponse'
+        '400':
+          description: Invalid parameter ID
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - parameters
+      summary: Update parameter metadata
+      operationId: updateParameter
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateParameterDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ParameterSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Only latest version can be updated
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - parameters
+      summary: Delete parameter
+      operationId: deleteParameter
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ParameterDeleteResponse'
+        '400':
+          description: Invalid parameter ID
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/parameters/{id}/versions':
+    get:
+      tags:
+        - parameters
+      summary: Get parameter versions history
+      operationId: getParameterVersions
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Versions history
+          schema:
+            $ref: '#/definitions/ParameterVersionsResponse'
+        '400':
+          description: Invalid parameter ID
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - parameters
+      summary: Create new parameter version
+      operationId: createParameterVersion
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateParameterVersionDto'
+      responses:
+        '201':
+          description: Version created
+          schema:
+            $ref: '#/definitions/ParameterSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Only latest version can be versioned
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Version already exists
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/parameters/{id}/status':
+    patch:
+      tags:
+        - parameters
+      summary: Update parameter status
+      operationId: updateParameterStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Parameter identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateParameterStatusDto'
+      responses:
+        '200':
+          description: Status updated
+          schema:
+            $ref: '#/definitions/ParameterSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Only latest version can change status
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Parameter not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /modules:
+    get:
+      tags:
+        - modules
+      summary: List modules
+      operationId: listModules
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Partial module name
+          type: string
+      responses:
+        '200':
+          description: List of modules
+          schema:
+            $ref: '#/definitions/ModuleListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - modules
+      summary: Create module
+      operationId: createModule
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateModuleDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ModuleSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/modules/{id}':
+    get:
+      tags:
+        - modules
+      summary: Get module by ID
+      operationId: getModuleById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Module identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ModuleSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Module not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - modules
+      summary: Update module
+      operationId: updateModule
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Module identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateModuleDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ModuleSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Module not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - modules
+      summary: Delete module
+      operationId: deleteModule
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Module identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ModuleDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Module not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /messages:
+    get:
+      tags:
+        - messages
+      summary: List messages
+      operationId: listMessages
+      produces:
+        - application/json
+      parameters:
+        - name: messageCode
+          in: query
+          required: false
+          description: Partial message code
+          type: string
+        - name: idMessageType
+          in: query
+          required: false
+          description: Message type identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: List of messages
+          schema:
+            $ref: '#/definitions/MessageListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - messages
+      summary: Create message
+      operationId: createMessage
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateMessageDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/MessageSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Message code already exists
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/messages/code/{code}':
+    get:
+      tags:
+        - messages
+      summary: Get message by code
+      operationId: getMessageByCode
+      produces:
+        - application/json
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Message code
+          type: string
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/MessageSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Message not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/messages/{id}':
+    get:
+      tags:
+        - messages
+      summary: Get message by ID
+      operationId: getMessageById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Message identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/MessageSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Message not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - messages
+      summary: Update message
+      operationId: updateMessage
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Message identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateMessageDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/MessageSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Message not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Message code already exists
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - messages
+      summary: Delete message
+      operationId: deleteMessage
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Message identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/MessageDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Message not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /application-messages:
+    get:
+      tags:
+        - application-messages
+      summary: List application-message relations
+      operationId: listApplicationMessages
+      produces:
+        - application/json
+      parameters:
+        - name: idApplication
+          in: query
+          required: false
+          description: Application identifier
+          type: integer
+          format: int32
+        - name: idMessage
+          in: query
+          required: false
+          description: Message identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: List of application-message relations
+          schema:
+            $ref: '#/definitions/ApplicationMsgListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - application-messages
+      summary: Create application-message relation
+      operationId: createApplicationMessage
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateApplicationMsgDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ApplicationMsgSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Relation already exists
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/application-messages/{id}':
+    get:
+      tags:
+        - application-messages
+      summary: Get application-message relation by ID
+      operationId: getApplicationMessageById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Relation identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ApplicationMsgSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Relation not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - application-messages
+      summary: Delete application-message relation
+      operationId: deleteApplicationMessage
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Relation identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ApplicationMsgDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Relation not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /processes:
+    get:
+      tags:
+        - processes
+      summary: List processes
+      operationId: listProcesses
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Partial process name
+          type: string
+      responses:
+        '200':
+          description: List of processes
+          schema:
+            $ref: '#/definitions/ProcessListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - processes
+      summary: Create process
+      operationId: createProcess
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateProcessDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ProcessSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/processes/{id}':
+    get:
+      tags:
+        - processes
+      summary: Get process by ID
+      operationId: getProcessById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ProcessSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Process not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - processes
+      summary: Update process
+      operationId: updateProcess
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateProcessDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ProcessSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Process not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - processes
+      summary: Delete process
+      operationId: deleteProcess
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ProcessDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Process not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /item-types:
+    get:
+      tags:
+        - item-types
+      summary: List item types
+      operationId: listItemTypes
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Partial item type name
+          type: string
+      responses:
+        '200':
+          description: List of item types
+          schema:
+            $ref: '#/definitions/ItemTypeListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - item-types
+      summary: Create item type
+      operationId: createItemType
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateItemTypeDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ItemTypeSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/item-types/{id}':
+    get:
+      tags:
+        - item-types
+      summary: Get item type by ID
+      operationId: getItemTypeById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item type identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ItemTypeSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item type not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - item-types
+      summary: Update item type
+      operationId: updateItemType
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item type identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateItemTypeDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ItemTypeSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item type not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - item-types
+      summary: Delete item type
+      operationId: deleteItemType
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item type identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ItemTypeDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item type not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /items:
+    get:
+      tags:
+        - items
+      summary: List items
+      operationId: listItems
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Partial item name
+          type: string
+      responses:
+        '200':
+          description: List of items
+          schema:
+            $ref: '#/definitions/ItemListResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - items
+      summary: Create item
+      operationId: createItem
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateItemDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ItemSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/items/{id}':
+    get:
+      tags:
+        - items
+      summary: Get item by ID
+      operationId: getItemById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/ItemSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - items
+      summary: Update item
+      operationId: updateItem
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item identifier
+          type: integer
+          format: int32
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateItemDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ItemSingleResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - items
+      summary: Delete item
+      operationId: deleteItem
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Item identifier
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/ItemDeleteResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Item not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+definitions:
+  ExceptionWrapper:
+    type: object
+    properties:
+      code:
+        description: Numeric HTTP Status error
+        example: 401
+        format: int32
+        type: integer
+      message:
+        description: Error description
+        example: Unauthorized
+        type: string
+  ApplicationMsgDto:
+    type: object
+    properties:
+      idApplicationMsg:
+        type: integer
+        format: int32
+        description: Unique identifier of the application-message relation
+      idMessage:
+        type: integer
+        format: int32
+        description: Message identifier
+      idApplication:
+        type: integer
+        format: int32
+        description: Application identifier
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+        description: Creation timestamp
+  CreateApplicationMsgDto:
+    type: object
+    required:
+      - idMessage
+      - idApplication
+    properties:
+      idMessage:
+        type: integer
+        format: int32
+      idApplication:
+        type: integer
+        format: int32
+      createdBy:
+        type: integer
+        format: int64
+  ApplicationMsgListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationMsgDto'
+      count:
+        type: integer
+        format: int32
+  ApplicationMsgSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ApplicationMsgDto'
+  ApplicationMsgDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Relacion eliminada exitosamente
+  ItemDto:
+    type: object
+    properties:
+      idItem:
+        type: integer
+        format: int32
+        description: Unique identifier
+      name:
+        type: string
+        description: Item name
+      description:
+        type: string
+        description: Item description
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateItemDto:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateItemDto:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      updatedBy:
+        type: integer
+        format: int64
+  ItemListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ItemDto'
+      count:
+        type: integer
+        format: int32
+  ItemSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ItemDto'
+  ItemDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Elemento eliminado exitosamente
+  ItemTypeDto:
+    type: object
+    properties:
+      idItemType:
+        type: integer
+        format: int32
+        description: Unique identifier
+      name:
+        type: string
+        description: Item type name
+      description:
+        type: string
+        description: Item type description
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateItemTypeDto:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateItemTypeDto:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      updatedBy:
+        type: integer
+        format: int64
+  ItemTypeListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ItemTypeDto'
+      count:
+        type: integer
+        format: int32
+  ItemTypeSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ItemTypeDto'
+  ItemTypeDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Tipo de elemento eliminado exitosamente
+  MessageDto:
+    type: object
+    properties:
+      idMessage:
+        type: integer
+        format: int32
+        description: Unique identifier
+      messageCode:
+        type: string
+        description: Message code
+      idMessageType:
+        type: integer
+        format: int32
+        description: Message type identifier
+      description:
+        type: string
+        description: Message description
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateMessageDto:
+    type: object
+    required:
+      - messageCode
+      - idMessageType
+    properties:
+      messageCode:
+        type: string
+      idMessageType:
+        type: integer
+        format: int32
+      description:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateMessageDto:
+    type: object
+    properties:
+      messageCode:
+        type: string
+      idMessageType:
+        type: integer
+        format: int32
+      description:
+        type: string
+      updatedBy:
+        type: integer
+        format: int64
+  MessageListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/MessageDto'
+      count:
+        type: integer
+        format: int32
+  MessageSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/MessageDto'
+  MessageDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Mensaje eliminado exitosamente
+  ModuleDto:
+    type: object
+    properties:
+      idModule:
+        type: integer
+        format: int32
+        description: Unique identifier
+      name:
+        type: string
+        description: Module name
+      description:
+        type: string
+        description: Module description
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateModuleDto:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateModuleDto:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      updatedBy:
+        type: integer
+        format: int64
+  ModuleListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ModuleDto'
+      count:
+        type: integer
+        format: int32
+  ModuleSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ModuleDto'
+  ModuleDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Modulo eliminado exitosamente
+  ProcessDto:
+    type: object
+    properties:
+      idProcess:
+        type: integer
+        format: int32
+        description: Unique identifier
+      name:
+        type: string
+        description: Process name
+      description:
+        type: string
+        description: Process description
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateProcessDto:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateProcessDto:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      updatedBy:
+        type: integer
+        format: int64
+  ProcessListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ProcessDto'
+      count:
+        type: integer
+        format: int32
+  ProcessSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ProcessDto'
+  ProcessDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Proceso eliminado exitosamente
+  ParameterDto:
+    type: object
+    properties:
+      idParameter:
+        type: integer
+        format: int32
+        description: Unique identifier
+      idModule:
+        type: integer
+        format: int32
+        description: Module identifier
+      idType:
+        type: integer
+        format: int32
+        description: Parameter type identifier
+      name:
+        type: string
+        description: Parameter name
+      description:
+        type: string
+        description: Parameter description
+      value:
+        type: string
+        description: Parameter value
+      version:
+        type: number
+        format: double
+        description: Parameter version
+      startDate:
+        type: string
+        format: date-time
+        description: Version start date
+      endDate:
+        type: string
+        format: date-time
+        description: Version end date
+      status:
+        type: integer
+        format: int32
+        description: 'Status code (1=Activo, 0=Inactivo)'
+      createdBy:
+        type: integer
+        format: int64
+        description: User who created the record
+      createdAt:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+        description: User who last updated the record
+      updatedAt:
+        type: string
+        format: date-time
+  CreateParameterDto:
+    type: object
+    required:
+      - idModule
+      - idType
+      - name
+      - value
+    properties:
+      idModule:
+        type: integer
+        format: int32
+      idType:
+        type: integer
+        format: int32
+      name:
+        type: string
+      description:
+        type: string
+      value:
+        type: string
+      version:
+        type: number
+        format: double
+      startDate:
+        type: string
+        format: date-time
+      endDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+        format: int32
+      createdBy:
+        type: integer
+        format: int64
+  UpdateParameterDto:
+    type: object
+    properties:
+      idModule:
+        type: integer
+        format: int32
+      idType:
+        type: integer
+        format: int32
+      description:
+        type: string
+      startDate:
+        type: string
+        format: date-time
+      endDate:
+        type: string
+        format: date-time
+      updatedBy:
+        type: integer
+        format: int64
+  CreateParameterVersionDto:
+    type: object
+    required:
+      - value
+    properties:
+      value:
+        type: string
+      startDate:
+        type: string
+        format: date-time
+      endDate:
+        type: string
+        format: date-time
+      changeReason:
+        type: string
+      createdBy:
+        type: integer
+        format: int64
+  UpdateParameterStatusDto:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: integer
+        format: int32
+        description: 'Status code (1=Activo, 0=Inactivo)'
+      updatedBy:
+        type: integer
+        format: int64
+  ParameterListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ParameterDto'
+      total:
+        type: integer
+        format: int32
+      page:
+        type: integer
+        format: int32
+      limit:
+        type: integer
+        format: int32
+      totalPages:
+        type: integer
+        format: int32
+  ParameterSingleResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/ParameterDto'
+      message:
+        type: string
+  ParameterVersionsResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ParameterDto'
+      count:
+        type: integer
+        format: int32
+  ParameterDeleteResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Parameter with id 1 deleted successfully
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ''
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: '${KEYCLOAK}/auth/realms/corp'
+    x-google-jwks_uri: '${JWKS_URL}'
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: 'Bearer '
+security:
+  - bearerAuth: []
+x-components: {}
+x-google-endpoints:
+  - allowCors: true
+    name: '${DOMAIN_OPENAPI}'

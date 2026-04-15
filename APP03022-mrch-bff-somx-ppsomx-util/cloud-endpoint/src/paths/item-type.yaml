@@ -1,0 +1,174 @@
+item-types:
+  get:
+    tags:
+      - item-types
+    summary: List item types
+    operationId: listItemTypes
+    produces:
+      - application/json
+    parameters:
+      - name: name
+        in: query
+        required: false
+        description: Partial item type name
+        type: string
+    responses:
+      "200":
+        description: List of item types
+        schema:
+          $ref: "../definitions/item-type.yaml#/ItemTypeListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - item-types
+    summary: Create item type
+    operationId: createItemType
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/item-type.yaml#/CreateItemTypeDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/item-type.yaml#/ItemTypeSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+item-types-by-id:
+  get:
+    tags:
+      - item-types
+    summary: Get item type by ID
+    operationId: getItemTypeById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item type identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/item-type.yaml#/ItemTypeSingleResponse"
+      "404":
+        description: Item type not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  patch:
+    tags:
+      - item-types
+    summary: Update item type
+    operationId: updateItemType
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item type identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/item-type.yaml#/UpdateItemTypeDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/item-type.yaml#/ItemTypeSingleResponse"
+      "404":
+        description: Item type not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - item-types
+    summary: Delete item type
+    operationId: deleteItemType
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Item type identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/item-type.yaml#/ItemTypeDeleteResponse"
+      "404":
+        description: Item type not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

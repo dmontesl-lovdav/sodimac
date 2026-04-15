@@ -1,0 +1,191 @@
+swagger: "2.0"
+info:
+  contact:
+    email: jrcastillo@falabella.cl
+    name: Arquitectura Falabella Tecnologia Corp.
+  description: >
+    Support RESTful operations for utils flow. This API provides access to
+    parameters, modules, messages, application messages, processes, item types,
+    and items.
+  title: Utils API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: utils
+  x-consumer-segments: retail
+  x-service-name: utils
+
+host: ${DOMAIN_OPENAPI}
+
+schemes:
+  - https
+
+paths:
+  /parameters:
+    $ref: "./paths/parameter.yaml#/parameters"
+  /parameters/{id}:
+    $ref: "./paths/parameter.yaml#/parameters-by-id"
+  /parameters/{id}/versions:
+    $ref: "./paths/parameter.yaml#/parameters-versions"
+  /parameters/{id}/status:
+    $ref: "./paths/parameter.yaml#/parameters-status"
+
+  /modules:
+    $ref: "./paths/module.yaml#/modules"
+  /modules/{id}:
+    $ref: "./paths/module.yaml#/modules-by-id"
+
+  /messages:
+    $ref: "./paths/message.yaml#/messages"
+  /messages/code/{code}:
+    $ref: "./paths/message.yaml#/messages-by-code"
+  /messages/{id}:
+    $ref: "./paths/message.yaml#/messages-by-id"
+
+  /application-messages:
+    $ref: "./paths/application-msg.yaml#/application-messages"
+  /application-messages/{id}:
+    $ref: "./paths/application-msg.yaml#/application-messages-by-id"
+
+  /processes:
+    $ref: "./paths/process.yaml#/processes"
+  /processes/{id}:
+    $ref: "./paths/process.yaml#/processes-by-id"
+
+  /item-types:
+    $ref: "./paths/item-type.yaml#/item-types"
+  /item-types/{id}:
+    $ref: "./paths/item-type.yaml#/item-types-by-id"
+
+  /items:
+    $ref: "./paths/item.yaml#/items"
+  /items/{id}:
+    $ref: "./paths/item.yaml#/items-by-id"
+
+definitions:
+  ExceptionWrapper:
+    $ref: "./definitions/common.yaml#/ExceptionWrapper"
+
+  ApplicationMsgDto:
+    $ref: "./definitions/application-msg.yaml#/ApplicationMsgDto"
+  CreateApplicationMsgDto:
+    $ref: "./definitions/application-msg.yaml#/CreateApplicationMsgDto"
+  ApplicationMsgListResponse:
+    $ref: "./definitions/application-msg.yaml#/ApplicationMsgListResponse"
+  ApplicationMsgSingleResponse:
+    $ref: "./definitions/application-msg.yaml#/ApplicationMsgSingleResponse"
+  ApplicationMsgDeleteResponse:
+    $ref: "./definitions/application-msg.yaml#/ApplicationMsgDeleteResponse"
+
+  ItemDto:
+    $ref: "./definitions/item.yaml#/ItemDto"
+  CreateItemDto:
+    $ref: "./definitions/item.yaml#/CreateItemDto"
+  UpdateItemDto:
+    $ref: "./definitions/item.yaml#/UpdateItemDto"
+  ItemListResponse:
+    $ref: "./definitions/item.yaml#/ItemListResponse"
+  ItemSingleResponse:
+    $ref: "./definitions/item.yaml#/ItemSingleResponse"
+  ItemDeleteResponse:
+    $ref: "./definitions/item.yaml#/ItemDeleteResponse"
+
+  ItemTypeDto:
+    $ref: "./definitions/item-type.yaml#/ItemTypeDto"
+  CreateItemTypeDto:
+    $ref: "./definitions/item-type.yaml#/CreateItemTypeDto"
+  UpdateItemTypeDto:
+    $ref: "./definitions/item-type.yaml#/UpdateItemTypeDto"
+  ItemTypeListResponse:
+    $ref: "./definitions/item-type.yaml#/ItemTypeListResponse"
+  ItemTypeSingleResponse:
+    $ref: "./definitions/item-type.yaml#/ItemTypeSingleResponse"
+  ItemTypeDeleteResponse:
+    $ref: "./definitions/item-type.yaml#/ItemTypeDeleteResponse"
+
+  MessageDto:
+    $ref: "./definitions/message.yaml#/MessageDto"
+  CreateMessageDto:
+    $ref: "./definitions/message.yaml#/CreateMessageDto"
+  UpdateMessageDto:
+    $ref: "./definitions/message.yaml#/UpdateMessageDto"
+  MessageListResponse:
+    $ref: "./definitions/message.yaml#/MessageListResponse"
+  MessageSingleResponse:
+    $ref: "./definitions/message.yaml#/MessageSingleResponse"
+  MessageDeleteResponse:
+    $ref: "./definitions/message.yaml#/MessageDeleteResponse"
+
+  ModuleDto:
+    $ref: "./definitions/module.yaml#/ModuleDto"
+  CreateModuleDto:
+    $ref: "./definitions/module.yaml#/CreateModuleDto"
+  UpdateModuleDto:
+    $ref: "./definitions/module.yaml#/UpdateModuleDto"
+  ModuleListResponse:
+    $ref: "./definitions/module.yaml#/ModuleListResponse"
+  ModuleSingleResponse:
+    $ref: "./definitions/module.yaml#/ModuleSingleResponse"
+  ModuleDeleteResponse:
+    $ref: "./definitions/module.yaml#/ModuleDeleteResponse"
+
+  ProcessDto:
+    $ref: "./definitions/process.yaml#/ProcessDto"
+  CreateProcessDto:
+    $ref: "./definitions/process.yaml#/CreateProcessDto"
+  UpdateProcessDto:
+    $ref: "./definitions/process.yaml#/UpdateProcessDto"
+  ProcessListResponse:
+    $ref: "./definitions/process.yaml#/ProcessListResponse"
+  ProcessSingleResponse:
+    $ref: "./definitions/process.yaml#/ProcessSingleResponse"
+  ProcessDeleteResponse:
+    $ref: "./definitions/process.yaml#/ProcessDeleteResponse"
+
+  ParameterDto:
+    $ref: "./definitions/parameter.yaml#/ParameterDto"
+  CreateParameterDto:
+    $ref: "./definitions/parameter.yaml#/CreateParameterDto"
+  UpdateParameterDto:
+    $ref: "./definitions/parameter.yaml#/UpdateParameterDto"
+  CreateParameterVersionDto:
+    $ref: "./definitions/parameter.yaml#/CreateParameterVersionDto"
+  UpdateParameterStatusDto:
+    $ref: "./definitions/parameter.yaml#/UpdateParameterStatusDto"
+  ParameterListResponse:
+    $ref: "./definitions/parameter.yaml#/ParameterListResponse"
+  ParameterSingleResponse:
+    $ref: "./definitions/parameter.yaml#/ParameterSingleResponse"
+  ParameterVersionsResponse:
+    $ref: "./definitions/parameter.yaml#/ParameterVersionsResponse"
+  ParameterDeleteResponse:
+    $ref: "./definitions/parameter.yaml#/ParameterDeleteResponse"
+
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
+    x-google-jwks_uri: ${JWKS_URL}
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+
+security:
+  - bearerAuth: []
+
+x-components: {}
+
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

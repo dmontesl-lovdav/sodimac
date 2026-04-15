@@ -165,7 +165,128 @@ net use Z: /delete
 
 ---
 
-## Respuestas pendientes
-- [ ] Resultado de `Get-SmbShare` en la PC Sodimac (¿ya hay share?).
-- [ ] Usuario de Windows de la PC Sodimac (`whoami`).
-- [ ] ¿Firewall permite SMB entrante? (regla "File and Printer Sharing" habilitada).
+## Resultados del diagnóstico en PC Sodimac (2026-04-15)
+
+Ver log crudo: [net.txt](net.txt)
+
+| Aspecto | Resultado |
+|---------|-----------|
+| Host\Usuario | `cd-rosas\g_dco018` |
+| IP | `192.168.0.141` |
+| **Admin local** | **❌ NO** |
+| LanmanServer (SMB) | ✅ Running |
+| SMB2 Protocol | ✅ Habilitado |
+| Shares existentes | Solo `ADMIN$`, `C$`, `IPC$` (defecto, requieren admin remoto) |
+| `New-SmbShare` | ❌ Acceso denegado |
+| SSH client | ✅ OpenSSH 9.5p2 |
+| SSH server (`sshd`) | ❌ No instalado |
+| `Test-NetConnection 192.168.0.121:445` | ❌ TCP failed + Ping timeout |
+| Software relevante | Git, TortoiseGit, GitHub Desktop, **WinSCP**, DBeaver, Netskope, ForeScout, Fortinet |
+
+### Diagnóstico
+- Sin admin en PC Sodimac → **plan SMB original descartado** (no se puede crear share ni instalar SSH server allá).
+- SMB entrante en PC personal (A8) bloqueado → firewall local o AP isolation. Hay que validar del otro lado (se pudo llegar de A8→Sodimac antes, así que la red permite al menos un sentido).
+- Software de seguridad corporativo (Netskope, ForeScout) puede filtrar tráfico adicional.
+
+---
+
+## Plan B — Invertir el flujo (SSH server en PC personal)
+
+Como la PC personal (A8) sí tiene admin, exponer ahí el servicio y que la PC Sodimac se conecte saliendo (que suele estar menos restringido).
+
+### Paso 1 — En PC personal (A8, PowerShell admin)
+
+Instalar OpenSSH Server:
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic
+```
+
+Abrir puerto 22 en firewall:
+```powershell
+New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+```
+
+Verificar:
+```powershell
+Get-Service sshd
+Get-NetTCPConnection -LocalPort 22
+```
+
+### Paso 2 — Desde PC Sodimac, probar conexión
+
+Test puerto:
+```powershell
+Test-NetConnection -ComputerName 192.168.0.121 -Port 22
+```
+
+Si `TcpTestSucceeded: True`:
+```powershell
+ssh dmont@192.168.0.121
+```
+(Contraseña: la de Windows de la PC personal.)
+
+### Paso 3 — Usar WinSCP para transferencia de archivos
+
+WinSCP ya está instalado en PC Sodimac. Nueva sesión:
+- **Protocolo:** SFTP
+- **Host:** `192.168.0.121`
+- **Puerto:** 22
+- **Usuario:** `dmont`
+- **Contraseña:** Windows
+
+Permite navegar, subir y bajar archivos a/desde PC personal. Mejor que GitHub como "buzón" rápido.
+
+### Paso 4 (opcional) — Repo git bare en PC personal
+
+Crear un remote directo (sin GitHub) en PC personal:
+```powershell
+# En A8:
+mkdir C:\repos-bare\workspace-sodimac.git
+cd C:\repos-bare\workspace-sodimac.git
+git init --bare
+```
+
+Desde PC Sodimac, agregar remote:
+```powershell
+cd C:\workspace-sodimac
+git remote add personal ssh://dmont@192.168.0.121/C:/repos-bare/workspace-sodimac.git
+git push personal dmontes
+```
+
+Bidireccional, rápido, sin pasar por GitHub.
+
+---
+
+## Plan C — Syncthing portable (sin admin en ningún lado)
+
+Si el Plan B falla por bloqueo corporativo (Netskope/ForeScout), Syncthing portable no requiere instalación ni admin y trabaja P2P en LAN.
+
+1. Descargar Syncthing portable en ambas PCs: https://syncthing.net/downloads/
+2. Ejecutar en ambas → abre UI en `http://localhost:8384`.
+3. En cada PC añadir la otra como "Remote Device" (por ID).
+4. Compartir la carpeta `C:\workspace-sodimac`.
+5. Sincronización bidireccional automática.
+
+Ventajas: no requiere admin, no requiere puerto entrante fijo, atraviesa NAT.
+
+**Riesgo:** si Netskope/ForeScout inspeccionan ejecutables nuevos, pueden bloquear Syncthing. Probar.
+
+---
+
+## Estado actual (2026-04-15)
+
+**PC personal (A8) — Plan B Paso 1 completado:**
+- `sshd` Running / Automatic ✅
+- Regla firewall `OpenSSH Server` Inbound Allow ✅
+- Puerto 22 escuchando en `0.0.0.0:22` ✅
+- Usuario de conexión: `dmont`
+- IP: `192.168.0.121`
+
+## Decisión pendiente
+- [x] Paso 1 Plan B — OpenSSH Server operativo en A8.
+- [ ] Paso 2 — Ejecutar desde PC Sodimac: `Test-NetConnection -ComputerName 192.168.0.121 -Port 22`
+- [ ] Paso 3 — Si TCP succeeded → `ssh dmont@192.168.0.121` (password: Windows de A8).
+- [ ] Paso 4 — Configurar WinSCP / git remote bare.
+- [ ] Si Paso 2 falla → Plan C (Syncthing portable).

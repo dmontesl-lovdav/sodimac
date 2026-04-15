@@ -286,7 +286,114 @@ Ventajas: no requiere admin, no requiere puerto entrante fijo, atraviesa NAT.
 
 ## Decisión pendiente
 - [x] Paso 1 Plan B — OpenSSH Server operativo en A8.
-- [ ] Paso 2 — Ejecutar desde PC Sodimac: `Test-NetConnection -ComputerName 192.168.0.121 -Port 22`
-- [ ] Paso 3 — Si TCP succeeded → `ssh dmont@192.168.0.121` (password: Windows de A8).
+- [x] Paso 2 — TCP 22 succeeded desde PC Sodimac.
+- [ ] Paso 3 — Autenticación por llave SSH (ver abajo).
 - [ ] Paso 4 — Configurar WinSCP / git remote bare.
-- [ ] Si Paso 2 falla → Plan C (Syncthing portable).
+
+---
+
+## Autenticación SSH — por llave pública
+
+**Contexto:** `dmont` es admin en A8. Windows OpenSSH, para usuarios admin, **ignora** `~/.ssh/authorized_keys` y usa el archivo global `C:\ProgramData\ssh\administrators_authorized_keys`. Ese archivo ya existe porque se configuró previamente para conectar desde la PC de Indra. Por eso la conexión desde PC Sodimac rechaza la contraseña: o la contraseña de Windows no era la correcta, o `PasswordAuthentication` está deshabilitado en `sshd_config`. Solución limpia: **agregar la llave pública de la PC Sodimac a ese archivo**.
+
+### Paso 3.1 — En PC Sodimac: generar (si no existe) y mostrar llave
+
+```powershell
+# Verifica si ya tienes llave:
+Test-Path $HOME\.ssh\id_ed25519.pub
+```
+
+Si devuelve `False`, genera:
+```powershell
+ssh-keygen -t ed25519 -C "g_dco018@cd-rosas"
+# Enter para aceptar ruta por defecto
+# Enter (vacío) para passphrase
+# Enter otra vez para confirmar
+```
+
+Mostrar la llave pública (copiar toda la línea):
+```powershell
+Get-Content $HOME\.ssh\id_ed25519.pub
+```
+
+Formato esperado (una sola línea):
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... g_dco018@cd-rosas
+```
+
+### Paso 3.2 — En PC personal (A8): agregar llave al archivo de admins
+
+**PowerShell como Administrador** (clic derecho → "Ejecutar como administrador"):
+
+```powershell
+$llave = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... g_dco018@cd-rosas'
+Add-Content -Path C:\ProgramData\ssh\administrators_authorized_keys -Value $llave
+```
+
+Verificar que se agregó:
+```powershell
+Get-Content C:\ProgramData\ssh\administrators_authorized_keys
+```
+
+No hace falta reiniciar `sshd` — OpenSSH relee el archivo en cada conexión.
+
+### Paso 3.3 — En PC Sodimac: probar conexión
+
+```powershell
+ssh dmont@192.168.0.121
+```
+
+Debe entrar **sin pedir contraseña**. Si pide contraseña o da `Permission denied (publickey)`, ver "Problemas comunes" abajo.
+
+---
+
+## Problemas comunes
+
+### "Permission denied (publickey)"
+La llave no se está reconociendo. Verificar permisos del archivo en A8 (PowerShell admin):
+```powershell
+icacls C:\ProgramData\ssh\administrators_authorized_keys
+```
+Debe tener SOLO `Administrators:F` y `SYSTEM:F`. Si tiene más, arreglarlo:
+```powershell
+icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r
+icacls C:\ProgramData\ssh\administrators_authorized_keys /grant "Administrators:F" "SYSTEM:F"
+```
+
+### Ver logs de sshd para diagnosticar
+En A8 (PowerShell admin):
+```powershell
+Get-EventLog -LogName Application -Source OpenSSH -Newest 20 | Format-List TimeGenerated,Message
+```
+
+---
+
+## Alternativa — habilitar login por contraseña
+
+Si por algún motivo la llave no funciona y quieres probar rápido con **contraseña de Windows**, se puede habilitar password auth editando `sshd_config` en A8 (PowerShell admin):
+
+```powershell
+# Backup
+Copy-Item C:\ProgramData\ssh\sshd_config C:\ProgramData\ssh\sshd_config.bak
+
+# Asegurar PasswordAuthentication yes
+(Get-Content C:\ProgramData\ssh\sshd_config) `
+  -replace '^\s*#?\s*PasswordAuthentication\s+\w+','PasswordAuthentication yes' `
+  | Set-Content C:\ProgramData\ssh\sshd_config
+
+# Reiniciar servicio
+Restart-Service sshd
+
+# Verificar
+Get-Content C:\ProgramData\ssh\sshd_config | Select-String 'PasswordAuthentication'
+```
+
+Tras esto, desde Sodimac:
+```powershell
+ssh dmont@192.168.0.121
+# Password: la misma con la que inicias sesión en Windows en A8
+```
+
+**Nota:** la contraseña que se pide es **la de tu cuenta de Windows en A8** (con la que desbloqueas la PC), no una del servicio SSH. Si usas cuenta Microsoft, a veces es el PIN lo que va; en ese caso hay que setear una contraseña local.
+
+**Preferencia:** dejar con llave (Paso 3) — más seguro, sin password en red, y replica el patrón ya funcionando desde Indra.

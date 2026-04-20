@@ -2,172 +2,165 @@
 
 **Jiras:** STM-321, STM-323, STM-1461, STM-1474, STM-1524, STM-1525
 **Fecha análisis:** 2026-04-20
-**Estado esquema de seguridad:** NO implementado aún (pendiente de corporativo)
+**Identity Provider:** Keycloak (JWT emitido por Keycloak, front lo administra)
+**Modelo BD seguridad:** Pendiente (usuario compartirá imagen del modelo)
 
 ---
 
-## 1. Mapeo de Módulos a Proyectos
+## 1. Mapeo Corregido de Módulos → Proyectos
 
-| Jira | Módulo | Proyecto | Controlador | Endpoint actual |
-|------|--------|----------|-------------|-----------------|
-| STM-323 | Facturas | `fiscal-api` :8082 | `InvoiceController.java` | `POST /invoices/search` |
-| STM-1474 | Recepción | `fiscal-api` :8082 | `PaymentRegistrationController.java` | `GET /fiscal/complementos-pago/buscar` |
-| STM-1461 | Carta Porte | `fiscal-api` :8082 | `RelatedDocumentsController.java` | `GET /related-documents` |
-| STM-1524 | Estado de Cuenta | `finanzas-api` (Node.js) | `accountsPayable.controller.ts` | `GET /api/accounts-payable` |
-| STM-1525 | Catálogo Proveedor | `catalogos-api` :8083 | `SupplierController.java` | `GET /suppliers` |
-| STM-321 | Three Way Match | **NO ENCONTRADO** | — | — |
+| Jira | Módulo | Proyecto | Controlador | Endpoint | Tabla BD |
+|------|--------|----------|-------------|----------|----------|
+| STM-323 | Facturas | `fiscal-api` :8082 | `InvoiceController.java` | `POST /invoices/search` | `tenant_fiscal.invoice` |
+| STM-1474 | Recepción | `fiscal-api` :8082 | `PaymentRegistrationController.java` | `GET /fiscal/complementos-pago/buscar` | `tenant_fiscal` |
+| STM-1461 | Carta Porte | `finanzas-api` (Node.js) | `shippingGuide.controller.ts` | `GET /api/shipping-guide` | `tenant_finance.shipping_guide` |
+| STM-1524 | Estado de Cuenta | `finanzas-api` (Node.js) | **No encontrado** | ⚠️ Ver dudas | `tenant_finance.account_statement` |
+| STM-1525 | Catálogo Proveedor | `catalogos-api` :8083 | `SupplierController.java` | `GET /suppliers` | `shared_catalogs.supplier` |
+| STM-321 | Three Way Match | **No encontrado** | **No encontrado** | ⚠️ Ver dudas | `tenant_finance.three_way_match` |
+
+> **Nota Carta Porte**: `fiscal-api` tiene un `RelatedDocumentsController` sobre "documentos relacionados en complementos fiscales". Eso es diferente al listado de guías carta porte que está en `finanzas-api/shippingGuide.controller.ts`.
 
 ---
 
-## 2. Infraestructura de Seguridad Actual
+## 2. Campo clave para filtrado por Proveedor
+
+Todas las tablas comparten el campo `vendor_number` (INTEGER) que representa el Proveedor:
+
+```sql
+tenant_finance.three_way_match        → vendor_number
+tenant_finance.account_statement      → vendor_number
+tenant_finance.shipping_guide         → (por confirmar)
+tenant_finance.accounts_payable       → vendor_number
+tenant_fiscal.invoice                 → via addenda.supplierNumber / numeroProveedor
+shared_catalogs.supplier              → supplier_number
+```
+
+El filtro base en SQL sería:
+```sql
+WHERE vendor_number IN (:proveedoresDelUsuario)
+-- O si atributo = -1: sin filtro (acceso total)
+```
+
+---
+
+## 3. Catálogos relevantes en shared_catalogs.catalog_header
+
+| id | code | name | Uso en estos Jiras |
+|----|------|------|-------------------|
+| 22 | CatTipoProveedor | Tipo Proveedor | Filtro TipoProveedor |
+| 18 | CatEstatusRecepcion | Estatus Recepción | Catálogo estado recepciones |
+| 38 | CatEstatusEstadoCuenta | Estatus Estado de Cuenta | Catálogo estado cta |
+| 1 | CatEstatusCartaPorte | Estatus Carta Porte | Catálogo estado guías |
+| 2 | CatEstatusCartaPorteFBC | Estatus Carta Porte FBC | Catálogo estado guías FBC |
+
+**CatTipoProveedor** valores actuales:
+```
+TPR001 → Proveedores de mercancía
+TPR002 → Proveedores de transporte
+TPR003 → Proveedores indirectos
+TPR004 → Proveedores de servicios
+```
+
+**GrupoProveedor** → NO existe aún en catalog_header. Será parte del nuevo modelo de seguridad.
+
+---
+
+## 4. Infraestructura de Seguridad Actual
 
 ### fiscal-api (único con JWT implementado)
 
-**Archivos clave:**
+**Archivos:**
+- [`JwtTokenInterceptor.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/JwtTokenInterceptor.java) — parsea JWT Keycloak, crea `Session`
+- [`Session.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/Session.java) — contexto de usuario
+- [`GroupValidator.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/GroupValidator.java) — `@Aspect` valida roles vía `@RequireRole`
 
-- [`JwtTokenInterceptor.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/JwtTokenInterceptor.java) — intercepta todas las requests, parsea JWT, crea objeto `Session`
-- [`Session.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/Session.java) — contenedor del contexto de usuario
-- [`GroupValidator.java`](../../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/security/GroupValidator.java) — `@Aspect` que valida roles via `@RequireRole`
+**Claims JWT extraídos actualmente:**
+```java
+// Session.java
+String name
+String email
+List<String> groups   // roles de Keycloak
 
-**Campos actuales del JWT extraídos:**
-```
-name    → Session.name
-email   → Session.email
-groups  → Session.groups (List<String>)
-```
-
-**Lo que FALTA en Session para estos Jiras:**
-```
-proveedor      → no existe
-tipoProveedor  → no existe
-grupoProveedor → no existe
+// FALTA → atributos del nuevo modelo de seguridad:
+// proveedor, tipoProveedor, grupoProveedor
 ```
 
-### finanzas-api (Node.js — SIN JWT)
-- No tiene middleware JWT
-- Usa `X-User-Id` header para auditoría únicamente
-- No tiene contexto de usuario autenticado
+**Roles configurados:**
+```properties
+fiscal.jwt.role.operador=operadores
+fiscal.jwt.role.proveedor=proveedores
+```
 
-### catalogos-api (Java — SIN JWT)
-- No tiene `JwtTokenInterceptor`
-- Usa `@RequestHeader("X-User-Id")` para auditoría únicamente
-- No tiene `Session` ni `GroupValidator`
+### finanzas-api y catalogos-api — SIN JWT
+
+- `finanzas-api`: No tiene interceptor JWT. Usa `logActivity` para auditoría.
+- `catalogos-api`: No tiene interceptor JWT. Usa `@RequestHeader("X-User-Id")`.
+
+**Keycloak** es el IdP corporativo. El front administra el token. El back confía en el front.
+Opción más probable: el BFF lee el token Keycloak y pasa los atributos por header a los backends.
 
 ---
 
-## 3. Base de Datos — Esquema de Atributos
+## 5. Nuevas tablas en BD (pendiente modelo del usuario)
 
-### shared_catalogs (catalogos-api PostgreSQL)
+El usuario compartirá el modelo de la nueva BD de seguridad.
+Datos que se esperan:
+- Tabla de usuarios con sus atributos: `usuario → [proveedores, tiposProveedor, gruposProveedor]`
+- O bien: los atributos vienen directamente en los claims del JWT de Keycloak
 
-**Catálogo de catálogos** = tablas `catalog_header` + `catalog_detail`
-- `catalog_header` → define cada catálogo (ej: TipoProveedor, GrupoProveedor)
-- `catalog_detail` → valores de cada catálogo
-- `catalog_detail.attributes` → campo JSONB para atributos extendidos (GIN index)
-
-**Tabla de proveedores:**
-```sql
--- shared_catalogs.supplier
-id, supplier_number, rfc, business_name, supplier_type_id, status...
-
--- shared_catalogs.supplier_type
-id, code (NAC/INT/MIX), name, status...
-```
-
-### ¿Tabla de atributos de usuario?
-**NO ENCONTRADA** en ningún esquema local.
-
-No existe tabla que relacione `usuario → proveedor/tipoProveedor/grupoProveedor`.
-El Jira dice que el esquema de seguridad aún no está creado.
+Regla valor `-1` = acceso total (sin filtro por ese atributo).
 
 ---
 
-## 4. Flujo esperado (una vez que el esquema esté listo)
+## 6. Estrategia de implementación por proyecto
 
-```
-Request → BFF → fiscal-api
-                  ↓
-          JwtTokenInterceptor
-          parsea JWT → Session {
-              name, email, groups,
-              [proveedor],        ← NUEVO
-              [tipoProveedor],    ← NUEVO
-              [grupoProveedor]    ← NUEVO
-          }
-                  ↓
-          Controller → Service → Specification
-                                  ↓
-                          WHERE proveedor IN (user.proveedores)
-                           AND tipoProveedor IN (user.tipoProveedores)
-                           OR -1 = skip filter for that attribute
-```
+### fiscal-api (STM-323 Facturas, STM-1474 Recepción)
+1. Agregar campos a `Session.java`: `List<Integer> proveedores`, `List<String> tiposProveedor`, `List<String> gruposProveedor`
+2. `JwtTokenInterceptor.java`: extraer esos claims del JWT (o consultar BD de seguridad)
+3. `InvoiceSpecification.java`: nuevo método `filterByUserAttributes(Session session)`
+4. `InvoiceServiceImpl`: aplicar spec de seguridad si `session.isProveedor()` (no operador)
+5. Mismo patrón en servicio de recepciones
 
-### Reglas a implementar por código:
-- Si atributo == `-1` → no aplicar filtro (acceso total a ese atributo)
-- Si usuario tiene múltiples valores → `OR` lógico
-- Si usuario sin atributos configurados → retornar `WRN7029`
+### finanzas-api (STM-1461 Carta Porte, STM-1524 Estado de Cuenta)
+- `shippingGuide.service.ts`: agregar filtro `vendor_number IN (user.proveedores)` en query
+- Middleware o header: recibir atributos del usuario desde BFF o desde JWT si se agrega middleware Keycloak
+
+### catalogos-api (STM-1525 Catálogo Proveedor)
+- `SupplierController.java` `GET /suppliers`: filtrar por `supplier_type_id` (TipoProveedor) y `group` (GrupoProveedor)
+- Sin `Proveedor` en este Jira → solo TipoProveedor y GrupoProveedor
 
 ---
 
-## 5. Cambios técnicos necesarios por proyecto
+## 7. Dudas pendientes
 
-### A) fiscal-api (STM-323, STM-1461, STM-1474)
+### Bloqueantes
 
-1. **`Session.java`** — agregar campos `proveedor`, `tipoProveedor`, `grupoProveedor` (List)
-2. **`JwtTokenInterceptor.java`** — extraer esos claims del JWT
-3. **`InvoiceSpecification.java`** — agregar filtros por atributos del usuario autenticado
-4. **Servicio de facturas** — aplicar especificación de seguridad si usuario es proveedor (no operador)
-5. **`RelatedDocumentsController`** / servicio carta porte — mismo patrón
-6. **`PaymentRegistrationController`** / servicio recepciones — mismo patrón
+1. **STM-321 Three Way Match**: La tabla `tenant_finance.three_way_match` existe en BD. ¿Hay endpoint en algún proyecto NO clonado localmente? ¿O es un módulo pendiente de crear?
 
-### B) catalogos-api (STM-1525 — Catálogo Proveedor)
-- **SupplierController.java** `GET /suppliers`
-- Actualmente sin JWT — necesitará interceptor o recibirá atributos vía header desde BFF
-- Filtrar por `supplier_type_id` (TipoProveedor) y grupo (GrupoProveedor)
+2. **STM-1524 Estado de Cuenta**: En finanzas-api existe `/api/accounts-payable` → tabla `accounts_payable` (documentos individuales). También existe tabla `account_statement` (resumen mensual por proveedor). ¿Cuál de las dos aplica para STM-1524?
 
-### C) finanzas-api (STM-1524 — Estado de Cuenta)
-- **accountsPayable.controller.ts** `GET /api/accounts-payable`
-- Actualmente sin JWT — mismo dilema que catalogos-api
-- Requiere definir si el filtro se aplica en finanzas-api o en la capa BFF
+3. **Modelo nuevo de seguridad**: Pendiente imagen del usuario. Necesario saber:
+   - ¿Los atributos (proveedor, tipoProveedor, grupoProveedor) vienen en claims del JWT de Keycloak?
+   - ¿O se consultan en BD de seguridad con el `email`/`sub` del token?
+   - ¿GrupoProveedor es un catalog nuevo a crear en shared_catalogs?
 
-### D) ??? (STM-321 — Three Way Match)
-- **No encontrado** en ningún proyecto local
-- Requiere aclaración (ver dudas)
-
----
-
-## 6. DUDAS Y PREGUNTAS PARA EL EQUIPO
-
-### Críticas (bloquean inicio de implementación)
-
-1. **Three Way Match (STM-321)**: ¿En qué proyecto/repositorio está el backend del three way match? No se encontró endpoint ni controlador en ningún proyecto clonado.
-
-2. **Origen de los atributos en JWT**: ¿Los atributos Proveedor, TipoProveedor y GrupoProveedor del usuario vienen dentro del payload del token JWT, o se deben consultar en una tabla de BD a partir del `email`/`userId` del token?
-
-3. **Tabla de atributos de usuario**: ¿Ya existe o está pendiente de crear? El Jira menciona "catálogo de catálogos" — ¿es el `catalog_header/catalog_detail` de catalogos-api o una tabla nueva del esquema de seguridad?
-
-4. **finanzas-api y catalogos-api sin JWT**: Estos proyectos no tienen interceptor JWT. ¿El filtro de seguridad se implementa:
-   - a) Agregando JWT a esos proyectos (interceptor nuevo), o
-   - b) En la capa BFF (bff.finanzas, bff.catalogos) leyendo el token y pasando los atributos por header?
+4. **finanzas-api y catalogos-api**: ¿El filtro de seguridad va en el BFF (leen JWT y pasan headers) o se agrega interceptor Keycloak directo en esos servicios?
 
 ### Funcionales
 
-5. **Estado de Cuenta = accounts-payable**: ¿El módulo "estado de cuenta" corresponde al endpoint `GET /api/accounts-payable` de finanzas-api, o hay otro endpoint/módulo?
+5. **Operadores con atributos restringidos**: ¿Los usuarios operador/analista también pueden tener atributos restringidos, o el filtro solo aplica a tipo `proveedor`?
 
-6. **Catálogo Proveedor (STM-1525) sin atributo Proveedor**: Este Jira solo filtra por TipoProveedor y GrupoProveedor (no por Proveedor). ¿Es intencional? Tiene sentido si el catálogo proveedor es la fuente de datos de proveedores.
-
-7. **Roles operador vs proveedor**: El GroupValidator ya distingue `operador` vs `proveedor`. ¿El filtro de atributos aplica SOLO a usuarios tipo proveedor, o también a operadores/analistas con atributos restringidos?
-
-8. **Múltiples proveedores**: Si un usuario proveedor tiene 3 valores de `Proveedor` (ej: 1001, 1002, 1003), ¿el OR lógico aplica dentro de Proveedor, o también entre Proveedor y TipoProveedor? Ejemplo: ¿`(Proveedor IN (1001,1002) OR TipoProveedor IN ('NAC'))`?
+6. **OR entre atributos diferentes**: Múltiples Proveedores = `OR` dentro del mismo atributo. ¿Y entre atributos distintos? ¿`(Proveedor=1001 OR TipoProveedor='NAC')` o es `AND`?
 
 ---
 
-## 7. Estado de implementación
+## 8. Estado
 
-| Jira | Proyecto identificado | Endpoint encontrado | Esquema BD | Listo para implementar |
-|------|-----------------------|--------------------|-----------|-----------------------|
-| STM-321 | ❌ No encontrado | ❌ | ❌ | ❌ Bloqueado |
-| STM-323 | ✅ fiscal-api | ✅ `/invoices/search` | ⚠️ Pendiente tabla users-attrs | ⚠️ Pendiente esquema |
-| STM-1461 | ✅ fiscal-api | ✅ `/related-documents` | ⚠️ Pendiente tabla users-attrs | ⚠️ Pendiente esquema |
-| STM-1474 | ✅ fiscal-api | ✅ `/fiscal/complementos-pago/buscar` | ⚠️ Pendiente tabla users-attrs | ⚠️ Pendiente esquema |
-| STM-1524 | ✅ finanzas-api | ✅ `/api/accounts-payable` | ⚠️ Pendiente tabla users-attrs | ⚠️ Pendiente JWT/filtro |
-| STM-1525 | ✅ catalogos-api | ✅ `/suppliers` | ⚠️ Pendiente tabla users-attrs | ⚠️ Pendiente JWT/filtro |
+| Jira | Proyecto | Endpoint | Tabla BD | Nuevo modelo seg. | Listo |
+|------|----------|----------|----------|--------------------|-------|
+| STM-321 | ❌ No ubicado | ❌ | ✅ three_way_match | ⏳ | ❌ Bloqueado |
+| STM-323 | ✅ fiscal-api | ✅ | ✅ invoice | ⏳ | ⚠️ Pendiente modelo |
+| STM-1461 | ✅ finanzas-api | ✅ | ✅ shipping_guide | ⏳ | ⚠️ Pendiente modelo |
+| STM-1474 | ✅ fiscal-api | ✅ | ✅ tenant_fiscal | ⏳ | ⚠️ Pendiente modelo |
+| STM-1524 | ✅ finanzas-api | ⚠️ Por confirmar | ✅ account_statement | ⏳ | ⚠️ Bloqueado |
+| STM-1525 | ✅ catalogos-api | ✅ | ✅ supplier | ⏳ | ⚠️ Pendiente modelo |

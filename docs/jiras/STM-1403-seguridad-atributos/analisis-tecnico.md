@@ -101,14 +101,49 @@ Opción más probable: el BFF lee el token Keycloak y pasa los atributos por hea
 
 ---
 
-## 5. Nuevas tablas en BD (pendiente modelo del usuario)
+## 5. Modelo de Seguridad — Nuevo Schema `core_security`
 
-El usuario compartirá el modelo de la nueva BD de seguridad.
-Datos que se esperan:
-- Tabla de usuarios con sus atributos: `usuario → [proveedores, tiposProveedor, gruposProveedor]`
-- O bien: los atributos vienen directamente en los claims del JWT de Keycloak
+Basado en ER compartido (`sesiones/modelo ER.pdf`, sección "Modelo Seguridad").
+DDL completo: [01_core_security_schema.sql](./01_core_security_schema.sql)
 
-Regla valor `-1` = acceso total (sin filtro por ese atributo).
+### Tablas clave para STM-1403
+
+```
+core_security.cat_attribute          → define atributos: Proveedor, TipoProveedor, GrupoProveedor
+core_security.user_attribute_value   → user_id + attribute_id + value (una fila por valor)
+core_security.cat_user               → usuarios con email + user_id_external (sub Keycloak)
+```
+
+### Query de filtrado (patrón base)
+
+```sql
+-- Obtener valores de atributo para un usuario autenticado
+SELECT uav.value
+FROM core_security.user_attribute_value uav
+JOIN core_security.cat_attribute        ca  ON ca.attribute_id = uav.attribute_id
+WHERE uav.user_id    = :userId          -- id interno, resuelto por email del JWT
+  AND ca.name        = 'Proveedor'      -- o 'TipoProveedor', 'GrupoProveedor'
+  AND uav.status     = 1;
+
+-- Si resultado contiene '-1' → acceso total (sin filtro en ese atributo)
+-- Si resultado vacío → retornar WRN7029 (sin atributos configurados)
+-- Si múltiples valores → WHERE vendor_number IN (1001, 1002, ...) [OR lógico]
+```
+
+### Tablas moradas (en módulo catalogos — pendiente schema destino)
+`cat_attribute`, `cat_profile`, `cat_application`, `cat_event`, `application_event`, `profile_application`, `profile_application_event`
+
+### Leyenda del ER
+- **Azules** → `core_security` (tablas principales)
+- **Moradas** → módulo catálogos (`shared_catalogs` o nuevo esquema, pendiente decisión)
+
+### Datos iniciales insertados
+```sql
+-- cat_attribute seeds (en DDL)
+('Proveedor',      'Número de proveedor permitido')
+('TipoProveedor',  'Tipo proveedor permitido (TPR001-TPR004 o -1)')
+('GrupoProveedor', 'Grupo de proveedor permitido')
+```
 
 ---
 

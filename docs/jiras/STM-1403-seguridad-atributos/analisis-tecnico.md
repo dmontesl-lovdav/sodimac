@@ -3,22 +3,26 @@
 **Jiras:** STM-321, STM-323, STM-1461, STM-1474, STM-1524, STM-1525
 **Fecha análisis:** 2026-04-20
 **Identity Provider:** Keycloak (JWT emitido por Keycloak, front lo administra)
-**Modelo BD seguridad:** Pendiente (usuario compartirá imagen del modelo)
+**Modelo BD seguridad:** ER compartido — ver sección 5 y [01_core_security_schema.sql](./01_core_security_schema.sql)
 
 ---
 
 ## 1. Mapeo Corregido de Módulos → Proyectos
 
-| Jira | Módulo | Proyecto | Controlador | Endpoint | Tabla BD |
-|------|--------|----------|-------------|----------|----------|
+| Jira | Módulo | Proyecto | Controlador / Punto de entrada | Endpoint | Tabla BD |
+|------|--------|----------|-------------------------------|----------|----------|
 | STM-323 | Facturas | `fiscal-api` :8082 | `InvoiceController.java` | `POST /invoices/search` | `tenant_fiscal.invoice` |
 | STM-1474 | Recepción | `fiscal-api` :8082 | `PaymentRegistrationController.java` | `GET /fiscal/complementos-pago/buscar` | `tenant_fiscal` |
 | STM-1461 | Carta Porte | `finanzas-api` (Node.js) | `shippingGuide.controller.ts` | `GET /api/shipping-guide` | `tenant_finance.shipping_guide` |
-| STM-1524 | Estado de Cuenta | `finanzas-api` (Node.js) | **No encontrado** | ⚠️ Ver dudas | `tenant_finance.account_statement` |
+| STM-1524 | Estado de Cuenta | `finanzas-api` (Node.js) | **Sin endpoint aún** | ⚠️ Tabla existe, módulo no implementado | `tenant_finance.account_statement` |
 | STM-1525 | Catálogo Proveedor | `catalogos-api` :8083 | `SupplierController.java` | `GET /suppliers` | `shared_catalogs.supplier` |
-| STM-321 | Three Way Match | **No encontrado** | **No encontrado** | ⚠️ Ver dudas | `tenant_finance.three_way_match` |
+| STM-321 | Three Way Match | `fiscal-api` :8082 | `InvoiceServiceImpl.java` — flujo cancelación | `PUT /invoices` (cambio estatus) | `tenant_finance.three_way_match` |
 
-> **Nota Carta Porte**: `fiscal-api` tiene un `RelatedDocumentsController` sobre "documentos relacionados en complementos fiscales". Eso es diferente al listado de guías carta porte que está en `finanzas-api/shippingGuide.controller.ts`.
+> **STM-321 Three Way Match**: No es un endpoint de consulta independiente. La regla de negocio aplica al **cancelar una factura** — fiscal-api debe consultar si la factura tiene un registro en `three_way_match` con estatus que impida cancelación. El catálogo de estatus TWM se consulta a catalogos-api (migrado a utils-api).
+
+> **STM-1524 Estado de Cuenta**: La tabla `tenant_finance.account_statement` existe pero `finanzas-api` no tiene entidad ni controller para ella. **Preguntar al equipo de finanzas-api** si el módulo está en otro proyecto no clonado o es pendiente de implementar.
+
+> **Nota Carta Porte**: `fiscal-api` tiene `RelatedDocumentsController` (documentos relacionados de complementos fiscales). Es distinto al listado de guías en `finanzas-api/shippingGuide.controller.ts`.
 
 ---
 
@@ -61,7 +65,9 @@ TPR003 → Proveedores indirectos
 TPR004 → Proveedores de servicios
 ```
 
-**GrupoProveedor** → NO existe aún en catalog_header. Será parte del nuevo modelo de seguridad.
+**GrupoProveedor** → NO existe aún en `catalog_header`. Pendiente de crear como nueva entrada.
+
+> `catalog_header` + `catalog_detail` **ES** el "catálogo de catálogos" del ER. Las tablas moradas del modelo de seguridad (`cat_attribute`, etc.) no son tablas nuevas — corresponden al patrón ya existente en `shared_catalogs`. Atributos Proveedor/TipoProveedor/GrupoProveedor serán nuevas entradas en `catalog_header`.
 
 ---
 
@@ -170,16 +176,13 @@ WHERE uav.user_id    = :userId          -- id interno, resuelto por email del JW
 
 ### Bloqueantes
 
-1. **STM-321 Three Way Match**: La tabla `tenant_finance.three_way_match` existe en BD. ¿Hay endpoint en algún proyecto NO clonado localmente? ¿O es un módulo pendiente de crear?
+1. **STM-321 Three Way Match — cancelación**: Al cancelar factura en fiscal-api, ¿cuáles estatus de `three_way_match` bloquean la cancelación? ¿Ya existe código de mensaje específico para ese bloqueo?
 
-2. **STM-1524 Estado de Cuenta**: En finanzas-api existe `/api/accounts-payable` → tabla `accounts_payable` (documentos individuales). También existe tabla `account_statement` (resumen mensual por proveedor). ¿Cuál de las dos aplica para STM-1524?
+2. **STM-1524 Estado de Cuenta**: La tabla `account_statement` existe en BD pero `finanzas-api` no tiene endpoint para ella. ¿Está en otro proyecto? ¿O es parte del sprint actual (pendiente de implementar)?
 
-3. **Modelo nuevo de seguridad**: Pendiente imagen del usuario. Necesario saber:
-   - ¿Los atributos (proveedor, tipoProveedor, grupoProveedor) vienen en claims del JWT de Keycloak?
-   - ¿O se consultan en BD de seguridad con el `email`/`sub` del token?
-   - ¿GrupoProveedor es un catalog nuevo a crear en shared_catalogs?
+3. **Atributos en JWT vs BD**: ¿Los atributos (proveedor, tipoProveedor, grupoProveedor) vienen en los claims del JWT de Keycloak, o se deben resolver en BD de `core_security` con el `email`/`sub` del token?
 
-4. **finanzas-api y catalogos-api**: ¿El filtro de seguridad va en el BFF (leen JWT y pasan headers) o se agrega interceptor Keycloak directo en esos servicios?
+4. **finanzas-api y catalogos-api**: ¿El filtro de seguridad va en el BFF (lee JWT y pasa headers) o se agrega interceptor Keycloak directo en esos servicios?
 
 ### Funcionales
 
@@ -193,9 +196,9 @@ WHERE uav.user_id    = :userId          -- id interno, resuelto por email del JW
 
 | Jira | Proyecto | Endpoint | Tabla BD | Nuevo modelo seg. | Listo |
 |------|----------|----------|----------|--------------------|-------|
-| STM-321 | ❌ No ubicado | ❌ | ✅ three_way_match | ⏳ | ❌ Bloqueado |
+| STM-321 | ✅ fiscal-api (cancel) | ✅ PUT /invoices | ✅ three_way_match | ⏳ | ⚠️ Pendiente: qué estatus bloquea |
 | STM-323 | ✅ fiscal-api | ✅ | ✅ invoice | ⏳ | ⚠️ Pendiente modelo |
 | STM-1461 | ✅ finanzas-api | ✅ | ✅ shipping_guide | ⏳ | ⚠️ Pendiente modelo |
 | STM-1474 | ✅ fiscal-api | ✅ | ✅ tenant_fiscal | ⏳ | ⚠️ Pendiente modelo |
-| STM-1524 | ✅ finanzas-api | ⚠️ Por confirmar | ✅ account_statement | ⏳ | ⚠️ Bloqueado |
+| STM-1524 | ⚠️ finanzas-api (sin endpoint) | ❌ No implementado | ✅ account_statement | ⏳ | ❌ Bloqueado — preguntar equipo |
 | STM-1525 | ✅ catalogos-api | ✅ | ✅ supplier | ⏳ | ⚠️ Pendiente modelo |

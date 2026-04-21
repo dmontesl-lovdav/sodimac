@@ -16,9 +16,9 @@
 | STM-1461 | Carta Porte | `finanzas-api` (Node.js) | `shippingGuide.controller.ts` | `GET /api/shipping-guide` | `tenant_finance.shipping_guide` |
 | STM-1524 | Estado de Cuenta | `finanzas-api` (Node.js) | **Sin endpoint aún** | ⚠️ Tabla existe, módulo no implementado | `tenant_finance.account_statement` |
 | STM-1525 | Catálogo Proveedor | `catalogos-api` :8083 | `SupplierController.java` | `GET /suppliers` | `shared_catalogs.supplier` |
-| STM-321 | Three Way Match | `fiscal-api` :8082 | `InvoiceServiceImpl.java` — flujo cancelación | `PUT /invoices` (cambio estatus) | `tenant_finance.three_way_match` |
+| STM-321 | Three Way Match | `finanzas-api` (Node.js) | **Sin endpoint aún** | ⚠️ Módulo no implementado | `tenant_finance.three_way_match` |
 
-> **STM-321 Three Way Match**: No es un endpoint de consulta independiente. La regla de negocio aplica al **cancelar una factura** — fiscal-api debe consultar si la factura tiene un registro en `three_way_match` con estatus que impida cancelación. El catálogo de estatus TWM se consulta a catalogos-api (migrado a utils-api).
+> **STM-321 Three Way Match**: Es un **módulo de consulta financiero** (OC + Recepción + Factura consolidados). La tabla `tenant_finance.three_way_match` existe en BD con campo `vendor_number` para filtrar por proveedor. No existe endpoint en `finanzas-api` — módulo pendiente de implementar. Preguntar a Ivan/equipo finanzas en qué proyecto va.
 
 > **STM-1524 Estado de Cuenta**: La tabla `tenant_finance.account_statement` existe pero `finanzas-api` no tiene entidad ni controller para ella. **Preguntar al equipo de finanzas-api** si el módulo está en otro proyecto no clonado o es pendiente de implementar.
 
@@ -196,7 +196,7 @@ WHERE uav.user_id    = :userId          -- id interno, resuelto por email del JW
 
 | Jira | Proyecto | Endpoint | Tabla BD | Nuevo modelo seg. | Listo |
 |------|----------|----------|----------|--------------------|-------|
-| STM-321 | ✅ fiscal-api (cancel) | ✅ PUT /invoices | ✅ three_way_match | ⏳ | ⚠️ Pendiente: qué estatus bloquea |
+| STM-321 | ⚠️ finanzas-api (sin endpoint) | ❌ No implementado | ✅ three_way_match | ⏳ | ❌ Bloqueado — preguntar equipo |
 | STM-323 | ✅ fiscal-api | ✅ | ✅ invoice | ⏳ | ⚠️ Pendiente modelo |
 | STM-1461 | ✅ finanzas-api | ✅ | ✅ shipping_guide | ⏳ | ⚠️ Pendiente modelo |
 | STM-1474 | ✅ fiscal-api | ✅ | ✅ tenant_fiscal | ⏳ | ⚠️ Pendiente modelo |

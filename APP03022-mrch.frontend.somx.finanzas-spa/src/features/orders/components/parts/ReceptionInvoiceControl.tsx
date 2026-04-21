@@ -6,6 +6,7 @@ import { InvoiceClient } from "../../api/InvoiceClient";
 import { formatAmount, formatDate } from "@/utils/utils";
 import SuccessMessage from "@/shared/components/ui/alerts/SuccessMessage";
 import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
+import "./ReceptionInvoiceControl.css";
 
 interface InvoiceData {
     rfcEmisor: string;
@@ -23,7 +24,7 @@ interface ReceptionInvoiceControlProps {
 }
 
 export const ReceptionInvoiceControl = ({ reception }: ReceptionInvoiceControlProps) => {
-    const client = new InvoiceClient();
+    const client =  InvoiceClient;
     const [fileXML, setFileXML] = useState<File | null>(null);
     const [filePDF, setFilePDF] = useState<File | null>(null);
     const [isValidating, setIsValidating] = useState(false);
@@ -145,12 +146,12 @@ export const ReceptionInvoiceControl = ({ reception }: ReceptionInvoiceControlPr
 
 
 return (
-  <div className="somx-bg-white somx-mt-2 somx-p-6 somx-border somx-border-gray-200 somx-mx-auto">
-    <div className="somx-grid somx-grid-cols-2 somx-gap-4 somx-text-sm">
-      <div>
-        <h2 className="somx-text-lg somx-font-bold somx-mb-4">Subir Factura</h2>
+  <div className="rc-invoice-control">
+    <div className="rc-invoice-layout">
+      <div className="rc-invoice-form">
+        <h2 className="rc-title">Subir Factura</h2>
         <p>Sube tu factura XML, tus datos serán validados de acuerdo a lo proporcionado</p>
-        <div className="somx-flex">
+        <div className="rc-field">
           <GenericInput
             label="Serie de la factura"
             placeholder="00000"
@@ -158,7 +159,7 @@ return (
             onChange={(event: ChangeEvent<HTMLInputElement>) => setSeries(event.target.value)}
           />
         </div>
-        <div className="somx-flex">
+        <div className="rc-field">
           <GenericInput
             label="UUID de la factura"
             placeholder="Escribe la serie UUID"
@@ -166,33 +167,33 @@ return (
             onChange={(event: ChangeEvent<HTMLInputElement>) => setUuid(event.target.value)}
           />
         </div>
-        <div className="somx-grid somx-grid-cols-2 somx-gap-2">
+        <div className="rc-upload-grid">
           {isValidating ? (
             <GenericLinearProgress />
           ) : (
-            <label className="somx-mb-2 somx-mt-2 somx-block somx-w-full somx-cursor-pointer somx-border-2 somx-border-dashed somx-border-gray-300 somx-rounded-lg somx-p-6 somx-text-center somx-hover:border-blue-400 somx-transition">
+            <label className="rc-upload-label">
               <input
                 type="file"
                 accept=".xml"
-                className="somx-hidden"
+                className="rc-file-input"
                 onChange={handleFileChange}
               />
-              <p className="somx-text-gray-500">Subir XML de la factura (Requerido)</p>
+              <p className="rc-upload-text">Subir XML de la factura (Requerido)</p>
               {fileXML && (
-                <p className="somx-mt-2 somx-text-blue-600 somx-font-semibold">{fileXML.name}</p>
+                <p className="rc-upload-file">{fileXML.name}</p>
               )}
             </label>
           )}
-          <label className="somx-mb-2 somx-mt-2 somx-block somx-w-full somx-cursor-pointer somx-border-2 somx-border-dashed somx-border-gray-300 somx-rounded-lg somx-p-6 somx-text-center somx-hover:border-blue-400 somx-transition">
+          <label className="rc-upload-label">
             <input
               type="file"
               accept=".pdf"
-              className="somx-hidden"
+              className="rc-file-input"
               onChange={handleFilePDFChange}
             />
-            <p className="somx-text-gray-500">Subir PDF de la factura (opcional)</p>
+            <p className="rc-upload-text">Subir PDF de la factura (opcional)</p>
             {filePDF && (
-              <p className="somx-mt-2 somx-text-blue-600 somx-font-semibold">{filePDF.name}</p>
+              <p className="rc-upload-file">{filePDF.name}</p>
             )}
           </label>
         </div>
@@ -205,52 +206,52 @@ return (
       </div>
 
       {invoiceData && (
-        <div>
-          <div className="somx-bg-gray-50 somx-rounded-lg somx-p-4 somx-shadow-inner">
-            <div className="somx-text-sm">
-              <table className="somx-border somx-border-gray-300 somx-w-full">
+        <div className="rc-invoice-summary-wrap">
+          <div className="rc-invoice-summary">
+            <div className="rc-summary-text">
+              <table className="rc-summary-table">
                 <tbody>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">RFC Emisor:</td>
-                    <td className="somx-p-2">{invoiceData.rfcEmisor}</td>
+                    <td className="rc-cell rc-cell-label">RFC Emisor:</td>
+                    <td className="rc-cell">{invoiceData.rfcEmisor}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Nombre Proveedor:</td>
-                    <td className="somx-p-2">{invoiceData.nombreProveedor}</td>
+                    <td className="rc-cell rc-cell-label">Nombre Proveedor:</td>
+                    <td className="rc-cell">{invoiceData.nombreProveedor}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Serie:</td>
-                    <td className="somx-p-2">{invoiceData.serie}</td>
+                    <td className="rc-cell rc-cell-label">Serie:</td>
+                    <td className="rc-cell">{invoiceData.serie}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">UUID:</td>
-                    <td className="somx-p-2">{invoiceData.uuid}</td>
+                    <td className="rc-cell rc-cell-label">UUID:</td>
+                    <td className="rc-cell">{invoiceData.uuid}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Folio:</td>
-                    <td className="somx-p-2">{invoiceData.folio}</td>
+                    <td className="rc-cell rc-cell-label">Folio:</td>
+                    <td className="rc-cell">{invoiceData.folio}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Monto:</td>
-                    <td className="somx-p-2">{formatAmount(parseFloat(invoiceData.monto))}</td>
+                    <td className="rc-cell rc-cell-label">Monto:</td>
+                    <td className="rc-cell">{formatAmount(parseFloat(invoiceData.monto))}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Fecha Timbrado:</td>
-                    <td className="somx-p-2">{formatDate(invoiceData.fechaTimbrado, true)}</td>
+                    <td className="rc-cell rc-cell-label">Fecha Timbrado:</td>
+                    <td className="rc-cell">{formatDate(invoiceData.fechaTimbrado, true)}</td>
                   </tr>
                   <tr>
-                    <td className="somx-font-medium somx-p-2">Uso CFDI:</td>
-                    <td className="somx-p-2">{invoiceData.usoCfdi}</td>
+                    <td className="rc-cell rc-cell-label">Uso CFDI:</td>
+                    <td className="rc-cell">{invoiceData.usoCfdi}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="somx-flex somx-flex-end">
+            <div className="rc-summary-actions">
               {!isProcessing && <GenericLinearProgress />}
               <GenericButton
                 disabled={isFinished || isProcessing}
-                className="somx-mt-2"
+                className="rc-save-btn"
                 variant="outline"
                 onClick={() => validateInvoice()}
               >

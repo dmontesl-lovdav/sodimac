@@ -3,15 +3,14 @@ import type { ChangeEvent, ReactElement } from 'react';
 import { GenericInput, GenericSelect, GenericButton } from '@shared/components/ui';
 import { GenericDateRangePicker } from '@shared/components/ui/date';
 
-/* ---------- Types ---------- */
 export type DateRange = [Date | null, Date | null];
 
 export interface FiltersValues {
     vendorId?: string;
     sapDocument?: string;
     documentNumber?: string;
-    dateStart?: string; // YYYY-MM-DD
-    dateEnd?: string;   // YYYY-MM-DD
+    dateStart?: string;
+    dateEnd?: string;
     rebateTypeId?: number;
     statusId?: number;
 }
@@ -20,12 +19,35 @@ interface FiltersBarProps {
     onSearch: (values: FiltersValues) => void;
 }
 
+const styles = {
+    container: {
+        display: 'flex',
+        flexWrap: 'wrap' as const,
+        gap: '1rem',
+        alignItems: 'flex-end',
+        border: '1px solid #e5e7eb',
+        borderRadius: '0.375rem',
+        padding: '1rem',
+        backgroundColor: '#f9fafb',
+    },
+    dateField: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        width: '15rem',
+    },
+    dateLabel: {
+        fontSize: '0.875rem',
+        color: '#4b5563',
+        marginBottom: '0.25rem',
+    },
+};
+
 export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement {
     const [vendor, setVendor] = useState<string>('');
     const [sapDocument, setSapDocument] = useState<string>('');
     const [documentNumber, setDocumentNumber] = useState<string>('');
     const [dateRange, setDateRange] = useState<DateRange>([null, null]);
-    const [rebateType, setRebateType] = useState<string>(''); // keep as string for <select>
+    const [rebateType, setRebateType] = useState<string>('');
     const [status, setStatus] = useState<string>('');
 
     const onChangeInput =
@@ -53,7 +75,7 @@ export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement 
     };
 
     return (
-        <div className="flex flex-wrap gap-4 items-end border border-gray-200 rounded-md p-4 bg-[#f9fafb]">
+        <div style={styles.container}>
             <GenericInput
                 label="Proveedor"
                 placeholder="Número de proveedor"
@@ -78,8 +100,8 @@ export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement 
                 widthClass="w-44"
             />
 
-            <div className="flex flex-col w-60">
-                <label className="text-sm text-gray-600 mb-1">Rango de fechas</label>
+            <div style={styles.dateField}>
+                <label style={styles.dateLabel}>Rango de fechas</label>
                 <GenericDateRangePicker value={dateRange} onChange={setDateRange} />
             </div>
 
@@ -109,7 +131,7 @@ export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement 
                 widthClass="w-40"
             />
 
-            <GenericButton onClick={handleSubmit} className="h-11">
+            <GenericButton onClick={handleSubmit} style={{ height: '44px' }}>
                 Buscar
             </GenericButton>
         </div>

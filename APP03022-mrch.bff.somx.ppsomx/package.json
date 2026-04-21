@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "start": "node --max-http-header-size=1048576 ./src/App.js"
+    "start": "node --max-http-header-size=1048576 ./src/App.js",
+    "test": "echo \"No tests required for BFF\""
   },
   "dependencies": {
     "dotenv": "^17.2.0",

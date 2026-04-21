@@ -20,6 +20,16 @@ export default function RequestsTable({
     const navigate = useNavigate();
 
     // ===== Roles desde el token (fuente de la verdad) =====
+
+    const realmRoles =
+        useAppSelector(
+            (s) => s.authentication?.tokenDecoded?.realm_access?.roles
+        ) || [];
+
+    const isTechAdmin =
+        Array.isArray(realmRoles) &&
+        realmRoles.includes('FBC_TECH_ADMIN_USER');
+
     const roles =
         useAppSelector(
             (s) =>
@@ -27,7 +37,9 @@ export default function RequestsTable({
         ) || [];
 
     // Solo admin puede eliminar
-    const canDelete = Array.isArray(roles) && roles.includes('ppsomx-admin');
+    const canDelete =
+        isTechAdmin ||
+        (Array.isArray(roles) && roles.includes('ppsomx-admin'));
 
     const categoryOf = (id) =>
         Array.isArray(categories) ? categories.find((c) => c.id === id) : null;

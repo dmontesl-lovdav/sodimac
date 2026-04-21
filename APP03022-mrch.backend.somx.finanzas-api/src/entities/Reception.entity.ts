@@ -9,15 +9,12 @@ import {
     OneToMany,
     JoinColumn
 } from 'typeorm';
+
 import { PurchaseOrder } from './PurchaseOrder.entity.js';
-import { OriginCatalog } from './OriginCatalog.entity.js';
-import { StatusCatalog } from './StatusCatalog.entity.js';
+import { AddendumManual } from './AddendumManual.entity.js';
 import { ReceptionSku } from './ReceptionSku.entity.js';
 import { Addendum } from './tenant_fiscal.addendum.entity.js';
 
-/**
- * Recepciones de mercancía
- */
 @Entity('reception')
 export class Reception {
     @PrimaryGeneratedColumn('uuid', { name: 'reception_id' })
@@ -47,6 +44,9 @@ export class Reception {
     @Column({ name: 'reception_date', type: 'date', nullable: true })
     receptionDate?: Date;
 
+    @Column({ name: 'guide_number', type: 'varchar', length: 50, nullable: true })
+    guideNumber?: string;
+
     // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
@@ -63,19 +63,30 @@ export class Reception {
     // Relaciones
     @ManyToOne(() => PurchaseOrder)
     @JoinColumn({ name: 'purchase_order_uuid' })
-    purchaseOrder?: PurchaseOrder;
+    purchaseOrder?: any;
 
-    @OneToMany(() => ReceptionSku, receptionSku => receptionSku.reception, { cascade: true, eager: true })
-    receptionSkus?: ReceptionSku[];
+    @OneToMany(
+        () => ReceptionSku,
+        (receptionSku) => receptionSku.reception,
+        { cascade: true, eager: true }
+    )
+    receptionSkus?: any[];
+
+    @OneToOne(() => AddendumManual, addendumManual => addendumManual.reception, { cascade: true, eager: true })
+    addendumManual?: AddendumManual;
 
     // @OneToMany(() => Addendum, (addendum) => addendum.reception, { cascade: true, eager: true })
     // @JoinColumn({ name: 'reception_number' })
     // addendums?: Addendum[];
 
     @OneToOne(() => Addendum, addendum => addendum.reception, { cascade: true, eager: true })
+    @OneToOne(
+        () => Addendum,
+        (addendum) => addendum.reception,
+        { cascade: true, eager: true }
+    )
     @JoinColumn({ name: 'reception_number' })
-    addendums?: Addendum;
+    addendums?: any;
 
-    // This property will be mapped by leftJoinAndMapOne
-    listAddendum?: Addendum; 
+    listAddendum?: any;
 }

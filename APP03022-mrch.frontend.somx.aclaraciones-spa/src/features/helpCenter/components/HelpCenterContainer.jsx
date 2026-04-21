@@ -40,7 +40,8 @@ export default function HelpCenterContainer() {
                 </section>
 
                 {/* Alert */}
-                {showAlert && (
+                {/* Dont delete this functionality will be implemented in version 2 */}
+                {/* {showAlert && (
                     <section className="hcc-alert">
                         <div className="hcc-alert-inner">
                             <div className="hcc-alert-main">
@@ -71,7 +72,7 @@ export default function HelpCenterContainer() {
                             </button>
                         </div>
                     </section>
-                )}
+                )} */}
 
                 {/* Contenido */}
                 <main className="hcc-main">

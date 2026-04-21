@@ -1,0 +1,83 @@
+
+.generic-select-searchable {
+    position: relative;
+    display: inline-block;
+}
+
+.gss-input {
+    width: 100%;
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+
+    padding: 0 56px 0 12px;
+    font-size: 14px;
+    color: #111827;
+
+    outline: none;
+}
+
+.gss-input:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
+}
+
+.gss-clear {
+    position: absolute;
+    right: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+}
+
+.gss-clear:hover {
+    color: #111827;
+}
+
+.generic-select-caret {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #002d4c;
+    font-size: 0.9rem;
+}
+
+.gss-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 50;
+}
+
+.gss-option {
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.gss-option:hover {
+    background: #f1f5f9;
+}
+
+.gss-empty {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #6b7280;
+}

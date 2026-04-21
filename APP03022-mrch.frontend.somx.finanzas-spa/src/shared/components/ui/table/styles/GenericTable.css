@@ -1,0 +1,269 @@
+/* ========================= */
+/*      TABLA GENERAL        */
+/* ========================= */
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.table {
+    min-width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse;
+    /* fuerza la fuente */
+    color: #1f2937;
+    /* mismo tono base */
+}
+
+/* -------- THEAD -------- */
+
+.table thead {
+    background-color: #eef6ff;
+    border-bottom: 1px solid #dce7f5;
+}
+
+.table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    /* peso correcto */
+    color: #002d4c;
+    /* azul corporativo */
+}
+
+/* -------- TBODY -------- */
+
+.table td {
+    padding: 0.75rem 1rem;
+    /* asegura regular */
+}
+
+.table-row {
+    border-top: 1px solid #e5e7eb;
+    transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+    background-color: #f9fafb;
+}
+
+/* fila enfocada con teclado */
+.table-row.focused {
+    background-color: #f3faff;
+    outline: 2px solid #0073e6;
+    outline-offset: -2px;
+}
+
+/* celda centrada */
+.text-center {
+    text-align: center;
+}
+
+
+/* -------- CHECKBOX -------- */
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+
+    border: 1px solid #d1d5db;
+    background: white;
+
+    accent-color: #002d4c;
+}
+
+.checkbox:hover {
+    transform: scale(1.12);
+}
+
+/* ====== ACTIONS ====== */
+
+.table-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    color: #002d4c;
+}
+
+
+.table-actions button {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.table-actions button img {
+    width: 20px;
+    height: 20px;
+    display: block;
+    cursor: pointer;
+}
+
+
+.table-actions button:hover {
+    opacity: 0.8;
+}
+
+/* ========================= */
+/*         PAGINADOR         */
+/* ========================= */
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    font-size: 0.875rem;
+    color: #1f2937;
+    /* gray-800 para contraste */
+}
+
+/* ---- Inputs & Select ---- */
+
+.pagination select,
+.pagination input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #002d4c;
+
+    padding: 2px 6px;
+    text-align: center;
+    width: 48px;
+
+    font-size: 0.875rem;
+    color: #002d4c;
+}
+
+.pagination select:focus,
+.pagination input:focus {
+    outline: none;
+    border-bottom: 2px solid #003e68;
+}
+
+/* Icono ▼ del select */
+.pagination select+span {
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 0.75rem;
+    color: #003e68;
+}
+
+/* ---- Flechas ---- */
+
+.pagination-arrow {
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+
+    color: #002d4c;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.pagination-arrow:hover:not(.disabled) {
+    background-color: #eaf5fc;
+    color: #0073e6;
+}
+
+.pagination-arrow.disabled {
+    color: #9ca3af;
+    background: transparent;
+    cursor: default;
+}
+
+/* ---- Botones numerados ---- */
+
+.page-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+
+    cursor: pointer;
+    color: #002d4c;
+    font-weight: 500;
+    border: 1px solid transparent;
+
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.page-btn:hover {
+    background-color: #eaf5fc;
+    border-color: #d2e4f8;
+}
+
+.page-btn.active {
+    background-color: #002d4c;
+    color: #ffffff;
+    border-color: #002d4c;
+}
+
+/* Espaciado extra bajo la tabla */
+.table-divider {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 0.75rem;
+}
+
+/* ========================= */
+/*          SWITCH           */
+/* ========================= */
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.switch-on {
+    background-color: #002d4c;
+}
+
+.switch-off {
+    background-color: #d1d5db;
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thumb-on {
+    right: 3px;
+    background: white;
+}
+
+.thumb-off {
+    left: 3px;
+    background: #002d4c;
+}
+
+.switch-check {
+    width: 10px;
+    fill: #002d4c;
+}
+
+.switch-x {
+    width: 10px;
+    stroke: white;
+    stroke-width: 2;
+}

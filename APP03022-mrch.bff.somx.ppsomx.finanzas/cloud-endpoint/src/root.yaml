@@ -1,0 +1,273 @@
+swagger: "2.0"
+info:
+  contact:
+    email: jrcastillo@falabella.cl
+    name: Arquitectura Falabella Tecnologia Corp.
+  description: >
+    Support RESTful operations for finanzas flow. This BFF provides access to
+    financial operations including accounts payable, rebates, fiscal payments,
+    shipping guides, vendor management, three way match, and MIGO.
+  title: Finanzas BFF API
+  version: 2.0.0
+  x-business-acronym: mrch
+  x-capability-acronym: finanzas
+  x-consumer-segments: retail
+  x-service-name: finanzas
+
+host: ${DOMAIN_OPENAPI}
+
+schemes:
+  - https
+
+paths:
+  /accounts-payable:
+    $ref: "./paths/accounts-payable.yaml#/accounts-payable"
+  /accounts-payable/{uuid}:
+    $ref: "./paths/accounts-payable.yaml#/accounts-payable-by-uuid"
+
+  /fiscal-payments:
+    $ref: "./paths/fiscal-payments.yaml#/fiscal-payments"
+  /fiscal-payments/{uuid}:
+    $ref: "./paths/fiscal-payments.yaml#/fiscal-payments-by-uuid"
+
+  /finanzas-payment:
+    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment"
+  /finanzas-payment/header-with-details:
+    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details"
+  /finanzas-payment/header-with-details/{paymentHeaderUuid}:
+    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details-by-uuid"
+
+  /audit-logs:
+    $ref: "./paths/audit-logs.yaml#/audit-logs"
+  /audit-logs/export/csv:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-export-csv"
+  /audit-logs/transaction/{idTransaccion}:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-by-transaction"
+  /audit-logs/{id}:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-by-id"
+
+  /rebates:
+    $ref: "./paths/rebates.yaml#/rebates"
+  /rebates/published:
+    $ref: "./paths/rebates.yaml#/rebates-published"
+  /rebates/published/export/csv:
+    $ref: "./paths/rebates.yaml#/rebates-published-export-csv"
+  /rebates/search:
+    $ref: "./paths/rebates.yaml#/rebates-search"
+  /rebates/export/csv:
+    $ref: "./paths/rebates.yaml#/rebates-export-csv"
+  /rebates/vendor/{vendorNumber}:
+    $ref: "./paths/rebates.yaml#/rebates-by-vendor"
+  /rebates/{uuid}:
+    $ref: "./paths/rebates.yaml#/rebates-by-uuid"
+
+  /stamped-rebates:
+    $ref: "./paths/stamped-rebates.yaml#/stamped-rebates"
+  /stamped-rebates/export/csv:
+    $ref: "./paths/stamped-rebates.yaml#/stamped-rebates-export-csv"
+  /stamped-rebates/{uuid}:
+    $ref: "./paths/stamped-rebates.yaml#/stamped-rebates-by-uuid"
+
+  /sap-documents:
+    $ref: "./paths/sap-documents.yaml#/sap-documents"
+  /sap-documents/{uuid}:
+    $ref: "./paths/sap-documents.yaml#/sap-documents-by-uuid"
+
+  /shipping-guide:
+    $ref: "./paths/shipping-guides.yaml#/shipping-guide"
+  /shipping-guide/csv:
+    $ref: "./paths/shipping-guides.yaml#/shipping-guide-csv"
+  /shipping-guide/{uuid}:
+    $ref: "./paths/shipping-guides.yaml#/shipping-guide-by-uuid"
+  /shipping-guide/guide/{idGuide}:
+    $ref: "./paths/shipping-guides.yaml#/shipping-guide-by-idGuide"
+
+  /three-way-match:
+    $ref: "./paths/three-way-match.yaml#/three-way-match"
+  /three-way-match/export/csv:
+    $ref: "./paths/three-way-match.yaml#/three-way-match-export-csv"
+  /three-way-match/export/xlsx:
+    $ref: "./paths/three-way-match.yaml#/three-way-match-export-xlsx"
+  /three-way-match/run:
+    $ref: "./paths/three-way-match.yaml#/three-way-match-run"
+
+  /migo:
+    $ref: "./paths/migo.yaml#/migo"
+  /migo/reject:
+    $ref: "./paths/migo.yaml#/migo-reject"
+  /migo/{id}:
+    $ref: "./paths/migo.yaml#/migo-by-id"
+  /migo/{id}/receptions:
+    $ref: "./paths/migo.yaml#/migo-receptions"
+  /migo/{id}/authorize:
+    $ref: "./paths/migo.yaml#/migo-authorize"
+  /migo/{id}/export-csv:
+    $ref: "./paths/migo.yaml#/migo-export-csv"
+
+  /vendor-blocks:
+    $ref: "./paths/vendor-blocks.yaml#/vendor-blocks"
+  /vendor-blocks/{uuid}:
+    $ref: "./paths/vendor-blocks.yaml#/vendor-blocks-by-uuid"
+
+  /purchase-orders:
+    $ref: "./paths/purchase-orders.yaml#/purchase-orders"
+  /purchase-orders/{uuid}:
+    $ref: "./paths/purchase-orders.yaml#/purchase-orders-by-uuid"
+
+definitions:
+  ExceptionWrapper:
+    $ref: "./definitions/common.yaml#/ExceptionWrapper"
+
+  AccountsPayableDto:
+    $ref: "./definitions/accounts-payable.yaml#/AccountsPayableDto"
+  CreateAccountsPayableDto:
+    $ref: "./definitions/accounts-payable.yaml#/CreateAccountsPayableDto"
+  UpdateAccountsPayableDto:
+    $ref: "./definitions/accounts-payable.yaml#/UpdateAccountsPayableDto"
+
+  FiscalPaymentDto:
+    $ref: "./definitions/fiscal-payments.yaml#/FiscalPaymentDto"
+  CreateFiscalPaymentDto:
+    $ref: "./definitions/fiscal-payments.yaml#/CreateFiscalPaymentDto"
+  UpdateFiscalPaymentDto:
+    $ref: "./definitions/fiscal-payments.yaml#/UpdateFiscalPaymentDto"
+
+  CreateFinanzasPaymentDto:
+    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentDto"
+  UpdateFinanzasPaymentDto:
+    $ref: "./definitions/finanzas-payment.yaml#/UpdateFinanzasPaymentDto"
+  FinanzasPaymentDto:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentDto"
+  FinanzasPaymentHeaderDto:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderDto"
+  CreateFinanzasPaymentDetailItemDto:
+    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentDetailItemDto"
+  CreateFinanzasPaymentHeaderWithDetailsDto:
+    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDetailsDto"
+  ResponsePageableFinanzasPaymentDto:
+    $ref: "./definitions/finanzas-payment.yaml#/ResponsePageableFinanzasPaymentDto"
+  FinanzasPaymentHeaderWithDetailsCreateData:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCreateData"
+  FinanzasPaymentHeaderWithDetailsGetData:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGetData"
+  FinanzasPaymentsListResponse:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentsListResponse"
+  FinanzasPaymentSingleResponse:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentSingleResponse"
+  FinanzasPaymentUpdateResponse:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentUpdateResponse"
+  FinanzasPaymentHeaderWithDetailsCreateResponse:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCreateResponse"
+  FinanzasPaymentHeaderWithDetailsGetResponse:
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGetResponse"
+
+  RebateDto:
+    $ref: "./definitions/rebates.yaml#/RebateDto"
+  CreateRebateDto:
+    $ref: "./definitions/rebates.yaml#/CreateRebateDto"
+  UpdateRebateDto:
+    $ref: "./definitions/rebates.yaml#/UpdateRebateDto"
+
+  StampedRebateDto:
+    $ref: "./definitions/stamped-rebates.yaml#/StampedRebateDto"
+  CreateStampedRebateDto:
+    $ref: "./definitions/stamped-rebates.yaml#/CreateStampedRebateDto"
+  UpdateStampedRebateDto:
+    $ref: "./definitions/stamped-rebates.yaml#/UpdateStampedRebateDto"
+
+  SapDocumentDto:
+    $ref: "./definitions/sap-documents.yaml#/SapDocumentDto"
+  CreateSapDocumentDto:
+    $ref: "./definitions/sap-documents.yaml#/CreateSapDocumentDto"
+  UpdateSapDocumentDto:
+    $ref: "./definitions/sap-documents.yaml#/UpdateSapDocumentDto"
+
+  ShippingGuideDto:
+    $ref: "./definitions/shipping-guides.yaml#/ShippingGuideDto"
+  CreateShippingGuideDto:
+    $ref: "./definitions/shipping-guides.yaml#/CreateShippingGuideDto"
+  UpdateShippingGuideDto:
+    $ref: "./definitions/shipping-guides.yaml#/UpdateShippingGuideDto"
+
+  ThreeWayMatchItem:
+    $ref: "./definitions/three-way-match.yaml#/ThreeWayMatchItem"
+  ThreeWayMatchListResponse:
+    $ref: "./definitions/three-way-match.yaml#/ThreeWayMatchListResponse"
+  RunThreeWayMatchBody:
+    $ref: "./definitions/three-way-match.yaml#/RunThreeWayMatchBody"
+  RunThreeWayMatchResponse:
+    $ref: "./definitions/three-way-match.yaml#/RunThreeWayMatchResponse"
+
+  MigoDocumentDto:
+    $ref: "./definitions/migo.yaml#/MigoDocumentDto"
+  MigoReceptionDto:
+    $ref: "./definitions/migo.yaml#/MigoReceptionDto"
+  RejectMigoDto:
+    $ref: "./definitions/migo.yaml#/RejectMigoDto"
+  MigoDocumentsListResponse:
+    $ref: "./definitions/migo.yaml#/MigoDocumentsListResponse"
+  MigoDocumentResponse:
+    $ref: "./definitions/migo.yaml#/MigoDocumentResponse"
+  MigoReceptionsListResponse:
+    $ref: "./definitions/migo.yaml#/MigoReceptionsListResponse"
+  MigoUploadResponse:
+    $ref: "./definitions/migo.yaml#/MigoUploadResponse"
+  MigoActionResponse:
+    $ref: "./definitions/migo.yaml#/MigoActionResponse"
+
+  VendorBlockDto:
+    $ref: "./definitions/vendor-blocks.yaml#/VendorBlockDto"
+  CreateVendorBlockDto:
+    $ref: "./definitions/vendor-blocks.yaml#/CreateVendorBlockDto"
+  UpdateVendorBlockDto:
+    $ref: "./definitions/vendor-blocks.yaml#/UpdateVendorBlockDto"
+
+  PurchaseOrderDto:
+    $ref: "./definitions/purchase-orders.yaml#/PurchaseOrderDto"
+  UpdatePurchaseOrderDto:
+    $ref: "./definitions/purchase-orders.yaml#/UpdatePurchaseOrderDto"
+  ReceiptDto:
+    $ref: "./definitions/purchase-orders.yaml#/ReceiptDto"
+
+  AuditLogDto:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogDto"
+  CreateAuditLogDto:
+    $ref: "./definitions/audit-logs.yaml#/CreateAuditLogDto"
+  CreateAuditLogResponse:
+    $ref: "./definitions/audit-logs.yaml#/CreateAuditLogResponse"
+  AuditLogsListData:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogsListData"
+  AuditLogsListResponse:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogsListResponse"
+  AuditLogsByTransactionResponse:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogsByTransactionResponse"
+
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  keycloak:
+    authorizationUrl: ""
+    flow: implicit
+    scopes: {}
+    type: oauth2
+    x-google-audiences: vendor-backend
+    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
+    x-google-jwks_uri: ${JWKS_URL}
+    x-google-jwt-locations:
+      - header: Authorization
+        value_prefix: "Bearer "
+
+security:
+  - bearerAuth: []
+
+x-components: {}
+
+x-google-endpoints:
+  - allowCors: true
+    name: ${DOMAIN_OPENAPI}

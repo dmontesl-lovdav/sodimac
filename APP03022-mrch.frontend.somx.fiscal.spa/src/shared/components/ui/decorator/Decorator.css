@@ -1,0 +1,36 @@
+.fiscal-decorator-card {
+  margin-top: 8px;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.fiscal-decorator-actions {
+  display: grid;
+  justify-items: end;
+  padding-top: 1.25rem;
+}
+
+.fiscal-decorator-actions-end {
+  justify-self: end;
+}
+
+@media (max-width: 768px) {
+  .fiscal-decorator-container {
+    margin: 1.5rem;
+  }
+
+  .fiscal-decorator-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fiscal-decorator-container {
+    margin: 1rem;
+  }
+
+  .fiscal-decorator-card {
+    padding: 1rem;
+  }
+}

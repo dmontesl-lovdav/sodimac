@@ -1,0 +1,12 @@
+ExceptionWrapper:
+  type: object
+  properties:
+    code:
+      description: Numeric HTTP Status error
+      example: 401
+      format: int32
+      type: integer
+    message:
+      description: Error description
+      example: Unauthorized
+      type: string

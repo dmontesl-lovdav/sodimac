@@ -1,14 +1,18 @@
-import { Entity, Column, PrimaryGeneratedColumn ,
-        CreateDateColumn,
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    CreateDateColumn,
     UpdateDateColumn,
     OneToOne,
     ManyToOne,
     JoinColumn
 } from 'typeorm';
+
 import { Reception } from './Reception.entity.js';
 import { Invoice } from './tenant_fiscal.invoice.entity.js';
 
-@Entity({ name: 'addendum', schema: "tenant_fiscal" })
+@Entity({ name: 'addendum', schema: 'tenant_fiscal' })
 export class Addendum {
     @PrimaryGeneratedColumn('uuid', { name: 'addendum_uuid' })
     addendumUuid!: string;
@@ -22,7 +26,6 @@ export class Addendum {
     @Column({ name: 'reception_number', type: 'varchar', nullable: false, unique: true })
     receptionNumber!: string;
 
-    // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
 
@@ -35,12 +38,14 @@ export class Addendum {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 
-    // Relaciones
-    @OneToOne(() => Reception, reception => reception.addendums)
+    @OneToOne(
+        () => Reception,
+        (reception) => reception.addendums
+    )
     @JoinColumn({ name: 'reception_number' })
-    reception?: Reception;
+    reception?: any;
 
     @ManyToOne(() => Invoice)
     @JoinColumn({ name: 'invoice_uuid' })
-    invoice?: Invoice;
+    invoice?: any;
 }

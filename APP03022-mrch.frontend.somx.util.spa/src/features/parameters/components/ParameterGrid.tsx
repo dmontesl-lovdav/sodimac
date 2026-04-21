@@ -1,346 +1,196 @@
-import { useEffect, useMemo, useState, type FC } from 'react';
+import { type FC } from 'react';
+import GenericTable from '@shared/components/ui/table/GenericTable';
 import type { Parameter } from '../types';
+import type { CatalogItem } from '../services/parameterService';
 import editIcon from '@/shared/icons/edit.svg';
+
+import '../styles/ParameterGridTable.css';
 
 interface ParameterGridProps {
   items: Parameter[];
+  totalItems?: number;
+  catalogs: {
+    modules: CatalogItem[];
+    parameterTypes: CatalogItem[];
+    statuses: CatalogItem[];
+  };
+  selectedIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
+  onEdit?: (parameter: Parameter) => void;
+  onStatusChange?: (parameter: Parameter) => void;
+  isHistoryMode?: boolean;
+  latestVersionIds?: Set<string>;
+  pageSize: number;
+  currentPage: number;
+  totalPages: number;
+  onPageSizeChange: (size: number) => void;
+  onPageChange: (page: number) => void;
 }
 
-const COLUMN_LABELS = {
-  select: 'Seleccionar',
-  id: 'ID Parámetro',
-  name: 'Nombre Parámetro',
-  description: 'Descripción',
-  module: 'Módulo',
-  parameterType: 'Tipo Parámetro',
-  value: 'Valor',
-  version: 'Versión',
-  startDate: 'Fecha Inicio Vigencia',
-  endDate: 'Fecha Fin Vigencia',
-  status: 'Estatus',
-  createdBy: 'Usuario Registro',
-  createdAt: 'Fecha Registro',
-  updatedBy: 'Usuario Modificación',
-  updatedAt: 'Fecha Modificación',
-  edit: 'Editar',
-  toggle: 'Activar / Desactivar',
-} as const;
-
-const formatDate = (value: string) => {
-  const [year, month, day] = value.split('-');
-  return `${day}-${month}-${year}`;
+const formatDate = (value: string | null | undefined): string => {
+  if (!value) return '-';
+  const parts = value.split('T')[0]?.split('-');
+  if (!parts || parts.length !== 3) return value;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
 };
 
-export const ParameterGrid: FC<ParameterGridProps> = ({ items }) => {
-  const [pageSize, setPageSize] = useState(10);
-  const [pageSizeInput, setPageSizeInput] = useState('10');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [goToPage, setGoToPage] = useState('1');
+const formatVersion = (version: string | number): string => {
+  const versionNum = typeof version === 'number' ? version : parseFloat(version);
+  return versionNum.toFixed(1);
+};
 
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+export const ParameterGrid: FC<ParameterGridProps> = ({
+  items,
+  totalItems,
+  catalogs,
+  selectedIds,
+  onSelectionChange,
+  onEdit,
+  onStatusChange,
+  latestVersionIds = new Set(),
+  pageSize,
+  currentPage,
+  totalPages,
+  onPageSizeChange,
+  onPageChange,
+}) => {
+  const currentPageIds = items.map(item => item.id);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [pageSize, totalItems]);
-
-  useEffect(() => {
-    setPageSizeInput(String(pageSize));
-  }, [pageSize]);
-
-  const clampedCurrentPage = Math.min(currentPage, totalPages);
-
-  useEffect(() => {
-    setGoToPage(String(clampedCurrentPage));
-  }, [clampedCurrentPage]);
-
-  const pageItems = useMemo(() => {
-    const startIndex = (clampedCurrentPage - 1) * pageSize;
-    return items.slice(startIndex, startIndex + pageSize);
-  }, [clampedCurrentPage, items, pageSize]);
-
-  const rangeStart =
-    totalItems === 0 ? 0 : (clampedCurrentPage - 1) * pageSize + 1;
-  const rangeEnd = totalItems === 0 ? 0 : Math.min(clampedCurrentPage * pageSize, totalItems);
-
-  const visiblePages = useMemo(() => {
-    const maxVisible = 5;
-    const pages: number[] = [];
-    const start = Math.max(
-      1,
-      Math.min(clampedCurrentPage, Math.max(1, totalPages - maxVisible + 1)),
-    );
-    const end = Math.min(totalPages, start + maxVisible - 1);
-
-    for (let page = start; page <= end; page += 1) {
-      pages.push(page);
+  const handleSelectAll = (checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      currentPageIds.forEach(id => newSelected.add(id));
+    } else {
+      currentPageIds.forEach(id => newSelected.delete(id));
     }
-
-    return pages;
-  }, [clampedCurrentPage, totalPages]);
-
-  const handleGoToCommit = () => {
-    const parsed = Number(goToPage);
-    if (!Number.isFinite(parsed)) {
-      setGoToPage(String(clampedCurrentPage));
-      return;
-    }
-
-    const nextPage = Math.min(totalPages, Math.max(1, Math.trunc(parsed)));
-    setCurrentPage(nextPage);
+    onSelectionChange(newSelected);
   };
 
-  const handlePageSizeCommit = () => {
-    const parsed = Number(pageSizeInput);
-    if (!Number.isFinite(parsed)) {
-      setPageSizeInput(String(pageSize));
-      return;
-    }
-
-    const nextSize = Math.min(999, Math.max(1, Math.trunc(parsed)));
-    setPageSize(nextSize);
+  const handleSelectItem = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) newSelected.add(id);
+    else newSelected.delete(id);
+    onSelectionChange(newSelected);
   };
 
-  if (items.length === 0) {
-    return null;
-  }
+  const isAllSelected = items.length > 0 && currentPageIds.every(id => selectedIds.has(id));
+
+  const getLabel = (value: string, catalog: CatalogItem[]) =>
+    catalog.find((item) => item.value === value)?.label || value;
+
+  const hasExpired = (p: Parameter): boolean => {
+    if (!p.endDate) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const endDateStr = p.endDate.split('T')[0];
+    return (endDateStr ?? '') < todayStr;
+  };
+
+  const getEffectiveStatus = (p: Parameter): number => hasExpired(p) ? 0 : p.status;
+
+  const isEditable = (p: Parameter): boolean => latestVersionIds.has(p.id) && !hasExpired(p);
+
+  const canChangeStatus = (p: Parameter): boolean => latestVersionIds.has(p.id) && !hasExpired(p);
+
+  const columns = [
+    {
+      header: (
+        <input type="checkbox" checked={isAllSelected} onChange={(e: any) => handleSelectAll(e.target.checked)} />
+      ),
+      render: (row: Parameter) => (
+        <input type="checkbox" checked={selectedIds.has(row.id)} onChange={(e: any) => handleSelectItem(row.id, e.target.checked)} />
+      ),
+      align: 'center' as const,
+    },
+    { header: 'ID Parámetro', render: (row: Parameter) => row.id },
+    { header: 'Nombre Parámetro', render: (row: Parameter) => row.name },
+    { header: 'Descripción', render: (row: Parameter) => row.description },
+    { header: 'Módulo', render: (row: Parameter) => row.module },
+    { header: 'Tipo Parámetro', render: (row: Parameter) => getLabel(row.parameterType, catalogs.parameterTypes) },
+    { header: 'Valor', render: (row: Parameter) => row.value },
+    { header: 'Versión', align: 'center' as const, render: (row: Parameter) => formatVersion(row.version) },
+    { header: 'Fecha Inicio', render: (row: Parameter) => formatDate(row.startDate) },
+    { header: 'Fecha Fin', render: (row: Parameter) => formatDate(row.endDate) },
+    {
+      header: 'Estatus',
+      align: 'center' as const,
+      render: (row: Parameter) => {
+        const eff = getEffectiveStatus(row);
+        return (
+          <span className={`status-badge status-badge--${eff === 1 ? 'success' : 'danger'}`}>
+            {getLabel(String(eff), catalogs.statuses)}
+          </span>
+        );
+      },
+    },
+    { header: 'Usuario Registro', render: (row: Parameter) => row.createdBy },
+    { header: 'Fecha Registro', render: (row: Parameter) => formatDate(row.createdAt) },
+    { header: 'Usuario Mod.', render: (row: Parameter) => row.updatedBy ?? '-' },
+    { header: 'Fecha Mod.', render: (row: Parameter) => row.updatedAt ? formatDate(row.updatedAt) : '-' },
+  ];
+
+  const actions = [
+    {
+      title: 'Editar parámetro',
+      icon: editIcon,
+      onClick: (row: Parameter) => onEdit?.(row),
+      isDisabled: (row: Parameter) => !isEditable(row),
+    },
+  ];
 
   return (
-    <section className="parameters-grid">
-      <div className="parameters-grid__summary">
-        {items.length} Catálogos encontrados
+    <section>
+      <div className="param-grid-summary">
+        <span className="param-grid-count">{totalItems ?? items.length} Parámetros encontrados</span>
+        <div className="param-grid-selection">
+          {selectedIds.size > 0 && (
+            <span className="param-selected-count">
+              ({selectedIds.size} {selectedIds.size === 1 ? 'seleccionado' : 'seleccionados'})
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="parameters-grid__select-all">Seleccionar todo</div>
+      <GenericTable
+        rows={items}
+        columns={columns}
+        actions={actions}
+        emptyLabel="No se encontraron parámetros registrados."
+        perPage={pageSize}
+        page={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onChangePerPage={onPageSizeChange}
+        onChangePage={onPageChange}
+      />
 
-      <div className="parameters-grid__table-wrapper">
-        <div
-          className="parameters-grid__header"
-          role="rowgroup"
-        >
-          <div className="parameters-grid__cell parameters-grid__cell--checkbox">
-            <input type="checkbox" aria-label="Seleccionar todo" />
-          </div>
-          <div className="parameters-grid__cell">ID Parámetro</div>
-          <div className="parameters-grid__cell">Nombre Parámetro</div>
-          <div className="parameters-grid__cell">Descripción</div>
-          <div className="parameters-grid__cell">Módulo</div>
-          <div className="parameters-grid__cell">Tipo Parámetro</div>
-          <div className="parameters-grid__cell">Valor</div>
-          <div className="parameters-grid__cell">Versión</div>
-          <div className="parameters-grid__cell">Fecha Inicio Vigencia</div>
-          <div className="parameters-grid__cell">Fecha Fin Vigencia</div>
-          <div className="parameters-grid__cell">Estatus</div>
-          <div className="parameters-grid__cell">Usuario Registro</div>
-          <div className="parameters-grid__cell">Fecha Registro</div>
-          <div className="parameters-grid__cell">Usuario Modificación</div>
-          <div className="parameters-grid__cell">Fecha Modificación</div>
-          <div className="parameters-grid__cell">Editar</div>
-          <div className="parameters-grid__cell">Activar / Desactivar</div>
-        </div>
+      {items.map(parameter => (
+        canChangeStatus(parameter) ? null : null
+      ))}
 
-        {pageItems.map((parameter) => (
-          <div
-            key={parameter.id}
-            className="parameters-grid__row"
-            role="row"
-          >
-            <div
-              className="parameters-grid__cell parameters-grid__cell--checkbox"
-              data-label={COLUMN_LABELS.select}
-            >
-              <input
-                type="checkbox"
-                aria-label={`Seleccionar ${parameter.name}`}
-              />
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.id}>
-              {parameter.id}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.name}>
-              {parameter.name}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.description}
-            >
-              {parameter.description}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.module}>
-              {parameter.module}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.parameterType}
-            >
-              {parameter.parameterType}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.value}>
-              {parameter.value}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.version}>
-              {parameter.version.toFixed(1)}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.startDate}
-            >
-              {formatDate(parameter.startDate)}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.endDate}>
-              {formatDate(parameter.endDate)}
-            </div>
-            <div className="parameters-grid__cell" data-label={COLUMN_LABELS.status}>
-              <span
-                className={`status-badge status-badge--${
-                  parameter.status === 'ACTIVE' ? 'success' : 'danger'
-                }`}
+      {items.length > 0 && (
+        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {items.map(parameter => (
+            <div key={parameter.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <span style={{ color: '#6b7280' }}>{parameter.id}:</span>
+              <label
+                className={`switch ${!canChangeStatus(parameter) ? 'switch--disabled' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (canChangeStatus(parameter)) onStatusChange?.(parameter);
+                }}
+                style={{
+                  opacity: canChangeStatus(parameter) ? 1 : 0.5,
+                  cursor: canChangeStatus(parameter) ? 'pointer' : 'not-allowed',
+                }}
               >
-                {parameter.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
-              </span>
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.createdBy}
-            >
-              {parameter.createdBy}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.createdAt}
-            >
-              {formatDate(parameter.createdAt)}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.updatedBy}
-            >
-              {parameter.updatedBy ?? '-'}
-            </div>
-            <div
-              className="parameters-grid__cell"
-              data-label={COLUMN_LABELS.updatedAt}
-            >
-              {parameter.updatedAt ? formatDate(parameter.updatedAt) : '-'}
-            </div>
-            <div
-              className="parameters-grid__cell parameters-grid__cell--edit"
-              data-label={COLUMN_LABELS.edit}
-            >
-              <button
-                type="button"
-                className="btn-icon"
-                aria-label={`Editar parámetro ${parameter.id}`}
-              >
-                <img src={editIcon} alt="edit icon" className='edit-icon' />
-              </button>
-            </div>
-            <div
-              className="parameters-grid__cell parameters-grid__cell--toggle"
-              data-label={COLUMN_LABELS.toggle}
-            >
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={parameter.status === 'ACTIVE'}
-                  readOnly
-                />
+                <input type="checkbox" checked={getEffectiveStatus(parameter) === 1} readOnly disabled={!canChangeStatus(parameter)} />
                 <span className="switch__slider" />
               </label>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        className="parameters-grid__pagination"
-        role="navigation"
-        aria-label="Paginación"
-      >
-        <div className="pagination__left">
-          <label className="pagination__label" htmlFor="pageSize">
-            Items por página:
-          </label>
-          <input
-            id="pageSize"
-            className="pagination__input pagination__input--pagesize"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={999}
-            value={pageSizeInput}
-            onChange={(event) => setPageSizeInput(event.target.value)}
-            onBlur={handlePageSizeCommit}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                handlePageSizeCommit();
-              }
-            }}
-          />
-
-          <label className="pagination__label" htmlFor="goToPage">
-            Ir a:
-          </label>
-          <input
-            id="goToPage"
-            className="pagination__input"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={totalPages}
-            value={goToPage}
-            onChange={(event) => setGoToPage(event.target.value)}
-            onBlur={handleGoToCommit}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                handleGoToCommit();
-              }
-            }}
-          />
-
-          <div className="pagination__range" aria-live="polite">
-            {rangeStart}-{rangeEnd} de {totalItems}
-          </div>
+          ))}
         </div>
-
-        <div className="pagination__right" aria-label="Navegación de páginas">
-          <button
-            type="button"
-            className="pagination__nav"
-            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            disabled={clampedCurrentPage <= 1}
-            aria-label="Página anterior"
-          >
-            ‹
-          </button>
-
-          <div className="pagination__pages">
-            {visiblePages.map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={`pagination__page${
-                  page === clampedCurrentPage ? ' pagination__page--active' : ''
-                }`}
-                onClick={() => setCurrentPage(page)}
-                aria-current={page === clampedCurrentPage ? 'page' : undefined}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="pagination__nav"
-            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-            disabled={clampedCurrentPage >= totalPages}
-            aria-label="Página siguiente"
-          >
-            ›
-          </button>
-        </div>
-      </div>
+      )}
     </section>
   );
 };

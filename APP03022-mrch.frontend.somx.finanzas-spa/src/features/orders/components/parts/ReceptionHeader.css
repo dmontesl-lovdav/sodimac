@@ -1,0 +1,37 @@
+.rc-header-card {
+    margin-top: 8px;
+}
+
+.rc-section-title {
+    font-weight: 700;
+}
+
+.rc-main-pill {
+    padding-left: 4px;
+}
+
+.rc-summary-grid {
+    border: 1px solid #e5e7eb;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(6, 1fr);
+    margin-top: 20px;
+    padding: 12px;
+}
+
+.rc-label {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+@media (max-width: 1200px) {
+    .rc-summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .rc-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}

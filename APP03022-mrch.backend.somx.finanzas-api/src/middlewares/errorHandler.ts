@@ -2,6 +2,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { QueryFailedError } from 'typeorm';
+import { logActivity } from '@/middlewares/logger.js';
 
 export interface HttpError extends Error {
     status?: number;
@@ -43,9 +44,21 @@ function pickCode(e: unknown): string | undefined {
     return typeof r.code === 'string' ? r.code : undefined;
 }
 
+function safeStringify(v: unknown) {
+    try {
+        return JSON.stringify(v);
+    } catch {
+        return String(v);
+    }
+}
+
 /* ───────────────── middleware ───────────────── */
-export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
-    // marcar _next como usado para el linter (Express requiere 4 args)
+export function errorHandler(
+    err: unknown,
+    req: Request,
+    res: Response,
+    _next: NextFunction
+) {
     void _next;
 
     console.error('💥 Error capturado:', err);
@@ -95,12 +108,57 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     }
 
     if (process.env.NODE_ENV === 'development') {
-        // adjunta stack solo en dev
-        if (!details && typeof err === 'object' && err !== null && 'stack' in err) {
+        if (
+            !details &&
+            typeof err === 'object' &&
+            err !== null &&
+            'stack' in err
+        ) {
             const r = err as Record<string, unknown>;
             details = typeof r.stack === 'string' ? r.stack : details;
         }
     }
+
+    // ✅ AUDITORÍA (STM-1208)
+    // - tipoEvento ERROR
+    // - codigoError: status (y si viene code)
+    // - idMensaje: por tipo (Validation/DB/etc.)
+    // - log: stack si existe
+    // - mensaje: message
+    // - detalle: details serializado
+    void logActivity(
+        true,
+        'ERROR_HANDLER',
+        message,
+        {
+            method: req.method,
+            url: req.originalUrl,
+            ip: req.ip,
+            query: req.query,
+            body: req.body,
+            response_status: status,
+            error: safeStringify(err),
+            details,
+        },
+        0,
+        {
+            tipoEvento: 'ERROR',
+            codigoError: String(status),
+            idMensaje:
+                err instanceof ZodError
+                    ? 'ValidationError'
+                    : err instanceof QueryFailedError
+                        ? 'DatabaseQueryFailed'
+                        : isJsonParseError(err)
+                            ? 'InvalidJson'
+                            : pickCode(err) || 'UnhandledError',
+            paso: `${req.method} ${req.originalUrl}`,
+            log:
+                typeof err === 'object' && err !== null && 'stack' in err
+                    ? String((err as any).stack)
+                    : safeStringify(err),
+        }
+    );
 
     res.status(status).json({
         success: false,

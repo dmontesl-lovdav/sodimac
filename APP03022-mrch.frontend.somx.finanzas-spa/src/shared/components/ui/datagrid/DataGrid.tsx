@@ -1,14 +1,15 @@
-
 import React, { ReactElement, useMemo, useState, useCallback, useEffect } from "react";
 import GenericTable, {
   Column as TableColumn,
   RowAction as GenericRowAction,
-} from "@/shared/components/ui/table/GenericTable";
+} from "@/shared/components/ui/table/DataTable";
 import { GenericSelect } from "@/shared/components/ui";
 import type { ChangeEvent } from "react";
 import SimpleLobby from "../lobby/Lobby";
-import xmlIconUrl from "@assets/xml.svg"; 
-import { exportToCSV } from "@/utils/utils";
+import xmlIconUrl from "@assets/xml.svg";
+import pdfIconUrl from "@assets/pdf.svg";
+import { exportToCSV, getStandardFilename } from "@/utils/utils";
+import { usePaginatedData } from "@/shared/hooks/usePaginatedData";
 
 /** Reexporta los tipos de GenericTable (no tienen 'accessor') */
 export type Column<T> = TableColumn<T>;
@@ -18,8 +19,8 @@ export type RowAction<T> = GenericRowAction<T>;
 export type DataGridColumn<T> = {
   header: string | React.ReactNode;
   align?: "left" | "center" | "right";
-  render?: (row: T) => React.ReactNode;      // render sin nav
-  accessor?: (row: T) => React.ReactNode;    // valor simple
+  render?: (row: T) => React.ReactNode;
+  accessor?: (row: T) => React.ReactNode;
   exportHeader?: string;
   exportAccessor?: (row: T) => string | number | null | undefined;
 };
@@ -30,28 +31,68 @@ export type BulkAction<T> = {
   run: (selected: T[], all: T[]) => Promise<void> | void;
 };
 
-type DataGridProps<T> = {
-  rows: T[];
-  loading: boolean;
-  /** Permite pasar columnas del DataGrid (con accessor) */
+type DataGridProps<T, F extends Record<string, any> = Record<string, any>> = {
+  rows?: T[];
+  loading?: boolean;
   columns: DataGridColumn<T>[];
   getRowId: (row: T) => string | number;
   page?: number;
   perPage?: number;
   totalPages?: number;
+  totalItems?: number;
   emptyLabel?: string;
   selectable?: boolean;
+  onChangePage?: (page: number) => void;
+  onChangePerPage?: (perPage: number) => void;
+
+  /** --- Paginación automática (si se pasa fetchFn, ignora rows y loading) --- */
+  fetchFn?: (filters: F & { page: number; size: number }) => Promise<{
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+    size: number;
+  }>;
+  filters?: F;
+  initialPage?: number;
+  initialSize?: number;
 
   /** --- Configuración de acciones internas --- */
-  enableCsv?: boolean;                 // default: true
-  csvFilename?: string;                // default: "Export"
-  enableXml?: boolean;                 // default: false
+  enableCsv?: boolean;
+  enablePdf?: boolean;
+  getPdfUrl?: (row: T) => string | null | undefined;
+  csvFilename?: string;
+  enableXml?: boolean;
   getXmlContent?: (row: T) => string | null | undefined;
-  getXmlFilename?: (row: T) => string; // default: `NC-{folio|invoiceUuid|getRowId}`
+  getFilename?: (row: T) => string;
+  rowActions?: GenericRowAction<T>[];
 };
 
 /** ------------------------------------------------------------
- * Helper interno: descargar XML (sin depender de props).
+ * Helper interno: descargar PDF desde una URL.
+ * ------------------------------------------------------------ */
+function downloadPDF(pdfUrl?: string | null, filename: string = "documento.pdf") {
+  const url = (pdfUrl ?? "").trim();
+  if (!url) {
+    console.warn("downloadPDF: URL vacía o nula.");
+    return;
+  }
+
+  const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = safeName;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+
+  requestAnimationFrame(() => {
+    document.body.removeChild(a);
+  });
+}
+
+/** ------------------------------------------------------------
+ * Helper interno: descargar XML.
  * ------------------------------------------------------------ */
 function downloadXML(xmlContent?: string | null, filename: string = "archivo.xml") {
   const xml = (xmlContent ?? "").trim();
@@ -59,6 +100,7 @@ function downloadXML(xmlContent?: string | null, filename: string = "archivo.xml
     console.warn("downloadXML: xmlContent vacío o nulo.");
     return;
   }
+
   const safeName = filename.toLowerCase().endsWith(".xml") ? filename : `${filename}.xml`;
   const blob = new Blob([xml], { type: "text/xml;charset=utf-8" });
 
@@ -75,6 +117,7 @@ function downloadXML(xmlContent?: string | null, filename: string = "archivo.xml
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
+
   requestAnimationFrame(() => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
@@ -95,40 +138,79 @@ function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null
   return "";
 }
 
-export default function DataGrid<T>({
-  rows,
-  loading,
+export default function DataGrid<T, F extends Record<string, any> = Record<string, any>>({
+  rows: externalRows,
+  loading: externalLoading,
   columns,
   getRowId,
-  page = 1,
-  perPage = 25,
-  totalPages = rows.length/perPage,
-  emptyLabel = loading ? "Cargando..." : "Sin resultados",
+  page: externalPage,
+  perPage: externalPerPage,
+  totalPages: externalTotalPages,
+  totalItems: externalTotalItems,
+  emptyLabel,
   selectable = true,
+  onChangePage: externalOnChangePage,
+  onChangePerPage: externalOnChangePerPage,
+
+  /** Paginación automática */
+  fetchFn,
+  filters,
+  initialPage = 0,
+  initialSize = 10,
 
   /** acciones internas */
   enableCsv = true,
   csvFilename = "Export",
   enableXml = false,
+  enablePdf = false,
+  getPdfUrl,
   getXmlContent,
-  getXmlFilename,
-}: DataGridProps<T>): ReactElement {
+  getFilename,
+  rowActions: customRowActions,
+}: DataGridProps<T, F>): ReactElement {
+  const paginatedData =
+    fetchFn && filters
+      ? usePaginatedData<T, F>({
+        fetchFn,
+        initialFilters: filters,
+        initialPage,
+        initialSize,
+
+      })
+      : null;
+
+  const rows = paginatedData ? paginatedData.rows : externalRows || [];
+  const loading = paginatedData ? paginatedData.loading : externalLoading || false;
+  const page = paginatedData ? paginatedData.page : externalPage || 1;
+  const perPage = paginatedData ? paginatedData.size : externalPerPage || 25;
+  const totalPages = paginatedData
+    ? paginatedData.totalPages
+    : externalTotalPages || Math.ceil(rows.length / perPage || 1);
+  const totalItems = paginatedData ? paginatedData.totalItems : externalTotalItems || rows.length;
+  const onChangePage = paginatedData ? paginatedData.changePage : externalOnChangePage;
+  const onChangePerPage = paginatedData ? paginatedData.changePerPage : externalOnChangePerPage;
+  const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
+
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [bulkValue, setBulkValue] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
-  /** -------- selección -------- */
-  useEffect(() => setSelectedIds(new Set()), [rows]);
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [rows]);
 
-  const toggleRow = useCallback((row: T) => {
-    const id = getRowId(row);
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, [getRowId]);
+  const toggleRow = useCallback(
+    (row: T) => {
+      const id = getRowId(row);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [getRowId]
+  );
 
   const allSelected = useMemo(
     () => selectedIds.size === rows.length && rows.length > 0,
@@ -136,41 +218,39 @@ export default function DataGrid<T>({
   );
 
   const toggleAll = useCallback(() => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       if (prev.size === rows.length) return new Set();
       return new Set(rows.map(getRowId));
     });
   }, [rows, getRowId]);
 
   const selectedRows = useMemo(
-    () => rows.filter(r => selectedIds.has(getRowId(r))),
+    () => rows.filter((r) => selectedIds.has(getRowId(r))),
     [rows, selectedIds, getRowId]
   );
 
-  /** -------- columna de selección (TableColumn<T>) -------- */
   const selectionColumn: TableColumn<T> | null = selectable
     ? {
-        header: (
-          <input
-            type="checkbox"
-            checked={allSelected}
-            onChange={toggleAll}
-            aria-label="Seleccionar todo"
-          />
-        ),
-        render: (row: T) => (
-          <input
-            type="checkbox"
-            checked={selectedIds.has(getRowId(row))}
-            onChange={() => toggleRow(row)}
-            aria-label="Seleccionar fila"
-          />
-        ),
-        align: "center",
-      }
+      header: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={toggleAll}
+          aria-label="Seleccionar todo"
+        />
+      ),
+      render: (row: T) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(getRowId(row))}
+          onChange={() => toggleRow(row)}
+          aria-label="Seleccionar fila"
+        />
+      ),
+      align: "center",
+    }
     : null;
 
-  /** -------- conversión a TableColumn<T> con render siempre definido -------- */
   const toTableColumns = useCallback(
     (cols: DataGridColumn<T>[]): TableColumn<T>[] => {
       const base = cols.map(({ header, align, render, accessor }) => {
@@ -179,7 +259,12 @@ export default function DataGrid<T>({
           if (typeof accessor === "function") return accessor(row);
           return null;
         };
-        return { header, align, render: renderWithNav } as TableColumn<T>;
+
+        return {
+          header,
+          align,
+          render: renderWithNav,
+        } as TableColumn<T>;
       });
 
       if (selectable && selectionColumn) return [selectionColumn, ...base];
@@ -190,70 +275,93 @@ export default function DataGrid<T>({
 
   const tableColumns = useMemo(() => toTableColumns(columns), [columns, toTableColumns]);
 
-  /** -------- acciones por fila internas (XML) -------- */
+  const resolveFilename = useCallback(
+    (row: T) => {
+      if (typeof getFilename === "function") return getFilename(row);
+      return getStandardFilename(row);
+    },
+    [getFilename]
+  );
+
   const internalRowActions: GenericRowAction<T>[] = useMemo(() => {
-    if (!enableXml) return [];
+    const actions: GenericRowAction<T>[] = [];
 
-    const xmlGetter: (row: T) => string | null | undefined =
-      getXmlContent ??
-      ((row: any) => row?.xmlContent); // auto-detección por convención
+    if (enableXml) {
+      const xmlGetter: (row: T) => string | null | undefined =
+        getXmlContent ?? ((row: any) => row?.xmlContent);
 
-    const nameGetter: (row: T) => string =
-      getXmlFilename ??
-      ((row: any) => {
-        const folio = row?.folio;
-        const inv = row?.invoiceUuid;
-        const id = getRowId(row);
-        return `NC-${folio || inv || id}`;
+      actions.push({
+        title: "Exportar XML",
+        icon: xmlIconUrl,
+        onClick: (row: T) => {
+          const xml = xmlGetter(row);
+          const fname = `${resolveFilename(row)}.xml`;
+          downloadXML(xml, fname);
+        },
       });
+    }
 
-    const action: GenericRowAction<T> = {
-      title: "Exportar XML",
-      icon: xmlIconUrl,
-      onClick: (row: T) => {
-        const xml = xmlGetter(row);
-        const fname = nameGetter(row);
-        downloadXML(xml, fname);
-      },
-    };
+    if (enablePdf) {
+      const pdfUrlGetter: (row: T) => string | null | undefined =
+        getPdfUrl ??
+        ((row: any) => {
+          const baseUrl = process.env.API_BASE_URL || "";
+          const fiscalUuid = row?.fiscalUuid;
+          if (!fiscalUuid) return null;
+          return `${baseUrl.replace(/\/+$/, "")}/pdf/from-uuid/${fiscalUuid}?inline=true`;
+        });
 
-    return [action];
-  }, [enableXml, getXmlContent, getXmlFilename, getRowId]);
+      actions.push({
+        title: "Descargar PDF",
+        icon: pdfIconUrl,
+        onClick: (row: T) => {
+          const url = pdfUrlGetter(row);
+          const fname = `${resolveFilename(row)}.pdf`;
+          downloadPDF(url, fname);
+        },
+      });
+    }
 
-  /** -------- acción masiva interna (CSV) -------- */
+    return actions;
+  }, [enableXml, enablePdf, getXmlContent, getPdfUrl, resolveFilename]);
+
+  const allRowActions = useMemo(
+    () => [...(customRowActions ?? []), ...internalRowActions],
+    [customRowActions, internalRowActions]
+  );
+
   const internalBulkActions: BulkAction<T>[] = useMemo(() => {
     if (!enableCsv) return [];
 
-    const csvAction: BulkAction<T> = {
-      label: "Exportar a CSV",
-      value: "csv",
-      run: (selected, all) => {
-        const data = selected.length ? selected : all;
+    return [
+      {
+        label: "Exportar a CSV",
+        value: "csv",
+        run: (selected, all) => {
+          const data = selected.length ? selected : all;
 
-        const headers = columns.map(col =>
-          col.exportHeader ?? headerToString(col.header, "")
-        );
+          const headers = columns.map((col) => col.exportHeader ?? headerToString(col.header, ""));
 
-        const rowsForCsv = data.map(row =>
-          columns.map(col => {
-            const v = getCellValue<T>(col, row);
-            return v ?? "";
-          })
-        );
+          const rowsForCsv = data.map((row) =>
+            columns.map((col) => {
+              const v = getCellValue<T>(col, row);
+              return v ?? "";
+            })
+          );
 
-        exportToCSV(headers, rowsForCsv, csvFilename);
+          exportToCSV(headers, rowsForCsv, csvFilename);
+        },
       },
-    };
-
-    return [csvAction];
+    ];
   }, [enableCsv, columns, csvFilename]);
 
-  /** -------- select de acción masiva -------- */
   const onBulkChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setBulkValue(value);
-    const action = internalBulkActions.find(a => a.value === value);
+
+    const action = internalBulkActions.find((a) => a.value === value);
     if (!action) return;
+
     try {
       setProcessing(true);
       await Promise.resolve(action.run(selectedRows.length ? selectedRows : rows, rows));
@@ -263,23 +371,25 @@ export default function DataGrid<T>({
     }
   };
 
-  /** -------- lobby vacío -------- */
-  if (rows.length === 0) {
+  if (!loading && rows.length === 0) {
     return <SimpleLobby message="Sin resultados" />;
   }
 
-  /** -------- render -------- */
   return (
     <div className="results-container">
       <GenericTable<T>
         rows={rows}
         columns={tableColumns}
-        actions={internalRowActions}
-        emptyLabel={emptyLabel}
+        actions={allRowActions}
+        emptyLabel={effectiveEmptyLabel}
         perPage={perPage}
         page={page}
         totalPages={totalPages}
+        totalItems={totalItems}
+        onChangePage={onChangePage}
+        onChangePerPage={onChangePerPage}
       />
+
       {internalBulkActions.length > 0 && (
         <div className="somx-action-container">
           {processing ? (
@@ -290,7 +400,10 @@ export default function DataGrid<T>({
               placeholder="Selecciona una acción"
               value={bulkValue}
               onChange={onBulkChange}
-              options={internalBulkActions.map(a => ({ label: a.label, value: a.value }))}
+              options={internalBulkActions.map((a) => ({
+                label: a.label,
+                value: a.value,
+              }))}
             />
           )}
         </div>
@@ -299,10 +412,6 @@ export default function DataGrid<T>({
   );
 }
 
-/* ============================================================
- * Opcional: helper reusado 'dentro de Grid' para crear onFilter
- * (no es prop del Grid; vive en este módulo).
- * ============================================================ */
 type CreateOnFilterOptions<T, F> = {
   fetchFn: (filters: F) => Promise<any>;
   pickRows?: (response: any) => T[];

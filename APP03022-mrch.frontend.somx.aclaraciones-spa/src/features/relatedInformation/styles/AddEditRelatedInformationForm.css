@@ -129,6 +129,10 @@
     text-align: right;
 }
 
+.ri-form-actions button+button {
+    margin-left: 12px;
+}
+
 .ri-form-back {
     text-decoration: underline;
     text-underline-offset: 4px;

@@ -1,15 +1,23 @@
-
 import lobbyIcon from "@assets/lobby.svg";
 import { ReactElement } from "react";
+import "./Lobby.css";
 
-export default function SimpleLobby({ message }: { message?: string }): ReactElement {
+export interface SimpleLobbyProps {
+  message?: string;
+  className?: string;
+  error?: boolean;
+}
+
+export default function SimpleLobby({ message, className = "", error = false }: SimpleLobbyProps): ReactElement {
+  const rootClass = `fiscal-lobby-container ${className}`.trim();
+  const messageClass = `fiscal-lobby-message ${error ? "fiscal-lobby-message-error" : ""}`.trim();
   return (
-    <div className="somx-lobby-container">
-      <div className="somx-lobby-icon-wrapper">
-        <img src={lobbyIcon} />
+    <div className={rootClass}>
+      <div className="fiscal-lobby-icon-wrapper">
+        <img src={lobbyIcon} alt="" />
       </div>
-      <div className="somx-lobby-message-wrapper">
-        <div className="somx-lobby-message">{message}</div>
+      <div className="fiscal-lobby-message-wrapper">
+        <div className={messageClass}>{message}</div>
       </div>
     </div>
   );

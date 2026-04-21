@@ -1,0 +1,65 @@
+ThreeWayMatchItem:
+  type: object
+  properties:
+    numeroProveedor:
+      type: string
+    ordenCompra:
+      type: string
+    recepcion:
+      type: string
+    fechaRecepcion:
+      type: string
+      format: date-time
+    uuid:
+      type: string
+    montoFactura:
+      type: number
+    documentoSap:
+      type: string
+    referenciaPago:
+      type: string
+    fechaPago:
+      type: string
+      format: date-time
+    montoPago:
+      type: number
+    estatus:
+      type: string
+
+ThreeWayMatchListResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/ThreeWayMatchItem"
+    total:
+      type: integer
+    page:
+      type: integer
+    limit:
+      type: integer
+
+RunThreeWayMatchBody:
+  type: object
+  properties:
+    fechaBase:
+      type: string
+      format: date-time
+    intento:
+      type: integer
+      minimum: 1
+      maximum: 10
+
+RunThreeWayMatchResponse:
+  type: object
+  properties:
+    ok:
+      type: boolean
+    message:
+      type: string
+    fechaBase:
+      type: string
+      format: date-time
+    intento:
+      type: integer

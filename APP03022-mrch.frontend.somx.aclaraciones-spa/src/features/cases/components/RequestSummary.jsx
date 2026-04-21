@@ -26,12 +26,23 @@ export default function RequestSummary({
     const [request, setRequest] = useState({});
     const [state, setState] = useState(STATE_LOADING);
 
-    const roles =
-        useAppSelector(
-            (s) => s.authentication?.tokenDecoded?.resource_access?.['fbc-aclaraciones']?.roles
-        ) || [];
+    const tokenDecoded =
+        useAppSelector((s) => s.authentication?.tokenDecoded) || {};
 
-    const isVendor = Array.isArray(roles) && roles.includes('ppsomx-vendor');
+    const realmRoles = tokenDecoded?.realm_access?.roles || [];
+    const resourceRoles =
+        tokenDecoded?.resource_access?.['fbc-aclaraciones']?.roles || [];
+
+    // PRIORIDAD DE ROLES (MISMA LÓGICA GLOBAL)
+    const effectiveRole = (() => {
+        if (realmRoles.includes('FBC_TECH_ADMIN_USER')) return 'TECH_ADMIN';
+        if (resourceRoles.includes('ppsomx-admin')) return 'ADMIN';
+        if (resourceRoles.includes('ppsomx-resolver')) return 'RESOLVER';
+        if (resourceRoles.includes('ppsomx-vendor')) return 'VENDOR';
+        return 'ADMIN'; // sin roles → admin (coherente con todo lo anterior)
+    })();
+
+    const isVendor = effectiveRole === 'VENDOR';
 
     async function waitForRequest() {
         try {
@@ -40,7 +51,8 @@ export default function RequestSummary({
                 return;
             }
 
-            const response = await ConfigurationBuilder.client.getRequest(requestId);
+            const response =
+                await ConfigurationBuilder.client.getRequest(requestId);
             const [comments, attachments] = await Promise.all([
                 ConfigurationBuilder.client.getRequestComments(requestId),
                 ConfigurationBuilder.client.getRequestAttachments(requestId),
@@ -109,6 +121,21 @@ export default function RequestSummary({
             </div>
 
             <div className="rs-item">
+                <span className="rs-label">Proveedor:</span>
+                {request.requester || '--'}
+            </div>
+
+            <div className="rs-item">
+                <span className="rs-label">Nombre proveedor:</span>
+                {request.nombreProveedor || '--'}
+            </div>
+
+            <div className="rs-item">
+                <span className="rs-label">Compañía:</span>
+                {request.company || '--'}
+            </div>
+
+            <div className="rs-item">
                 <span className="rs-label">Descripción del caso:</span>
                 {request.description}
             </div>
@@ -170,6 +197,10 @@ export default function RequestSummary({
 
         case STATE_LOADED:
         default:
-            return <div className="rs-wrapper"><Body /></div>;
+            return (
+                <div className="rs-wrapper">
+                    <Body />
+                </div>
+            );
     }
 }

@@ -1,0 +1,19 @@
+.fiscal-layout-outer {
+}
+
+.fiscal-layout-inner {
+  padding: 2rem;
+  background-color: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .fiscal-layout-inner {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fiscal-layout-inner {
+    padding: 0.75rem;
+  }
+}

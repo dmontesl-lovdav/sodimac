@@ -1,16 +1,23 @@
 {
+  "name": "reverse-proxy-bff",
+  "version": "1.0.0",
+  "description": "Express proxy (BFF) with healthcheck and size-limited parsers for GCP",
+  "license": "MIT",
   "type": "module",
+  "main": "src/App.js",
   "scripts": {
     "start": "node --max-http-header-size=1048576 ./src/App.js"
   },
   "dependencies": {
-    "dotenv": "^17.2.0",
-    "express": "^5.1.0",
-    "express-http-proxy": "^2.1.1",
-    "jsonwebtoken": "^9.0.2",
-    "pino": "^9.7.0"
+    "dotenv": "16.4.5",
+    "express": "4.19.2",
+    "express-http-proxy": "1.6.3",
+    "jsonwebtoken": "9.0.2",
+    "pino": "9.7.0"
   },
   "devDependencies": {
-    "@apidevtools/swagger-cli": "^4.0.4"
+    "nodemon": "3.0.2",
+    "pino-pretty": "11.2.2",
+    "@apidevtools/swagger-cli": "4.0.4"
   }
 }

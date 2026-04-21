@@ -1,0 +1,52 @@
+.pay-filters {
+    width: 100%;
+}
+
+.pay-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.pay-field {
+    flex: 0 0 auto;
+}
+
+.pay-field-dates {
+    flex: 0 0 auto;
+    /* antes: 1 1 250px */
+    display: flex;
+    align-items: center;
+}
+
+.pay-actions-container {
+    display: flex;
+    gap: 12px;
+    margin-left: 0;
+    /* antes: auto */
+    flex: 0 0 auto;
+    align-items: center;
+}
+
+.pay-clear-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+    text-decoration: underline;
+}
+
+.pay-clear-btn:hover {
+    opacity: 0.85;
+}
+
+.pay-inline-error {
+    margin-top: 8px;
+    color: #b91c1c;
+    font-size: 13px;
+}

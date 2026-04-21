@@ -27,6 +27,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function CategorieGridContainer() {
     const [categories, setCategories] = useState([]);
+    const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
@@ -70,16 +71,14 @@ export default function CategorieGridContainer() {
     /* ============================= */
     useEffect(() => {
         (async () => {
-            const showInitialModal = firstLoadRef.current;
-
             try {
                 setLoading(true);
-                setOpLoading(true);
 
                 const res = await getCategories({
                     page: page - 1,
                     size: perPage,
                     active: filterActive,
+                    search: search?.trim() || undefined,
                 });
 
                 setCategories(
@@ -97,11 +96,9 @@ export default function CategorieGridContainer() {
                 showAlert('error', 'No se pudieron cargar las categorías.', 'Error');
             } finally {
                 setLoading(false);
-                setOpLoading(false);
-                if (showInitialModal) firstLoadRef.current = false;
             }
         })();
-    }, [filterActive, page, perPage, reloadKey]);
+    }, [filterActive, search, page, perPage]);
 
     useEffect(() => {
         const handler = () => {
@@ -110,6 +107,7 @@ export default function CategorieGridContainer() {
             setTimeout(() => {
                 setSearch('');
                 setFilterActive('all');
+                setSearchInput('');
                 setPage(1);
                 setReloadKey((k) => k + 1);
                 firstLoadRef.current = false;
@@ -124,9 +122,12 @@ export default function CategorieGridContainer() {
     /* ============================= */
     /*            HANDLERS            */
     /* ============================= */
+
     const handleSearchInput = (e) => {
-        clearTimeout(wait.current);
-        wait.current = setTimeout(() => setSearch(e.target.value), 250);
+        setSearchInput(e.target.value);
+    };
+    const handleSearchSubmit = () => {
+        setSearch(searchInput.trim());
         setPage(1);
     };
 
@@ -288,8 +289,9 @@ export default function CategorieGridContainer() {
                     </div>
 
                     <CategoryGridToolbar
-                        search={search}
+                        search={searchInput}
                         onSearchInput={handleSearchInput}
+                        onSearchSubmit={handleSearchSubmit}
                         filterActive={filterActive}
                         onFilterChange={setFilterActive}
                     />

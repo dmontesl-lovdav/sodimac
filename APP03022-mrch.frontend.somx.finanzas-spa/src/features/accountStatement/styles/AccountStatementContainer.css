@@ -1,0 +1,48 @@
+/* ✅ FILE: src/features/account-statement/containers/styles/AccountStatementContainer.css */
+
+/* ========================= */
+/*         LAYOUT            */
+/* ========================= */
+
+.al-layout {
+    padding: 8px 24px 16px;
+}
+
+.al-box {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 24px 0;
+    margin-top: 16px;
+    background: transparent;
+}
+
+.al-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.al-description {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 6px 0 0 0;
+}
+
+/* ========================= */
+/*         FILTERS           */
+/* ========================= */
+
+.al-filters-section {
+    margin-top: 16px;
+    margin-bottom: 18px;
+}
+
+/* ========================= */
+/*          GRID             */
+/* ========================= */
+
+.al-grid-section {
+    margin-top: 18px;
+}

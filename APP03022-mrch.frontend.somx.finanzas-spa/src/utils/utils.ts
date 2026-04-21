@@ -1,4 +1,5 @@
 export function formatDate(date: string, includeHour: boolean = false) {
+  if(!date) return '-';
   const dateFormat = new Date(date);
   if (includeHour) {
     return dateFormat.toLocaleDateString("es-MX", {
@@ -101,7 +102,7 @@ export function getFiltersFromLocalStorage<T>(key: string): T | null {
   }
 }
 
-export async function fetchProvidersAsCatalog(): Promise<Array<{ label: string; value: string }> | null> {
+export async function fetchProvidersAsCatalog(valueField = "rfc"): Promise<Array<{ label: string; value: string }> | null> {
   const catalogs_api = process.env.CATALOGS_API_URL || "";
   try {
     const response = await fetch(catalogs_api);
@@ -109,12 +110,12 @@ export async function fetchProvidersAsCatalog(): Promise<Array<{ label: string; 
       const data = await response.json();
       const mappedProviders = data.map((provider: any) => ({
         label: `${provider.businessName} (${provider.rfc})`,
-        value: provider.rfc == "LOSJ780126" ? "JOH120507FU9" : provider.rfc,
+        value: provider[valueField] == "LOSJ780126" ? "JOH120507FU9" : provider[valueField],
       }));
       return ([
         {
           label: "Todos los proveedores",
-          value: ""
+          value: " "
         },
         ...mappedProviders
       ]);
@@ -138,3 +139,18 @@ export const getStandardFilename = (r: any) => {
   const timestamp = `${year}${month}${day}.${hours}${minutes}`;
   return `${serie}-${folio}-${timestamp}`;
 }
+
+export const MONTHS: { value: number; label: string }[] = [
+    { value: 1, label: 'Enero' },
+    { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' },
+    { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' },
+    { value: 12, label: 'Diciembre' },
+];

@@ -1,0 +1,16 @@
+/* src/features/audit-logs/styles/AuditLogsFilters.css */
+.al-filters {
+    width: 100%;
+}
+
+.al-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.al-actions {
+    display: flex;
+    gap: 8px;
+}

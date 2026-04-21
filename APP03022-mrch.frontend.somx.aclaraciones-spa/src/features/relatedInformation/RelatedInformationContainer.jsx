@@ -8,7 +8,6 @@ import {
     deleteRelatedInformation,
 } from '@/features/relatedInformation/api/relatedInformationService';
 
-import { loadCatalog } from '@/features/cases/components/RequestUtils';
 import { Breadcrumb, GenericButton, GenericModal } from '@shared/components/ui';
 import RelatedInformationGridToolbar from './components/RelatedInformationGridToolbar';
 import RelatedInformationTable from './components/RelatedInformationGridTable';
@@ -30,10 +29,6 @@ export default function RelatedInformationContainer() {
 
     const stateOrigin = fromMaintainer ? { fromMaintainer: true } : undefined;
 
-    const [bizUnit, setBizUnit] = useState('');
-    const [country, setCountry] = useState('');
-    const [bizUnits, setBizUnits] = useState([]);
-    const [countries, setCountries] = useState([]);
     const [items, setItems] = useState([]);
     const [relatedInfoId, setRelatedInfoId] = useState('');
     const [relatedInfoIds, setRelatedInfoIds] = useState([]);
@@ -42,7 +37,7 @@ export default function RelatedInformationContainer() {
     const [perPage, setPerPage] = useState(10);
 
     const [loading, setLoading] = useState(false);
-    const [criteria, setCriteria] = useState({ id: '', bizUnit: '', country: '' });
+    const [criteria, setCriteria] = useState({ id: '' });
     const [opLoading, setOpLoading] = useState(true);
 
     const [alert, setAlert] = useState({
@@ -61,29 +56,7 @@ export default function RelatedInformationContainer() {
         cancelText: 'Cancelar',
     });
 
-    const api = ConfigurationBuilder.client;
     const nav = useNavigate();
-
-    const CATALOGS_BUSINESSUNITS = 1;
-    const CATALOGS_COUNTRIES = 2;
-
-    // cargar combos
-    useEffect(() => {
-        (async () => {
-            try {
-                await loadCatalog(api, CATALOGS_BUSINESSUNITS, (arr) => {
-                    setBizUnits(arr.map(({ id, description }) => ({ value: String(id), label: String(description) })));
-                });
-
-                await loadCatalog(api, CATALOGS_COUNTRIES, (arr) => {
-                    setCountries(arr.map(({ id, description }) => ({ value: String(id), label: String(description) })));
-                });
-            } catch {
-                setBizUnits([]);
-                setCountries([]);
-            }
-        })();
-    }, [api]);
 
     useEffect(() => {
         (async () => {
@@ -92,7 +65,7 @@ export default function RelatedInformationContainer() {
                 setRelatedInfoIds(
                     (Array.isArray(data) ? data : []).map((r) => ({
                         value: String(r.id),
-                        label: `${r.title}${r.countryName ? ` (${r.countryName})` : ''}`,
+                        label: r.title,
                     }))
                 );
             } catch {
@@ -101,15 +74,12 @@ export default function RelatedInformationContainer() {
         })();
     }, []);
 
-    // load data
     const loadRelatedInfo = async () => {
         try {
             setLoading(true);
 
             const data = await getRelatedInformation({
                 id: criteria.id ? Number(criteria.id) : undefined,
-                businessUnit: criteria.id ? undefined : criteria.bizUnit || undefined,
-                country: criteria.id ? undefined : criteria.country || undefined,
                 size: 500,
             });
 
@@ -127,18 +97,12 @@ export default function RelatedInformationContainer() {
         loadRelatedInfo();
     }, [criteria]);
 
-
     useEffect(() => {
         const handler = () => {
             setOpLoading(true);
-
-            // reset filtros
-            setBizUnit('');
-            setCountry('');
             setRelatedInfoId('');
-            setCriteria({ id: '', bizUnit: '', country: '' });
+            setCriteria({ id: '' });
             setPage(1);
-
             loadRelatedInfo();
         };
 
@@ -146,11 +110,8 @@ export default function RelatedInformationContainer() {
         return () => window.removeEventListener('country-changed', handler);
     }, []);
 
-
-
     const showAlert = (severity, message, title = 'Listo') =>
         setAlert({ visible: true, title, message, severity });
-
 
     const handleTogglePublished = async (id, current) => {
         try {
@@ -172,9 +133,7 @@ export default function RelatedInformationContainer() {
         }
     };
 
-
     const handleAskDelete = (id) => setConfirm((c) => ({ ...c, visible: true, id }));
-
 
     const handleConfirmDelete = async () => {
         const id = confirm.id;
@@ -195,29 +154,21 @@ export default function RelatedInformationContainer() {
 
     const handleResetFilters = () => {
         setRelatedInfoId('');
-        setBizUnit('');
-        setCountry('');
-        setCriteria({ id: '', bizUnit: '', country: '' });
+        setCriteria({ id: '' });
         setPage(1);
         setOpLoading(true);
     };
 
-    const handleSearchFilters = ({ id, businessUnit, country }) => {
+    const handleSearchFilters = ({ id }) => {
         setOpLoading(true);
-        setCriteria({
-            id: id ?? '',
-            bizUnit: id ? '' : businessUnit ?? '',
-            country: id ? '' : country ?? '',
-        });
+        setCriteria({ id: id ?? '' });
         setPage(1);
     };
-
 
     const filtered = useMemo(() => items, [items]);
     const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
     const start = (page - 1) * perPage;
     const rows = filtered.slice(start, start + perPage);
-
 
     const breadcrumbItems = fromMaintainer
         ? [
@@ -234,18 +185,15 @@ export default function RelatedInformationContainer() {
 
     return (
         <div className="ri-container">
-
             <div className="ri-breadcrumb">
                 <Breadcrumb items={breadcrumbItems} />
             </div>
 
             <div className="ri-card">
                 <div className="ri-card-inner">
-
                     <div className="ri-header">
                         <div>
                             <h3 className="ri-title">Módulo de información relacionada</h3>
-                            <p className="ri-subtitle">Búsqueda por unidad de negocio o país.</p>
                             <p className="ri-count">{filtered.length} ítems encontrados</p>
                         </div>
 
@@ -264,12 +212,6 @@ export default function RelatedInformationContainer() {
                         relatedInfoId={relatedInfoId}
                         relatedInfoIds={relatedInfoIds}
                         onRelatedInfoIdChange={setRelatedInfoId}
-                        bizUnit={bizUnit}
-                        bizUnits={bizUnits}
-                        onBizUnitChange={setBizUnit}
-                        country={country}
-                        countries={countries}
-                        onCountryChange={setCountry}
                         onSearchInput={handleSearchFilters}
                         onReset={handleResetFilters}
                     />
@@ -277,8 +219,6 @@ export default function RelatedInformationContainer() {
                     <RelatedInformationTable
                         loading={loading}
                         rows={rows}
-                        buOptions={bizUnits}
-                        countryOptions={countries}
                         emptyLabel="Sin resultados"
                         perPage={perPage}
                         page={page}
@@ -295,26 +235,14 @@ export default function RelatedInformationContainer() {
                     />
 
                     <div className="ri-footer">
-                        {fromMaintainer ? (
-                            <GenericButton
-                                variant="text"
-                                onClick={() => nav('/mantenedor')}
-                                className="ri-backlink"
-                            >
-                                ← Volver al Mantenedor
-                            </GenericButton>
-                        ) : (
-                            <GenericButton
-                                variant="text"
-                                onClick={() => nav(-1)}
-                                className="ri-backlink"
-                            >
-                                Volver
-                            </GenericButton>
-                        )}
+                        <GenericButton
+                            variant="text"
+                            onClick={() => (fromMaintainer ? nav('/mantenedor') : nav(-1))}
+                            className="ri-backlink"
+                        >
+                            ← Volver
+                        </GenericButton>
                     </div>
-
-
                 </div>
             </div>
 

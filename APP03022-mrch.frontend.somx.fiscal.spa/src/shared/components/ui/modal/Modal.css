@@ -1,0 +1,127 @@
+.fiscal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.fiscal-modal-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.fiscal-modal-spinner {
+  height: 2.5rem;
+  width: 2.5rem;
+  color: #0284c7;
+  animation: spin 1s linear infinite;
+}
+
+.fiscal-modal-loading-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.fiscal-modal-alert-container {
+  width: 90%;
+  max-width: 24rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  padding: 2rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  text-align: center;
+}
+
+.fiscal-modal-icon-container {
+  margin: 0 auto 1.5rem;
+  display: flex;
+  height: 4rem;
+  width: 4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+.fiscal-modal-icon-container-success { background-color: #d1fae5; }
+.fiscal-modal-icon-container-error { background-color: #ffe4e6; }
+.fiscal-modal-icon-container-warning { background-color: #fef3c7; }
+.fiscal-modal-icon-container-info { background-color: #e0f2fe; }
+
+.fiscal-modal-icon {
+  height: 2rem;
+  width: 2rem;
+}
+
+.fiscal-modal-icon-success { color: #059669; }
+.fiscal-modal-icon-error { color: #e11d48; }
+.fiscal-modal-icon-warning { color: #d97706; }
+.fiscal-modal-icon-info { color: #0284c7; }
+
+.fiscal-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.fiscal-modal-message {
+  font-size: 0.875rem;
+  color: #334155;
+  white-space: pre-line;
+  margin-bottom: 1.5rem;
+}
+
+.fiscal-modal-button-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.fiscal-modal-button {
+  border-radius: 0.375rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.fiscal-modal-button-primary {
+  background-color: #0284c7;
+  color: #ffffff;
+  border: none;
+}
+
+.fiscal-modal-button-primary:hover {
+  background-color: #0369a1;
+}
+
+.fiscal-modal-button-secondary {
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #d1d5db;
+}
+
+.fiscal-modal-button-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+.fiscal-modal-spinner-circle {
+  opacity: 0.25;
+}
+
+.fiscal-modal-spinner-path {
+  opacity: 0.75;
+}

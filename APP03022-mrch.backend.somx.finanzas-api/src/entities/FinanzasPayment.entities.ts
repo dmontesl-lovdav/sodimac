@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({ name: 'finanzas_payments' })
+@Entity({ name: 'payment_detail' })
 export class FinanzasPayment {
     @PrimaryGeneratedColumn('uuid', { name: 'finanzas_payment_uuid' })
     finanzasPaymentUuid!: string;
@@ -34,6 +34,10 @@ export class FinanzasPayment {
 
     @Column({ name: 'status', type: 'int', nullable: false, default: 1 })
     status!: number;
+
+    // FK lógica hacia cabecera
+    @Column({ name: 'payment_header_uuid', type: 'uuid', nullable: true })
+    paymentHeaderUuid?: string | null;
 
     // Audit fields
     @Column({ name: 'created_by', type: 'bigint', nullable: true })

@@ -14,6 +14,8 @@ import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from "@/utils/logger.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
+import * as svcAxios from "@/services/axios.service.js";
+import 'dotenv/config';
 
 
 // GET /shipping-guides/csv
@@ -23,8 +25,9 @@ export async function csvExport(req: Request, res: Response, next: NextFunction)
         return shippingGuideService.writeCsv(criteria, res);
     } catch (e) {
         logger.error("❌ ShippingGuide.csvExport. ERROR  : No fue posible exportar a csv. FAILED → data={} cause={}", req.query, e); 
-        await logActivity(true, 'ERROR  : No fue posible exportar a csv, Favor de validar', e , req.query);
-        res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC012);
+        logActivity(true, 'ERROR  : No fue posible exportar a csv, Favor de validar', e , req.query);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -38,8 +41,10 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         const response = await shippingGuideService.listPaginated(q);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
-        await logActivity(true, 'ERROR  :', e , req.query);
-        res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
+        logger.error("❌ ShippingGuide.csvExport. ERROR  : No fue posible listar las guias de enbarque. FAILED → data={} cause={}", req.query, e); 
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC013);
+        logActivity(true, 'ERROR  : No fue posible listar las guias de enbarque, Favor de validar', e , req.query);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -63,8 +68,9 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
         const response = await shippingGuideService.get(q.uuid);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
-        await logActivity(true, 'ERROR  :', e , req.params);
-        res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC013);
+        logActivity(true, CatMsgExc.description , e , req.query);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -93,8 +99,9 @@ export async function updateByUuid(req: Request, res: Response, next: NextFuncti
         const response = await shippingGuideService.updateOneByUuid(q.uuid, dto);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
-        await logActivity(true, 'ERROR  :', e , req.params);
-        res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014);
+        logActivity(true, CatMsgExc.description , e , req.query);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -107,8 +114,9 @@ export async function updateByGuide(req: Request, res: Response, next: NextFunct
         const response = await shippingGuideService.updateOneByGuide(q.idGuide, dto);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
-        await logActivity(true, 'ERROR  :', e , req.params);
-        res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014);
+        logActivity(true, CatMsgExc.description , e , req.query);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -120,7 +128,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
         await shippingGuideService.remove(q.uuid);
         res.status(204).json({ trace_id: getTraceId()});
     } catch (e) {
-        await logActivity(true, 'ERROR  :', e , req.params);
+        logActivity(true, 'ERROR  :', e , req.params);
         res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e, null, -1, StatusCodes.BAD_REQUEST, false, ""));
         next(e);
     }

@@ -1,77 +1,68 @@
-// src/shared/components/ui/GenericTable.tsx
-import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
-import './GenericTable.css';
+// ✅ FILE: src/shared/components/ui/table/GenericTable.tsx
+import { useNavigate, NavigateFunction } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import './styles/GenericTable.css';
 
-/* --------------------------------- Types --------------------------------- */
-export type Align = 'left' | 'center' | 'right';
+/* ========================================================= */
+/* TYPES                               */
+/* ========================================================= */
 
-export interface Column<T> {
-    /** Encabezado visible */
-    header: string | React.ReactNode;
-    /** Alineación (default: left) */
-    align?: Align;
-    /** Render por celda (nav es opcional para permitir (row)=>... ) */
-    render: (row: T, nav?: ReturnType<typeof useNavigate>) => React.ReactNode;
+type Align = 'left' | 'center' | 'right';
+
+export interface SwitchProps {
+    on: boolean;
+    onClick: () => void;
 }
 
-export interface RowAction<T> {
-    /** Tooltip / título accesible del botón */
+export interface Column<T = any> {
+    header: string;
+    align?: Align;
+    render: (row: T, nav: NavigateFunction) => React.ReactNode;
+}
+
+export interface RowAction<T = any> {
     title: string;
-    /** Ícono (ruta a imagen/svg) */
     icon: string;
-    /** Handler de click (recibe fila y nav) */
-    onClick: (row: T, nav: ReturnType<typeof useNavigate>) => void;
-    /** Deshabilitar acción por fila (opcional) */
+    onClick: (row: T, nav: NavigateFunction) => void;
     isDisabled?: (row: T) => boolean;
 }
 
-export interface GenericTableProps<T> {
-    /* -- data -------------- */
-    rows: T[];
-    columns: Column<T>[];
+// Mantenemos Action como alias por si otros componentes ya lo están importando
+export type Action<T = any> = RowAction<T>;
 
-    /* -- acciones por fila -- */
+export interface GenericTableProps<T = any> {
+    rows?: T[];
+    columns?: Column<T>[];
     actions?: RowAction<T>[];
-
-    /* -- textos -- */
     emptyLabel?: string;
-
-    /* -- paginación -------- */
     perPage?: number;
     page?: number;
     totalPages?: number;
-    onChangePerPage?: (n: number) => void;
-    onChangePage?: (n: number) => void;
-
-    /* -- total global ------ */
-    /** totalItems: total de registros **en el dataset completo** (no solo en esta página).
-     *  Si no se pasa, se usa rows.length. */
+    onChangePerPage?: (value: number) => void;
+    onChangePage?: (value: number) => void;
+    enableSelection?: boolean;
+    selectedIds?: any[];
+    onSelectRow?: (id: any, selected: boolean) => void;
     totalItems?: number;
 }
 
-/* ---------- util: mini-switch opcional ---------- */
-export function Switch({
-    on,
-    onClick,
-}: {
-    on: boolean;
-    onClick?: () => void;
-}) {
+/* ========================================================= */
+/* SWITCH                              */
+/* ========================================================= */
+
+export function Switch({ on, onClick }: SwitchProps) {
     return (
-        <span onClick={onClick} className={`gt-switch ${on ? 'on' : 'off'}`}>
-            <span className={`gt-switch-thumb ${on ? 'on' : 'off'}`}>
+        <span
+            onClick={onClick}
+            className={`switch ${on ? 'switch-on' : 'switch-off'}`}
+        >
+            <span className={`switch-thumb ${on ? 'thumb-on' : 'thumb-off'}`}>
                 {on ? (
-                    <svg viewBox="0 0 12 9" className="gt-switch-icon" fill="#002d4c">
+                    <svg viewBox="0 0 12 9" className="switch-check">
                         <path d="M4.3 8.6 0 4.3 1.4 2.9l2.9 2.9 5.7-5.7 1.4 1.4z" />
                     </svg>
                 ) : (
-                    <svg
-                        viewBox="0 0 10 10"
-                        className="gt-switch-icon"
-                        stroke="#ffffff"
-                        strokeWidth={2}
-                    >
+                    <svg viewBox="0 0 10 10" className="switch-x">
                         <line x1="1" y1="1" x2="9" y2="9" />
                         <line x1="9" y1="1" x2="1" y2="9" />
                     </svg>
@@ -81,219 +72,279 @@ export function Switch({
     );
 }
 
-/* ------------------------------ GenericTable ------------------------------ */
-export default function GenericTable<T>(
-    props: GenericTableProps<T>
-) {
+/* ========================================================= */
+/* TABLA GENÉRICA                            */
+/* ========================================================= */
 
-    const {
-        rows,
-        columns,
-        actions = [],
-        emptyLabel = 'Sin resultados',
+function getRowId(row: any) {
+    // ✅ Backward compatible: prioriza id si existe
+    return row?.id ?? row?.activity_logs_uuid ?? row?.uuid ?? JSON.stringify(row);
+}
 
-        // paginación
-        perPage = 10,
-        page = 1,
-        totalPages = 1,
-        onChangePerPage = () => undefined,
-        onChangePage = () => undefined,
-
-        totalItems,
-    } = props;
+export default function GenericTable<T = any>({
+    rows = [],
+    columns = [],
+    actions = [],
+    emptyLabel = 'Sin resultados',
+    perPage = 10,
+    page = 1,
+    totalPages = 1,
+    onChangePerPage = () => { },
+    onChangePage = () => { },
+    enableSelection = false,
+    selectedIds = [],
+    onSelectRow = () => { },
+    totalItems,
+}: GenericTableProps<T>) {
 
     const nav = useNavigate();
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
-    // Totales para el texto "X–Y de N"
-    const N: number = Number.isFinite(totalItems as number)
-        ? Number(totalItems)
-        : rows.length;
-
+    const N = Number.isFinite(totalItems) ? Number(totalItems) : rows.length;
     const safePerPage = Math.max(1, Number(perPage || 1));
-    const safeTotalPages = Math.max(1, Number(totalPages || 1));
-    const safePage = Math.min(Math.max(1, Number(page || 1)), safeTotalPages);
-
+    const safePage = Math.min(Math.max(1, Number(page || 1)), Math.max(1, Number(totalPages || 1)));
     const firstIdx = N === 0 ? 0 : (safePage - 1) * safePerPage + 1;
     const lastIdx = Math.min(safePage * safePerPage, N);
 
-    const pageWindowStart = Math.max(0, Math.min(safePage - 3, safeTotalPages - 5));
-    const visiblePages = Array.from(
-        { length: Math.min(5, safeTotalPages) },
-        (_, i) => i + 1 + pageWindowStart
+    /* ========================================================= */
+    /* NAVEGACIÓN CON TECLADO                        */
+    /* ========================================================= */
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (!enableSelection || rows.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setFocusedIndex(prev => {
+                    const next = prev === null ? 0 : Math.min(prev + 1, rows.length - 1);
+                    return next;
+                });
+            }
+
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setFocusedIndex(prev => {
+                    const next = prev === null ? rows.length - 1 : Math.max(prev - 1, 0);
+                    return next;
+                });
+            }
+
+            if (e.key === 'Enter' && focusedIndex !== null) {
+                e.preventDefault();
+                const id = getRowId((rows as any)[focusedIndex]);
+                const isSelected = selectedIds.includes(id);
+                onSelectRow(id, !isSelected);
+            }
+        },
+        [rows, selectedIds, focusedIndex, enableSelection, onSelectRow]
     );
 
-    const alignClass = (align: Align) =>
-        align === 'center' ? 'gt-align-center' : align === 'right' ? 'gt-align-right' : 'gt-align-left';
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
+
+    /* ========================================================= */
+    /* SELECT ALL (PAGE)                         */
+    /* ========================================================= */
+
+    const pageIds = rows.map((r: any) => getRowId(r));
+    const hasRows = pageIds.length > 0;
+    const selectedCountOnPage = pageIds.filter((id) => selectedIds.includes(id)).length;
+    const allSelectedOnPage = hasRows && selectedCountOnPage === pageIds.length;
+    const someSelectedOnPage = selectedCountOnPage > 0 && !allSelectedOnPage;
+
+    /* ========================================================= */
+    /* RENDER                            */
+    /* ========================================================= */
 
     return (
-        <div className="gt-container">
-            {/* ------------------ tabla ------------------ */}
-            <table className="gt-table">
-                {/* ---------- encabezados ---------- */}
-                <thead className="gt-thead">
+        <div className="table-wrapper">
+
+            <table className="table">
+                <thead>
                     <tr>
-                        {columns.map(({ header, align = 'left' }, index) => (
-                            <th
-                                key={typeof header === 'string' ? header : `col-${index}`}
-                                className={`gt-th ${alignClass(align)}`}
-                            >
+                        {enableSelection && (
+                            <th className="text-center" style={{ width: 40 }}>
+                                <input
+                                    type="checkbox"
+                                    className="checkbox"
+                                    checked={allSelectedOnPage}
+                                    ref={(el) => {
+                                        if (el) el.indeterminate = someSelectedOnPage;
+                                    }}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        // ✅ Selecciona/deselecciona SOLO la página actual
+                                        (rows as any[]).forEach((row) => {
+                                            const id = getRowId(row);
+                                            onSelectRow(id, checked);
+                                        });
+                                    }}
+                                    aria-label="Seleccionar todo"
+                                    title="Seleccionar todo"
+                                />
+                            </th>
+                        )}
+
+                        {columns.map(({ header, align = 'left' }) => (
+                            <th key={header} style={{ textAlign: align }}>
                                 {header}
                             </th>
                         ))}
+
                         {actions.length > 0 && (
-                            <th className="gt-th gt-align-center gt-lg">Acciones</th>
+                            <th className="text-center">Acciones</th>
                         )}
                     </tr>
                 </thead>
 
-                {/* ---------- cuerpo ---------- */}
                 <tbody>
-                    {/* vacía */}
-                    {rows.length === 0 && (
+                    {rows.length === 0 ? (
                         <tr>
                             <td
-                                colSpan={columns.length + (actions.length > 0 ? 1 : 0)}
-                                className="gt-empty"
+                                className="text-center"
+                                colSpan={
+                                    columns.length +
+                                    (actions.length > 0 ? 1 : 0) +
+                                    (enableSelection ? 1 : 0)
+                                }
                             >
-                                {emptyLabel}
+                                <div style={{ padding: "1.5rem", color: "#6b7280" }}>
+                                    {emptyLabel}
+                                </div>
                             </td>
                         </tr>
-                    )}
+                    ) : (
+                        rows.map((row: any, index) => {
+                            const rowId = getRowId(row);
 
-                    {/* datos */}
-                    {rows.map((row, index) => (
-                        <tr
-                            key={index}
-                            className="gt-row"
-                        >
-                            {columns.map(({ header, align = 'left', render }, index) => (
-                                <td
-                                    key={typeof header === 'string' ? header : `col-${index}`}
-                                    className={`gt-td ${alignClass(align)}`}
+                            return (
+                                <tr
+                                    key={rowId}
+                                    className={`table-row ${focusedIndex === index ? 'focused' : ''}`}
                                 >
-                                    {render(row, nav)}
-                                </td>
-                            ))}
+                                    {enableSelection && (
+                                        <td className="text-center" style={{ width: 40 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(rowId)}
+                                                onChange={(e) =>
+                                                    onSelectRow(rowId, e.target.checked)
+                                                }
+                                                className="checkbox"
+                                            />
+                                        </td>
+                                    )}
 
-                            {/* acciones */}
-                            {actions.length > 0 && (
-                                <td className="gt-td gt-align-center">
-                                    <div className="gt-actions">
-                                        {actions.map(({ title, icon, onClick, isDisabled }) => {
-                                            const disabled = isDisabled?.(row) ?? false;
-                                            return (
-                                                <button
-                                                    key={title}
-                                                    title={title}
-                                                    onClick={() => !disabled && onClick(row, nav)}
-                                                    className="gt-action-btn"
-                                                    disabled={disabled}
-                                                >
-                                                    <img src={icon} className="gt-action-icon" alt={title} />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </td>
-                            )}
-                        </tr>
-                    ))}
+                                    {columns.map(({ header, align = 'left', render }) => (
+                                        <td key={header} style={{ textAlign: align }}>
+                                            {render(row, nav)}
+                                        </td>
+                                    ))}
+
+                                    {actions.length > 0 && (
+                                        <td>
+                                            <div className="table-actions">
+                                                {actions.map(({ title, icon, onClick, isDisabled }) => {
+                                                    const disabled = isDisabled ? isDisabled(row) : false;
+                                                    return (
+                                                        <button
+                                                            key={title}
+                                                            title={title}
+                                                            onClick={() => !disabled && onClick(row, nav)}
+                                                            disabled={disabled}
+                                                            style={{
+                                                                cursor: disabled ? 'not-allowed' : 'pointer',
+                                                                opacity: disabled ? 0.4 : 1
+                                                            }}
+                                                        >
+                                                            <img src={icon} alt={title} width={20} height={20} />
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </td>
+                                    )}
+                                </tr>
+                            );
+                        })
+                    )}
                 </tbody>
             </table>
 
-            {/* ---------------- paginación ---------------- */}
-            <div className="gt-pagination">
-                {/* per-page */}
-                <label>
+            <div className="pagination">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     Filas por página:
-                    <div className="gt-select-wrapper">
+                    <div style={{ position: 'relative' }}>
                         <select
                             value={perPage}
-                            onChange={(e) => onChangePerPage(Number(e.target.value))}
-                            className="gt-select"
+                            onChange={(e) => onChangePerPage(+e.target.value)}
                         >
                             {[5, 10, 25, 50].map((n) => (
-                                <option key={n} value={n}>
-                                    {n}
-                                </option>
+                                <option key={n}>{n}</option>
                             ))}
                         </select>
-                        <span className="gt-select-caret">
-                            ▾
-                        </span>
+                        <span style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
+                            pointerEvents: 'none',
+                            color: '#002d4c'
+                        }}>▾</span>
                     </div>
                 </label>
 
-                {/* go-to page */}
-                <label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     Ir a:
                     <input
                         type="number"
                         min={1}
-                        max={safeTotalPages}
-                        value={safePage}
-                        onChange={(e) =>
-                            onChangePage(
-                                Math.max(1, Math.min(safeTotalPages, Number(e.target.value) || 1))
-                            )
-                        }
-                        className="gt-input"
+                        max={totalPages}
+                        value={page}
+                        onChange={(e) => onChangePage(+e.target.value || 1)}
                     />
                 </label>
 
-                {/* rango */}
-                <span className="gt-range">
-                    {firstIdx}-{lastIdx} de {N}
-                </span>
+                <span>{firstIdx}-{lastIdx} de {N}</span>
 
-                {/* flechas + números */}
-                <div className="gt-pages">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
-                        onClick={() => onChangePage(Math.max(1, safePage - 1))}
-                        disabled={safePage === 1}
-                        className="gt-page-btn"
-                        title="Anterior"
+                        onClick={() => onChangePage(Math.max(1, page - 1))}
+                        disabled={page === 1}
+                        className={`pagination-arrow ${page === 1 ? 'disabled' : ''}`}
                     >
                         ‹
                     </button>
 
-                    {visiblePages.map((n) => (
-                        <button
-                            key={n}
-                            onClick={() => onChangePage(n)}
-                            disabled={safePage === n}
-                            className={`gt-page-btn ${safePage === n ? 'is-current' : ''}`}
-                            title={`Ir a ${n}`}
-                        >
-                            {n}
-                        </button>
-                    ))}
+                    {[...Array(totalPages).keys()]
+                        .map((i) => i + 1)
+                        .slice(
+                            Math.max(0, Math.min(page - 3, totalPages - 5)),
+                            Math.max(0, Math.min(page - 3, totalPages - 5)) + 5
+                        )
+                        .map((n) => (
+                            <button
+                                key={n}
+                                onClick={() => onChangePage(n)}
+                                className={`page-btn ${page === n ? 'active' : ''}`}
+                            >
+                                {n}
+                            </button>
+                        ))}
 
                     <button
-                        onClick={() =>
-                            onChangePage(Math.min(safeTotalPages, safePage + 1))
-                        }
-                        disabled={safePage === safeTotalPages}
-                        className="gt-page-btn"
-                        title="Siguiente"
+                        onClick={() => onChangePage(Math.min(totalPages, page + 1))}
+                        disabled={page === totalPages}
+                        className={`pagination-arrow ${page === totalPages ? 'disabled' : ''}`}
                     >
                         ›
                     </button>
                 </div>
             </div>
 
-            {/* línea final */}
-            <div className="gt-footer-line" />
+            <div className="table-divider" />
         </div>
     );
-}
-
-/* --------------------------- Helper buildTable --------------------------- */
-/** Compatibilidad con uso existente: buildTable(data, columns, options) */
-export function buildTable<T extends { id?: string | number }>(
-    rows: T[],
-    columns: Column<T>[],
-    options: Partial<Omit<GenericTableProps<T>, 'rows' | 'columns'>> = {}
-) {
-    return <GenericTable<T> rows={rows} columns={columns} {...options} />;
 }

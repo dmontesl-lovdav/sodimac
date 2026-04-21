@@ -7,12 +7,10 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
+
 import { ShippingGuide } from './ShippingGuide.entity.js';
 import { StatusCatalog } from './StatusCatalog.entity.js';
 
-/**
- * Documentos asociados a las guías de envío
- */
 @Entity('shipping_guide_document')
 export class ShippingGuideDocument {
     @PrimaryGeneratedColumn('uuid', { name: 'shipping_guide_document_id' })
@@ -30,7 +28,6 @@ export class ShippingGuideDocument {
     @Column({ name: 'status', type: 'numeric', precision: 2, nullable: true })
     status?: number;
 
-    // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
 
@@ -43,12 +40,11 @@ export class ShippingGuideDocument {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 
-    // Relaciones
     @ManyToOne(() => ShippingGuide)
     @JoinColumn({ name: 'shipping_guide_id' })
-    shippingGuide?: ShippingGuide;
+    shippingGuide?: any;
 
     @ManyToOne(() => StatusCatalog)
     @JoinColumn({ name: 'status' })
-    statusCatalog?: StatusCatalog;
+    statusCatalog?: any;
 }

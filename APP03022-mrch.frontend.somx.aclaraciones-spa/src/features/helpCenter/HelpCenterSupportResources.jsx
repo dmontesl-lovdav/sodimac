@@ -89,9 +89,9 @@ export default function HelpCenterSupportResources() {
                 if (firstLoadRef.current) setOpLoading(true);
 
                 const faqs = await api.getFaqs({ categoryId: Number(selectedId), size: 1000 });
-
+                const publishedFaqs = (faqs ?? []).filter(f => f.published === true);
                 const detailedFaqs = await Promise.all(
-                    (faqs ?? []).map(async (f) => {
+                    publishedFaqs.map(async (f) => {
                         try {
                             const detail = await api.getFaq(f.id);
                             return {

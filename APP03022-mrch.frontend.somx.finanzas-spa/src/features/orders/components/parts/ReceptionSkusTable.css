@@ -1,0 +1,98 @@
+.rc-empty-state {
+    margin-top: 8px;
+}
+
+.rc-section-title {
+    font-weight: 700;
+    padding: 24px 0;
+}
+
+.rc-skus-panel {
+    width: 100%;
+}
+
+.rc-stats-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 12px;
+}
+
+.rc-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.rc-spacer {
+    height: 8px;
+}
+
+.rc-accordion {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin: 20px;
+}
+
+.rc-accordion-header {
+    padding: 16px;
+}
+
+.rc-accordion-summary {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.rc-meta-label {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+.rc-meta-value {
+    font-weight: 600;
+    margin: 0;
+}
+
+.rc-accordion-content {
+    border-top: 1px solid #e5e7eb;
+    padding: 16px;
+}
+
+.rc-comment {
+    color: #4b5563;
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.rc-table-wrap {
+    overflow-x: auto;
+}
+
+.rc-download-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.rc-download-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #2563eb;
+    cursor: pointer;
+    display: inline-flex;
+    font-weight: 600;
+    gap: 8px;
+}
+
+.rc-download-btn:hover {
+    color: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+    .rc-stats-grid,
+    .rc-accordion-summary {
+        grid-template-columns: 1fr;
+    }
+}

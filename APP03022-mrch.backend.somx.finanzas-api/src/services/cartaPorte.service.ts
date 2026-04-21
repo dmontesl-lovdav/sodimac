@@ -14,7 +14,8 @@ import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 import * as svcShipping from "@/services/shippingGuide.service.js";
 import * as svcPurchaseO from "@/services/purchaseOrder.service.js";
 import { getDataSource } from "@/config/typeorm-datasource.js"; // Your DataSource instance
-import { logActivity  } from '@/middlewares/logger.js';
+import * as svcAxios from "@/services/axios.service.js";
+import 'dotenv/config';
 
 
 
@@ -42,7 +43,8 @@ export async function createAll(dtoPurchase: CreatePurchaseOrderDto, files: Expr
   await getDataSource().transaction( async (transactionalEntityManager) => {     
     const createdOC = await svcPurchaseO.create(dtoPurchase, transactionalEntityManager, files, folder, origin);
   });
-  return ResponseHandler.responseBuilder("OC y Guias Registradas en el sistema de FBC exitosamente " ,null,0, StatusCodes.CREATED, true, "");
+  const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS211);
+  return ResponseHandler.responseBuilder(CatMsgExc.description ,null,0, StatusCodes.CREATED, true, "");
 }
 
 

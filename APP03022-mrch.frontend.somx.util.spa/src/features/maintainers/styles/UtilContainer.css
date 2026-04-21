@@ -1,0 +1,105 @@
+.util-root {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.util-main {
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* SOLO borde arriba */
+.util-box {
+    border-top: 1px solid #e5e7eb;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0;
+    padding: 1.5rem 0;
+}
+
+/* mismo estilo de mantenedores */
+.maintainers-title {
+    font-size: 28px;
+    line-height: 2rem;
+    font-weight: 500;
+    color: #262626;
+    margin-bottom: 1.25rem;
+}
+
+/* grid igual que mantenedores */
+.cards-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* cards igual que mantenedores */
+.card {
+    display: block;
+    width: 100%;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    text-decoration: none;
+    transition: box-shadow 0.2s;
+    border: 1px solid #E6E8EB;
+    background-color: white;
+    cursor: pointer;
+}
+
+.card:hover {
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.card.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.card.disabled:hover {
+    box-shadow: none;
+}
+
+.card-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.card-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.card-right {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 500;
+    color: #1F2937;
+}
+
+.card-desc {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #4B5563;
+}

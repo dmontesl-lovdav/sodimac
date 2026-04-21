@@ -1,0 +1,65 @@
+.fiscal-alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fiscal-alert-error-icon {
+  height: 20px;
+  width: 20px;
+}
+
+.fiscal-alert-error-text {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.fiscal-alert-success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fiscal-alert-success-icon {
+  height: 20px;
+  width: 20px;
+}
+
+.fiscal-alert-success-text {
+  color: #059669;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.fiscal-alert-warning {
+  background-color: #fffbeb;
+  border: 1px solid #fef08a;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fiscal-alert-warning-icon {
+  height: 20px;
+  width: 20px;
+}
+
+.fiscal-alert-warning-text {
+  color: #d97706;
+  font-size: 0.875rem;
+  font-weight: 500;
+}

@@ -1,0 +1,176 @@
+accounts-payable:
+  get:
+    tags:
+      - accounts-payable
+    summary: List accounts payable
+    operationId: listAccountsPayable
+    produces:
+      - application/json
+    parameters:
+      - name: status
+        in: query
+        required: false
+        description: Status code (e.g. 1=open, 2=closed)
+        type: integer
+        format: int32
+      - name: vendorNumber
+        in: query
+        required: false
+        description: Vendor number identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List of accounts payable
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/accounts-payable.yaml#/AccountsPayableDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - accounts-payable
+    summary: Create account payable
+    operationId: createAccountPayable
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/accounts-payable.yaml#/CreateAccountsPayableDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/accounts-payable.yaml#/AccountsPayableDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+accounts-payable-by-uuid:
+  get:
+    tags:
+      - accounts-payable
+    summary: Get account payable by ID
+    operationId: getAccountPayableById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Account payable UUID
+        type: string
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/accounts-payable.yaml#/AccountsPayableDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  patch:
+    tags:
+      - accounts-payable
+    summary: Update account payable
+    operationId: updateAccountPayable
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Account payable UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/accounts-payable.yaml#/UpdateAccountsPayableDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/accounts-payable.yaml#/AccountsPayableDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - accounts-payable
+    summary: Delete account payable
+    operationId: deleteAccountPayable
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Account payable UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

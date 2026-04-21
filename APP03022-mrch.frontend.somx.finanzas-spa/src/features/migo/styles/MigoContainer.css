@@ -1,0 +1,204 @@
+.migo-layout {
+    padding: 8px 24px 16px;
+}
+
+.migo-box {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 24px 0;
+    margin-top: 16px;
+    background: transparent;
+}
+
+.migo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.migo-title {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+}
+
+.migo-description {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.migo-filters-section {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.migo-filter-input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 240px;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.migo-filters-section .dr-wrapper,
+.migo-filters-section .dr-input {
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.migo-grid-section {
+    margin-top: 24px;
+}
+
+.migo-toolbar {
+    display: flex;
+    gap: 10px;
+}
+
+.migo-summary-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.migo-summary-label {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+}
+
+.migo-summary-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.migo-upload-section {
+    margin-top: 16px;
+}
+
+.migo-upload-hint {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.migo-upload-columns {
+    font-size: 12px;
+    color: #9ca3af;
+    font-family: monospace;
+    margin-bottom: 16px;
+}
+
+.migo-upload-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.migo-errors-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fef2f2;
+    margin: 16px 0;
+}
+
+.migo-errors-list h4 {
+    color: #dc2626;
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.migo-errors-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.migo-errors-list li {
+    font-size: 12px;
+    color: #991b1b;
+    padding: 4px 0;
+    border-bottom: 1px solid #fecaca;
+}
+
+.migo-errors-list li:last-child {
+    border-bottom: none;
+}
+
+.migo-summary-result {
+    margin: 16px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.migo-summary-result h4 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.migo-summary-stats {
+    display: flex;
+    gap: 24px;
+    margin: 12px 0;
+}
+
+.migo-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.migo-stat-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.migo-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.migo-stat-valid {
+    color: #16a34a;
+}
+
+.migo-stat-invalid {
+    color: #dc2626;
+}
+
+.migo-reject-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.migo-reject-form textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    resize: vertical;
+}

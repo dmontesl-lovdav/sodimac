@@ -185,27 +185,1037 @@
         }
       }
     },
-    "/finanzas-payments": {
+    "/audit-logs": {
       "get": {
         "tags": [
-          "FinanzasPayments"
+          "AuditLogs"
         ],
-        "summary": "Payments to providers",
+        "summary": "List audit logs (filtered + paginated)",
         "produces": [
           "application/json"
         ],
         "consumes": [
           "application/json"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "required": true,
+            "description": "Start datetime (required)",
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "required": true,
+            "description": "End datetime (required)",
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "idAplicativo",
+            "in": "query",
+            "required": false,
+            "description": "Service/App name (maps to service_name)",
+            "type": "string"
+          },
+          {
+            "name": "modulo",
+            "in": "query",
+            "required": false,
+            "description": "Module (maps to modulo)",
+            "type": "string"
+          },
+          {
+            "name": "idTransaccion",
+            "in": "query",
+            "required": false,
+            "description": "Transaction id (trace_id)",
+            "type": "string"
+          },
+          {
+            "name": "tipoEvento",
+            "in": "query",
+            "required": false,
+            "description": "Event type (ALL|ERROR|ALERTA|INFO)",
+            "type": "string"
+          },
+          {
+            "name": "codigoError",
+            "in": "query",
+            "required": false,
+            "description": "Error code (codigo_error)",
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Free text search (message, detail, action, etc.)",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Test",
+            "description": "Paginated audit logs",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/AccountsPayable"
+              "$ref": "#/components/schemas/ListAuditLogsResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AuditLogs"
+        ],
+        "summary": "Create audit log",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateAuditLogDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "activity_logs_uuid": {
+                  "type": "string",
+                  "format": "uuid",
+                  "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
+                }
+              },
+              "required": [
+                "activity_logs_uuid"
+              ]
+            }
+          },
+          "400": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    },
+    "/audit-logs/export/csv": {
+      "get": {
+        "tags": [
+          "AuditLogs"
+        ],
+        "summary": "Export audit logs as CSV (filtered)",
+        "produces": [
+          "text/csv"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "idAplicativo",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "modulo",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "idTransaccion",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "tipoEvento",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "codigoError",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file",
+            "schema": {
+              "type": "string",
+              "example": "IdLog,IdTransaccion,..."
+            }
+          }
+        }
+      }
+    },
+    "/audit-logs/transaction/{idTransaccion}": {
+      "get": {
+        "tags": [
+          "AuditLogs"
+        ],
+        "summary": "Get audit logs by transaction id",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "idTransaccion",
+            "in": "path",
+            "required": true,
+            "description": "Transaction id (trace_id)",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit logs grouped by transaction id",
+            "schema": {
+              "$ref": "#/components/schemas/AuditLogsByTransactionResponse"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/audit-logs/{id}": {
+      "get": {
+        "tags": [
+          "AuditLogs"
+        ],
+        "summary": "Get audit log detail by id",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit log detail",
+            "schema": {
+              "$ref": "#/components/schemas/AuditLog"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/carta-porte/guia-embarque": {
+      "post": {
+        "tags": [
+          "CartaPorte"
+        ],
+        "summary": "Create shipping guides for cartaPorte Batch",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/BaseArrayFilesSchemaParent"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/carta-porte/oc": {
+      "post": {
+        "tags": [
+          "CartaPorte"
+        ],
+        "summary": "Create purchase order for CartaPorte batch",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/BaseSchemaParent"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/carta-porte/all": {
+      "post": {
+        "tags": [
+          "CartaPorte"
+        ],
+        "summary": "Create purchase order and shipping Guides for CartaPorte batch",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/BaseArrayFilesSchemaParent"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/carta-porte/findAllGuia": {
+      "post": {
+        "tags": [
+          "CartaPorte"
+        ],
+        "summary": "Obtiene todas las guias que has sido actualizados los estatus",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ListShippingGuideQuerySchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/carta-porte/updateAllStatusGuia": {
+      "post": {
+        "tags": [
+          "CartaPorte"
+        ],
+        "summary": "Actualiza el campo Status de las guias que fueron actualizadas en carta porte",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ShippginGuideSummaryListSchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/finanzas-payments": {
+      "get": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "List provider payment details (legacy detail table)",
+        "description": "Returns paginated payment detail records from payment_detail.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "createdAtInitial": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "createdAtEnd": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "vendorNumber": {
+                  "type": "integer"
+                },
+                "finanzasPaymentUuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "paymentDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "documentNumber": {
+                  "type": "string"
+                },
+                "sapDocument": {
+                  "type": "string"
+                },
+                "pageNumber": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "pageSize": {
+                  "type": "integer",
+                  "example": 10
+                }
+              },
+              "required": [
+                "createdAtInitial",
+                "createdAtEnd",
+                "pageNumber",
+                "pageSize"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated detail payments",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FinanzasPayment"
+                      }
+                    },
+                    "totalElements": {
+                      "type": "integer"
+                    },
+                    "numberOfElements": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    },
+                    "pageNumber": {
+                      "type": "integer"
+                    },
+                    "pageSize": {
+                      "type": "integer"
+                    }
+                  }
+                }
               }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "Create single payment detail record",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateFinanzasPaymentDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Payment detail created",
+            "schema": {
+              "$ref": "#/components/schemas/FinanzasPayment"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "Update payment detail status by filters",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UpdateFinanzasPaymentDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment detail status updated"
+          }
+        }
+      }
+    },
+    "/finanzas-payments/header-with-details": {
+      "post": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "Create grouped payment header with detail lines",
+        "description": "Creates a payment header and related payment detail lines in a single transaction. Validates INCOME presence and header total vs detail breakdown.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateFinanzasPaymentHeaderWithDetailsDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Header and details created successfully",
+            "schema": {
+              "$ref": "#/components/schemas/FinanzasPaymentHeaderWithDetailsResponse"
+            }
+          },
+          "400": {
+            "description": "Validation error (WRN7024 / WRN7025)"
+          }
+        }
+      }
+    },
+    "/finanzas-payments/header-with-details/{paymentHeaderUuid}": {
+      "get": {
+        "tags": [
+          "FinanzasPayments"
+        ],
+        "summary": "Get payment header with detail lines",
+        "description": "Returns header and details by paymentHeaderUuid. Supports optional pagination for details.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "paymentHeaderUuid",
+            "in": "path",
+            "required": true,
+            "description": "Grouped payment header identifier",
+            "type": "string"
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": false,
+            "description": "Optional page number for detail pagination",
+            "type": "integer"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Optional page size for detail pagination",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Header with details (full or paginated)",
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FinanzasPaymentHeaderGetWithDetailsResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/FinanzasPaymentHeaderGetWithDetailsPaginatedResponse"
+                }
+              ]
+            }
+          },
+          "404": {
+            "description": "Header not found"
+          }
+        }
+      }
+    },
+    "/purchase-orders": {
+      "get": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "List Purchase Orders (filtered + paginated)",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "purchaseOrderDateAtInitial",
+            "in": "query",
+            "required": true,
+            "description": "Start datetime (required)",
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "purchaseOrderDateAtEnd",
+            "in": "query",
+            "required": true,
+            "description": "End datetime (required)",
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "supplierNumber",
+            "in": "query",
+            "required": false,
+            "description": "Supplier Number",
+            "type": "number"
+          },
+          {
+            "name": "orderNumber",
+            "in": "query",
+            "required": false,
+            "description": "Order Number",
+            "type": "string"
+          },
+          {
+            "name": "originId",
+            "in": "query",
+            "required": false,
+            "description": "Origin ID",
+            "type": "number"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Order Status",
+            "type": "number"
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "description": "Page Number",
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "description": "Page Size",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "404": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "Create Order with Receptions and ReceptionsSkus",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreatePurchaseOrderDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "404": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/purchase-orders/:uuid": {
+      "get": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "Get Purchase Orders by uuid",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "params",
+            "required": true,
+            "description": "Purchase Order UUID",
+            "type": "string",
+            "format": "UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/purchase-orders/reception/:uuid": {
+      "get": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "Get reception by uuid",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "params",
+            "required": true,
+            "description": "Reception UUID",
+            "type": "string",
+            "format": "UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "Update reception status by uuid",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReceptionDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "400": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/purchase-orders/listReception": {
+      "get": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "List Receptions(filtered + paginated)",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ListReceptionQuerySchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "404": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          }
+        }
+      }
+    },
+    "/purchase-orders/updateReception": {
+      "patch": {
+        "tags": [
+          "PurchaseOrders"
+        ],
+        "summary": "Update Status Reception",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UpdateStatusReceptionSchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
+            }
+          },
+          "404": {
+            "description": "General Response",
+            "schema": {
+              "$ref": "#/components/schemas/ResponseHandlerDTO"
             }
           }
         }
@@ -611,6 +1621,335 @@
           }
         }
       }
+    },
+    "/three-way-match": {
+      "get": {
+        "tags": [
+          "ThreeWayMatch"
+        ],
+        "summary": "Search Three Way Match records",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tipoFecha",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "numeroProveedor",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordenCompra",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "recepcion",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Three Way Match results",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ThreeWayMatch"
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "limit": {
+                  "type": "integer"
+                },
+                "totalPages": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/three-way-match/export/csv": {
+      "get": {
+        "tags": [
+          "ThreeWayMatch"
+        ],
+        "summary": "Export Three Way Match results to CSV",
+        "produces": [
+          "text/csv"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tipoFecha",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "numeroProveedor",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordenCompra",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "recepcion",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file generated",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/three-way-match/export/xlsx": {
+      "get": {
+        "tags": [
+          "ThreeWayMatch"
+        ],
+        "summary": "Export Three Way Match results to XLSX",
+        "produces": [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tipoFecha",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "numeroProveedor",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordenCompra",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "recepcion",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "XLSX file generated",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/three-way-match/run": {
+      "post": {
+        "tags": [
+          "ThreeWayMatch"
+        ],
+        "summary": "Run Three Way Match batch (trigger from frontend)",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RunThreeWayMatchBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch executed",
+            "schema": {
+              "$ref": "#/components/schemas/RunThreeWayMatchResponse"
+            }
+          }
+        }
+      }
+    },
+    "/transaction-ids": {
+      "post": {
+        "tags": [
+          "TransactionIds"
+        ],
+        "summary": "Generate transaction ID",
+        "description": "Genera un folio visible único y un UUID interno para trazabilidad de acciones en el portal.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CreateTransactionIdDto"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Transaction ID generated successfully",
+            "schema": {
+              "$ref": "#/components/schemas/TransactionIdApiResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request or catalog validation error"
+          },
+          "409": {
+            "description": "Duplicate folio_visible or uuid_interno"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction-ids/{folioVisible}": {
+      "get": {
+        "tags": [
+          "TransactionIds"
+        ],
+        "summary": "Get transaction by visible folio",
+        "description": "Consulta el detalle completo de una transacción a partir del folio visible reportado por el usuario.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "folioVisible",
+            "in": "path",
+            "required": true,
+            "description": "Visible folio generated by the transaction ID service",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction found",
+            "schema": {
+              "$ref": "#/components/schemas/TransactionIdApiResponse"
+            }
+          },
+          "404": {
+            "description": "Transaction ID not found"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -687,6 +2026,814 @@
         "dueDate": {
           "type": "string",
           "format": "date"
+        }
+      }
+    },
+    "AuditLog": {
+      "type": "object",
+      "properties": {
+        "activity_logs_uuid": {
+          "type": "string",
+          "format": "uuid",
+          "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
+        },
+        "trace_front_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        },
+        "trace_id": {
+          "type": "string",
+          "format": "uuid",
+          "example": "a4b6c2b0-1f2b-4a0f-9c3c-9c2f9e7b1a11"
+        },
+        "duration_ms": {
+          "type": "number",
+          "example": 123.45
+        },
+        "is_error": {
+          "type": "boolean",
+          "example": false
+        },
+        "modulo": {
+          "type": "string",
+          "example": "API_FINANZAS"
+        },
+        "service_name": {
+          "type": "string",
+          "example": "finanzas-api"
+        },
+        "action": {
+          "type": "string",
+          "nullable": true,
+          "example": "GET /shipping-guide"
+        },
+        "paso": {
+          "type": "string",
+          "nullable": true,
+          "example": "END_GET"
+        },
+        "message": {
+          "type": "string",
+          "nullable": true,
+          "example": "END_GET"
+        },
+        "message_detail": {
+          "type": "string",
+          "nullable": true,
+          "example": "END REQUEST"
+        },
+        "user_id": {
+          "type": "string",
+          "example": "system"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21T22:10:00.000Z"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tipo_evento": {
+          "type": "string",
+          "example": "INFO"
+        },
+        "codigo_error": {
+          "type": "string",
+          "nullable": true,
+          "example": "400"
+        },
+        "id_mensaje": {
+          "type": "string",
+          "nullable": true,
+          "example": "ValidationError"
+        },
+        "log": {
+          "type": "string",
+          "nullable": true,
+          "example": "stack trace..."
+        }
+      },
+      "required": [
+        "activity_logs_uuid",
+        "trace_id",
+        "modulo",
+        "service_name",
+        "timestamp",
+        "tipo_evento"
+      ]
+    },
+    "CreateAuditLogDto": {
+      "type": "object",
+      "properties": {
+        "idTransaccion": {
+          "type": "string",
+          "format": "uuid",
+          "example": "a4b6c2b0-1f2b-4a0f-9c3c-9c2f9e7b1a11"
+        },
+        "idAplicativo": {
+          "type": "string",
+          "example": "finanzas-api"
+        },
+        "idModulo": {
+          "type": "string",
+          "example": "API_FINANZAS"
+        },
+        "paso": {
+          "type": "string",
+          "example": "CreateShippingGuide"
+        },
+        "detalle": {
+          "type": "string",
+          "nullable": true,
+          "example": "Descripción corta"
+        },
+        "fechaHora": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21T22:10:00.000Z"
+        },
+        "tipoEvento": {
+          "type": "string",
+          "example": "INFO"
+        },
+        "idUsuario": {
+          "type": "string",
+          "nullable": true,
+          "example": "system"
+        },
+        "idError": {
+          "type": "string",
+          "nullable": true,
+          "example": "ERR-400"
+        },
+        "idMensaje": {
+          "type": "string",
+          "nullable": true,
+          "example": "CAT1001"
+        },
+        "mensaje": {
+          "type": "string",
+          "nullable": true,
+          "example": "Validation failed"
+        },
+        "log": {
+          "type": "string",
+          "nullable": true,
+          "example": "stack trace..."
+        }
+      },
+      "required": [
+        "idTransaccion",
+        "idAplicativo",
+        "idModulo",
+        "paso",
+        "tipoEvento"
+      ]
+    },
+    "ListAuditLogsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "example": 1
+        },
+        "limit": {
+          "type": "integer",
+          "example": 10
+        },
+        "total": {
+          "type": "integer",
+          "example": 152
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AuditLog"
+          }
+        }
+      },
+      "required": [
+        "page",
+        "limit",
+        "total",
+        "data"
+      ]
+    },
+    "AuditLogsByTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "idTransaccion": {
+          "type": "string",
+          "format": "uuid",
+          "example": "a4b6c2b0-1f2b-4a0f-9c3c-9c2f9e7b1a11"
+        },
+        "total": {
+          "type": "integer",
+          "example": 3
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AuditLog"
+          }
+        }
+      },
+      "required": [
+        "idTransaccion",
+        "total",
+        "data"
+      ]
+    },
+    "BaseArrayFilesSchemaParent": {
+      "type": "object",
+      "properties": {
+        "folder": {
+          "type": "string",
+          "example": "nameFolder"
+        },
+        "origen": {
+          "type": "string",
+          "example": "2"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "binary"
+          },
+          "minItems": 1
+        },
+        "content": {
+          "type": "string",
+          "description": "guias de embarque en Json String",
+          "example": "{\"shippingGuideList\":[{\"guideNumber\":\"LG602871012202510441\",\"vendorNumber\":1,\"truckPlate\":\"abc\",\"originId\":2,\"deliveryType\":1,\"deliveryDate\":\"2025-10-23 15:58:35\",\"shipingGuideDocumentList\":[{\"fileName\":\"File Name xml\",\"fileType\":1,\"status\":1},{\"fileName\":\"File Name csv\",\"fileType\":2,\"status\":1}]}]}"
+        }
+      },
+      "required": [
+        "folder",
+        "origen",
+        "files",
+        "content"
+      ]
+    },
+    "BaseSchemaParent": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "Orden de Compra en Json String",
+          "example": "{\"orderNumber\":\"recep54CP.xml\",\"supplierNumber\":1,\"origen\":\"1\",\"amount\":\"10.0\",\"status\":1,\"purchaseOrderDate\":\"2025-05-24 02:00:00\",\"createdBy\":1,\"guideNumber\":[{\"guide\":\"LG602871012202510441\"}],\"receptionList\":[{\"receptionNumber\":\"recep54CP.xml\",\"originId\":1,\"destinationId\":1,\"amount\":\"10.0\",\"status\":0,\"sapDocument\":\"fas\",\"comments\":\"NO COMMENTS\",\"receptionDate\":\"2025-05-23 02:00:00\",\"createdBy\":1,\"receiptSkuList\":[{\"sku\":\"V01\",\"description\":\"V01\",\"quantity\":1,\"unitCost\":\"10.0\",\"totalCost\":\"10.0\",\"status\":0,\"createdBy\":1}]}]}"
+        }
+      },
+      "required": [
+        "content"
+      ]
+    },
+    "ListShippingGuideQuerySchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "example": "1"
+        },
+        "guideNumber": {
+          "type": "string",
+          "example": "PAK34313"
+        },
+        "status": {
+          "type": "number",
+          "example": 2
+        },
+        "vendorNumber": {
+          "type": "number",
+          "example": 3458897
+        },
+        "originId": {
+          "type": "number",
+          "example": 2
+        },
+        "destinationId": {
+          "type": "number",
+          "example": 5
+        },
+        "deliveryType": {
+          "type": "number",
+          "example": 5
+        },
+        "isStatusUpdated": {
+          "type": "boolean",
+          "example": true
+        },
+        "from": {
+          "type": "string",
+          "format": "date",
+          "example": "2025-12-23"
+        },
+        "to": {
+          "type": "string",
+          "format": "date",
+          "example": "2025-12-26"
+        },
+        "pageNumber": {
+          "type": "number",
+          "example": 1
+        },
+        "pageSize": {
+          "type": "number",
+          "example": 10
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "isStatusUpdated",
+        "pageNumber",
+        "pageSize"
+      ]
+    },
+    "ShippginGuideSummaryListSchema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "data"
+      ]
+    },
+    "FinanzasPayment": {
+      "type": "object",
+      "properties": {
+        "finanzasPaymentUuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "company": {
+          "type": "integer",
+          "example": 10
+        },
+        "documentNumber": {
+          "type": "string",
+          "example": "FAC-1001"
+        },
+        "documentReference": {
+          "type": "string",
+          "example": "REF-1001"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "example": 12345
+        },
+        "amount": {
+          "type": "string",
+          "example": "1500.00"
+        },
+        "currency": {
+          "type": "string",
+          "example": "MXN"
+        },
+        "documentType": {
+          "type": "string",
+          "example": "FAC"
+        },
+        "sapDocument": {
+          "type": "string",
+          "example": "490001"
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date",
+          "example": "2026-02-27"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        },
+        "paymentHeaderUuid": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        },
+        "createdBy": {
+          "type": "integer",
+          "nullable": true,
+          "example": 1001
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "example": null
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        }
+      },
+      "required": [
+        "finanzasPaymentUuid",
+        "company",
+        "documentNumber",
+        "documentReference",
+        "vendorNumber",
+        "amount",
+        "currency",
+        "documentType",
+        "sapDocument",
+        "paymentDate",
+        "status",
+        "createdAt"
+      ]
+    },
+    "FinanzasPaymentHeader": {
+      "type": "object",
+      "properties": {
+        "paymentHeaderUuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "company": {
+          "type": "integer",
+          "example": 10
+        },
+        "anio": {
+          "type": "integer",
+          "example": 2026
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "example": 12345
+        },
+        "currency": {
+          "type": "string",
+          "example": "MXN"
+        },
+        "totalAmount": {
+          "type": "string",
+          "example": "2000.00"
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date",
+          "example": "2026-02-27"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        },
+        "createdBy": {
+          "type": "integer",
+          "nullable": true,
+          "example": 1001
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "type": "integer",
+          "nullable": true,
+          "example": null
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        }
+      },
+      "required": [
+        "paymentHeaderUuid",
+        "company",
+        "anio",
+        "vendorNumber",
+        "currency",
+        "totalAmount",
+        "paymentDate",
+        "status",
+        "createdAt"
+      ]
+    },
+    "CreateFinanzasPaymentDto": {
+      "type": "object",
+      "properties": {
+        "company": {
+          "type": "integer",
+          "example": 10
+        },
+        "documentNumber": {
+          "type": "string",
+          "example": "FAC-1001"
+        },
+        "documentReference": {
+          "type": "string",
+          "example": "REF-1001"
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "example": 12345
+        },
+        "amount": {
+          "type": "string",
+          "example": "1500.00"
+        },
+        "documentType": {
+          "type": "string",
+          "example": "FAC"
+        },
+        "sapDocument": {
+          "type": "string",
+          "example": "490001"
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date",
+          "example": "2026-02-27"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        },
+        "paymentHeaderUuid": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        }
+      },
+      "required": [
+        "company",
+        "documentNumber",
+        "documentReference",
+        "vendorNumber",
+        "amount",
+        "documentType",
+        "sapDocument",
+        "paymentDate",
+        "status"
+      ]
+    },
+    "UpdateFinanzasPaymentDto": {
+      "type": "object",
+      "properties": {
+        "vendorNumber": {
+          "type": "integer",
+          "example": 12345
+        },
+        "documentNumber": {
+          "type": "string",
+          "example": "FAC-1001"
+        },
+        "sapDocument": {
+          "type": "string",
+          "example": "490001"
+        },
+        "documentType": {
+          "type": "string",
+          "example": "FAC"
+        },
+        "status": {
+          "type": "integer",
+          "example": 2
+        }
+      },
+      "required": [
+        "vendorNumber",
+        "documentNumber",
+        "sapDocument",
+        "documentType",
+        "status"
+      ]
+    },
+    "CreateFinanzasPaymentDetailItemDto": {
+      "type": "object",
+      "properties": {
+        "documentNumber": {
+          "type": "string",
+          "example": "FAC-1001"
+        },
+        "documentReference": {
+          "type": "string",
+          "example": "REF-1001"
+        },
+        "amount": {
+          "type": "string",
+          "example": "1500.00"
+        },
+        "documentType": {
+          "type": "string",
+          "example": "FAC"
+        },
+        "sapDocument": {
+          "type": "string",
+          "example": "490001"
+        },
+        "paymentLineType": {
+          "type": "string",
+          "enum": [
+            "INCOME",
+            "CREDIT_NOTE"
+          ],
+          "example": "INCOME"
+        }
+      },
+      "required": [
+        "documentNumber",
+        "documentReference",
+        "amount",
+        "documentType",
+        "sapDocument",
+        "paymentLineType"
+      ]
+    },
+    "CreateFinanzasPaymentHeaderWithDetailsDto": {
+      "type": "object",
+      "properties": {
+        "company": {
+          "type": "integer",
+          "example": 10
+        },
+        "anio": {
+          "type": "integer",
+          "example": 2026
+        },
+        "vendorNumber": {
+          "type": "integer",
+          "example": 12345
+        },
+        "currency": {
+          "type": "string",
+          "example": "MXN"
+        },
+        "totalAmount": {
+          "type": "string",
+          "example": "2000.00"
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date",
+          "example": "2026-02-27"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        },
+        "createdBy": {
+          "type": "integer",
+          "nullable": true,
+          "example": 1001
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CreateFinanzasPaymentDetailItemDto"
+          }
+        }
+      },
+      "required": [
+        "company",
+        "anio",
+        "vendorNumber",
+        "currency",
+        "totalAmount",
+        "paymentDate",
+        "status",
+        "details"
+      ]
+    },
+    "FinanzasPaymentHeaderWithDetailsResponse": {
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/components/schemas/FinanzasPaymentHeader"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/FinanzasPayment"
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "paymentHeaderUuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "totalDetails": {
+              "type": "integer",
+              "example": 2
+            },
+            "headerTotal": {
+              "type": "string",
+              "example": "2000.00"
+            },
+            "expectedTotal": {
+              "type": "string",
+              "example": "2000.00"
+            }
+          }
+        }
+      }
+    },
+    "FinanzasPaymentHeaderGetWithDetailsResponse": {
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/components/schemas/FinanzasPaymentHeader"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/FinanzasPayment"
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "paymentHeaderUuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "totalDetails": {
+              "type": "integer",
+              "example": 2
+            },
+            "totalAmountHeader": {
+              "type": "string",
+              "example": "2000.00"
+            },
+            "totalAmountDetail": {
+              "type": "string",
+              "example": "2000.00"
+            },
+            "amountsMatch": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        }
+      }
+    },
+    "FinanzasPaymentHeaderGetWithDetailsPaginatedResponse": {
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/components/schemas/FinanzasPaymentHeader"
+        },
+        "detailsPage": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FinanzasPayment"
+              }
+            },
+            "totalElements": {
+              "type": "integer",
+              "example": 25
+            },
+            "numberOfElements": {
+              "type": "integer",
+              "example": 10
+            },
+            "totalPages": {
+              "type": "integer",
+              "example": 3
+            },
+            "pageNumber": {
+              "type": "integer",
+              "example": 1
+            },
+            "pageSize": {
+              "type": "integer",
+              "example": 10
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "paymentHeaderUuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "totalAmountHeader": {
+              "type": "string",
+              "example": "2000.00"
+            }
+          }
         }
       }
     },
@@ -882,6 +3029,534 @@
           "type": "integer"
         }
       }
+    },
+    "CreatePurchaseOrderDto": {
+      "type": "object",
+      "properties": {
+        "supplierNumber": {
+          "type": "number",
+          "example": 123.45
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "order123"
+        },
+        "amount": {
+          "type": "string",
+          "example": "10.34"
+        },
+        "purchaseOrderDate": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "status": {
+          "type": "number",
+          "example": 1
+        },
+        "createdBy": {
+          "type": "number",
+          "example": 1
+        },
+        "receptionList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CreateReceiptionSchema"
+          }
+        },
+        "guideNumber": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "REC001",
+            "REC002",
+            "REC003"
+          ],
+          "nullable": true,
+          "description": "Aplica Obligatorio para CartaPorte"
+        },
+        "shippingGuideList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CreateShippingGuideSchema"
+          },
+          "nullable": true,
+          "description": "Aplica Obligatorio para CartaPorte"
+        },
+        "origen": {
+          "type": "string",
+          "example": "1"
+        }
+      },
+      "required": [
+        "supplierNumber",
+        "orderNumber",
+        "amount",
+        "purchaseOrderDate",
+        "status",
+        "createdBy",
+        "receptionList"
+      ]
+    },
+    "CreateReceiptionSchema": {
+      "type": "object",
+      "properties": {
+        "receptionNumber": {
+          "type": "string",
+          "example": "rec001"
+        },
+        "originId": {
+          "type": "number",
+          "example": 1
+        },
+        "origin": {
+          "type": "string",
+          "example": "SLI"
+        },
+        "destinationId": {
+          "type": "number",
+          "example": "1"
+        },
+        "amount": {
+          "type": "string",
+          "example": "10.34"
+        },
+        "comments": {
+          "type": "string",
+          "example": "comentarios extras"
+        },
+        "guideNumber": {
+          "type": "string",
+          "example": "245243V424R245"
+        },
+        "receptionDate": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "status": {
+          "type": "number",
+          "example": "1"
+        },
+        "createdBy": {
+          "type": "number",
+          "example": "1"
+        },
+        "receiptSkuList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CreateReceiptionSkuSchema"
+          },
+          "description": "Lista de Skus de las recepciones"
+        }
+      },
+      "required": [
+        "receptionNumber",
+        "origin",
+        "destinationId",
+        "amount",
+        "comments",
+        "guideNumber",
+        "receptionDate",
+        "status",
+        "createdBy",
+        "receiptSkuList"
+      ]
+    },
+    "CreateReceiptionSkuSchema": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string",
+          "example": "V01"
+        },
+        "description": {
+          "type": "string",
+          "example": "Descripcion del SKU"
+        },
+        "quantity": {
+          "type": "number",
+          "example": 2
+        },
+        "unitCost": {
+          "type": "string",
+          "example": "10.1"
+        },
+        "totalCost": {
+          "type": "string",
+          "example": "20.2"
+        },
+        "status": {
+          "type": "number",
+          "example": 2
+        },
+        "createdBy": {
+          "type": "number",
+          "example": 3
+        }
+      },
+      "required": [
+        "sku",
+        "description",
+        "quantity",
+        "unitCost",
+        "totalCost",
+        "status",
+        "createdBy"
+      ]
+    },
+    "CreateShippingGuideSchema": {
+      "type": "object",
+      "properties": {
+        "guideNumber": {
+          "type": "string",
+          "example": "adfeREUPI"
+        },
+        "vendorNumber": {
+          "type": "number",
+          "example": 22876
+        },
+        "truckPlate": {
+          "type": "string",
+          "example": "pack345"
+        },
+        "trailerPlate": {
+          "type": "string",
+          "example": "TrailerPlate",
+          "nullable": true
+        },
+        "driverName": {
+          "type": "string",
+          "example": "Nombre Apellido",
+          "nullable": true
+        },
+        "driverLicense": {
+          "type": "string",
+          "example": "LIC21",
+          "nullable": true
+        },
+        "originId": {
+          "type": "number",
+          "example": 1
+        },
+        "destinationId": {
+          "type": "number",
+          "example": 2,
+          "nullable": true
+        },
+        "deliveryType": {
+          "type": "number",
+          "example": 2
+        },
+        "status": {
+          "type": "number",
+          "example": 2
+        },
+        "comments": {
+          "type": "string",
+          "example": "comentarios extras",
+          "nullable": true
+        },
+        "deliveryDate": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "shippingDate": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "estimatedArrival": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "actualArrival": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "createdBy": {
+          "type": "number",
+          "example": 2
+        },
+        "shipingGuideDocumentList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CreateShipingGuideDocumentSchema"
+          },
+          "description": "Lista de Skus de las recepciones"
+        }
+      },
+      "required": [
+        "guideNumber",
+        "vendorNumber",
+        "truckPlate",
+        "originId",
+        "deliveryType",
+        "status",
+        "deliveryDate",
+        "shipingGuideDocumentList"
+      ]
+    },
+    "CreateShipingGuideDocumentSchema": {
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string",
+          "example": "filename.ext"
+        },
+        "fileType": {
+          "type": "number",
+          "example": 1
+        },
+        "status": {
+          "type": "number",
+          "example": 2
+        }
+      },
+      "required": [
+        "fileName",
+        "fileType",
+        "status"
+      ]
+    },
+    "ListPurchaseOrderQuerySchema": {
+      "type": "object",
+      "properties": {
+        "purchaseOrderDateAtInitial": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "purchaseOrderDateAtEnd": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "purchaseOrderId": {
+          "type": "string",
+          "example": "PO1",
+          "nullable": true
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "4576",
+          "nullable": true
+        },
+        "originId": {
+          "type": "number",
+          "example": 1,
+          "nullable": true
+        },
+        "supplierNumber": {
+          "type": "number",
+          "example": 23498,
+          "nullable": true
+        },
+        "pageNumber": {
+          "type": "string",
+          "example": "1"
+        },
+        "pageSize": {
+          "type": "string",
+          "example": "10"
+        },
+        "status": {
+          "type": "number",
+          "example": 1,
+          "nullable": true
+        }
+      },
+      "required": [
+        "purchaseOrderDateAtInitial",
+        "purchaseOrderDateAtEnd",
+        "pageNumber",
+        "pageSize"
+      ]
+    },
+    "ListReceptionQuerySchema": {
+      "type": "object",
+      "properties": {
+        "receptionDateAtInitial": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "receptionDateAtEnd": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000"
+        },
+        "createdAtInitial": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000",
+          "nullable": true
+        },
+        "createdAtEnd": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-02-21 22:10:00.000",
+          "nullable": true
+        },
+        "supplierNumber": {
+          "type": "number",
+          "example": 23498,
+          "nullable": true
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "1",
+          "nullable": true
+        },
+        "receptionId": {
+          "type": "string",
+          "example": "1",
+          "nullable": true
+        },
+        "pageNumber": {
+          "type": "string",
+          "example": "1"
+        },
+        "pageSize": {
+          "type": "string",
+          "example": "10"
+        },
+        "status": {
+          "type": "number",
+          "example": 1,
+          "nullable": true
+        }
+      },
+      "required": [
+        "receptionDateAtInitial",
+        "receptionDateAtEnd",
+        "pageNumber",
+        "pageSize"
+      ]
+    },
+    "UpdateStatusReceptionSchema": {
+      "type": "object",
+      "properties": {
+        "supplierNumber": {
+          "type": "number",
+          "example": 23498
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "1"
+        },
+        "receptionNumber": {
+          "type": "string",
+          "example": "1"
+        },
+        "uuid": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "example": "209279be-37c7-4154-b3c6-df976fd7b6a",
+          "nullable": true
+        },
+        "comments": {
+          "type": "string",
+          "example": "Comentarios extras"
+        },
+        "status": {
+          "type": "number",
+          "example": 1
+        }
+      },
+      "required": [
+        "supplierNumber",
+        "orderNumber",
+        "receptionNumber",
+        "status",
+        "comments"
+      ]
+    },
+    "ResponseHandlerDTO": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "example": {
+            "test": "rewee"
+          }
+        },
+        "message": {
+          "type": "string",
+          "example": "Mensaje de respuesta"
+        },
+        "errorCode": {
+          "type": "number",
+          "example": -1
+        },
+        "code": {
+          "type": "string",
+          "example": "ERR01"
+        },
+        "httpStatus": {
+          "type": "number",
+          "example": 200
+        },
+        "success": {
+          "type": "boolean",
+          "example": true
+        },
+        "detailError": {
+          "type": "object",
+          "additionalProperties": true,
+          "example": {
+            "detailError": "rewee"
+          }
+        },
+        "timeStamp": {
+          "type": "number",
+          "example": 4524535243523243
+        }
+      }
+    },
+    "ReceptionDTO": {
+      "type": "object",
+      "properties": {
+        "supplierNumber": {
+          "type": "number",
+          "example": 76345
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "on345"
+        },
+        "receptionId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
+        },
+        "status": {
+          "type": "number",
+          "example": 3
+        }
+      },
+      "required": [
+        "supplierNumber",
+        "orderNumber",
+        "receptionId",
+        "status"
+      ]
     },
     "Rebate": {
       "type": "object",
@@ -1610,6 +4285,273 @@
           "type": "integer"
         }
       }
+    },
+    "ThreeWayMatch": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "numeroProveedor": {
+          "type": "string"
+        },
+        "ordenCompra": {
+          "type": "string"
+        },
+        "fechaOrdenCompra": {
+          "type": "string",
+          "format": "date"
+        },
+        "montoOrdenCompra": {
+          "type": "number"
+        },
+        "recepcion": {
+          "type": "string"
+        },
+        "fechaRecepcion": {
+          "type": "string",
+          "format": "date"
+        },
+        "montoRecepcion": {
+          "type": "number"
+        },
+        "serie": {
+          "type": "string"
+        },
+        "folio": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "fechaTimbrado": {
+          "type": "string",
+          "format": "date"
+        },
+        "montoFactura": {
+          "type": "number"
+        },
+        "numeroNotaCredito": {
+          "type": "string"
+        },
+        "montoNotaCredito": {
+          "type": "number"
+        },
+        "documentoSap": {
+          "type": "string"
+        },
+        "fechaContable": {
+          "type": "string",
+          "format": "date"
+        },
+        "montoContable": {
+          "type": "number"
+        },
+        "referenciaPago": {
+          "type": "string"
+        },
+        "fechaPago": {
+          "type": "string",
+          "format": "date"
+        },
+        "montoPago": {
+          "type": "number"
+        },
+        "estatus": {
+          "type": "integer"
+        }
+      }
+    },
+    "RunThreeWayMatchBody": {
+      "type": "object",
+      "properties": {
+        "fechaBase": {
+          "type": "string",
+          "format": "date"
+        },
+        "intento": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "example": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunThreeWayMatchResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "example": true
+        },
+        "message": {
+          "type": "string",
+          "example": "ThreeWayMatch executed"
+        },
+        "fechaBase": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "intento": {
+          "type": "integer",
+          "example": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateTransactionIdDto": {
+      "type": "object",
+      "properties": {
+        "codigoModulo": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 4,
+          "example": "PROV",
+          "description": "Código del módulo o microservicio origen en mayúsculas."
+        },
+        "pantallaOrigen": {
+          "type": "string",
+          "maxLength": 100,
+          "example": "ALTA_PROVEEDOR",
+          "description": "Pantalla o submódulo que origina la acción."
+        },
+        "caso": {
+          "type": "string",
+          "maxLength": 200,
+          "example": "GUARDAR_PROVEEDOR",
+          "description": "Caso o flujo ejecutado por el usuario."
+        },
+        "metadatos": {
+          "type": "object",
+          "additionalProperties": true,
+          "example": {
+            "rfc": "ABC010203XYZ",
+            "proveedorId": 1001
+          },
+          "description": "Información adicional libre asociada a la transacción."
+        },
+        "idUsuario": {
+          "type": "string",
+          "example": "12345",
+          "description": "Usuario autenticado que ejecuta la acción."
+        },
+        "origen": {
+          "type": "string",
+          "example": "portal-proveedores",
+          "description": "Sistema o microservicio que genera la solicitud."
+        }
+      },
+      "required": [
+        "codigoModulo",
+        "pantallaOrigen",
+        "caso"
+      ]
+    },
+    "TransactionIdResponse": {
+      "type": "object",
+      "properties": {
+        "folioVisible": {
+          "type": "string",
+          "example": "PROV-0000A3KF",
+          "description": "Folio visible corto y legible para el usuario."
+        },
+        "uuidInterno": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000",
+          "description": "Identificador técnico interno."
+        },
+        "fechaHora": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-03-18T20:30:45.000Z"
+        },
+        "codigoModulo": {
+          "type": "string",
+          "example": "PROV"
+        },
+        "pantallaOrigen": {
+          "type": "string",
+          "example": "ALTA_PROVEEDOR"
+        },
+        "caso": {
+          "type": "string",
+          "example": "GUARDAR_PROVEEDOR"
+        },
+        "idUsuario": {
+          "type": "string",
+          "example": "12345"
+        },
+        "origen": {
+          "type": "string",
+          "example": "portal-proveedores"
+        },
+        "estatus": {
+          "type": "string",
+          "example": "GENERATED"
+        },
+        "metadatos": {
+          "type": "object",
+          "additionalProperties": true,
+          "example": {
+            "rfc": "ABC010203XYZ",
+            "proveedorId": 1001
+          }
+        }
+      },
+      "required": [
+        "folioVisible",
+        "uuidInterno",
+        "fechaHora",
+        "codigoModulo",
+        "pantallaOrigen",
+        "caso",
+        "idUsuario",
+        "origen",
+        "estatus"
+      ]
+    },
+    "TransactionIdApiResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Transaction ID generated successfully"
+        },
+        "data": {
+          "$ref": "#/components/schemas/TransactionIdResponse"
+        },
+        "count": {
+          "type": "integer",
+          "example": 0
+        },
+        "statusCode": {
+          "type": "integer",
+          "example": 201
+        },
+        "success": {
+          "type": "boolean",
+          "example": true
+        },
+        "details": {
+          "type": "string",
+          "example": ""
+        },
+        "trace_id": {
+          "type": "string",
+          "format": "uuid",
+          "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
+        }
+      },
+      "required": [
+        "message",
+        "data",
+        "count",
+        "statusCode",
+        "success",
+        "details"
+      ]
     },
     "VendorBlock": {
       "type": "object",

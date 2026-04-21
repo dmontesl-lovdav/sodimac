@@ -1,0 +1,71 @@
+ShippingGuideDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    guideNumber:
+      type: string
+      description: Shipping guide number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    shipmentDate:
+      type: string
+      format: date-time
+      description: Shipment date
+    deliveryDate:
+      type: string
+      format: date-time
+      description: Expected delivery date
+    origin:
+      type: string
+      description: Origin location
+    destination:
+      type: string
+      description: Destination location
+    status:
+      type: integer
+      description: Shipping status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateShippingGuideDto:
+  type: object
+  required:
+    - guideNumber
+    - vendorNumber
+    - shipmentDate
+  properties:
+    guideNumber:
+      type: string
+    vendorNumber:
+      type: integer
+    shipmentDate:
+      type: string
+      format: date-time
+    deliveryDate:
+      type: string
+      format: date-time
+    origin:
+      type: string
+    destination:
+      type: string
+    status:
+      type: integer
+
+UpdateShippingGuideDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    deliveryDate:
+      type: string
+      format: date-time
+    destination:
+      type: string

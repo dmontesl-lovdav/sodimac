@@ -6,6 +6,7 @@
     "target": "ES2022",
     "moduleResolution": "NodeNext",
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
     "baseUrl": "./src",
     "paths": {
       "@/*": [
@@ -66,7 +67,7 @@
     "dist",
     "**/*.test.ts",
     "**/__tests__/**",
-    "jest.config.ts",
+    "jest.config.cjs",
     "jest.config.js",
     "eslint.config.js",
     "nodemon.json"

@@ -1,46 +1,107 @@
-import { ApiClient } from "@/services/ApiClient";
-import { ShippingGuide, ShippingGuideDetail, ShippingGuideFilter, ShippingGuideStatusHistory } from "../interfaces";
+// ✅ FILE: src/features/shipping-guides/api/ShippingGuideClient.ts
+import { createApiClient } from "@/services/ApiClient";
+import {
+    ShippingGuide,
+    ShippingGuideDetail,
+    ShippingGuideFilter,
+    ShippingGuideStatusHistory
+} from "../interfaces";
 
-export class ShippingGuideClient extends ApiClient {
+const api = createApiClient();
+const ROUTE = "shipping-guide";
 
-    private DEFAULT_ROUTE = "api/shipping-guide";
+// Esto evita enviar variables vacías, nulas o mal formadas que suelen causar el Error 500.
+function toQuery(params: any = {}) {
+    const sp = new URLSearchParams();
 
-    public constructor() {
-        super();
-    }
+    Object.entries(params).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === "") return;
 
-    public async get(filter: ShippingGuideFilter, binary?: boolean): Promise<ShippingGuide[]> {
-        const params: URLSearchParams = new URLSearchParams();
-        filter.guideNumber && params.set("guideNumber", filter.guideNumber);
-        filter.vendorNumber && params.set("vendorNumber", filter.vendorNumber);
-        filter.vendorNumber && params.set("supplierNumber", filter.vendorNumber); // alias
-        filter.sourceId && params.set("sourceId", filter.sourceId);
-        filter.sourceId && params.set("origin", filter.sourceId); // alias
-        filter.truckPlate && params.set("truckPlate", filter.truckPlate);
-        filter.truckPlate && params.set("plate", filter.truckPlate); // alias
-        filter.trailerPlate && params.set("trailerPlate", filter.trailerPlate);
-        filter.from && params.set("from", filter.from);
-        filter.to && params.set("to", filter.to);
-        filter.deliveryType && params.set("deliveryType", filter.deliveryType);
+        if (Array.isArray(v)) {
+            v.forEach((item) => {
+                if (item === undefined || item === null || item === "") return;
+                sp.append(k, String(item));
+            });
+            return;
+        }
 
-        return binary
-            ? this.executeBinary(`${this.DEFAULT_ROUTE}/csv?${params.toString()}`, "get", filter, undefined, "report.csv") as unknown as Promise<ShippingGuide[]>
-            : this.execute<ShippingGuide[]>(`${this.DEFAULT_ROUTE}?${params.toString()}`, "get", filter);
-    };
+        sp.append(k, String(v));
+    });
 
-    public async getDetail(shippingGuideId: string): Promise<ShippingGuideDetail> {
-        return this.execute<ShippingGuideDetail>(`${this.DEFAULT_ROUTE}/${shippingGuideId}`, "get");
-    }
+    return sp.toString();
+}
 
-    public async cancel(payload: {
+export const shippingGuideService = {
+    async get(
+        filter: ShippingGuideFilter,
+        binary?: boolean
+    ): Promise<ShippingGuide[]> {
+        // Construimos un objeto limpio con los parámetros
+        const params: any = {};
+
+        if (filter.guideNumber) params.guideNumber = filter.guideNumber;
+
+        // Mapeo doble (mantenido de tu código original por si el backend pide ambos)
+        if (filter.vendorNumber) {
+            params.vendorNumber = filter.vendorNumber;
+            params.supplierNumber = filter.vendorNumber;
+        }
+        if (filter.sourceId) {
+            params.sourceId = filter.sourceId;
+            params.origin = filter.sourceId;
+        }
+        if (filter.truckPlate) {
+            params.truckPlate = filter.truckPlate;
+            params.plate = filter.truckPlate;
+        }
+
+        if (filter.trailerPlate) params.trailerPlate = filter.trailerPlate;
+        if (filter.deliveryType) params.deliveryType = filter.deliveryType;
+
+        // ✅ Formateo robusto de fechas al estilo audit-logs
+        if (filter.from) params.from = new Date(filter.from).toISOString();
+        if (filter.to) params.to = new Date(filter.to).toISOString();
+
+        // Convertimos el objeto en un query string válido
+        const query = toQuery(params);
+        const queryString = query ? `?${query}` : "";
+
+        if (binary) {
+            await api.requestBinary(
+                `${ROUTE}/csv${queryString}`,
+                "get"
+            );
+            return [];
+        }
+
+        return api.request<ShippingGuide[]>(
+            `${ROUTE}${queryString}`,
+            "get"
+        );
+    },
+
+    async getDetail(
+        shippingGuideId: string
+    ): Promise<ShippingGuideDetail> {
+        return api.request<ShippingGuideDetail>(
+            `${ROUTE}/${shippingGuideId}`,
+            "get"
+        );
+    },
+
+    async cancel(payload: {
         shippingGuideIds: string[];
         reasonId: number;
         comment: string;
     }): Promise<void> {
-        return this.execute<void>(`${this.DEFAULT_ROUTE}/cancel`, "post", payload);
-    }
+        return api.request<void>(
+            `${ROUTE}/cancel`,
+            "post",
+            payload
+        );
+    },
 
-    public async updateStatus(payload: {
+    async updateStatus(payload: {
         shippingGuideId: string;
         targetStatus: number;
         reasonId: number;
@@ -49,10 +110,19 @@ export class ShippingGuideClient extends ApiClient {
         uuid?: string;
         comment: string;
     }): Promise<void> {
-        return this.execute<void>(`${this.DEFAULT_ROUTE}/status`, "post", payload);
-    }
+        return api.request<void>(
+            `${ROUTE}/status`,
+            "post",
+            payload
+        );
+    },
 
-    public async getStatusHistory(shippingGuideId: string): Promise<ShippingGuideStatusHistory[]> {
-        return this.execute<ShippingGuideStatusHistory[]>(`${this.DEFAULT_ROUTE}/${shippingGuideId}/status-history`, "get");
+    async getStatusHistory(
+        shippingGuideId: string
+    ): Promise<ShippingGuideStatusHistory[]> {
+        return api.request<ShippingGuideStatusHistory[]>(
+            `${ROUTE}/${shippingGuideId}/status-history`,
+            "get"
+        );
     }
-}
+};

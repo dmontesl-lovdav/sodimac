@@ -1,93 +1,119 @@
-// src/features/.../apiClient.ts
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { localHomeStore } from '../store/localStore';
+// src/services/ApiClient.ts
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { localHomeStore } from "../store/localStore";
 
-type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+export type TokenProvider = string | (() => string | null | undefined);
 
-export abstract class ApiClient {
-    private defaultToken?: string;
-    private axios: AxiosInstance;
-    private baseUrl: string;
+export type ApiClient = {
+    request: <T = any>(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        extra?: AxiosRequestConfig
+    ) => Promise<T>;
+    requestBinary: (
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        filename?: string
+    ) => Promise<void>;
+};
 
-    protected constructor(baseUrl = process.env.API_BASE_URL || "") {
-        this.defaultToken = process.env.AUTH_DEFAULT_TOKEN && process.env.AUTH_DEFAULT_TOKEN.trim() !== ''
-            ? process.env.AUTH_DEFAULT_TOKEN
-            : undefined;
-        this.baseUrl = baseUrl.replace(/\/+$/, '');
-        this.axios = axios.create();
+export function createApiClient(options?: {
+    baseUrl?: string;
+    tokenProvider?: TokenProvider;
+    timeoutMs?: number;
+}): ApiClient {
+    const baseUrl =
+        options?.baseUrl ??
+        process.env.API_BASE_URL ??
+        "";
+
+    const timeoutMs = options?.timeoutMs ?? 15000;
+
+    const instance: AxiosInstance = axios.create({
+        baseURL: baseUrl.replace(/\/+$/, ""),
+        timeout: timeoutMs,
+    });
+
+    function resolveToken(): string | null {
+        const storeToken =
+            (localHomeStore.getState() as any)?.authentication?.token;
+
+        console.log("🔑 STORE TOKEN:", storeToken);
+        console.log("🔑 AUTH STATE:", localHomeStore.getState()?.authentication);
+
+        if (storeToken?.trim()) return storeToken;
+
+        const envToken =
+            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ||
+            process.env.AUTH_DEFAULT_TOKEN;
+
+        if (envToken?.trim()) {
+            console.warn("⚠️ Using fallback ENV token (dev mode)");
+            return envToken;
+        }
+
+        return null;
     }
 
-    protected resolveToken(): string | null {
-        return this.defaultToken || ((localHomeStore.getState() as any)?.authentication?.token ?? null);
-    }
+    async function request<T = any>(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        extra?: AxiosRequestConfig
+    ): Promise<T> {
+        const token = resolveToken();
+        if (!token) throw new Error("No token");
 
-    protected async execute<T>(path: string, method: HttpMethod, data?: any, options?: AxiosRequestConfig): Promise<T> {
-        const token = this.resolveToken();
-        if (!token) { throw new Error('No token'); }
+        const isFormData =
+            typeof FormData !== "undefined" && data instanceof FormData;
 
         const headers: Record<string, string> = {
             Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
+            Accept: "application/json",
         };
 
-        const res: AxiosResponse<T> = await axios.request({
-            url: `${this.baseUrl}/${path.replace(/^\/+/, '')}`,
+        if (!isFormData && method !== "get") {
+            headers["Content-Type"] = "application/json";
+        }
+
+        const res: AxiosResponse<T> = await instance.request({
+            url: `/${path.replace(/^\/+/, "")}`,
             method,
-            data: data ?? undefined,
+            data: isFormData ? data : data ?? undefined,
             headers,
-            responseType: options?.responseType,
-            ...options,
+            responseType: extra?.responseType,
+            ...extra,
         });
 
         return res.data as T;
     }
 
-    protected async fetchDocument(path: string) {
-        const token = this.resolveToken();
-        
-        if (!token) { throw new Error('No token'); }
-        const response: AxiosResponse = await axios.get(`${this.baseUrl}/${path.replace(/^\/+/, '')}`);
-        return response;
+    async function requestBinary(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        filename?: string
+    ): Promise<void> {
+        const token = resolveToken();
+        if (!token) throw new Error("No token");
 
-    }
-
-    protected async executeRequestBinary(invoice: File, path: string) {
-        const formdata = new FormData();
-        formdata.append("file", invoice);
-
-        const requestOptions = {
-            method: "POST",
-            body: formdata
-        };
-
-        return await fetch(`${this.baseUrl}/${path.replace(/^\/+/, '')}`, requestOptions)
-            .then((response) => response.json())
-            .then((result) => result)
-            .catch((error) => error);
-    }
-
-    protected async executeBinary(path: string, method: HttpMethod, data?: any, options?: AxiosRequestConfig, filename?: string) {
-        const token = this.resolveToken();
-        if (!token) { throw new Error('No token'); }
-
-        const headers: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        };
-
-        const response: AxiosResponse = await axios.request({
-            url: `${this.baseUrl}/${path.replace(/^\/+/, '')}`,
+        const res: AxiosResponse = await instance.request({
+            url: `/${path.replace(/^\/+/, "")}`,
             method,
-            data: data ?? undefined,
-            headers,
+            data,
             responseType: "blob",
-            ...options,
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         });
 
-        const anchor = document.createElement('a');
-        anchor.href = window.URL.createObjectURL(response.data);
+        const blob = new Blob([res.data]);
+
+        const anchor = document.createElement("a");
+        anchor.href = window.URL.createObjectURL(blob);
         anchor.download = filename || "file.bin";
 
         document.body.appendChild(anchor);
@@ -96,4 +122,9 @@ export abstract class ApiClient {
         document.body.removeChild(anchor);
         window.URL.revokeObjectURL(anchor.href);
     }
+
+    return {
+        request,
+        requestBinary,
+    };
 }

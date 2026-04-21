@@ -1,0 +1,50 @@
+StampedRebateDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    rebateId:
+      type: string
+      description: Related rebate ID
+    stampDate:
+      type: string
+      format: date-time
+      description: Stamp date
+    certificateNumber:
+      type: string
+      description: Certificate number
+    status:
+      type: integer
+      description: Status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateStampedRebateDto:
+  type: object
+  required:
+    - rebateId
+    - certificateNumber
+  properties:
+    rebateId:
+      type: string
+    stampDate:
+      type: string
+      format: date-time
+    certificateNumber:
+      type: string
+    status:
+      type: integer
+
+UpdateStampedRebateDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    certificateNumber:
+      type: string

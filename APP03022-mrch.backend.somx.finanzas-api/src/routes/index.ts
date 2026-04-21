@@ -11,12 +11,14 @@ import finanzasPaymentsRouter from "./finanzasPayments.routes.js";
 import purchaseOrderController from "@/controllers/purchaseOrder.controller.js";
 import cartaPorteRouter from "./cartaPorte.routes.js";
 import storageGCPRouter from "./storageGCP.routes.js";
-
+import threeWayMatchRoutes from "./threeWayMatch.routes.js";
+import auditLogRoutes from "./auditLog.routes.js";
+import accountStatementRouter from "./accountStatement.routes.js";
+import migoRouter from "./migo.routes.js";
+import transactionIdRouter from "./transactionId.routes.js";
 
 const router: RouterType = Router();
 
-// monta las rutas con prefijo
-//router.use(contextMiddleware);
 router.use("/accounts-payable", accountsPayableRouter);
 router.use("/fiscal-payments", fiscalPaymentRouter);
 router.use("/rebates", rebateRouter);
@@ -29,5 +31,10 @@ router.use("/purchase-orders", purchaseOrderController);
 router.use("/finanzas-payment", finanzasPaymentsRouter);
 router.use("/carta-porte", cartaPorteRouter);
 router.use("/storage-gcp", storageGCPRouter);
+router.use("/three-way-match", threeWayMatchRoutes);
+router.use("/audit-logs", auditLogRoutes);
+router.use("/account-statement", accountStatementRouter);
+router.use("/migo", migoRouter);
+router.use("/transaction-ids", transactionIdRouter);
 
 export default router;

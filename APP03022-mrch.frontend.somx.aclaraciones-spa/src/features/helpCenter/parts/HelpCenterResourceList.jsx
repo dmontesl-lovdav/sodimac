@@ -20,7 +20,7 @@ export default function HelpCenterResourceList({
             </div>
 
             {loadingRes ? (
-                <div className="hcrl-loading">Cargando preguntas frecuentes…</div>
+                <div className="hcrl-loading">Cargando manuales y tutoriales...</div>
             ) : resources.length === 0 ? (
                 <div className="hcrl-loading">No hay preguntas frecuentes en esta categoría.</div>
             ) : (

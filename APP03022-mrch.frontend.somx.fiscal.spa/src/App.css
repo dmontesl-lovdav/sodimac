@@ -1,0 +1,256 @@
+
+:root {
+    --fiscal-primary: #002d4c;
+    --fiscal-primary-hover: #003865;
+    --fiscal-secondary: #005b96;
+    --fiscal-secondary-hover: #004b7a;
+    --fiscal-white: #ffffff;
+    --fiscal-gray: #6b7280;
+    --fiscal-gray-light: #f3f4f6;
+    --fiscal-gray-border: #e5e7eb;
+    --fiscal-error: #b91c1c;
+    --fiscal-error-bg: #fef2f2;
+    --fiscal-success: #059669;
+    --fiscal-success-bg: #f0fdf4;
+    --fiscal-warning: #b76e00;
+    --fiscal-warning-bg: #fef3c7;
+    --fiscal-info: #0284c7;
+    --fiscal-info-bg: #e0f2fe;
+    --fiscal-grid-cols: 12;
+    --fiscal-gap: 1rem;
+    --fiscal-radius: 6px;
+    --fiscal-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --fiscal-z-modal: 50;
+}
+
+/* Grid */
+.fiscal-row {
+    display: grid;
+    grid-template-columns: repeat(var(--fiscal-grid-cols), minmax(0, 1fr));
+    gap: var(--fiscal-gap);
+}
+
+.fiscal-col-1 { grid-column: span 1; }
+.fiscal-col-2 { grid-column: span 2; }
+.fiscal-col-3 { grid-column: span 3; }
+.fiscal-col-4 { grid-column: span 4; }
+.fiscal-col-5 { grid-column: span 5; }
+.fiscal-col-6 { grid-column: span 6; }
+.fiscal-col-7 { grid-column: span 7; }
+.fiscal-col-8 { grid-column: span 8; }
+.fiscal-col-9 { grid-column: span 9; }
+.fiscal-col-10 { grid-column: span 10; }
+.fiscal-col-11 { grid-column: span 11; }
+.fiscal-col-12 { grid-column: span 12; }
+
+/* Display */
+.fiscal-flex { 
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    flex-direction: row;
+    gap: 15px;
+ }
+.fiscal-flex-row { flex-direction: row; }
+.fiscal-flex-col { flex-direction: column; }
+.fiscal-flex-wrap { flex-wrap: wrap; }
+.fiscal-hidden { display: none; }
+.fiscal-block { display: block; }
+
+.fiscal-items-center { align-items: center; }
+.fiscal-items-end { align-items: flex-end; }
+.fiscal-justify-center { justify-content: center; }
+.fiscal-justify-end { justify-content: flex-end; }
+.fiscal-justify-between { justify-content: space-between; }
+
+.fiscal-gap { gap: var(--fiscal-gap); }
+.fiscal-gap-sm { gap: 0.5rem; }
+.fiscal-gap-lg { gap: 1.5rem; }
+
+.fiscal-w-full { width: 100%; }
+.fiscal-w-auto { width: auto; }
+.fiscal-w-450 { width: 450px; }
+.fiscal-w-650 { width: 650px; }
+
+.fiscal-app {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #fff;
+}
+
+.fiscal-cards-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+  .fiscal-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fiscal-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.fiscal-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.fiscal-container-breadcrumb {
+  width: 100%;
+  padding: 1rem 2rem 0 2rem;
+}
+
+.fiscal-main {
+  width: 100%;
+  background-color: #ffffff;
+  padding: 1.5rem 2rem 3rem 2rem;
+}
+
+.fiscal-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.fiscal-section-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.fiscal-icon-svg {
+  width: 100%;
+  height: 100%;
+  color: #6b7280;
+}
+
+.fiscal-mt-1 { margin-top: 0.25rem; }
+.fiscal-mt-2 { margin-top: 0.5rem; }
+.fiscal-mt-4 { margin-top: 1rem; }
+.fiscal-mb-2 { margin-bottom: 0.5rem; }
+.fiscal-mb-4 { margin-bottom: 1rem; }
+.fiscal-mx-auto { margin-left: auto; margin-right: auto; }
+
+.fiscal-p-4 { padding: 1rem; }
+.fiscal-p-6 { padding: 1.5rem; }
+.fiscal-pt-6 { padding-top: 1.5rem; }
+.fiscal-pb-6 { padding-bottom: 1.5rem; }
+
+/* Backgrounds */
+.fiscal-bg-white { background-color: var(--fiscal-white); }
+.fiscal-bg-gray { background-color: var(--fiscal-gray-light); }
+.fiscal-bg-primary { background-color: var(--fiscal-primary); }
+.fiscal-bg-secondary { background-color: var(--fiscal-secondary); }
+.fiscal-bg-error { background-color: var(--fiscal-error-bg); }
+.fiscal-bg-success { background-color: var(--fiscal-success-bg); }
+
+/* Text */
+.fiscal-text-primary { color: var(--fiscal-primary); }
+.fiscal-text-gray { color: var(--fiscal-gray); }
+.fiscal-text-white { color: var(--fiscal-white); }
+.fiscal-text-error { color: var(--fiscal-error); }
+.fiscal-text-success { color: var(--fiscal-success); }
+.fiscal-text-center { text-align: center; }
+.fiscal-text-right { text-align: right; }
+
+.fiscal-font-medium { font-weight: 500; }
+.fiscal-font-semibold { font-weight: 600; }
+
+/* Border */
+.fiscal-border { border-width: 1px; border-style: solid; }
+.fiscal-border-gray { border-color: var(--fiscal-gray-border); }
+.fiscal-rounded { border-radius: var(--fiscal-radius); }
+
+/* Other */
+.fiscal-cursor-pointer { cursor: pointer; }
+.fiscal-overflow-x-auto { overflow-x: auto; }
+.fiscal-relative { position: relative; }
+.fiscal-z-modal { z-index: var(--fiscal-z-modal); }
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--fiscal-primary);
+}
+
+/* Responsive: filtros al 100%, grid apilado, layout reducido */
+@media (max-width: 768px) {
+  .fiscal-w-450,
+  .fiscal-w-650 {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fiscal-decorator-card .fiscal-flex.fiscal-flex-wrap {
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .fiscal-decorator-card .fiscal-flex.fiscal-flex-wrap > div {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .fiscal-decorator-card .fiscal-flex.fiscal-justify-end.fiscal-mt-2 {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .fiscal-row .fiscal-col-3,
+  .fiscal-row .fiscal-col-4,
+  .fiscal-row .fiscal-col-5,
+  .fiscal-row .fiscal-col-6 {
+    grid-column: span 12;
+  }
+
+  .fiscal-main {
+    padding: 1rem;
+  }
+
+  .fiscal-container-breadcrumb {
+    padding: 1rem 1rem 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fiscal-main {
+    padding: 0.75rem;
+  }
+
+  .fiscal-container-breadcrumb {
+    padding: 0.75rem 0.75rem 0 0.75rem;
+  }
+}

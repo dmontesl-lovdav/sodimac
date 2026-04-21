@@ -1,0 +1,125 @@
+purchase-orders:
+  get:
+    tags:
+      - purchase-orders
+    summary: List purchase orders
+    operationId: listPurchaseOrders
+    produces:
+      - application/json
+    parameters:
+      - name: criteria
+        in: query
+        required: false
+        description: Search criteria
+        type: string
+      - name: dateFrom
+        in: query
+        required: false
+        description: Start date (YYYY-MM-DD)
+        type: string
+        format: date
+      - name: dateTo
+        in: query
+        required: false
+        description: End date (YYYY-MM-DD)
+        type: string
+        format: date
+      - name: status
+        in: query
+        required: false
+        description: Status filter
+        type: integer
+    responses:
+      "200":
+        description: List of purchase orders with receipts
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/purchase-orders.yaml#/PurchaseOrderDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+purchase-orders-by-uuid:
+  get:
+    tags:
+      - purchase-orders
+    summary: Get purchase order by ID
+    operationId: getPurchaseOrderById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Purchase order UUID
+        type: string
+    responses:
+      "200":
+        description: Purchase order with receipts
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/PurchaseOrderDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  patch:
+    tags:
+      - purchase-orders
+    summary: Update purchase order (status only)
+    operationId: updatePurchaseOrderStatus
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Purchase order UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/UpdatePurchaseOrderDto"
+    responses:
+      "200":
+        description: Updated purchase order
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/PurchaseOrderDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

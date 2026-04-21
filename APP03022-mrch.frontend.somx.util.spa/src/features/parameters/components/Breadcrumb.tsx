@@ -1,33 +1,15 @@
-import type { FC } from 'react';
+import { FC } from 'react';
+import SharedBreadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 
 interface BreadcrumbProps {
   items: string[];
 }
 
 export const Breadcrumb: FC<BreadcrumbProps> = ({ items }) => {
-  return (
-    <nav
-      aria-label="breadcrumb"
-      className="fbc-breadcrumb"
-    >
-      <ol className="fbc-breadcrumb__list">
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
+  const breadcrumbItems = items.map((label, index) => ({
+    label,
+    to: index === 0 ? '/' : undefined,
+  }));
 
-          return (
-            <li
-              key={item}
-              className={`fbc-breadcrumb__item${
-                isLast ? ' fbc-breadcrumb__item--current' : ''
-              }`}
-              aria-current={isLast ? 'page' : undefined}
-            >
-              {item}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
+  return <SharedBreadcrumb items={breadcrumbItems} />;
 };
-

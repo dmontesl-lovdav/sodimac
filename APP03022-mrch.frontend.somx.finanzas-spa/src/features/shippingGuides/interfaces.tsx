@@ -8,15 +8,37 @@ export const ReceiptTypeOptions = [
 ];
 
 export interface ShippingGuideFilter {
-    id?: string,
+    id?: string;
     guideNumber?: string;
     vendorNumber?: string;
-    sourceId?: string,
+    sourceId?: string;
     truckPlate?: string;
     trailerPlate?: string;
-    deliveryType?: string,
-    from?: string,
-    to?: string,
+    deliveryType?: string;
+    from?: string;
+    to?: string;
+}
+
+export interface ShippingGuideCatalogItem {
+    key: string;
+    value: string;
+    color: string;
+    externalKey: string;
+    internalStatus: number;
+    description: string;
+}
+
+export interface ShippingGuideSupplierType {
+    id: number;
+    code: string;
+    description: string;
+}
+
+export interface ShippingGuideSupplier {
+    supplierNumber: number;
+    rfc: string;
+    businessName: string;
+    supplierType: ShippingGuideSupplierType;
 }
 
 export interface ShippingGuide {
@@ -27,10 +49,10 @@ export interface ShippingGuide {
     truckPlate: string;
     trailerPlate?: string | null;
 
-    sourceId: number;
-    deliveryType: number;
+    originId: number;
+    deliveryType: ShippingGuideCatalogItem;
 
-    status: number;
+    status: ShippingGuideCatalogItem;
     comments?: string | null;
 
     deliveryDate: string;
@@ -39,6 +61,15 @@ export interface ShippingGuide {
     createdAt: string;
     updatedBy?: string | null;
     updatedAt?: string | null;
+    isStatusUpdated?: boolean;
+
+    supplier?: ShippingGuideSupplier;
+    tipoProveedor?: ShippingGuideSupplierType;
+    OrigenCartaPorte?: ShippingGuideCatalogItem;
+    orderNumber?: string | null;
+
+    // compatibilidad temporal por si alguna vista vieja aún usa esto
+    sourceId?: number;
 }
 
 export interface ShippingGuideDetail {

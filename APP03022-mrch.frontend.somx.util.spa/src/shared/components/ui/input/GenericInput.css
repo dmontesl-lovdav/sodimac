@@ -1,0 +1,80 @@
+
+.generic-input-container {
+    position: relative;
+    width: 100%;
+}
+
+.generic-input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid #d1d5db;
+    padding: 16px 16px 8px 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.generic-input:focus {
+    border-color: #0369a1;
+}
+
+.generic-input.error {
+    border-color: #e11d48 !important;
+}
+
+.generic-input:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.generic-input-label {
+    position: absolute;
+    left: 16px;
+    pointer-events: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: #64748b;
+}
+
+.generic-input-label.resting {
+    top: 15px;
+    font-size: 0.875rem;
+}
+
+.generic-input-label.floating {
+    top: -2px;
+    font-size: 0.75rem;
+}
+
+.generic-input-label.focused {
+    color: #0369a1;
+}
+
+.generic-input-label.error {
+    color: #e11d48;
+}
+
+.generic-input-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.generic-input-helper {
+    color: #6b7280;
+}
+
+.generic-input-helper.error {
+    color: #e11d48;
+}
+
+.generic-input-counter {
+    color: #6b7280;
+}
+
+.generic-input-counter.error {
+    color: #e11d48;
+}

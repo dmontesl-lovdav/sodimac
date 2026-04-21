@@ -49,6 +49,7 @@ export interface ApiClient {
     postSla(sla: Sla): Promise<number>;
     getSla(id: number): Promise<Sla>;
     getSlas(): Promise<Sla[]>;
+    getSlaResponseTimeByModule(moduleId: number): Promise<string>;
 
     // Catalogs
     getCatalog(type: number, parentId?: number): Promise<Catalog[]>;
@@ -231,15 +232,20 @@ export function createApiClient(options: { baseUrl: string; tokenProvider?: Toke
 
         const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
 
-        // 👇 obtener país desde el store global
+        // 👇 obtener país y sucursal desde el store global
         const state: any = localHomeStore.getState();
-        const countryCode = state?.configuration?.selectedTenant?.country?.name ?? "MX";
 
+        const countryCode =
+            state?.configuration?.selectedTenant?.country?.name ?? "MX";
+
+        const commerceCode =
+            state?.configuration?.selectedTenant?.commerce?.name ?? "DEFAULT";
 
         const headers: Record<string, string> = {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
-            "X-Country": countryCode,
+            "X-Country": countryCode,      // País (CL, BR, etc.)
+            "X-Commerce": commerceCode,    // Sucursal / Comercio (SOD, TOT, FAL)
         };
 
         if (!isFormData && method !== "get")
@@ -305,6 +311,8 @@ export function createApiClient(options: { baseUrl: string; tokenProvider?: Toke
     const postSla = (sla: Sla) => request<number>('slas', 'post', sla);
     const getSla = (id: number) => request<Sla>(`slas/${id}`, 'get');
     const getSlas = () => request<Sla[]>(`slas`, 'get');
+    const getSlaResponseTimeByModule = (moduleId: number) =>
+        request<string>(`slas/module/${moduleId}/response-time`, 'get');
 
     // Catalogs
     const getCatalog = (type: number, parentId?: number) => {
@@ -468,6 +476,7 @@ export function createApiClient(options: { baseUrl: string; tokenProvider?: Toke
         includeIcons?: boolean;
         includeIcon?: boolean;
         active?: string;
+        search?: string;
     }) => {
         const query = new URLSearchParams();
 
@@ -485,6 +494,7 @@ export function createApiClient(options: { baseUrl: string; tokenProvider?: Toke
 
         if (include !== undefined) query.set('includeIcons', String(include));
         if (params?.active) query.set('active', params.active);
+        if (params?.search?.trim()) query.set('search', params.search.trim());
 
         const qs = query.toString();
         return request<{
@@ -706,6 +716,7 @@ export function createApiClient(options: { baseUrl: string; tokenProvider?: Toke
         postSla,
         getSla,
         getSlas,
+        getSlaResponseTimeByModule,
 
         // catalogs
         getCatalog,

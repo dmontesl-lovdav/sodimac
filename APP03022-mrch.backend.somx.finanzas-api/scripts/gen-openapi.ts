@@ -1,4 +1,3 @@
-// scripts/gen-openapi.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -28,13 +27,11 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
         (swagger as AnyObj)['x-google-endpoints'] = [{ name: endpointsHost }];
     }
 
-    // basePath desde servers[0].url si empieza con "/"
     if (Array.isArray(oas3.servers) && oas3.servers.length > 0) {
         const u = oas3.servers[0]?.url ?? '/';
         if (typeof u === 'string' && u.startsWith('/')) (swagger as AnyObj)['basePath'] = u;
     }
 
-    // securitySchemes → securityDefinitions
     const sec = (oas3.components as AnyObj | undefined)?.['securitySchemes'] as AnyObj | undefined;
     if (sec) {
         for (const [k, v] of Object.entries(sec)) {
@@ -68,11 +65,9 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
         }
     }
 
-    // components.schemas → definitions
     const schemas = (oas3.components as AnyObj | undefined)?.['schemas'] as AnyObj | undefined;
     (swagger as AnyObj)['definitions'] = schemas ?? {};
 
-    // paths
     const outPaths = (swagger as AnyObj)['paths'] as AnyObj;
     for (const [p, pathItem] of Object.entries(oas3.paths ?? {})) {
         const pi = pathItem as OpenAPIV3.PathItemObject;
@@ -80,7 +75,6 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
 
         const operations = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
 
-        // parámetros a nivel path
         const pathParams =
             (pi.parameters as unknown as AnyObj[] | undefined)?.map(cleanParameter) ?? [];
 
@@ -102,7 +96,6 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
 
             if (o.security) (v2op as AnyObj)['security'] = o.security;
 
-            // requestBody → parameter in: body
             if (o.requestBody) {
                 const rb = o.requestBody as OpenAPIV3.RequestBodyObject;
                 const firstCt = rb.content ? Object.keys(rb.content)[0] : undefined;
@@ -119,11 +112,9 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
                 if (firstCt) (v2op as AnyObj)['consumes'] = [firstCt];
             }
 
-            // parameters (query/path/header)
             const params = (o.parameters as unknown as AnyObj[] | undefined) ?? [];
             for (const prm of params) (v2op.parameters as unknown as AnyObj[]).push(cleanParameter(prm));
 
-            // responses (content → schema)
             const v2resps = (v2op as AnyObj)['responses'] as AnyObj;
             for (const [code, resp] of Object.entries(o.responses ?? {})) {
                 const r = resp as OpenAPIV3.ResponseObject;
@@ -143,7 +134,6 @@ function toSwagger2(oas3: OpenAPIV3.Document, endpointsHost?: string): AnyObj {
 }
 
 function cleanParameter(prm: AnyObj): AnyObj {
-    // parámetros estilo OAS3 → Swagger2
     const hasIn = typeof prm?.['in'] === 'string';
     const hasName = typeof prm?.['name'] === 'string';
     if (hasIn && hasName && prm['in'] !== 'body') {
@@ -161,29 +151,42 @@ function cleanParameter(prm: AnyObj): AnyObj {
     return prm;
 }
 
+function writeJsonFile(filePath: string, data: unknown) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
 async function main() {
     const root = path.join(__dirname, '..');
-    const outDir = path.join(root, 'src', 'docs'); // ⟵ ahora dentro de src/docs
-    fs.mkdirSync(outDir, { recursive: true });
 
-    // import dinámico del builder (compatible ESM/tsx)
     const mod = await import(pathToFileURL(path.join(root, 'src', 'docs', 'openapi.ts')).href);
     if (!('buildOpenAPISpec' in mod)) throw new Error('No se encontró buildOpenAPISpec');
-    const oas3 = (await (mod as { buildOpenAPISpec: () => Promise<OpenAPIV3.Document> }).buildOpenAPISpec());
 
-    // 1) Guarda OAS3
-    const oas3File = path.join(outDir, 'openapi.json');
-    fs.writeFileSync(oas3File, JSON.stringify(oas3, null, 2), 'utf-8');
-
-    // 2) Convierte a Swagger 2.0 (opcional/legacy)
-    const host = process.env.ENDPOINTS_HOST; // opcional
+    const oas3 = await (mod as { buildOpenAPISpec: () => Promise<OpenAPIV3.Document> }).buildOpenAPISpec();
+    const host = process.env.ENDPOINTS_HOST;
     const swagger2 = toSwagger2(oas3, host);
-    const swFile = path.join(outDir, 'swagger.json');
-    fs.writeFileSync(swFile, JSON.stringify(swagger2, null, 2), 'utf-8');
+
+    const outputs = [
+        {
+            openapi: path.join(root, 'src', 'docs', 'openapi.json'),
+            swagger: path.join(root, 'src', 'docs', 'swagger.json'),
+        },
+        {
+            openapi: path.join(root, 'dist', 'docs', 'openapi.json'),
+            swagger: path.join(root, 'dist', 'docs', 'swagger.json'),
+        },
+    ];
+
+    for (const output of outputs) {
+        writeJsonFile(output.openapi, oas3);
+        writeJsonFile(output.swagger, swagger2);
+    }
 
     console.log('✅ Generados:');
-    console.log(' -', path.relative(root, oas3File));
-    console.log(' -', path.relative(root, swFile));
+    for (const output of outputs) {
+        console.log(' -', path.relative(root, output.openapi));
+        console.log(' -', path.relative(root, output.swagger));
+    }
 }
 
 main().catch((e) => {

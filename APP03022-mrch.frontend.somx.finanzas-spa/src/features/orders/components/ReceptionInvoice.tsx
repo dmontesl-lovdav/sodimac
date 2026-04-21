@@ -6,13 +6,14 @@ import { OrderClient } from "../api/OrderClient";
 import { EMPTY_RECEPTION, Reception } from "../interfaces";
 import { ReceptionInvoiceControl } from "./parts/ReceptionInvoiceControl";
 import ReceptionHeader from "./parts/ReceptionHeader";
+import "./ReceptionInvoice.css";
 
 
 export function ReceptionInvoice(): ReactElement {
     const params = useParams();
     const [loading, setLoading] = useState(false);
     const [reception, setReception] = useState<Reception>(EMPTY_RECEPTION);
-    const client: OrderClient = new OrderClient();
+    const client: any = OrderClient;
 
 
     
@@ -30,21 +31,22 @@ export function ReceptionInvoice(): ReactElement {
         if(params.uuid){
             fetchData(params.uuid);
         }
+        console.log("ReceptionInvoice params:", params);
     }, [params]);
 
     const breadcrumb: BreadcrumbItem[] = [
-        { label: "Finanzas", to: "/" },
-        { label: "Recepciones", to: "/recepciones" },
+        { label: "Finanzas", to: "/finanzas" },
+        { label: "Recepciones", to: "/finanzas/recepciones" },
         { label: `${reception.receptionId}` },
     ];
 
     return decorate(
         breadcrumb,
-        "/recepciones/" + reception.receptionId,
-        <>
+        "/finanzas/recepciones/" + reception.receptionId,
+        <div className="rc-reception-invoice">
             <ReceptionHeader reception={reception} />
             <ReceptionInvoiceControl reception={reception} />
-        </>,
+        </div>,
         loading
     );
 }

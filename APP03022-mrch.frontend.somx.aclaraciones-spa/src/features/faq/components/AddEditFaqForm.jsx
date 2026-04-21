@@ -197,12 +197,12 @@ export default function AddEditFaqForm() {
             { label: 'Centro de ayuda', to: '/' },
             { label: 'Mantenedor', to: '/mantenedor' },
             { label: 'Preguntas frecuentes', to: withOrigin('/faqs') },
-            { label: isEdit ? 'Editar pregunta' : 'Agregar pregunta' },
+            { label: isEdit ? 'Editar pregunta' : 'Asignar una nueva pregunta frecuente' },
         ]
         : [
             { label: 'Centro de ayuda', to: '/' },
             { label: 'Preguntas frecuentes', to: '/faqs' },
-            { label: isEdit ? 'Editar pregunta' : 'Agregar pregunta' },
+            { label: isEdit ? 'Editar pregunta' : 'Asignar una nueva pregunta frecuente' },
         ];
 
     return (
@@ -238,7 +238,7 @@ export default function AddEditFaqForm() {
                     <div className="faq-inner">
 
                         <section className="faq-section">
-                            <h3>Asignar temas de ayuda</h3>
+                            <h3>Selecciona el módulo</h3>
                             <TopicSelector
                                 categories={categories}
                                 value={topic}

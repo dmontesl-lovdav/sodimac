@@ -1,0 +1,162 @@
+vendor-blocks:
+  get:
+    tags:
+      - vendor-blocks
+    summary: List vendor blocks
+    operationId: listVendorBlocks
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of vendor blocks
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/vendor-blocks.yaml#/VendorBlockDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - vendor-blocks
+    summary: Create vendor block
+    operationId: createVendorBlock
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/vendor-blocks.yaml#/CreateVendorBlockDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/vendor-blocks.yaml#/VendorBlockDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+vendor-blocks-by-uuid:
+  get:
+    tags:
+      - vendor-blocks
+    summary: Get vendor block by ID
+    operationId: getVendorBlockById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Vendor block UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/vendor-blocks.yaml#/VendorBlockDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  put:
+    tags:
+      - vendor-blocks
+    summary: Update vendor block
+    operationId: updateVendorBlock
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Vendor block UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/vendor-blocks.yaml#/UpdateVendorBlockDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/vendor-blocks.yaml#/VendorBlockDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - vendor-blocks
+    summary: Delete vendor block
+    operationId: deleteVendorBlock
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Vendor block UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

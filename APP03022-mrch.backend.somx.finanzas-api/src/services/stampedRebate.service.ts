@@ -25,22 +25,30 @@ export async function getByDocumentNumber(documentNumber: string) {
 }
 
 export async function create(dto: CreateStampedRebateDto) {
-    const data = {
-        ...dto,
+    const data: Partial<StampedRebate> = {
         createdAt: new Date(),
         updatedAt: new Date(),
     };
 
-    return r.createOne(data as any);
+    if (dto.documentNumber !== undefined) data.documentNumber = dto.documentNumber;
+    if (dto.referenceNumber !== undefined) data.referenceNumber = dto.referenceNumber;
+    if (dto.status !== undefined) data.status = dto.status;
+    if (dto.createdBy !== undefined) data.createdBy = dto.createdBy;
+
+    return r.createOne(data);
 }
 
 export async function update(id: string, dto: UpdateStampedRebateDto) {
-    const patch = {
-        ...dto,
+    const patch: Partial<StampedRebate> = {
         updatedAt: new Date(),
     };
 
-    return r.updateOne(id, patch as any);
+    if (dto.documentNumber !== undefined) patch.documentNumber = dto.documentNumber;
+    if (dto.referenceNumber !== undefined) patch.referenceNumber = dto.referenceNumber;
+    if (dto.status !== undefined) patch.status = dto.status;
+    if (dto.updatedBy !== undefined) patch.updatedBy = dto.updatedBy;
+
+    return r.updateOne(id, patch);
 }
 
 export async function remove(id: string) {
@@ -49,26 +57,26 @@ export async function remove(id: string) {
 
 // Generate CSV report
 export async function generateCsvReport(): Promise<string> {
-    const stampedRebates = await r.findAll({}, 10000);  // Get all records
+    const stampedRebates = await r.findAll({}, 10000);
 
     const headers = [
-        'UUID',
-        'Document Number',
-        'Reference Number',
-        'Status'
+        "UUID",
+        "Document Number",
+        "Reference Number",
+        "Status",
     ];
 
     const rows = stampedRebates.map(sr => [
         sr.stampedRebateUuid,
         sr.documentNumber,
         sr.referenceNumber,
-        sr.status
+        sr.status,
     ]);
 
     const csvLines = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(",")),
     ];
 
-    return csvLines.join('\n');
+    return csvLines.join("\n");
 }

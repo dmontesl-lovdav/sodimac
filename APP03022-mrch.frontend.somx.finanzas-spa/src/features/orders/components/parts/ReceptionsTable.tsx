@@ -11,6 +11,7 @@ import { Reception, ReceptionStatusOptions } from "../../interfaces";
 import { formatDate, formatAmount, exportToCSV } from "@/utils/utils";
 import { OrderPillStatus } from "./ReceptionPillStatus";
 import { GenericInput, GenericSelect } from "@/shared/components/ui";
+import "./ReceptionsTable.css";
 
 const ActionOptions = [{ label: "Exportar a CSV", value: "csv" }];
 
@@ -99,7 +100,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
     ];
 
     return (
-        <div className="results-container">
+        <div className="rc-results-table">
             <GenericTable<Reception>
                 rows={rows}
                 columns={columns}
@@ -109,7 +110,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
                 page={1}
                 totalPages={1}
             />
-            <div className="somx-action-container">
+            <div className="rc-actions-panel">
                 {isExporting ? <p>Se está procesando tu acción...</p> : (
                     <GenericSelect
                         label="Acción"

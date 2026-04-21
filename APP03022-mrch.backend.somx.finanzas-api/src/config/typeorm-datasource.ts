@@ -1,8 +1,19 @@
 import 'reflect-metadata';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { DataSource } from 'typeorm';
 import type { DataSourceOptions } from 'typeorm';
+import * as svcAxios from "@/services/axios.service.js";
 
+// Load local .env with priority over system variables
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({
+    path: path.resolve(__dirname, '../../.env'),
+    override: true,
+});
 
 // Importar todas las entidades explícitamente
 import { OriginCatalog } from '../entities/OriginCatalog.entity.js';
@@ -25,7 +36,21 @@ import { StampedRebate } from '../entities/StampedRebate.entity.js';
 import { FinanzasPayment } from '../entities/FinanzasPayment.entities.js';
 import { Addendum } from '../entities/tenant_fiscal.addendum.entity.js';
 import { Invoice } from '../entities/tenant_fiscal.invoice.entity.js';
+import { AddendumManual } from '../entities/AddendumManual.entity.js';
 
+import { ThreeWayMatch } from '../entities/ThreeWayMatch.entity.js';
+import { TwmEjecucion } from '../entities/TwmEjecucion.entity.js';
+import { TwmLogs } from '../entities/TwmLogs.entity.js';
+import { TwmCifrasControl } from '../entities/TwmCifrasControl.entity.js';
+import { AccountStatement } from '../entities/AccountStatement.entity.js';
+import { FinanzasPaymentHeader } from '../entities/FinanzasPaymentHeader.entity.js';
+import { MigoDocument } from '../entities/MigoDocument.entity.js';
+import { MigoDocumentReception } from '../entities/MigoDocumentReception.entity.js';
+import { TransactionId } from '../entities/TransactionId.entity.js';
+import { TransactionIdErrorLog } from '../entities/TransactionIdErrorLog.entity.js';
+import { SharedCatalogHeader } from '../entities/SharedCatalogHeader.entity.js';
+import { SharedCatalogDetail } from '../entities/SharedCatalogDetail.entity.js';
+import { SharedSupplier } from '../entities/SharedSupplier.entity.js';
 
 // Registrar entidades explícitamente
 const ENTITIES = [
@@ -49,57 +74,48 @@ const ENTITIES = [
     FinanzasPayment,
     Addendum,
     Invoice,
+    ThreeWayMatch,
+    TwmEjecucion,
+    TwmLogs,
+    TwmCifrasControl,
+    AccountStatement,
+    FinanzasPaymentHeader,
+    AddendumManual,
+    MigoDocument,
+    MigoDocumentReception,
+    TransactionId,
+    TransactionIdErrorLog,
+    SharedCatalogHeader,
+    SharedCatalogDetail,
+    SharedSupplier,
 ];
 
-// Parsear DATASOURCE_URL (formato JDBC Spring Boot) a configuración TypeORM
-function parseJdbcUrl(jdbcUrl: string) {
-    // Parsear: jdbc:postgresql://host:port/database?currentSchema=schema&useSSL=true
-    // Nota: Los parámetros en JDBC usan ? para separar, pero también & internamente
-    const match = jdbcUrl.match(/jdbc:postgresql:\/\/([^:]+):(\d+)\/([^?]+)(\?.*)?$/);
-    if (!match) {
-        throw new Error(`Invalid DATASOURCE_URL format: ${jdbcUrl}`);
-    }
+const dbHost = process.env.DB_HOST;
+const dbPort = Number(process.env.DB_PORT);
+const dbUser = process.env.DB_USER;
+const dbPass = process.env.DB_PASS;
+const dbName = process.env.DB_NAME;
+const dbSchema = process.env.DB_SCHEMA || 'tenant_finance';
+const dbSSL = process.env.DB_SSL === 'true';
 
-    const [, host, port, database, queryString] = match;
-
-    // Parsear parámetros JDBC: pueden usar ? como delimitador en lugar de &
-    const paramsString = (queryString?.substring(1) || '').replace(/\?/g, '&');
-    const params = new URLSearchParams(paramsString);
-
-    return {
-        host,
-        port: Number(port),
-        database,
-        schema: params.get('currentSchema') || 'tenant_finance',
-        ssl: params.get('useSSL') === 'true'
-    };
+if (!dbHost || !dbPort || !dbUser || !dbPass || !dbName) {
+    throw new Error(
+        'Missing required environment variables: DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME'
+    );
 }
-
-// Extraer configuración de variables de entorno DATASOURCE_*
-const datasourceUrl = process.env.DATASOURCE_URL;
-const datasourceUsername = process.env.DATASOURCE_USERNAME;
-const datasourcePassword = process.env.DATASOURCE_PASSWORD;
-
-if (!datasourceUrl || !datasourceUsername || !datasourcePassword) {
-    throw new Error('Missing required environment variables: DATASOURCE_URL, DATASOURCE_USERNAME, DATASOURCE_PASSWORD');
-}
-
-const dbConfig = parseJdbcUrl(datasourceUrl);
-
-const useSSL = dbConfig.ssl;
 
 const options: DataSourceOptions = {
     type: 'postgres',
-    host: dbConfig.host as string,
-    port: dbConfig.port,
-    username: datasourceUsername,
-    password: datasourcePassword,
-    database: dbConfig.database as string,
-    schema: dbConfig.schema as string,
+    host: dbHost,
+    port: dbPort,
+    username: dbUser,
+    password: dbPass,
+    database: dbName,
+    schema: dbSchema,
     entities: ENTITIES,
     logging: true,
     synchronize: false,
-    ...(useSSL && { ssl: { rejectUnauthorized: false } })
+    ...(dbSSL && { ssl: { rejectUnauthorized: false } }),
 };
 
 console.log('[DATASOURCE] Creating new DataSource instance');
@@ -109,6 +125,7 @@ try {
 } catch (err) {
     console.error('[DATASOURCE] Error getting entity names:', err);
 }
+
 export const datasource = new DataSource(options);
 console.log('[DATASOURCE] DataSource created with', datasource.options.entities?.length, 'entities');
 
@@ -120,15 +137,15 @@ export async function initDataSource() {
 
     if (!datasource.isInitialized) {
         console.log('[DB CONNECT]', {
-            host: dbConfig.host,
-            port: dbConfig.port,
-            user: datasourceUsername,
-            db: dbConfig.database,
-            schema: dbConfig.schema,
-            ssl: useSSL
+            host: dbHost,
+            port: dbPort,
+            user: dbUser,
+            db: dbName,
+            schema: dbSchema,
+            ssl: dbSSL,
         });
-        await datasource.initialize();
 
+        await datasource.initialize();
 
         console.log('[INIT] DataSource entity metadata count AFTER init:', datasource.entityMetadatas?.length || 0);
     }
@@ -140,10 +157,17 @@ export async function initDataSource() {
 }
 
 export function getDataSource(): DataSource {
-    console.log('[getDataSource] Called. initializedDataSource:', !!initializedDataSource, 'isInitialized:', initializedDataSource?.isInitialized);
+    console.log(
+        '[getDataSource] Called. initializedDataSource:',
+        !!initializedDataSource,
+        'isInitialized:',
+        initializedDataSource?.isInitialized
+    );
+
     if (!initializedDataSource || !initializedDataSource.isInitialized) {
         throw new Error('DataSource not initialized. Call initDataSource() first.');
     }
+
     console.log('[getDataSource] Returning DataSource with', initializedDataSource.entityMetadatas?.length, 'entity metadatas');
     return initializedDataSource;
 }

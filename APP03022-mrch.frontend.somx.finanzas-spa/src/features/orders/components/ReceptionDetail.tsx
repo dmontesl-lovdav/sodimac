@@ -10,6 +10,7 @@ import { EMPTY_RECEPTION, ReceptionStatusOptions, Reception } from "../interface
 import ReceptionHeader from "./parts/ReceptionHeader";
 import ReceptionSkusTable from "./parts/ReceptionSkusTable";
 import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
+import "./ReceptionDetail.css";
 
 const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
     const [status, setStatus] = useState(reception.status);
@@ -37,12 +38,12 @@ const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
     }
 
     return (
-        <div className="mt-5 grid grid-cols-1">
-            <div className=" p-5 border-1 border-gray-200">
-                <div className="flex">
-                    <div className="font-bold">Editar Estado:</div>
+        <div className="rc-detail-container">
+            <div className="rc-detail-card">
+                <div className="rc-row">
+                    <div className="rc-label">Editar Estado:</div>
                 </div>
-                <div className="flex">
+                <div className="rc-row">
                     <GenericSelect
                         value={status}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => setStatus(parseInt(event.target.value))}
@@ -51,7 +52,7 @@ const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
                         options={ReceptionStatusOptions}
                     />
                 </div>
-                <div className="flex">
+                <div className="rc-row">
                     <GenericInput
                         label="Motivo de cambio de estado"
                         placeholder="Escribe la razón por el cambio de estado"
@@ -61,7 +62,7 @@ const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
                 </div>
 
                 {status === 2 &&
-                    (<div className="flex">
+                    (<div className="rc-row">
                         <GenericInput
                             label="UUID"
                             placeholder="Proporciona el UUID para complementar"
@@ -70,8 +71,7 @@ const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
                         />
                     </div>)}
                 <ErrorMessage message={error} />
-                <div className="flex justify-start mt-2">
-
+                <div className="rc-button-row">
                     <GenericButton variant="outline" onClick={checkInformation} > Guardar Estado </GenericButton>
                 </div>
             </div>
@@ -88,7 +88,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
     const params = useParams();
     const [loading, setLoading] = useState(false);
     const [reception, setReception] = useState<Reception>(EMPTY_RECEPTION);
-    const client: OrderClient = new OrderClient();
+    const client = OrderClient;
 
     useEffect(() => {
         const fetchData = async (uuid: string) => {
@@ -108,7 +108,6 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
         try {
             if (reception && reception.receptionId) {
                 setLoading(true);
-                //UUID?
                 const updated = await client.updateReceptionStatus(reception.receptionId, {
                     status: status,
                     comment: reason
@@ -123,14 +122,14 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
 
 
     const breadcrumb: BreadcrumbItem[] = [
-        { label: "Finanzas", to: "/" },
-        { label: "Recepciones", to: "/recepciones" },
+        { label: "Finanzas", to: "/finanzas" },
+        { label: "Recepciones", to: "/finanzas/recepciones" },
         { label: `${reception.receptionNumber}` },
     ];
 
     return decorate(
         breadcrumb,
-        "/recepciones",
+        "/finanzas/recepciones",
         <>
             <ReceptionHeader reception={reception} />
             {editable && buildDetail(reception, updateOrderStatus)}

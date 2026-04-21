@@ -2436,6 +2436,43 @@ paths:
         - sla-controller
       operationId: postSla
       summary: Creates a new Sla.
+  /slas/module/{moduleId}/response-time:
+    get:
+      produces:
+        - application/json
+      parameters:
+        - description: Module id
+          format: int32
+          in: path
+          name: moduleId
+          required: true
+          type: integer
+          x-example: 61
+      responses:
+        "200":
+          description: SLA response time description.
+          schema:
+            type: string
+        "401":
+          description: The request requires user authentication.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "403":
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "404":
+          description: SLA not found for given module.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+        "500":
+          description: Internal error.
+          schema:
+            $ref: "#/definitions/ExceptionWrapper"
+      tags:
+        - sla-controller
+      operationId: getSlaResponseTimeByModule
+      summary: Retrieves SLA first response time description by module
   /slas/{id}:
     delete:
       produces:

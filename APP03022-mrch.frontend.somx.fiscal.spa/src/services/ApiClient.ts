@@ -1,87 +1,154 @@
-// src/features/.../apiClient.ts
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { localHomeStore } from '../store/localStore';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { localHomeStore } from "../store/localStore";
 
-type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+export type TokenProvider = string | (() => string | null | undefined);
 
-export abstract class ApiClient {
-    private defaultToken?: string;
-    private axios: AxiosInstance;
-    private baseUrl: string;
+export type ApiClient = {
+    request: <T = any>(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        extra?: AxiosRequestConfig
+    ) => Promise<T>;
+    requestBinary: (
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        filename?: string
+    ) => Promise<void>;
+};
 
-    protected constructor(baseUrl = process.env.API_BASE_URL || "") {
-        this.defaultToken = process.env.AUTH_DEFAULT_TOKEN && process.env.AUTH_DEFAULT_TOKEN.trim() !== ''
-            ? process.env.AUTH_DEFAULT_TOKEN
-            : undefined;
-        this.baseUrl = baseUrl.replace(/\/+$/, '');
-        this.axios = axios.create();
+export function createApiClient(options?: {
+    baseUrl?: string;
+    tokenProvider?: TokenProvider;
+    timeoutMs?: number;
+}): ApiClient {
+    const baseUrl =
+        options?.baseUrl ??
+        process.env.REACT_APP_API_BASE_URL ??
+        process.env.API_BASE_URL ??
+        "";
+
+    const timeoutMs = options?.timeoutMs ?? 15000;
+
+    const instance: AxiosInstance = axios.create({
+        baseURL: baseUrl.replace(/\/+$/, ""),
+        timeout: timeoutMs,
+    });
+
+    function isLocalEnvironment(): boolean {
+        if (typeof window === "undefined") return false;
+
+        const hostname = window.location.hostname;
+
+        return (
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname === "0.0.0.0"
+        );
     }
 
-    protected resolveToken(): string | null {
-        //TODO: IMPLEMENTAR AUTH TOKEN
-        return "TEST";
-        return this.defaultToken || ((localHomeStore.getState() as any)?.authentication?.token ?? null);
+    function resolveToken(): string | null {
+        if (typeof options?.tokenProvider === "function") {
+            const providedToken = options.tokenProvider();
+            if (providedToken?.trim()) return providedToken;
+        }
+
+        if (
+            typeof options?.tokenProvider === "string" &&
+            options.tokenProvider.trim()
+        ) {
+            return options.tokenProvider;
+        }
+
+        const storeToken =
+            (localHomeStore.getState() as any)?.authentication?.token;
+
+        if (storeToken?.trim()) return storeToken;
+
+        const envToken =
+            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ||
+            process.env.AUTH_DEFAULT_TOKEN;
+
+        if (envToken?.trim()) {
+            return envToken;
+        }
+
+        return null;
     }
 
-    protected async execute<T>(path: string, method: HttpMethod, data?: any, options?: AxiosRequestConfig): Promise<T> {
-        const token = this.resolveToken();
-        if (!token) { throw new Error('No token'); }
+    async function request<T = any>(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        extra?: AxiosRequestConfig
+    ): Promise<T> {
+        const token = resolveToken();
+        const isLocal = isLocalEnvironment();
+
+        if (!token && !isLocal) {
+            throw new Error("No token");
+        }
+
+        const isFormData =
+            typeof FormData !== "undefined" && data instanceof FormData;
 
         const headers: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
+            Accept: "application/json",
         };
 
-        const res: AxiosResponse<T> = await axios.request({
-            url: `${this.baseUrl}/${path.replace(/^\/+/, '')}`,
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        if (!isFormData && method !== "get") {
+            headers["Content-Type"] = "application/json";
+        }
+
+        const res: AxiosResponse<T> = await instance.request({
+            url: `/${path.replace(/^\/+/, "")}`,
             method,
-            data: data ?? undefined,
+            data: isFormData ? data : data ?? undefined,
             headers,
-            responseType: options?.responseType,
-            ...options,
+            responseType: extra?.responseType,
+            ...extra,
         });
 
         return res.data as T;
     }
 
-    protected async executeRequestBinary(invoice: File, path: string) {
-        const formdata = new FormData();
-        formdata.append("file", invoice);
+    async function requestBinary(
+        path: string,
+        method: HttpMethod,
+        data?: any,
+        filename?: string
+    ): Promise<void> {
+        const token = resolveToken();
+        const isLocal = isLocalEnvironment();
 
-        const requestOptions = {
-            method: "POST",
-            body: formdata
-        };
+        if (!token && !isLocal) {
+            throw new Error("No token");
+        }
 
-        return await fetch(`${this.baseUrl}/${path.replace(/^\/+/, '')}`, requestOptions)
-            .then((response) => response.json())
-            .then((result) => result)
-            .catch((error) => error);
-    }
+        const headers: Record<string, string> = {};
 
-    protected async executeBinary(path: string, method: HttpMethod, data?: any, options?: AxiosRequestConfig, filename?: string) {
-        const token = this.resolveToken();
-        
-        if (!token) { throw new Error('No token'); }
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
 
-        const headers: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        };
-
-        const response: AxiosResponse = await axios.request({
-            url: `${this.baseUrl}/${path.replace(/^\/+/, '')}`,
+        const res: AxiosResponse = await instance.request({
+            url: `/${path.replace(/^\/+/, "")}`,
             method,
-            data: data ?? undefined,
-            headers,
+            data,
             responseType: "blob",
-            ...options,
+            headers,
         });
 
-        const anchor = document.createElement('a');
-        anchor.href = window.URL.createObjectURL(response.data);
+        const blob = new Blob([res.data]);
+
+        const anchor = document.createElement("a");
+        anchor.href = window.URL.createObjectURL(blob);
         anchor.download = filename || "file.bin";
 
         document.body.appendChild(anchor);
@@ -91,12 +158,8 @@ export abstract class ApiClient {
         window.URL.revokeObjectURL(anchor.href);
     }
 
-    protected async fetchDocument(path: string) {
-        const token = this.resolveToken();
-        
-        if (!token) { throw new Error('No token'); }
-        const response: AxiosResponse = await axios.get(`${this.baseUrl}/${path.replace(/^\/+/, '')}`);
-        return response;
-
-    }
+    return {
+        request,
+        requestBinary,
+    };
 }

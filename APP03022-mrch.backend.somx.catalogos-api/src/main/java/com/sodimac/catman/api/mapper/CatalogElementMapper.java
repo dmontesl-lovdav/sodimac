@@ -9,18 +9,26 @@ import com.sodimac.catman.api.model.dto.CatalogElementDto;
 import com.sodimac.catman.api.model.dto.CatalogSimpleDto;
 import com.sodimac.catman.api.model.entity.CatalogDetail;
 import com.sodimac.catman.api.model.entity.CatalogHeader;
+import com.sodimac.catman.api.model.entity.DictionaryLang;
 import com.sodimac.catman.api.repository.CatalogDetailRepository;
 import com.sodimac.catman.api.repository.CatalogHeaderRepository;
+import com.sodimac.catman.api.repository.DictionaryLangRepository;
 
 @Component
 public class CatalogElementMapper {
 
+    private static final int DEFAULT_LANG_ID = 1;
+
     private final CatalogHeaderRepository headerRepository;
     private final CatalogDetailRepository detailRepository;
+    private final DictionaryLangRepository dictionaryLangRepository;
 
-    public CatalogElementMapper(CatalogHeaderRepository headerRepository, CatalogDetailRepository detailRepository) {
+    public CatalogElementMapper(CatalogHeaderRepository headerRepository,
+                                CatalogDetailRepository detailRepository,
+                                DictionaryLangRepository dictionaryLangRepository) {
         this.headerRepository = headerRepository;
         this.detailRepository = detailRepository;
+        this.dictionaryLangRepository = dictionaryLangRepository;
     }
 
     public CatalogElementDto toDto(CatalogDetail entity) {
@@ -28,11 +36,18 @@ public class CatalogElementMapper {
             return null;
         }
 
+        String elementName = entity.getKey();
+        if (entity.getDictId() != null && entity.getDictId() > 0) {
+            elementName = dictionaryLangRepository.findByDictIdAndLangId(entity.getDictId(), DEFAULT_LANG_ID)
+                    .map(DictionaryLang::getDescription)
+                    .orElse(entity.getKey());
+        }
+
         CatalogElementDto dto = CatalogElementDto.builder()
                 .id(entity.getId())
                 .catalogId(entity.getHeader() != null ? entity.getHeader().getId() : null)
                 .catalogCode(entity.getHeader() != null ? entity.getHeader().getCode() : null)
-                .element(entity.getKey())
+                .element(elementName)
                 .value(entity.getValue())
                 .key(entity.getKey())
                 .validFrom(entity.getValidFrom())
@@ -45,6 +60,7 @@ public class CatalogElementMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedBy(entity.getUpdatedBy())
                 .updatedAt(entity.getUpdatedAt())
+                .externalKey(entity.getExternalKey())
                 .sortOrder(entity.getSortOrder())
                 .attributes(entity.getAttributes())
                 .build();
@@ -56,7 +72,15 @@ public class CatalogElementMapper {
 
         if (entity.getParentElementId() != null) {
             detailRepository.findById(entity.getParentElementId())
-                    .ifPresent(parent -> dto.setParentElementName(parent.getKey()));
+                    .ifPresent(parent -> {
+                        String parentName = parent.getKey();
+                        if (parent.getDictId() != null && parent.getDictId() > 0) {
+                            parentName = dictionaryLangRepository.findByDictIdAndLangId(parent.getDictId(), DEFAULT_LANG_ID)
+                                    .map(DictionaryLang::getDescription)
+                                    .orElse(parent.getKey());
+                        }
+                        dto.setParentElementName(parentName);
+                    });
         }
 
         return dto;
@@ -89,10 +113,3 @@ public class CatalogElementMapper {
                 .collect(Collectors.toList());
     }
 }
-
-
-
-
-
-
-

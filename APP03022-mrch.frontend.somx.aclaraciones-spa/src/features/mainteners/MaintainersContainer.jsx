@@ -18,6 +18,15 @@ export default function MaintainersContainer() {
     const [myCasesCount, setMyCasesCount] = useState(null);
     const [casesLoading, setCasesLoading] = useState(true);
 
+    const realmRoles =
+        useAppSelector(
+            (s) => s.authentication?.tokenDecoded?.realm_access?.roles
+        ) || [];
+
+    const isTechAdmin =
+        Array.isArray(realmRoles) &&
+        realmRoles.includes('FBC_TECH_ADMIN_USER');
+
     const roles =
         useAppSelector(
             (s) => s.authentication?.tokenDecoded?.resource_access?.['fbc-aclaraciones']?.roles
@@ -36,9 +45,11 @@ export default function MaintainersContainer() {
         try {
             setCasesLoading(true);
             const api = ConfigurationBuilder.client;
-            let count = 0;
+            let cases = [];
 
-            if (roles.includes('ppsomx-admin') || roles.includes('ppsomx-resolver')) {
+            if (isTechAdmin ||
+                roles.includes('ppsomx-admin') ||
+                roles.includes('ppsomx-resolver')) {
                 const details = await api.getResolverDetails(userEmail);
 
                 if (details?.length) {
@@ -47,20 +58,20 @@ export default function MaintainersContainer() {
                         page: 1,
                         size: 9999
                     });
-                    count = Array.isArray(res?.data) ? res.data.length : 0;
+                    cases = Array.isArray(res?.data) ? res.data : [];
                 }
             } else {
                 const res = await api.getRequests({});
-                count = Array.isArray(res?.data) ? res.data.length : 0;
+                cases = Array.isArray(res?.data) ? res.data : [];
             }
 
-            setMyCasesCount(count);
+            setMyCasesCount(cases.length);
         } catch {
             setMyCasesCount(0);
         } finally {
             setCasesLoading(false);
         }
-    }, [roles, userEmail]);
+    }, [isTechAdmin, roles, userEmail]);
 
     useEffect(() => {
         loadMyCases();
@@ -87,14 +98,14 @@ export default function MaintainersContainer() {
         {
             url: '/faqs',
             key: 'faqs',
-            title: 'Preguntas frecuentes',
+            title: 'Manuales y tutoriales (Preguntas Frecuentes)',
             desc: 'Administra las preguntas frecuentes que el proveedor podrá visualizar.',
             icon: iconChat,
         },
         {
             url: '/categories',
             key: 'temas',
-            title: 'Categorías (Módulos)',
+            title: 'Categorías',
             desc: 'Configura las categorías sobre las cuales se asociarán preguntas frecuentes.',
             icon: iconAlertUp,
         },
@@ -105,13 +116,15 @@ export default function MaintainersContainer() {
             desc: 'Configura y vincula información en relación a las preguntas frecuentes.',
             icon: iconEye,
         },
-        {
-            url: '/notices',
-            key: 'seccion',
-            title: 'Sección informativa',
-            desc: 'Define información para banners de alerta.',
-            icon: iconWarning,
-        },
+        // Dont delete this functionality will be implemented in version 2 
+        // {
+        //     url: '/notices',
+        //     key: 'seccion',
+        //     title: 'Sección informativa',
+        //     desc: 'Define información para banners de alerta.',
+        //     icon: iconWarning,
+        //     disabled: true,
+        // },
         {
             url: '/feedback',
             key: 'feedback',
@@ -146,7 +159,9 @@ export default function MaintainersContainer() {
             />
 
             <main className="maintainers-main">
-                {showAlert && (
+                {/* Dont delete this functionality will be implemented in version 2 */}
+
+                {/* {showAlert && (
                     <section className="alert-box">
                         <div className="alert-content">
                             <div className="alert-left">
@@ -177,7 +192,7 @@ export default function MaintainersContainer() {
                             </button>
                         </div>
                     </section>
-                )}
+                )} */}
 
                 <div className="divider" />
 

@@ -45,6 +45,11 @@ public class CatalogElementCreateDto implements Serializable {
     @Schema(description = "ID del elemento padre (solo para catálogos secundarios)", example = "10")
     private Integer parentElementId;
 
+    @Schema(description = "Valor de conversión para sistemas externos (opcional)", example = "MX")
+    @Size(max = 50, message = "El valor de conversión no puede exceder 50 caracteres")
+    @jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9._-]*$", message = "El valor de conversión solo puede contener letras, números, guiones, guiones bajos y puntos")
+    private String externalKey;
+
     @Schema(description = "Orden de visualización", example = "1")
     private Integer sortOrder;
 

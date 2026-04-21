@@ -1,0 +1,220 @@
+three-way-match:
+  get:
+    tags:
+      - three-way-match
+    summary: List three way match records
+    operationId: listThreeWayMatch
+    produces:
+      - application/json
+    parameters:
+      - in: query
+        name: tipoFecha
+        required: true
+        type: string
+      - in: query
+        name: fechaInicio
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: fechaFin
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: numeroProveedor
+        required: false
+        type: string
+      - in: query
+        name: ordenCompra
+        required: false
+        type: string
+      - in: query
+        name: recepcion
+        required: false
+        type: string
+      - in: query
+        name: page
+        required: false
+        type: integer
+      - in: query
+        name: limit
+        required: false
+        type: integer
+    responses:
+      "200":
+        description: Three way match list
+        schema:
+          $ref: "../definitions/three-way-match.yaml#/ThreeWayMatchListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+three-way-match-export-csv:
+  get:
+    tags:
+      - three-way-match
+    summary: Export three way match to CSV
+    operationId: exportThreeWayMatchCsv
+    produces:
+      - text/csv
+    parameters:
+      - in: query
+        name: tipoFecha
+        required: true
+        type: string
+      - in: query
+        name: fechaInicio
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: fechaFin
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: numeroProveedor
+        required: false
+        type: string
+      - in: query
+        name: ordenCompra
+        required: false
+        type: string
+      - in: query
+        name: recepcion
+        required: false
+        type: string
+      - in: query
+        name: page
+        required: false
+        type: integer
+      - in: query
+        name: limit
+        required: false
+        type: integer
+    responses:
+      "200":
+        description: CSV file
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+three-way-match-export-xlsx:
+  get:
+    tags:
+      - three-way-match
+    summary: Export three way match to XLSX
+    operationId: exportThreeWayMatchXlsx
+    produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    parameters:
+      - in: query
+        name: tipoFecha
+        required: true
+        type: string
+      - in: query
+        name: fechaInicio
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: fechaFin
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: numeroProveedor
+        required: false
+        type: string
+      - in: query
+        name: ordenCompra
+        required: false
+        type: string
+      - in: query
+        name: recepcion
+        required: false
+        type: string
+      - in: query
+        name: page
+        required: false
+        type: integer
+      - in: query
+        name: limit
+        required: false
+        type: integer
+    responses:
+      "200":
+        description: XLSX file
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+three-way-match-run:
+  post:
+    tags:
+      - three-way-match
+    summary: Execute three way match process
+    operationId: runThreeWayMatch
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: false
+        schema:
+          $ref: "../definitions/three-way-match.yaml#/RunThreeWayMatchBody"
+    responses:
+      "200":
+        description: Three way match executed
+        schema:
+          $ref: "../definitions/three-way-match.yaml#/RunThreeWayMatchResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

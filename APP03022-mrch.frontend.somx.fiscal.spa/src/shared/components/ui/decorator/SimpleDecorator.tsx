@@ -1,34 +1,41 @@
-
 import { Breadcrumb } from "@/shared/components/ui/navigation";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { ReactElement } from "react";
-
 import { GenericButton } from "@/shared/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { GenericMarqueeBar } from "../progress";
+import "./Decorator.css";
+
+export interface DecorateOptions {
+  className?: string;
+}
+
+function GoBackButton(): ReactElement {
+  const navigate = useNavigate();
+  return (
+    <GenericButton variant="link" className="fiscal-decorator-actions-end" onClick={() => navigate(-1)}>
+      Volver
+    </GenericButton>
+  );
+}
 
 export function decorate(
   breadcrumItems: BreadcrumbItem[],
-  returnPath: string,
+  _returnPath: string,
   content: ReactElement,
-  loading?: boolean,
-  actions?: ReactElement
+  actions?: ReactElement,
+  options?: DecorateOptions
 ): ReactElement {
-  if (loading) {
-    return <GenericMarqueeBar />;
-  }
-
+  const containerClass = `fiscal-decorator-container ${options?.className ?? ""}`.trim();
   return (
-    <div className="somx-decorate-container">
+    <div className={containerClass}>
       <Breadcrumb items={breadcrumItems} />
-      <div className="somx-decorate-card">
+      <div className="fiscal-decorator-actions">
+        {actions}
+      </div>
+      <div className="fiscal-decorator-card">
         {content}
-        <div className="somx-decorate-actions">
-          {actions}
-          <GenericButton variant="link" className="somx-self-end">
-            <Link to={returnPath}>Volver</Link>
-          </GenericButton>
-        </div>
+
       </div>
     </div>
   );

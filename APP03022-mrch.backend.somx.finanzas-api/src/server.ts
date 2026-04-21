@@ -1,14 +1,11 @@
-// src/server.ts
 import 'dotenv/config';
+import http from 'http';
 import app from './app.js';
 import { initDataSource } from './config/typeorm-datasource.js';
-import { mountSwagger } from './swagger.js';
 
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
-// Puerto
 const port = Number(process.env.PORT ?? process.env.APP_PORT ?? 3711);
+const maxHeaderSize = Number(process.env.MAX_HEADER_SIZE ?? 65536);
 
-// Trust proxy (opcional y seguro)
 const TRUST_PROXY = (process.env.TRUST_PROXY ?? '').trim();
 if (TRUST_PROXY) {
     app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
@@ -20,14 +17,16 @@ let server: import('http').Server;
 
 async function bootstrap() {
     try {
-        // DB primero
         await initDataSource();
 
-        // Swagger después (async)
-        await mountSwagger(app);
+        console.log("PORT ENV:", process.env.PORT);
+        console.log("APP_PORT ENV:", process.env.APP_PORT);
+        console.log("Resolved port:", port);
+        console.log("MAX_HEADER_SIZE:", maxHeaderSize);
 
-        // Luego arrancamos HTTP
-        server = app.listen(port, '0.0.0.0', () => {
+        server = http.createServer({ maxHeaderSize }, app);
+
+        server.listen(port, '0.0.0.0', () => {
             console.log(`API listening on http://localhost:${port}`);
         });
     } catch (err) {
@@ -38,7 +37,6 @@ async function bootstrap() {
 
 bootstrap();
 
-// Graceful shutdown
 const shutDown = (signal: string) => {
     console.log(`${signal} received. Shutting down...`);
     if (server) {

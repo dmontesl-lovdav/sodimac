@@ -1,0 +1,162 @@
+fiscal-payments:
+  get:
+    tags:
+      - fiscal-payments
+    summary: List fiscal payments
+    operationId: listFiscalPayments
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of fiscal payments
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/fiscal-payments.yaml#/FiscalPaymentDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - fiscal-payments
+    summary: Create fiscal payment
+    operationId: createFiscalPayment
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/fiscal-payments.yaml#/CreateFiscalPaymentDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/fiscal-payments.yaml#/FiscalPaymentDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+fiscal-payments-by-uuid:
+  get:
+    tags:
+      - fiscal-payments
+    summary: Get fiscal payment by ID
+    operationId: getFiscalPaymentById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Fiscal payment UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/fiscal-payments.yaml#/FiscalPaymentDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  put:
+    tags:
+      - fiscal-payments
+    summary: Update fiscal payment
+    operationId: updateFiscalPayment
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Fiscal payment UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/fiscal-payments.yaml#/UpdateFiscalPaymentDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/fiscal-payments.yaml#/FiscalPaymentDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - fiscal-payments
+    summary: Delete fiscal payment
+    operationId: deleteFiscalPayment
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Fiscal payment UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

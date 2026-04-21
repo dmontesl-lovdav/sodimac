@@ -1,3 +1,4 @@
+export * from './alerts/index';
 export * from './button/index';
 export * from './select/index';
 export * from './table/index';
@@ -9,3 +10,5 @@ export * from './attachmentUploader/index';
 export * from './input/index';
 export * from './verticalStepper/index';
 export * from './progress/index';
+export * from './decorator/index';
+export * from './lobby/index';

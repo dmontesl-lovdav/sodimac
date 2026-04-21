@@ -2,10 +2,15 @@
 import { ReactElement } from "react";
 import { Divider } from "./Divider";
 
-export function Title({ title }: { title?: string }): ReactElement {
+interface TitleProps {
+  title?: string;
+  description?: string;
+}
+export function Title({ title, description }: TitleProps): ReactElement {
   return (
    <div>
-      <p className="font-bold">{title}</p>
+      <h3>{title}</h3>
+      {description && <p className="somx-mt-3 somx-mb-3">{description}</p>}
       <Divider />
    </div>
   );

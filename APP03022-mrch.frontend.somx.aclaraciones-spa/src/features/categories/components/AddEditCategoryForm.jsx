@@ -8,7 +8,8 @@ import {
     GenericMarqueeBar,
     GenericButton,
     GenericInput,
-    GenericAttachmentUploader
+    GenericAttachmentUploader,
+    GenericModal
 } from '@shared/components/ui';
 
 import './styles/AddEditCategoryForm.css';
@@ -38,6 +39,18 @@ export default function AddEditCategoryForm({ id }) {
     // limpiar imagen del server
     const [hadServerIcon, setHadServerIcon] = useState(false);
     const [clearIcon, setClearIcon] = useState(false);
+
+    const [submitBlocked, setSubmitBlocked] = useState(false);
+    const [lastFailedName, setLastFailedName] = useState('');
+
+
+    const [alert, setAlert] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        severity: 'error',
+    });
+
 
     useEffect(() => {
         if (files.length > 0) {
@@ -163,6 +176,20 @@ export default function AddEditCategoryForm({ id }) {
                 : nav(-1);
         } catch (e) {
             console.error(e);
+
+            const apiMessage =
+                e?.response?.data?.message ||
+                'Ocurrió un error al guardar la categoría.';
+
+            setAlert({
+                visible: true,
+                title: 'No se pudo guardar',
+                message: apiMessage,
+                severity: 'error',
+            });
+
+            setSubmitBlocked(true);
+            setLastFailedName(_name.trim());
             setState(STATE.LOADED);
         }
     }
@@ -188,137 +215,159 @@ export default function AddEditCategoryForm({ id }) {
 
             {state === STATE.LOADING && <GenericMarqueeBar height={6} />}
 
-            {state === STATE.LOADED && (
-                <div className={`addedit-neg-margin-left addedit-neg-margin-right addedit-box`}>
-                    <div className="addedit-box-padding">
-                        <div className="addedit-inner">
+            <div className={`addedit-box ${state === STATE.LOADING ? 'is-loading' : ''}`}>
+                <div className="addedit-box-padding">
+                    <div className="addedit-inner">
 
-                            <div>
-                                <h3 className="addedit-title">
-                                    {_id
-                                        ? 'Editar categoría (Módulo)'
-                                        : 'Agregar nuevo tema de categoría (Módulo)'}
-                                </h3>
+                        <div>
+                            <h3 className="addedit-title">
+                                {_id
+                                    ? 'Editar categoría'
+                                    : 'Agregar nuevo tema de categoría'}
+                            </h3>
 
-                                <p className="addedit-subtitle">
-                                    Búsqueda por folio, orden de compra, proveedor o usuario.
-                                </p>
-                            </div>
+                            <p className="addedit-subtitle">
+                            </p>
+                        </div>
 
-                            <div>
-                                <h3 className="addedit-mt4" style={{ fontWeight: 'bold' }}>Ingresa el módulo</h3>
+                        <div>
+                            <h3 className="addedit-mt4" style={{ fontWeight: 'bold' }}>Ingresa la categoría</h3>
 
-                                <GenericInput
-                                    className="addedit-mt2"
-                                    onChange={(e) => setName(e?.target?.value ?? '')}
-                                    value={_name}
-                                    name="name"
-                                    label="Nombre de la categoría"
-                                    placeholder="Financieros"
-                                    required
-                                    type="text"
-                                    maxLength={32}
-                                    minLength={2}
-                                    autoComplete="off"
-                                />
+                            <GenericInput
+                                className="addedit-mt2"
+                                onChange={(e) => {
+                                    const value = e?.target?.value ?? '';
+                                    setName(value);
 
-                                <GenericInput
-                                    className="addedit-mt4"
-                                    onChange={(e) => setDescription(e?.target?.value ?? '')}
-                                    value={_description}
-                                    name="description"
-                                    label="Descripción"
-                                    placeholder="Temas relacionados con facturas, pagos y reembolsos"
-                                    required
-                                    type="text"
-                                    maxLength={128}
-                                    minLength={2}
-                                    autoComplete="off"
-                                />
-                            </div>
-
-                            {/* Agregar imagen */}
-                            <div>
-                                <h3 className="addedit-mt4" style={{ fontWeight: 'bold' }}>Agregar imagen</h3>
-                                <div className="addedit-mt6 addedit-mb3">
-                                    Asegúrate de que los documentos sean legibles, estén bien iluminados y contengan solo una imagen por archivo.
-                                </div>
-
-                                {preview && files.length > 0 && (
-                                    <div className="addedit-preview-box">
-                                        <img
-                                            src={preview}
-                                            alt={existingIconName || 'Icono actual'}
-                                            style={{
-                                                width: 72,
-                                                height: 72,
-                                                objectFit: 'contain',
-                                                borderRadius: 6,
-                                                border: '1px solid #e5e7eb',
-                                            }}
-                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                        />
-
-                                        <GenericButton
-                                            variant="text"
-                                            color="secondary"
-                                            onClick={() => {
-                                                setFiles([]);
-                                                setPreview(null);
-                                            }}
-                                        >
-                                            Quitar imagen
-                                        </GenericButton>
-                                    </div>
-                                )}
-
-                                <GenericAttachmentUploader
-                                    files={files}
-                                    setFiles={(arr) => {
-                                        setFiles(arr);
-                                        if (arr.length === 0) setPreview(null);
-                                        else if (arr[0]?.preview) setPreview(arr[0].preview);
-                                        else if (arr[0] instanceof File) {
-                                            try {
-                                                const url = URL.createObjectURL(arr[0]);
-                                                arr[0].preview = url;
-                                                setPreview(url);
-                                            } catch { }
-                                        }
-                                    }}
-                                    fileExtensions={['jpg', 'jpeg', 'png', 'gif']}
-                                    fileSize={1024 * 512}
-                                    multiple={false}
-                                />
-                            </div>
-
-                            {/* Botones */}
-                            <div className="addedit-actions">
-                                <GenericButton
-                                    variant="text"
-                                    className="addedit-back-btn"
-                                    onClick={() =>
-                                        fromMaintainer
-                                            ? nav(withOrigin('/categories'), { state: stateOrigin })
-                                            : nav(-1)
+                                    if (submitBlocked && value.trim() !== lastFailedName) {
+                                        setSubmitBlocked(false);
                                     }
-                                >
-                                    Volver
-                                </GenericButton>
+                                }}
+                                value={_name}
+                                name="name"
+                                label="Nombre de la categoría"
+                                placeholder="Financieros"
+                                required
+                                type="text"
+                                maxLength={32}
+                                minLength={2}
+                                autoComplete="off"
+                            />
 
-                                <GenericButton
-                                    variant="primary"
-                                    disabled={!formIsValid}
-                                    onClick={handleSave}
-                                >
-                                    Guardar
-                                </GenericButton>
+                            <GenericInput
+                                className="addedit-mt4"
+                                onChange={(e) => setDescription(e?.target?.value ?? '')}
+                                value={_description}
+                                name="description"
+                                label="Descripción"
+                                placeholder="Temas relacionados con facturas, pagos y reembolsos"
+                                required
+                                type="text"
+                                maxLength={128}
+                                minLength={2}
+                                autoComplete="off"
+                            />
+                        </div>
+
+                        {/* Agregar imagen */}
+                        <div>
+                            <h3 className="addedit-mt4" style={{ fontWeight: 'bold' }}>Agregar imagen</h3>
+                            <div className="addedit-mt6 addedit-mb3">
+                                Asegúrate de que los documentos sean legibles, estén bien iluminados y contengan solo una imagen por archivo.
                             </div>
+
+                            {preview && files.length > 0 && (
+                                <div className="addedit-preview-box">
+                                    <img
+                                        src={preview}
+                                        alt={existingIconName || 'Icono actual'}
+                                        style={{
+                                            width: 72,
+                                            height: 72,
+                                            objectFit: 'contain',
+                                            borderRadius: 6,
+                                            border: '1px solid #e5e7eb',
+                                        }}
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+
+                                    <GenericButton
+                                        variant="text"
+                                        color="secondary"
+                                        onClick={() => {
+                                            setFiles([]);
+                                            setPreview(null);
+                                        }}
+                                    >
+                                        Quitar imagen
+                                    </GenericButton>
+                                </div>
+                            )}
+
+                            <GenericAttachmentUploader
+                                files={files}
+                                setFiles={(arr) => {
+                                    setFiles(arr);
+                                    if (arr.length === 0) setPreview(null);
+                                    else if (arr[0]?.preview) setPreview(arr[0].preview);
+                                    else if (arr[0] instanceof File) {
+                                        try {
+                                            const url = URL.createObjectURL(arr[0]);
+                                            arr[0].preview = url;
+                                            setPreview(url);
+                                        } catch { }
+                                    }
+                                }}
+                                fileExtensions={['jpg', 'jpeg', 'png', 'gif']}
+                                fileSize={1024 * 512}
+                                multiple={false}
+                            />
+                        </div>
+
+                        {/* Botones */}
+                        <div className="addedit-actions">
+                            <GenericButton
+                                variant="text"
+                                className="addedit-back-btn"
+                                onClick={() =>
+                                    fromMaintainer
+                                        ? nav(withOrigin('/categories'), { state: stateOrigin })
+                                        : nav(-1)
+                                }
+                            >
+                                Volver
+                            </GenericButton>
+
+                            <GenericButton
+                                variant="primary"
+                                disabled={!formIsValid || submitBlocked || state === STATE.LOADING}
+                                onClick={handleSave}
+                            >
+                                Guardar
+                            </GenericButton>
 
                         </div>
+
                     </div>
                 </div>
-            )}
+            </div>
+            <GenericModal
+                visible={alert.visible}
+                variant="alert"
+                severity={alert.severity}
+                title={alert.title}
+                message={alert.message}
+                buttonText="Aceptar"
+                onClose={() =>
+                    setAlert((a) => ({ ...a, visible: false }))
+                }
+            />
+            <GenericModal
+                visible={state === STATE.LOADING}
+                variant="loading"
+                message="Guardando categoría…"
+            />
+
         </div>
     );
 }

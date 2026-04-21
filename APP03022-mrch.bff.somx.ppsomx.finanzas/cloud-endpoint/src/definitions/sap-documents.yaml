@@ -1,0 +1,64 @@
+SapDocumentDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    documentNumber:
+      type: string
+      description: SAP document number
+    documentType:
+      type: string
+      description: Document type
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    amount:
+      type: string
+      description: Document amount
+    postingDate:
+      type: string
+      format: date-time
+      description: Posting date
+    status:
+      type: integer
+      description: Document status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateSapDocumentDto:
+  type: object
+  required:
+    - documentNumber
+    - documentType
+    - vendorNumber
+  properties:
+    documentNumber:
+      type: string
+    documentType:
+      type: string
+    vendorNumber:
+      type: integer
+    amount:
+      type: string
+    postingDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+
+UpdateSapDocumentDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    amount:
+      type: string
+    postingDate:
+      type: string
+      format: date-time

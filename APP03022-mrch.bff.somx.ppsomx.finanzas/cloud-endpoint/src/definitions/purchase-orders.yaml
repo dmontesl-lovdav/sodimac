@@ -1,0 +1,66 @@
+PurchaseOrderDto:
+  type: object
+  properties:
+    purchaseOrderId:
+      type: string
+      format: uuid
+      description: Unique identifier
+    orderNumber:
+      type: string
+      description: Order number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    orderDate:
+      type: string
+      format: date-time
+      description: Order date
+    totalAmount:
+      type: string
+      description: Total amount
+    status:
+      type: integer
+      description: Order status
+    receipts:
+      type: array
+      description: Associated receipts
+      items:
+        $ref: "#/ReceiptDto"
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+UpdatePurchaseOrderDto:
+  type: object
+  properties:
+    status:
+      type: integer
+      description: New status value
+
+ReceiptDto:
+  type: object
+  properties:
+    receiptId:
+      type: string
+      format: uuid
+      description: Receipt unique identifier
+    receiptNumber:
+      type: string
+      description: Receipt number
+    purchaseOrderUuid:
+      type: string
+      format: uuid
+      description: Related purchase order
+    amount:
+      type: string
+      description: Receipt amount
+    receiptDate:
+      type: string
+      format: date-time
+      description: Receipt date
+    status:
+      type: integer
+      description: Receipt status

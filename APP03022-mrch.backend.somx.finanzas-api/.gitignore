@@ -35,3 +35,6 @@ Thumbs.db
 
 # TypeORM temp
 tmp/
+package-lock.json
+yarn.lock
+package-lock.json

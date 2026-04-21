@@ -1,11 +1,9 @@
-// src/features/relatedInformation/AddEditRelatedInformationForm.jsx
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Buffer } from 'buffer';
 
 import {
     Breadcrumb,
-    GenericSelectFloating,
     GenericButton,
     GenericInput,
     GenericLinearProgress,
@@ -14,6 +12,7 @@ import AttachmentUploader from '@/shared/components/ui/attachmentUploader/Attach
 
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 import { loadCatalog } from '@/features/cases/components/RequestUtils';
+import { globalHomeStore } from '@/store/globalStore';
 
 import {
     createRelatedInformation,
@@ -22,6 +21,41 @@ import {
 } from '@/features/relatedInformation/api/relatedInformationService';
 
 import '../styles/AddEditRelatedInformationForm.css';
+
+/* 🔹 misma lógica que RequestForm */
+function applyTenant({ commerce, country }, businessUnits, countries, setBusinessUnitId, setCountryId) {
+    if (!commerce || !country) return;
+    if (!businessUnits.length || !countries.length) return;
+
+    const bu = businessUnits.find(b =>
+        b.description?.toUpperCase().includes(
+            commerce === 'TOT' ? 'TOTTUS'
+                : commerce === 'SOD' ? 'SODIMAC'
+                    : commerce === 'FAL' ? 'FALABELLA'
+                        : commerce
+        )
+    );
+
+    const COUNTRY_CODE_MAP = {
+        CL: 'CHILE',
+        MX: 'MEXICO',
+        CO: 'COLOMBIA',
+        PE: 'PERU',
+        AR: 'ARGENTINA',
+        BR: 'BRASIL',
+        UY: 'URUGUAY',
+    };
+
+    const normalizedCountry =
+        COUNTRY_CODE_MAP[country] || country?.toUpperCase();
+
+    const ct = countries.find(c =>
+        c.description?.toUpperCase() === normalizedCountry
+    );
+
+    if (bu?.id) setBusinessUnitId(String(bu.id));
+    if (ct?.id) setCountryId(String(ct.id));
+}
 
 export default function AddEditRelatedInformationForm() {
     const { id: idFromRoute } = useParams();
@@ -56,21 +90,8 @@ export default function AddEditRelatedInformationForm() {
 
     const [files, setFiles] = useState([]);
     const [preview, setPreview] = useState(null);
-
     const [hadServerImage, setHadServerImage] = useState(false);
     const [clearImage, setClearImage] = useState(false);
-
-    const businessUnitOptions = useMemo(() => {
-        const list = Array.isArray(businessUnits) ? businessUnits : [];
-        const reordered = [
-            ...list.filter(x => Number(x.id) === 3),
-            ...list.filter(x => Number(x.id) !== 3),
-        ];
-        return reordered.map(({ id, description }) => ({
-            value: String(id),
-            label: String(description),
-        }));
-    }, [businessUnits]);
 
     useEffect(() => {
         if (files.length > 0) {
@@ -80,40 +101,69 @@ export default function AddEditRelatedInformationForm() {
         }
     }, [files.length, hadServerImage]);
 
+    /* 🔹 cargar catálogos + edit */
     useEffect(() => {
         (async () => {
             try {
                 setState(STATE.LOADING);
 
-                await loadCatalog(api, CATALOGS_BUSINESSUNITS, (arr) => {
-                    setBusinessUnits(arr);
-                });
-
-                await loadCatalog(api, CATALOGS_COUNTRIES, (arr) => {
-                    setCountries(arr);
-                });
+                await loadCatalog(api, CATALOGS_BUSINESSUNITS, setBusinessUnits);
+                await loadCatalog(api, CATALOGS_COUNTRIES, setCountries);
 
                 await loadEdit();
-            } catch (err) {
-                console.error('Failed to load catalogs', err);
             } finally {
                 setState(STATE.LOADED);
             }
         })();
     }, []);
 
+    /* 🔹 aplicar tenant inicial */
     useEffect(() => {
-        const handler = () => {
-            if (fromMaintainer) {
-                nav(withOrigin('/relatedInformation'), { state: stateOrigin });
-            } else {
-                nav(-1);
-            }
-        };
+        if (!globalHomeStore?.GetGlobalState) return;
 
-        window.addEventListener("country-changed", handler);
-        return () => window.removeEventListener("country-changed", handler);
-    }, [fromMaintainer, nav, stateOrigin]);
+        const state = globalHomeStore.GetGlobalState('aclaraciones');
+        const tenant = state?.configuration?.selectedTenant;
+        if (!tenant) return;
+
+        applyTenant(
+            { commerce: tenant?.commerce?.name, country: tenant?.country?.name },
+            businessUnits,
+            countries,
+            setBusinessUnitId,
+            setCountryId
+        );
+    }, [businessUnits, countries]);
+
+    /* 🔹 escuchar country-changed */
+    useEffect(() => {
+        function handler(e) {
+            const { commerce, country } = e.detail || {};
+            applyTenant(
+                { commerce, country },
+                businessUnits,
+                countries,
+                setBusinessUnitId,
+                setCountryId
+            );
+        }
+
+        window.addEventListener('country-changed', handler);
+        return () => window.removeEventListener('country-changed', handler);
+    }, [businessUnits, countries]);
+
+    useEffect(() => {
+        if (!idFromRoute) return;
+
+        function handleTenantChange() {
+            fromMaintainer
+                ? nav(withOrigin('/relatedInformation'), { state: stateOrigin })
+                : nav(-1);
+        }
+
+        window.addEventListener('country-changed', handleTenantChange);
+        return () =>
+            window.removeEventListener('country-changed', handleTenantChange);
+    }, [idFromRoute, fromMaintainer, nav, stateOrigin]);
 
     const loadEdit = async () => {
         if (!idFromRoute) return;
@@ -126,7 +176,7 @@ export default function AddEditRelatedInformationForm() {
             setCountryId(r.countryId ? String(r.countryId) : '');
 
             if (r.image) {
-                const bytes = Uint8Array.from(atob(r.image), (c) => c.charCodeAt(0));
+                const bytes = Uint8Array.from(atob(r.image), c => c.charCodeAt(0));
                 const fname = r.imageName ?? 'original.jpg';
                 const fileObj = new File([bytes], fname, { type: 'image/jpeg' });
                 fileObj.preview = URL.createObjectURL(fileObj);
@@ -134,13 +184,8 @@ export default function AddEditRelatedInformationForm() {
                 setFiles([fileObj]);
                 setPreview(fileObj.preview);
                 setHadServerImage(true);
-                setClearImage(false);
-            } else {
-                setHadServerImage(false);
-                setClearImage(false);
             }
-        } catch (err) {
-            console.error('Failed to load record', err);
+        } catch {
             fromMaintainer
                 ? nav(withOrigin('/relatedInformation'), { state: stateOrigin })
                 : nav(-1);
@@ -149,9 +194,7 @@ export default function AddEditRelatedInformationForm() {
 
     const formIsValid =
         title.trim().length > 2 &&
-        link.trim().length > 2 &&
-        Number(businessUnitId) > 0 &&
-        Number(countryId) > 0;
+        link.trim().length > 2;
 
     async function handleSave() {
         try {
@@ -159,7 +202,6 @@ export default function AddEditRelatedInformationForm() {
 
             let imageB64;
             let imageName;
-
             const first = files[0];
             const isUserFile = first && first instanceof File && !first.__fromServer;
 
@@ -171,8 +213,8 @@ export default function AddEditRelatedInformationForm() {
             const payload = {
                 title: title.trim(),
                 link: link.trim(),
-                businessUnitId: businessUnitId ? Number(businessUnitId) : undefined,
-                countryId: countryId ? Number(countryId) : undefined,
+                businessUnitId: Number(businessUnitId),
+                countryId: Number(countryId),
             };
 
             if (imageB64) {
@@ -183,17 +225,14 @@ export default function AddEditRelatedInformationForm() {
                 payload.imageName = '';
             }
 
-            if (idFromRoute) {
-                await updateRelatedInformation(+idFromRoute, payload);
-            } else {
-                await createRelatedInformation(payload);
-            }
+            idFromRoute
+                ? await updateRelatedInformation(+idFromRoute, payload)
+                : await createRelatedInformation(payload);
 
             fromMaintainer
                 ? nav(withOrigin('/relatedInformation'), { state: stateOrigin })
                 : nav(-1);
-        } catch (err) {
-            console.error('Save failed', err);
+        } finally {
             setState(STATE.LOADED);
         }
     }
@@ -213,66 +252,28 @@ export default function AddEditRelatedInformationForm() {
 
     return (
         <div className="ri-form-container">
-
             <div className="ri-form-breadcrumb">
                 <Breadcrumb items={breadcrumbItems} />
             </div>
 
             {state === STATE.LOADING && (
-                <GenericLinearProgress
-                    indeterminate
-                    value={1}
-                    max={3}
-                    buffer={1.5}
-                    fullWidth
-                    className="ri-form-progress"
-                />
+                <GenericLinearProgress indeterminate fullWidth />
             )}
 
             {state === STATE.LOADED && (
                 <div className="ri-form-card">
-
                     <div className="ri-form-card-inner">
+                        <h3 className="ri-form-title">
+                            {idFromRoute ? 'Editar información relacionada' : 'Agregar información relacionada'}
+                        </h3>
 
-                        <div className="ri-form-header">
-                            <h3 className="ri-form-title">
-                                {idFromRoute
-                                    ? 'Editar información relacionada'
-                                    : 'Agregar información relacionada'}
-                            </h3>
-                        </div>
-
-                        <h3 className="ri-form-subsection">Selecciona tu unidad de negocio y país</h3>
-
-                        <div className="ri-field-spacing">
-                            <GenericSelectFloating
-                                label="Unidad de Negocio"
-                                value={businessUnitId}
-                                onChange={(e) => setBusinessUnitId(e.target.value)}
-                                options={businessUnitOptions}
-                            />
-                        </div>
-
-                        <div className="ri-field-spacing">
-                            <GenericSelectFloating
-                                label="País"
-                                value={countryId}
-                                onChange={(e) => setCountryId(e.target.value)}
-                                options={(countries ?? []).map(({ id, description }) => ({
-                                    value: String(id),
-                                    label: String(description),
-                                }))}
-                            />
-                        </div>
-
-                        <h3 className="ri-form-subsection mt-8">Información relacionada</h3>
+                        <h3 className="ri-form-subsection">Información relacionada</h3>
 
                         <GenericInput
                             className="ri-field-spacing"
                             label="Título"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Orden de compra"
                             maxLength={64}
                             required
                         />
@@ -282,22 +283,17 @@ export default function AddEditRelatedInformationForm() {
                             label="Enlace"
                             value={link}
                             onChange={(e) => setLink(e.target.value)}
-                            placeholder="https://..."
                             maxLength={256}
                             required
                         />
 
                         <h3 className="ri-form-subsection mt-8">Agregar imagen</h3>
-                        <p className="ri-form-image-hint">
-                            Formatos soportados: JPG - JPEG - PNG (máx. 2 MB).
-                        </p>
 
                         <AttachmentUploader
                             files={files}
                             setFiles={(arr) => {
                                 setFiles(arr);
-                                if (arr.length === 0) setPreview(null);
-                                else if (arr[0]?.preview) setPreview(arr[0].preview);
+                                setPreview(arr[0]?.preview ?? null);
                             }}
                             fileExtensions={['jpg', 'jpeg', 'png']}
                             fileSize={2 * 1024 * 1024}
@@ -307,7 +303,6 @@ export default function AddEditRelatedInformationForm() {
                         <div className="ri-form-actions">
                             <GenericButton
                                 variant="text"
-                                className="ri-form-back"
                                 onClick={() =>
                                     fromMaintainer
                                         ? nav(withOrigin('/relatedInformation'), { state: stateOrigin })
@@ -325,7 +320,6 @@ export default function AddEditRelatedInformationForm() {
                                 Guardar
                             </GenericButton>
                         </div>
-
                     </div>
                 </div>
             )}

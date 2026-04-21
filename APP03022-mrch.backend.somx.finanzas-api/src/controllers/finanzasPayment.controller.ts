@@ -1,54 +1,226 @@
 import type { Request, Response, NextFunction } from "express";
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 import * as svc from "@/services/finanzasPayment.service.js";
-import { HttpError } from "@/utils/HttpError.js";
-import { ResponseHandler } from '@/response/ResponseHandler.js';
+import { ResponseHandler } from "@/response/ResponseHandler.js";
 import {
     CreateFinanzasPaymentSchema,
     UpdateFinanzasPaymentSchema,
     ListFinanzasPaymentsQuerySchema,
+    CreateFinanzasPaymentHeaderWithDetailsSchema,
     type CreateFinanzasPaymentDto,
     type UpdateFinanzasPaymentDto,
     type ListFinanzasPaymentQuery,
+    type CreateFinanzasPaymentHeaderWithDetailsDto,
+    PaymentHeaderUuidParamSchema,
+    ListFinanzasPaymentDetailsByHeaderQuerySchema,
+    type PaymentHeaderUuidParamDto,
+    type ListFinanzasPaymentDetailsByHeaderQueryDto,
 } from "@/schemas/finanzasPayment.schema.js";
 
 // GET /finanzas-payment
-export async function list(req: Request, res: Response, next: NextFunction) {
-    try {
-        const q: ListFinanzasPaymentQuery = ListFinanzasPaymentsQuerySchema.parse(req.body);
-        const response = await svc.list(q); 
-        
+export async function list(req: Request, res: Response, _next: NextFunction) {
+    const start = Date.now();
 
-         res.json(response);
+    try {
+        console.log("[finanzas-payment][controller.list] START", {
+            method: req.method,
+            originalUrl: req.originalUrl,
+            query: req.query,
+            headers: {
+                authorization: req.headers.authorization ? "[PRESENT]" : "[MISSING]",
+                "x-country": req.headers["x-country"],
+                "x-commerce": req.headers["x-commerce"],
+            },
+        });
+
+        const q: ListFinanzasPaymentQuery = ListFinanzasPaymentsQuerySchema.parse(req.query);
+
+        console.log("[finanzas-payment][controller.list] PARSED_QUERY", q);
+
+        const response = await svc.list(q);
+
+        console.log("[finanzas-payment][controller.list] END", {
+            elapsedMs: Date.now() - start,
+            success: true,
+        });
+
+        return res.json(response);
     } catch (e) {
-        res.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-        next(e);
+        console.error("[finanzas-payment][controller.list] ERROR", {
+            elapsedMs: Date.now() - start,
+            error: e,
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json(
+            ResponseHandler.responseBuilder(
+                "ERROR: " + e,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                ""
+            )
+        );
     }
 }
 
 // POST /finanzas-payment
-export async function create(req: Request, res: Response, next: NextFunction) {
+export async function create(req: Request, res: Response, _next: NextFunction) {
+    const start = Date.now();
+
     try {
-        //console.log('[DEBUG] Query params:', req.body);
+        console.log("[finanzas-payment][controller.create] START", {
+            method: req.method,
+            originalUrl: req.originalUrl,
+        });
+
         const dto: CreateFinanzasPaymentDto = CreateFinanzasPaymentSchema.parse(req.body);
         const created = await svc.create(dto);
-        //console.log('[DEBUG] Paso el Create', '');
-        res.status(201).json(created);
-    } catch (e) { 
-        res.status(404).json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-        next(e); 
+
+        console.log("[finanzas-payment][controller.create] END", {
+            elapsedMs: Date.now() - start,
+            success: true,
+        });
+
+        return res.status(StatusCodes.CREATED).json(created);
+    } catch (e) {
+        console.error("[finanzas-payment][controller.create] ERROR", {
+            elapsedMs: Date.now() - start,
+            error: e,
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json(
+            ResponseHandler.responseBuilder(
+                "ERROR: " + e,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                ""
+            )
+        );
     }
 }
 
-// PATCH /accounts-payable
-export async function update(req: Request, res: Response, next: NextFunction) {
+// POST /finanzas-payment/header-with-details
+export async function createHeaderWithDetails(req: Request, res: Response, _next: NextFunction) {
+    const start = Date.now();
+
     try {
+        console.log("[finanzas-payment][controller.createHeaderWithDetails] START", {
+            method: req.method,
+            originalUrl: req.originalUrl,
+        });
+
+        const dto: CreateFinanzasPaymentHeaderWithDetailsDto =
+            CreateFinanzasPaymentHeaderWithDetailsSchema.parse(req.body);
+
+        const created = await svc.createHeaderWithDetails(dto);
+
+        console.log("[finanzas-payment][controller.createHeaderWithDetails] END", {
+            elapsedMs: Date.now() - start,
+            success: true,
+        });
+
+        return res.status(StatusCodes.CREATED).json(created);
+    } catch (e) {
+        console.error("[finanzas-payment][controller.createHeaderWithDetails] ERROR", {
+            elapsedMs: Date.now() - start,
+            error: e,
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json(
+            ResponseHandler.responseBuilder(
+                "ERROR: " + e,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                ""
+            )
+        );
+    }
+}
+
+// PATCH /finanzas-payment
+export async function update(req: Request, res: Response, _next: NextFunction) {
+    const start = Date.now();
+
+    try {
+        console.log("[finanzas-payment][controller.update] START", {
+            method: req.method,
+            originalUrl: req.originalUrl,
+        });
+
         const dto: UpdateFinanzasPaymentDto = UpdateFinanzasPaymentSchema.parse(req.body);
         const updated = await svc.update(dto);
-        //if (!updated) return res.status(404).json({ message: "Not found" });
-        res.json(updated);
-    } catch (e) { 
-        res.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-        next(e); 
+
+        console.log("[finanzas-payment][controller.update] END", {
+            elapsedMs: Date.now() - start,
+            success: true,
+        });
+
+        return res.json(updated);
+    } catch (e) {
+        console.error("[finanzas-payment][controller.update] ERROR", {
+            elapsedMs: Date.now() - start,
+            error: e,
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json(
+            ResponseHandler.responseBuilder(
+                "ERROR: " + e,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                ""
+            )
+        );
+    }
+}
+
+export async function getHeaderWithDetails(req: Request, res: Response, _next: NextFunction) {
+    const start = Date.now();
+
+    try {
+        console.log("[finanzas-payment][controller.getHeaderWithDetails] START", {
+            method: req.method,
+            originalUrl: req.originalUrl,
+            params: req.params,
+            query: req.query,
+        });
+
+        const params: PaymentHeaderUuidParamDto = PaymentHeaderUuidParamSchema.parse(req.params);
+
+        let queryDto: ListFinanzasPaymentDetailsByHeaderQueryDto | undefined = undefined;
+        if (req.query.pageNumber !== undefined || req.query.pageSize !== undefined) {
+            queryDto = ListFinanzasPaymentDetailsByHeaderQuerySchema.parse(req.query);
+        }
+
+        const response = await svc.getHeaderWithDetails(params.paymentHeaderUuid, queryDto);
+
+        console.log("[finanzas-payment][controller.getHeaderWithDetails] END", {
+            elapsedMs: Date.now() - start,
+            success: true,
+        });
+
+        return res.status(StatusCodes.OK).json(response);
+    } catch (e) {
+        console.error("[finanzas-payment][controller.getHeaderWithDetails] ERROR", {
+            elapsedMs: Date.now() - start,
+            error: e,
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json(
+            ResponseHandler.responseBuilder(
+                "ERROR: " + e,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                ""
+            )
+        );
     }
 }

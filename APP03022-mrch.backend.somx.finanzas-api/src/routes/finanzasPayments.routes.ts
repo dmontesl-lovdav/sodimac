@@ -1,19 +1,36 @@
 import { Router, type Router as RouterType } from "express";
 import * as controller from "@/controllers/finanzasPayment.controller.js";
 import { validateBody, validateParams, validateQuery } from "@/middlewares/validate.js";
+import { attachAuthToken } from "@/middlewares/authToken.js";
 import {
     CreateFinanzasPaymentSchema,
     UpdateFinanzasPaymentSchema,
-    ListFinanzasPaymentsQuerySchema
+    ListFinanzasPaymentsQuerySchema,
+    CreateFinanzasPaymentHeaderWithDetailsSchema,
+    PaymentHeaderUuidParamSchema,
 } from "@/schemas/finanzasPayment.schema.js";
-import { activityLogger   } from '@/middlewares/logger.js';
+import { activityLogger } from "@/middlewares/logger.js";
 
 const r: RouterType = Router();
-r.use(activityLogger('FinanzasPayment'));
-r.get("/", validateBody(ListFinanzasPaymentsQuerySchema), controller.list);
-// r.get("/:uuid", validateParams(IdParamSchema), controller.getById);
- r.post("/", validateBody(CreateFinanzasPaymentSchema), controller.create);
- r.patch("/", validateBody(UpdateFinanzasPaymentSchema), controller.update);
-// r.delete("/:uuid", validateParams(IdParamSchema), controller.remove);
+
+r.use(activityLogger("FinanzasPayment"));
+r.use(attachAuthToken);
+
+r.get("/", validateQuery(ListFinanzasPaymentsQuerySchema), controller.list);
+
+r.post(
+    "/header-with-details",
+    validateBody(CreateFinanzasPaymentHeaderWithDetailsSchema),
+    controller.createHeaderWithDetails
+);
+
+r.post("/", validateBody(CreateFinanzasPaymentSchema), controller.create);
+r.patch("/", validateBody(UpdateFinanzasPaymentSchema), controller.update);
+
+r.get(
+    "/header-with-details/:paymentHeaderUuid",
+    validateParams(PaymentHeaderUuidParamSchema),
+    controller.getHeaderWithDetails
+);
 
 export default r;

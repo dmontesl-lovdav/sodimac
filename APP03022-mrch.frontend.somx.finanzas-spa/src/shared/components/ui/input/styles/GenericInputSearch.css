@@ -1,0 +1,55 @@
+/* =============================== */
+/*         GENERIC INPUT          */
+/* =============================== */
+
+.generic-input {
+
+    height: 44px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+
+    padding: 0 16px;
+
+    font-size: 14px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    outline: none;
+
+    box-sizing: border-box;
+
+}
+
+
+/* full width opcional */
+
+.generic-input-full {
+    width: 100%;
+}
+
+
+/* focus igual que UAT */
+
+.generic-input:focus {
+
+    border-color: #0284c7;
+
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.20);
+
+}
+
+
+/* disabled */
+
+.generic-input:disabled {
+
+    background: #f9fafb;
+
+    color: #9ca3af;
+
+    cursor: not-allowed;
+
+}

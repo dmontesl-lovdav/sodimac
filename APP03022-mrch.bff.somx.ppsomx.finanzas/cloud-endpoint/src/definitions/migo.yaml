@@ -1,0 +1,144 @@
+# definitions/migo.yaml
+
+MigoDocumentDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    fileName:
+      type: string
+    status:
+      type: integer
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+MigoReceptionDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    migoDocumentId:
+      type: string
+      format: uuid
+    receptionNumber:
+      type: string
+    purchaseOrderNumber:
+      type: string
+    status:
+      type: integer
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+RejectMigoDto:
+  type: object
+  required:
+    - migoDocumentId
+    - rejectionReason
+  properties:
+    migoDocumentId:
+      type: string
+      format: uuid
+    rejectionReason:
+      type: string
+      minLength: 1
+      maxLength: 500
+
+MigoDocumentsListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    status:
+      type: integer
+    message:
+      type: string
+    data:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/MigoDocumentDto"
+        totalElements:
+          type: integer
+        numberOfElements:
+          type: integer
+        totalPages:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+
+MigoDocumentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    status:
+      type: integer
+    message:
+      type: string
+    data:
+      $ref: "#/MigoDocumentDto"
+
+MigoReceptionsListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    status:
+      type: integer
+    message:
+      type: string
+    data:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/MigoReceptionDto"
+        totalElements:
+          type: integer
+        numberOfElements:
+          type: integer
+        totalPages:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+
+MigoUploadResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    status:
+      type: integer
+    message:
+      type: string
+    data:
+      type: object
+
+MigoActionResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    status:
+      type: integer
+    message:
+      type: string
+    data:
+      type: object

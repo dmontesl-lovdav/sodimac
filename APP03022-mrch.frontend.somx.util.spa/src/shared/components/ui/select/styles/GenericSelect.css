@@ -1,0 +1,43 @@
+
+.generic-select-container {
+    position: relative;
+    display: inline-block;
+}
+
+.gs-width-default {
+    width: 200px;
+}
+
+.generic-select {
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+
+    padding: 0 32px 0 12px;
+    font-size: 14px;
+    color: #111827;
+
+    appearance: none;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.generic-select:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
+}
+
+.generic-select-caret {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #002d4c;
+    font-size: 0.9rem;
+}
+
+.generic-select option[value=""] {
+    color: #9ca3af;
+}

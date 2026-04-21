@@ -1,0 +1,48 @@
+.gdrp-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.gdrp-size-sm {
+    height: 40px;
+    font-size: 0.875rem;
+}
+
+.gdrp-size-md {
+    height: 44px;
+    font-size: 0.875rem;
+}
+
+.gdrp-size-lg {
+    height: 48px;
+    font-size: 1rem;
+}
+
+.gdrp-input {
+    width: 100%;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding-left: 16px;
+    padding-right: 40px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gdrp-input:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
+}
+
+.gdrp-caret {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #002d4c;
+    pointer-events: none;
+}
+
+.gdrp-full {
+    width: 100%;
+}

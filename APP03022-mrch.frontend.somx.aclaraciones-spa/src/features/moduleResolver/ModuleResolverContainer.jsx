@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Breadcrumb, GenericButton, GenericModal, GenericSelect } from '@shared/components/ui';
+import { Breadcrumb, GenericButton, GenericInput, GenericModal, GenericSelect } from '@shared/components/ui';
 import { useNavigate } from 'react-router-dom';
 
 import {
     getAllResolvers,
     getResolversByModule,
+    getResolversByEmail,
     loadModulesCatalog,
     deleteResolver
 } from './api/moduleResolverService';
@@ -29,6 +30,7 @@ export default function ModuleResolverContainer() {
 
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
+    const [email, setEmail] = useState('');
 
     const nav = useNavigate();
 
@@ -83,17 +85,45 @@ export default function ModuleResolverContainer() {
     /*                        BUSCAR                             */
     /* ========================================================= */
     const search = async () => {
-        if (!moduleId) return;
-
         try {
             setLoading(true);
 
-            const result = await getResolversByModule(Number(moduleId), page - 1, perPage);
+            // 1️⃣ Email + módulo → buscar por email y filtrar por módulo
+            if (email.trim()) {
+                const result = await getResolversByEmail(email.trim());
 
-            setItems(result?.content || []);
-            setTotalPages(result?.totalPages || 1);
-            setPage(1);
+                let filtered = result || [];
 
+                if (moduleId) {
+                    filtered = filtered.filter(
+                        r => String(r.moduleId) === String(moduleId)
+                    );
+                }
+
+                setItems(filtered);
+                setTotalPages(1);
+                setTotalItems(filtered.length);
+                setPage(1);
+                return;
+            }
+
+            // 2️⃣ Solo módulo
+            if (moduleId) {
+                const result = await getResolversByModule(
+                    Number(moduleId),
+                    page,
+                    perPage
+                );
+
+                setItems(result?.content || []);
+                setTotalPages(result?.totalPages || 1);
+                setTotalItems(result?.totalElements || 0);
+                setPage(1);
+                return;
+            }
+
+            // 3️⃣ Sin filtros → todo
+            loadAll(1, perPage);
         } finally {
             setLoading(false);
         }
@@ -174,6 +204,12 @@ export default function ModuleResolverContainer() {
                         placeholder="Seleccionar módulo…"
                         widthClass="gs-width-lg"
                     />
+                    <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Buscar por correo…"
+                        className="mrc-input"
+                    />
 
                     <GenericButton variant="outline" onClick={search}>
                         Buscar
@@ -183,6 +219,7 @@ export default function ModuleResolverContainer() {
                         variant="outlineFill"
                         onClick={() => {
                             setModuleId('');
+                            setEmail('');
                             setPage(1);
                             loadAll(1, perPage);
                         }}

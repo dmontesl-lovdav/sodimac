@@ -12,14 +12,13 @@ import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
 import { Between, EntityManager, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
 import * as svcAxios from "@/services/axios.service.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { ShippingGuideDocument } from "@/entities/ShippingGuideDocument.entity.js";
+import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
-
-
 
 import { logger } from "@/utils/logger.js";
 import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
-
 
 //export class MyService {
 const HEADERS_NAME = [
@@ -90,40 +89,15 @@ export async function list(criteria: ListShippingGuideQuery) {
 }
 
 export async function listPaginated(q: ListShippingGuideQuery) {
+    const {
+        statusList,
+        tipoProveedorList,
+        tipoEntregaGuiaList,
+        catOrigenCartaPorteList,
+    } = await sharedCatalogService.getShippingGuideCatalogContext();
 
-            // Define the structure of a single supplier
-    interface Supplier {
-        supplierNumber: number;
-        rfc: string;
-        businessName: string;
-        supplierType: {
-                        id: number;
-                        code: string;
-                        description: string;
-                        };
-    };
-    const allSuppliers = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_GET_ALL_SUPPLIERS);
-    const supplierList: Supplier[] = allSuppliers.data as Supplier[];
+    const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
 
-    interface GenericCatalog {
-        value: string;
-        color: string;
-        internalStatus: number;
-        description: string;
-    };
-
-    const CatEstatusCartaPorteFBC = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_ESTATUS_CARTAPORTE_FBC);
-    const statusList: GenericCatalog[] = CatEstatusCartaPorteFBC.data.details as GenericCatalog[];
-
-    const CatTipoProveedor = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_TIPO_PROVEEDOR);
-    const tipoProveedorList: GenericCatalog[] = CatTipoProveedor.data.details as GenericCatalog[];
-    
-    const CatTipoEntregaGuia = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_TIPO_ENTREGA_GUIA);
-    const tipoEntrergaGuiaList: GenericCatalog[] = CatTipoEntregaGuia.data.details as GenericCatalog[];
-
-    const CatOrigenCartaPorte = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_ORIGEN_CARTA_PORTE);
-    const catOrigenCartaPorteList: GenericCatalog[] = CatOrigenCartaPorte.data.details as GenericCatalog[];
-    
     const filter: FindOptionsWhere<ShippingGuide> = buildCriteria(q);
     let pageSize: number = 10;  //Por default es 10 registros por pagina
     if (q.pageSize !== undefined) {
@@ -132,32 +106,44 @@ export async function listPaginated(q: ListShippingGuideQuery) {
 
     let [result, total, _numberOfElements] = await guides.findAllPaginated(filter, pageSize, q.pageNumber);
     result = result as ShippingGuide[];
-    result.forEach((item, index) => {
-        const foundSupplier: Supplier | undefined = supplierList.find(Supplier => Supplier.supplierNumber.toString() === item.vendorNumber?.toString());
-        const foundStatus: GenericCatalog | undefined = statusList.find(it => it.internalStatus === item.status);
-        const foundTipoProveedor: GenericCatalog | undefined = tipoProveedorList.find(it => it.internalStatus.toString() === item.originId?.toString());
-        const foundTipoEntrega: GenericCatalog | undefined = tipoEntrergaGuiaList.find(it => it.internalStatus.toString() === item.deliveryType?.toString());
-        const foundOriginCP: GenericCatalog | undefined = catOrigenCartaPorteList.find(it => it.internalStatus.toString() === item.originId?.toString());
+
+    result.forEach((item) => {
+        const foundSupplier: Supplier | undefined = supplierList.find(
+            supplier => supplier.supplierNumber?.toString() === item.vendorNumber?.toString()
+        );
+
+        const foundStatus: GenericCatalogDetails | undefined = statusList.find(
+            it => it.internalStatus?.toString() === item.status?.toString()
+        );
+
+        const foundTipoProveedor = foundSupplier?.supplierType;
+
+        const foundTipoEntrega: GenericCatalogDetails | undefined = tipoEntregaGuiaList.find(
+            it => it.internalStatus?.toString() === item.deliveryType?.toString()
+        );
+
+        const foundOriginCP: GenericCatalogDetails | undefined = catOrigenCartaPorteList.find(
+            it => it.internalStatus?.toString() === item.originId?.toString()
+        );
+
         (item as any).supplier = foundSupplier;
         (item as any).status = foundStatus;
         (item as any).tipoProveedor = foundTipoProveedor;
         (item as any).deliveryType = foundTipoEntrega;
         (item as any).OrigenCartaPorte = foundOriginCP;
 
-        const SGPO: ShippingGuidePurchaseOrder[] = item.shippingGuidePurchaseOrders as ShippingGuidePurchaseOrder[]
-        (item as any).orderNumber = SGPO[0]?.purchaseOrder?.orderNumber
+        const SGPO: ShippingGuidePurchaseOrder[] = item.shippingGuidePurchaseOrders as ShippingGuidePurchaseOrder[];
+        (item as any).orderNumber = SGPO[0]?.purchaseOrder?.orderNumber;
         delete item.shippingGuidePurchaseOrders;
-
     });
-    
-    
+
     const _totalItems = Number(total?.valueOf() == null ? 0 : Number(total?.valueOf()));
     let _totalPages = _totalItems / pageSize;
 
     if (_totalPages - Math.trunc(_totalPages) > 0) {
         _totalPages = Math.trunc(_totalPages) + 1;
     } else {
-        _totalPages = Math.trunc(_totalPages)
+        _totalPages = Math.trunc(_totalPages);
     }
 
     const responsePageableDTO: ResponsePageableDTO = {
@@ -167,7 +153,6 @@ export async function listPaginated(q: ListShippingGuideQuery) {
         totalPages: _totalPages,
         pageNumber: q.pageNumber,
         pageSize: pageSize
-
     };
 
     logger.info("✅ get shippingGuide List → data={} ", result);
@@ -177,22 +162,21 @@ export async function listPaginated(q: ListShippingGuideQuery) {
 export async function get(id: string) {
     const entity = await guides.findById(id);
     if (entity == null || entity == undefined) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS206);
         logger.info("❌ get shippingGuide NOT FOUND → data={} ", entity);
-        return ResponseHandler.responseBuilder("", entity, 0, StatusCodes.NOT_FOUND, true, "");
+        return ResponseHandler.responseBuilder(CatMsgExc.description, entity, 0, StatusCodes.NOT_FOUND, true, "");
     }
     logger.info("✅ get shippingGuide → data={} ", entity);
     return ResponseHandler.responseBuilder("", entity, 0, StatusCodes.OK, true, "");
-
 }
 
-
 export async function create(createShippingGuideList: CreateShippingGuideDto[] = []
-                            , files: Express.Multer.File[] | null, folder: string | null, origin: number
-                            , status: number, transactionalEntityManager: EntityManager) {
-    
+    , files: Express.Multer.File[] | null, folder: string | null, origin: number
+    , status: number, transactionalEntityManager: EntityManager) {
+
     let enviados = true;
-    let resp = ResponseHandler.responseBuilder("",null,0, StatusCodes.CREATED, true, "", "");
-    
+    let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
+
     // files.forEach(async (file, index) => {
     //     console.log(`Archivo ${index + 1}:`);
     //     console.log('Nombre:', file.originalname);
@@ -203,25 +187,22 @@ export async function create(createShippingGuideList: CreateShippingGuideDto[] =
     //     //console.log('Contenido:', contenido);             
     // });
 
-
-
     const entityCreatedList: ShippingGuide[] = [];
-    createShippingGuideList.forEach(  (dto, index ) => {
-        const shippingGuideDocumentList= new Array();
-        if(dto.shipingGuideDocumentList != null && dto.shipingGuideDocumentList.length > 0){
-            dto.shipingGuideDocumentList.forEach( (shipdoc, index) => {
-            const datarec: Partial<ShippingGuideDocument> = {
-                fileName: shipdoc.fileName,
-                fileType: shipdoc.fileType,
-                status: 1, //Nace con el Status 1
-            };
-            
-            shippingGuideDocumentList.push(datarec);
-        });
+    createShippingGuideList.forEach((dto) => {
+        const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
+        if (dto.shipingGuideDocumentList != null && dto.shipingGuideDocumentList.length > 0) {
+            dto.shipingGuideDocumentList.forEach((shipdoc) => {
+                const datarec: Partial<ShippingGuideDocument> = {
+                    fileName: shipdoc.fileName,
+                    fileType: shipdoc.fileType,
+                    status: 1, //Nace con el Status 1
+                };
+
+                shippingGuideDocumentList.push(datarec);
+            });
         }
 
-
-        const data: Partial<ShippingGuide> = {
+        const data = {
             guideNumber: dto.guideNumber,
             vendorNumber: dto.vendorNumber,
             shippingDate: dto.deliveryDate,
@@ -233,28 +214,28 @@ export async function create(createShippingGuideList: CreateShippingGuideDto[] =
             shippingGuideDocuments: shippingGuideDocumentList,
             createdBy: 1,
             createdAt: new Date(),
-            isStatusUpdated: false
-            
-
+            isStatusUpdated: false,
         };
 
-        const temp = transactionalEntityManager.create(ShippingGuide,data);                  
+        const temp = transactionalEntityManager.create(ShippingGuide, data);
         entityCreatedList.push(temp);
     });
     const entityCreated = await transactionalEntityManager.save(entityCreatedList);
 
-    if(origin == 2 && files != null && folder != null){ //Solo se guardan los documentos de CP
+    if (origin == 2 && files != null && folder != null) { //Solo se guardan los documentos de CP
         enviados = await svcAxios.sendFilesToBucket(files, folder);
-        logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder)
-        if(!enviados) throw new Error(`NO FUE POSIBLE ENVIAR LOS ARCHIVOS AL BUCKET DE GCP:`);
+        if (!enviados) {
+            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207);
+            logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
+            throw new Error(CatMsgExc.description);
+        }
     }
-
-    logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder); 
-    resp = ResponseHandler.responseBuilder("(RES1003) El registro de la guía de embarque se realizó exitosamente",{...entityCreated, status: status},0, StatusCodes.CREATED, true, "", "RES1003");
+    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208);
+    logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
+    resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
 
     return resp;
 }
-
 
 export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto) {
     const patch = {
@@ -266,13 +247,15 @@ export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto) {
     const entityUpdated = await guides.updateOneByUuid(id, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
-        response = ResponseHandler.responseBuilder("NOT FOUND", entityUpdated, 0, StatusCodes.NOT_FOUND, false, "");
+        response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        //FALTA ENVIAR NOTIFICACIN API DE REGRESO A A CARTA PORTE DEL ESTATUS QUE SE ACTUALIZO DE LA GUIA DE EMBARQUE
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
+        response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }
-    return response
+    return response;
 }
 
 export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingGuideDto) {
@@ -285,13 +268,15 @@ export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingG
     const entityUpdated = await guides.updateOneByGuide(guideNumber, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
-        response = ResponseHandler.responseBuilder("NOT FOUND", entityUpdated, 0, StatusCodes.NOT_FOUND, false, "");
+        response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        //FALTA ENVIAR NOTIFICACIN API DE REGRESO A A CARTA PORTE DEL ESTATUS QUE SE ACTUALIZO DE LA GUIA DE EMBARQUE
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
+        response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }
-    return response
+    return response;
 }
 
 export async function remove(id: string) {
@@ -301,33 +286,33 @@ export async function remove(id: string) {
 export async function findAll(dto: ListShippingGuideQuery) {
     const filter: FindOptionsWhere<ShippingGuide> = {};
     interface ShippingGuideSummary {
-      shippingGuideId: string | undefined;
-      guideNumber: string | undefined;
-      status?: number | undefined;
-      vendorNumber?: number | undefined;
-      originId?: number | undefined;
-
+        shippingGuideId: string | undefined;
+        guideNumber: string | undefined;
+        status?: number | undefined;
+        vendorNumber?: number | undefined;
+        originId?: number | undefined;
     }
+
     const shippingGuideList = await guides.findByAll(buildCriteria(dto));
 
-    const shippingGuideSummarys: ShippingGuideSummary[] = shippingGuideList.map( item =>({
-        shippingGuideId: item.shippingGuideId ,
+    const shippingGuideSummarys: ShippingGuideSummary[] = shippingGuideList.map(item => ({
+        shippingGuideId: item.shippingGuideId,
         guideNumber: item.guideNumber,
         vendorNumber: item.vendorNumber,
         status: item.status,
         originId: item.originId
-    }) );
+    }));
 
-    const response = ResponseHandler.responseBuilder("",shippingGuideSummarys,0, StatusCodes.OK, true, "");
-    return response
+    const response = ResponseHandler.responseBuilder("", shippingGuideSummarys, 0, StatusCodes.OK, true, "");
+    return response;
 }
 
-export async function updateAllStatusGuia (dto: ShippginGuideSummaryListDto){
+export async function updateAllStatusGuia(dto: ShippginGuideSummaryListDto) {
     const shippingGuideIds: string[] = dto.data.map(item => item);
     const updateEntities = await guides.updateAllStatus(shippingGuideIds);
 
-    const response = ResponseHandler.responseBuilder("",updateEntities,0, StatusCodes.OK, true, "");
-    return response
+    const response = ResponseHandler.responseBuilder("", updateEntities, 0, StatusCodes.OK, true, "");
+    return response;
 }
 
 export function buildCriteria(criteria: ListShippingGuideQuery): FindOptionsWhere<ShippingGuide> {
@@ -340,17 +325,14 @@ export function buildCriteria(criteria: ListShippingGuideQuery): FindOptionsWher
     if (criteria.deliveryType !== undefined) filter.deliveryType = criteria.deliveryType;
     if (criteria.originId !== undefined) filter.originId = criteria.originId;
     if (criteria.isStatusUpdated !== undefined) filter.isStatusUpdated = criteria.isStatusUpdated;
-    // Trabajamos con copias locales por seguridad
+
     let from = criteria.from ?? undefined;
     let to = criteria.to ?? undefined;
 
-    // Si sólo viene "from" y quieres que cuente ese día completo,
-    // puedes tomar "to" = mismo día (ajusta según tu negocio)
     if (from && !to) {
         to = new Date(from);
     }
 
-    // Solo si tenemos "to" hacemos el +1 día
     if (to) {
         const toEnd = new Date(to.getTime());
         toEnd.setDate(toEnd.getDate() + 1);
@@ -364,8 +346,6 @@ export function buildCriteria(criteria: ListShippingGuideQuery): FindOptionsWher
         filter.deliveryDate = MoreThanOrEqual(from);
     }
 
-    // else if (criteria.from) filter.deliveryDate = MoreThanOrEqual(criteria.from);
-    // else if (criteria.to) filter.deliveryDate = LessThanOrEqual(criteria.to);
     return filter;
 }
 //}

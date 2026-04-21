@@ -91,6 +91,20 @@
     /* normal botón */
 }
 
+.rc-responsible-right {
+    grid-column: 2 / 3;
+    grid-row: auto;
+    height: 44px;
+    position: relative;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.rc-responsible-right .gss-input {
+    height: 44px;
+}
+
+
 /* ===== Mobile spacing fix ===== */
 @media (max-width: 768px) {
     .rf-w-lg {

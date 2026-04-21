@@ -4,35 +4,30 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import singleSpaReact from 'single-spa-react';
 
 import FiscalContainer from './features/home/components/FiscalContainer';
-import ComplementPublishContainer from './features/complement/components/ComplementPublishContainer';
-import InvoicesContainer from './features/invoices/components/InvoicesContainer';
-import ComplementPaymentContainer from './features/complementPayment/ComplementPaymentContainer';
-import './styles.css';
-import CreditsContainer from './features/credits/components/CreditsContainer';
-
-const appStyles = {
-    app: {
-        minHeight: '100vh',
-        width: '100%',
-        backgroundColor: '#ffffff',
-    },
-};
+import InvoicesContainer from './features/invoice/InvoicesContainer';
+import ComplementContainer from './features/complement/ComplementContainer';
+import AddComplement from './features/complement/AddComplement';
+import CreditsContainer from './features/creditNote/CreditsContainer';
+import ComplementRelatedInvoices from './features/complement/ComplementRelatedInvoices';
+import { Layout } from './shared/components/container/Layout';
+import './App.css';
+import PublishCreditNote from './features/creditNote/PublishCreditNote';
 
 function AppRoutes() {
     return (
-        <div style={appStyles.app}>
+        <Layout>
             <Routes>
                 <Route path="/" element={<FiscalContainer />} />
                 <Route path="/fiscal" element={<FiscalContainer />} />
                 <Route path="/fiscal/facturas" element={<InvoicesContainer />} />
-                <Route path="/fiscal/complemento/:paymentId" element={<ComplementPublishContainer />} />
-                <Route path="/fiscal/consulta-complemento-pago" element={<ComplementPaymentContainer />} />
-                
+                <Route path="/fiscal/consulta-complemento-pago" element={<ComplementContainer />} />
+                <Route path="/fiscal/publicar-complemento" element={<AddComplement />} />
+                <Route path="/fiscal/complemento/:uuid" element={<ComplementRelatedInvoices />} />
                 <Route path="/fiscal/notas-credito" element={<CreditsContainer />} />
-                
+                <Route path="/fiscal/publicar-nota-credito" element={<PublishCreditNote />} />
                 <Route path="*" element={<FiscalContainer />} />
             </Routes>
-        </div>
+        </Layout>
     );
 }
 

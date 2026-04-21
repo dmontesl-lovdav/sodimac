@@ -19,7 +19,7 @@ public interface CatalogHeaderRepository extends JpaRepository<CatalogHeader, In
     Optional<CatalogHeader> findByCode(String code);
 
     @Query("SELECT h FROM CatalogHeader h WHERE LOWER(h.name) = LOWER(:name)")
-    Optional<CatalogHeader> findByName(@Param("name") String name);
+    List<CatalogHeader> findByName(@Param("name") String name);
 
     List<CatalogHeader> findByStatus(Integer status);
 

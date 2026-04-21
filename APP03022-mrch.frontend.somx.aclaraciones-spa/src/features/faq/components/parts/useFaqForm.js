@@ -303,7 +303,10 @@ export default function useFaqForm({ api, id, onNotFound }) {
         try {
             setIsSaving(true);
             if (isEdit) {
-                const updateBody = buildUpdatePayload();
+                const updateBody = {
+                    ...buildUpdatePayload(),
+                    relatedInfoIds: body.relatedInfoIds,
+                };
                 await api.putFaq(Number(numericId), updateBody);
                 showAlert({
                     severity: 'success',

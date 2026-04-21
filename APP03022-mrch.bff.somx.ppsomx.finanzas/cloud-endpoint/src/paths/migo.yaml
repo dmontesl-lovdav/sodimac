@@ -1,0 +1,288 @@
+migo:
+  get:
+    tags:
+      - migo
+    summary: List MIGO documents
+    operationId: listMigoDocuments
+    produces:
+      - application/json
+    parameters:
+      - in: query
+        name: publishedAtStart
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: publishedAtEnd
+        required: true
+        type: string
+        format: date-time
+      - in: query
+        name: status
+        required: false
+        type: integer
+      - in: query
+        name: fileName
+        required: false
+        type: string
+      - in: query
+        name: pageNumber
+        required: false
+        type: integer
+        default: 1
+      - in: query
+        name: pageSize
+        required: false
+        type: integer
+        default: 10
+    responses:
+      "200":
+        description: MIGO documents list
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoDocumentsListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-by-id:
+  get:
+    tags:
+      - migo
+    summary: Get MIGO document by ID
+    operationId: getMigoDocumentById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: MIGO document UUID
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: MIGO document found
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoDocumentResponse"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-receptions:
+  get:
+    tags:
+      - migo
+    summary: List MIGO receptions by document
+    operationId: listMigoReceptions
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: MIGO document UUID
+        type: string
+        format: uuid
+      - in: query
+        name: pageNumber
+        required: false
+        type: integer
+        default: 1
+      - in: query
+        name: pageSize
+        required: false
+        type: integer
+        default: 10
+    responses:
+      "200":
+        description: MIGO receptions list
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoReceptionsListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-upload:
+  post:
+    tags:
+      - migo
+    summary: Upload MIGO CSV file
+    operationId: uploadMigoCsv
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    parameters:
+      - in: formData
+        name: file
+        type: file
+        required: true
+        description: CSV file
+    responses:
+      "200":
+        description: CSV processed successfully
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoUploadResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-authorize:
+  patch:
+    tags:
+      - migo
+    summary: Authorize MIGO document
+    operationId: authorizeMigoDocument
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: MIGO document UUID
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: MIGO document authorized
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoActionResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-reject:
+  patch:
+    tags:
+      - migo
+    summary: Reject MIGO document
+    operationId: rejectMigoDocument
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/migo.yaml#/RejectMigoDto"
+    responses:
+      "200":
+        description: MIGO document rejected
+        schema:
+          $ref: "../definitions/migo.yaml#/MigoActionResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+migo-export-csv:
+  get:
+    tags:
+      - migo
+    summary: Export MIGO receptions to CSV
+    operationId: exportMigoReceptionsCsv
+    produces:
+      - text/csv
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: MIGO document UUID
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: CSV file
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

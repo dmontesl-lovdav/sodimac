@@ -1,0 +1,111 @@
+/* ✅ FILE: src/features/payments/styles/PaymentsResultsTable.css */
+
+/* ========================= */
+/*         WRAPPER           */
+/* ========================= */
+
+.pay-results {
+    position: relative;
+}
+
+/* ========================= */
+/*     ACTIONS COLUMN        */
+/* ========================= */
+
+.pay-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 120px;
+}
+
+.pay-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.pay-action-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.pay-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pay-action-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+/* ========================= */
+/*     BOTTOM ACTIONS        */
+/* ========================= */
+
+.pay-bottom-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+
+    margin-top: 12px;
+}
+
+.pay-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    height: 34px;
+    padding: 0 12px;
+
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    color: #374151;
+    font-size: 13px;
+}
+
+.pay-export-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.pay-export-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.pay-back-link {
+    color: #003865;
+    font-size: 13px;
+    font-weight: 400;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}

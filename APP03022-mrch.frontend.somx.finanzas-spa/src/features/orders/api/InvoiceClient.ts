@@ -1,32 +1,37 @@
-import { ApiClient } from "@/services/ApiClient";
+import { createApiClient } from "@/services/ApiClient";
 import { Invoice } from "../interfaces";
 
-export class InvoiceClient extends ApiClient {
+const fiscalApi = createApiClient({baseUrl: process.env.FISCAL_API_URL || ""});
 
-    private DEFAULT_ROUTE = "/fiscal";
+const api = createApiClient();
 
-    public constructor() {
-        super(process.env.API_FISCAL_URL || "");
-    }
+export const InvoiceClient = {
+    async validateInvoice(invoice: File): Promise<any> {
+        const form = new FormData();
+        form.append("file", invoice);
+        return fiscalApi.request<any>("fiscal/xml/process/file", "post", form);
+    },
 
-    public async validateInvoice(invoice: File): Promise<any> {
-        return this.executeRequestBinary(invoice, `${this.DEFAULT_ROUTE}/xml/process/file`);
-    };
+    async getCreditNotesByUuid(uuid: string): Promise<any> {
+        return fiscalApi.request<any>(`fiscal/xml/process/file`, "get");
+    },
 
-    public async getCreditNotesByUuid(uuid: string): Promise<any> {
-        return this.execute(`${this.DEFAULT_ROUTE}/xml/process/file`, 'get');
-    };
+    async create(invoice: File): Promise<any> {
+        const form = new FormData();
+        form.append("file", invoice);
+        return api.request<any>("invoices/register", "post", form);
+    },
 
-    public async create(invoice: File): Promise<any> {
-        return this.executeRequestBinary(invoice, `/invoices/register`);
-    };
+    async update(uuid: string, payload: any): Promise<any> {
+        return api.request<Invoice>("invoices", "put", payload);
+    },
 
-    public async update(uuid: string, payload: any): Promise<any> {
-       return this.execute<Invoice>(`/invoices`, "put", payload);
-    };
-
-    public async getXmlDocument(uuid: string): Promise<any> {
-        return this.fetchDocument(`invoices/${uuid}/xml`);
-    };
-
-}
+    async getXmlDocument(uuid: string): Promise<Blob> {
+        return api.request<Blob>(
+            `invoices/${uuid}/xml`,
+            "get",
+            undefined,
+            { responseType: "blob" }
+        );
+    },
+};

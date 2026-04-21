@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { globalHomeStore } from '@/store/globalStore';
 
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 
@@ -12,6 +13,30 @@ import {
 } from '@shared/components/ui';
 
 import '../styles/SlaAddEditForm.css';
+
+function applyTenantToSla(tenant, businessUnits, countries, setData) {
+    const buDesc = tenant?.commerce?.description?.toUpperCase();
+    const ctDesc = tenant?.country?.description?.toUpperCase();
+
+    if (!buDesc || !ctDesc) return;
+    if (!businessUnits.length || !countries.length) return;
+
+    const bu = businessUnits.find(
+        b => b.description?.toUpperCase() === buDesc
+    );
+
+    const ct = countries.find(
+        c => c.description?.toUpperCase() === ctDesc
+    );
+
+    if (bu?.id && ct?.id) {
+        setData(p => ({
+            ...p,
+            businessUnit: bu.id,
+            country: ct.id,
+        }));
+    }
+}
 
 export default function SlaAddEditForm() {
     const CATALOG_BUSINESSUNITS = 1;
@@ -90,6 +115,11 @@ export default function SlaAddEditForm() {
             err?.response?.data?.message ||
             err?.response?.data?.error ||
             err?.data?.message;
+
+        if (msg === 'SLA_ALREADY_EXISTS_FOR_MODULE') {
+            return 'Ya existe un SLA configurado para este módulo.';
+        }
+
         return msg || err?.message || 'Ocurrió un error inesperado.';
     };
 
@@ -152,6 +182,41 @@ export default function SlaAddEditForm() {
         })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        if (!globalHomeStore?.GetGlobalState) return;
+
+        const gs = globalHomeStore.GetGlobalState('aclaraciones');
+        const tenant = gs?.configuration?.selectedTenant;
+
+        if (!tenant) return;
+
+        applyTenantToSla(
+            tenant,
+            businessUnits,
+            countries,
+            setData
+        );
+    }, [businessUnits, countries]);
+
+    useEffect(() => {
+        function handleCountryChanged() {
+            const gs = globalHomeStore?.GetGlobalState?.('aclaraciones');
+            const tenant = gs?.configuration?.selectedTenant;
+            if (!tenant) return;
+
+            applyTenantToSla(
+                tenant,
+                businessUnits,
+                countries,
+                setData
+            );
+        }
+
+        window.addEventListener('country-changed', handleCountryChanged);
+        return () => window.removeEventListener('country-changed', handleCountryChanged);
+    }, [businessUnits, countries]);
+
 
     useEffect(() => {
         const handler = () => {
@@ -279,7 +344,7 @@ export default function SlaAddEditForm() {
                             </h3>
 
                             <section className="sla-form-fields">
-                                <GenericSelectFloating
+                                {/* <GenericSelectFloating
                                     label="Unidad de Negocio"
                                     value={String(data.businessUnit || '')}
                                     onChange={updateNumberField('businessUnit')}
@@ -294,7 +359,7 @@ export default function SlaAddEditForm() {
                                     options={toOptions(filteredCountries)}
                                     required
                                     disabled={!data.businessUnit}
-                                />
+                                /> */}
 
                                 <GenericSelectFloating
                                     label="Módulo"

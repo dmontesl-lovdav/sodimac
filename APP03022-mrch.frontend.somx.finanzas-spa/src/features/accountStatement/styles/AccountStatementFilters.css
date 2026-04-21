@@ -1,0 +1,26 @@
+.al-filters {
+    width: 100%;
+}
+
+.al-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.as-field {
+    flex: 0 0 auto;
+}
+
+.as-field>* {
+    min-width: 180px;
+}
+
+/* acciones (botones) */
+.as-action {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}

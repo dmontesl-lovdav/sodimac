@@ -1,0 +1,219 @@
+shipping-guide:
+  get:
+    tags:
+      - shipping-guide
+    summary: List shipping guides
+    operationId: listShippingGuides
+    produces:
+      - application/json
+    parameters:
+      - in: query
+        name: from
+        required: false
+        type: string
+        format: date-time
+      - in: query
+        name: to
+        required: false
+        type: string
+        format: date-time
+    responses:
+      "200":
+        description: List of shipping guides
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/shipping-guides.yaml#/ShippingGuideDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+shipping-guide-csv:
+  get:
+    tags:
+      - shipping-guide
+    summary: Export shipping guides to CSV
+    operationId: exportShippingGuidesToCsv
+    produces:
+      - text/csv
+    parameters:
+      - in: query
+        name: from
+        required: false
+        type: string
+        format: date-time
+      - in: query
+        name: to
+        required: false
+        type: string
+        format: date-time
+    responses:
+      "200":
+        description: CSV file with shipping guides
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+shipping-guide-by-uuid:
+  get:
+    tags:
+      - shipping-guide
+    summary: Get shipping guide by ID
+    operationId: getShippingGuideById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Shipping guide UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/ShippingGuideDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  put:
+    tags:
+      - shipping-guide
+    summary: Update shipping guide
+    operationId: updateShippingGuide
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Shipping guide UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/UpdateShippingGuideDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/ShippingGuideDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - shipping-guide
+    summary: Delete shipping guide
+    operationId: deleteShippingGuide
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Shipping guide UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+shipping-guide-by-idGuide:
+  patch:
+    tags:
+      - shipping-guide
+    summary: Update shipping guide by guide ID
+    operationId: updateShippingGuideByGuide
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: idGuide
+        in: path
+        required: true
+        description: Guide ID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/UpdateShippingGuideDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/ShippingGuideDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

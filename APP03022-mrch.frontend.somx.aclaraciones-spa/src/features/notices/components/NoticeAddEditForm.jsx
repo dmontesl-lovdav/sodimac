@@ -1,5 +1,10 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 import { loadCatalog } from '@features/cases/components/RequestUtils';
+import { globalHomeStore } from '@/store/globalStore';
+
 import {
     Breadcrumb,
     GenericButton,
@@ -7,10 +12,27 @@ import {
     GenericLinearProgress,
     GenericSelectFloating,
 } from '@shared/components/ui';
-import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import '../styles/NoticeAddEditForm.css';
+
+/* 🔹 RESOLVER IDs DESDE CATÁLOGOS POR NOMBRE */
+function resolveTenantIds(tenant, businessUnits, countries) {
+    const buDesc = tenant?.commerce?.description?.toUpperCase();
+    const ctDesc = tenant?.country?.description?.toUpperCase();
+
+    const bu = businessUnits.find(
+        b => b.description?.toUpperCase() === buDesc
+    );
+
+    const ct = countries.find(
+        c => c.description?.toUpperCase() === ctDesc
+    );
+
+    return {
+        businessUnitId: bu?.id ? String(bu.id) : '',
+        countryId: ct?.id ? String(ct.id) : '',
+    };
+}
 
 export default function NoticeAddEditForm() {
     const CATALOGS_BUSINESSUNITS = 1;
@@ -37,10 +59,11 @@ export default function NoticeAddEditForm() {
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [businessUnit, setBusinessUnit] = useState('');
-    const [country, setCountry] = useState('');
     const [link, setLink] = useState('');
     const [position, setPosition] = useState('');
+
+    const [businessUnit, setBusinessUnit] = useState('');
+    const [country, setCountry] = useState('');
 
     const [businessUnits, setBusinessUnits] = useState([]);
     const [countries, setCountries] = useState([]);
@@ -51,102 +74,92 @@ export default function NoticeAddEditForm() {
     async function loadEdit() {
         if (!id) return;
         const notice = await api.getNotice(id);
+
         setName(notice.name ?? '');
         setDescription(notice.description ?? '');
         setLink(notice.link ?? '');
+        setPosition(notice.position ? String(notice.position) : '');
+
         setBusinessUnit(notice.businessUnit ? String(notice.businessUnit) : '');
         setCountry(notice.country ? String(notice.country) : '');
-        setPosition(notice.position ? String(notice.position) : '');
     }
 
+    /* 🔹 cargar catálogos + edit */
     useEffect(() => {
         (async () => {
             try {
                 setState(STATE.LOADING);
 
-                await loadCatalog(api, CATALOGS_BUSINESSUNITS, (data) => setBusinessUnits(data));
-                await loadCatalog(api, CATALOGS_COUNTRIES, (data) => setCountries(data));
-                await loadCatalog(api, CATALOGS_POSITIONS, (data) => setPositions(data));
+                await loadCatalog(api, CATALOGS_BUSINESSUNITS, setBusinessUnits);
+                await loadCatalog(api, CATALOGS_COUNTRIES, setCountries);
+                await loadCatalog(api, CATALOGS_POSITIONS, setPositions);
 
                 await loadEdit();
-            } catch (e) {
-                console.error('Failed to load catalogs/notices', e);
             } finally {
                 setState(STATE.LOADED);
             }
         })();
     }, []);
 
+    /* 🔹 aplicar tenant (por descripción) */
     useEffect(() => {
-        const handler = () => {
-            if (fromMaintainer) {
-                nav(withOrigin('/notices'), { state: stateOrigin });
-            } else {
-                nav(-1);
-            }
-        };
+        const gs = globalHomeStore?.GetGlobalState?.('aclaraciones');
+        const tenant = gs?.configuration?.selectedTenant;
+        if (!tenant) return;
+        if (!businessUnits.length || !countries.length) return;
 
-        window.addEventListener("country-changed", handler);
-        return () => window.removeEventListener("country-changed", handler);
-    }, [fromMaintainer, nav, stateOrigin]);
+        const { businessUnitId, countryId } =
+            resolveTenantIds(tenant, businessUnits, countries);
 
+        if (businessUnitId) setBusinessUnit(businessUnitId);
+        if (countryId) setCountry(countryId);
+    }, [businessUnits, countries]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        function handleTenantChange() {
+            fromMaintainer
+                ? nav(withOrigin('/notices'), { state: stateOrigin })
+                : nav(-1);
+        }
+
+        window.addEventListener('country-changed', handleTenantChange);
+        return () => window.removeEventListener('country-changed', handleTenantChange);
+    }, [id, fromMaintainer, nav, stateOrigin]);
+
+    /* 🔹 VALIDACIÓN */
     const formIsValid =
         name.trim().length > 2 &&
         description.trim().length > 2 &&
         link.trim().length > 2 &&
-        Number(businessUnit) > 0 &&
-        Number(country) > 0 &&
         Number(position) > 0;
 
     async function handleSave() {
         setState(STATE.LOADING);
         try {
             const notice = {
-                businessUnit: businessUnit ? Number(businessUnit) : undefined,
-                country: country ? Number(country) : undefined,
+                businessUnit: Number(businessUnit),
+                country: Number(country),
                 name: name.trim(),
                 description: description.trim(),
                 link: link.trim(),
-                position: position ? Number(position) : undefined,
+                position: Number(position),
                 publised: true,
             };
 
-            if (id) {
-                await api.putNotice(id, notice);
-            } else {
-                await api.postNotice(notice);
-            }
+            id
+                ? await api.putNotice(id, notice)
+                : await api.postNotice(notice);
 
-            if (fromMaintainer) {
-                nav(withOrigin('/notices'), { state: stateOrigin });
-            } else {
-                nav(-1);
-            }
+            fromMaintainer
+                ? nav(withOrigin('/notices'), { state: stateOrigin })
+                : nav(-1);
         } catch (e) {
-            console.log(e);
+            console.error(e);
             setState(STATE.LOADED);
         }
     }
-
-    const businessUnitOptions = useMemo(() => {
-        const list = Array.isArray(businessUnits) ? businessUnits : [];
-        const reordered = [
-            ...list.filter((x) => Number(x.id) === 3),
-            ...list.filter((x) => Number(x.id) !== 3),
-        ];
-        return reordered.map(({ id, description }) => ({
-            value: String(id),
-            label: String(description),
-        }));
-    }, [businessUnits]);
-
-    const countryOptions = useMemo(
-        () => (countries ?? []).map(({ id, description }) => ({
-            value: String(id),
-            label: String(description),
-        })),
-        [countries]
-    );
 
     const positionOptions = useMemo(
         () => (positions ?? []).map(({ id, description }) => ({
@@ -176,14 +189,7 @@ export default function NoticeAddEditForm() {
             </div>
 
             {state === STATE.LOADING && (
-                <GenericLinearProgress
-                    indeterminate
-                    value={1}
-                    max={3}
-                    buffer={1.5}
-                    fullWidth
-                    className="naf-progress"
-                />
+                <GenericLinearProgress indeterminate fullWidth className="naf-progress" />
             )}
 
             {state === STATE.LOADED && (
@@ -194,36 +200,13 @@ export default function NoticeAddEditForm() {
                                 {id ? 'Editar información' : 'Agregar información'}
                             </h3>
 
-                            <h3 className="naf-section-title">Selecciona tu unidad de negocio y país</h3>
-
-                            <div className="naf-margin-top">
-                                <GenericSelectFloating
-                                    label="Unidad de Negocio"
-                                    value={businessUnit}
-                                    onChange={(e) => setBusinessUnit(e.target.value)}
-                                    options={businessUnitOptions}
-                                />
-                            </div>
-
-                            <div className="naf-margin-top">
-                                <GenericSelectFloating
-                                    label="País"
-                                    value={country}
-                                    onChange={(e) => setCountry(e.target.value)}
-                                    options={countryOptions}
-                                />
-                            </div>
-
-                            <h3 className="naf-section-title naf-section-margin">
-                                Detalle de información
-                            </h3>
+                            <h3 className="naf-section-title">Detalle de información</h3>
 
                             <GenericInput
                                 className="naf-margin-top"
                                 label="Título"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="Financieros"
                                 maxLength={32}
                                 required
                             />
@@ -233,7 +216,6 @@ export default function NoticeAddEditForm() {
                                 label="Párrafo"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Temas relacionados con facturas, pagos y reembolsos"
                                 maxLength={128}
                                 required
                             />
@@ -243,7 +225,6 @@ export default function NoticeAddEditForm() {
                                 label="Enlace"
                                 value={link}
                                 onChange={(e) => setLink(e.target.value)}
-                                placeholder="http://fbusinesscenter.com"
                                 maxLength={256}
                                 required
                             />

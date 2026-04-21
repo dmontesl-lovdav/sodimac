@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Buffer } from 'buffer';
 import { useEffect, useMemo, useState } from 'react';
+import { useAppSelector } from '@/store/hooks/useAppSelector';
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 import { loadCatalog, translateIdToString } from './RequestUtils';
 import AttachmentUploader from '../../../shared/components/ui/attachmentUploader/AttachmentUploader';
@@ -12,7 +13,8 @@ import {
     GenericButton,
     GenericInput,
     GenericLinearProgress,
-    GenericModal
+    GenericModal,
+    GenericSelectSearchable
 } from '@shared/components/ui';
 import { useNavigate } from 'react-router-dom';
 import '../styles/RequestConfigure.css';
@@ -35,6 +37,21 @@ export default function RequestConfigure({
     const CATALOGS_PRIORITIES = 13;
     const CATALOGS_REPEATITIVENESS = 14;
 
+    const RAW_STATUS_CLAZZ_OPTIONS = [
+        { id: 23, description: 'Sin atender' },
+        { id: 24, description: 'En atención' },
+        { id: 25, description: 'Resuelto' },
+        { id: 26, description: 'Cancelado' },
+        { id: 52, description: 'Rechazado' },
+    ];
+
+    const userEmail =
+        useAppSelector(
+            (s) =>
+                s.authentication?.tokenDecoded?.email ||
+                s.authentication?.tokenDecoded?.preferred_username
+        ) || '';
+
     const navigate = useNavigate();
     const apiClient = ConfigurationBuilder.client;
 
@@ -55,6 +72,7 @@ export default function RequestConfigure({
         progress: request?.progress != null ? String(request.progress) : '',
         priority: request?.priority != null ? String(request.priority) : '',
         repeatitiveness: request?.repeatitiveness != null ? String(request.repeatitiveness) : '',
+        responsible: request?.responsible ?? '',
     });
 
     const [state, setState] = useState(STATE_LOADING);
@@ -69,6 +87,95 @@ export default function RequestConfigure({
     const [priorities, setPriorities] = useState([]);
     const [progress, setProgress] = useState([]);
     const [repeatitiveness, setRepeatitiveness] = useState([]);
+    const [resolverOptions, setResolverOptions] = useState([]);
+
+    async function loadAllResolvers() {
+        let page = 1;
+        const size = 50;
+        let all = [];
+        let last = false;
+
+        while (!last) {
+            const res = await apiClient.getAllResolvers(page, size);
+            all = all.concat(res.content || []);
+            last = res.last;
+            page++;
+        }
+
+        const currentModuleId = Number(form.module || request.module);
+
+        // console.log('modulo actual', currentModuleId)
+
+        // ===== DEBUG JSON CLARO =====
+        const debugResolvers = all.map(r => ({
+            moduleId: r.moduleId,
+            moduleName: r.moduleName,
+            email: r.resolverEmail,
+            personName: r.personName,
+            pasaFiltro: Number(r.moduleId) === currentModuleId,
+        }));
+
+        // console.log(
+        //     'DEBUG RESOLVERS JSON:',
+        //     JSON.stringify(debugResolvers, null, 2)
+        // );
+        // ============================
+
+        const filtered = all
+            .filter(r => Number(r.moduleId) === currentModuleId)
+            .reduce((map, r) => {
+                const email = r.resolverEmail?.toLowerCase();
+                if (!email || map.has(email)) return map;
+
+                map.set(email, {
+                    value: email,
+                    label: `${r.personName} – ${r.resolverEmail}`,
+                });
+                return map;
+            }, new Map());
+
+        const debugAfter = all
+            .filter(r => Number(r.moduleId) === currentModuleId)
+            .map(r => ({
+                moduleId: r.moduleId,
+                moduleName: r.moduleName,
+                email: r.resolverEmail,
+                personName: r.personName,
+            }));
+
+        // console.log(
+        //     'DEBUG AFTER FILTER:',
+        //     JSON.stringify(debugAfter, null, 2)
+        // );
+
+        setResolverOptions([]);
+        setResolverOptions(Array.from(filtered.values()));
+    }
+
+    useEffect(() => {
+        if (state === STATE_LOADED && (form.module || request.module)) {
+            loadAllResolvers().catch(() => { });
+        }
+    }, [state, form.module]);
+
+    useEffect(() => {
+        if (!resolverOptions.length) return;
+
+        // 1. Si ya hay responsable válido, no tocar
+        const exists = resolverOptions.some(o => o.value === form.responsible);
+        if (exists) return;
+
+        // 2. Intentar autoseleccionar usuario actual
+        const self = resolverOptions.find(o => o.value === userEmail);
+        if (self) {
+            setForm(prev => ({ ...prev, responsible: userEmail }));
+            return;
+        }
+
+        // 3. Si no existe, limpiar
+        setForm(prev => ({ ...prev, responsible: '' }));
+    }, [resolverOptions, userEmail]);
+
 
     useEffect(() => {
         let cancelled = false;
@@ -144,6 +251,8 @@ export default function RequestConfigure({
         const originalModule = String(request.module);
         const newModule = String(form.module);
 
+        if (!isResponsibleValid) return;
+
         if (originalModule === newModule) {
             configureRequest();
             return;
@@ -210,7 +319,7 @@ export default function RequestConfigure({
         }
     }
 
-    const clazzOptions = toOptions(clazzes);
+    const clazzOptions = toOptions(RAW_STATUS_CLAZZ_OPTIONS);
     const progressOptions = toOptions(progress);
     const priorityOptions = toOptions(priorities);
     const repeatitivenessOptions = toOptions(repeatitiveness);
@@ -222,6 +331,10 @@ export default function RequestConfigure({
         () => (showAllComments ? existingComments : existingComments.slice(-3)),
         [existingComments, showAllComments]
     );
+
+    const isResponsibleValid =
+        form.responsible &&
+        resolverOptions.some(o => o.value === form.responsible);
 
     const moduleWarningModal = (
         <GenericModal
@@ -299,7 +412,7 @@ export default function RequestConfigure({
                             key={`clazz-${clazzOptions.length}-${form.clazz}`}
                             className="rc-select"
                             name="clazz"
-                            label="Columna"
+                            label="Estado"
                             value={form.clazz}
                             onChange={updateField}
                             options={clazzOptions}
@@ -332,12 +445,26 @@ export default function RequestConfigure({
                             key={`repeatitiveness-${repeatitivenessOptions.length}-${form.repeatitiveness}`}
                             className="rc-select"
                             name="repeatitiveness"
-                            label="Repetir"
+                            label="Frecuencia de casos"
                             value={form.repeatitiveness}
                             onChange={updateField}
                             options={repeatitivenessOptions}
                             fullWidth
                         />
+
+                        <GenericSelectSearchable
+                            value={form.responsible}
+                            onChange={(e) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    responsible: e.target.value,
+                                }))
+                            }
+                            options={resolverOptions}
+                            placeholder="Buscar responsable…"
+                            containerClassName="rc-responsible-right"
+                        />
+
                     </div>
 
                     <div className="rc-comments-header">
@@ -366,7 +493,7 @@ export default function RequestConfigure({
                             name="comments"
                             label="Comentario"
                             placeholder="Comentario para la solicitud"
-                            maxLength={300}
+                            maxLength={256}
                             type="text"
                         />
                     </div>
@@ -407,6 +534,7 @@ export default function RequestConfigure({
                         className="rc-inline rc-ml"
                         variant="primary"
                         onClick={handleSubmit}
+                        disabled={!isResponsibleValid}
                     >
                         Enviar
                     </GenericButton>

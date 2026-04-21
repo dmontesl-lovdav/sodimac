@@ -1,0 +1,163 @@
+.gm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gm-box {
+    width: 90%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.20);
+
+    text-align: center;
+}
+
+.gm-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+}
+
+.gm-spinner {
+    width: 40px;
+    height: 40px;
+    animation: gm-spin 1s linear infinite;
+}
+
+@keyframes gm-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.gm-spinner-track {
+    opacity: 0.25;
+    stroke: #0ea5e9;
+    stroke-width: 2;
+    fill: none;
+}
+
+.gm-spinner-head {
+    opacity: 0.75;
+    stroke: #0ea5e9;
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.gm-msg {
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.gm-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.sev-bg-success {
+    background-color: #d1fae5;
+}
+
+.sev-bg-error {
+    background-color: #fee2e2;
+}
+
+.sev-bg-warning {
+    background-color: #fef3c7;
+}
+
+.sev-bg-info {
+    background-color: #e0f2fe;
+}
+
+.sev-color-success {
+    color: #059669;
+}
+
+.sev-color-error {
+    color: #e11d48;
+}
+
+.sev-color-warning {
+    color: #d97706;
+}
+
+.sev-color-info {
+    color: #0284c7;
+}
+
+.gm-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.gm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.gm-text {
+    font-size: 14px;
+    color: #374151;
+    white-space: pre-line;
+    margin-top: 8px;
+}
+
+.gm-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.gm-btn {
+    padding: 8px 22px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.gm-btn-cancel {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.gm-btn-cancel:hover {
+    background-color: #f3f4f6;
+}
+
+.gm-btn-confirm {
+    background-color: #0ea5e9;
+    color: white;
+}
+
+.gm-btn-confirm:hover {
+    background-color: #0284c7;
+}
+
+.gm-btn-full {
+    width: 100%;
+    margin-top: 8px;
+}

@@ -1,0 +1,34 @@
+/* ========================= */
+/* DESCUENTOS - FILTERS      */
+/* ========================= */
+
+.dc-filters {
+    margin-bottom: 24px;
+}
+
+/* Fila horizontal real (mismo patrón Recepciones / ThreeWayMatch) */
+.dc-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: nowrap;
+}
+
+/* Forzamos tamaños consistentes para wrappers somx */
+.dc-row .somx-input-wrapper,
+.dc-row .somx-select-wrapper,
+.dc-row .dr-wrapper {
+    width: auto !important;
+    min-width: 220px;
+    flex: 0 0 auto;
+}
+
+/* Date range un poquito más ancho */
+.dc-row .dr-wrapper {
+    min-width: 260px;
+}
+
+/* Inputs internos (si aplica) */
+.dc-row .somx-input {
+    width: 200px;
+}

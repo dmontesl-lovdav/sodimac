@@ -4,12 +4,13 @@ import GenericTable, {
   Column as TableColumn,
   RowAction as GenericRowAction,
 } from "@/shared/components/ui/table/DataTable";
-import { GenericSelect } from "@/shared/components/ui";
-import type { ChangeEvent } from "react";
+import { GenericButton, GenericModal } from "@/shared/components/ui";
 import SimpleLobby from "../lobby/Lobby";
 import xmlIconUrl from "@assets/xml.svg";
 import pdfIconUrl from "@assets/pdf.svg";
-import { exportToCSV } from "@/utils/utils";
+import { exportToCSV, getStandardFilename } from "@/utils/utils";
+import { usePaginatedData, type UsePaginatedDataOptions, parseFetchError } from "@/shared/components/ui/datagrid/hooks/usePaginatedData";
+import { ModalMsg } from "@/shared/components/ui/modal/ModalMsg";
 
 /** Reexporta los tipos de GenericTable (no tienen 'accessor') */
 export type Column<T> = TableColumn<T>;
@@ -31,17 +32,32 @@ export type BulkAction<T> = {
   run: (selected: T[], all: T[]) => Promise<void> | void;
 };
 
-type DataGridProps<T> = {
-  rows: T[];
-  loading: boolean;
+type DataGridProps<T, F = any> = {
+  rows?: T[];
+  loading?: boolean;
   /** Permite pasar columnas del DataGrid (con accessor) */
   columns: DataGridColumn<T>[];
   getRowId: (row: T) => string | number;
   page?: number;
   perPage?: number;
   totalPages?: number;
+  totalItems?: number;
   emptyLabel?: string;
   selectable?: boolean;
+  onChangePage?: (page: number) => void;
+  onChangePerPage?: (perPage: number) => void;
+
+  /** --- Paginación automática (si se pasa fetchFn, ignora rows y loading) --- */
+  fetchFn?: (filters: F & { page: number; size: number }) => Promise<{
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+    size?: number;
+  }>;
+  filters?: F;
+  initialPage?: number;
+  initialSize?: number;
 
   /** --- Configuración de acciones internas --- */
   enableCsv?: boolean;                 // default: true
@@ -49,8 +65,14 @@ type DataGridProps<T> = {
   getPdfUrl?: (row: T) => string | null | undefined; // URL del PDF
   csvFilename?: string;                // default: "Export"
   enableXml?: boolean;                 // default: false
-  getXmlContent?: (row: T) => string | null | undefined;
+  getXmlContent?: (row: T) => string | null | undefined | Promise<string | null | undefined>;
   getFilename?: (row: T) => string; // default: `{folio|invoiceUuid|getRowId}`
+  /** Acciones por fila adicionales (se muestran antes de XML/PDF) */
+  rowActions?: GenericRowAction<T>[];
+
+  /** Si es true y no hay filas, se muestra SimpleLobby con este mensaje (ej. "Realiza una búsqueda en los filtros"). */
+  filtersEmpty?: boolean;
+  emptyFiltersMessage?: string;
 };
 
 /** ------------------------------------------------------------
@@ -118,17 +140,26 @@ function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null
   if (typeof col.render === "function") return col.render(row) as any;
   return "";
 }
-
-export default function DataGrid<T>({
-  rows,
-  loading,
+/* ts-ignore */
+export default function DataGrid<T, F = any>({
+  rows: externalRows,
+  loading: externalLoading,
   columns,
   getRowId,
-  page = 1,
-  perPage = 25,
-  totalPages = rows.length/perPage,
-  emptyLabel = loading ? "Cargando..." : "Sin resultados",
+  page: externalPage,
+  perPage: externalPerPage,
+  totalPages: externalTotalPages,
+  totalItems: externalTotalItems,
+  emptyLabel,
   selectable = true,
+  onChangePage: externalOnChangePage,
+  onChangePerPage: externalOnChangePerPage,
+
+  /** Paginación automática */
+  fetchFn,
+  filters,
+  initialPage = 0,
+  initialSize = 10,
 
   /** acciones internas */
   enableCsv = true,
@@ -136,26 +167,32 @@ export default function DataGrid<T>({
   enableXml = false,
   enablePdf = false,
   getPdfUrl,
-  getXmlContent
-}: DataGridProps<T>): ReactElement {
-  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
-  const [bulkValue, setBulkValue] = useState<string>("");
-  const [processing, setProcessing] = useState<boolean>(false);
+  getXmlContent,
+  rowActions: customRowActions,
+  filtersEmpty = false,
+  emptyFiltersMessage="Realiza una búsqueda en los filtros para mostrar resultados.",
+}: DataGridProps<T, F>): ReactElement {
+  // Si se pasa fetchFn, usar paginación automática
+  const paginatedData = fetchFn && filters ? usePaginatedData<T, F>({
+    fetchFn,
+    initialFilters: filters,
+    initialPage,
+    initialSize,
+  } as UsePaginatedDataOptions<T, F>) : null;
 
-  const getFilename = useCallback(
-    (row: T): string => {
-      const serie = (row as any)?.series || (row as any)?.serie || "";
-      const folio = (row as any)?.folio || "";
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const hours = String(now.getHours()).padStart(2, "0");
-      const minutes = String(now.getMinutes()).padStart(2, "0");
-      const timestamp = `${year}${month}${day}.${hours}${minutes}`;
-      return `${serie}-${folio}-${timestamp}`;
-    }
-    , []);
+  const rows = paginatedData ? paginatedData.rows : (externalRows || []);
+  const loading = paginatedData ? paginatedData.loading : (externalLoading || false);
+  const fetchError = paginatedData?.error ?? null;
+  const page = paginatedData ? paginatedData.page : (externalPage || 1);
+  const perPage = paginatedData ? paginatedData.size : (externalPerPage || 25);
+  const totalPages = paginatedData ? paginatedData.totalPages : (externalTotalPages || Math.ceil(rows.length / perPage));
+  const totalItems = paginatedData ? paginatedData.totalItems : (externalTotalItems || rows.length);
+  const onChangePage = paginatedData ? paginatedData.changePage : externalOnChangePage;
+  const onChangePerPage = paginatedData ? paginatedData.changePerPage : externalOnChangePerPage;
+  const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [processing, setProcessing] = useState<boolean>(false);
+  const [xmlErrorMsg, setXmlErrorMsg] = useState<string | undefined>(undefined);
 
   /** -------- selección -------- */
   useEffect(() => setSelectedIds(new Set()), [rows]);
@@ -236,19 +273,28 @@ export default function DataGrid<T>({
 
     // Acción XML
     if (enableXml) {
-      const xmlGetter: (row: T) => string | null | undefined =
+      const xmlGetter: (row: T) => string | null | undefined | Promise<string | null | undefined> =
         getXmlContent ??
         ((row: any) => row?.xmlContent); // auto-detección por convención
 
-      const nameGetter: (row: T) => string = getFilename;
+      const nameGetter: (row: T) => string = (row: T) => getStandardFilename(row)+".xml";
 
       actions.push({
         title: "Exportar XML",
         icon: xmlIconUrl,
-        onClick: (row: T) => {
-          const xml = xmlGetter(row);
-          const fname = nameGetter(row);
-          downloadXML(xml, fname);
+        onClick: async (row: T) => {
+          try {
+            const xml = await xmlGetter(row);
+            if (!xml?.trim()) {
+              setXmlErrorMsg("Error al obtener el XML");
+              return;
+            }
+            downloadXML(xml, nameGetter(row));
+          } catch (err) {
+            console.error(err);
+            const payload = parseFetchError(err) ?? { message: "Error al obtener el XML" };
+            setXmlErrorMsg([payload.errorCode, payload.message].filter(Boolean).join(" - "));
+          }
         },
       });
     }
@@ -264,7 +310,7 @@ export default function DataGrid<T>({
           return `${baseUrl}pdf/from-uuid/${fiscalUuid}?inline=true`;
         });
 
-      const pdfNameGetter: (row: T) => string = getFilename
+      const pdfNameGetter: (row: T) => string = (row: T) => getStandardFilename(row)+".pdf";
 
       actions.push({
         title: "Descargar PDF",
@@ -278,7 +324,12 @@ export default function DataGrid<T>({
     }
 
     return actions;
-  }, [enableXml, enablePdf, getXmlContent, getFilename, getPdfUrl, getRowId]);
+  }, [enableXml, enablePdf, getXmlContent, getStandardFilename, getPdfUrl, getRowId]);
+
+  const allRowActions = useMemo(
+    () => [...(customRowActions ?? []), ...internalRowActions],
+    [customRowActions, internalRowActions]
+  );
 
   /** -------- acción masiva interna (CSV) -------- */
   const internalBulkActions: BulkAction<T>[] = useMemo(() => {
@@ -308,54 +359,86 @@ export default function DataGrid<T>({
     return [csvAction];
   }, [enableCsv, columns, csvFilename]);
 
-  /** -------- select de acción masiva -------- */
-  const onBulkChange = async (e: ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setBulkValue(value);
-    const action = internalBulkActions.find(a => a.value === value);
-    if (!action) return;
+  /** -------- botones de acción masiva -------- */
+  const onBulkClick = async (action: BulkAction<T>) => {
     try {
       setProcessing(true);
       await Promise.resolve(action.run(selectedRows.length ? selectedRows : rows, rows));
     } finally {
       setProcessing(false);
-      setBulkValue("");
     }
   };
 
-  /** -------- lobby vacío -------- */
+  const xmlErrorModal = (
+    <ModalMsg
+      severity="error"
+      visible={!!xmlErrorMsg}
+      msg={xmlErrorMsg || ""}
+      onClose={() => setXmlErrorMsg(undefined)}
+    />
+  );
+
+  const processingModal = (
+    <GenericModal
+      visible={processing}
+      variant="loading"
+      message="Se está procesando tu acción..."
+    />
+  );
+
+  /** -------- lobby vacío o error de búsqueda -------- */
   if (rows.length === 0) {
-    return <SimpleLobby message="Sin resultados" />;
+    const message =
+      filtersEmpty && emptyFiltersMessage
+        ? emptyFiltersMessage
+        : loading
+          ? "Cargando..."
+          : fetchError
+            ? [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") || "Error al obtener los datos"
+            : "Sin resultados";
+    return (
+      <>
+        <SimpleLobby message={message} error={!!fetchError && !filtersEmpty} />
+        {xmlErrorModal}
+      </>
+    );
   }
 
-  /** -------- render -------- */
+  /** -------- render tabla -------- */
   return (
-    <div className="results-container">
-      <GenericTable<T>
-        rows={rows}
-        columns={tableColumns}
-        actions={internalRowActions}
-        emptyLabel={emptyLabel}
-        perPage={perPage}
-        page={page}
-        totalPages={totalPages}
-      />
-      {internalBulkActions.length > 0 && (
-        <div className="somx-action-container">
-          {processing ? (
-            <p>Se está procesando tu acción...</p>
-          ) : (
-            <GenericSelect
-              label="Acción"
-              placeholder="Selecciona una acción"
-              value={bulkValue}
-              onChange={onBulkChange}
-              options={internalBulkActions.map(a => ({ label: a.label, value: a.value }))}
-            />
-          )}
-        </div>
-      )}
-    </div>
+    <>
+      <div className="results-container">
+         {internalBulkActions.length > 0 && (
+          <div className="fiscal-flex fiscal-gap-2 fiscal-flex-wrap fiscal-justify-end fiscal-mt-4">
+            {internalBulkActions.map(action => (
+              <GenericButton
+                key={action.value}
+                variant="primary"
+                disabled={processing}
+                onClick={() => onBulkClick(action)}
+              >
+                {action.label}
+              </GenericButton>
+            ))}
+          </div>
+        )}
+        <GenericTable<T>
+          rows={rows}
+          columns={tableColumns}
+          actions={allRowActions}
+          emptyLabel={emptyLabel}
+          perPage={perPage}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onChangePage={onChangePage}
+          onChangePerPage={onChangePerPage}
+        />
+       
+      </div>
+      {processingModal}
+      {xmlErrorModal}
+    </>
   );
 }
 

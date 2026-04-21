@@ -1,11 +1,13 @@
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 import { Buffer } from 'buffer';
 import { useEffect, useState } from 'react';
+import { useAppSelector } from '@/store/hooks/useAppSelector';
 import AttachmentUploader from '../../../shared/components/ui/attachmentUploader/AttachmentUploader';
 import { Step, VerticalStepper } from '../../../shared/components/ui/verticalStepper/VerticalStepper';
 import '../styles/RequestForm.css';
 import RequestConfirm from './RequestConfirm';
 import { loadCatalog } from './RequestUtils';
+import { globalHomeStore } from "@/store/globalStore";
 import {
     GenericSelectFloating,
     GenericInput,
@@ -13,6 +15,25 @@ import {
     GenericLinearProgress,
 } from '@shared/components/ui';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
+
+function applyTenant(tenant, businessUnits, countries, setBusinessUnitId, setCountryId) {
+    const buDesc = tenant?.commerce?.description?.toUpperCase();
+    const ctDesc = tenant?.country?.description?.toUpperCase();
+
+    if (!buDesc || !ctDesc) return;
+    if (!businessUnits.length || !countries.length) return;
+
+    const bu = businessUnits.find(
+        b => b.description?.toUpperCase() === buDesc
+    );
+
+    const ct = countries.find(
+        c => c.description?.toUpperCase() === ctDesc
+    );
+
+    if (bu?.id) setBusinessUnitId(String(bu.id));
+    if (ct?.id) setCountryId(String(ct.id));
+}
 
 export default function RequestForm({ backCallback, businessUnits, countries, modules, reasons }) {
     const STATE_LOADING = 1;
@@ -34,12 +55,9 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
     const [description, setDescription] = useState('');
     const [details, setDetails] = useState([]);
     const [files, setFiles] = useState([]);
-
     const [submitted, setSubmitted] = useState(null);
 
-    const filteredCountries = businessUnitId === '2'
-        ? countries.filter(c => c.id === 4 || c.id === 6)
-        : [];
+    const filteredCountries = countries;
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalTitle, setModalTitle] = useState('');
@@ -57,13 +75,56 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
             .filter((o) => o.value && o.label);
     }
 
-    const buOptions = toOptions(
-        businessUnits.filter(bu => bu.id === 2)
-    );
+    const buOptions = toOptions(businessUnits);
     const countryOptions = toOptions(countries);
     const moduleOptions = toOptions(modules);
     const reasonOptions = toOptions(reasons);
     const detailOptions = toOptions(details);
+
+    const name = useAppSelector(
+        (s) => s.authentication?.tokenDecoded?.name
+    );
+
+    useEffect(() => {
+        console.log('USER NAME FROM TOKEN:', name);
+    }, [name]);
+
+    useEffect(() => {
+        if (!globalHomeStore?.GetGlobalState) return;
+
+        const gs = globalHomeStore.GetGlobalState('aclaraciones');
+        const tenant = gs?.configuration?.selectedTenant;
+
+        if (!tenant) return;
+        if (!businessUnits.length || !countries.length) return;
+
+        applyTenant(
+            tenant,
+            businessUnits,
+            countries,
+            setBusinessUnitId,
+            setCountryId
+        );
+    }, [businessUnits, countries]);
+
+    useEffect(() => {
+        function handleCountryChanged() {
+            const gs = globalHomeStore?.GetGlobalState?.('aclaraciones');
+            const tenant = gs?.configuration?.selectedTenant;
+            if (!tenant) return;
+
+            applyTenant(
+                tenant,
+                businessUnits,
+                countries,
+                setBusinessUnitId,
+                setCountryId
+            );
+        }
+
+        window.addEventListener('country-changed', handleCountryChanged);
+        return () => window.removeEventListener('country-changed', handleCountryChanged);
+    }, [businessUnits, countries]);
 
     useEffect(() => {
         (async () => {
@@ -82,18 +143,26 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
         })();
     }, [reasonId]);
 
-    useEffect(() => {
-        setCountryId('');
-    }, [businessUnitId]);
-
     const formIsValid =
         company.trim().length >= 2 &&
-        businessUnitId &&
-        countryId &&
         moduleId &&
         reasonId &&
         detailId &&
         description.trim().length >= 2;
+
+    console.log({
+        company,
+        companyValid: company.trim().length >= 2,
+        moduleId,
+        moduleValid: !!moduleId,
+        reasonId,
+        reasonValid: !!reasonId,
+        detailId,
+        detailValid: !!detailId,
+        description,
+        descriptionValid: description.trim().length >= 2,
+        formIsValid,
+    });
 
     async function postRequest() {
         const validFiles = (files || []).filter(f => !f.err);
@@ -126,6 +195,7 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
                 orderId: orderId.trim() || null,
                 description: description.trim(),
                 clazz: 23,
+                nombreProveedor: name,
             };
             if (attachments) payload.attachments = attachments;
 
@@ -198,7 +268,7 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
             <VerticalStepper>
                 <Step>
                     <div>
-                        <h3 className="rf-font-semibold rf-mt-1">Selecciona tu Unidad de Negocio y País</h3>
+                        {/* <h3 className="rf-font-semibold rf-mt-1">Selecciona tu Unidad de Negocio y País</h3>
 
                         <GenericSelectFloating
                             className="rf-mt-2"
@@ -207,6 +277,7 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
                             onChange={(e) => setBusinessUnitId(e.target.value)}
                             options={buOptions}
                             required={true}
+                            disabled
                             fullWidth
                         />
 
@@ -218,8 +289,8 @@ export default function RequestForm({ backCallback, businessUnits, countries, mo
                             options={toOptions(filteredCountries)}
                             required={true}
                             fullWidth
-                            disabled={!businessUnitId}
-                        />
+                            disabled
+                        /> */}
 
                         <h3 className="rf-font-semibold rf-mt-4">Datos de tu empresa</h3>
 

@@ -16,15 +16,17 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 async function importAllFrom(dir: string): Promise<AnyObj[]> {
     const abs = path.join(__dirname, dir);
     if (!fs.existsSync(abs)) return [];
-    const files = fs.readdirSync(abs).filter(f => f.endsWith('.ts'));
+    const files = fs.readdirSync(abs)
+        .filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+    ;
     const mods: AnyObj[] = [];
     for (const f of files) {
+
+        console.log("Loading OpenAPI file:", f);
+
         const url = pathToFileURL(path.join(abs, f)).href;
-        // import dinámico de cada archivo
-        // eslint rule no-await-in-loop no aplica si el objetivo es secuencial
-        // y aquí necesitamos preservar el orden de merge; mantener await dentro del loop
-        // pero sin deshabilitar reglas globalmente
         const m = await import(url);
+
         mods.push(m as AnyObj);
     }
     return mods;

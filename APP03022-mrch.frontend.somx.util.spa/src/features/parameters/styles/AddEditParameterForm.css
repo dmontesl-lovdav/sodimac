@@ -1,0 +1,138 @@
+
+.parameter-create {
+    padding: 16px 0;
+    background-color: #fff;
+    flex: 1;
+}
+
+.parameter-create__header {
+    margin-bottom: 16px;
+}
+
+.parameter-create__title {
+    font-size: 20px;
+    font-weight: 500;
+    color: #111;
+    margin: 0 0 4px 0;
+}
+
+.parameter-create__description {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.parameter-create__divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 16px 0;
+}
+
+.parameter-create__content {
+    display: flex;
+    gap: 24px;
+}
+
+.parameter-create__stepper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.parameter-create__step-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #0071CE;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.parameter-create__step-line {
+    width: 2px;
+    flex: 1;
+    background-color: #d1d5db;
+    margin: 4px 0;
+}
+
+.parameter-create__form-container {
+    flex: 1;
+}
+
+.parameter-create__form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.parameter-create__form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 200px;
+    flex: 1;
+}
+
+.parameter-create__form-group--full {
+    min-width: 100%;
+}
+
+.parameter-create__form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.parameter-create__form-input,
+.parameter-create__form-select,
+.parameter-create__form-textarea {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+}
+
+.parameter-create__form-input:focus,
+.parameter-create__form-select:focus,
+.parameter-create__form-textarea:focus {
+    outline: none;
+    border-color: #0071CE;
+    box-shadow: 0 0 0 2px rgba(0, 113, 206, 0.1);
+}
+
+.parameter-create__form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.parameter-create__form-error {
+    font-size: 11px;
+    color: #dc2626;
+}
+
+.parameter-create__form-hint {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.parameter-create__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.parameter-create__name-exists {
+    color: #dc2626;
+    font-size: 11px;
+}

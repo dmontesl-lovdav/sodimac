@@ -1,31 +1,40 @@
 import { Link } from 'react-router-dom';
+import './styles/Breadcrumb.css';
 
-export type BreadcrumbItem = {
+export interface BreadcrumbItem {
   label: string;
   to?: string;
-};
+}
 
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
 }
 
-export default function Breadcrumb({ items = [] }: BreadcrumbProps) {
+/**
+ * items: [{ label: 'Inicio', to: '/' }, { label: 'Centro de ayuda' }]
+ * El último ítem NO recibe enlace porque es el activo.
+ */
+export default function Breadcrumb({ items }: BreadcrumbProps) {
   return (
-    <nav className="somx-breadcrumb">
+    <nav className="breadcrumb">
       {items.map(({ label, to }, idx) => {
         const isLast = idx === items.length - 1;
 
         return (
-          <span key={label} className="somx-breadcrumb-item">
-            {idx > 0 && <span className="somx-breadcrumb-separator">{'>'}</span>}
+          <span key={`${label}-${idx}`} className="breadcrumb-item">
+
+            {idx > 0 && (
+              <span className="breadcrumb-separator">{'>'}</span>
+            )}
 
             {isLast || !to ? (
-              <span className="somx-breadcrumb-current">{label}</span>
+              <span className="breadcrumb-current">{label}</span>
             ) : (
-              <Link to={to} className="somx-breadcrumb-link">
+              <Link to={to} className="breadcrumb-link">
                 {label}
               </Link>
             )}
+
           </span>
         );
       })}

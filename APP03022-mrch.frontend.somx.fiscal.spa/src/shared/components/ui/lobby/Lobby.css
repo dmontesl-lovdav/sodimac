@@ -1,0 +1,27 @@
+.fiscal-lobby-container {
+  opacity: 0.5;
+  user-select: none;
+}
+
+.fiscal-lobby-icon-wrapper {
+  padding-top: 2.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.fiscal-lobby-message-wrapper {
+  padding-top: 1.25rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.fiscal-lobby-message {
+  font-size: 0.875rem;
+}
+
+.fiscal-lobby-message-error {
+  color: red;
+  font-weight: 500;
+}

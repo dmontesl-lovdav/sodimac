@@ -1,13 +1,33 @@
 import { datasource } from "@/config/typeorm-datasource.js";
 import { Reception } from "@/entities/Reception.entity.js";
+import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js"
 import { Between,  } from "typeorm";
 import type {
 ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
 import { number, z } from "zod/v4";
+import { In, type FindOptionsWhere } from "typeorm";
+import { Raw } from 'typeorm';
+import { DeepPartial } from 'typeorm';
 
 export const repo = () => datasource.getRepository(Reception);
+
+export async function createOne(dataR: Partial<Reception> | DeepPartial<Reception>, po: PurchaseOrder) {
+    const entity = repo().create({...dataR, purchaseOrder: po});
+    return entity;
+}
+
+
+// Crear VARIAS recepciones
+export function createMany(dataList: Partial<Reception>[], po: PurchaseOrder) {
+  const list = dataList.map(r => ({
+    ...r,
+    purchaseOrder: po,
+  }));
+  return repo().create(list); // Devuelve Reception[]
+}
+
 
 export async function findById(receptionId: string) {
     return repo().findOneBy({ receptionId });
@@ -18,6 +38,14 @@ export async function updateOne(receptionId: string, rec: Reception) {
     return findById(receptionId);
 }
 
+export async function findAll(purchaseOrderId : string){
+
+    
+return repo().createQueryBuilder('r')
+.where('r.purchase_order_uuid::uuid = :id::uuid', { id: purchaseOrderId })
+.getMany();
+
+}
 
 export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: number, pageNumber: number) {
     const skip = (pageNumber - 1) * pageSize; // Calculate the offset
@@ -48,7 +76,7 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         if(filter.status !== undefined && filter.status != 8){  // status=8 Borrado logico
             whereClause.status = filter.status;
         } else {
-            whereClause.status != 8;   //No se le permite ver al front las de estatus= 8 Borrado logico
+            //whereClause.status != z.coerce.number().parse(8);   //No se le permite ver al front las de estatus= 8 Borrado logico
         }
         if(filter.receptionId !== undefined){
             whereClause.receptionId = filter.receptionId;
@@ -77,6 +105,8 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         //.createQueryBuilder(PurchaseOrder, 'purchaseOrder')
         .createQueryBuilder(Reception, 'reception')
         .leftJoinAndSelect('reception.purchaseOrder','purchaseOrder')
+        .leftJoinAndSelect('purchaseOrder.shippingGuidePurchaseOrders','shippingGuidePurchaseOrders')
+        .leftJoinAndSelect('shippingGuidePurchaseOrders.shippingGuide','shippingGuide')
         // .leftJoinAndSelect('reception.receptionSkus','receptionSku')
         .leftJoinAndMapMany("reception.listAddendum", // The property on the User entity where the mapped Photo will be stored
                             Addendum,       // entity to be joined

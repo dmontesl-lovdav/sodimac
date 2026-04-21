@@ -1,59 +1,115 @@
-
-export interface PaymentInfo {
-    paymentId: string;
-    paymentNumber: string;
-    paymentDate: string;
-    paymentAmount: number;
-    currency: string;
-    providerNumber: string;
-    providerName: string;
-    invoiceCount: number;
-    creditNoteCount: number;
-    totalDocuments: number;
-    status: string;
-    statusId: number;
+export interface ComplementPaymentFilters {
+  uuid?: string;
+  serie?: string;
+  folio?: string;
+  rfcEmisor?: string;
+  rfcReceptor?: string;
+  fechaPagoInicio?: string;
+  fechaPagoFin?: string;
+  fechaEmisionInicio?: string;
+  fechaEmisionFin?: string;
+  status?: string;
+  page?: number;
+  size?: number;
 }
 
-export interface ComplementDocument {
-    type: 'xml' | 'pdf';
-    file?: File;
-    fileName?: string;
-    uploadDate?: string;
-    status?: string;
+export interface ErrorResponse {
+  response?: {
+    data?: { errorCode?: string; message?: string }
+  }
 }
 
-export interface ComplementUploadRequest {
-    paymentId: string;
-    xmlFile: File;
-    pdfFile?: File;
-}
-
-export interface ComplementUploadResponse {
-    success: boolean;
-    message: string;
-    complementId?: string;
-    errors?: ValidationError[];
-}
-
-export interface ValidationError {
-    code: string;
-    message: string;
-    field?: string;
-}
-
-export interface LastPublishedComplement {
-    complementId: string;
-    fileName: string;
-    uploadDate: string;
-    status: string;
-    xmlUrl?: string;
-    pdfUrl?: string;
-}
-
-export const VALIDATION_MESSAGES = {
-    'WRN7004': 'Se requiere publicar el complemento de pago en formato XML.',
-    'BUS2006': 'Las facturas no corresponden al complemento que desea publicar.',
-    'SUCCESS_UPLOAD': 'Complemento publicado exitosamente.',
-    'ERROR_UPLOAD': 'Error al publicar el complemento. Por favor intente nuevamente.'
+export const EMPTY_COMPLEMENT_PAYMENT: ComplementPaymentFilters = {
+  fechaPagoInicio: "",
+  fechaPagoFin: "",
+  page: 0,
+  size: 10,
 };
 
+export interface ComplementPayment {
+  paymentsUuid: string;
+  fiscalUuid: string;
+  series: string;
+  folio: string;
+  subtotal: number;
+  totalAmount: number;
+  issuerRfc: string;
+  issuerName: string;
+  receiverRfc: string;
+  receiverName: string;
+  paymentDate: string;
+  createdAt: string;
+  statusDescription: string;
+  relatedDocumentsCount?: number;
+}
+
+export interface RelatedInvoice {
+   relatedDocumentUuid: string;
+   paymentUuid: string;
+   documentUuid: string;
+   amountPaid: number;
+   previousBalance: number;
+   remainingBalance: number;
+   installmentNumber: number;
+   series: string;
+   folio: string;
+   currency: string;
+   exchangeRate: number;
+}
+
+export interface ComplementPaymentResponse {
+  content: ComplementPayment[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
+export interface PaymentHeaderData {
+  idProveedor: string;
+  nombreProveedor: string;
+  referenciaPago: string;
+  anioPagos: string;
+  moneda: string;
+  monto: string;
+  estatus: string;
+  fechaRegistro: string;
+}
+
+export interface XmlComplementPreview {
+  uuid: string;
+  rfcEmisor: string;
+  nombreEmisor: string;
+  monto: string;
+  fechaTimbrado: string;
+}
+
+
+export const EMPTY_HEADER: PaymentHeaderData = {
+  idProveedor: "--",
+  nombreProveedor: "--",
+  referenciaPago: "--",
+  anioPagos: "--",
+  moneda: "--",
+  monto: "--",
+  estatus: "--",
+  fechaRegistro: "--",
+};
+
+export type ProviderCatalogItem = {
+  id: string;
+  idProveedor: string;
+  businessName?: string;
+  tipoProveedor?: {
+    id?: string;
+  };
+};
+
+export type QueryPaymentData = {
+  referenciaPago: string;
+  idProveedor: string;
+  moneda: string;
+  monto: string;
+  fechaRegistro: string;
+  anioPagos: string;
+};

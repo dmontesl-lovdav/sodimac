@@ -1,0 +1,26 @@
+.fiscal-header{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.fiscal-header-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    margin-top: 0;
+    color: #111827;
+}
+
+    .fiscal-header-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+    }
+@media (min-width: 1024px) {
+    .fiscal-header-title {
+        font-size: 1.5rem;
+    }
+}

@@ -75,6 +75,9 @@ public class CatalogElementDto implements Serializable {
     @Schema(description = "Fecha de actualización", example = "2025-01-16T14:45:00")
     private LocalDateTime updatedAt;
 
+    @Schema(description = "Valor de conversión para sistemas externos", example = "MX")
+    private String externalKey;
+
     @Schema(description = "Orden de visualización", example = "1")
     private Integer sortOrder;
 

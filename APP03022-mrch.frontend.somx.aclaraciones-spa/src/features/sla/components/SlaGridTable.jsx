@@ -89,8 +89,8 @@ export default function SlaGridTable(props) {
 
     /* ---- columnas ---- */
     const columns = [
-        { header: 'Unidad de Negocio', render: (r) => resolveCatalogValue(CATALOG_BUSINESSUNITS, r.businessUnit) },
-        { header: 'País', render: (r) => resolveCatalogValue(CATALOG_COUNTRIES, r.country) },
+        // { header: 'Unidad de Negocio', render: (r) => resolveCatalogValue(CATALOG_BUSINESSUNITS, r.businessUnit) },
+        // { header: 'País', render: (r) => resolveCatalogValue(CATALOG_COUNTRIES, r.country) },
         { header: 'Módulo', render: (r) => resolveCatalogValue(CATALOG_MODULES, r.module) },
         { header: 'Motivo', render: (r) => resolveCatalogValue(CATALOG_REASONS, r.reason) },
         { header: 'priority', render: (r) => resolveCatalogValue(CATALOG_PRIORITIES, r.priority) },

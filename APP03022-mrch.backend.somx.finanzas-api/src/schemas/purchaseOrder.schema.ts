@@ -23,15 +23,19 @@ export const ListPurchaseOrderQuerySchema = z.object({
 });
 
 /** Para actualizar (PATCH) — incluimos updatedBy */
-export const UpdatePurchaseOrderSchema = z.object({
+export const UpdateStatusReceptionSchema = z.object({
     supplierNumber: z.number().int().min(1,{ message: "Invalid field `supplierNumber` on PurchaseOrder. value : NotAllowed"}),
     orderNumber: z.string().nonempty({message: "Invalid field `orderNumber` on PurchaseOrder. value cannot be empty, null or blank"}),
-    receptionId: z.string().nonempty({message: "Invalid field `receptionId` on PurchaseOrder. value cannot be empty, null or blank"}),
-    status: z.number().int().min(1,{message: "Invalid field `status` on PurchaseOrder. value : 0"})
+    receptionNumber: z.string().nonempty({message: "Invalid field `receptionNumber` on PurchaseOrder. value cannot be empty, null or blank"}),
+    status: z.number().int().min(1,{message: "Invalid field `status` on Reception. value : 0"}),
+    uuid: z.uuid().optional(),
+    comments: z.string()
 }).strict();
 
+
+
 // Actualizar estado de recepción
-export const UpdateStatusReceptionSchema = z.object({
+export const UpdateStatusReceptionSchemaByUuid = z.object({
     comment: z.string().nonempty({message: "Invalid field `comment` on Reception. value cannot be empty, null or blank"}),
     status: z.number().int().min(1,{message: "Invalid field `status` on Reception. value : 0"})
 }).strict();
@@ -107,7 +111,7 @@ export const CreatePurchaseOrderSchemaList = z.object({
 
 export type ListPurchaseOrderQueryDto = z.infer<typeof ListPurchaseOrderQuerySchema>;
 export type CreatePurchaseOrderDto = z.infer<typeof CreatePurchaseOrderSchema>;
-export type UpdatePurchaseOrderDto = z.infer<typeof UpdatePurchaseOrderSchema>;
+export type UpdatePurchaseOrderDto = z.infer<typeof UpdateStatusReceptionSchema>;
 
 
 

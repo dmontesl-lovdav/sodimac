@@ -38,7 +38,7 @@ export default function TopicSelector({
             <div className="topic-row">
                 <div className="topic-select">
                     <GenericSelectFloating
-                        label="Categorías (Módulos)"
+                        label="Categorías (Pregunta frecuente)"
                         value={value ?? ''}
                         onChange={handleSelectChange}
                         options={categories}

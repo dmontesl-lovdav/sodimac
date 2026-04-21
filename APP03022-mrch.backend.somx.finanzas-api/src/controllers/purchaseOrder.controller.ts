@@ -4,11 +4,11 @@ import { Reception } from "@/entities/Reception.entity.js";
 import { HttpError } from "@/utils/HttpError.js";
 import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
-import { Between, Equal, FindOptionsWhere, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
+import { Between, Equal, FindOperator, FindOptionsWhere, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
 import {
     CreatePurchaseOrderSchema,
-    UpdatePurchaseOrderSchema,
     UpdateStatusReceptionSchema,
+    UpdateStatusReceptionSchemaByUuid,
     ListPurchaseOrderQuerySchema,
     type CreatePurchaseOrderDto,
     type UpdatePurchaseOrderDto,
@@ -29,6 +29,7 @@ import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js";
 import { ResponsePageableDTO } from "@/response/ResponseHandler.dto.js";
 import { activityLogger, logActivity, getTraceId, logBeforeMethod } from '@/middlewares/logger.js';
 import * as svcAxios from "@/services/axios.service.js";
+import { Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 
 
@@ -54,29 +55,19 @@ async function save(request: Request, response: Response, next: NextFunction) {
             response.status(201).json({...created, trace_id: getTraceId()});
         });
     } catch (e) {
-        await logActivity(true,'ERROR EN EL GUARDADO DE OC', e, request.body );
+        logActivity(true, 'ERROR: ', e,  request.body );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
+
     }
 }
 
 // GET /
 async function list(request: Request, response: Response, next: NextFunction) {
     try {
-        // Define the structure of a single supplier
-        interface Supplier {
-            supplierNumber: number;
-            rfc: string;
-            businessName: string;
-            supplierType: {
-                            id: number;
-                            code: string;
-                            description: string;
-                            };
-        };
 
-
-        const allSuppliers = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_GET_ALL_SUPPLIERS);
-        const supplierList: Supplier[] = allSuppliers.data as Supplier[];
+        const supplierList = await svcAxios.GetSuppliers();
         const dto: ListPurchaseOrderQueryDto = ListPurchaseOrderQuerySchema.parse(request.query);
 
         const purchaseOrderQuery = await datasource.manager
@@ -149,8 +140,9 @@ async function list(request: Request, response: Response, next: NextFunction) {
         return response.json({...ResponseHandler.responseBuilder("",responsePageableDTO,0, StatusCodes.OK, true, ""), trace_id: getTraceId()});
 
     } catch (e) {
-        await logActivity(true, 'ERROR: ', e,  request.body );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true, 'ERROR: ', e,  request.body );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
     }
 }
@@ -158,7 +150,7 @@ async function list(request: Request, response: Response, next: NextFunction) {
 // GET /:uuid
 async function getById(request: Request, response: Response, next: NextFunction) {
     try {
-        const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") });
+        const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
         if (!rows || rows.length === 0) response.json({});
 
         for(const row of rows){
@@ -168,9 +160,10 @@ async function getById(request: Request, response: Response, next: NextFunction)
         return response.json({...rows[0], trace_id: getTraceId()});
 
     } catch (e) { 
-        await logActivity(true,'ERROR', e, request.params );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-        next(e); 
+        logActivity(true,'ERROR', e, request.params );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC002);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
+        next(e);
     }
 }
 
@@ -178,24 +171,10 @@ async function getById(request: Request, response: Response, next: NextFunction)
 async function getReceptionById(request: Request, response: Response, next: NextFunction) {
     try {
 
-        // Define the structure of a single supplier
-        interface Supplier {
-            supplierNumber: number;
-            rfc: string;
-            businessName: string;
-            supplierType: {
-                            id: number;
-                            code: string;
-                            description: string;
-                            };
-        };
-        const allSuppliers = await svcAxios.axiosGet((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_GET_ALL_SUPPLIERS);
-        const supplierList: Supplier[] = allSuppliers.data as Supplier[];
-
-
+  
         let uuid = '';
         if(request.params.uuid != undefined){
-            uuid = request.params.uuid;
+            uuid = request.params.uuid as string;
         }
 
         const row = await getReceiptsRepo()
@@ -218,8 +197,7 @@ async function getReceptionById(request: Request, response: Response, next: Next
         .where('po.purchase_order_uuid = CAST(:purchaseOrderId AS uuid)', { purchaseOrderId: row?.purchaseOrderId })
         .getOne();
 
-
-        const foundSupplier: Supplier | undefined = supplierList.find(Supplier => Supplier.supplierNumber.toString() === order?.supplierNumber.toString());
+        const foundSupplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(order?.supplierNumber ?? 0);
         (order as any).supplier = foundSupplier;
         
         const data = {
@@ -230,21 +208,22 @@ async function getReceptionById(request: Request, response: Response, next: Next
          return response.json({...ResponseHandler.responseBuilder("",data,0, StatusCodes.OK, true, ""), trace_id: getTraceId()});
 
     } catch (e) { 
-        await logActivity(true,'ERROR', e, request.params );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true,'ERROR', e, request.params );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC003);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
 
 // PATCH /reception/:uuid
-async function updateReceptionStatus(request: Request, response: Response, next: NextFunction) {
+async function updateReceptionStatusByUuid(request: Request, response: Response, next: NextFunction) {
     try {
         const reference: Reception = request.body;
         if (!reference) {
             throw new HttpError(400, "Missing update body");
         }
 
-        const row = await getReceiptsRepo().findBy({ receptionId: Equal(request.params.uuid || "") });
+        const row = await getReceiptsRepo().findBy({ receptionId: Equal(request.params.uuid || "") as string | FindOperator<string> });
         if (!row || row.length === 0 || !row[0]) {
             throw new HttpError(400, "Invalid uuid");
         }
@@ -258,8 +237,9 @@ async function updateReceptionStatus(request: Request, response: Response, next:
         await getReceiptsRepo().save({...persistence, trace_id: getTraceId()});
         response.json(persistence);
     } catch (e) { 
-        await logActivity(true,'ERROR', e, request.params );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true,'ERROR', e, request.params );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
@@ -272,7 +252,7 @@ async function updateById(request: Request, response: Response, next: NextFuncti
             throw new HttpError(400, "Missing update body");
         }
 
-        const row = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") });
+        const row = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
         if (!row || row.length === 0 || !row[0]) {
             throw new HttpError(400, "Invalid uuid");
         }
@@ -286,8 +266,9 @@ async function updateById(request: Request, response: Response, next: NextFuncti
         await getPurchaseOrdersRepo().save(persistence);
         response.json({...persistence, trace_id: getTraceId()});
     } catch (e) { 
-        await logActivity(true,'ERROR', e, request.params );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true,'ERROR', e, request.params );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC005);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
@@ -300,8 +281,9 @@ async function listReception(request: Request, response: Response, next: NextFun
         return response.status(res.httpStatus).json({...res, trace_id: getTraceId()});
 
     } catch (e) {
-        await logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e , request.body);
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e , request.body);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
     }
 }
@@ -309,13 +291,13 @@ async function listReception(request: Request, response: Response, next: NextFun
 // PATCH /updateReception
 async function updateReception(request: Request, response: Response, next: NextFunction) {
     try {
-        const dto: UpdatePurchaseOrderDto = UpdatePurchaseOrderSchema.parse(request.body);
+        const dto: UpdatePurchaseOrderDto = UpdateStatusReceptionSchema.parse(request.body);
         const updated = await svc.updateReception(dto);
-        //if (!updated) return res.status(404).json({ message: "Not found" });
         return response.status(updated.httpStatus).json({...updated, trace_id: getTraceId()});
     } catch (e) { 
-        await logActivity(true,'ERROR', e, request.params );
-        response.json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
+        logActivity(true,'ERROR', e, request.params );
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004);
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
@@ -360,9 +342,9 @@ const controllerName = 'PurchaseOrder';
 export default Router()
     .use(activityLogger(controllerName))
     .get("/listReception",validateBody(ListReceptionQuerySchema), logBeforeMethod('listReception'), listReception)
-    .patch("/updateReception",validateBody(UpdatePurchaseOrderSchema), logBeforeMethod('updateReception'), updateReception)
+    .patch("/updateReception",validateBody(UpdateStatusReceptionSchema), logBeforeMethod('updateReception'), updateReception)
     .get("/reception/:uuid", logBeforeMethod('getReceptionById'), getReceptionById)
-    .patch("/reception/:uuid",validateBody(UpdateStatusReceptionSchema), logBeforeMethod('updateReceptionStatus'), updateReceptionStatus)
+    .patch("/reception/:uuid",validateBody(UpdateStatusReceptionSchemaByUuid), logBeforeMethod('updateReceptionStatusByUuid'), updateReceptionStatusByUuid)
     
     .post("/",validateBody(CreatePurchaseOrderSchema), logBeforeMethod('save'), save)
     .get("/", validateQuery(ListPurchaseOrderQuerySchema), logBeforeMethod('list'), list)

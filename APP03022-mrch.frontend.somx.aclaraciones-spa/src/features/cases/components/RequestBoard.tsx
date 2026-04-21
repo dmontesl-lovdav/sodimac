@@ -6,10 +6,10 @@ import '../styles/RequestBoard.css';
 
 /** Columnas visibles en el tablero (orden y títulos) */
 const BOARD_COLUMNS = [
-    { id: 'todo', title: 'To do' },
-    { id: 'doing', title: 'Doing' },
-    { id: 'done', title: 'Done' },
-    { id: 'rejected', title: 'Rejected' },
+    { id: 'todo', title: 'Sin atender' },
+    { id: 'doing', title: 'En atención' },
+    { id: 'done', title: 'Resuelto' },
+    { id: 'rejected', title: 'Rechazado' },
 ];
 
 /** Mapeo de clazz (ID de estado) -> columna */

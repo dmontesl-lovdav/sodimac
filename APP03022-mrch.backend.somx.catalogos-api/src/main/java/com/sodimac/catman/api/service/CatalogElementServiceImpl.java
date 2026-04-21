@@ -19,8 +19,10 @@ import com.sodimac.catman.api.model.dto.CatalogElementUpdateDto;
 import com.sodimac.catman.api.model.dto.CatalogSimpleDto;
 import com.sodimac.catman.api.model.entity.CatalogDetail;
 import com.sodimac.catman.api.model.entity.CatalogHeader;
+import com.sodimac.catman.api.model.entity.DictionaryLang;
 import com.sodimac.catman.api.repository.CatalogDetailRepository;
 import com.sodimac.catman.api.repository.CatalogHeaderRepository;
+import com.sodimac.catman.api.repository.DictionaryLangRepository;
 import com.sodimac.catman.api.repository.specification.CatalogElementSpecification;
 
 @Service
@@ -28,17 +30,21 @@ public class CatalogElementServiceImpl implements CatalogElementService {
 
     private static final String CATALOG_TYPE_PRIMARIO = "PRIMARIO";
     private static final String CATALOG_TYPE_SECUNDARIO = "SECUNDARIO";
+    private static final int DEFAULT_LANG_ID = 1;
 
     private final CatalogHeaderRepository headerRepository;
     private final CatalogDetailRepository detailRepository;
+    private final DictionaryLangRepository dictionaryLangRepository;
     private final CatalogElementMapper elementMapper;
 
     public CatalogElementServiceImpl(
             CatalogHeaderRepository headerRepository,
             CatalogDetailRepository detailRepository,
+            DictionaryLangRepository dictionaryLangRepository,
             CatalogElementMapper elementMapper) {
         this.headerRepository = headerRepository;
         this.detailRepository = detailRepository;
+        this.dictionaryLangRepository = dictionaryLangRepository;
         this.elementMapper = elementMapper;
     }
 
@@ -88,30 +94,50 @@ public class CatalogElementServiceImpl implements CatalogElementService {
         CatalogHeader catalog = headerRepository.findById(catalogId)
                 .orElseThrow(() -> new GenericException(404, "Catálogo no encontrado con ID: " + catalogId));
 
-        if (detailRepository.existsByHeaderIdAndKeyIgnoreCase(catalogId, createDto.getElement())) {
-            throw new GenericException(400, "Ya existe un elemento con este nombre en el catálogo.");
-        }
+        checkDuplicateElementName(catalogId, createDto.getElement(), null);
 
         validateDates(createDto.getValidFrom(), createDto.getValidTo());
 
-        validateParentRelation(catalog, createDto.getParentCatalogId(), createDto.getParentElementId());
+        Integer parentCatId = createDto.getParentCatalogId();
+        Integer parentElemId = createDto.getParentElementId();
+        if (parentElemId != null && parentCatId == null) {
+            detailRepository.findById(parentElemId).ifPresent(parent -> {
+                if (parent.getHeader() != null) {
+                    createDto.setParentCatalogId(parent.getHeader().getId());
+                }
+            });
+            parentCatId = createDto.getParentCatalogId();
+        }
+
+        validateParentRelation(catalog, parentCatId, parentElemId);
+
+        String generatedKey = generateNextKey(catalog);
+
+        int dictId = createDictionaryEntry(createDto.getElement());
 
         CatalogDetail detail = CatalogDetail.builder()
                 .header(catalog)
-                .key(createDto.getElement())
+                .key(generatedKey)
                 .value(createDto.getValue())
                 .validFrom(createDto.getValidFrom())
                 .validTo(createDto.getValidTo())
-                .parentCatalogId(createDto.getParentCatalogId())
-                .parentElementId(createDto.getParentElementId())
+                .parentCatalogId(parentCatId)
+                .parentElementId(parentElemId)
+                .externalKey(createDto.getExternalKey() != null && !createDto.getExternalKey().isBlank() ? createDto.getExternalKey() : null)
                 .sortOrder(createDto.getSortOrder() != null ? createDto.getSortOrder() : 0)
                 .attributes(createDto.getAttributes())
                 .status(CatalogDetail.STATUS_ACTIVE)
-                .dictId(0)
+                .dictId(dictId)
                 .createdBy(userId)
                 .build();
 
         CatalogDetail saved = detailRepository.save(detail);
+
+        if (catalog.getStatus() != null && catalog.getStatus() == 0) {
+            catalog.setStatus(1);
+            headerRepository.save(catalog);
+        }
+
         return elementMapper.toDto(saved);
     }
 
@@ -126,10 +152,8 @@ public class CatalogElementServiceImpl implements CatalogElementService {
                 .orElseThrow(() -> new GenericException(404, "Elemento no encontrado con ID: " + elementId));
 
         if (updateDto.getElement() != null && !updateDto.getElement().isBlank()) {
-            if (detailRepository.existsByHeaderIdAndKeyIgnoreCaseAndIdNot(catalogId, updateDto.getElement(), elementId)) {
-                throw new GenericException(400, "Ya existe un elemento con este nombre en el catálogo.");
-            }
-            detail.setKey(updateDto.getElement());
+            checkDuplicateElementName(catalogId, updateDto.getElement(), elementId);
+            updateDictionaryEntry(detail.getDictId(), updateDto.getElement());
         }
 
         if (updateDto.getValue() != null) {
@@ -146,10 +170,17 @@ public class CatalogElementServiceImpl implements CatalogElementService {
 
         validateDates(detail.getValidFrom(), detail.getValidTo());
 
-        if (updateDto.getParentCatalogId() != null || updateDto.getParentElementId() != null) {
-            Integer parentCatId = updateDto.getParentCatalogId() != null ? updateDto.getParentCatalogId() : detail.getParentCatalogId();
-            Integer parentElemId = updateDto.getParentElementId() != null ? updateDto.getParentElementId() : detail.getParentElementId();
-            validateParentRelation(catalog, parentCatId, parentElemId);
+        Integer parentCatId = updateDto.getParentCatalogId();
+        Integer parentElemId = updateDto.getParentElementId();
+        boolean parentChanged = (parentCatId != null && !parentCatId.equals(detail.getParentCatalogId()))
+                || (parentElemId != null && !parentElemId.equals(detail.getParentElementId()))
+                || (parentCatId == null && detail.getParentCatalogId() != null)
+                || (parentElemId == null && detail.getParentElementId() != null);
+
+        if (parentChanged) {
+            if (parentCatId != null || parentElemId != null) {
+                validateParentRelation(catalog, parentCatId, parentElemId);
+            }
             detail.setParentCatalogId(parentCatId);
             detail.setParentElementId(parentElemId);
         }
@@ -160,6 +191,10 @@ public class CatalogElementServiceImpl implements CatalogElementService {
 
         if (updateDto.getAttributes() != null) {
             detail.setAttributes(updateDto.getAttributes());
+        }
+
+        if (updateDto.getExternalKey() != null) {
+            detail.setExternalKey(updateDto.getExternalKey().isBlank() ? null : updateDto.getExternalKey());
         }
 
         if (updateDto.getStatus() != null) {
@@ -179,8 +214,8 @@ public class CatalogElementServiceImpl implements CatalogElementService {
         CatalogDetail detail = detailRepository.findById(elementId)
                 .orElseThrow(() -> new GenericException(404, "Elemento no encontrado con ID: " + elementId));
 
-        if (newStatus != CatalogDetail.STATUS_ACTIVE && newStatus != CatalogDetail.STATUS_INACTIVE) {
-            throw new GenericException(400, "Estatus inválido. Use 1 para Activo o 0 para Inactivo.");
+        if (newStatus != 0 && newStatus != 1) {
+            throw new GenericException(400, "Estatus inválido. Use 0 (Inactivo) o 1 (Activo).");
         }
 
         detail.setStatus(newStatus);
@@ -193,15 +228,15 @@ public class CatalogElementServiceImpl implements CatalogElementService {
 
     @Override
     public List<CatalogSimpleDto> findPrimaryCatalogs() {
-        List<CatalogHeader> catalogs = headerRepository.findByCatalogTypeAndStatus(
-                CATALOG_TYPE_PRIMARIO, CatalogHeader.STATUS_ACTIVE);
-        return elementMapper.toSimpleDtoList(catalogs);
+        List<CatalogHeader> primaries = headerRepository.findByCatalogTypeAndStatus(CATALOG_TYPE_PRIMARIO, 1);
+        List<CatalogHeader> hierarchicals = headerRepository.findByCatalogTypeAndStatus("HIERARCHICAL", 1);
+        primaries.addAll(hierarchicals);
+        return elementMapper.toSimpleDtoList(primaries);
     }
 
     @Override
     public List<CatalogElementDto> findActiveElements(Integer catalogId) {
-        List<CatalogDetail> elements = detailRepository.findByHeaderIdAndStatus(
-                catalogId, CatalogDetail.STATUS_ACTIVE);
+        List<CatalogDetail> elements = detailRepository.findByHeaderIdAndStatus(catalogId, CatalogDetail.STATUS_ACTIVE);
         return elementMapper.toDtoList(elements);
     }
 
@@ -209,6 +244,69 @@ public class CatalogElementServiceImpl implements CatalogElementService {
     public Optional<CatalogSimpleDto> findCatalogById(Integer catalogId) {
         return headerRepository.findById(catalogId)
                 .map(elementMapper::toSimpleDto);
+    }
+
+    private String generateNextKey(CatalogHeader catalog) {
+        String prefix = catalog.getPrefix() != null ? catalog.getPrefix() : "EL";
+        String maxKey = detailRepository.findMaxKeyByHeaderId(catalog.getId());
+
+        int nextNum = 1;
+        if (maxKey != null && maxKey.startsWith(prefix)) {
+            try {
+                String numPart = maxKey.substring(prefix.length());
+                nextNum = Integer.parseInt(numPart) + 1;
+            } catch (NumberFormatException e) {
+                Long count = detailRepository.countByHeaderId(catalog.getId());
+                nextNum = count.intValue() + 1;
+            }
+        } else if (maxKey != null) {
+            Long count = detailRepository.countByHeaderId(catalog.getId());
+            nextNum = count.intValue() + 1;
+        }
+
+        return prefix + String.format("%04d", nextNum);
+    }
+
+    private int createDictionaryEntry(String elementName) {
+        DictionaryLang dictEntry = DictionaryLang.builder()
+                .dictId(0)
+                .langId(DEFAULT_LANG_ID)
+                .description(elementName)
+                .build();
+        DictionaryLang saved = dictionaryLangRepository.save(dictEntry);
+        saved.setDictId(saved.getId());
+        dictionaryLangRepository.save(saved);
+        return saved.getId();
+    }
+
+    private void updateDictionaryEntry(Integer dictId, String newName) {
+        if (dictId != null && dictId > 0) {
+            dictionaryLangRepository.findByDictIdAndLangId(dictId, DEFAULT_LANG_ID)
+                    .ifPresent(dict -> {
+                        dict.setDescription(newName);
+                        dictionaryLangRepository.save(dict);
+                    });
+        }
+    }
+
+    private String getElementNameFromDict(CatalogDetail detail) {
+        if (detail.getDictId() != null && detail.getDictId() > 0) {
+            return dictionaryLangRepository.findByDictIdAndLangId(detail.getDictId(), DEFAULT_LANG_ID)
+                    .map(DictionaryLang::getDescription)
+                    .orElse(detail.getKey());
+        }
+        return detail.getKey();
+    }
+
+    private void checkDuplicateElementName(Integer catalogId, String elementName, Integer excludeId) {
+        List<CatalogDetail> existing = detailRepository.findByHeaderIdOrderBySortOrder(catalogId);
+        for (CatalogDetail el : existing) {
+            if (excludeId != null && el.getId().equals(excludeId)) continue;
+            String existingName = getElementNameFromDict(el);
+            if (existingName != null && existingName.trim().equalsIgnoreCase(elementName.trim())) {
+                throw new GenericException(400, "Ya existe un elemento con este nombre en el catálogo.");
+            }
+        }
     }
 
     private void validateDates(LocalDate validFrom, LocalDate validTo) {
@@ -228,38 +326,44 @@ public class CatalogElementServiceImpl implements CatalogElementService {
     }
 
     private void validateParentRelation(CatalogHeader catalog, Integer parentCatalogId, Integer parentElementId) {
-        boolean isPrimary = CATALOG_TYPE_PRIMARIO.equalsIgnoreCase(catalog.getCatalogType());
+        boolean isPrimary = CATALOG_TYPE_PRIMARIO.equalsIgnoreCase(catalog.getCatalogType())
+                || "HIERARCHICAL".equalsIgnoreCase(catalog.getCatalogType());
 
         if (isPrimary) {
             if (parentCatalogId != null || parentElementId != null) {
                 throw new GenericException(400, "Los elementos de catálogos primarios no pueden tener relación padre.");
             }
-        } else {
-            if (parentCatalogId != null && parentElementId == null) {
-                throw new GenericException(400, "Debe seleccionar un elemento padre cuando se ha elegido un catálogo padre.");
-            }
+            return;
+        }
 
-            if (parentCatalogId != null) {
-                CatalogHeader parentCatalog = headerRepository.findById(parentCatalogId)
-                        .orElseThrow(() -> new GenericException(400, "Catálogo padre no encontrado."));
+        boolean hasCatalog = parentCatalogId != null;
+        boolean hasElement = parentElementId != null;
+        if (hasCatalog != hasElement) {
+            throw new GenericException(400,
+                    "Debe proporcionar tanto el catálogo padre como el elemento padre, o dejar ambos vacíos");
+        }
 
-                if (!CATALOG_TYPE_PRIMARIO.equalsIgnoreCase(parentCatalog.getCatalogType())) {
-                    throw new GenericException(400, "El catálogo padre debe ser de tipo Primario.");
-                }
+        if (parentCatalogId == null) {
+            return;
+        }
 
-                if (parentElementId != null) {
-                    detailRepository.findById(parentElementId)
-                            .filter(d -> d.getHeader().getId().equals(parentCatalogId))
-                            .orElseThrow(() -> new GenericException(400, "Elemento padre no encontrado en el catálogo padre seleccionado."));
-                }
-            }
+        CatalogDetail parentElement = detailRepository.findById(parentElementId)
+                .orElseThrow(() -> new GenericException(400,
+                        "El elemento padre seleccionado no existe en el sistema"));
+
+        CatalogHeader parentCatalog = headerRepository.findById(parentCatalogId)
+                .orElseThrow(() -> new GenericException(400,
+                        "El catálogo padre debe ser de tipo primario o jerárquico"));
+
+        if (!CATALOG_TYPE_PRIMARIO.equalsIgnoreCase(parentCatalog.getCatalogType())
+                && !"HIERARCHICAL".equalsIgnoreCase(parentCatalog.getCatalogType())) {
+            throw new GenericException(400,
+                    "El catálogo padre debe ser de tipo primario o jerárquico");
+        }
+
+        if (!parentElement.getHeader().getId().equals(parentCatalogId)) {
+            throw new GenericException(400,
+                    "El elemento padre no pertenece al catálogo padre seleccionado");
         }
     }
 }
-
-
-
-
-
-
-

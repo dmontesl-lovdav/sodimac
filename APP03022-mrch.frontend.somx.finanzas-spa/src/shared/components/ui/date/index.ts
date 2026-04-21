@@ -1,1 +1,1 @@
-export { default as GenericDateRangePicker } from './GenericDateRangePicker.jsx';
+export { default as GenericDateRangePicker } from './GenericDateRangePicker';

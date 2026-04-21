@@ -31,22 +31,40 @@ export async function getActiveBlocks(vendorNumber: number) {
 }
 
 export async function create(dto: CreateVendorBlockDto) {
-    const data = {
-        ...dto,
+    const data: Partial<VendorBlock> = {
         createdAt: new Date(),
         updatedAt: new Date(),
     };
 
-    return r.createOne(data as any);
+    if (dto.vendorNumber !== undefined) data.vendorNumber = dto.vendorNumber;
+    if (dto.blockReason !== undefined) data.blockReason = dto.blockReason;
+    if (dto.blockDescription !== undefined) data.blockDescription = dto.blockDescription;
+    if (dto.startDate !== undefined) data.startDate = dto.startDate;
+    if (dto.endDate !== undefined) data.endDate = dto.endDate;
+    if (dto.status !== undefined) data.status = dto.status;
+    if (dto.autoUnblock !== undefined) data.autoUnblock = dto.autoUnblock;
+    if (dto.blockType !== undefined) data.blockType = dto.blockType;
+    if (dto.createdBy !== undefined) data.createdBy = dto.createdBy;
+
+    return r.createOne(data);
 }
 
 export async function update(id: string, dto: UpdateVendorBlockDto) {
-    const patch = {
-        ...dto,
+    const patch: Partial<VendorBlock> = {
         updatedAt: new Date(),
     };
 
-    return r.updateOne(id, patch as any);
+    if (dto.vendorNumber !== undefined) patch.vendorNumber = dto.vendorNumber;
+    if (dto.blockReason !== undefined) patch.blockReason = dto.blockReason;
+    if (dto.blockDescription !== undefined) patch.blockDescription = dto.blockDescription;
+    if (dto.startDate !== undefined) patch.startDate = dto.startDate;
+    if (dto.endDate !== undefined) patch.endDate = dto.endDate;
+    if (dto.status !== undefined) patch.status = dto.status;
+    if (dto.autoUnblock !== undefined) patch.autoUnblock = dto.autoUnblock;
+    if (dto.blockType !== undefined) patch.blockType = dto.blockType;
+    if (dto.updatedBy !== undefined) patch.updatedBy = dto.updatedBy;
+
+    return r.updateOne(id, patch);
 }
 
 export async function remove(id: string) {

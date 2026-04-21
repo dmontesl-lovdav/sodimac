@@ -1,0 +1,48 @@
+/* ✅ FILE: src/features/account-statement/styles/AccountStatementGrid.css */
+
+.as-grid {
+    margin-top: 18px;
+}
+
+/* acciones iguales al estándar (rc-actions / pay-actions) */
+.as-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 160px;
+}
+
+.as-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.as-action-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.as-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.as-action-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+}

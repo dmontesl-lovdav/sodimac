@@ -7,12 +7,10 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
+
 import { ShippingGuide } from './ShippingGuide.entity.js';
 import { PurchaseOrder } from './PurchaseOrder.entity.js';
 
-/**
- * Relación entre guías de envío y órdenes de compra
- */
 @Entity('shipping_guide_purchase_order')
 export class ShippingGuidePurchaseOrder {
     @PrimaryGeneratedColumn('uuid', { name: 'shipping_guide_purchase_order_id' })
@@ -24,11 +22,14 @@ export class ShippingGuidePurchaseOrder {
     @Column({ name: 'purchase_order_uuid', type: 'uuid', nullable: false })
     purchaseOrderId!: string;
 
-    // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    @CreateDateColumn({
+        name: 'created_at',
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+    })
     createdAt!: Date;
 
     @Column({ name: 'updated_by', type: 'bigint', nullable: true })
@@ -37,12 +38,11 @@ export class ShippingGuidePurchaseOrder {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 
-    // Relaciones
     @ManyToOne(() => ShippingGuide)
     @JoinColumn({ name: 'shipping_guide_id' })
-    shippingGuide?: ShippingGuide;
+    shippingGuide?: any;
 
-    @ManyToOne(() => PurchaseOrder, {eager: true})
+    @ManyToOne(() => PurchaseOrder, { eager: true })
     @JoinColumn({ name: 'purchase_order_uuid' })
-    purchaseOrder?: PurchaseOrder;
+    purchaseOrder?: any;
 }

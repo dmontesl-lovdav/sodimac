@@ -98,4 +98,7 @@ public interface CatalogDetailRepository extends JpaRepository<CatalogDetail, In
             @Param("status") Integer status);
 
     Long countByHeaderId(Integer headerId);
+
+    @Query("SELECT MAX(d.key) FROM CatalogDetail d WHERE d.header.id = :headerId")
+    String findMaxKeyByHeaderId(@Param("headerId") Integer headerId);
 }

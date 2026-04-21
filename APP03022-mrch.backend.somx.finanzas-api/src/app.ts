@@ -3,21 +3,26 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 
+import { mountSwagger } from "./swagger.js";
 import router from "./routes/index.js";
+
 import { errorHandler } from "@/middlewares/errorHandler.js";
 import { healthCheck, livenessProbe, readinessProbe } from "@/controllers/health.controller.js";
-import { globalErrorHandler } from '@/middlewares/logger.js';
+import { globalErrorHandler } from "@/middlewares/logger.js";
 
 const app = express();
 
-// Seguridad básica
-app.use(helmet());
+// Cors
 app.use(cors());
 
+app.use(helmet());
 
 // Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Swagger
+await mountSwagger(app);
 
 // Health check endpoints (Spring Boot Actuator style)
 app.get("/health", healthCheck);
@@ -37,6 +42,6 @@ app.use("/api", (_req, res) => {
 
 // Middleware global de errores (SIEMPRE al final)
 app.use(errorHandler);
-app.use(globalErrorHandler); //MANEJO DE ERRROES PARA ESCRITURA EN LA BASE
+app.use(globalErrorHandler);
 
 export default app;

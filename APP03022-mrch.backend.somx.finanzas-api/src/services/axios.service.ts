@@ -3,6 +3,8 @@ import FormData from 'form-data';
 import 'dotenv/config';
 import multer from 'multer';
 import { logger } from "@/utils/logger.js";
+import { GenericCatalogDetails, Supplier, ValidStatus } from '@/response/GenericCatalogDetails.dto.js';
+import { logActivity, getTraceId } from '@/middlewares/logger.js';
 
 /**
  * Envía archivos y datos adicionales a una API externa usando axios
@@ -12,7 +14,7 @@ import { logger } from "@/utils/logger.js";
  * @param {Object} headers - Headers adicionales (ej. Authorization)
  * @returns {Promise<Object>} Respuesta de la API externa
  */
-async function sendFilesWithData(url: string, files: Express.Multer.File[], extraData = {}, headers = {}, validateResponse = null ) {
+async function sendFilesWithData(url: string, files: Express.Multer.File[], extraData = {}, headers = {}, validateResponse = null) {
     try {
         const formData = new FormData();
 
@@ -35,13 +37,13 @@ async function sendFilesWithData(url: string, files: Express.Multer.File[], extr
             }
         });
 
-                // Validar respuesta si se proporciona función
+        // Validar respuesta si se proporciona función
 
         if (!response.data.success) {
             logger.error("❌ Error al enviar archivos  → data={}", response);
             throw new Error('Error al enviar archivos.');
         }
-        
+        logActivity(false, 'Archivos enviados exitosamente a google cloud', null, JSON.stringify({ trace_id: getTraceId() }));
         logger.info("✅ Archivos enviados exitosamente  → data={}", response);
         return response.data.success;
     } catch (error) {
@@ -50,11 +52,11 @@ async function sendFilesWithData(url: string, files: Express.Multer.File[], extr
     }
 }
 
-export async function sendFilesToBucket(files: Express.Multer.File[], folder: String){
+export async function sendFilesToBucket(files: Express.Multer.File[], folder: string) {
     try {
-        return true; //PARA PRUEBAS
+        //return true; //PARA PRUEBAS
         const extraData = {
-             folder: folder,
+            folder: folder,
         };
 
         const apiResponse = await sendFilesWithData(
@@ -68,58 +70,124 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: St
         //FALTA VALIDAR LA RESPUESTA Y ENVIAR EL RETURN CORRECTO
         //return apiResponse;
 
-    } catch (error) {
+    } catch (e) {
+        logActivity(true, 'ERROR : No fue posible registrar los archivos en google cloud', e, JSON.stringify({ trace_id: getTraceId() }));
         return false;
-        //return res.status(500).json({ message: 'Error al enviar a la API', error: error.message });
     }
 
 
-        // if (files.length > 0) {
-        //     // Procesar cada archivo en memoria
-        //     const formData = new FormData();
-        //     files.forEach((file, index) => {
-        //         console.log(`Archivo ${index + 1}:`);
-        //         console.log('Nombre:', file.originalname);
-        //         console.log('Tipo:', file.mimetype);
-        //         console.log('Tamaño:', file.size);
-        //         // Ejemplo: convertir a string si es texto
-        //         const contenido = file.buffer.toString('utf-8');
+    // if (files.length > 0) {
+    //     // Procesar cada archivo en memoria
+    //     const formData = new FormData();
+    //     files.forEach((file, index) => {
+    //         console.log(`Archivo ${index + 1}:`);
+    //         console.log('Nombre:', file.originalname);
+    //         console.log('Tipo:', file.mimetype);
+    //         console.log('Tamaño:', file.size);
+    //         // Ejemplo: convertir a string si es texto
+    //         const contenido = file.buffer.toString('utf-8');
 
-        //         formData.append('files', file.buffer, file.originalname);
-        //     });
-  
-            // Ejemplo: enviar a una API externa
-            // const response = await axios.post('https://api.ejemplo.com/upload', formData, {
-            //     headers: {
-            //         ...formData.getHeaders(), // Necesario para multipart/form-data
-            //         Authorization: 'Bearer TU_TOKEN_AQUI' // Si la API requiere autenticación
-            //     }
-            // });
+    //         formData.append('files', file.buffer, file.originalname);
+    //     });
 
-        // } else {
+    // Ejemplo: enviar a una API externa
+    // const response = await axios.post('https://api.ejemplo.com/upload', formData, {
+    //     headers: {
+    //         ...formData.getHeaders(), // Necesario para multipart/form-data
+    //         Authorization: 'Bearer TU_TOKEN_AQUI' // Si la API requiere autenticación
+    //     }
+    // });
 
-        // }
+    // } else {
+
+    // }
 
 }
 
-export async function axiosGet(url: string ){
+export async function axiosGet(url: string, params?: any) {
 
+    let response: any;
+    if (params == undefined) {
+        params = {};
+    }
+
+    await axios.get(url, { params })
+        .then(function (_response) {
+            response = _response;
+            console.log(_response);
+        })
+        .catch(function (error) {
+            response = error.response;
+            console.log(error);
+        })
+        .finally(function () {
+            console.log();
+        });
+    return response;
+}
+
+export async function axiosPost(url: string, data: any) {
 
     //const response2 = await axios.get(url);
 
-    let response : any;
-    const res = await axios.get(url)
-    .then(function (_response) {
-        // manejar respuesta exitosa
-        response = _response;
-        console.log(_response);
-    })
-    .catch(function (error) {
-        // manejar error
-        console.log(error);
-    })
-    .finally(function () {
-        // siempre sera executado
-    });
+    let response: any;
+    const res = await axios.post(url, data)
+        .then(function (_response) {
+            // manejar respuesta exitosa
+            response = _response;
+            console.log(_response);
+        })
+        .catch(function (error) {
+            // manejar error
+            console.log(error);
+        })
+        .finally(function () {
+            // siempre sera executado
+        });
     return response;
+}
+
+export async function GetSuppliers() {
+    const allSuppliers: any = await axiosGet((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_GET_ALL_SUPPLIERS);
+    const supplierList: Supplier[] = allSuppliers.data as Supplier[];
+    return supplierList;
+}
+
+export async function GetSupplierBySupplierNumber(supplierNumber: number) {
+    const supplierTmp: any = await axiosGet((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_GET_SUPPLIER + "/" + supplierNumber);
+    if (supplierTmp.data == '') {
+        return undefined;
+    } else {
+        const supplier: Supplier = supplierTmp.data as Supplier;
+        return supplier;
+    }
+
+}
+
+export async function GetCatalogDetail(url: string) {
+    const CatCatalog: any = await axiosGet(url);
+    const msgObj: GenericCatalogDetails = CatCatalog.data as GenericCatalogDetails;
+    return msgObj;
+}
+
+export async function GetCatalogDetailList(url: string) {
+    const CatCatalog: any = await axiosGet(url);
+    const msgObj: GenericCatalogDetails[] = CatCatalog.data as GenericCatalogDetails[];
+    return msgObj;
+}
+
+export async function ValidStatus(url: string, optionId: number, sourceStatus: number, targetStatus: number) {
+    const params = {
+        optionId: optionId,
+        sourceStatus: sourceStatus,
+        targetStatus: targetStatus
+    }
+    const CatCatalog: any = await axiosGet(url, params);
+    const msgObj: ValidStatus = CatCatalog.data as ValidStatus;
+    if (msgObj.success && msgObj.valid) {
+        return true;
+    } else {
+        return false;
+    }
+
 }

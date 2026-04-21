@@ -1,0 +1,317 @@
+rebates:
+  get:
+    tags:
+      - rebates
+    summary: List rebates
+    operationId: listRebates
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of rebates
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/rebates.yaml#/RebateDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - rebates
+    summary: Create rebate
+    operationId: createRebate
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/rebates.yaml#/CreateRebateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/rebates.yaml#/RebateDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-published:
+  get:
+    tags:
+      - rebates
+    summary: Get published rebates
+    operationId: getPublishedRebates
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of published rebates
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/rebates.yaml#/RebateDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-published-export-csv:
+  get:
+    tags:
+      - rebates
+    summary: Export published rebates to CSV
+    operationId: exportPublishedRebatesToCsv
+    produces:
+      - text/csv
+    responses:
+      "200":
+        description: CSV file with published rebates
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-search:
+  get:
+    tags:
+      - rebates
+    summary: Search rebates
+    operationId: searchRebates
+    produces:
+      - application/json
+    parameters:
+      - name: q
+        in: query
+        required: false
+        description: Search query
+        type: string
+      - name: vendorNumber
+        in: query
+        required: false
+        description: Vendor number
+        type: integer
+      - name: status
+        in: query
+        required: false
+        description: Rebate status
+        type: integer
+    responses:
+      "200":
+        description: Search results
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/rebates.yaml#/RebateDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-export-csv:
+  get:
+    tags:
+      - rebates
+    summary: Export filtered rebates to CSV
+    operationId: exportFilteredRebatesToCsv
+    produces:
+      - text/csv
+    parameters:
+      - name: status
+        in: query
+        required: false
+        description: Filter by status
+        type: integer
+      - name: vendorNumber
+        in: query
+        required: false
+        description: Filter by vendor
+        type: integer
+    responses:
+      "200":
+        description: CSV file with filtered rebates
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-by-vendor:
+  get:
+    tags:
+      - rebates
+    summary: Get rebates by vendor
+    operationId: getRebatesByVendor
+    produces:
+      - application/json
+    parameters:
+      - name: vendorNumber
+        in: path
+        required: true
+        description: Vendor number
+        type: integer
+    responses:
+      "200":
+        description: List of vendor rebates
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/rebates.yaml#/RebateDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-by-uuid:
+  get:
+    tags:
+      - rebates
+    summary: Get rebate by ID
+    operationId: getRebateById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Rebate UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/rebates.yaml#/RebateDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  put:
+    tags:
+      - rebates
+    summary: Update rebate
+    operationId: updateRebate
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Rebate UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/rebates.yaml#/UpdateRebateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/rebates.yaml#/RebateDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - rebates
+    summary: Delete rebate
+    operationId: deleteRebate
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Rebate UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

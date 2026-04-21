@@ -1,0 +1,236 @@
+finanzas-payment:
+  get:
+    tags:
+      - finanzas-payment
+    summary: List finanzas payments
+    operationId: listFinanzasPayments
+    produces:
+      - application/json
+    parameters:
+      - name: createdAtInitial
+        in: query
+        required: true
+        description: Initial creation date
+        type: string
+        format: date-time
+      - name: createdAtEnd
+        in: query
+        required: true
+        description: End creation date
+        type: string
+        format: date-time
+      - name: vendorNumber
+        in: query
+        required: false
+        description: Vendor number
+        type: integer
+      - name: finanzasPaymentUuid
+        in: query
+        required: false
+        description: Finanzas payment UUID
+        type: string
+        format: uuid
+      - name: paymentDate
+        in: query
+        required: false
+        description: Payment date
+        type: string
+        format: date
+      - name: documentNumber
+        in: query
+        required: false
+        description: Document number
+        type: string
+      - name: sapDocument
+        in: query
+        required: false
+        description: SAP document
+        type: string
+      - name: pageNumber
+        in: query
+        required: true
+        description: Page number
+        type: integer
+      - name: pageSize
+        in: query
+        required: true
+        description: Page size
+        type: integer
+    responses:
+      "200":
+        description: List of finanzas payments
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/FinanzasPaymentsListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - finanzas-payment
+    summary: Create finanzas payment
+    operationId: createFinanzasPayment
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/CreateFinanzasPaymentDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/FinanzasPaymentSingleResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  patch:
+    tags:
+      - finanzas-payment
+    summary: Update finanzas payment status
+    operationId: updateFinanzasPayment
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/UpdateFinanzasPaymentDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/FinanzasPaymentUpdateResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+finanzas-payment-header-with-details:
+  post:
+    tags:
+      - finanzas-payment
+    summary: Create finanzas payment header with details
+    operationId: createFinanzasPaymentHeaderWithDetails
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDetailsDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCreateResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+finanzas-payment-header-with-details-by-uuid:
+  get:
+    tags:
+      - finanzas-payment
+    summary: Get finanzas payment header with details
+    operationId: getFinanzasPaymentHeaderWithDetails
+    produces:
+      - application/json
+    parameters:
+      - name: paymentHeaderUuid
+        in: path
+        required: true
+        description: Payment header UUID
+        type: string
+        format: uuid
+      - name: pageNumber
+        in: query
+        required: false
+        description: Page number
+        type: integer
+        default: 1
+      - name: pageSize
+        in: query
+        required: false
+        description: Page size
+        type: integer
+        default: 20
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGetResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

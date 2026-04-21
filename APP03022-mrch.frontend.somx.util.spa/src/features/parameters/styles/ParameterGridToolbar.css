@@ -1,0 +1,60 @@
+
+.param-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+}
+
+.param-toolbar__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 150px;
+}
+
+.param-toolbar__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.param-toolbar__input,
+.param-toolbar__select {
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    height: 36px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.param-toolbar__input:focus,
+.param-toolbar__select:focus {
+    outline: none;
+    border-color: #0071CE;
+    box-shadow: 0 0 0 2px rgba(0, 113, 206, 0.1);
+}
+
+.param-toolbar__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.param-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 20px;
+}
+
+.param-toolbar__error {
+    font-size: 11px;
+    color: #dc2626;
+}

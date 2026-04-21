@@ -7,12 +7,9 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
-import { Reception } from './Reception.entity.js';
-import { StatusCatalog } from './StatusCatalog.entity.js';
 
-/**
- * Detalle de SKUs en recepciones
- */
+import { Reception } from './Reception.entity.js';
+
 @Entity('reception_sku')
 export class ReceptionSku {
     @PrimaryGeneratedColumn('uuid', { name: 'reception_sku_id' })
@@ -39,7 +36,6 @@ export class ReceptionSku {
     @Column({ name: 'status', type: 'numeric', precision: 2, nullable: true })
     status?: number;
 
-    // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
 
@@ -52,9 +48,7 @@ export class ReceptionSku {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 
-    // Relaciones
     @ManyToOne(() => Reception)
     @JoinColumn({ name: 'reception_id' })
-    reception?: Reception;
-
+    reception?: any;
 }

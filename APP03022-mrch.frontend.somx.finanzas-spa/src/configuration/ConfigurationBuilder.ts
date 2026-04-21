@@ -1,11 +1,24 @@
 // src/configuration/ConfigurationBuilder.ts
+
+import { createApiClient } from '@/services/ApiClient';
 import { createAuthenticator } from '@/security/Authenticator';
+import { localHomeStore } from '@/store/localStore';
 
-// ✅ flags/env
+/* ========================================= */
+/*               FLAGS                       */
+/* ========================================= */
+
+const localDeploymentEnv = process.env.LOCAL_DEPLOYMENT ?? process.env.REACT_APP_LOCAL_DEPLOYMENT;
+
 export const localDeployment =
-        (process.env.AUTH_DEFAULT_TOKEN ?? '') !== '';
+        localDeploymentEnv !== undefined
+                ? localDeploymentEnv.toLowerCase() === 'true'
+                : (process.env.AUTH_DEFAULT_TOKEN ?? '') !== '';
 
-// ✅ autenticador funcional
+/* ========================================= */
+/*             AUTHENTICATOR                 */
+/* ========================================= */
+
 export const authenticator = createAuthenticator({
         adminGroup:
                 process.env.AUTH_GROUP_ADMIN ??
@@ -16,12 +29,33 @@ export const authenticator = createAuthenticator({
         defaultToken: process.env.AUTH_DEFAULT_TOKEN ?? '',
 });
 
-// 🔄 default export para mantener compatibilidad:
-//   import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
-//   ConfigurationBuilder.client ...
+/* ========================================= */
+/*               API CLIENT                  */
+/* ========================================= */
+
+export const client = createApiClient({
+        baseUrl: process.env.API_BASE_URL ?? '',
+        tokenProvider: () => {
+                const envToken = process.env.AUTH_DEFAULT_TOKEN;
+
+                if (envToken?.trim()) return envToken;
+
+                return (
+                        (localHomeStore.getState() as any)?.authentication?.token ??
+                        null
+                );
+        },
+        timeoutMs: 15000,
+});
+
+/* ========================================= */
+/*         DEFAULT EXPORT COMPATIBLE         */
+/* ========================================= */
+
 const ConfigurationBuilder = {
         localDeployment,
         authenticator,
+        client,
 } as const;
 
 export default ConfigurationBuilder;

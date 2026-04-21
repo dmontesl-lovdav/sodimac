@@ -20,7 +20,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     /* ---------- NEW ---------- */
-    "allowJs": false,
+    "allowJs": true,
     /* ---------- Linting / strictness ---------- */
     "strict": true,
     "noUnusedLocals": true,

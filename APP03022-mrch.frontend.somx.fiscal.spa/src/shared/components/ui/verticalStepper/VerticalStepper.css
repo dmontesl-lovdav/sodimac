@@ -1,0 +1,34 @@
+.fiscal-stepper {
+}
+
+.fiscal-stepper-row {
+  display: flex;
+}
+
+.fiscal-stepper-col-icon {
+  margin-right: 1.5em;
+}
+
+.fiscal-stepper-icon {
+  background-color: white;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  font-weight: 700;
+  padding-top: 0.2em;
+  color: white;
+  text-align: center;
+  width: 32px;
+  height: 32px;
+}
+
+.fiscal-stepper-line {
+  width: 1px;
+  height: 100%;
+  margin-left: 15px;
+  border-left: 1px solid #0d9bd3;
+}
+
+.fiscal-stepper-content {
+  width: 100%;
+}

@@ -1,212 +1,233 @@
-import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
-import { 
-    PaymentRecord, 
-    PagedResult, 
+import {
+    PaymentRecord,
+    PagedResult,
     PaymentSearchParams,
     PaymentDetail,
     PaymentDocument
 } from '../interfaces';
+import { createApiClient } from '@/services/ApiClient';
 
-const client = ConfigurationBuilder.client;
+const api = createApiClient();
 
-// Mock data 
-const mockPayments: PaymentRecord[] = [
-    {
-        id: 1,
-        providerNumber: '393264',
-        providerName: 'PLASTITRIM, S.A. DE C.V.',
-        paymentNumber: '242195', 
-        receptionNumber: '242195',
-        guideNumber: '9',
-        invoiceNumber: '',  
-        currency: 'MXN',
-        amount: 152000.00,
-        bulkQty: 152,
-        palletQty: 0,
-        totalQty: 0,
-        paymentDate: '19-09-2025',
-        issueDate: '19-09-2025',
-        status: 'Pendiente de complemento',
-        statusId: 0,
-        serie: '',
-        folio: '',
-        uuid: '',
-        reportIds: [1286]
-    },
-    {
-        id: 2,
-        providerNumber: '394201',
-        providerName: 'COMERCIALIZADORA ABC S.A. DE C.V.',
-        paymentNumber: '242196',  
-        receptionNumber: '242196',
-        guideNumber: '9',
-        invoiceNumber: '', 
-        currency: 'MXN',
-        amount: 3000.00,
-        bulkQty: 3,
-        palletQty: 0,
-        totalQty: 0,
-        paymentDate: '19-09-2025',
-        issueDate: '19-09-2025',
-        status: 'Pendiente de complemento',
-        statusId: 0,
-        serie: '',
-        folio: '',
-        uuid: '',
-        reportIds: [40]
-    }
-];
+class PaymentsClient {
+    private ROUTE = 'finanzas-payment';
+    private ACCOUNTS_ROUTE = 'accounts-payable';
 
-const mockDocuments: PaymentDocument[] = [
-    {
-        id: '1',
-        documentNumber: 'FAC-2025-001',
-        documentType: 'Factura',
-        reference: 'REF-001',
-        documentDate: '15/09/2025',
-        accountingDate: '15/09/2025',
-        dueDate: '15/10/2025',
-        currency: 'MXN',
-        amount: 50000.00,
-        serie: 'A',
-        folio: '1001',
-        uuid: 'A1B2C3D4-E5F6-G7H8-I9J0-K1L2M3N4O5P6',
-        status: 'Activo'
-    },
-    {
-        id: '2',
-        documentNumber: 'NC-2025-001',
-        documentType: 'Nota de Crédito',
-        reference: 'REF-002',
-        documentDate: '16/09/2025',
-        accountingDate: '16/09/2025',
-        dueDate: '16/10/2025',
-        currency: 'MXN',
-        amount: -5000.00,
-        serie: 'NC',
-        folio: '2001',
-        uuid: 'B2C3D4E5-F6G7-H8I9-J0K1-L2M3N4O5P6Q7',
-        status: 'Activo'
-    },
-    {
-        id: '3',
-        documentNumber: 'FAC-2025-002',
-        documentType: 'Factura',
-        reference: 'REF-003',
-        documentDate: '17/09/2025',
-        accountingDate: '17/09/2025',
-        dueDate: '17/10/2025',
-        currency: 'MXN',
-        amount: 107000.00,
-        serie: 'A',
-        folio: '1002',
-        uuid: 'C3D4E5F6-G7H8-I9J0-K1L2-M3N4O5P6Q7R8',
-        status: 'Activo'
-    }
-];
-
-export const paymentsService = {
     async searchPayments(params: PaymentSearchParams): Promise<PagedResult<PaymentRecord>> {
-       
-        await new Promise((r) => setTimeout(r, 500));
-
-        let filteredPayments = [...mockPayments];
-        
-        if (params.statusId !== undefined) {
-            filteredPayments = filteredPayments.filter(p => p.statusId === params.statusId);
-        }
-
-        if (params.paymentNumber) {
-            filteredPayments = filteredPayments.filter(p => 
-                p.paymentNumber.includes(params.paymentNumber!)
-            );
-        }
+        const body: Record<string, any> = {
+            createdAtInitial: params.startDate,
+            createdAtEnd: params.endDate,
+            pageNumber: params.page || 1,
+            pageSize: params.size || 10,
+        };
 
         if (params.providerId) {
-            filteredPayments = filteredPayments.filter(p => 
-                p.providerNumber === params.providerId
-            );
+            body.vendorNumber = Number(params.providerId);
         }
 
-        const page = params.page || 1;
-        const size = params.size || 10;
-        const startIndex = (page - 1) * size;
-        const endIndex = startIndex + size;
-        const paginatedItems = filteredPayments.slice(startIndex, endIndex);
+        // Estos existen en tu interfaz; se mandan por compatibilidad si el BE los soporta
+        if (params.paymentNumber) {
+            body.documentNumber = params.paymentNumber;
+        }
+
+        if (params.referenceNumber) {
+            body.documentReference = params.referenceNumber;
+        }
+
+        if (typeof params.statusId === 'number') {
+            body.status = params.statusId;
+        }
+
+        const wrapper = await api.request<any>(this.ROUTE, 'get', undefined, { params: body });
+        // ApiClient ya regresa res.data, pero tu BE responde con ResponseHandler.responseBuilder => { data: pageable }
+        const pageable = wrapper?.data ?? wrapper ?? {};
+        const content = pageable?.content ?? [];
+
+        const items: PaymentRecord[] = content.map((item: any) => ({
+            idPago: item.finanzasPaymentUuid || item.id || '',
+            paymentHeaderUuid: item.paymentHeaderUuid ?? null,
+            documentNumber: item.documentNumber || '',
+            documentReference: item.documentReference || '',
+            providerNumber: String(item.vendorNumber || ''),
+            providerName: item.vendorName || '',
+            currency: item.currency || 'MXN',
+            amount: Number(item.amount) || 0,
+            documentType: item.documentType || '',
+            sapDocument: item.sapDocument || '',
+            paymentDate: item.paymentDate
+                ? new Date(item.paymentDate).toLocaleDateString('es-MX')
+                : '',
+            paymentYear: item.paymentDate
+                ? new Date(item.paymentDate).getFullYear().toString()
+                : '',
+            status: getStatusLabel(item.status),
+            statusId: item.status ?? 0,
+            createdAt: item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString('es-MX')
+                : '',
+            updatedAt: item.updatedAt
+                ? new Date(item.updatedAt).toLocaleDateString('es-MX')
+                : '',
+        }));
 
         return {
-            items: paginatedItems,
-            currentPage: page,
-            totalItems: filteredPayments.length,
-            totalPages: Math.ceil(filteredPayments.length / size)
+            items,
+            currentPage: pageable?.pageNumber ?? (params.page || 1),
+            totalItems: pageable?.totalElements ?? items.length,
+            totalPages:
+                pageable?.totalPages ??
+                Math.max(
+                    1,
+                    Math.ceil(
+                        (pageable?.totalElements ?? items.length) /
+                        (params.size || 10)
+                    )
+                ),
         };
-    },
+    }
+
+    // ✅ NUEVO: detalle real paginado (GET /finanzas-payment/header-with-details/:paymentHeaderUuid?pageNumber=&pageSize=)
+    async getHeaderWithDetails(
+        paymentHeaderUuid: string,
+        opts: { pageNumber: number; pageSize: number }
+    ): Promise<any> {
+        return api.request<any>(
+            `${this.ROUTE}/header-with-details/${paymentHeaderUuid}`,
+            'get',
+            undefined,
+            {
+                params: {
+                    pageNumber: opts.pageNumber,
+                    pageSize: opts.pageSize,
+                },
+            }
+        );
+    }
 
     async getPaymentDetail(paymentNumber: string): Promise<PaymentDetail> {
-        await new Promise((r) => setTimeout(r, 300));
-        
-        const payment = mockPayments.find(p => p.paymentNumber === paymentNumber);
+        const searchResult = await this.searchPayments({
+            startDate: '2020-01-01',
+            endDate: new Date().toISOString().split('T')[0],
+            paymentNumber,
+            page: 1,
+            size: 1,
+        });
+
+        const payment = searchResult.items[0];
         if (!payment) {
             throw new Error('Pago no encontrado');
         }
 
+        let documents: PaymentDocument[] = [];
+
+        try {
+            const accountsResponse = await api.request<any>(
+                `${this.ACCOUNTS_ROUTE}?vendorNumber=${payment.providerNumber}&documentNumber=${paymentNumber}`,
+                'get'
+            );
+
+            const accountsData = Array.isArray(accountsResponse)
+                ? accountsResponse
+                : accountsResponse?.content ?? [];
+
+            documents = accountsData.map((doc: any) => ({
+                id: doc.accountsPayableUuid || doc.id || '',
+                documentNumber: doc.documentNumber || '',
+                documentType: doc.documentType || '',
+                reference: doc.reference || '',
+                documentDate: doc.documentDate
+                    ? new Date(doc.documentDate).toLocaleDateString('es-MX')
+                    : '',
+                accountingDate: doc.accountingDate
+                    ? new Date(doc.accountingDate).toLocaleDateString('es-MX')
+                    : '',
+                dueDate: doc.dueDate
+                    ? new Date(doc.dueDate).toLocaleDateString('es-MX')
+                    : '',
+                currency: doc.currency || 'MXN',
+                amount: Number(doc.amount) || 0,
+                serie: doc.serie || '',
+                folio: doc.folio || '',
+                uuid: doc.uuid || '',
+                sapDocument: doc.sapDocument || '',
+                paymentDate: doc.paymentDate
+                    ? new Date(doc.paymentDate).toLocaleDateString('es-MX')
+                    : '',
+                status: doc.status || 'Activo',
+                createdAt: doc.createdAt
+                    ? new Date(doc.createdAt).toLocaleDateString('es-MX')
+                    : '',
+                updatedAt: doc.updatedAt
+                    ? new Date(doc.updatedAt).toLocaleDateString('es-MX')
+                    : '',
+            }));
+        } catch (err) {
+            console.error('[PaymentsService] Error fetching accounts:', err);
+            documents = [];
+        }
+
         return {
             ...payment,
-            documents: mockDocuments,
-            paymentYear: '2025',
-            complementInfo: payment.statusId === 1 ? {
-                serie: payment.serie || '',
-                folio: payment.folio || '',
-                uuid: payment.uuid || '',
-                uploadDate: '20-09-2025',
-                status: 'Activo'
-            } : undefined
+            documents,
         };
-    },
+    }
 
-    async exportPayments(params: PaymentSearchParams, format: 'csv' | 'xlsx' = 'csv', isAdmin: boolean = false): Promise<Blob> {
-        const result = await this.searchPayments({ ...params, size: 999999 });
-        
+    exportPaymentsCsv(rows: PaymentRecord[]): Blob {
         const headers = [
-            ...(isAdmin ? ['Número Proveedor', 'Nombre Proveedor'] : []),
-            'Número Pago',
+            'Referencia de pago',
+            'Número proveedor',
+            'Nombre proveedor',
             'Moneda',
-            'Monto',
-            'Fecha Pago',
+            'Importe',
+            'Fecha de pago',
+            'Año de pago',
             'Estatus',
-            'Serie',
-            'Folio',
-            'UUID'
+            'Fecha de registro',
+            'Fecha de actualización',
         ];
 
-        const rows = result.items.map(item => [
-            ...(isAdmin ? [item.providerNumber, item.providerName] : []),
-            item.paymentNumber,
+        const formatAmount = (amount: number): string =>
+            `$${amount.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+
+        const csvRows = rows.map(item => [
+            item.documentReference,
+            item.providerNumber,
+            item.providerName,
             item.currency,
-            item.amount.toString(),
+            formatAmount(item.amount),
             item.paymentDate,
+            item.paymentYear,
             item.status,
-            item.serie || '',
-            item.folio || '',
-            item.uuid || ''
+            item.createdAt,
+            item.updatedAt,
         ]);
 
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n');
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.join(','),
+                ...csvRows.map(row => row.map(cell => `"${cell}"`).join(',')),
+            ].join('\n');
 
-        return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    },
+        return new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+    }
 
     async uploadPaymentComplement(paymentNumber: string, file: File): Promise<void> {
-        await new Promise((r) => setTimeout(r, 1000));
-        console.log('Complement uploaded for payment:', paymentNumber, file.name);
-    },
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('paymentNumber', paymentNumber);
+
+        await api.request(`${this.ROUTE}/complement`, 'post', formData);
+    }
 
     async exportPaymentDetail(paymentNumber: string, isAdmin: boolean = false): Promise<Blob> {
         const detail = await this.getPaymentDetail(paymentNumber);
-        
+
         const headers = [
             ...(isAdmin ? ['Número Proveedor', 'Nombre Proveedor'] : []),
             'Número Pago',
@@ -223,13 +244,13 @@ export const paymentsService = {
             'Serie',
             'Folio',
             'UUID',
-            'Estatus'
+            'Estatus',
         ];
 
         const rows = detail.documents.map(doc => [
             ...(isAdmin ? [detail.providerNumber, detail.providerName] : []),
-            detail.paymentNumber,
-            detail.paymentYear || '2025',
+            detail.documentNumber,
+            detail.paymentYear || '',
             detail.paymentDate,
             detail.amount.toString(),
             detail.currency,
@@ -242,28 +263,87 @@ export const paymentsService = {
             doc.serie || '',
             doc.folio || '',
             doc.uuid || '',
-            doc.status
+            doc.status,
         ]);
 
         const csvContent = [
             headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
         ].join('\n');
 
-        return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    },
+        return new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+    }
+
+    exportDetailCsv(documents: PaymentDocument[]): Blob {
+        const headers = [
+            'Número documento',
+            'Referencia documento',
+            'Moneda',
+            'Importe',
+            'Tipo de documento',
+            'Documento SAP',
+            'Fecha de pago',
+            'Estatus',
+            'Fecha de registro',
+            'Fecha de actualización',
+        ];
+
+        const formatAmount = (amount: number): string =>
+            `$${amount.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+
+        const csvRows = documents.map(doc => [
+            doc.documentNumber,
+            doc.reference || '',
+            doc.currency,
+            formatAmount(doc.amount),
+            doc.documentType,
+            doc.sapDocument || '',
+            doc.paymentDate || '',
+            doc.status,
+            doc.createdAt || '',
+            doc.updatedAt || '',
+        ]);
+
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.join(','),
+                ...csvRows.map(row => row.map(cell => `"${cell}"`).join(',')),
+            ].join('\n');
+
+        return new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+    }
 
     async getMessages(): Promise<Record<string, string>> {
         return {
-            'INF6000': 'No existe información con los criterios establecidos.',
-            'ERR001': 'La fecha final no puede exceder un mes desde la fecha actual.',
-            'ERR002': 'El periodo máximo de consulta es de 6 meses.',
-            'ERR003': 'Fecha inicio es obligatoria.',
-            'ERR004': 'Fecha fin es obligatoria.',
-            'WRN7003': 'No es posible publicar el complemento de pago, faltan documentos fiscales por publicar',
-            'SUCCESS001': 'Búsqueda realizada exitosamente.',
-            'SUCCESS002': 'Exportación completada.',
-            'SUCCESS003': 'Complemento cargado exitosamente.'
+            INF6000: 'No existe información con los criterios establecidos.',
+            ERR001: 'La fecha final no puede exceder un mes desde la fecha actual.',
+            ERR002: 'El periodo máximo de consulta es de 6 meses.',
+            ERR003: 'Fecha inicio es obligatoria.',
+            ERR004: 'Fecha fin es obligatoria.',
+            WRN7003:
+                'No es posible publicar el complemento de pago, faltan documentos fiscales por publicar',
+            SUCCESS001: 'Búsqueda realizada exitosamente.',
+            SUCCESS002: 'Exportación completada.',
+            SUCCESS003: 'Complemento cargado exitosamente.',
         };
     }
-};
+}
+
+function getStatusLabel(statusId: number): string {
+    const map: Record<number, string> = {
+        0: 'Pendiente de complemento',
+        1: 'Complemento relacionado',
+        2: 'Pago cancelado',
+    };
+    return map[statusId] ?? 'Desconocido';
+}
+
+export const paymentsService = new PaymentsClient();

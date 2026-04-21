@@ -1,0 +1,443 @@
+CreateFinanzasPaymentDto:
+  type: object
+  required:
+    - company
+    - documentNumber
+    - documentReference
+    - vendorNumber
+    - amount
+    - documentType
+    - sapDocument
+    - paymentDate
+    - status
+  properties:
+    company:
+      type: integer
+      example: 1
+    documentNumber:
+      type: string
+      example: "DOC-1001"
+    documentReference:
+      type: string
+      example: "REF-1001"
+    vendorNumber:
+      type: integer
+      example: 20045
+    amount:
+      type: string
+      pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+      example: "1500.00"
+    documentType:
+      type: string
+      example: "FA"
+    sapDocument:
+      type: string
+      example: "5100001234"
+    paymentDate:
+      type: string
+      format: date
+      example: "2026-03-09"
+    status:
+      type: integer
+      example: 1
+    paymentHeaderUuid:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+UpdateFinanzasPaymentDto:
+  type: object
+  required:
+    - vendorNumber
+    - documentNumber
+    - sapDocument
+    - documentType
+    - status
+  properties:
+    vendorNumber:
+      type: integer
+      example: 20045
+    documentNumber:
+      type: string
+      example: "DOC-1001"
+    sapDocument:
+      type: string
+      example: "5100001234"
+    documentType:
+      type: string
+      example: "FA"
+    status:
+      type: integer
+      example: 2
+
+FinanzasPaymentDto:
+  type: object
+  properties:
+    finanzasPaymentUuid:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440001"
+    company:
+      type: integer
+      example: 1
+    documentNumber:
+      type: string
+      example: "DOC-1001"
+    documentReference:
+      type: string
+      example: "REF-1001"
+    vendorNumber:
+      type: integer
+      example: 20045
+    amount:
+      type: string
+      example: "1500.00"
+    currency:
+      type: string
+      example: "MXN"
+    documentType:
+      type: string
+      example: "FA"
+    sapDocument:
+      type: string
+      example: "5100001234"
+      x-nullable: true
+    paymentDate:
+      type: string
+      format: date
+      example: "2026-03-09"
+    status:
+      type: integer
+      example: 1
+    paymentHeaderUuid:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+      x-nullable: true
+    createdBy:
+      type: integer
+      example: 123
+      x-nullable: true
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-03-09T12:00:00Z"
+    updatedBy:
+      type: integer
+      example: 456
+      x-nullable: true
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2026-03-09T13:00:00Z"
+      x-nullable: true
+
+FinanzasPaymentHeaderDto:
+  type: object
+  properties:
+    paymentHeaderUuid:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    company:
+      type: integer
+      example: 1
+    anio:
+      type: integer
+      example: 2026
+    vendorNumber:
+      type: integer
+      example: 20045
+    currency:
+      type: string
+      example: "MXN"
+    totalAmount:
+      type: string
+      example: "2500.00"
+    paymentDate:
+      type: string
+      format: date
+      example: "2026-03-09"
+    status:
+      type: integer
+      example: 1
+    createdBy:
+      type: integer
+      example: 123
+      x-nullable: true
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-03-09T12:00:00Z"
+    updatedBy:
+      type: integer
+      example: 456
+      x-nullable: true
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2026-03-09T13:00:00Z"
+      x-nullable: true
+
+CreateFinanzasPaymentDetailItemDto:
+  type: object
+  required:
+    - documentNumber
+    - documentReference
+    - amount
+    - documentType
+    - sapDocument
+    - paymentLineType
+  properties:
+    documentNumber:
+      type: string
+      example: "DOC-1001"
+    documentReference:
+      type: string
+      example: "REF-1001"
+    amount:
+      type: string
+      pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+      example: "1000.00"
+    documentType:
+      type: string
+      example: "FA"
+    sapDocument:
+      type: string
+      example: "5100001234"
+    paymentLineType:
+      type: string
+      enum:
+        - INCOME
+        - CREDIT_NOTE
+      example: "INCOME"
+
+CreateFinanzasPaymentHeaderWithDetailsDto:
+  type: object
+  required:
+    - company
+    - anio
+    - vendorNumber
+    - totalAmount
+    - paymentDate
+    - details
+  properties:
+    company:
+      type: integer
+      example: 1
+    anio:
+      type: integer
+      example: 2026
+    vendorNumber:
+      type: integer
+      example: 20045
+    currency:
+      type: string
+      default: "MXN"
+      example: "MXN"
+    totalAmount:
+      type: string
+      pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+      example: "2500.00"
+    paymentDate:
+      type: string
+      format: date
+      example: "2026-03-09"
+    status:
+      type: integer
+      default: 1
+      example: 1
+    createdBy:
+      type: integer
+      example: 123
+    details:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/CreateFinanzasPaymentDetailItemDto"
+
+ResponsePageableFinanzasPaymentDto:
+  type: object
+  properties:
+    content:
+      type: array
+      items:
+        $ref: "#/FinanzasPaymentDto"
+    totalElements:
+      type: integer
+      example: 25
+    numberOfElements:
+      type: integer
+      example: 10
+    totalPages:
+      type: integer
+      example: 3
+    pageNumber:
+      type: integer
+      example: 1
+    pageSize:
+      type: integer
+      example: 10
+
+FinanzasPaymentHeaderWithDetailsCreateData:
+  type: object
+  properties:
+    header:
+      $ref: "#/FinanzasPaymentHeaderDto"
+    details:
+      type: array
+      items:
+        $ref: "#/FinanzasPaymentDto"
+    summary:
+      type: object
+      properties:
+        paymentHeaderUuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        totalDetails:
+          type: integer
+          example: 2
+        headerTotal:
+          type: string
+          example: "2500.00"
+        expectedTotal:
+          type: string
+          example: "2500.00"
+
+FinanzasPaymentHeaderWithDetailsGetData:
+  type: object
+  properties:
+    header:
+      $ref: "#/FinanzasPaymentHeaderDto"
+    details:
+      type: array
+      items:
+        $ref: "#/FinanzasPaymentDto"
+    detailsPage:
+      $ref: "#/ResponsePageableFinanzasPaymentDto"
+    summary:
+      type: object
+      properties:
+        paymentHeaderUuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        totalDetails:
+          type: integer
+          example: 2
+        totalAmountHeader:
+          type: string
+          example: "2500.00"
+        totalAmountDetail:
+          type: string
+          example: "2500.00"
+        amountsMatch:
+          type: boolean
+          example: true
+
+FinanzasPaymentsListResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: ""
+    data:
+      $ref: "#/ResponsePageableFinanzasPaymentDto"
+    code:
+      type: integer
+      example: 0
+    statusCode:
+      type: integer
+      example: 200
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      example: ""
+
+FinanzasPaymentSingleResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: ""
+    data:
+      $ref: "#/FinanzasPaymentDto"
+    code:
+      type: integer
+      example: 0
+    statusCode:
+      type: integer
+      example: 201
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      example: ""
+
+FinanzasPaymentUpdateResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: ""
+    data:
+      type: object
+      description: TypeORM update result
+    code:
+      type: integer
+      example: 0
+    statusCode:
+      type: integer
+      example: 200
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      example: ""
+
+FinanzasPaymentHeaderWithDetailsCreateResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: ""
+    data:
+      $ref: "#/FinanzasPaymentHeaderWithDetailsCreateData"
+    code:
+      type: integer
+      example: 0
+    statusCode:
+      type: integer
+      example: 201
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      example: ""
+
+FinanzasPaymentHeaderWithDetailsGetResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: ""
+    data:
+      $ref: "#/FinanzasPaymentHeaderWithDetailsGetData"
+    code:
+      type: integer
+      example: 0
+    statusCode:
+      type: integer
+      example: 200
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      example: ""

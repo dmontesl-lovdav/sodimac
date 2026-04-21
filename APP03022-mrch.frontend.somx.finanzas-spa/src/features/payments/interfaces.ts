@@ -1,35 +1,34 @@
-
 export interface PaymentSearchParams {
-    providerId?: string;          
-    paymentNumber?: string;        
-    statusId?: number;           
-    startDate: string;            
-    endDate: string;              
+    providerId?: string;
+    paymentNumber?: string;
+    referenceNumber?: string;
+    statusId?: number;
+    startDate: string;
+    endDate: string;
     page?: number;
     size?: number;
 }
 
 export interface PaymentRecord {
-    id?: string | number;          
-    providerNumber: string;        
-    providerName: string;        
-    paymentNumber: string;        
-    receptionNumber: string;     
-    guideNumber: string;         
-    invoiceNumber: string;       
-    currency: string;            
-    amount: number;             
-    bulkQty: number;             
-    palletQty: number;          
-    totalQty: number;            
-    paymentDate: string;        
-    issueDate: string;         
-    status: string;            
-    statusId: number;           
-    serie?: string;             
-    folio?: string;              
-    uuid?: string;               
-    reportIds?: number[];        
+    idPago: string;
+
+    // ✅ NUEVO: UUID de cabecera para navegar a detalle paginado (GET header-with-details/:uuid)
+    paymentHeaderUuid?: string | null;
+
+    documentNumber: string;
+    documentReference: string;
+    providerNumber: string;
+    providerName: string;
+    currency: string;
+    amount: number;
+    documentType: string;
+    sapDocument: string;
+    paymentDate: string;
+    paymentYear: string;
+    status: string;
+    statusId: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface PaymentStatus {
@@ -53,7 +52,6 @@ export interface PagedResult<T> {
 export interface PaymentDetail extends PaymentRecord {
     documents: PaymentDocument[];
     complementInfo?: ComplementInfo;
-    paymentYear?: string;
 }
 
 export interface PaymentDocument {
@@ -69,7 +67,11 @@ export interface PaymentDocument {
     serie?: string;
     folio?: string;
     uuid?: string;
+    sapDocument?: string;
+    paymentDate?: string;
     status: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ComplementInfo {
@@ -91,4 +93,3 @@ export interface UserRole {
     providerId?: string;
     providerName?: string;
 }
-

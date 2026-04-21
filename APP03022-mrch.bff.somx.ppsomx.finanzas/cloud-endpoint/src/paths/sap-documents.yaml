@@ -1,0 +1,162 @@
+sap-documents:
+  get:
+    tags:
+      - sap-documents
+    summary: List SAP documents
+    operationId: listSapDocuments
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of SAP documents
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/sap-documents.yaml#/SapDocumentDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - sap-documents
+    summary: Create SAP document
+    operationId: createSapDocument
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/sap-documents.yaml#/CreateSapDocumentDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/sap-documents.yaml#/SapDocumentDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+sap-documents-by-uuid:
+  get:
+    tags:
+      - sap-documents
+    summary: Get SAP document by ID
+    operationId: getSapDocumentById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: SAP document UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/sap-documents.yaml#/SapDocumentDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  put:
+    tags:
+      - sap-documents
+    summary: Update SAP document
+    operationId: updateSapDocument
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: SAP document UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/sap-documents.yaml#/UpdateSapDocumentDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/sap-documents.yaml#/SapDocumentDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - sap-documents
+    summary: Delete SAP document
+    operationId: deleteSapDocument
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: SAP document UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

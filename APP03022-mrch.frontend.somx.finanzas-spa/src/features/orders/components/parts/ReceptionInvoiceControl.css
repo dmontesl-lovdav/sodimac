@@ -1,0 +1,99 @@
+.rc-invoice-control {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    margin-top: 8px;
+    padding: 24px;
+}
+
+.rc-invoice-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    font-size: 14px;
+}
+
+.rc-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.rc-field {
+    margin-top: 8px;
+}
+
+.rc-upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.rc-upload-label {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+}
+
+.rc-upload-label:hover {
+    border-color: #60a5fa;
+}
+
+.rc-file-input {
+    display: none;
+}
+
+.rc-upload-text {
+    color: #6b7280;
+}
+
+.rc-upload-file {
+    color: #2563eb;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.rc-invoice-summary {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.rc-summary-table {
+    border: 1px solid #d1d5db;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.rc-cell {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 8px;
+}
+
+.rc-cell-label {
+    font-weight: 600;
+}
+
+.rc-summary-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.rc-save-btn {
+    margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+    .rc-invoice-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .rc-upload-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,56 @@
+/* ========================= */
+/*         LAYOUT            */
+/* ========================= */
+
+.twm-layout {
+    padding: 8px 24px 16px;
+}
+
+.twm-box {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 24px 0;
+    margin-top: 16px;
+    background: transparent;
+}
+
+.twm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.twm-title {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+}
+
+.twm-description {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+/* separación entre header y filtros */
+.twm-filters-section {
+    margin-top: 24px;
+}
+
+/* ========================= */
+/*         GRID              */
+/* ========================= */
+
+.twm-grid-section {
+    margin-top: 24px;
+}
+
+/* Espacio superior si GenericTable usa wrapper */
+.twm-box .generic-table-wrapper {
+    margin-top: 12px;
+}
+
+.twm-toolbar {
+    display: flex;
+    gap: 10px;
+}

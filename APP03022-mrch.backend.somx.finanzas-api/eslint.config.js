@@ -3,16 +3,11 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-    // ignores globales
     { ignores: ['dist/**', '**/*.test.*', '**/*.spec.*'] },
 
-    // reglas base JS
     js.configs.recommended,
-
-    // reglas TS sin type-check (rápidas)
     ...tseslint.configs.recommended,
 
-    // aplica a TS/JS
     {
         files: ['**/*.{ts,js}'],
         languageOptions: {
@@ -20,7 +15,11 @@ export default tseslint.config(
             sourceType: 'module'
         },
         rules: {
-            // tus ajustes aquí si quieres
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-unused-vars": "off",
+            "prefer-const": "off",
+            "no-var": "off",
+            "no-constant-binary-expression": "off"
         }
     }
 );

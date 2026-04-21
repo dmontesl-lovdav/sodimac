@@ -1,95 +1,154 @@
+import {
+  GenericSelectSearchable,
+  GenericDateRangePicker,
+  GenericButton,
+  GenericModal,
+} from "@shared/components/ui";
+import type { ReactElement } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ReceptionStatusOptions,
+  ProvidersOptions,
+  OrdersFilters,
+} from "../../interfaces";
+import {
+  fetchProvidersAsCatalog,
+  getFiltersFromLocalStorage,
+  saveFiltersToLocalStorage,
+} from "@/utils/utils";
 
-import { GenericButton, GenericSelectFloating } from "@shared/components/ui";
-import { GenericDateRangePicker } from "@shared/components/ui/date";
-import type { ChangeEvent, ReactElement } from "react";
-import { useEffect, useState, useRef } from "react";
-import { ReceptionStatusOptions, ProvidersOptions, OrdersFilters } from "../../interfaces";
-import { fetchProvidersAsCatalog, getFiltersFromLocalStorage, saveFiltersToLocalStorage } from "@/utils/utils";
+import "./FiltersBar.css";
 
 interface Props {
   onSearch: (filters: OrdersFilters) => void;
 }
 
 export default function FiltersBar({ onSearch }: Props): ReactElement {
-  const [range, setRange] = useState<Date[]>([]);
-  const [status, setStatus] = useState(0);
-  const [provider, setProvider] = useState(0);
   const [providers, setProviders] = useState<ProvidersOptions[]>([]);
+  const [provider, setProvider] = useState<string>(""); // string para Searchable
+  const [status, setStatus] = useState<string>(""); // string para Searchable
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    null,
+    null,
+  ]);
+
+  const [rangeErrorModal, setRangeErrorModal] = useState<boolean>(false);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     const fetchProviders = async () => {
       const response = await fetchProvidersAsCatalog();
-      if (response) {
-        setProviders(response);
-      }
+      if (response) setProviders(response);
     };
     fetchProviders();
   }, []);
 
   useEffect(() => {
     if (providers.length > 0 && !hasLoadedRef.current) {
-      const savedFilters = getFiltersFromLocalStorage<OrdersFilters>("receptions_filters");
-      if (savedFilters) {
-        setRange([
-          new Date(savedFilters.purchaseOrderDateAtInitial),
-          new Date(savedFilters.purchaseOrderDateAtEnd)
-        ]);
-        setProvider(savedFilters.supplierNumber || 0);
-        setStatus(savedFilters.status || 0);
-        hasLoadedRef.current = true;
+      const saved = getFiltersFromLocalStorage<OrdersFilters>(
+        "receptions_filters"
+      );
+
+      if (saved) {
+        const start = saved.purchaseOrderDateAtInitial
+          ? new Date(saved.purchaseOrderDateAtInitial)
+          : null;
+
+        const end = saved.purchaseOrderDateAtEnd
+          ? new Date(saved.purchaseOrderDateAtEnd)
+          : null;
+
+        setDateRange([start, end]);
+        setProvider(saved.supplierNumber ? String(saved.supplierNumber) : "");
+        setStatus(saved.status ? String(saved.status) : "");
       }
+
+      hasLoadedRef.current = true;
     }
   }, [providers]);
 
-  const handleSubmit = () => {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
-    const filterData = {
-      purchaseOrderDateAtInitial: range && range.length > 0 && range[0] ? range[0].toISOString() : oneMonthAgo.toISOString(),
-      purchaseOrderDateAtEnd: range && range.length > 1 && range[1] ? range[1].toISOString() : new Date().toISOString(),
-      supplierNumber: provider || undefined,
-      status: status || undefined,
+  const validateRange = (): boolean => {
+    const [d1, d2] = dateRange;
+    if (!d1 || !d2) return true;
+
+    const diffMonths =
+      (d2.getFullYear() - d1.getFullYear()) * 12 +
+      (d2.getMonth() - d1.getMonth());
+
+    return diffMonths <= 6;
+  };
+
+  const handleSearch = (): void => {
+    if (!validateRange()) {
+      setRangeErrorModal(true);
+      return;
+    }
+
+    const today = new Date();
+    const oneMonthAgo = new Date(today);
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    const [start, end] = dateRange;
+
+    const filterData: OrdersFilters = {
+      purchaseOrderDateAtInitial: (start ?? oneMonthAgo).toISOString(),
+      purchaseOrderDateAtEnd: (end ?? today).toISOString(),
+      supplierNumber: provider ? Number(provider) : undefined,
+      status: status ? Number(status) : undefined,
       pageNumber: 1,
-      pageSize: 10
+      pageSize: 10,
     };
+
     saveFiltersToLocalStorage("receptions_filters", filterData);
     onSearch(filterData);
   };
 
-
-
   return (
-    <div className="somx-flex somx-flex-wrap somx-items-end somx-gap-4">
-      <div className="somx-w-2xs">
-        <GenericSelectFloating
-          label="Proveedor"
-          value={provider}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setProvider(parseInt(event.target.value))}
-          placeholder="Proveedor"
-          options={providers}
-        />
+    <>
+      <div className="rc-filters">
+        <div className="rc-row">
+          <GenericSelectSearchable
+            value={provider}
+            onChange={(e: { target: { value: string } }) =>
+              setProvider(e.target.value)
+            }
+            options={providers}
+            placeholder="Proveedor"
+            widthClass="gs-width-md"
+          />
+
+          <GenericSelectSearchable
+            value={status}
+            onChange={(e: { target: { value: string } }) =>
+              setStatus(e.target.value)
+            }
+            options={ReceptionStatusOptions as any}
+            placeholder="Estatus"
+            widthClass="gs-width-md"
+          />
+
+          <GenericDateRangePicker
+            value={dateRange}
+            onChange={(dates) => setDateRange(dates)}
+            placeholder="Rango de fecha recepción"
+            size="md"
+          />
+
+          <GenericButton variant="outline" onClick={handleSearch}>
+            Buscar
+          </GenericButton>
+        </div>
       </div>
-      <div className="somx-w-2xs">
-        <GenericSelectFloating
-          label="Estatus"
-          value={status}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setStatus( parseInt(event.target.value))}
-          placeholder="Estado"
-          options={ReceptionStatusOptions}
-        />
-      </div>
-      <div className="somx-w-2xs">
-        <GenericDateRangePicker
-          value={range}
-          onChange={(dates: Date[]) => setRange(dates)}
-          placeholder="Rango de Fecha Recepción"
-        />
-      </div>
-      <GenericButton variant="outlineFill" className="somx-h-11" onClick={handleSubmit}>
-        Buscar
-      </GenericButton>
-    </div>
+
+      <GenericModal
+        visible={rangeErrorModal}
+        variant="alert"
+        severity="warning"
+        title="Rango inválido"
+        message="El rango máximo permitido es 6 meses."
+        buttonText="Aceptar"
+        onClose={() => setRangeErrorModal(false)}
+      />
+    </>
   );
 }

@@ -21,10 +21,12 @@ export const ListReceptionQuerySchema = z.object({
 /** Para crear */
 export const CreateReceiptionSchema = z.object({
     receptionNumber: z.string(),
-    originId: z.number().int().min(1,{ message: "Invalid field `originId` on Reception. value : null or empti" }),
+    originId: z.number().optional(),
+    origin: z.string().nullable().optional(),   //El origen puede venir en String,hay que convertirlo a Int
     destinationId: z.number().int({message: "Invalid field `destinationId` on Reception. value cannot be empty, null or blank"}),
     amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "decimal with 2 places"),
     comments: z.string(),
+    guideNumber: z.string().optional(),
     //sapDocument: z.string().nonempty({message: "Invalid field `sapDocument` on Reception. value cannot be empty, null or blank"}),
     receptionDate: z.coerce.date().nonoptional({message: "Invalid field `receptionDate` on Reception. value cannot be empty, null or blank"}),
     status: z.number().int(),

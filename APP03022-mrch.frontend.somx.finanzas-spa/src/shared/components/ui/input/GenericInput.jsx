@@ -1,4 +1,3 @@
-
 import { useEffect, useId, useState } from 'react';
 
 export default function GenericInput({
@@ -42,8 +41,6 @@ export default function GenericInput({
     };
   }, [id]);
 
-  const effectivePlaceholder = focused || hasValue ? placeholder : '';
-
   return (
     <div className={`somx-input-wrapper ${className}`}>
       <input
@@ -54,30 +51,27 @@ export default function GenericInput({
         onChange={onChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder={effectivePlaceholder}
+        placeholder={placeholder}
         disabled={disabled}
         readOnly={readOnly}
         maxLength={maxLength}
         aria-invalid={!!error}
         aria-describedby={maxLength ? counterId : undefined}
-        className={`somx-input ${disabled ? 'somx-input-disabled' : ''} ${
-          error ? 'somx-input-error' : ''
-        }`}
+        className={`somx-input ${disabled ? 'somx-input-disabled' : ''} ${error ? 'somx-input-error' : ''
+          }`}
         {...props}
       />
 
       {label && (
         <label
           htmlFor={id}
-          className={`somx-label ${
-            focused || hasValue ? 'somx-label-focused' : 'somx-label-default'
-          } ${
-            error
+          className={`somx-label ${focused || hasValue ? 'somx-label-focused' : 'somx-label-default'
+            } ${error
               ? 'somx-label-error'
               : focused
-              ? 'somx-label-focused-color'
-              : 'somx-label-default-color'
-          }`}
+                ? 'somx-label-focused-color'
+                : 'somx-label-default-color'
+            }`}
           style={{ left: `${leftPad}px` }}
         >
           {label}

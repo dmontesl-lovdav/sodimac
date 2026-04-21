@@ -1,4 +1,3 @@
-//
 // ────────────────────────────────────────────────────────────
 // React y librerías base
 // ────────────────────────────────────────────────────────────
@@ -128,12 +127,20 @@ function useAuthReady() {
     return Boolean(tokenDecoded);
 }
 
-function useIsVendor() {
-    const roles =
-        useAppSelector(
-            s => s.authentication?.tokenDecoded?.resource_access?.['fbc-aclaraciones']?.roles
-        ) || [];
-    return Array.isArray(roles) && roles.includes('ppsomx-vendor');
+// PRIORIDAD DE ROLES (ÚNICA FUENTE DE VERDAD)
+function useEffectiveRole() {
+    const token = useAppSelector(s => s.authentication?.tokenDecoded);
+
+    const realmRoles = token?.realm_access?.roles || [];
+    const resourceRoles =
+        token?.resource_access?.['fbc-aclaraciones']?.roles || [];
+
+    if (realmRoles.includes('FBC_TECH_ADMIN_USER')) return 'TECH_ADMIN';
+    if (resourceRoles.includes('ppsomx-admin')) return 'ADMIN';
+    if (resourceRoles.includes('ppsomx-resolver')) return 'RESOLVER';
+    if (resourceRoles.includes('ppsomx-vendor')) return 'VENDOR';
+
+    return 'ADMIN';
 }
 
 // ---------- Pantalla de espera mínima mientras carga el token ----------
@@ -143,18 +150,23 @@ function Gate({ children }) {
     return <>{children}</>;
 }
 
-// ---------- Landing por rol (solo decide a dónde ir) ----------
+// ---------- Landing por rol (prioridad aplicada) ----------
 function Landing() {
-    const isVendor = useIsVendor();
-    return isVendor ? <Navigate to="/home" replace /> : <Navigate to="/mantenedor" replace />;
+    const role = useEffectiveRole();
+
+    return role === 'VENDOR'
+        ? <Navigate to="/home" replace />
+        : <Navigate to="/mantenedor" replace />;
 }
 
 // ---------- Bloqueo de /mantenedor para vendors ----------
 function RequireNonVendor({ children }) {
-    const isVendor = useIsVendor();
+    const role = useEffectiveRole();
     const ready = useAuthReady();
+
     if (!ready) return null;
-    if (isVendor) return <Navigate to="/home" replace />;
+    if (role === 'VENDOR') return <Navigate to="/home" replace />;
+
     return <>{children}</>;
 }
 
@@ -171,10 +183,7 @@ function AppRoutes() {
                 {/* Help Center */}
                 <Route path="/home" element={<HelpCenterContainer />} />
                 <Route path="/help-center/resources" element={<HelpCenterSupportResources />} />
-                <Route
-                    path="/help-center/faqs/category"
-                    element={<HelpCenterFaqByCategory />}
-                />
+                <Route path="/help-center/faqs/category" element={<HelpCenterFaqByCategory />} />
                 <Route path="/help-center/faqs/detail" element={<HelpCenterFaqDetail />} />
 
                 {/* Casos */}
@@ -204,7 +213,7 @@ function AppRoutes() {
                 <Route path="/slas/new" element={<SlaAddEditForm />} />
                 <Route path="/slas/:id" element={<SlaAddEditForm />} />
 
-                {/* Sección informativa */}
+                {/* Notices */}
                 <Route path="/notices" element={<NoticeGridContainer />} />
                 <Route path="/notices/new" element={<NoticeAddEditForm />} />
                 <Route path="/notices/:id" element={<NoticeAddEditForm />} />
@@ -242,14 +251,13 @@ function AppRoutes() {
                     }
                 />
 
-
-                {/* 🔥 UI Playground */}
+                {/* UI Playground */}
                 <Route path="/playground/ui" element={<UiPlayground />} />
 
                 {/* Roles debug */}
                 <Route path="/debug/roles" element={<RolesDebug />} />
 
-                {/* Mantenedor (solo no-vendors) */}
+                {/* Mantenedor */}
                 <Route
                     path="/mantenedor"
                     element={

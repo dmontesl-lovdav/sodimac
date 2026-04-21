@@ -1,0 +1,64 @@
+FiscalPaymentDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    paymentNumber:
+      type: string
+      description: Payment number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    amount:
+      type: string
+      description: Payment amount
+    currency:
+      type: string
+      description: Currency code
+    paymentDate:
+      type: string
+      format: date-time
+      description: Payment date
+    status:
+      type: integer
+      description: Payment status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateFiscalPaymentDto:
+  type: object
+  required:
+    - paymentNumber
+    - vendorNumber
+    - amount
+  properties:
+    paymentNumber:
+      type: string
+    vendorNumber:
+      type: integer
+    amount:
+      type: string
+    currency:
+      type: string
+    paymentDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+
+UpdateFiscalPaymentDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    amount:
+      type: string
+    paymentDate:
+      type: string
+      format: date-time

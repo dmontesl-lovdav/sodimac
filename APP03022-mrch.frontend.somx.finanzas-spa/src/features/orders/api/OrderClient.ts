@@ -1,48 +1,59 @@
-import { ApiClient } from "@/services/ApiClient";
-import { OrdersFilters } from "../components/parts/FiltersBar";
+import { createApiClient } from "@/services/ApiClient";
+import type { OrdersFilters } from "../interfaces";
 import { Order, Reception, ReceptionAxios, ReceptionAxiosSingle } from "../interfaces";
 
-export class OrderClient extends ApiClient {
+const api = createApiClient({
+    baseUrl: process.env.API_BASE_URL || "",
+});
 
-    private DEFAULT_ROUTE = "/purchase-orders";
+const DEFAULT_ROUTE = "purchase-orders";
 
-    public constructor() {
-        super();
-    }
-
-    public async get(criteria: OrdersFilters): Promise<ReceptionAxios> {
-        const params: URLSearchParams = new URLSearchParams();
+export const OrderClient = {
+    async get(criteria: OrdersFilters): Promise<ReceptionAxios> {
+        const params = new URLSearchParams();
         params.set("purchaseOrderDateAtInitial", criteria.purchaseOrderDateAtInitial);
         params.set("purchaseOrderDateAtEnd", criteria.purchaseOrderDateAtEnd);
-        params.set("pageNumber", criteria.pageNumber+"");
-        params.set("pageSize", criteria.pageSize+"");
-        if (criteria.supplierNumber) {
-//          params.set("supplierNumber", criteria.supplierNumber + "");
-        }
-        if (criteria.status) {
-//          params.set("status", criteria.status + "");
-        }
+        params.set("pageNumber", String(criteria.pageNumber));
+        params.set("pageSize", String(criteria.pageSize));
 
-        return this.execute<ReceptionAxios>(`${this.DEFAULT_ROUTE}?${params.toString()}`, "get", criteria);
-    };
-    
+        const qs = params.toString();
 
-    public async getByUuid(uuid: string): Promise<Order> {
-        return this.execute<Order>(`${this.DEFAULT_ROUTE}/${uuid}`, "get");
-    };
+        return api.request<ReceptionAxios>(
+            `${DEFAULT_ROUTE}?${qs}`,
+            "get"
+        );
+    },
 
-    public async getReceptionByUuid(uuid: string): Promise<ReceptionAxiosSingle> {
-        const params: URLSearchParams = new URLSearchParams();
-        params.set("uuid", uuid);
-        return this.execute<ReceptionAxiosSingle>(`${this.DEFAULT_ROUTE}/reception/${uuid}`, "get", params);
-    };
+    async getByUuid(uuid: string): Promise<Order> {
+        return api.request<Order>(
+            `${DEFAULT_ROUTE}/${uuid}`,
+            "get"
+        );
+    },
 
-    public async updateReceptionStatus(uuid: string, order: Partial<Reception>): Promise<Reception> {
-        return this.execute<Reception>(`${this.DEFAULT_ROUTE}/reception/${uuid}`, "patch", order);
-    }
+    async getReceptionByUuid(uuid: string): Promise<ReceptionAxiosSingle> {
+        return api.request<ReceptionAxiosSingle>(
+            `${DEFAULT_ROUTE}/reception/${uuid}`,
+            "get"
+        );
+    },
 
-    public async updateByUuid(uuid: string, order: Order): Promise<Order> {
-        return this.execute<Order>(`${this.DEFAULT_ROUTE}/${uuid}`, "patch", order);
-    }
+    async updateReceptionStatus(
+        uuid: string,
+        order: Partial<Reception>
+    ): Promise<Reception> {
+        return api.request<Reception>(
+            `${DEFAULT_ROUTE}/reception/${uuid}`,
+            "patch",
+            order
+        );
+    },
 
-}
+    async updateByUuid(uuid: string, order: Order): Promise<Order> {
+        return api.request<Order>(
+            `${DEFAULT_ROUTE}/${uuid}`,
+            "patch",
+            order
+        );
+    },
+};

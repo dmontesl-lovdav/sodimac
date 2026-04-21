@@ -46,27 +46,31 @@ export interface GenericTableProps<T> {
     /** totalItems: total de registros **en el dataset completo** (no solo en esta página).
      *  Si no se pasa, se usa rows.length. */
     totalItems?: number;
+
+    className?: string;
 }
 
 /* ---------- util: mini-switch opcional ---------- */
 export function Switch({
     on,
     onClick,
+    className = '',
 }: {
     on: boolean;
     onClick?: () => void;
+    className?: string;
 }) {
     return (
-        <span onClick={onClick} className={`gt-switch ${on ? 'on' : 'off'}`}>
-            <span className={`gt-switch-thumb ${on ? 'on' : 'off'}`}>
+        <span onClick={onClick} className={`fiscal-table-switch ${on ? 'on' : 'off'} ${className}`.trim()}>
+            <span className={`fiscal-table-switch-thumb ${on ? 'on' : 'off'}`}>
                 {on ? (
-                    <svg viewBox="0 0 12 9" className="gt-switch-icon" fill="#002d4c">
+                    <svg viewBox="0 0 12 9" className="fiscal-table-switch-icon" fill="#002d4c">
                         <path d="M4.3 8.6 0 4.3 1.4 2.9l2.9 2.9 5.7-5.7 1.4 1.4z" />
                     </svg>
                 ) : (
                     <svg
                         viewBox="0 0 10 10"
-                        className="gt-switch-icon"
+                        className="fiscal-table-switch-icon"
                         stroke="#ffffff"
                         strokeWidth={2}
                     >
@@ -98,6 +102,7 @@ export default function GenericTable<T>(
         onChangePage = () => undefined,
 
         totalItems,
+        className = '',
     } = props;
 
     const nav = useNavigate();
@@ -121,25 +126,25 @@ export default function GenericTable<T>(
     );
 
     const alignClass = (align: Align) =>
-        align === 'center' ? 'gt-align-center' : align === 'right' ? 'gt-align-right' : 'gt-align-left';
+        align === 'center' ? 'fiscal-table-align-center' : align === 'right' ? 'fiscal-table-align-right' : 'fiscal-table-align-left';
 
     return (
-        <div className="gt-container">
+        <div className={`fiscal-table-container fiscal-mt-4 ${className}`.trim()}>
             {/* ------------------ tabla ------------------ */}
-            <table className="gt-table">
+            <table className="fiscal-table-table">
                 {/* ---------- encabezados ---------- */}
-                <thead className="gt-thead">
+                <thead className="fiscal-table-thead">
                     <tr>
                         {columns.map(({ header, align = 'left' }, index) => (
                             <th
                                 key={typeof header === 'string' ? header : `col-${index}`}
-                                className={`gt-th ${alignClass(align)}`}
+                                className={`fiscal-table-th ${alignClass(align)}`}
                             >
                                 {header}
                             </th>
                         ))}
                         {actions.length > 0 && (
-                            <th className="gt-th gt-align-center gt-lg">Acciones</th>
+                            <th className="fiscal-table-th fiscal-table-align-center fiscal-table-lg">Acciones</th>
                         )}
                     </tr>
                 </thead>
@@ -151,7 +156,7 @@ export default function GenericTable<T>(
                         <tr>
                             <td
                                 colSpan={columns.length + (actions.length > 0 ? 1 : 0)}
-                                className="gt-empty"
+                                className="fiscal-table-empty"
                             >
                                 {emptyLabel}
                             </td>
@@ -162,12 +167,12 @@ export default function GenericTable<T>(
                     {rows.map((row, index) => (
                         <tr
                             key={index}
-                            className="gt-row"
+                            className="fiscal-table-row"
                         >
                             {columns.map(({ header, align = 'left', render }, index) => (
                                 <td
                                     key={typeof header === 'string' ? header : `col-${index}`}
-                                    className={`gt-td ${alignClass(align)}`}
+                                    className={`fiscal-table-td ${alignClass(align)}`}
                                 >
                                     {render(row, nav)}
                                 </td>
@@ -175,8 +180,8 @@ export default function GenericTable<T>(
 
                             {/* acciones */}
                             {actions.length > 0 && (
-                                <td className="gt-td gt-align-center">
-                                    <div className="gt-actions">
+                                <td className="fiscal-table-td fiscal-table-align-center">
+                                    <div className="fiscal-table-actions">
                                         {actions.map(({ title, icon, onClick, isDisabled }) => {
                                             const disabled = isDisabled?.(row) ?? false;
                                             return (
@@ -184,10 +189,10 @@ export default function GenericTable<T>(
                                                     key={title}
                                                     title={title}
                                                     onClick={() => !disabled && onClick(row, nav)}
-                                                    className="gt-action-btn"
+                                                    className="fiscal-table-action-btn"
                                                     disabled={disabled}
                                                 >
-                                                    <img src={icon} className="gt-action-icon" alt={title} />
+                                                    <img src={icon} className="fiscal-table-action-icon" alt={title} />
                                                 </button>
                                             );
                                         })}
@@ -200,15 +205,15 @@ export default function GenericTable<T>(
             </table>
 
             {/* ---------------- paginación ---------------- */}
-            <div className="gt-pagination">
+            <div className="fiscal-table-pagination">
                 {/* per-page */}
                 <label>
                     Filas por página:
-                    <div className="gt-select-wrapper">
+                    <div className="fiscal-table-select-wrapper">
                         <select
                             value={perPage}
                             onChange={(e) => onChangePerPage(Number(e.target.value))}
-                            className="gt-select"
+                            className="fiscal-table-select"
                         >
                             {[5, 10, 25, 50].map((n) => (
                                 <option key={n} value={n}>
@@ -216,7 +221,7 @@ export default function GenericTable<T>(
                                 </option>
                             ))}
                         </select>
-                        <span className="gt-select-caret">
+                        <span className="fiscal-table-select-caret">
                             ▾
                         </span>
                     </div>
@@ -235,21 +240,21 @@ export default function GenericTable<T>(
                                 Math.max(1, Math.min(safeTotalPages, Number(e.target.value) || 1))
                             )
                         }
-                        className="gt-input"
+                        className="fiscal-table-input"
                     />
                 </label>
 
                 {/* rango */}
-                <span className="gt-range">
+                <span className="fiscal-table-range">
                     {firstIdx}-{lastIdx} de {N}
                 </span>
 
                 {/* flechas + números */}
-                <div className="gt-pages">
+                <div className="fiscal-table-pages">
                     <button
                         onClick={() => onChangePage(Math.max(1, safePage - 1))}
                         disabled={safePage === 1}
-                        className="gt-page-btn"
+                        className="fiscal-table-page-btn fiscal-table-arrow"
                         title="Anterior"
                     >
                         ‹
@@ -260,7 +265,7 @@ export default function GenericTable<T>(
                             key={n}
                             onClick={() => onChangePage(n)}
                             disabled={safePage === n}
-                            className={`gt-page-btn ${safePage === n ? 'is-current' : ''}`}
+                            className={`fiscal-table-page-btn ${safePage === n ? 'is-current' : ''}`}
                             title={`Ir a ${n}`}
                         >
                             {n}
@@ -272,7 +277,7 @@ export default function GenericTable<T>(
                             onChangePage(Math.min(safeTotalPages, safePage + 1))
                         }
                         disabled={safePage === safeTotalPages}
-                        className="gt-page-btn"
+                        className="fiscal-table-page-btn fiscal-table-arrow"
                         title="Siguiente"
                     >
                         ›
@@ -281,7 +286,7 @@ export default function GenericTable<T>(
             </div>
 
             {/* línea final */}
-            <div className="gt-footer-line" />
+            <div className="fiscal-table-footer-line" />
         </div>
     );
 }

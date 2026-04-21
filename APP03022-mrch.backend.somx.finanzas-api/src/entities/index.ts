@@ -22,3 +22,6 @@ export { FiscalPayment } from './FiscalPayment.entity.js';
 export { AccountsPayable } from './AccountsPayable.entity.js';
 export { VendorBlock } from './VendorBlock.entity.js';
 export { StampedRebate } from './StampedRebate.entity.js';
+
+export { MigoDocument } from './MigoDocument.entity.js';
+export { MigoDocumentReception } from './MigoDocumentReception.entity.js';

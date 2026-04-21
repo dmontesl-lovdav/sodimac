@@ -1,4 +1,8 @@
-export { default as GenericSelect } from './GenericSelect.jsx';
-export { default as GenericSelectFilled } from './GenericSelectFilled.jsx';
-export { default as GenericSelectUnderline } from './GenericSelectUnderline.jsx';
-export { default as GenericSelectFloating } from './GenericSelectFloating.jsx';
+export { default as GenericSelect } from './GenericSelect';
+export { default as GenericSelectFilled } from './GenericSelectFilled';
+export { default as GenericSelectUnderline } from './GenericSelectUnderline';
+export { default as GenericSelectFloating } from './GenericSelectFloating';
+export type { GenericSelectProps, GenericSelectOption } from './GenericSelect';
+export type { GenericSelectFilledProps, GenericSelectFilledOption } from './GenericSelectFilled';
+export type { GenericSelectUnderlineProps, SelectOption } from './GenericSelectUnderline';
+export type { GenericSelectFloatingProps, GenericSelectFloatingOption } from './GenericSelectFloating';

@@ -1,0 +1,76 @@
+RebateDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    rebateNumber:
+      type: string
+      description: Rebate number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    amount:
+      type: string
+      description: Rebate amount
+    status:
+      type: integer
+      description: Rebate status
+    effectiveDate:
+      type: string
+      format: date-time
+      description: Effective date
+    expirationDate:
+      type: string
+      format: date-time
+      description: Expiration date
+    published:
+      type: boolean
+      description: Published status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateRebateDto:
+  type: object
+  required:
+    - rebateNumber
+    - vendorNumber
+    - amount
+  properties:
+    rebateNumber:
+      type: string
+    vendorNumber:
+      type: integer
+    amount:
+      type: string
+    status:
+      type: integer
+    effectiveDate:
+      type: string
+      format: date-time
+    expirationDate:
+      type: string
+      format: date-time
+    published:
+      type: boolean
+
+UpdateRebateDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    amount:
+      type: string
+    effectiveDate:
+      type: string
+      format: date-time
+    expirationDate:
+      type: string
+      format: date-time
+    published:
+      type: boolean

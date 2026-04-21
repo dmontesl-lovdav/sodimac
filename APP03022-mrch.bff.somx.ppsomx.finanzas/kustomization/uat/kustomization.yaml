@@ -21,12 +21,11 @@ patches:
   - path: env-var.yaml
   - path: resources.yaml
   - path: workload-identity.yaml
-  # - path: espv2.yaml  # Comentado: Cambiado a NGINX Ingress (como aclaraciones)
+  - path: espv2.yaml
 
 resources:
   - ../base
   - hpa-config.yaml
-  - ingress.yaml
 
 images:
   - name: foo/bar

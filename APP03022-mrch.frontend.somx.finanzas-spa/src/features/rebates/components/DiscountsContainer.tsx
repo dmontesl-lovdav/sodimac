@@ -5,6 +5,26 @@ import ResultsTable from './parts/ResultsTable';
 import { rebatesService } from '../api/rebatesService';
 import { DiscountRecord } from '../interfaces';
 
+const styles = {
+    container: {
+        width: '100%',
+        padding: '1.5rem 2rem',
+    },
+    title: {
+        fontSize: '1.5rem',
+        fontWeight: 600,
+        marginTop: '1.5rem',
+        marginBottom: '0.5rem',
+    },
+    subtitle: {
+        color: '#4b5563',
+        marginBottom: '1.5rem',
+    },
+    tableWrapper: {
+        marginTop: '1.5rem',
+    },
+};
+
 export default function DiscountsContainer() {
     const [filters, setFilters] = useState<any>({});
     const [data, setData] = useState<DiscountRecord[]>([]);
@@ -24,14 +44,12 @@ export default function DiscountsContainer() {
         }
     };
 
-    // ⬇️ Cargar “todos” al montar
     useEffect(() => {
-        handleSearch({}); // sin filtros = traer todo
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        handleSearch({});
     }, []);
 
     return (
-        <div className="w-full px-8 py-6">
+        <div style={styles.container}>
             <Breadcrumb
                 items={[
                     { label: 'Inicio', to: '/' },
@@ -40,12 +58,12 @@ export default function DiscountsContainer() {
                 ]}
             />
 
-            <h1 className="text-2xl font-semibold mt-6 mb-2">Listado de acuerdos comerciales</h1>
-            <p className="text-gray-600 mb-6">Buscar descuentos comerciales aplicados</p>
+            <h1 style={styles.title}>Listado de acuerdos comerciales</h1>
+            <p style={styles.subtitle}>Buscar descuentos comerciales aplicados</p>
 
             <FiltersBar onSearch={handleSearch} />
 
-            <div className="mt-6">
+            <div style={styles.tableWrapper}>
                 <ResultsTable rows={data} loading={loading} />
             </div>
         </div>

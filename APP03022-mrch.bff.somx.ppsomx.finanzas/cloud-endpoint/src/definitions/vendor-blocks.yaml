@@ -1,0 +1,71 @@
+VendorBlockDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    blockType:
+      type: string
+      description: Type of block
+    blockReason:
+      type: string
+      description: Reason for blocking
+    effectiveDate:
+      type: string
+      format: date-time
+      description: Block effective date
+    expirationDate:
+      type: string
+      format: date-time
+      description: Block expiration date
+    status:
+      type: integer
+      description: Block status
+    createdBy:
+      type: integer
+      description: User who created the block
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateVendorBlockDto:
+  type: object
+  required:
+    - vendorNumber
+    - blockType
+    - blockReason
+  properties:
+    vendorNumber:
+      type: integer
+    blockType:
+      type: string
+    blockReason:
+      type: string
+    effectiveDate:
+      type: string
+      format: date-time
+    expirationDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+    createdBy:
+      type: integer
+
+UpdateVendorBlockDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    blockReason:
+      type: string
+    expirationDate:
+      type: string
+      format: date-time

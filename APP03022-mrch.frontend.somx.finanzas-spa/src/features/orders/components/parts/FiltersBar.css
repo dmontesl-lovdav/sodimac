@@ -1,0 +1,31 @@
+.rc-filters {
+    margin-bottom: 24px;
+}
+
+.rc-row {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 16px;
+}
+
+.rc-row .somx-input-wrapper,
+.rc-row .somx-select-wrapper {
+    flex: 0 0 auto;
+    min-width: 180px;
+    width: auto !important;
+}
+
+.rc-row .somx-select-wrapper {
+    min-width: 220px;
+}
+
+.rc-row .somx-input {
+    width: 180px;
+}
+
+@media (max-width: 900px) {
+    .rc-row {
+        flex-wrap: wrap;
+    }
+}

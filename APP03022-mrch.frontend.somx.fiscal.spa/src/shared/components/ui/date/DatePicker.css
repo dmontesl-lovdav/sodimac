@@ -1,0 +1,23 @@
+.fiscal-date-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.fiscal-date-wrapper input {
+  width: 90%;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  padding: 0.9rem;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fiscal-date-caret {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #002d4c;
+  pointer-events: none;
+}

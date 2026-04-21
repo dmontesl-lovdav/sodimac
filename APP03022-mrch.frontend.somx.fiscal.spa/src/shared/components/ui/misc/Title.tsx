@@ -1,13 +1,24 @@
 
-import { ReactElement } from "react";
-import { Divider } from "./Divider";
+import { ReactElement, type ReactNode } from "react";
+import "./Title.css";
 
-export function Title({ title }: { title?: string }): ReactElement {
+interface TitleProps {
+  title?: string;
+  description?: string;
+  actions?: ReactNode;
+}
+
+export function Title({ title, description, actions }: TitleProps): ReactElement {
   return (
-   <div>
-      <p className="font-bold">{title}</p>
-      <Divider />
-   </div>
+    <div className="fiscal-header">
+      <div>
+        <h4 className="fiscal-header-title">{title}</h4>
+        {description && <p>{description}</p>}
+      </div>
+      <div className="fiscal-header-actions">
+        {actions}
+      </div>
+    </div>
   );
 }
 

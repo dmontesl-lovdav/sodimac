@@ -1,0 +1,48 @@
+.rc-credits-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: 20px;
+}
+
+.rc-credits-card {
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+}
+
+.rc-credits-row {
+    display: flex;
+}
+
+.rc-credits-title {
+    font-weight: 700;
+}
+
+.rc-credits-spacer {
+    height: 12px;
+}
+
+.rc-action-wrap {
+    width: 150px;
+}
+
+.rc-action-btn {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+}
+
+.rc-action-btn:hover {
+    background: #f9fafb;
+}
+
+.rc-action-icon {
+    display: block;
+    height: 18px;
+    width: 18px;
+}

@@ -9,9 +9,6 @@ import {
 } from 'typeorm';
 import { PacCatalog } from './PacCatalog.entity.js';
 
-/**
- * Catálogo de versiones de CFDI soportadas por el sistema
- */
 @Entity('version_catalog')
 export class VersionCatalog {
     @PrimaryGeneratedColumn({ name: 'version_id' })
@@ -44,7 +41,6 @@ export class VersionCatalog {
     @Column({ type: 'integer', default: 1 })
     status!: number;
 
-    // Auditoría
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
 
@@ -57,8 +53,11 @@ export class VersionCatalog {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 
-    // Relaciones
-    @ManyToOne(() => PacCatalog, pac => pac.versions)
+    @ManyToOne(
+        () => PacCatalog,
+        (pac) => pac.versions
+    )
     @JoinColumn({ name: 'pac_id' })
-    pac!: PacCatalog;
+    pac!: any;
+
 }

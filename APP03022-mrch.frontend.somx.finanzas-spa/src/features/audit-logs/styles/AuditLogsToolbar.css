@@ -1,0 +1,6 @@
+/* src/features/audit-logs/styles/AuditLogsToolbar.css */
+.al-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}

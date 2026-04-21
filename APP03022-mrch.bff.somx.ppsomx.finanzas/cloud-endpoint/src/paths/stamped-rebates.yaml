@@ -1,0 +1,184 @@
+stamped-rebates:
+  get:
+    tags:
+      - stamped-rebates
+    summary: List stamped rebates
+    operationId: listStampedRebates
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List of stamped rebates
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/stamped-rebates.yaml#/StampedRebateDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - stamped-rebates
+    summary: Create stamped rebate
+    operationId: createStampedRebate
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/stamped-rebates.yaml#/CreateStampedRebateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/stamped-rebates.yaml#/StampedRebateDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+stamped-rebates-export-csv:
+  get:
+    tags:
+      - stamped-rebates
+    summary: Export stamped rebates to CSV
+    operationId: exportStampedRebatesToCsv
+    produces:
+      - text/csv
+    responses:
+      "200":
+        description: CSV file with stamped rebates
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+stamped-rebates-by-uuid:
+  get:
+    tags:
+      - stamped-rebates
+    summary: Get stamped rebate by ID
+    operationId: getStampedRebateById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Stamped rebate UUID
+        type: string
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/stamped-rebates.yaml#/StampedRebateDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  put:
+    tags:
+      - stamped-rebates
+    summary: Update stamped rebate
+    operationId: updateStampedRebate
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Stamped rebate UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/stamped-rebates.yaml#/UpdateStampedRebateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/stamped-rebates.yaml#/StampedRebateDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - stamped-rebates
+    summary: Delete stamped rebate
+    operationId: deleteStampedRebate
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Stamped rebate UUID
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

@@ -1,10 +1,11 @@
 // src/features/categories/components/CategoryGridToolbar.jsx
-import { GenericSelect } from '@shared/components/ui';
+import { GenericSelect, GenericButton } from '@shared/components/ui';
 import './styles/CategoryGridToolbar.css';
 
 export default function CategoryGridToolbar({
     search,
     onSearchInput,
+    onSearchSubmit,
     filterActive,
     onFilterChange,
 }) {
@@ -32,11 +33,18 @@ export default function CategoryGridToolbar({
             {/* Búsqueda */}
             <div className="cgt-search-wrapper cgt-search-spacing">
                 <input
-                    defaultValue={search}
+                    value={search}
                     onChange={onSearchInput}
                     placeholder="Buscar por palabra clave"
                     className="cgt-input"
+                    style={{ marginRight: '8px' }}
                 />
+                <GenericButton
+                    variant="outline"
+                    onClick={onSearchSubmit}
+                >
+                    Buscar
+                </GenericButton>
             </div>
         </div>
     );

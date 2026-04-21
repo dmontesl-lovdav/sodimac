@@ -1,0 +1,66 @@
+.fiscal-card {
+  position: relative;
+  display: flex;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  min-height: 84px;
+}
+
+.fiscal-card-light {
+  background-color: #ffffff;
+}
+
+.fiscal-card-dark {
+  background-color: #eaf3ff;
+  border-color: #cfe1f5;
+}
+
+.fiscal-card:hover {
+  border-color: #cfe1f5;
+  background-color: #f3f8ff;
+}
+
+.fiscal-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fiscal-card-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+.fiscal-card-description {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.fiscal-card-link {
+  width: 100%;
+  text-decoration: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+}
+
+.fiscal-card-icon {
+  height: 3.5rem;
+  width: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fiscal-card-icon .fiscal-icon-svg {
+  width: 3.35rem;
+  height: 3.35rem;
+}

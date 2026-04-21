@@ -40,8 +40,6 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
     const STATE_LOADING = 1;
     const STATE_LOADED = 2;
     const [noModulesModal, setNoModulesModal] = useState(false);
-
-    const [isAdmin, setIsAdmin] = useState(false);
     const [state, setState] = useState(STATE_LOADING);
     const [view, setView] = useState('grid');
     const [filters, setFilters] = useState({
@@ -63,6 +61,15 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
     const apiClient = ConfigurationBuilder.client;
     const navigate = useNavigate();
 
+    const realmRoles =
+        useAppSelector(
+            (s) => s.authentication?.tokenDecoded?.realm_access?.roles
+        ) || [];
+
+    const isTechAdmin =
+        Array.isArray(realmRoles) &&
+        realmRoles.includes('FBC_TECH_ADMIN_USER');
+
     const roles =
         useAppSelector(
             (s) => s.authentication?.tokenDecoded?.resource_access?.['fbc-aclaraciones']?.roles
@@ -75,9 +82,18 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
                 s.authentication?.tokenDecoded?.preferred_username
         ) || '';
 
+    const effectiveRole = (() => {
+        if (isTechAdmin) return 'TECH_ADMIN';
+        if (roles.includes('ppsomx-admin')) return 'ADMIN';
+        if (roles.includes('ppsomx-resolver')) return 'RESOLVER';
+        if (roles.includes('ppsomx-vendor')) return 'VENDOR';
+        return 'ADMIN';
+    })();
+
     const canSwitchViews =
-        Array.isArray(roles) &&
-        (roles.includes('ppsomx-admin') || roles.includes('ppsomx-resolver'));
+        effectiveRole === 'TECH_ADMIN' ||
+        effectiveRole === 'ADMIN' ||
+        effectiveRole === 'RESOLVER';
 
     const canDelete = canSwitchViews;
 
@@ -145,6 +161,8 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
                 orderId: req.orderId,
                 creationTime: translateDate(req.creationTime),
                 reason: translateIdToString(req.reason, reasons),
+                nombreProveedor: req.nombreProveedor,
+                requester: req.requester,
                 company: req.company,
                 statusPill: buildStatusPill(req.clazz),
                 clazz: req.clazz,
@@ -198,6 +216,8 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
                 creationTime: translateDate(req.creationTime),
                 module: modulesMap.get(req.module) || '-',
                 reason: reasonsMap.get(req.reason) || '-',
+                nombreProveedor: req.nombreProveedor,
+                requester: req.requester,
                 company: req.company,
                 responsible: req.responsible,
                 statusPill: buildStatusPill(req.clazz),
@@ -213,13 +233,6 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
             console.error('Error loading resolver requests', err);
         }
     }
-
-    useEffect(() => {
-        (async () => {
-            const flag = await ConfigurationBuilder.authenticator.isAdmin();
-            setIsAdmin(flag);
-        })();
-    }, []);
 
     useEffect(() => {
         const handler = () => {
@@ -263,7 +276,9 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
                         creationTime: translateDate(req.creationTime),
                         module: req.module,
                         reason: req.reason,
+                        requester: req.requester,
                         company: req.company,
+                        nombreProveedor: req.nombreProveedor,
                         responsible: req.responsible,
                         clazz: req.clazz,
                     }));
@@ -304,7 +319,9 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
 
     const adminColumns = [
         { header: 'Módulo', render: (r) => <>{r.module}</> },
-        { header: 'Responsable', render: (r) => <>{r.responsible}</> },
+        { header: 'Correo proveedor', render: (r) => <>{r.requester}</> },
+        { header: 'Nombre proveedor', render: (r) => <>{r.nombreProveedor}</> },
+        // { header: 'Responsable', render: (r) => <>{r.responsible}</> },
     ];
 
     const columns = canSwitchViews
@@ -314,8 +331,9 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
             baseColumns[2],
             adminColumns[0],
             baseColumns[3],
-            baseColumns[4],
             adminColumns[1],
+            adminColumns[2],
+            baseColumns[4],
             baseColumns[5],
         ]
         : baseColumns;
@@ -412,7 +430,7 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
     return (
         <div className="page-wrapper">
 
-            {roles.includes('ppsomx-vendor') ? (
+            {effectiveRole === 'VENDOR' ? (
                 <div className="rg-block">
                     <h3 className="title" style={{ fontWeight: 600, marginBottom: '4px' }}>
                         Busca tus solicitudes
@@ -430,7 +448,7 @@ export default function RequestGrid({ reasons = [], onShowHelper }) {
                 </div>
             )}
 
-            {!roles.includes('ppsomx-vendor') && (
+            {effectiveRole !== 'VENDOR' && (
                 <div className="rg-view-switch">
                     <GenericButton
                         variant={view === 'grid' ? 'primary' : 'outline'}

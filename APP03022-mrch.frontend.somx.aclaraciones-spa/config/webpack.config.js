@@ -24,6 +24,7 @@ module.exports = () => ({
     path: path.resolve(process.cwd(), 'dist'),
     clean: true,
     assetModuleFilename: 'images/[hash][ext][query]',
+	chunkFilename: "[name].[contenthash].js",
   },
 
   /* ---------- source-maps ---------- */

@@ -1,0 +1,93 @@
+AccountsPayableDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    orderNumber:
+      type: string
+      description: Purchase order number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    sourceId:
+      type: integer
+      description: Source system identifier
+    totalAmount:
+      type: string
+      description: Total amount
+    currency:
+      type: string
+      description: Currency code
+    status:
+      type: integer
+      description: Status code
+    orderDate:
+      type: string
+      format: date-time
+      description: Order date
+    deliveryDate:
+      type: string
+      format: date-time
+      description: Delivery date
+    terms:
+      type: string
+      description: Payment terms
+    createdBy:
+      type: integer
+      description: User who created the record
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      description: User who last updated the record
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateAccountsPayableDto:
+  type: object
+  required:
+    - orderNumber
+    - vendorNumber
+    - totalAmount
+  properties:
+    orderNumber:
+      type: string
+    vendorNumber:
+      type: integer
+    sourceId:
+      type: integer
+    totalAmount:
+      type: string
+    currency:
+      type: string
+    status:
+      type: integer
+    orderDate:
+      type: string
+      format: date-time
+    deliveryDate:
+      type: string
+      format: date-time
+    terms:
+      type: string
+    createdBy:
+      type: integer
+
+UpdateAccountsPayableDto:
+  type: object
+  properties:
+    status:
+      type: integer
+    totalAmount:
+      type: string
+    deliveryDate:
+      type: string
+      format: date-time
+    terms:
+      type: string
+    updatedBy:
+      type: integer

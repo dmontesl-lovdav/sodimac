@@ -1,0 +1,24 @@
+.rc-detail-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: 20px;
+}
+
+.rc-detail-card {
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+}
+
+.rc-row {
+    display: flex;
+}
+
+.rc-label {
+    font-weight: 700;
+}
+
+.rc-button-row {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 8px;
+}

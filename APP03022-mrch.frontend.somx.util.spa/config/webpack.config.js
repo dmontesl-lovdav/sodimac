@@ -1,6 +1,3 @@
-/* --------------------------------------------------------------------------
- * config/webpack.config.js
- * ------------------------------------------------------------------------ */
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
 const Dotenv = require('dotenv-webpack');
@@ -9,31 +6,26 @@ const deps = require('../package.json').dependencies;
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const babelConfig = require('../babel.config.js');
 
-/* -------- env -------- */
 const mode = process.env.NODE_ENV || 'development';
 const envFile = path.join(__dirname, `../.env.${mode}`);
 
 require('dotenv').config({ path: envFile });
 
-const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
+const { APP_PORT, APP_NAME, AUTHENTICATION_APP, BACKEND_URL } = process.env;
 
-  /* -------- config -------- */
-  module.exports = () => ({
-	  /* ---------- entry ---------- */
-	  entry: './src/main.tsx',
+module.exports = () => ({
+  entry: './src/main.tsx',
 
-	  /* ---------- output ---------- */
   output: {
-    publicPath: APP_URL || 'http://localhost:3701/',
+    publicPath: 'auto',
+    uniqueName: APP_NAME || 'util',
     path: path.resolve(process.cwd(), 'dist'),
     clean: true,
     assetModuleFilename: 'images/[hash][ext][query]',
   },
 
-  /* ---------- source-maps ---------- */
   devtool: mode === 'production' ? false : 'source-map',
 
-  /* ---------- resolve + aliases ---------- */
   resolve: {
     extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
     alias: {
@@ -44,10 +36,11 @@ const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
     },
   },
 
-  /* ---------- dev-server ---------- */
   devServer: {
     port: APP_PORT || 3701,
     historyApiFallback: true,
+    hot: false,
+    liveReload: true,
     static: {
       directory: path.resolve(__dirname, '../public'),
     },
@@ -57,9 +50,16 @@ const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
       'Access-Control-Allow-Headers':
         'X-Requested-With, content-type, Authorization',
     },
+    proxy: [
+      {
+        context: ['/api'],
+        target: BACKEND_URL || 'http://localhost:3712',
+        changeOrigin: true,
+        secure: false,
+      },
+    ],
   },
 
-  /* ---------- loaders ---------- */
   module: {
     rules: [
       {
@@ -99,13 +99,11 @@ const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
     ],
   },
 
-  /* ---------- plugins ---------- */
   plugins: [
-    // ✅ un solo Dotenv centralizado
     new Dotenv({ path: envFile }),
 
     new ModuleFederationPlugin({
-      name: APP_NAME || 'aclaraciones',
+      name: APP_NAME || 'util',
       filename: 'remoteEntry.js',
       remotes: {
         authentication:
@@ -118,13 +116,13 @@ const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
       shared: {
         react: {
           singleton: true,
-          requiredVersion: deps['react'],
           eager: true,
+          requiredVersion: deps['react'],
         },
         'react-dom': {
           singleton: true,
-          requiredVersion: deps['react-dom'],
           eager: true,
+          requiredVersion: deps['react-dom'],
         },
         'single-spa': {
           singleton: true,
@@ -137,12 +135,15 @@ const { APP_PORT, APP_URL, APP_NAME, AUTHENTICATION_APP } = process.env;
       },
     }),
 
-    // 👇 copia los archivos de /public al build final
     new CopyWebpackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, '../public'),
-          to: '.', // copia todo el contenido de public al dist/
+          to: '.',
+          noErrorOnMissing: true,
+          globOptions: {
+            ignore: ['**/index.html'],
+          },
         },
       ],
     }),

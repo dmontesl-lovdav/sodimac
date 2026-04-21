@@ -1,50 +1,72 @@
-import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
+import { createApiClient } from '@/services/ApiClient';
 import { DiscountRecord, PagedResult, SearchParams } from '../interfaces';
 
-const client = ConfigurationBuilder.client;
-
-/* 🔹 MOCK temporal (simula consumo de API real) */
-const mockRows: DiscountRecord[] = [
-    {
-        id: 1527,
-        vendorNumber: '11158-9',
-        vendorName: 'PLASTITRIM, S.A. DE C.V.',
-        documentNumber: 'Merma01',
-        referenceDocument: 'XXXX',
-        rebateType: 'Merma',
-        sapDocument: '1010101',
-        amount: 100.0,
-        periodId: 11,
-        periodName: 'Enero',
-        status: 'Pendiente',
-        applyDate: '01/01/2025',
-        expirationDate: '01/02/2025',
-    },
-    {
-        id: 1526,
-        vendorNumber: '97117NBA',
-        vendorName: 'PLASTITRIM, S.A. DE C.V.',
-        documentNumber: 'Cross01',
-        referenceDocument: 'YYYY',
-        rebateType: 'Cross',
-        sapDocument: '133433',
-        amount: 50.0,
-        periodId: 11,
-        periodName: 'Enero',
-        status: 'Pendiente',
-        applyDate: '01/01/2025',
-        expirationDate: '01/02/2025',
-    },
-];
+const api = createApiClient();
+const ROUTE = 'rebates';
 
 export const rebatesService = {
-    async searchDiscounts(params: SearchParams): Promise<PagedResult<DiscountRecord>> {
-        await new Promise((r) => setTimeout(r, 400)); // Simula delay
+    async searchDiscounts(
+        params: SearchParams
+    ): Promise<PagedResult<DiscountRecord>> {
+        const body = {
+            idProveedor: params.vendorId || '',
+            numeroDocumento: params.documentNumber || undefined,
+            referenciaDocumento: params.sapDocument || undefined,
+            uuid: undefined,
+            page: (params.page || 1) - 1,
+            size: params.size || 20,
+        };
+
+        const response = await api.request<any>(
+            `${ROUTE}/filter`,
+            'post',
+            body
+        );
+
+        const data = response?.data ?? response;
+        const content = Array.isArray(data)
+            ? data
+            : data?.data ?? [];
+
+        const items: DiscountRecord[] = content.map((item: any) => ({
+            id: item.id || 0,
+            vendorNumber:
+                item.vendorNumber || item.idProveedor || '',
+            vendorName:
+                item.vendorName || item.nombreProveedor || '',
+            documentNumber:
+                item.documentNumber || item.numeroDocumento || '',
+            referenceDocument:
+                item.referenceDocument ||
+                item.referenciaDocumento ||
+                '',
+            rebateType:
+                item.rebateType || item.tipoDescuento || '',
+            sapDocument:
+                item.sapDocument || item.documentoSap || '',
+            amount: Number(item.amount || item.monto) || 0,
+            periodId: item.periodId || 0,
+            periodName: item.periodName || '',
+            status: item.status || item.estatus || '',
+            applyDate:
+                item.applyDate || item.fechaAplicacion || '',
+            expirationDate:
+                item.expirationDate ||
+                item.fechaVencimiento ||
+                '',
+        }));
+
         return {
-            items: mockRows,
-            page: 1,
-            totalItems: mockRows.length,
-            totalPages: 1,
+            items,
+            totalItems:
+                data?.total ??
+                data?.totalElements ??
+                items.length,
+            totalPages: data?.totalPages ?? 1,
+            page:
+                (data?.page ??
+                    data?.pageNumber ??
+                    0) + 1,
         };
     },
 };

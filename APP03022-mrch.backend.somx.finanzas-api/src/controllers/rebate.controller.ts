@@ -31,7 +31,7 @@ export async function getPublishedRebates(req: Request, res: Response, next: Nex
 // GET /rebates/vendor/:vendorNumber - Obtener rebates por número de proveedor
 export async function getRebatesByVendor(req: Request, res: Response, next: NextFunction) {
     try {
-        const vendorNumberParam = req.params.vendorNumber;
+        const vendorNumberParam = req.params.vendorNumber as string;
         if (!vendorNumberParam) {
             throw new HttpError(400, "Vendor number is required");
         }

@@ -1,23 +1,20 @@
-swagger: "2.0"
+swagger: '2.0'
 info:
   contact:
     email: jrcastillo@falabella.cl
     name: Arquitectura Falabella Tecnologia Corp.
-  description:
-    "Support RESTful operations for finanzas flow. This BFF provides access to
-    financial operations including accounts payable, rebates, fiscal payments,
-    shipping guides, and vendor management."
+  description: |
+    Support RESTful operations for finanzas flow. This BFF provides access to financial operations including accounts payable, rebates, fiscal payments, shipping guides, vendor management, three way match, and MIGO.
   title: Finanzas BFF API
   version: 2.0.0
   x-business-acronym: mrch
   x-capability-acronym: finanzas
   x-consumer-segments: retail
   x-service-name: finanzas
-host: ${DOMAIN_OPENAPI}
+host: '${DOMAIN_OPENAPI}'
 schemes:
   - https
 paths:
-  # ==================== ACCOUNTS PAYABLE ====================
   /accounts-payable:
     get:
       tags:
@@ -30,7 +27,7 @@ paths:
         - name: status
           in: query
           required: false
-          description: Status code (e.g. 1=open, 2=closed)
+          description: 'Status code (e.g. 1=open, 2=closed)'
           type: integer
           format: int32
         - name: vendorNumber
@@ -40,20 +37,20 @@ paths:
           type: integer
           format: int32
       responses:
-        "200":
+        '200':
           description: List of accounts payable
           schema:
             type: array
             items:
-              $ref: "#/definitions/AccountsPayableDto"
-        "401":
+              $ref: '#/definitions/AccountsPayableDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -70,28 +67,27 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateAccountsPayableDto"
+            $ref: '#/definitions/CreateAccountsPayableDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/AccountsPayableDto"
-        "400":
+            $ref: '#/definitions/AccountsPayableDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /accounts-payable/{uuid}:
+  '/accounts-payable/{uuid}':
     get:
       tags:
         - accounts-payable
@@ -105,24 +101,24 @@ paths:
           required: true
           description: Account payable UUID
           type: string
-          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/AccountsPayableDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/AccountsPayableDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     patch:
@@ -144,24 +140,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateAccountsPayableDto"
+            $ref: '#/definitions/UpdateAccountsPayableDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/AccountsPayableDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/AccountsPayableDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -178,24 +174,22 @@ paths:
           description: Account payable UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== FISCAL PAYMENTS ====================
   /fiscal-payments:
     get:
       tags:
@@ -205,20 +199,20 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of fiscal payments
           schema:
             type: array
             items:
-              $ref: "#/definitions/FiscalPaymentDto"
-        "401":
+              $ref: '#/definitions/FiscalPaymentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -235,28 +229,27 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateFiscalPaymentDto"
+            $ref: '#/definitions/CreateFiscalPaymentDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/FiscalPaymentDto"
-        "400":
+            $ref: '#/definitions/FiscalPaymentDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /fiscal-payments/{uuid}:
+  '/fiscal-payments/{uuid}':
     get:
       tags:
         - fiscal-payments
@@ -271,22 +264,22 @@ paths:
           description: Fiscal payment UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/FiscalPaymentDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/FiscalPaymentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
@@ -308,24 +301,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateFiscalPaymentDto"
+            $ref: '#/definitions/UpdateFiscalPaymentDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/FiscalPaymentDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/FiscalPaymentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -342,24 +335,531 @@ paths:
           description: Fiscal payment UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== REBATES ====================
+  /finanzas-payment:
+    get:
+      tags:
+        - finanzas-payment
+      summary: List finanzas payments
+      operationId: listFinanzasPayments
+      produces:
+        - application/json
+      parameters:
+        - name: createdAtInitial
+          in: query
+          required: true
+          description: Initial creation date
+          type: string
+          format: date-time
+        - name: createdAtEnd
+          in: query
+          required: true
+          description: End creation date
+          type: string
+          format: date-time
+        - name: vendorNumber
+          in: query
+          required: false
+          description: Vendor number
+          type: integer
+        - name: finanzasPaymentUuid
+          in: query
+          required: false
+          description: Finanzas payment UUID
+          type: string
+          format: uuid
+        - name: paymentDate
+          in: query
+          required: false
+          description: Payment date
+          type: string
+          format: date
+        - name: documentNumber
+          in: query
+          required: false
+          description: Document number
+          type: string
+        - name: sapDocument
+          in: query
+          required: false
+          description: SAP document
+          type: string
+        - name: pageNumber
+          in: query
+          required: true
+          description: Page number
+          type: integer
+        - name: pageSize
+          in: query
+          required: true
+          description: Page size
+          type: integer
+      responses:
+        '200':
+          description: List of finanzas payments
+          schema:
+            $ref: '#/definitions/FinanzasPaymentsListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - finanzas-payment
+      summary: Create finanzas payment
+      operationId: createFinanzasPayment
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateFinanzasPaymentDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/FinanzasPaymentSingleResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - finanzas-payment
+      summary: Update finanzas payment status
+      operationId: updateFinanzasPayment
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateFinanzasPaymentDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/FinanzasPaymentUpdateResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /finanzas-payment/header-with-details:
+    post:
+      tags:
+        - finanzas-payment
+      summary: Create finanzas payment header with details
+      operationId: createFinanzasPaymentHeaderWithDetails
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateFinanzasPaymentHeaderWithDetailsDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/FinanzasPaymentHeaderWithDetailsCreateResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/finanzas-payment/header-with-details/{paymentHeaderUuid}':
+    get:
+      tags:
+        - finanzas-payment
+      summary: Get finanzas payment header with details
+      operationId: getFinanzasPaymentHeaderWithDetails
+      produces:
+        - application/json
+      parameters:
+        - name: paymentHeaderUuid
+          in: path
+          required: true
+          description: Payment header UUID
+          type: string
+          format: uuid
+        - name: pageNumber
+          in: query
+          required: false
+          description: Page number
+          type: integer
+          default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Page size
+          type: integer
+          default: 20
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/FinanzasPaymentHeaderWithDetailsGetResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /audit-logs:
+    get:
+      tags:
+        - audit-logs
+      summary: List audit logs
+      operationId: listAuditLogs
+      produces:
+        - application/json
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: true
+          description: Start datetime
+          type: string
+          format: date-time
+        - name: fechaFin
+          in: query
+          required: true
+          description: End datetime
+          type: string
+          format: date-time
+        - name: idAplicativo
+          in: query
+          required: false
+          description: Service/App name
+          type: string
+        - name: modulo
+          in: query
+          required: false
+          description: Module
+          type: string
+        - name: idTransaccion
+          in: query
+          required: false
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+        - name: tipoEvento
+          in: query
+          required: false
+          description: Event type
+          type: string
+          enum:
+            - ALL
+            - ERROR
+            - ALERTA
+            - INFO
+        - name: codigoError
+          in: query
+          required: false
+          description: Error code
+          type: string
+        - name: search
+          in: query
+          required: false
+          description: Free text search
+          type: string
+        - name: page
+          in: query
+          required: false
+          description: Page number
+          type: integer
+          default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Page size
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: List of audit logs
+          schema:
+            $ref: '#/definitions/AuditLogsListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - audit-logs
+      summary: Create audit log
+      operationId: createAuditLog
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateAuditLogDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/CreateAuditLogResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /audit-logs/export/csv:
+    get:
+      tags:
+        - audit-logs
+      summary: Export audit logs as CSV
+      operationId: exportAuditLogsCsv
+      produces:
+        - text/csv
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: true
+          description: Start datetime
+          type: string
+          format: date-time
+        - name: fechaFin
+          in: query
+          required: true
+          description: End datetime
+          type: string
+          format: date-time
+        - name: idAplicativo
+          in: query
+          required: false
+          description: Service/App name
+          type: string
+        - name: modulo
+          in: query
+          required: false
+          description: Module
+          type: string
+        - name: idTransaccion
+          in: query
+          required: false
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+        - name: tipoEvento
+          in: query
+          required: false
+          description: Event type
+          type: string
+          enum:
+            - ALL
+            - ERROR
+            - ALERTA
+            - INFO
+        - name: codigoError
+          in: query
+          required: false
+          description: Error code
+          type: string
+        - name: search
+          in: query
+          required: false
+          description: Free text search
+          type: string
+      responses:
+        '200':
+          description: CSV file
+          schema:
+            type: string
+            example: 'IdLog,IdTransaccion,...'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/audit-logs/transaction/{idTransaccion}':
+    get:
+      tags:
+        - audit-logs
+      summary: Get audit logs by transaction id
+      operationId: getAuditLogsByTransaction
+      produces:
+        - application/json
+      parameters:
+        - name: idTransaccion
+          in: path
+          required: true
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Audit logs grouped by transaction id
+          schema:
+            $ref: '#/definitions/AuditLogsByTransactionResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/audit-logs/{id}':
+    get:
+      tags:
+        - audit-logs
+      summary: Get audit log detail by id
+      operationId: getAuditLogDetail
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Audit log UUID
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Audit log detail
+          schema:
+            $ref: '#/definitions/AuditLogDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /rebates:
     get:
       tags:
@@ -369,20 +869,20 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of rebates
           schema:
             type: array
             items:
-              $ref: "#/definitions/RebateDto"
-        "401":
+              $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -399,27 +899,26 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateRebateDto"
+            $ref: '#/definitions/CreateRebateDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/RebateDto"
-        "400":
+            $ref: '#/definitions/RebateDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
   /rebates/published:
     get:
       tags:
@@ -429,23 +928,22 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of published rebates
           schema:
             type: array
             items:
-              $ref: "#/definitions/RebateDto"
-        "401":
+              $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
   /rebates/published/export/csv:
     get:
       tags:
@@ -455,19 +953,18 @@ paths:
       produces:
         - text/csv
       responses:
-        "200":
+        '200':
           description: CSV file with published rebates
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
   /rebates/search:
     get:
       tags:
@@ -493,23 +990,22 @@ paths:
           description: Rebate status
           type: integer
       responses:
-        "200":
+        '200':
           description: Search results
           schema:
             type: array
             items:
-              $ref: "#/definitions/RebateDto"
-        "401":
+              $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
   /rebates/export/csv:
     get:
       tags:
@@ -530,20 +1026,19 @@ paths:
           description: Filter by vendor
           type: integer
       responses:
-        "200":
+        '200':
           description: CSV file with filtered rebates
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /rebates/vendor/{vendorNumber}:
+  '/rebates/vendor/{vendorNumber}':
     get:
       tags:
         - rebates
@@ -558,24 +1053,23 @@ paths:
           description: Vendor number
           type: integer
       responses:
-        "200":
+        '200':
           description: List of vendor rebates
           schema:
             type: array
             items:
-              $ref: "#/definitions/RebateDto"
-        "401":
+              $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /rebates/{uuid}:
+  '/rebates/{uuid}':
     get:
       tags:
         - rebates
@@ -590,22 +1084,22 @@ paths:
           description: Rebate UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/RebateDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
@@ -627,24 +1121,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateRebateDto"
+            $ref: '#/definitions/UpdateRebateDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/RebateDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/RebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -661,24 +1155,22 @@ paths:
           description: Rebate UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== STAMPED REBATES ====================
   /stamped-rebates:
     get:
       tags:
@@ -688,20 +1180,20 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of stamped rebates
           schema:
             type: array
             items:
-              $ref: "#/definitions/StampedRebateDto"
-        "401":
+              $ref: '#/definitions/StampedRebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -718,27 +1210,26 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateStampedRebateDto"
+            $ref: '#/definitions/CreateStampedRebateDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/StampedRebateDto"
-        "400":
+            $ref: '#/definitions/StampedRebateDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
   /stamped-rebates/export/csv:
     get:
       tags:
@@ -748,20 +1239,19 @@ paths:
       produces:
         - text/csv
       responses:
-        "200":
+        '200':
           description: CSV file with stamped rebates
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /stamped-rebates/{uuid}:
+  '/stamped-rebates/{uuid}':
     get:
       tags:
         - stamped-rebates
@@ -776,22 +1266,22 @@ paths:
           description: Stamped rebate UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/StampedRebateDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/StampedRebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
@@ -813,24 +1303,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateStampedRebateDto"
+            $ref: '#/definitions/UpdateStampedRebateDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/StampedRebateDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/StampedRebateDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -847,24 +1337,22 @@ paths:
           description: Stamped rebate UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== SAP DOCUMENTS ====================
   /sap-documents:
     get:
       tags:
@@ -874,20 +1362,20 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of SAP documents
           schema:
             type: array
             items:
-              $ref: "#/definitions/SapDocumentDto"
-        "401":
+              $ref: '#/definitions/SapDocumentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -904,28 +1392,27 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateSapDocumentDto"
+            $ref: '#/definitions/CreateSapDocumentDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/SapDocumentDto"
-        "400":
+            $ref: '#/definitions/SapDocumentDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /sap-documents/{uuid}:
+  '/sap-documents/{uuid}':
     get:
       tags:
         - sap-documents
@@ -940,22 +1427,22 @@ paths:
           description: SAP document UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/SapDocumentDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/SapDocumentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
@@ -977,24 +1464,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateSapDocumentDto"
+            $ref: '#/definitions/UpdateSapDocumentDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/SapDocumentDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/SapDocumentDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -1011,110 +1498,94 @@ paths:
           description: SAP document UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== SHIPPING GUIDES ====================
-  /shipping-guides:
+  /shipping-guide:
     get:
       tags:
-        - shipping-guides
+        - shipping-guide
       summary: List shipping guides
       operationId: listShippingGuides
       produces:
         - application/json
+      parameters:
+        - in: query
+          name: from
+          required: false
+          type: string
+          format: date-time
+        - in: query
+          name: to
+          required: false
+          type: string
+          format: date-time
       responses:
-        "200":
+        '200':
           description: List of shipping guides
           schema:
             type: array
             items:
-              $ref: "#/definitions/ShippingGuideDto"
-        "401":
+              $ref: '#/definitions/ShippingGuideDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-    post:
-      tags:
-        - shipping-guides
-      summary: Create shipping guide
-      operationId: createShippingGuide
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/CreateShippingGuideDto"
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: "#/definitions/ShippingGuideDto"
-        "400":
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
-          description: Internal error
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-      security:
-        - bearerAuth: []
-
-  /shipping-guides/csv:
+  /shipping-guide/csv:
     get:
       tags:
-        - shipping-guides
+        - shipping-guide
       summary: Export shipping guides to CSV
       operationId: exportShippingGuidesToCsv
       produces:
         - text/csv
+      parameters:
+        - in: query
+          name: from
+          required: false
+          type: string
+          format: date-time
+        - in: query
+          name: to
+          required: false
+          type: string
+          format: date-time
       responses:
-        "200":
+        '200':
           description: CSV file with shipping guides
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /shipping-guides/{uuid}:
+  '/shipping-guide/{uuid}':
     get:
       tags:
-        - shipping-guides
+        - shipping-guide
       summary: Get shipping guide by ID
       operationId: getShippingGuideById
       produces:
@@ -1126,27 +1597,27 @@ paths:
           description: Shipping guide UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/ShippingGuideDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ShippingGuideDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
       tags:
-        - shipping-guides
+        - shipping-guide
       summary: Update shipping guide
       operationId: updateShippingGuide
       consumes:
@@ -1163,29 +1634,29 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateShippingGuideDto"
+            $ref: '#/definitions/UpdateShippingGuideDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/ShippingGuideDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ShippingGuideDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
       tags:
-        - shipping-guides
+        - shipping-guide
       summary: Delete shipping guide
       operationId: deleteShippingGuide
       produces:
@@ -1197,24 +1668,530 @@ paths:
           description: Shipping guide UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== VENDOR BLOCKS ====================
+  '/shipping-guide/guide/{idGuide}':
+    patch:
+      tags:
+        - shipping-guide
+      summary: Update shipping guide by guide ID
+      operationId: updateShippingGuideByGuide
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: idGuide
+          in: path
+          required: true
+          description: Guide ID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateShippingGuideDto'
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/ShippingGuideDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /three-way-match:
+    get:
+      tags:
+        - three-way-match
+      summary: List three way match records
+      operationId: listThreeWayMatch
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: tipoFecha
+          required: true
+          type: string
+        - in: query
+          name: fechaInicio
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: fechaFin
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: numeroProveedor
+          required: false
+          type: string
+        - in: query
+          name: ordenCompra
+          required: false
+          type: string
+        - in: query
+          name: recepcion
+          required: false
+          type: string
+        - in: query
+          name: page
+          required: false
+          type: integer
+        - in: query
+          name: limit
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: Three way match list
+          schema:
+            $ref: '#/definitions/ThreeWayMatchListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /three-way-match/export/csv:
+    get:
+      tags:
+        - three-way-match
+      summary: Export three way match to CSV
+      operationId: exportThreeWayMatchCsv
+      produces:
+        - text/csv
+      parameters:
+        - in: query
+          name: tipoFecha
+          required: true
+          type: string
+        - in: query
+          name: fechaInicio
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: fechaFin
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: numeroProveedor
+          required: false
+          type: string
+        - in: query
+          name: ordenCompra
+          required: false
+          type: string
+        - in: query
+          name: recepcion
+          required: false
+          type: string
+        - in: query
+          name: page
+          required: false
+          type: integer
+        - in: query
+          name: limit
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: CSV file
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /three-way-match/export/xlsx:
+    get:
+      tags:
+        - three-way-match
+      summary: Export three way match to XLSX
+      operationId: exportThreeWayMatchXlsx
+      produces:
+        - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      parameters:
+        - in: query
+          name: tipoFecha
+          required: true
+          type: string
+        - in: query
+          name: fechaInicio
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: fechaFin
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: numeroProveedor
+          required: false
+          type: string
+        - in: query
+          name: ordenCompra
+          required: false
+          type: string
+        - in: query
+          name: recepcion
+          required: false
+          type: string
+        - in: query
+          name: page
+          required: false
+          type: integer
+        - in: query
+          name: limit
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: XLSX file
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /three-way-match/run:
+    post:
+      tags:
+        - three-way-match
+      summary: Execute three way match process
+      operationId: runThreeWayMatch
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: false
+          schema:
+            $ref: '#/definitions/RunThreeWayMatchBody'
+      responses:
+        '200':
+          description: Three way match executed
+          schema:
+            $ref: '#/definitions/RunThreeWayMatchResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /migo:
+    get:
+      tags:
+        - migo
+      summary: List MIGO documents
+      operationId: listMigoDocuments
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: publishedAtStart
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: publishedAtEnd
+          required: true
+          type: string
+          format: date-time
+        - in: query
+          name: status
+          required: false
+          type: integer
+        - in: query
+          name: fileName
+          required: false
+          type: string
+        - in: query
+          name: pageNumber
+          required: false
+          type: integer
+          default: 1
+        - in: query
+          name: pageSize
+          required: false
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: MIGO documents list
+          schema:
+            $ref: '#/definitions/MigoDocumentsListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /migo/reject:
+    patch:
+      tags:
+        - migo
+      summary: Reject MIGO document
+      operationId: rejectMigoDocument
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/RejectMigoDto'
+      responses:
+        '200':
+          description: MIGO document rejected
+          schema:
+            $ref: '#/definitions/MigoActionResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/migo/{id}':
+    get:
+      tags:
+        - migo
+      summary: Get MIGO document by ID
+      operationId: getMigoDocumentById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: MIGO document UUID
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: MIGO document found
+          schema:
+            $ref: '#/definitions/MigoDocumentResponse'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/migo/{id}/receptions':
+    get:
+      tags:
+        - migo
+      summary: List MIGO receptions by document
+      operationId: listMigoReceptions
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: MIGO document UUID
+          type: string
+          format: uuid
+        - in: query
+          name: pageNumber
+          required: false
+          type: integer
+          default: 1
+        - in: query
+          name: pageSize
+          required: false
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: MIGO receptions list
+          schema:
+            $ref: '#/definitions/MigoReceptionsListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/migo/{id}/authorize':
+    patch:
+      tags:
+        - migo
+      summary: Authorize MIGO document
+      operationId: authorizeMigoDocument
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: MIGO document UUID
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: MIGO document authorized
+          schema:
+            $ref: '#/definitions/MigoActionResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/migo/{id}/export-csv':
+    get:
+      tags:
+        - migo
+      summary: Export MIGO receptions to CSV
+      operationId: exportMigoReceptionsCsv
+      produces:
+        - text/csv
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: MIGO document UUID
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: CSV file
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /vendor-blocks:
     get:
       tags:
@@ -1224,20 +2201,20 @@ paths:
       produces:
         - application/json
       responses:
-        "200":
+        '200':
           description: List of vendor blocks
           schema:
             type: array
             items:
-              $ref: "#/definitions/VendorBlockDto"
-        "401":
+              $ref: '#/definitions/VendorBlockDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     post:
@@ -1254,28 +2231,27 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/CreateVendorBlockDto"
+            $ref: '#/definitions/CreateVendorBlockDto'
       responses:
-        "201":
+        '201':
           description: Created
           schema:
-            $ref: "#/definitions/VendorBlockDto"
-        "400":
+            $ref: '#/definitions/VendorBlockDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /vendor-blocks/{uuid}:
+  '/vendor-blocks/{uuid}':
     get:
       tags:
         - vendor-blocks
@@ -1290,22 +2266,22 @@ paths:
           description: Vendor block UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Found
           schema:
-            $ref: "#/definitions/VendorBlockDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/VendorBlockDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     put:
@@ -1327,24 +2303,24 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdateVendorBlockDto"
+            $ref: '#/definitions/UpdateVendorBlockDto'
       responses:
-        "200":
+        '200':
           description: Updated
           schema:
-            $ref: "#/definitions/VendorBlockDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/VendorBlockDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     delete:
@@ -1361,24 +2337,22 @@ paths:
           description: Vendor block UUID
           type: string
       responses:
-        "204":
+        '204':
           description: Deleted
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  # ==================== PURCHASE ORDERS ====================
   /purchase-orders:
     get:
       tags:
@@ -1411,24 +2385,23 @@ paths:
           description: Status filter
           type: integer
       responses:
-        "200":
+        '200':
           description: List of purchase orders with receipts
           schema:
             type: array
             items:
-              $ref: "#/definitions/PurchaseOrderDto"
-        "401":
+              $ref: '#/definitions/PurchaseOrderDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
-  /purchase-orders/{uuid}:
+  '/purchase-orders/{uuid}':
     get:
       tags:
         - purchase-orders
@@ -1443,22 +2416,22 @@ paths:
           description: Purchase order UUID
           type: string
       responses:
-        "200":
+        '200':
           description: Purchase order with receipts
           schema:
-            $ref: "#/definitions/PurchaseOrderDto"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/PurchaseOrderDto'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
     patch:
@@ -1480,33 +2453,33 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/UpdatePurchaseOrderDto"
+            $ref: '#/definitions/UpdatePurchaseOrderDto'
       responses:
-        "200":
+        '200':
           description: Updated purchase order
           schema:
-            $ref: "#/definitions/PurchaseOrderDto"
-        "400":
+            $ref: '#/definitions/PurchaseOrderDto'
+        '400':
           description: Bad request
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "404":
-          description: Not found
-          schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "401":
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
           description: Unauthorized
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
-        "500":
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
           description: Internal error
           schema:
-            $ref: "#/definitions/ExceptionWrapper"
+            $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
-
 definitions:
   ExceptionWrapper:
+    type: object
     properties:
       code:
         description: Numeric HTTP Status error
@@ -1517,9 +2490,6 @@ definitions:
         description: Error description
         example: Unauthorized
         type: string
-    type: object
-
-  # ==================== ACCOUNTS PAYABLE DTOs ====================
   AccountsPayableDto:
     type: object
     properties:
@@ -1568,7 +2538,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateAccountsPayableDto:
     type: object
     required:
@@ -1598,7 +2567,6 @@ definitions:
         type: string
       createdBy:
         type: integer
-
   UpdateAccountsPayableDto:
     type: object
     properties:
@@ -1613,8 +2581,6 @@ definitions:
         type: string
       updatedBy:
         type: integer
-
-  # ==================== FISCAL PAYMENT DTOs ====================
   FiscalPaymentDto:
     type: object
     properties:
@@ -1647,7 +2613,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateFiscalPaymentDto:
     type: object
     required:
@@ -1668,7 +2633,6 @@ definitions:
         format: date-time
       status:
         type: integer
-
   UpdateFiscalPaymentDto:
     type: object
     properties:
@@ -1679,8 +2643,436 @@ definitions:
       paymentDate:
         type: string
         format: date-time
-
-  # ==================== REBATE DTOs ====================
+  CreateFinanzasPaymentDto:
+    type: object
+    required:
+      - company
+      - documentNumber
+      - documentReference
+      - vendorNumber
+      - amount
+      - documentType
+      - sapDocument
+      - paymentDate
+      - status
+    properties:
+      company:
+        type: integer
+        example: 1
+      documentNumber:
+        type: string
+        example: DOC-1001
+      documentReference:
+        type: string
+        example: REF-1001
+      vendorNumber:
+        type: integer
+        example: 20045
+      amount:
+        type: string
+        pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+        example: '1500.00'
+      documentType:
+        type: string
+        example: FA
+      sapDocument:
+        type: string
+        example: '5100001234'
+      paymentDate:
+        type: string
+        format: date
+        example: '2026-03-09'
+      status:
+        type: integer
+        example: 1
+      paymentHeaderUuid:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+  UpdateFinanzasPaymentDto:
+    type: object
+    required:
+      - vendorNumber
+      - documentNumber
+      - sapDocument
+      - documentType
+      - status
+    properties:
+      vendorNumber:
+        type: integer
+        example: 20045
+      documentNumber:
+        type: string
+        example: DOC-1001
+      sapDocument:
+        type: string
+        example: '5100001234'
+      documentType:
+        type: string
+        example: FA
+      status:
+        type: integer
+        example: 2
+  FinanzasPaymentDto:
+    type: object
+    properties:
+      finanzasPaymentUuid:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440001
+      company:
+        type: integer
+        example: 1
+      documentNumber:
+        type: string
+        example: DOC-1001
+      documentReference:
+        type: string
+        example: REF-1001
+      vendorNumber:
+        type: integer
+        example: 20045
+      amount:
+        type: string
+        example: '1500.00'
+      currency:
+        type: string
+        example: MXN
+      documentType:
+        type: string
+        example: FA
+      sapDocument:
+        type: string
+        example: '5100001234'
+        x-nullable: true
+      paymentDate:
+        type: string
+        format: date
+        example: '2026-03-09'
+      status:
+        type: integer
+        example: 1
+      paymentHeaderUuid:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+        x-nullable: true
+      createdBy:
+        type: integer
+        example: 123
+        x-nullable: true
+      createdAt:
+        type: string
+        format: date-time
+        example: '2026-03-09T12:00:00Z'
+      updatedBy:
+        type: integer
+        example: 456
+        x-nullable: true
+      updatedAt:
+        type: string
+        format: date-time
+        example: '2026-03-09T13:00:00Z'
+        x-nullable: true
+  FinanzasPaymentHeaderDto:
+    type: object
+    properties:
+      paymentHeaderUuid:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+      company:
+        type: integer
+        example: 1
+      anio:
+        type: integer
+        example: 2026
+      vendorNumber:
+        type: integer
+        example: 20045
+      currency:
+        type: string
+        example: MXN
+      totalAmount:
+        type: string
+        example: '2500.00'
+      paymentDate:
+        type: string
+        format: date
+        example: '2026-03-09'
+      status:
+        type: integer
+        example: 1
+      createdBy:
+        type: integer
+        example: 123
+        x-nullable: true
+      createdAt:
+        type: string
+        format: date-time
+        example: '2026-03-09T12:00:00Z'
+      updatedBy:
+        type: integer
+        example: 456
+        x-nullable: true
+      updatedAt:
+        type: string
+        format: date-time
+        example: '2026-03-09T13:00:00Z'
+        x-nullable: true
+  CreateFinanzasPaymentDetailItemDto:
+    type: object
+    required:
+      - documentNumber
+      - documentReference
+      - amount
+      - documentType
+      - sapDocument
+      - paymentLineType
+    properties:
+      documentNumber:
+        type: string
+        example: DOC-1001
+      documentReference:
+        type: string
+        example: REF-1001
+      amount:
+        type: string
+        pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+        example: '1000.00'
+      documentType:
+        type: string
+        example: FA
+      sapDocument:
+        type: string
+        example: '5100001234'
+      paymentLineType:
+        type: string
+        enum:
+          - INCOME
+          - CREDIT_NOTE
+        example: INCOME
+  CreateFinanzasPaymentHeaderWithDetailsDto:
+    type: object
+    required:
+      - company
+      - anio
+      - vendorNumber
+      - totalAmount
+      - paymentDate
+      - details
+    properties:
+      company:
+        type: integer
+        example: 1
+      anio:
+        type: integer
+        example: 2026
+      vendorNumber:
+        type: integer
+        example: 20045
+      currency:
+        type: string
+        default: MXN
+        example: MXN
+      totalAmount:
+        type: string
+        pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+        example: '2500.00'
+      paymentDate:
+        type: string
+        format: date
+        example: '2026-03-09'
+      status:
+        type: integer
+        default: 1
+        example: 1
+      createdBy:
+        type: integer
+        example: 123
+      details:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/definitions/CreateFinanzasPaymentDetailItemDto'
+  ResponsePageableFinanzasPaymentDto:
+    type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: '#/definitions/FinanzasPaymentDto'
+      totalElements:
+        type: integer
+        example: 25
+      numberOfElements:
+        type: integer
+        example: 10
+      totalPages:
+        type: integer
+        example: 3
+      pageNumber:
+        type: integer
+        example: 1
+      pageSize:
+        type: integer
+        example: 10
+  FinanzasPaymentHeaderWithDetailsCreateData:
+    type: object
+    properties:
+      header:
+        $ref: '#/definitions/FinanzasPaymentHeaderDto'
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/FinanzasPaymentDto'
+      summary:
+        type: object
+        properties:
+          paymentHeaderUuid:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+          totalDetails:
+            type: integer
+            example: 2
+          headerTotal:
+            type: string
+            example: '2500.00'
+          expectedTotal:
+            type: string
+            example: '2500.00'
+  FinanzasPaymentHeaderWithDetailsGetData:
+    type: object
+    properties:
+      header:
+        $ref: '#/definitions/FinanzasPaymentHeaderDto'
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/FinanzasPaymentDto'
+      detailsPage:
+        $ref: '#/definitions/ResponsePageableFinanzasPaymentDto'
+      summary:
+        type: object
+        properties:
+          paymentHeaderUuid:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+          totalDetails:
+            type: integer
+            example: 2
+          totalAmountHeader:
+            type: string
+            example: '2500.00'
+          totalAmountDetail:
+            type: string
+            example: '2500.00'
+          amountsMatch:
+            type: boolean
+            example: true
+  FinanzasPaymentsListResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        example: ''
+      data:
+        $ref: '#/definitions/ResponsePageableFinanzasPaymentDto'
+      code:
+        type: integer
+        example: 0
+      statusCode:
+        type: integer
+        example: 200
+      success:
+        type: boolean
+        example: true
+      token:
+        type: string
+        example: ''
+  FinanzasPaymentSingleResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        example: ''
+      data:
+        $ref: '#/definitions/FinanzasPaymentDto'
+      code:
+        type: integer
+        example: 0
+      statusCode:
+        type: integer
+        example: 201
+      success:
+        type: boolean
+        example: true
+      token:
+        type: string
+        example: ''
+  FinanzasPaymentUpdateResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        example: ''
+      data:
+        type: object
+        description: TypeORM update result
+      code:
+        type: integer
+        example: 0
+      statusCode:
+        type: integer
+        example: 200
+      success:
+        type: boolean
+        example: true
+      token:
+        type: string
+        example: ''
+  FinanzasPaymentHeaderWithDetailsCreateResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        example: ''
+      data:
+        $ref: '#/definitions/FinanzasPaymentHeaderWithDetailsCreateData'
+      code:
+        type: integer
+        example: 0
+      statusCode:
+        type: integer
+        example: 201
+      success:
+        type: boolean
+        example: true
+      token:
+        type: string
+        example: ''
+  FinanzasPaymentHeaderWithDetailsGetResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        example: ''
+      data:
+        $ref: '#/definitions/FinanzasPaymentHeaderWithDetailsGetData'
+      code:
+        type: integer
+        example: 0
+      statusCode:
+        type: integer
+        example: 200
+      success:
+        type: boolean
+        example: true
+      token:
+        type: string
+        example: ''
   RebateDto:
     type: object
     properties:
@@ -1717,7 +3109,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateRebateDto:
     type: object
     required:
@@ -1741,7 +3132,6 @@ definitions:
         format: date-time
       published:
         type: boolean
-
   UpdateRebateDto:
     type: object
     properties:
@@ -1757,8 +3147,6 @@ definitions:
         format: date-time
       published:
         type: boolean
-
-  # ==================== STAMPED REBATE DTOs ====================
   StampedRebateDto:
     type: object
     properties:
@@ -1785,7 +3173,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateStampedRebateDto:
     type: object
     required:
@@ -1801,7 +3188,6 @@ definitions:
         type: string
       status:
         type: integer
-
   UpdateStampedRebateDto:
     type: object
     properties:
@@ -1809,8 +3195,6 @@ definitions:
         type: integer
       certificateNumber:
         type: string
-
-  # ==================== SAP DOCUMENT DTOs ====================
   SapDocumentDto:
     type: object
     properties:
@@ -1843,7 +3227,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateSapDocumentDto:
     type: object
     required:
@@ -1864,7 +3247,6 @@ definitions:
         format: date-time
       status:
         type: integer
-
   UpdateSapDocumentDto:
     type: object
     properties:
@@ -1875,8 +3257,6 @@ definitions:
       postingDate:
         type: string
         format: date-time
-
-  # ==================== SHIPPING GUIDE DTOs ====================
   ShippingGuideDto:
     type: object
     properties:
@@ -1913,7 +3293,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateShippingGuideDto:
     type: object
     required:
@@ -1937,7 +3316,6 @@ definitions:
         type: string
       status:
         type: integer
-
   UpdateShippingGuideDto:
     type: object
     properties:
@@ -1948,8 +3326,203 @@ definitions:
         format: date-time
       destination:
         type: string
-
-  # ==================== VENDOR BLOCK DTOs ====================
+  ThreeWayMatchItem:
+    type: object
+    properties:
+      numeroProveedor:
+        type: string
+      ordenCompra:
+        type: string
+      recepcion:
+        type: string
+      fechaRecepcion:
+        type: string
+        format: date-time
+      uuid:
+        type: string
+      montoFactura:
+        type: number
+      documentoSap:
+        type: string
+      referenciaPago:
+        type: string
+      fechaPago:
+        type: string
+        format: date-time
+      montoPago:
+        type: number
+      estatus:
+        type: string
+  ThreeWayMatchListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ThreeWayMatchItem'
+      total:
+        type: integer
+      page:
+        type: integer
+      limit:
+        type: integer
+  RunThreeWayMatchBody:
+    type: object
+    properties:
+      fechaBase:
+        type: string
+        format: date-time
+      intento:
+        type: integer
+        minimum: 1
+        maximum: 10
+  RunThreeWayMatchResponse:
+    type: object
+    properties:
+      ok:
+        type: boolean
+      message:
+        type: string
+      fechaBase:
+        type: string
+        format: date-time
+      intento:
+        type: integer
+  MigoDocumentDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      fileName:
+        type: string
+      status:
+        type: integer
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+  MigoReceptionDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      migoDocumentId:
+        type: string
+        format: uuid
+      receptionNumber:
+        type: string
+      purchaseOrderNumber:
+        type: string
+      status:
+        type: integer
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+  RejectMigoDto:
+    type: object
+    required:
+      - migoDocumentId
+      - rejectionReason
+    properties:
+      migoDocumentId:
+        type: string
+        format: uuid
+      rejectionReason:
+        type: string
+        minLength: 1
+        maxLength: 500
+  MigoDocumentsListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      status:
+        type: integer
+      message:
+        type: string
+      data:
+        type: object
+        properties:
+          content:
+            type: array
+            items:
+              $ref: '#/definitions/MigoDocumentDto'
+          totalElements:
+            type: integer
+          numberOfElements:
+            type: integer
+          totalPages:
+            type: integer
+          pageNumber:
+            type: integer
+          pageSize:
+            type: integer
+  MigoDocumentResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      status:
+        type: integer
+      message:
+        type: string
+      data:
+        $ref: '#/definitions/MigoDocumentDto'
+  MigoReceptionsListResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      status:
+        type: integer
+      message:
+        type: string
+      data:
+        type: object
+        properties:
+          content:
+            type: array
+            items:
+              $ref: '#/definitions/MigoReceptionDto'
+          totalElements:
+            type: integer
+          numberOfElements:
+            type: integer
+          totalPages:
+            type: integer
+          pageNumber:
+            type: integer
+          pageSize:
+            type: integer
+  MigoUploadResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      status:
+        type: integer
+      message:
+        type: string
+      data:
+        type: object
+  MigoActionResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+      status:
+        type: integer
+      message:
+        type: string
+      data:
+        type: object
   VendorBlockDto:
     type: object
     properties:
@@ -1986,7 +3559,6 @@ definitions:
       updatedAt:
         type: string
         format: date-time
-
   CreateVendorBlockDto:
     type: object
     required:
@@ -2010,7 +3582,6 @@ definitions:
         type: integer
       createdBy:
         type: integer
-
   UpdateVendorBlockDto:
     type: object
     properties:
@@ -2021,8 +3592,6 @@ definitions:
       expirationDate:
         type: string
         format: date-time
-
-  # ==================== PURCHASE ORDER DTOs ====================
   PurchaseOrderDto:
     type: object
     properties:
@@ -2050,21 +3619,19 @@ definitions:
         type: array
         description: Associated receipts
         items:
-          $ref: "#/definitions/ReceiptDto"
+          $ref: '#/definitions/ReceiptDto'
       createdAt:
         type: string
         format: date-time
       updatedAt:
         type: string
         format: date-time
-
   UpdatePurchaseOrderDto:
     type: object
     properties:
       status:
         type: integer
         description: New status value
-
   ReceiptDto:
     type: object
     properties:
@@ -2089,7 +3656,190 @@ definitions:
       status:
         type: integer
         description: Receipt status
-
+  AuditLogDto:
+    type: object
+    properties:
+      activity_logs_uuid:
+        type: string
+        format: uuid
+        example: 09159938-7d75-433c-ae9f-d86f57cbe3a4
+      trace_front_id:
+        type: string
+        format: uuid
+        example: 9fa85f64-5717-4562-b3fc-2c963f66af6
+        x-nullable: true
+      trace_id:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      duration_ms:
+        type: number
+        example: 0
+      is_error:
+        type: boolean
+        example: false
+      modulo:
+        type: string
+        example: COMPLEMENT
+      service_name:
+        type: string
+        example: fiscal-front
+      action:
+        type: string
+        example: UPLOAD_XML
+        x-nullable: true
+      paso:
+        type: string
+        example: UPLOAD_XML
+        x-nullable: true
+      message:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      id_mensaje:
+        type: string
+        example: ValidationError
+        x-nullable: true
+      message_detail:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      codigo_error:
+        type: string
+        example: '400'
+        x-nullable: true
+      tipo_evento:
+        type: string
+        enum:
+          - ERROR
+          - ALERTA
+          - INFO
+        example: INFO
+      log:
+        type: string
+        example: stack trace...
+        x-nullable: true
+      user_id:
+        type: string
+        example: '1'
+      timestamp:
+        type: string
+        format: date-time
+        example: '2026-03-27T03:24:923Z'
+      details:
+        type: object
+        additionalProperties: true
+  CreateAuditLogDto:
+    type: object
+    required:
+      - idTransaccion
+      - idAplicativo
+      - idModulo
+      - paso
+      - tipoEvento
+    properties:
+      idTransaccion:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      idAplicativo:
+        type: string
+        example: fiscal-front
+      idModulo:
+        type: string
+        example: COMPLEMENT
+      paso:
+        type: string
+        example: UPLOAD_XML
+      detalle:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      fechaHora:
+        type: string
+        format: date-time
+        example: '2026-03-27T03:24:923Z'
+        x-nullable: true
+      tipoEvento:
+        type: string
+        enum:
+          - ERROR
+          - ALERTA
+          - INFO
+        example: INFO
+      idUsuario:
+        type: string
+        example: '1'
+        x-nullable: true
+      idError:
+        type: string
+        example: ERR-400
+        x-nullable: true
+      idMensaje:
+        type: string
+        example: ValidationError
+        x-nullable: true
+      mensaje:
+        type: string
+        example: Validation failed
+        x-nullable: true
+      log:
+        type: string
+        example: stack trace...
+        x-nullable: true
+  CreateAuditLogResponse:
+    type: object
+    properties:
+      activity_logs_uuid:
+        type: string
+        format: uuid
+        example: 09159938-7d75-433c-ae9f-d86f57cbe3a4
+  AuditLogsListData:
+    type: object
+    properties:
+      page:
+        type: integer
+        example: 1
+      limit:
+        type: integer
+        example: 10
+      total:
+        type: integer
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/AuditLogDto'
+  AuditLogsListResponse:
+    type: object
+    properties:
+      page:
+        type: integer
+        example: 1
+      limit:
+        type: integer
+        example: 10
+      total:
+        type: integer
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/AuditLogDto'
+  AuditLogsByTransactionResponse:
+    type: object
+    properties:
+      idTransaccion:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      total:
+        type: integer
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/AuditLogDto'
 securityDefinitions:
   api_key:
     in: query
@@ -2100,19 +3850,19 @@ securityDefinitions:
     name: Authorization
     type: apiKey
   keycloak:
-    authorizationUrl: ""
+    authorizationUrl: ''
     flow: implicit
     scopes: {}
     type: oauth2
     x-google-audiences: vendor-backend
-    x-google-issuer: ${KEYCLOAK}/auth/realms/corp
-    x-google-jwks_uri: ${JWKS_URL}
+    x-google-issuer: '${KEYCLOAK}/auth/realms/corp'
+    x-google-jwks_uri: '${JWKS_URL}'
     x-google-jwt-locations:
       - header: Authorization
-        value_prefix: "Bearer "
+        value_prefix: 'Bearer '
 security:
   - bearerAuth: []
 x-components: {}
 x-google-endpoints:
   - allowCors: true
-    name: ${DOMAIN_OPENAPI}
+    name: '${DOMAIN_OPENAPI}'

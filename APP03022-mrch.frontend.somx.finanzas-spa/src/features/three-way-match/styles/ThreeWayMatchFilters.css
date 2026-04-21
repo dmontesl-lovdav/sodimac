@@ -1,0 +1,32 @@
+/* ========================= */
+/* THREE WAY MATCH FILTERS   */
+/* ========================= */
+
+.twm-filters {
+    margin-bottom: 24px;
+}
+
+/* Fila horizontal REAL */
+.twm-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: nowrap;
+}
+
+.twm-row .somx-input-wrapper,
+.twm-row .somx-select-wrapper {
+    width: auto !important;
+    min-width: 180px;
+    flex: 0 0 auto;
+}
+
+/* Select un poco más ancho */
+.twm-row .somx-select-wrapper {
+    min-width: 220px;
+}
+
+/* Inputs internos */
+.twm-row .somx-input {
+    width: 180px;
+}

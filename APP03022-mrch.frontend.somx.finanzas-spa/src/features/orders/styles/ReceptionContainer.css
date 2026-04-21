@@ -1,0 +1,92 @@
+/* ========================= */
+/*         LAYOUT            */
+/* ========================= */
+
+.rc-layout {
+    padding: 8px 24px 16px;
+}
+
+.rc-box {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 24px 0;
+    margin-top: 16px;
+    background: transparent;
+}
+
+.rc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.rc-description {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 6px 0 0 0;
+}
+
+/* ========================= */
+/*         FILTERS           */
+/* ========================= */
+
+.rc-filters-section {
+    margin-top: 16px;
+    margin-bottom: 18px;
+}
+
+/* ========================= */
+/*          GRID             */
+/* ========================= */
+
+.rc-grid-section {
+    margin-top: 18px;
+}
+
+/* ========================= */
+/*        ACTIONS            */
+/* ========================= */
+
+.rc-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 160px;
+}
+
+.rc-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.rc-action-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.rc-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.rc-action-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+}

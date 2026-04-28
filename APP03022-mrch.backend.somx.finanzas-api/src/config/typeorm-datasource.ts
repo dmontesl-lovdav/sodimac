@@ -31,6 +31,7 @@ import { ShippingGuidePurchaseOrder } from '../entities/ShippingGuidePurchaseOrd
 import { SupplierBlock } from '../entities/SupplierBlock.entity.js';
 import { FiscalPayment } from '../entities/FiscalPayment.entity.js';
 import { AccountsPayable } from '../entities/AccountsPayable.entity.js';
+import { Healthcheck } from '../entities/Healthcheck.entity.js'
 import { VendorBlock } from '../entities/VendorBlock.entity.js';
 import { StampedRebate } from '../entities/StampedRebate.entity.js';
 import { FinanzasPayment } from '../entities/FinanzasPayment.entities.js';
@@ -69,6 +70,7 @@ const ENTITIES = [
     SupplierBlock,
     FiscalPayment,
     AccountsPayable,
+    Healthcheck,
     VendorBlock,
     StampedRebate,
     FinanzasPayment,

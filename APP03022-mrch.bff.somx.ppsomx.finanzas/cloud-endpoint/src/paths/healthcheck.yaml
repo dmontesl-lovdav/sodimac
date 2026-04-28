@@ -1,0 +1,27 @@
+healthcheck:
+  get:
+    tags:
+      - healthcheck
+    summary: Validate Finanzas API and database health
+    operationId: getHealthcheck
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Healthcheck data found
+        schema:
+          $ref: "../definitions/healthcheck.yaml#/HealthcheckResponseDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: No healthcheck records found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

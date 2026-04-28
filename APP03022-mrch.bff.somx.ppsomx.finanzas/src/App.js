@@ -21,10 +21,31 @@ const healthPath = process.env.HEALTH_PATH || '/health';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const openapiPath = path.resolve(__dirname, "../cloud-endpoint/openapi.yaml");
+const swaggerUiDistPath = path.resolve(__dirname, "../node_modules/swagger-ui-dist");
+const swaggerCssPath = path.join(swaggerUiDistPath, "swagger-ui.css");
+const swaggerBundlePath = path.join(swaggerUiDistPath, "swagger-ui-bundle.js");
+const swaggerPresetPath = path.join(swaggerUiDistPath, "swagger-ui-standalone-preset.js");
+
+const resolveOpenApiVariables = (request, fileContent) => {
+    const forwardedHost = request.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const requestHost = request.get("host")?.trim();
+    const domainOpenApi = process.env.DOMAIN_OPENAPI || forwardedHost || requestHost || "";
+    const replacements = {
+        DOMAIN_OPENAPI: domainOpenApi,
+        KEYCLOAK: process.env.KEYCLOAK || "",
+        JWKS_URL: process.env.JWKS_URL || ""
+    };
+
+    return fileContent.replace(/\$\{([A-Z_]+)\}/g, (match, variableName) => {
+        const value = replacements[variableName];
+        return value !== undefined ? value : match;
+    });
+};
 
 logger.info(" CONFIGURING AUTH CERTS ");
 const authPublicKey = process.env.AUTH_PUBLIC_KEY || '';
 let decodedAuthKey = '';
+
 if (authPublicKey) {
     try {
         decodedAuthKey = new X509Certificate(Buffer.from(authPublicKey, "base64")).toString();
@@ -54,8 +75,9 @@ openapiAliases.forEach((route) => {
     localService.get(route, (request, response) => {
         try {
             const fileContent = fs.readFileSync(openapiPath, "utf8");
+            const resolvedContent = resolveOpenApiVariables(request, fileContent);
             response.type("application/yaml");
-            response.send(fileContent);
+            response.send(resolvedContent);
         } catch (error) {
             logger.error(`FAILED TO READ OPENAPI FILE: ${error}`);
             response.status(500).send({ message: "Unable to load openapi.yaml" });
@@ -65,12 +87,9 @@ openapiAliases.forEach((route) => {
 
 // SERVE SWAGGER UI CSS
 swaggerCssAliases.forEach((route) => {
-    localService.get(route, async (request, response) => {
+    localService.get(route, (request, response) => {
         try {
-            const swaggerCssResponse = await fetch("https://unpkg.com/swagger-ui-dist/swagger-ui.css");
-            const swaggerCss = await swaggerCssResponse.text();
-            response.type("text/css");
-            response.send(swaggerCss);
+            response.sendFile(swaggerCssPath);
         } catch (error) {
             logger.error(`FAILED TO LOAD SWAGGER CSS: ${error}`);
             response.status(500).send("Unable to load Swagger UI CSS");
@@ -80,12 +99,9 @@ swaggerCssAliases.forEach((route) => {
 
 // SERVE SWAGGER UI BUNDLE
 swaggerBundleAliases.forEach((route) => {
-    localService.get(route, async (request, response) => {
+    localService.get(route, (request, response) => {
         try {
-            const swaggerBundleResponse = await fetch("https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js");
-            const swaggerBundle = await swaggerBundleResponse.text();
-            response.type("application/javascript");
-            response.send(swaggerBundle);
+            response.sendFile(swaggerBundlePath);
         } catch (error) {
             logger.error(`FAILED TO LOAD SWAGGER BUNDLE: ${error}`);
             response.status(500).send("Unable to load Swagger UI bundle");
@@ -95,12 +111,9 @@ swaggerBundleAliases.forEach((route) => {
 
 // SERVE SWAGGER UI PRESET
 swaggerPresetAliases.forEach((route) => {
-    localService.get(route, async (request, response) => {
+    localService.get(route, (request, response) => {
         try {
-            const swaggerPresetResponse = await fetch("https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js");
-            const swaggerPreset = await swaggerPresetResponse.text();
-            response.type("application/javascript");
-            response.send(swaggerPreset);
+            response.sendFile(swaggerPresetPath);
         } catch (error) {
             logger.error(`FAILED TO LOAD SWAGGER PRESET: ${error}`);
             response.status(500).send("Unable to load Swagger UI preset");
@@ -110,23 +123,15 @@ swaggerPresetAliases.forEach((route) => {
 
 // SERVE SWAGGER UI HTML
 docsAliases.forEach((route) => {
-    const openapiUrl = route.startsWith("/ppsomx/backend-finanzas")
-        ? "/ppsomx/backend-finanzas/openapi.yaml"
-        : "/openapi.yaml";
-
-    const swaggerCssUrl = route.startsWith("/ppsomx/backend-finanzas")
-        ? "/ppsomx/backend-finanzas/swagger-ui.css"
-        : "/swagger-ui.css";
-
-    const swaggerBundleUrl = route.startsWith("/ppsomx/backend-finanzas")
-        ? "/ppsomx/backend-finanzas/swagger-ui-bundle.js"
-        : "/swagger-ui-bundle.js";
-
-    const swaggerPresetUrl = route.startsWith("/ppsomx/backend-finanzas")
-        ? "/ppsomx/backend-finanzas/swagger-ui-standalone-preset.js"
-        : "/swagger-ui-standalone-preset.js";
-
     localService.get(route, (request, response) => {
+        const openapiUrl = "openapi.yaml";
+        const swaggerCssUrl = "swagger-ui.css";
+        const swaggerBundleUrl = "swagger-ui-bundle.js";
+        const swaggerPresetUrl = "swagger-ui-standalone-preset.js";
+
+        logger.info(`SWAGGER HTML URL DEBUG: ${request.originalUrl}`);
+        logger.info(`SWAGGER HTML ASSETS => CSS: ${swaggerCssUrl}, BUNDLE: ${swaggerBundleUrl}, PRESET: ${swaggerPresetUrl}, OPENAPI: ${openapiUrl}`);
+
         response.type("text/html");
         response.send(`
 <!DOCTYPE html>
@@ -139,7 +144,6 @@ docsAliases.forEach((route) => {
 </head>
 <body>
     <div id="swagger-ui"></div>
-
     <script src="${swaggerBundleUrl}"></script>
     <script src="${swaggerPresetUrl}"></script>
     <script>

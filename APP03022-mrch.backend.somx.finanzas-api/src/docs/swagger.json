@@ -909,6 +909,49 @@
         }
       }
     },
+    "/healthcheck": {
+      "get": {
+        "tags": [
+          "Healthcheck"
+        ],
+        "summary": "Validate Finanzas API and database health",
+        "description": "Returns one internal healthcheck record from database. If data is returned, the API and DB connection are alive.",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Healthcheck data found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "alive": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "count": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Healthcheck"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No healthcheck records found"
+          }
+        }
+      }
+    },
     "/purchase-orders": {
       "get": {
         "tags": [
@@ -3029,6 +3072,43 @@
           "type": "integer"
         }
       }
+    },
+    "Healthcheck": {
+      "type": "object",
+      "properties": {
+        "healthcheckUuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "serviceName": {
+          "type": "string",
+          "example": "finanzas-api"
+        },
+        "status": {
+          "type": "string",
+          "example": "OK"
+        },
+        "message": {
+          "type": "string",
+          "nullable": true,
+          "example": "Healthcheck record alive"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        }
+      },
+      "required": [
+        "healthcheckUuid",
+        "serviceName",
+        "status",
+        "createdAt"
+      ]
     },
     "CreatePurchaseOrderDto": {
       "type": "object",

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { DataSource } from 'typeorm';
 import type { DataSourceOptions } from 'typeorm';
-import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from "typeorm-transactional-cls-hooked";
+import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional-cls-hooked';
 
 // Load local .env with priority over system variables
 const __filename = fileURLToPath(import.meta.url);
@@ -23,10 +23,24 @@ import { ApplicationMsg } from '../entities/ApplicationMsg.entity.js';
 import { CatProcess } from '../entities/CatProcess.entity.js';
 import { CatItemType } from '../entities/CatItemType.entity.js';
 import { CatItem } from '../entities/CatItem.entity.js';
-import { ActivityLogs } from '../entities/ActivityLogs.entity.js';
+import { CatalogDetail } from '../entities/CatalogDetail.entity.js';
+import { CatalogHeader } from '../entities/CatalogHeader.entity.js';
+import {
+    ModuleProcess,
+    ProfileModule,
+    ProfileModuleProcess,
+    ProfileUser,
+    RolePermission,
+    RoleProvider,
+    RoleUser,
+    UserAttribute,
+    UserData,
+} from '../entities/SecurityRelations.entity.js';
+import { ActivityLogs } from '@/entities/ActivityLogs.entity.js';
 
 // Registrar entidades
 const ENTITIES = [
+    ActivityLogs,
     CatParameter,
     CatModule,
     CatMessage,
@@ -34,7 +48,17 @@ const ENTITIES = [
     CatProcess,
     CatItemType,
     CatItem,
-    ActivityLogs
+    CatalogHeader,
+    CatalogDetail,
+    UserData,
+    ModuleProcess,
+    ProfileModule,
+    ProfileUser,
+    ProfileModuleProcess,
+    RoleUser,
+    RolePermission,
+    RoleProvider,
+    UserAttribute,
 ];
 
 const dbHost = process.env.DB_HOST;
@@ -84,7 +108,7 @@ export async function initDataSource() {
     console.log('[INIT] DataSource entity metadata count BEFORE init:', datasource.entityMetadatas?.length || 0);
 
     if (!datasource.isInitialized) {
-        console.log('[DB CONNECT]', {
+         console.log('[DB CONNECT]', {
             host: dbHost,
             port: dbPort,
             user: dbUser,

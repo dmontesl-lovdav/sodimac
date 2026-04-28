@@ -15,6 +15,106 @@ host: '${DOMAIN_OPENAPI}'
 schemes:
   - https
 paths:
+  /docs:
+    get:
+      summary: Swagger UI
+      operationId: getSwaggerDocs
+      produces:
+        - text/html
+      responses:
+        '200':
+          description: Swagger UI
+      security: []
+  /openapi.yaml:
+    get:
+      summary: OpenAPI spec
+      operationId: getOpenApiYaml
+      produces:
+        - application/yaml
+      responses:
+        '200':
+          description: OpenAPI spec
+      security: []
+  /swagger-ui.css:
+    get:
+      summary: Swagger UI CSS
+      operationId: getSwaggerUiCss
+      produces:
+        - text/css
+      responses:
+        '200':
+          description: Swagger UI CSS
+      security: []
+  /swagger-ui-bundle.js:
+    get:
+      summary: Swagger UI JS bundle
+      operationId: getSwaggerUiBundle
+      produces:
+        - application/javascript
+      responses:
+        '200':
+          description: Swagger UI JS
+      security: []
+  /swagger-ui-standalone-preset.js:
+    get:
+      summary: Swagger UI JS preset
+      operationId: getSwaggerUiPreset
+      produces:
+        - application/javascript
+      responses:
+        '200':
+          description: Swagger UI preset
+      security: []
+  /ppsomx/backend-finanzas/docs:
+    get:
+      summary: Swagger UI aliased path
+      operationId: getSwaggerDocsAliased
+      produces:
+        - text/html
+      responses:
+        '200':
+          description: Swagger UI
+      security: []
+  /ppsomx/backend-finanzas/openapi.yaml:
+    get:
+      summary: OpenAPI spec aliased path
+      operationId: getOpenApiYamlAliased
+      produces:
+        - application/yaml
+      responses:
+        '200':
+          description: OpenAPI spec
+      security: []
+  /ppsomx/backend-finanzas/swagger-ui.css:
+    get:
+      summary: Swagger UI CSS aliased path
+      operationId: getSwaggerUiCssAliased
+      produces:
+        - text/css
+      responses:
+        '200':
+          description: Swagger UI CSS
+      security: []
+  /ppsomx/backend-finanzas/swagger-ui-bundle.js:
+    get:
+      summary: Swagger UI bundle aliased path
+      operationId: getSwaggerUiBundleAliased
+      produces:
+        - application/javascript
+      responses:
+        '200':
+          description: Swagger UI JS
+      security: []
+  /ppsomx/backend-finanzas/swagger-ui-standalone-preset.js:
+    get:
+      summary: Swagger UI preset aliased path
+      operationId: getSwaggerUiPresetAliased
+      produces:
+        - application/javascript
+      responses:
+        '200':
+          description: Swagger UI preset
+      security: []
   /accounts-payable:
     get:
       tags:
@@ -182,6 +282,33 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
         '404':
           description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /healthcheck:
+    get:
+      tags:
+        - healthcheck
+      summary: Validate Finanzas API and database health
+      operationId: getHealthcheck
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Healthcheck data found
+          schema:
+            $ref: '#/definitions/HealthcheckResponseDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: No healthcheck records found
           schema:
             $ref: '#/definitions/ExceptionWrapper'
         '500':
@@ -2490,6 +2617,49 @@ definitions:
         description: Error description
         example: Unauthorized
         type: string
+  HealthcheckDto:
+    type: object
+    properties:
+      healthcheckUuid:
+        type: string
+        format: uuid
+        description: Unique healthcheck identifier
+      serviceName:
+        type: string
+        description: Service name
+        example: finanzas-api
+      status:
+        type: string
+        description: Healthcheck status
+        example: OK
+      message:
+        type: string
+        description: Healthcheck message
+        example: Healthcheck record alive
+      createdAt:
+        type: string
+        format: date-time
+        description: Creation date
+      updatedAt:
+        type: string
+        format: date-time
+        description: Last update date
+  HealthcheckResponseDto:
+    type: object
+    properties:
+      alive:
+        type: boolean
+        description: Indicates if the service and DB connection are alive
+        example: true
+      count:
+        type: integer
+        format: int32
+        description: Number of healthcheck records returned
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/HealthcheckDto'
   AccountsPayableDto:
     type: object
     properties:

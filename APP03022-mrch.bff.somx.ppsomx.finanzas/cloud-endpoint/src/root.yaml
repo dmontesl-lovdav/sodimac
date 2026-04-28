@@ -20,10 +20,123 @@ schemes:
   - https
 
 paths:
+  /docs:
+    get:
+      summary: Swagger UI
+      operationId: getSwaggerDocs
+      produces:
+        - text/html
+      responses:
+        "200":
+          description: Swagger UI
+      security: []
+
+  /openapi.yaml:
+    get:
+      summary: OpenAPI spec
+      operationId: getOpenApiYaml
+      produces:
+        - application/yaml
+      responses:
+        "200":
+          description: OpenAPI spec
+      security: []
+
+  /swagger-ui.css:
+    get:
+      summary: Swagger UI CSS
+      operationId: getSwaggerUiCss
+      produces:
+        - text/css
+      responses:
+        "200":
+          description: Swagger UI CSS
+      security: []
+
+  /swagger-ui-bundle.js:
+    get:
+      summary: Swagger UI JS bundle
+      operationId: getSwaggerUiBundle
+      produces:
+        - application/javascript
+      responses:
+        "200":
+          description: Swagger UI JS
+      security: []
+
+  /swagger-ui-standalone-preset.js:
+    get:
+      summary: Swagger UI JS preset
+      operationId: getSwaggerUiPreset
+      produces:
+        - application/javascript
+      responses:
+        "200":
+          description: Swagger UI preset
+      security: []
+
+  /ppsomx/backend-finanzas/docs:
+    get:
+      summary: Swagger UI aliased path
+      operationId: getSwaggerDocsAliased
+      produces:
+        - text/html
+      responses:
+        "200":
+          description: Swagger UI
+      security: []
+
+  /ppsomx/backend-finanzas/openapi.yaml:
+    get:
+      summary: OpenAPI spec aliased path
+      operationId: getOpenApiYamlAliased
+      produces:
+        - application/yaml
+      responses:
+        "200":
+          description: OpenAPI spec
+      security: []
+
+  /ppsomx/backend-finanzas/swagger-ui.css:
+    get:
+      summary: Swagger UI CSS aliased path
+      operationId: getSwaggerUiCssAliased
+      produces:
+        - text/css
+      responses:
+        "200":
+          description: Swagger UI CSS
+      security: []
+
+  /ppsomx/backend-finanzas/swagger-ui-bundle.js:
+    get:
+      summary: Swagger UI bundle aliased path
+      operationId: getSwaggerUiBundleAliased
+      produces:
+        - application/javascript
+      responses:
+        "200":
+          description: Swagger UI JS
+      security: []
+
+  /ppsomx/backend-finanzas/swagger-ui-standalone-preset.js:
+    get:
+      summary: Swagger UI preset aliased path
+      operationId: getSwaggerUiPresetAliased
+      produces:
+        - application/javascript
+      responses:
+        "200":
+          description: Swagger UI preset
+      security: []
+
   /accounts-payable:
     $ref: "./paths/accounts-payable.yaml#/accounts-payable"
   /accounts-payable/{uuid}:
     $ref: "./paths/accounts-payable.yaml#/accounts-payable-by-uuid"
+
+  /healthcheck:
+    $ref: "./paths/healthcheck.yaml#/healthcheck"
 
   /fiscal-payments:
     $ref: "./paths/fiscal-payments.yaml#/fiscal-payments"
@@ -35,7 +148,8 @@ paths:
   /finanzas-payment/header-with-details:
     $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details"
   /finanzas-payment/header-with-details/{paymentHeaderUuid}:
-    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details-by-uuid"
+    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details-by-u\
+      uid"
 
   /audit-logs:
     $ref: "./paths/audit-logs.yaml#/audit-logs"
@@ -118,6 +232,11 @@ definitions:
   ExceptionWrapper:
     $ref: "./definitions/common.yaml#/ExceptionWrapper"
 
+  HealthcheckDto:
+    $ref: "./definitions/healthcheck.yaml#/HealthcheckDto"
+  HealthcheckResponseDto:
+    $ref: "./definitions/healthcheck.yaml#/HealthcheckResponseDto"
+
   AccountsPayableDto:
     $ref: "./definitions/accounts-payable.yaml#/AccountsPayableDto"
   CreateAccountsPayableDto:
@@ -143,13 +262,16 @@ definitions:
   CreateFinanzasPaymentDetailItemDto:
     $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentDetailItemDto"
   CreateFinanzasPaymentHeaderWithDetailsDto:
-    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDetailsDto"
+    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDeta\
+      ilsDto"
   ResponsePageableFinanzasPaymentDto:
     $ref: "./definitions/finanzas-payment.yaml#/ResponsePageableFinanzasPaymentDto"
   FinanzasPaymentHeaderWithDetailsCreateData:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCreateData"
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
+      ateData"
   FinanzasPaymentHeaderWithDetailsGetData:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGetData"
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
+      Data"
   FinanzasPaymentsListResponse:
     $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentsListResponse"
   FinanzasPaymentSingleResponse:
@@ -157,9 +279,11 @@ definitions:
   FinanzasPaymentUpdateResponse:
     $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentUpdateResponse"
   FinanzasPaymentHeaderWithDetailsCreateResponse:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCreateResponse"
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
+      ateResponse"
   FinanzasPaymentHeaderWithDetailsGetResponse:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGetResponse"
+    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
+      Response"
 
   RebateDto:
     $ref: "./definitions/rebates.yaml#/RebateDto"

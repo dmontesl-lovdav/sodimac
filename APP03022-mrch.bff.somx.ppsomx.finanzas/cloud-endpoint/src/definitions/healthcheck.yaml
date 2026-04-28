@@ -1,0 +1,44 @@
+HealthcheckDto:
+  type: object
+  properties:
+    healthcheckUuid:
+      type: string
+      format: uuid
+      description: Unique healthcheck identifier
+    serviceName:
+      type: string
+      description: Service name
+      example: finanzas-api
+    status:
+      type: string
+      description: Healthcheck status
+      example: OK
+    message:
+      type: string
+      description: Healthcheck message
+      example: Healthcheck record alive
+    createdAt:
+      type: string
+      format: date-time
+      description: Creation date
+    updatedAt:
+      type: string
+      format: date-time
+      description: Last update date
+
+HealthcheckResponseDto:
+  type: object
+  properties:
+    alive:
+      type: boolean
+      description: Indicates if the service and DB connection are alive
+      example: true
+    count:
+      type: integer
+      format: int32
+      description: Number of healthcheck records returned
+      example: 1
+    data:
+      type: array
+      items:
+        $ref: "#/HealthcheckDto"

@@ -16,6 +16,7 @@ import auditLogRoutes from "./auditLog.routes.js";
 import accountStatementRouter from "./accountStatement.routes.js";
 import migoRouter from "./migo.routes.js";
 import transactionIdRouter from "./transactionId.routes.js";
+import healthcheckRouter from "./healthcheck.routes.js";
 
 const router: RouterType = Router();
 
@@ -36,5 +37,6 @@ router.use("/audit-logs", auditLogRoutes);
 router.use("/account-statement", accountStatementRouter);
 router.use("/migo", migoRouter);
 router.use("/transaction-ids", transactionIdRouter);
+router.use("/healthcheck", healthcheckRouter);
 
 export default router;

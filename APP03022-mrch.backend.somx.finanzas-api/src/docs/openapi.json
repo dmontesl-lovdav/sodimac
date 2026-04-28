@@ -11,12 +11,7 @@
       "description": "Base URL (paths incluyen /api si así los defines)"
     }
   ],
-  "tags": [
-    {
-      "name": "Health",
-      "description": "Service health checks"
-    }
-  ],
+  "tags": [],
   "paths": {
     "/accounts": {
       "get": {
@@ -1117,6 +1112,46 @@
           },
           "404": {
             "description": "Header not found"
+          }
+        }
+      }
+    },
+    "/healthcheck": {
+      "get": {
+        "tags": [
+          "Healthcheck"
+        ],
+        "summary": "Validate Finanzas API and database health",
+        "description": "Returns one internal healthcheck record from database. If data is returned, the API and DB connection are alive.",
+        "responses": {
+          "200": {
+            "description": "Healthcheck data found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alive": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Healthcheck"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No healthcheck records found"
           }
         }
       }
@@ -3510,6 +3545,43 @@
             "type": "integer"
           }
         }
+      },
+      "Healthcheck": {
+        "type": "object",
+        "properties": {
+          "healthcheckUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceName": {
+            "type": "string",
+            "example": "finanzas-api"
+          },
+          "status": {
+            "type": "string",
+            "example": "OK"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "example": "Healthcheck record alive"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "healthcheckUuid",
+          "serviceName",
+          "status",
+          "createdAt"
+        ]
       },
       "CreatePurchaseOrderDto": {
         "type": "object",

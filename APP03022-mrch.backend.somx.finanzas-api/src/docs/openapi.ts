@@ -1,4 +1,3 @@
-// src/docs/openapi.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -16,19 +15,22 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 async function importAllFrom(dir: string): Promise<AnyObj[]> {
     const abs = path.join(__dirname, dir);
     if (!fs.existsSync(abs)) return [];
-    const files = fs.readdirSync(abs)
-        .filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
-    ;
-    const mods: AnyObj[] = [];
-    for (const f of files) {
 
-        console.log("Loading OpenAPI file:", f);
+    const files = fs
+        .readdirSync(abs)
+        .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+
+    const mods: AnyObj[] = [];
+
+    for (const f of files) {
+        console.log('Loading OpenAPI file:', f);
 
         const url = pathToFileURL(path.join(abs, f)).href;
         const m = await import(url);
 
         mods.push(m as AnyObj);
     }
+
     return mods;
 }
 
@@ -44,21 +46,31 @@ export async function buildOpenAPISpec() {
 
     const schemas: AnyObj = {};
     const paths: AnyObj = {};
-    const tags: Tag[] = [{ name: 'Health', description: 'Service health checks' }];
+    const tags: Tag[] = [];
 
     // merge de componentes (cualquier export que termine en "Schemas")
     for (const m of componentsMods) {
         for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Schemas') && isPlainObject(v)) Object.assign(schemas, v);
-            if (k === 'tags' && Array.isArray(v)) tags.push(...(v as Tag[]));
+            if (k.endsWith('Schemas') && isPlainObject(v)) {
+                Object.assign(schemas, v);
+            }
+
+            if (k === 'tags' && Array.isArray(v)) {
+                tags.push(...(v as Tag[]));
+            }
         }
     }
 
     // merge de paths (cualquier export que termine en "Paths")
     for (const m of pathsMods) {
         for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Paths') && isPlainObject(v)) Object.assign(paths, v);
-            if (k === 'tags' && Array.isArray(v)) tags.push(...(v as Tag[]));
+            if (k.endsWith('Paths') && isPlainObject(v)) {
+                Object.assign(paths, v);
+            }
+
+            if (k === 'tags' && Array.isArray(v)) {
+                tags.push(...(v as Tag[]));
+            }
         }
     }
 
@@ -69,7 +81,12 @@ export async function buildOpenAPISpec() {
             version: process.env.npm_package_version ?? '1.0.0',
             description: 'Express + TypeScript API (OAS3)',
         },
-        servers: [{ url: '/api', description: 'Base URL (paths incluyen /api si así los defines)' }],
+        servers: [
+            {
+                url: '/api',
+                description: 'Base URL (paths incluyen /api si así los defines)',
+            },
+        ],
         tags,
         paths,
         components: {
@@ -82,16 +99,19 @@ export async function buildOpenAPISpec() {
                 },
             },
             schemas: {
-                // esquema de error base + lo encontrado en /components
                 Error: {
                     type: 'object',
-                    properties: { error: { type: 'string' } },
-                    example: { error: 'Something went wrong' },
+                    properties: {
+                        error: { type: 'string' },
+                    },
+                    example: {
+                        error: 'Something went wrong',
+                    },
                 },
                 ...schemas,
             },
         },
-        security: [], // opcional: puedes poner [{ bearerAuth: [] }]
+        security: [],
     };
 
     return spec;

@@ -253,6 +253,16 @@ Abrir **PowerShell**, navegar al directorio del proyecto y ejecutar:
 
 ```powershell
 Get-ChildItem -Path . -Filter ".git" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+
+PS C:\Users\g_dco018> cd C:\local-new
+PS C:\local-new> Get-ChildItem -Path . -Filter ".git" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter ".github" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter "target" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter ".m2" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter ".mvn" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter ".settings" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+PS C:\local-new> Get-ChildItem -Path . -Filter ".log" -Directory -Recurse -Force | Remove-Item -Recurse -Force
+
 ```
 
 > Nota: El comando `find . -name ".git" -type d -exec rm -rf {} +` no funciona

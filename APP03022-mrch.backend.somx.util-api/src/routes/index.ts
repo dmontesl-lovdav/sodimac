@@ -9,6 +9,7 @@ import itemTypeRouter from "./itemType.routes.js";
 import itemRouter from "./item.routes.js";
 import activityLogsRouter from "./activityLogs.routes.js";
 import securityRouter from "./security.routes.js";
+import supplierRouter from "./supplier.routes.js";
 
 const router: RouterType = Router();
 
@@ -22,5 +23,6 @@ router.use("/item-types", itemTypeRouter);
 router.use("/items", itemRouter);
 router.use("/activity-logs", activityLogsRouter);
 router.use("/security", securityRouter);
+router.use("/suppliers", supplierRouter);
 
 export default router;

@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "STM-1525 — Catálogo Proveedor — Filtro Seguridad",
+    "description": "Pruebas de filtro de seguridad por TipoProveedor (ATR002) en Catálogo Proveedor.\nutil-api: http://localhost:3712",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Escenario 1 — Sin header (admin) → 22 proveedores",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?pageSize=5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [{ "key": "pageSize", "value": "5" }]
+        },
+        "description": "Sin x-user-types. Admin/sistema. Devuelve todos los proveedores (22 total)."
+      }
+    },
+    {
+      "name": "Escenario 2 — USR_ANA (TPR001) → 11 proveedores tipo 1",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "TPR001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?pageSize=20",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [{ "key": "pageSize", "value": "20" }]
+        },
+        "description": "ATR002=TPR001 → external_key=1 → supplier_type_id=1. Esperado: 11 proveedores."
+      }
+    },
+    {
+      "name": "Escenario 3 — Multi tipo TPR001,TPR002 → 14 proveedores",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "TPR001,TPR002" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?pageSize=20",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [{ "key": "pageSize", "value": "20" }]
+        },
+        "description": "ATR002=TPR001,TPR002 OR lógico → supplier_type_id IN (1,2). Esperado: 14 proveedores."
+      }
+    },
+    {
+      "name": "Escenario 4 — Acceso total (-1) → 22 proveedores",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "-1" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?pageSize=5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [{ "key": "pageSize", "value": "5" }]
+        },
+        "description": "-1 = acceso total, sin filtro de tipo."
+      }
+    },
+    {
+      "name": "Escenario 5 — Sin ATR002 → WRN7029",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"]
+        },
+        "description": "x-user-types vacío → BFF inyecta vacío cuando usuario no tiene ATR002. HTTP 400 WRN7029."
+      }
+    },
+    {
+      "name": "Búsqueda con filtros adicionales",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "TPR001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?businessName=Distribu&status=1&page=1&pageSize=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [
+            { "key": "businessName", "value": "Distribu" },
+            { "key": "status", "value": "1" },
+            { "key": "page", "value": "1" },
+            { "key": "pageSize", "value": "10" }
+          ]
+        },
+        "description": "Filtro combinado: tipo TPR001 + busca 'Distribu' en businessName + status=1."
+      }
+    },
+    {
+      "name": "Filtro por supplierNumber",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-types", "value": "TPR001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3712/api/suppliers?supplierNumber=MERC",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3712",
+          "path": ["api", "suppliers"],
+          "query": [
+            { "key": "supplierNumber", "value": "MERC" }
+          ]
+        },
+        "description": "Busca proveedores con supplierNumber que contiene 'MERC' dentro de los del tipo TPR001."
+      }
+    }
+  ]
+}

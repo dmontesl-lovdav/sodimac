@@ -1182,6 +1182,23 @@ public class InvoiceServiceImpl implements InvoiceService {
     // ========== BÚSQUEDA (STM-338) ==========
 
     @Override
+    public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors) {
+        log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={}", allowedVendors);
+        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors);
+        Sort sort = Sort.by(
+                "DESC".equalsIgnoreCase(searchRequest.getSortDirection()) ? Sort.Direction.DESC : Sort.Direction.ASC,
+                searchRequest.getSortBy() != null ? searchRequest.getSortBy() : "createdAt"
+        );
+        Pageable pageable = PageRequest.of(
+                searchRequest.getPage() != null ? searchRequest.getPage() : 0,
+                searchRequest.getSize() != null ? searchRequest.getSize() : 20,
+                sort
+        );
+        Page<InvoiceEntity> page = invoiceRepository.findAll(spec, pageable);
+        return page.map(this::mapToSearchResponse);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest) {
         log.info("========================================");

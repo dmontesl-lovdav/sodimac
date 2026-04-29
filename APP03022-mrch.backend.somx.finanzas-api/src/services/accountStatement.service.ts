@@ -19,7 +19,7 @@ function statusToLabel(status: number): string {
 }
 
 
-export async function search(query: ListAccountStatementQuery) {
+export async function search(query: ListAccountStatementQuery, allowedVendors: string[] | null = null) {
     const month = query.month === 'all' ? undefined : query.month;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
@@ -27,6 +27,7 @@ export async function search(query: ListAccountStatementQuery) {
         vendorNumber: query.vendorNumber,
         year: query.year,
         month: month ?? 'all',
+        allowedVendors,
         limit: pageSize,
         offset: (page - 1) * pageSize,
     });
@@ -45,8 +46,8 @@ export async function search(query: ListAccountStatementQuery) {
     return { items, totalItems: total, totalPages, currentPage: page };
 }
 
-export async function getById(uuid: string) {
-    const row = await r.findById(uuid);
+export async function getById(uuid: string, allowedVendors: string[] | null = null) {
+    const row = await r.findById(uuid, allowedVendors);
     if (!row) return null;
     return {
         accountStatementUuid: row.accountStatementUuid,

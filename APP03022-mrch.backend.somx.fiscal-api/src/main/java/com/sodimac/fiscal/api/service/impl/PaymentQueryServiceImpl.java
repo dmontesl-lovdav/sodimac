@@ -34,6 +34,16 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors) {
+        log.info("Buscando complementos de pago con filtro de vendors: {}", allowedVendors);
+        Page<PaymentsEntity> paymentsPage = paymentsRepository.searchPayments(searchRequest, allowedVendors);
+        log.info("Se encontraron {} complementos de pago (Página {}/{})",
+                paymentsPage.getTotalElements(), paymentsPage.getNumber() + 1, paymentsPage.getTotalPages());
+        return paymentsPage.map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest) {
         log.info("Buscando complementos de pago con filtros: RFC Emisor={}, RFC Receptor={}, Folio={}, Fecha Inicio={}, Fecha Fin={}",
                 searchRequest.getRfcEmisor(), searchRequest.getRfcReceptor(), searchRequest.getFolio(),

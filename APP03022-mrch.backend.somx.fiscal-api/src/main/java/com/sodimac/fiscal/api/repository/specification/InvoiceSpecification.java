@@ -9,6 +9,7 @@ import com.sodimac.fiscal.api.model.entity.RelatedCfdiEntity;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,10 @@ public class InvoiceSpecification {
      * @return Specification para ejecutar la query
      */
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest) {
+        return buildSpecification(searchRequest, null);
+    }
+
+    public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -184,6 +189,21 @@ public class InvoiceSpecification {
                                 searchRequest.getRelatedInvoiceUuid()
                         ));
                 predicates.add(root.get("invoiceUuid").in(relatedCfdiSubquery));
+            }
+
+            // Filtro de seguridad STM-323: supplier permitidos del BFF (x-user-vendors)
+            if (allowedVendors != null && !allowedVendors.isEmpty()) {
+                List<BigDecimal> vendorNumbers = allowedVendors.stream()
+                        .map(v -> { try { return new BigDecimal(v); } catch (NumberFormatException e) { return null; } })
+                        .filter(v -> v != null)
+                        .toList();
+                if (!vendorNumbers.isEmpty()) {
+                    Subquery<UUID> secSubquery = query.subquery(UUID.class);
+                    Root<AddendumEntity> secRoot = secSubquery.from(AddendumEntity.class);
+                    secSubquery.select(secRoot.get("invoiceUuid"))
+                            .where(secRoot.get("supplierNumber").in(vendorNumbers));
+                    predicates.add(root.get("invoiceUuid").in(secSubquery));
+                }
             }
 
             // Combinar todos los predicados con AND

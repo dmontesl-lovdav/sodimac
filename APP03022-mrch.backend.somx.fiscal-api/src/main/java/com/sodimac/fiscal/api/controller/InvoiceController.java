@@ -37,6 +37,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * ============================================================================
@@ -365,22 +368,41 @@ public class InvoiceController {
             )
     })
     @PostMapping(value = "/search", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<InvoiceSearchResponse>> searchInvoices(
-            @Valid @RequestBody InvoiceSearchRequest searchRequest) {
+    public ResponseEntity<?> searchInvoices(
+            @Valid @RequestBody InvoiceSearchRequest searchRequest,
+            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors) {
 
-        log.info("Solicitud de busqueda de facturas/NC recibida. RFC Emisor: {}, Tipo: {}, Fechas: {} - {}",
+        // STM-323: filtro seguridad por proveedor
+        List<String> allowedVendors = parseVendorHeader(xUserVendors);
+        if (allowedVendors != null && allowedVendors.isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                "success", false,
+                "code", "WRN7029",
+                "message", "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador"
+            ));
+        }
+
+        log.info("Solicitud de busqueda de facturas/NC recibida. RFC Emisor: {}, Tipo: {}, Fechas: {} - {}, Vendors: {}",
                 searchRequest.getRfcEmisor(),
                 searchRequest.getTipoDocumento(),
                 searchRequest.getFechaInicioRecepcion(),
-                searchRequest.getFechaFinalRecepcion());
+                searchRequest.getFechaFinalRecepcion(),
+                allowedVendors);
 
-        // Ejecutar búsqueda con JPA Criteria
-        Page<InvoiceSearchResponse> results = invoiceService.searchInvoices(searchRequest);
+        Page<InvoiceSearchResponse> results = invoiceService.searchInvoices(searchRequest, allowedVendors);
 
         log.info("Busqueda completada. Resultados: {} de {} totales",
                 results.getNumberOfElements(), results.getTotalElements());
 
         return ResponseEntity.ok(results);
+    }
+
+    private List<String> parseVendorHeader(String header) {
+        if (header == null) return null;               // sin header → sin restricción (admin)
+        String trimmed = header.trim();
+        if (trimmed.isEmpty()) return Collections.emptyList();  // vacío → WRN7029
+        if ("-1".equals(trimmed)) return null;         // -1 → acceso total
+        return Arrays.asList(trimmed.split(","));
     }
 
     /**

@@ -57,6 +57,7 @@ export interface UserAttributeRow {
     name: string;
     attributeTypeId: number;
     attributeTypeName: string;
+    attributeTypeKey: string | null;
     attributeValueId: number | null;
     attributeValueName: string | null;
     attributeValueKey: string | null;
@@ -639,6 +640,7 @@ export async function listUserAttributes(
         .addSelect(dictionaryLabelExpr('attributeType', langId), 'name')
         .addSelect('userAttribute.catalog_detail_attribute_type_id', 'attributeTypeId')
         .addSelect(dictionaryLabelExpr('attributeType', langId), 'attributeTypeName')
+        .addSelect('attributeType.detailKey', 'attributeTypeKey')
         .addSelect('userAttribute.catalog_detail_attribute_value_id', 'attributeValueId')
         .addSelect(dictionaryLabelExpr('attributeValue', langId), 'attributeValueName')
         .addSelect('attributeValue.detailKey', 'attributeValueKey')
@@ -666,6 +668,7 @@ export async function listUserAttributes(
             name: String(item.name),
             attributeTypeId: Number(item.attributeTypeId),
             attributeTypeName: String(item.attributeTypeName),
+            attributeTypeKey: item.attributeTypeKey == null ? null : String(item.attributeTypeKey),
             attributeValueId: item.attributeValueId == null ? null : Number(item.attributeValueId),
             attributeValueName: item.attributeValueName == null ? null : String(item.attributeValueName),
             attributeValueKey: item.attributeValueKey == null ? null : String(item.attributeValueKey),

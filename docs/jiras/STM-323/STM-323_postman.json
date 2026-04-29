@@ -1,0 +1,170 @@
+{
+  "info": {
+    "name": "STM-323 — Facturas — Filtro Seguridad",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Facturas (fiscal-api).\nBFF fiscal: http://localhost:3003 | Backend: http://localhost:8082",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Escenario 1 — Proveedor único (fernando) → 4 registros",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-key", "value": "USR_FERNANDO" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:3003/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3003",
+          "path": ["invoices", "search"]
+        },
+        "description": "BFF resuelve ATR001=11111 para 'fernando'. Solo facturas del proveedor 11111. Esperado: 4 registros."
+      }
+    },
+    {
+      "name": "Escenario 2 — Múltiples proveedores (jose) → 8 registros",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-key", "value": "USR_JOSE" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:3003/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3003",
+          "path": ["invoices", "search"]
+        },
+        "description": "BFF resuelve ATR001=11111,22222 para 'jose'. Facturas 11111 ó 22222. Esperado: 8 registros."
+      }
+    },
+    {
+      "name": "Escenario 3 — Acceso total -1 (ivan) → 23 registros",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:3003/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3003",
+          "path": ["invoices", "search"]
+        },
+        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción. Esperado: 23 registros."
+      }
+    },
+    {
+      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-key", "value": "USR_ANA" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:3003/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3003",
+          "path": ["invoices", "search"]
+        },
+        "description": "'ana' sin ATR001. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+      }
+    },
+    {
+      "name": "[Directo] Proveedor 11111",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-vendors", "value": "11111" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "search"]
+        },
+        "description": "Prueba directa al backend fiscal-api sin BFF."
+      }
+    },
+    {
+      "name": "[Directo] Proveedores 11111,22222",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-vendors", "value": "11111,22222" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "search"]
+        },
+        "description": "Prueba directa multi-proveedor. OR lógico."
+      }
+    },
+    {
+      "name": "[Directo] Sin atributos → WRN7029",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-user-vendors", "value": "" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "http://localhost:8082/invoices/search",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["invoices", "search"]
+        },
+        "description": "x-user-vendors vacío → HTTP 400 WRN7029."
+      }
+    }
+  ]
+}

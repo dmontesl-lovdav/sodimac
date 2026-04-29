@@ -9,6 +9,7 @@ import router from "./routes/index.js";
 import { errorHandler } from "@/middlewares/errorHandler.js";
 import { healthCheck, livenessProbe, readinessProbe } from "@/controllers/health.controller.js";
 import { globalErrorHandler } from "@/middlewares/logger.js";
+import { attachSecurityContext } from "@/middlewares/security.middleware.js";
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.get("/health", healthCheck);
 app.get("/actuator/health", healthCheck);
 app.get("/actuator/health/liveness", livenessProbe);
 app.get("/actuator/health/readiness", readinessProbe);
+
+// Security context (lee headers x-user-vendors/types/groups del BFF)
+app.use("/api", attachSecurityContext);
 
 // Rutas de la API
 console.log("[APP] Mounting router at /api, router type:", typeof router, "has stack:", !!(router as any).stack);

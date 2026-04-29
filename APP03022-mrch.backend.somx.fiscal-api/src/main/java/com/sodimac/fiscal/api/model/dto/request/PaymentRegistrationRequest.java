@@ -58,4 +58,8 @@ public class PaymentRegistrationRequest {
      */
     @NotNull(message = "El archivo XML es requerido")
     private MultipartFile xmlFile;
+
+    public MultipartFile getXmlFile() {
+        return xmlFile;
+    }
 }

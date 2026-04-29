@@ -585,3 +585,25 @@ export async function invalidateUserDetailsCache(userKey?: string, idProfile?: n
     const existed = ACCESS_CONTEXT_CACHE.delete(cacheKey);
     return { cleared: existed ? 1 : 0 };
 }
+
+/** Atributos de un usuario por userKey (sub, preferred_username, email o id). Uso BFF. */
+export async function getUserAttributesByKey(userKey: string, langId?: number) {
+    const key = String(userKey ?? '').trim();
+    if (!key) throw { status: 400, message: 'userKey es obligatorio' };
+
+    const user = await securityRepo.findUserByLookupKey(key);
+    if (!user) throw { status: 404, message: `No existe usuario activo con la clave '${key}'` };
+
+    const result = await securityRepo.listUserAttributes(user.idUserData, 1, 1000, langId);
+
+    return {
+        userDataId: user.idUserData,
+        sub: user.sub,
+        preferredUsername: user.preferredUsername,
+        email: user.email,
+        attributes: result.items.map((a) => ({
+            typeKey:  a.attributeTypeKey ?? String(a.attributeTypeId),
+            valueKey: a.attributeValueKey ?? null,
+        })),
+    };
+}

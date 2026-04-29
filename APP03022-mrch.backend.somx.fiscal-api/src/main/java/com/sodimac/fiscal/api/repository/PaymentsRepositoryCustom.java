@@ -23,4 +23,6 @@ public interface PaymentsRepositoryCustom {
      * @return Página de complementos de pago que cumplen los criterios
      */
     Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest);
+
+    Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors);
 }

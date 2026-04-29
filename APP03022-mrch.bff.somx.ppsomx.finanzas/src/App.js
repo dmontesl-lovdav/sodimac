@@ -17,6 +17,92 @@ const remoteUrl = process.env.REMOTE_URL || 'http://localhost:3001';
 const localPort = process.env.LOCAL_PORT || '3000';
 const localContext = process.env.LOCAL_CONTEXT || '/';
 const healthPath = process.env.HEALTH_PATH || '/health';
+const utilApiUrl = process.env.UTIL_API_URL || 'http://localhost:3712';
+
+// ---------------------------------------------------------------------------
+// Security context — caché en memoria (TTL 5 min, alinea con util-api)
+// ---------------------------------------------------------------------------
+const SECURITY_CACHE = new Map();
+const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function extractUserKey(request) {
+    // 1. GCP Cloud Endpoints inyecta el payload JWT en base64url
+    const gcpInfo = request.headers['x-endpoint-api-userinfo'];
+    if (gcpInfo) {
+        try {
+            const payload = JSON.parse(Buffer.from(gcpInfo, 'base64url').toString('utf8'));
+            return payload.preferred_username || payload.sub || null;
+        } catch {
+            logger.warn('Failed to parse X-Endpoint-API-UserInfo');
+        }
+    }
+
+    // 2. Fallback dev: decodificar Bearer sin verificar (solo dev, GCP valida en prod)
+    const auth = request.headers['authorization'] || '';
+    const token = auth.replace(/^Bearer\s+/i, '');
+    if (token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+                return payload.preferred_username || payload.sub || null;
+            }
+        } catch {
+            logger.warn('Failed to decode Bearer token');
+        }
+    }
+
+    // 3. Dev override: header X-User-Key directo (solo cuando AUTH_PUBLIC_KEY no configurado)
+    if (!decodedAuthKey) {
+        const devKey = request.headers['x-user-key'];
+        if (devKey) return devKey;
+    }
+
+    return null;
+}
+
+async function fetchSecurityContext(userKey) {
+    const now = Date.now();
+    const cached = SECURITY_CACHE.get(userKey);
+    if (cached && cached.expiresAt > now) return cached.data;
+
+    try {
+        const res = await fetch(`${utilApiUrl}/api/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
+        if (!res.ok) {
+            logger.warn({ userKey, status: res.status }, 'util-api user-details non-ok');
+            return null;
+        }
+        const body = await res.json();
+        const data = body?.data ?? body;
+        SECURITY_CACHE.set(userKey, { data, expiresAt: now + SECURITY_CACHE_TTL_MS });
+        return data;
+    } catch (err) {
+        logger.warn({ userKey, err: err.message }, 'util-api user-details error');
+        return null;
+    }
+}
+
+function buildSecurityHeaders(context) {
+    if (!context) return {};
+
+    const attrs = context.attributes ?? [];
+
+    const valuesFor = (typeKey) =>
+        attrs
+            .filter(a => a.typeKey === typeKey)
+            .map(a => a.valueKey)
+            .filter(Boolean);
+
+    const vendors = valuesFor('ATR001');
+    const types   = valuesFor('ATR002');
+    const groups  = valuesFor('ATR004');
+
+    return {
+        'x-user-vendors': vendors.length ? vendors.join(',') : '',
+        'x-user-types':   types.length   ? types.join(',')   : '',
+        'x-user-groups':  groups.length  ? groups.join(',')  : '',
+    };
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -174,13 +260,13 @@ localService.use(bodyParser.urlencoded({ limit: maximumPayloadSize, extended: tr
 
 logger.info(" CONFIGURING PROXY ");
 const remoteResolver = proxy(remoteUrl, {
-    parseReqBody: false,
+    parseReqBody: true,
     proxyReqPathResolver: (request) => {
         const targetPath = request.originalUrl.replace(localContext, "");
         const normalizedPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
         return "/api" + normalizedPath;
     },
-    proxyReqOptDecorator: (options, request) => {
+    proxyReqOptDecorator: async (options, request) => {
         if (request.method.toLowerCase() === "options") {
             return options;
         }
@@ -188,6 +274,23 @@ const remoteResolver = proxy(remoteUrl, {
         if (request.url.indexOf(healthPath) >= 0) {
             return options;
         }
+
+        const userKey = extractUserKey(request);
+        if (!userKey) {
+            logger.warn({ url: request.originalUrl }, 'No userKey found in request — skipping security context');
+            return options;
+        }
+
+        const context = await fetchSecurityContext(userKey);
+        const secHeaders = buildSecurityHeaders(context);
+
+        options.headers = {
+            ...options.headers,
+            'x-user-key': userKey,
+            ...secHeaders,
+        };
+
+        logger.info({ userKey, vendors: secHeaders['x-user-vendors'], types: secHeaders['x-user-types'] }, 'Security context injected');
 
         return options;
     },

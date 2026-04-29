@@ -1,0 +1,141 @@
+{
+  "info": {
+    "name": "STM-321 — Three Way Match — Filtro Seguridad",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Three Way Match.\nBFF: http://localhost:3000 | Backend: http://localhost:3001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Escenario 1 — Proveedor único (fernando)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_FERNANDO" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=1001 para el usuario 'fernando'. Solo devuelve registros del proveedor 1001."
+      }
+    },
+    {
+      "name": "Escenario 2 — Múltiples proveedores (jose)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_JOSE" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=1001,1002 para 'jose'. Devuelve registros de proveedor 1001 ó 1002 (OR lógico)."
+      }
+    },
+    {
+      "name": "Escenario 3 — Acceso total -1 (ivan)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción de proveedor, devuelve todo."
+      }
+    },
+    {
+      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_ANA" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "'ana' no tiene ATR001 configurado. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+      }
+    },
+    {
+      "name": "[Directo] Proveedor 1001",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-vendors", "value": "1001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "Prueba directa al backend sin BFF. Header x-user-vendors inyectado manualmente."
+      }
+    },
+    {
+      "name": "[Directo] Sin atributos → WRN7029",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-vendors", "value": "" }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "three-way-match"],
+          "query": [
+            { "key": "tipoFecha", "value": "fechaRecepcion" },
+            { "key": "fechaInicio", "value": "2024-01-01" },
+            { "key": "fechaFin", "value": "2025-12-31" }
+          ]
+        },
+        "description": "Header x-user-vendors vacío → HTTP 400 WRN7029."
+      }
+    }
+  ]
+}

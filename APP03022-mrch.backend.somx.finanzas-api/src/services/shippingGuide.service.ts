@@ -1,4 +1,5 @@
 import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
+
 import * as guides from "@/repositories/shippingGuide.repo.js";
 import type {
     CreateShippingGuideDto,
@@ -10,7 +11,7 @@ import { Response } from "express";
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
-import { Between, EntityManager, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
+import { Between, EntityManager, In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
 import * as svcAxios from "@/services/axios.service.js";
 import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { ShippingGuideDocument } from "@/entities/ShippingGuideDocument.entity.js";
@@ -88,7 +89,7 @@ export async function list(criteria: ListShippingGuideQuery) {
     return guides.findAll(criteria);
 }
 
-export async function listPaginated(q: ListShippingGuideQuery) {
+export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: number[] | null = null) {
     const {
         statusList,
         tipoProveedorList,
@@ -99,6 +100,9 @@ export async function listPaginated(q: ListShippingGuideQuery) {
     const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
 
     const filter: FindOptionsWhere<ShippingGuide> = buildCriteria(q);
+    if (allowedVendors && allowedVendors.length > 0) {
+        filter.vendorNumber = In(allowedVendors);
+    }
     let pageSize: number = 10;  //Por default es 10 registros por pagina
     if (q.pageSize !== undefined) {
         pageSize = q.pageSize;

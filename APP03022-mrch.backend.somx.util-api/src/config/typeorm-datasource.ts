@@ -37,10 +37,12 @@ import {
     UserData,
 } from '../entities/SecurityRelations.entity.js';
 import { ActivityLogs } from '@/entities/ActivityLogs.entity.js';
+import { Supplier } from '@/entities/Supplier.entity.js';
 
 // Registrar entidades
 const ENTITIES = [
     ActivityLogs,
+    Supplier,
     CatParameter,
     CatModule,
     CatMessage,

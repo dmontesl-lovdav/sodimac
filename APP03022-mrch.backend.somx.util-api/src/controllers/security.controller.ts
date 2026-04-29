@@ -289,6 +289,16 @@ export async function saveModuleProcessAssignment(req: Request, res: Response, n
 }
 
 /** GET /api/security/user-details/:userKey — detalle por user_data (preferred_username, sub, email o id). */
+export async function getUserAttributesByKey(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userKey = decodeURIComponent(String(req.params.userKey ?? ''));
+        const data = await securityService.getUserAttributesByKey(userKey, parseLangId(req));
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function getUserDetailsByCatalogKey(req: Request, res: Response, next: NextFunction) {
     try {
         const userKey = decodeURIComponent(String(req.params.userKey ?? ''));

@@ -21,6 +21,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador REST para el registro de complementos de pago.
@@ -164,19 +168,35 @@ public class PaymentRegistrationController {
                     description = "Error interno del servidor"
             )
     })
-    public ResponseEntity<Page<PaymentSearchResponse>> buscarComplementosPago(
-            @ModelAttribute PaymentSearchRequest searchRequest) {
+    public ResponseEntity<?> buscarComplementosPago(
+            @ModelAttribute PaymentSearchRequest searchRequest,
+            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors) {
 
-        log.info("Recibida solicitud de búsqueda de complementos de pago - Filtros: {}", searchRequest);
+        List<String> allowedVendors = parseVendorHeader(xUserVendors);
+        if (allowedVendors != null && allowedVendors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "code", "WRN7029",
+                    "message", "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador"
+            ));
+        }
 
-        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest);
+        log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}", searchRequest,
+                allowedVendors == null ? "sin restricción" : allowedVendors);
 
-        log.info("Búsqueda completada - Resultados: {}/{}, Página: {}/{}",
-                results.getNumberOfElements(),
-                results.getTotalElements(),
-                results.getNumber() + 1,
-                results.getTotalPages());
+        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest, allowedVendors);
+
+        log.info("Búsqueda completada - {}/{} resultados, página {}/{}",
+                results.getNumberOfElements(), results.getTotalElements(),
+                results.getNumber() + 1, results.getTotalPages());
 
         return ResponseEntity.ok(results);
+    }
+
+    private List<String> parseVendorHeader(String header) {
+        if (header == null) return null;
+        String trimmed = header.trim();
+        if (trimmed.isEmpty()) return Collections.emptyList();
+        if ("-1".equals(trimmed)) return null;
+        return Arrays.asList(trimmed.split(","));
     }
 }

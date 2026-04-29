@@ -9,16 +9,26 @@ import { initDataSource } from "@/config/typeorm-datasource.js";
 import { runThreeWayMatch } from "@/services/threeWayMatch.service.js";
 import { RunThreeWayMatchBodySchema, type RunThreeWayMatchBody } from "@/schemas/threeWayMatchRun.schema.js";
 
+const WRN7029 = { success: false, code: "WRN7029", message: "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador" };
+
+function allowedVendors(req: Request): string[] | null | "wrn7029" {
+    const sec = req.security;
+    if (!sec) return null;
+    if (Array.isArray(sec.vendors) && sec.vendors.length === 0) return "wrn7029";
+    return sec.vendors;   // null = sin restricción, string[] = filtro
+}
+
 export async function list(
     req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        const q: ListThreeWayMatchQuery =
-            ListThreeWayMatchQuerySchema.parse(req.query);
+        const vendors = allowedVendors(req);
+        if (vendors === "wrn7029") { res.status(400).json(WRN7029); return; }
 
-        const result = await svc.list(q);
+        const q: ListThreeWayMatchQuery = ListThreeWayMatchQuerySchema.parse(req.query);
+        const result = await svc.list(q, vendors);
         res.json(result);
     } catch (e) {
         next(e);
@@ -31,10 +41,13 @@ export async function exportCsv(
     next: NextFunction
 ) {
     try {
+        const vendors = allowedVendors(req);
+        if (vendors === "wrn7029") { res.status(400).json(WRN7029); return; }
+
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const csv = await svc.exportCsv(q);
+        const csv = await svc.exportCsv(q, vendors);
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
@@ -56,10 +69,13 @@ export async function exportXlsx(
     next: NextFunction
 ) {
     try {
+        const vendors = allowedVendors(req);
+        if (vendors === "wrn7029") { res.status(400).json(WRN7029); return; }
+
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const buffer = await svc.exportXlsx(q);
+        const buffer = await svc.exportXlsx(q, vendors);
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 

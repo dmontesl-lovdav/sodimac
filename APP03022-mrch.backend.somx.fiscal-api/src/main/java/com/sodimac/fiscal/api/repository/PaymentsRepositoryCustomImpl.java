@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import com.sodimac.fiscal.api.model.dto.request.PaymentSearchRequest;
+import com.sodimac.fiscal.api.model.entity.AddendumEntity;
 import com.sodimac.fiscal.api.model.entity.IssuerEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
@@ -24,6 +25,9 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -165,6 +169,78 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         if (!predicates.isEmpty()) {
             countQuery.where(cb.and(predicates.toArray(new Predicate[0])));
         }
+
+        return entityManager.createQuery(countQuery).getSingleResult();
+    }
+
+    // -------------------------------------------------------------------------
+    // STM-1474: overload con filtro de seguridad por vendor
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest, List<String> allowedVendors) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaQuery<PaymentsEntity> query = cb.createQuery(PaymentsEntity.class);
+        Root<PaymentsEntity> root = query.from(PaymentsEntity.class);
+
+        Fetch<PaymentsEntity, IssuerEntity> issuerFetch = root.fetch("issuer", JoinType.LEFT);
+        Fetch<PaymentsEntity, ReceiverEntity> receiverFetch = root.fetch("receiver", JoinType.LEFT);
+
+        List<Predicate> predicates = buildPredicates(cb, root, searchRequest,
+                (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
+                (Join<PaymentsEntity, ReceiverEntity>) receiverFetch);
+
+        // Filtro de seguridad por vendor (addendum.supplier_number)
+        addVendorPredicate(cb, query, root, allowedVendors, predicates);
+
+        if (!predicates.isEmpty()) query.where(cb.and(predicates.toArray(new Predicate[0])));
+
+        Sort.Direction direction = "DESC".equalsIgnoreCase(searchRequest.getSortDirection())
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        query.orderBy(direction == Sort.Direction.DESC
+                ? cb.desc(root.get(searchRequest.getSortBy()))
+                : cb.asc(root.get(searchRequest.getSortBy())));
+
+        List<PaymentsEntity> results = entityManager.createQuery(query)
+                .setFirstResult(searchRequest.getPage() * searchRequest.getSize())
+                .setMaxResults(searchRequest.getSize())
+                .getResultList();
+
+        long total = countPaymentsWithVendors(searchRequest, allowedVendors);
+
+        return new PageImpl<>(results, PageRequest.of(searchRequest.getPage(), searchRequest.getSize()), total);
+    }
+
+    private void addVendorPredicate(CriteriaBuilder cb, CriteriaQuery<?> query,
+                                    Root<PaymentsEntity> root,
+                                    List<String> allowedVendors,
+                                    List<Predicate> predicates) {
+        if (allowedVendors == null || allowedVendors.isEmpty()) return;
+        // payments_uuid IN (SELECT payments_uuid FROM addendum WHERE CAST(supplier_number AS TEXT) IN (...))
+        Subquery<UUID> sub = query.subquery(UUID.class);
+        Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
+        sub.select(addRoot.get("paymentsUuid"))
+           .where(cb.and(
+               cb.isNotNull(addRoot.get("paymentsUuid")),
+               addRoot.get("supplierNumber").as(String.class).in(allowedVendors)
+           ));
+        predicates.add(root.get("paymentsUuid").in(sub));
+    }
+
+    private long countPaymentsWithVendors(PaymentSearchRequest searchRequest, List<String> allowedVendors) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<PaymentsEntity> root = countQuery.from(PaymentsEntity.class);
+
+        Join<PaymentsEntity, IssuerEntity> issuerJoin = root.join("issuer", JoinType.LEFT);
+        Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.LEFT);
+
+        List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
+        addVendorPredicate(cb, countQuery, root, allowedVendors, predicates);
+
+        countQuery.select(cb.count(root));
+        if (!predicates.isEmpty()) countQuery.where(cb.and(predicates.toArray(new Predicate[0])));
 
         return entityManager.createQuery(countQuery).getSingleResult();
     }

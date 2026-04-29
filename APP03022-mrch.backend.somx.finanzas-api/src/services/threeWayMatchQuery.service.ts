@@ -19,7 +19,7 @@ function validateRange(q: ListThreeWayMatchQuery) {
     }
 }
 
-function buildFilters(q: ListThreeWayMatchQuery, page: number, limit: number) {
+function buildFilters(q: ListThreeWayMatchQuery, page: number, limit: number, allowedVendors: string[] | null) {
     return {
         tipoFecha: q.tipoFecha,
         fechaInicio: q.fechaInicio,
@@ -27,26 +27,27 @@ function buildFilters(q: ListThreeWayMatchQuery, page: number, limit: number) {
         ...(q.numeroProveedor && { numeroProveedor: q.numeroProveedor }),
         ...(q.ordenCompra && { ordenCompra: q.ordenCompra }),
         ...(q.recepcion && { recepcion: q.recepcion }),
+        allowedVendors,
         page,
         limit,
     };
 }
 
-export async function list(q: ListThreeWayMatchQuery) {
+export async function list(q: ListThreeWayMatchQuery, allowedVendors: string[] | null = null) {
 
     validateRange(q);
 
     return r.findWithFilters(
-        buildFilters(q, q.page ?? 1, q.limit ?? 20)
+        buildFilters(q, q.page ?? 1, q.limit ?? 20, allowedVendors)
     );
 }
 
-export async function exportCsv(q: ListThreeWayMatchQuery) {
+export async function exportCsv(q: ListThreeWayMatchQuery, allowedVendors: string[] | null = null) {
 
     validateRange(q);
 
     const result = await r.findWithFilters(
-        buildFilters(q, 1, 100000)
+        buildFilters(q, 1, 100000, allowedVendors)
     );
 
     const rows = result.data;
@@ -89,12 +90,12 @@ export async function exportCsv(q: ListThreeWayMatchQuery) {
     return csvLines.join("\n");
 }
 
-export async function exportXlsx(q: ListThreeWayMatchQuery) {
+export async function exportXlsx(q: ListThreeWayMatchQuery, allowedVendors: string[] | null = null) {
 
     validateRange(q);
 
     const result = await r.findWithFilters(
-        buildFilters(q, 1, 100000)
+        buildFilters(q, 1, 100000, allowedVendors)
     );
 
     const workbook = new ExcelJS.Workbook();

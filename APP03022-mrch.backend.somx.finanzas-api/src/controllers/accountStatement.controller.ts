@@ -5,10 +5,22 @@ import {
     UuidParamSchema,
 } from '@/schemas/accountStatement.schema.js';
 
+const WRN7029 = { success: false, code: 'WRN7029', message: 'El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador' };
+
+function allowedVendors(req: Request): string[] | null | 'wrn7029' {
+    const sec = req.security;
+    if (!sec) return null;
+    if (Array.isArray(sec.vendors) && sec.vendors.length === 0) return 'wrn7029';
+    return sec.vendors;
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
+        const vendors = allowedVendors(req);
+        if (vendors === 'wrn7029') { res.status(400).json(WRN7029); return; }
+
         const query = ListAccountStatementQuerySchema.parse(req.query);
-        const result = await svc.search(query);
+        const result = await svc.search(query, vendors);
         res.json(result);
     } catch (e) {
         next(e);
@@ -17,8 +29,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function getById(req: Request, res: Response, next: NextFunction) {
     try {
+        const vendors = allowedVendors(req);
+        if (vendors === 'wrn7029') { res.status(400).json(WRN7029); return; }
+
         const { uuid } = UuidParamSchema.parse(req.params);
-        const row = await svc.getById(uuid);
+        const row = await svc.getById(uuid, vendors);
         if (!row) return res.status(404).json({ message: 'Not found' });
         res.json(row);
     } catch (e) {

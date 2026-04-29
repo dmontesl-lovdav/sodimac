@@ -39,6 +39,7 @@ export async function findWithFilters(params: {
     numeroProveedor?: string;
     ordenCompra?: string;
     recepcion?: string;
+    allowedVendors?: string[] | null;
     page?: number;
     limit?: number;
 }) {
@@ -50,6 +51,7 @@ export async function findWithFilters(params: {
         numeroProveedor,
         ordenCompra,
         recepcion,
+        allowedVendors = null,
         page = 1,
         limit = 20
     } = params;
@@ -76,6 +78,13 @@ export async function findWithFilters(params: {
         inicio: fechaInicio,
         fin: fechaFin,
     });
+
+    // ========================
+    // Filtro de seguridad — vendors permitidos del BFF (STM-321)
+    // ========================
+    if (allowedVendors !== null && allowedVendors.length > 0) {
+        qb.andWhere("CAST(t.numeroProveedor AS TEXT) IN (:...allowedVendors)", { allowedVendors });
+    }
 
     // ========================
     // Filtros opcionales

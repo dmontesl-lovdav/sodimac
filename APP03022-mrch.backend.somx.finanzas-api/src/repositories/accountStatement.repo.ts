@@ -8,7 +8,8 @@ export function repo() {
 export interface FindByFiltersOptions {
     vendorNumber?: number | undefined;
     year: number;
-    month: number | 'all' ;
+    month: number | 'all';
+    allowedVendors?: string[] | null;
     limit: number;
     offset: number;
 }
@@ -18,6 +19,9 @@ export async function findByFilters(options: FindByFiltersOptions): Promise<{ ro
         .createQueryBuilder('a')
         .where('a.year = :year', { year: options.year });
 
+    if (options.allowedVendors && options.allowedVendors.length > 0) {
+        qb.andWhere('CAST(a.vendor_number AS TEXT) IN (:...allowedVendors)', { allowedVendors: options.allowedVendors });
+    }
     if (options.vendorNumber) {
         qb.andWhere('a.vendor_number = :vendorNumber', { vendorNumber: options.vendorNumber });
     }
@@ -37,8 +41,15 @@ export async function findByFilters(options: FindByFiltersOptions): Promise<{ ro
     return { rows, total };
 }
 
-export async function findById(uuid: string): Promise<AccountStatement | null> {
-    return repo().findOneBy({ accountStatementUuid: uuid });
+export async function findById(uuid: string, allowedVendors: string[] | null = null): Promise<AccountStatement | null> {
+    if (!allowedVendors || allowedVendors.length === 0) {
+        return repo().findOneBy({ accountStatementUuid: uuid });
+    }
+    return repo()
+        .createQueryBuilder('a')
+        .where('a.account_statement_uuid = :uuid', { uuid })
+        .andWhere('CAST(a.vendor_number AS TEXT) IN (:...allowedVendors)', { allowedVendors })
+        .getOne();
 }
 
 export async function updateReviewStatus(

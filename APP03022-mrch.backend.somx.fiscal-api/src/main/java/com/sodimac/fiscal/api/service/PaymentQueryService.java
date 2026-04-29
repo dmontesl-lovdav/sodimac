@@ -26,4 +26,6 @@ public interface PaymentQueryService {
      * @return Página de complementos de pago que cumplen los criterios
      */
     Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest);
+
+    Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors);
 }

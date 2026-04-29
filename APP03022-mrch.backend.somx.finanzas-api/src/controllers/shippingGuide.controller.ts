@@ -32,13 +32,25 @@ export async function csvExport(req: Request, res: Response, next: NextFunction)
     }
 }
 
+const WRN7029 = { success: false, code: 'WRN7029', message: 'El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador' };
+
+function allowedVendors(req: Request): number[] | null | 'wrn7029' {
+    const sec = req.security;
+    if (!sec) return null;
+    if (Array.isArray(sec.vendors) && sec.vendors.length === 0) return 'wrn7029';
+    return sec.vendors ? sec.vendors.map(Number).filter(n => !isNaN(n)) : null;
+}
+
 // GET /shipping-guides STM 577
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
-        const q: ListShippingGuideQuery =
-            ListShippingGuideQuerySchema.parse(req.query);   
+        const vendors = allowedVendors(req);
+        if (vendors === 'wrn7029') { res.status(400).json(WRN7029); return; }
 
-        const response = await shippingGuideService.listPaginated(q);
+        const q: ListShippingGuideQuery =
+            ListShippingGuideQuerySchema.parse(req.query);
+
+        const response = await shippingGuideService.listPaginated(q, vendors);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
         logger.error("❌ ShippingGuide.csvExport. ERROR  : No fue posible listar las guias de enbarque. FAILED → data={} cause={}", req.query, e); 

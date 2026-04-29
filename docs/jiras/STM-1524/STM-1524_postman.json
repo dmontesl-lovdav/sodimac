@@ -1,0 +1,146 @@
+{
+  "info": {
+    "name": "STM-1524 — Estado de Cuenta — Filtro Seguridad",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Estado de Cuenta.\nBFF: http://localhost:3000 | Backend: http://localhost:3001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Escenario 1 — Proveedor único (fernando)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_FERNANDO" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=1001 para 'fernando'. Solo estados de cuenta del proveedor 1001."
+      }
+    },
+    {
+      "name": "Escenario 2 — Múltiples proveedores (jose)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_JOSE" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=1001,1002 para 'jose'. Estados del proveedor 1001 ó 1002 (OR lógico)."
+      }
+    },
+    {
+      "name": "Escenario 3 — Acceso total -1 (ivan)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción, devuelve todos los estados."
+      }
+    },
+    {
+      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-key", "value": "USR_ANA" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "'ana' sin ATR001. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+      }
+    },
+    {
+      "name": "Escenario 5 — Filtro en detalle por UUID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-vendors", "value": "1001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/account-statement/REEMPLAZAR-UUID-AQUI",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "account-statement", "REEMPLAZAR-UUID-AQUI"]
+        },
+        "description": "Si el estado pertenece a otro proveedor, retorna 404. Si es del 1001, retorna 200."
+      }
+    },
+    {
+      "name": "[Directo] Proveedor 1001",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-vendors", "value": "1001" }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "Prueba directa al backend."
+      }
+    },
+    {
+      "name": "[Directo] Sin atributos → WRN7029",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-user-vendors", "value": "" }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/account-statement?year=2026",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "account-statement"],
+          "query": [
+            { "key": "year", "value": "2026" }
+          ]
+        },
+        "description": "x-user-vendors vacío → HTTP 400 WRN7029."
+      }
+    }
+  ]
+}

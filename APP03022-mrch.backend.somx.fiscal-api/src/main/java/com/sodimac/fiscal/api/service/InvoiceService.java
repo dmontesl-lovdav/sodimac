@@ -95,6 +95,8 @@ public interface InvoiceService {
      */
     Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest);
 
+    Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors);
+
     // ========== DESCARGA MASIVA (STM-396) ==========
 
     /**

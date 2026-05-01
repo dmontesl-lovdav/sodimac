@@ -1,0 +1,97 @@
+StatusTrainDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    optionId:
+      type: integer
+      format: int32
+    sourceStatus:
+      type: integer
+      format: int32
+    targetStatus:
+      type: integer
+      format: int32
+    createdBy:
+      type: integer
+      format: int64
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: integer
+      format: int64
+    updatedAt:
+      type: string
+      format: date-time
+
+StatusTrainCreateDto:
+  type: object
+  required:
+    - optionId
+    - sourceStatus
+    - targetStatus
+    - createdBy
+  properties:
+    optionId:
+      type: integer
+      format: int32
+    sourceStatus:
+      type: integer
+      format: int32
+    targetStatus:
+      type: integer
+      format: int32
+    createdBy:
+      type: integer
+      format: int64
+
+StatusTrainUpdateDto:
+  type: object
+  required:
+    - sourceStatus
+    - targetStatus
+    - updatedBy
+  properties:
+    sourceStatus:
+      type: integer
+      format: int32
+    targetStatus:
+      type: integer
+      format: int32
+    updatedBy:
+      type: integer
+      format: int64
+
+StatusTrainValidationResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    valid:
+      type: boolean
+    code:
+      type: string
+    message:
+      type: string
+    data:
+      $ref: "#/StatusTrainDto"
+
+StatusTrainListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    code:
+      type: string
+    message:
+      type: string
+    count:
+      type: integer
+      format: int32
+    data:
+      type: array
+      items:
+        $ref: "#/StatusTrainDto"
+

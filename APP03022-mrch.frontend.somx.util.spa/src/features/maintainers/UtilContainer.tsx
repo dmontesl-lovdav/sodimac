@@ -39,7 +39,6 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
             description: 'Consulta y administra los catálogos disponibles del sistema.',
             link: '/util/catalogos',
             icon: iconSupport,
-            disabled: true,
         },
         {
             title: 'Auditoría',
@@ -47,6 +46,12 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
             link: '/util/auditoria',
             icon: iconAudit,
             disabled: true,
+        },
+        {
+            title: 'Seguridad',
+            description: 'Consulta y gestiona la seguridad del sistema.',
+            link: '/seguridad',
+            icon: iconSetting
         },
         {
             title: 'Estado de conexión',

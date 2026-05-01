@@ -23,7 +23,7 @@ spec:
       - image: foo/bar
         name: ${PROJECT_NAME}
         ports:
-        - containerPort: 8080
+        - containerPort: 8082
           name: http
           protocol: TCP
         securityContext:
@@ -36,7 +36,7 @@ spec:
         startupProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8082
             scheme: HTTP
           failureThreshold: 60
           periodSeconds: 5
@@ -45,7 +45,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8082
             scheme: HTTP
           failureThreshold: 3
           periodSeconds: 10
@@ -54,7 +54,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8082
             scheme: HTTP
           failureThreshold: 3
           periodSeconds: 10

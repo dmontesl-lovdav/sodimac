@@ -18,7 +18,11 @@
       "@services/*": ["services/*"],
       "@utils/*": ["utils/*"],
       "@entities/*": ["entities/*"],
-      "@repositories/*": ["repositories/*"]
+      "@repositories/*": ["repositories/*"],
+      "@mappers/*": ["mappers/*"],
+      "@dto/*": ["dto/*"],
+      "@exceptions/*": ["exceptions/*"],
+      "@enums/*": ["enums/*"]
     },
     "types": ["node"],
     "sourceMap": true,

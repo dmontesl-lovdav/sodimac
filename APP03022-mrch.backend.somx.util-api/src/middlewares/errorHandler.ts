@@ -1,15 +1,15 @@
-// src/middlewares/errorHandler.ts
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { QueryFailedError } from 'typeorm';
 import { UtilsException } from '../exceptions/UtilsException.js';
+import { GenericException } from '../exceptions/GenericException.js';
+import { ConflictException } from '../exceptions/ConflictException.js';
 
 export interface HttpError extends Error {
     status?: number;
     code?: string;
 }
 
-/* --------------- helpers (type guards) --------------- */
 function hasStatus(e: unknown): e is { status: number; message?: string } {
     return (
         typeof e === 'object' &&
@@ -44,7 +44,6 @@ function pickCode(e: unknown): string | undefined {
     return typeof r.code === 'string' ? r.code : undefined;
 }
 
-/* ----------------- middleware ----------------- */
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
     void _next;
 
@@ -55,7 +54,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     let code: string | undefined;
     let details: unknown;
 
-    // 0) UtilsException (excepcion personalizada del sistema)
     if (err instanceof UtilsException) {
         status = err.httpStatus;
         message = err.message;
@@ -64,12 +62,23 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
             details = { additionalInfo: err.additionalInfo };
         }
     }
-    // 1) HttpError propio (throw { status, message })
+
+    else if (err instanceof GenericException) {
+        status = err.code;
+        message = err.message;
+    }
+
+    else if (err instanceof ConflictException) {
+        status = 409;
+        message = err.message;
+        code = err.errorType;
+    }
+
     else if (hasStatus(err)) {
         status = err.status;
         message = err.message ?? message;
     }
-    // 2) Zod (usa `issues`)
+
     else if (err instanceof ZodError) {
         status = 400;
         message = 'Validation failed';
@@ -79,7 +88,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
             message: i.message,
         }));
     }
-    // 3) SQL / TypeORM
+
     else if (err instanceof QueryFailedError) {
         status = 400;
         message = 'Database query failed';
@@ -88,17 +97,17 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
             driver: pickDriverDetail(err) ?? err.message,
         };
     }
-    // 4) JSON malformado (body-parser)
+
     else if (isJsonParseError(err)) {
         status = 400;
         message = 'Invalid JSON in request body';
     }
-    // 5) Red/conexion
+
     else if (pickCode(err) === 'ECONNREFUSED' || pickCode(err) === 'ETIMEDOUT') {
         status = 503;
         message = 'Service temporarily unavailable';
     }
-    // 6) Fallback
+
     else if (typeof err === 'object' && err !== null && 'message' in err) {
         const r = err as Record<string, unknown>;
         if (typeof r.message === 'string') message = r.message;
@@ -119,3 +128,4 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
         details,
     });
 }
+

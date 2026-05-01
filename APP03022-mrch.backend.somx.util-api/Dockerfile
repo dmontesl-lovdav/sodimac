@@ -5,5 +5,5 @@ COPY package.json ./
 # Bundle app source
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8082
 ENTRYPOINT ["npm", "run", "start"]

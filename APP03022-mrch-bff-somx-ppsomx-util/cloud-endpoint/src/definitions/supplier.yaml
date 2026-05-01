@@ -1,0 +1,205 @@
+SupplierTypeDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    code:
+      type: string
+    description:
+      type: string
+
+PaymentConditionDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    conditionName:
+      type: string
+    days:
+      type: integer
+      format: int32
+
+SupplierDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    supplierNumber:
+      type: string
+    rfc:
+      type: string
+    businessName:
+      type: string
+    supplierType:
+      $ref: "#/SupplierTypeDto"
+    logo:
+      type: string
+    paymentCondition:
+      $ref: "#/PaymentConditionDto"
+    status:
+      type: integer
+      format: int32
+
+SupplierCreateDto:
+  type: object
+  required:
+    - supplierNumber
+    - rfc
+    - businessName
+  properties:
+    supplierNumber:
+      type: string
+      example: PROV001
+    rfc:
+      type: string
+      example: ABC123456789
+    businessName:
+      type: string
+    supplierTypeId:
+      type: integer
+      format: int32
+    logo:
+      type: string
+    paymentConditionId:
+      type: integer
+      format: int32
+
+SupplierUpdateDto:
+  type: object
+  properties:
+    rfc:
+      type: string
+    businessName:
+      type: string
+    supplierTypeId:
+      type: integer
+      format: int32
+    logo:
+      type: string
+    paymentConditionId:
+      type: integer
+      format: int32
+    status:
+      type: integer
+      format: int32
+
+SupplierBlockInfoDto:
+  type: object
+  properties:
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    blockReason:
+      type: string
+
+SupplierFilterDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    supplierNumber:
+      type: string
+    rfc:
+      type: string
+    businessName:
+      type: string
+    supplierType:
+      $ref: "#/SupplierTypeDto"
+    paymentCondition:
+      $ref: "#/PaymentConditionDto"
+    status:
+      type: integer
+      format: int32
+    blocked:
+      type: boolean
+    blockInfo:
+      $ref: "#/SupplierBlockInfoDto"
+
+SupplierBlockDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    supplierNumber:
+      type: string
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    blockReason:
+      type: string
+    status:
+      type: integer
+      format: int32
+    currentlyBlocked:
+      type: boolean
+    createdAt:
+      type: string
+      format: date-time
+    createdBy:
+      type: string
+    updatedAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: string
+
+SupplierBlockResponseDto:
+  type: object
+  properties:
+    message:
+      type: string
+    data:
+      $ref: "#/SupplierBlockDto"
+
+SupplierBlockCreateDto:
+  type: object
+  required:
+    - supplierNumber
+    - validFrom
+    - validTo
+  properties:
+    supplierNumber:
+      type: string
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    blockReason:
+      type: string
+
+SupplierBlockUpdateDto:
+  type: object
+  properties:
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    blockReason:
+      type: string
+    status:
+      type: integer
+      format: int32
+
+IsBlockedResponse:
+  type: object
+  properties:
+    supplierNumber:
+      type: string
+    blocked:
+      type: boolean
+

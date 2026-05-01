@@ -1,0 +1,356 @@
+CatalogDetailDto:
+  type: object
+  properties:
+    key:
+      type: string
+      example: EFA001
+    internalStatus:
+      type: integer
+      format: int32
+      example: 1
+    externalKey:
+      type: string
+      example: G01
+    value:
+      type: string
+      example: "0.160000"
+    description:
+      type: string
+      example: Factura creada exitosamente
+    color:
+      type: string
+      example: "#28a745"
+    sortOrder:
+      type: integer
+      format: int32
+      example: 1
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    attributes:
+      type: object
+
+CatalogHeaderDto:
+  type: object
+  properties:
+    code:
+      type: string
+      example: CatEstatusFactura
+    prefix:
+      type: string
+      example: EFA
+    name:
+      type: string
+      example: Estatus de Factura
+    description:
+      type: string
+    module:
+      type: string
+    catalogType:
+      type: string
+      example: SIMPLE
+    details:
+      type: array
+      items:
+        $ref: "#/CatalogDetailDto"
+
+CatalogSimpleDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    code:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    catalogType:
+      type: string
+    status:
+      type: integer
+      format: int32
+
+CatalogResponseDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    code:
+      type: string
+    prefix:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    module:
+      type: string
+    catalogType:
+      type: string
+    status:
+      type: integer
+      format: int32
+    createdBy:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: string
+    updatedAt:
+      type: string
+      format: date-time
+    elementCount:
+      type: integer
+      format: int64
+
+CatalogCreateDto:
+  type: object
+  required:
+    - name
+    - catalogType
+  properties:
+    code:
+      type: string
+      example: CAT_PAISES
+    prefix:
+      type: string
+      example: PAI
+    name:
+      type: string
+    description:
+      type: string
+    catalogType:
+      type: string
+      enum: [PRIMARIO, SECUNDARIO]
+    module:
+      type: string
+
+CatalogUpdateDto:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    catalogType:
+      type: string
+    status:
+      type: integer
+      format: int32
+    module:
+      type: string
+
+CatalogElementDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    catalogId:
+      type: integer
+      format: int32
+    catalogCode:
+      type: string
+    element:
+      type: string
+    value:
+      type: string
+    key:
+      type: string
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    status:
+      type: integer
+      format: int32
+    statusDescription:
+      type: string
+    parentCatalogId:
+      type: integer
+      format: int32
+    parentCatalogName:
+      type: string
+    parentElementId:
+      type: integer
+      format: int32
+    parentElementName:
+      type: string
+    createdBy:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: string
+    updatedAt:
+      type: string
+      format: date-time
+    externalKey:
+      type: string
+    sortOrder:
+      type: integer
+      format: int32
+    attributes:
+      type: object
+
+CatalogElementCreateDto:
+  type: object
+  required:
+    - element
+    - validFrom
+  properties:
+    element:
+      type: string
+    value:
+      type: string
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    parentCatalogId:
+      type: integer
+      format: int32
+    parentElementId:
+      type: integer
+      format: int32
+    externalKey:
+      type: string
+    sortOrder:
+      type: integer
+      format: int32
+    attributes:
+      type: object
+
+CatalogElementUpdateDto:
+  type: object
+  properties:
+    element:
+      type: string
+    value:
+      type: string
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    parentCatalogId:
+      type: integer
+      format: int32
+    parentElementId:
+      type: integer
+      format: int32
+    externalKey:
+      type: string
+    sortOrder:
+      type: integer
+      format: int32
+    attributes:
+      type: object
+    status:
+      type: integer
+      format: int32
+
+CatalogElementStatusDto:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: integer
+      format: int32
+      enum: [0, 1]
+
+CatalogElementPageResponse:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/CatalogElementDto"
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+    total:
+      type: integer
+      format: int64
+    totalPages:
+      type: integer
+      format: int32
+    hasNext:
+      type: boolean
+    hasPrevious:
+      type: boolean
+
+CatalogPageResponse:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/CatalogResponseDto"
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+    total:
+      type: integer
+      format: int64
+    totalPages:
+      type: integer
+      format: int32
+    hasNext:
+      type: boolean
+    hasPrevious:
+      type: boolean
+
+LayoutValidationError:
+  type: object
+  properties:
+    row:
+      type: integer
+      format: int32
+    cell:
+      type: string
+    column:
+      type: string
+    message:
+      type: string
+
+LayoutValidationResponse:
+  type: object
+  properties:
+    isValid:
+      type: boolean
+    errorCount:
+      type: integer
+      format: int32
+    errors:
+      type: array
+      items:
+        $ref: "#/LayoutValidationError"
+    reportAvailable:
+      type: boolean
+    reportId:
+      type: string
+    rowsProcessed:
+      type: integer
+      format: int32
+

@@ -2,6 +2,7 @@ import './GenericButton.css';
 
 export default function GenericButton({
     children,
+    type = 'button',
     variant = 'primary',
     className = '',
     style = {},
@@ -18,6 +19,7 @@ export default function GenericButton({
 
     return (
         <button
+            type={type}
             {...props}
             disabled={disabled}
             style={style}

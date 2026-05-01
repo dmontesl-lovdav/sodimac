@@ -1,17 +1,16 @@
-/*
-Repositorio para almacenar el store local de fiscal, para evitar mezclarlo con el store global de la aplicación.
-*/
-import { configureStore, createSlice } from '@reduxjs/toolkit';
+import { combineReducers, configureStore, Store } from "@reduxjs/toolkit";
+import authSlice from "./slices/authSlice";
+import configSlice from "./slices/configSlice";
 
-const uiSlice = createSlice({
-    name: 'ui',
-    initialState: { greeting: 'Bienvenido al módulo Fiscal', isLoading: false, error: null },
-    reducers: {}
+export const rootReducers = combineReducers({
+    authentication: authSlice,
+    configuration: configSlice,
 });
 
-export const localHomeStore = configureStore({
-    reducer: { ui: uiSlice.reducer, configuration: (state = {}) => state, authentication: (state = { }) => state },
+export type RootState = ReturnType<typeof rootReducers>;
+
+export const localHomeStore: Store<RootState> = configureStore({
+    reducer: rootReducers,
 });
 
-export type RootState = ReturnType<typeof localHomeStore.getState>;
 export type AppDispatch = typeof localHomeStore.dispatch;

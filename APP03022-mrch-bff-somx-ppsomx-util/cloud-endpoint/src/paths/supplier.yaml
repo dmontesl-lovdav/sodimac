@@ -1,0 +1,249 @@
+suppliers:
+  get:
+    tags:
+      - suppliers
+    summary: List suppliers (active by default)
+    operationId: listSuppliers
+    produces:
+      - application/json
+    parameters:
+      - name: status
+        in: query
+        required: false
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List of suppliers
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierDto"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - suppliers
+    summary: Create supplier
+    operationId: createSupplier
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierCreateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierDto"
+      "400":
+        description: Invalid data
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+suppliers-by-id:
+  get:
+    tags:
+      - suppliers
+    summary: Get supplier by ID
+    operationId: getSupplierById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Supplier
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  put:
+    tags:
+      - suppliers
+    summary: Update supplier
+    operationId: updateSupplier
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierUpdateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - suppliers
+    summary: Deactivate supplier
+    operationId: deleteSupplier
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+suppliers-by-number:
+  get:
+    tags:
+      - suppliers
+    summary: Get supplier by number
+    operationId: getSupplierByNumber
+    produces:
+      - application/json
+    parameters:
+      - name: supplierNumber
+        in: path
+        required: true
+        type: string
+    responses:
+      "200":
+        description: Supplier
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+suppliers-by-rfc:
+  get:
+    tags:
+      - suppliers
+    summary: Get supplier by RFC
+    operationId: getSupplierByRfc
+    produces:
+      - application/json
+    parameters:
+      - name: rfc
+        in: path
+        required: true
+        type: string
+    responses:
+      "200":
+        description: Supplier
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+suppliers-types:
+  get:
+    tags:
+      - suppliers
+    summary: List supplier types
+    operationId: listSupplierTypes
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierTypeDto"
+    security:
+      - bearerAuth: []
+
+suppliers-payment-conditions:
+  get:
+    tags:
+      - suppliers
+    summary: List payment conditions
+    operationId: listPaymentConditions
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/PaymentConditionDto"
+    security:
+      - bearerAuth: []
+
+suppliers-filter:
+  get:
+    tags:
+      - suppliers
+    summary: "STM-831: Filter suppliers by type and block status"
+    operationId: filterSuppliers
+    produces:
+      - application/json
+    parameters:
+      - name: tipoProveedor
+        in: query
+        required: true
+        type: integer
+        format: int32
+      - name: estatusBloqueo
+        in: query
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Filtered list
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierFilterDto"
+    security:
+      - bearerAuth: []
+

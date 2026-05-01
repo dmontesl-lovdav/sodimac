@@ -1,4 +1,4 @@
-APP_PORT=8080
+APP_PORT=8082
 NODE_ENV=production
 DATASOURCE_URL=jdbc:postgresql://localhost:5432/b2b_portal?currentSchema=core_utils&useSSL=false
 DATASOURCE_USERNAME=postgres

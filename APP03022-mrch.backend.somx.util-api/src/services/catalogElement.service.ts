@@ -1,0 +1,375 @@
+import { datasource } from '@/config/typeorm-datasource.js';
+import { CatalogHeader } from '@/entities/CatalogHeader.entity.js';
+import { CatalogDetail } from '@/entities/CatalogDetail.entity.js';
+import { DictionaryLang } from '@/entities/DictionaryLang.entity.js';
+import * as headerRepo from '@/repositories/catalogHeader.repo.js';
+import * as detailRepo from '@/repositories/catalogDetail.repo.js';
+import * as dictRepo from '@/repositories/dictionaryLang.repo.js';
+import * as elementMapper from '@/mappers/catalogElement.mapper.js';
+import { GenericException } from '@/exceptions/GenericException.js';
+import type {
+    CatalogElementCreateDto,
+    CatalogElementUpdateDto,
+    CatalogElementDto,
+    CatalogElementPageResponse,
+    CatalogSimpleDto
+} from '@/dto/catalog.dto.js';
+import type { PageOptions } from '@/repositories/catalogDetail.repo.js';
+
+const CATALOG_TYPE_PRIMARIO = 'PRIMARIO';
+const CATALOG_TYPE_HIERARCHICAL = 'HIERARCHICAL';
+const DEFAULT_LANG_ID = 1;
+
+export interface FindElementsParams {
+    catalogId: number;
+    elementId?: number | null;
+    element?: string | null;
+    value?: string | null;
+    parentCatalogId?: number | null;
+    parentElementId?: number | null;
+    status?: number | null;
+    key?: string | null;
+    page: number;
+    pageSize: number;
+    sortBy: string;
+    sortDir: 'ASC' | 'DESC';
+}
+
+export async function findElements(params: FindElementsParams): Promise<CatalogElementPageResponse> {
+    const catalog = await headerRepo.findById(params.catalogId);
+    if (!catalog) {
+        throw new GenericException(404, `Catálogo no encontrado con ID: ${params.catalogId}`);
+    }
+
+    const pageOptions: PageOptions = {
+        page: Math.max(0, params.page - 1),
+        pageSize: params.pageSize,
+        sortBy: params.sortBy,
+        sortDir: params.sortDir
+    };
+
+    const result = await detailRepo.findElementsPaged(
+        {
+            catalogId: params.catalogId,
+            elementId: params.elementId,
+            element: params.element,
+            value: params.value,
+            parentCatalogId: params.parentCatalogId,
+            parentElementId: params.parentElementId,
+            status: params.status,
+            key: params.key
+        },
+        pageOptions
+    );
+
+    const items = await elementMapper.toDtoList(result.items);
+
+    return {
+        items,
+        page: result.page + 1,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasNext: result.page + 1 < result.totalPages,
+        hasPrevious: result.page > 0
+    };
+}
+
+export async function findElementById(catalogId: number, elementId: number): Promise<CatalogElementDto | null> {
+    const detail = await detailRepo.findById(elementId);
+    if (!detail || detail.header?.id !== catalogId) return null;
+    return elementMapper.toDto(detail);
+}
+
+function validateDates(validFrom?: string | null, validTo?: string | null): void {
+    if (!validFrom) return;
+
+    if (validTo) {
+        const from = new Date(validFrom);
+        const to = new Date(validTo);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        if (to < from) {
+            throw new GenericException(400, 'La fecha de fin de vigencia no puede ser anterior a la fecha de inicio.');
+        }
+
+        if (to <= now) {
+            throw new GenericException(400, 'La fecha de fin de vigencia debe ser mayor a la fecha actual.');
+        }
+    }
+}
+
+async function validateParentRelation(
+    catalog: CatalogHeader,
+    parentCatalogId: number | null | undefined,
+    parentElementId: number | null | undefined
+): Promise<void> {
+    const isPrimary =
+        catalog.catalogType?.toUpperCase() === CATALOG_TYPE_PRIMARIO ||
+        catalog.catalogType?.toUpperCase() === CATALOG_TYPE_HIERARCHICAL;
+
+    if (isPrimary) {
+        if (parentCatalogId != null || parentElementId != null) {
+            throw new GenericException(400, 'Los elementos de catálogos primarios no pueden tener relación padre.');
+        }
+        return;
+    }
+
+    const hasCatalog = parentCatalogId != null;
+    const hasElement = parentElementId != null;
+    if (hasCatalog !== hasElement) {
+        throw new GenericException(
+            400,
+            'Debe proporcionar tanto el catálogo padre como el elemento padre, o dejar ambos vacíos'
+        );
+    }
+
+    if (parentCatalogId == null) return;
+
+    const parentElement = await detailRepo.findById(parentElementId!);
+    if (!parentElement) {
+        throw new GenericException(400, 'El elemento padre seleccionado no existe en el sistema');
+    }
+
+    const parentCatalog = await headerRepo.findById(parentCatalogId);
+    if (!parentCatalog) {
+        throw new GenericException(400, 'El catálogo padre debe ser de tipo primario o jerárquico');
+    }
+
+    const pType = parentCatalog.catalogType?.toUpperCase();
+    if (pType !== CATALOG_TYPE_PRIMARIO && pType !== CATALOG_TYPE_HIERARCHICAL) {
+        throw new GenericException(400, 'El catálogo padre debe ser de tipo primario o jerárquico');
+    }
+
+    if (parentElement.header?.id !== parentCatalogId) {
+        throw new GenericException(400, 'El elemento padre no pertenece al catálogo padre seleccionado');
+    }
+}
+
+async function getElementNameFromDict(detail: CatalogDetail): Promise<string> {
+    if (detail.dictId != null && detail.dictId > 0) {
+        const dict = await dictRepo.findByDictIdAndLangId(detail.dictId, DEFAULT_LANG_ID);
+        if (dict) return dict.description ?? detail.key;
+    }
+    return detail.key;
+}
+
+async function checkDuplicateElementName(
+    catalogId: number,
+    elementName: string,
+    excludeId: number | null
+): Promise<void> {
+    const existing = await detailRepo.findByHeaderIdOrderBySortOrder(catalogId);
+    for (const el of existing) {
+        if (excludeId != null && el.id === excludeId) continue;
+        const existingName = await getElementNameFromDict(el);
+        if (existingName && existingName.trim().toLowerCase() === elementName.trim().toLowerCase()) {
+            throw new GenericException(400, 'Ya existe un elemento con este nombre en el catálogo.');
+        }
+    }
+}
+
+async function generateNextKey(catalog: CatalogHeader): Promise<string> {
+    const prefix = catalog.prefix ?? 'EL';
+    const maxKey = await detailRepo.findMaxKeyByHeaderId(catalog.id);
+
+    let nextNum = 1;
+    if (maxKey && maxKey.startsWith(prefix)) {
+        const numPart = maxKey.substring(prefix.length);
+        const parsed = Number.parseInt(numPart, 10);
+        if (!Number.isNaN(parsed)) {
+            nextNum = parsed + 1;
+        } else {
+            const count = await detailRepo.countByHeaderId(catalog.id);
+            nextNum = count + 1;
+        }
+    } else if (maxKey) {
+        const count = await detailRepo.countByHeaderId(catalog.id);
+        nextNum = count + 1;
+    }
+
+    return `${prefix}${String(nextNum).padStart(4, '0')}`;
+}
+
+async function createDictionaryEntry(elementName: string): Promise<number> {
+    const dictRepoInstance = datasource.getRepository(DictionaryLang);
+
+    const entry = dictRepoInstance.create({
+        dictId: 0,
+        langId: DEFAULT_LANG_ID,
+        description: elementName
+    });
+    let saved = await dictRepoInstance.save(entry);
+    saved.dictId = saved.id;
+    saved = await dictRepoInstance.save(saved);
+    return saved.id;
+}
+
+async function updateDictionaryEntry(dictId: number | null | undefined, newName: string): Promise<void> {
+    if (dictId == null || dictId <= 0) return;
+    const entry = await dictRepo.findByDictIdAndLangId(dictId, DEFAULT_LANG_ID);
+    if (!entry) return;
+    entry.description = newName;
+    await dictRepo.save(entry);
+}
+
+export async function createElement(
+    catalogId: number,
+    dto: CatalogElementCreateDto,
+    userId: string
+): Promise<CatalogElementDto> {
+    const catalog = await headerRepo.findById(catalogId);
+    if (!catalog) {
+        throw new GenericException(404, `Catálogo no encontrado con ID: ${catalogId}`);
+    }
+
+    await checkDuplicateElementName(catalogId, dto.element, null);
+    validateDates(dto.validFrom, dto.validTo);
+
+    let parentCatId = dto.parentCatalogId ?? null;
+    const parentElemId = dto.parentElementId ?? null;
+    if (parentElemId != null && parentCatId == null) {
+        const parent = await detailRepo.findById(parentElemId);
+        if (parent?.header) {
+            parentCatId = parent.header.id;
+        }
+    }
+
+    await validateParentRelation(catalog, parentCatId, parentElemId);
+
+    const generatedKey = await generateNextKey(catalog);
+    const dictId = await createDictionaryEntry(dto.element);
+
+    const detailRepoInstance = datasource.getRepository(CatalogDetail);
+    const detail = detailRepoInstance.create({
+        header: catalog,
+        headerId: catalog.id,
+        key: generatedKey,
+        value: dto.value ?? null,
+        validFrom: dto.validFrom ?? null,
+        validTo: dto.validTo ?? null,
+        parentCatalogId: parentCatId,
+        parentElementId: parentElemId,
+        externalKey: dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null,
+        sortOrder: dto.sortOrder ?? 0,
+        attributes: dto.attributes ?? null,
+        status: CatalogDetail.STATUS_ACTIVE,
+        dictId,
+        createdBy: userId
+    });
+
+    const saved = await detailRepoInstance.save(detail);
+
+    if (catalog.status === 0) {
+        catalog.status = 1;
+        await headerRepo.save(catalog);
+    }
+
+    const result = await elementMapper.toDto(saved);
+    if (!result) {
+        throw new GenericException(500, 'Error creando elemento');
+    }
+    return result;
+}
+
+export async function updateElement(
+    catalogId: number,
+    elementId: number,
+    dto: CatalogElementUpdateDto,
+    userId: string
+): Promise<CatalogElementDto> {
+    const catalog = await headerRepo.findById(catalogId);
+    if (!catalog) {
+        throw new GenericException(404, `Catálogo no encontrado con ID: ${catalogId}`);
+    }
+
+    const detail = await detailRepo.findById(elementId);
+    if (!detail || detail.header?.id !== catalogId) {
+        throw new GenericException(404, `Elemento no encontrado con ID: ${elementId}`);
+    }
+
+    if (dto.element && dto.element.trim() !== '') {
+        await checkDuplicateElementName(catalogId, dto.element, elementId);
+        await updateDictionaryEntry(detail.dictId, dto.element);
+    }
+
+    if (dto.value != null) detail.value = dto.value;
+    if (dto.validFrom != null) detail.validFrom = dto.validFrom;
+    if (dto.validTo != null) detail.validTo = dto.validTo;
+
+    validateDates(detail.validFrom, detail.validTo);
+
+    const parentCatId = dto.parentCatalogId;
+    const parentElemId = dto.parentElementId;
+    const parentChanged =
+        (parentCatId != null && parentCatId !== detail.parentCatalogId) ||
+        (parentElemId != null && parentElemId !== detail.parentElementId) ||
+        (parentCatId == null && detail.parentCatalogId != null) ||
+        (parentElemId == null && detail.parentElementId != null);
+
+    if (parentChanged) {
+        if (parentCatId != null || parentElemId != null) {
+            await validateParentRelation(catalog, parentCatId, parentElemId);
+        }
+        detail.parentCatalogId = parentCatId ?? null;
+        detail.parentElementId = parentElemId ?? null;
+    }
+
+    if (dto.sortOrder != null) detail.sortOrder = dto.sortOrder;
+    if (dto.attributes != null) detail.attributes = dto.attributes;
+    if (dto.externalKey !== undefined) {
+        detail.externalKey = dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null;
+    }
+    if (dto.status != null) detail.status = dto.status;
+
+    detail.updatedBy = userId;
+    detail.updatedAt = new Date();
+
+    const saved = await detailRepo.save(detail);
+    const result = await elementMapper.toDto(saved);
+    if (!result) throw new GenericException(500, 'Error actualizando elemento');
+    return result;
+}
+
+export async function changeStatus(
+    elementId: number,
+    newStatus: number,
+    userId: string
+): Promise<CatalogElementDto> {
+    const detail = await detailRepo.findById(elementId);
+    if (!detail) {
+        throw new GenericException(404, `Elemento no encontrado con ID: ${elementId}`);
+    }
+
+    if (newStatus !== 0 && newStatus !== 1) {
+        throw new GenericException(400, 'Estatus inválido. Use 0 (Inactivo) o 1 (Activo).');
+    }
+
+    detail.status = newStatus;
+    detail.updatedBy = userId;
+    detail.updatedAt = new Date();
+
+    const saved = await detailRepo.save(detail);
+    const result = await elementMapper.toDto(saved);
+    if (!result) throw new GenericException(500, 'Error cambiando estatus');
+    return result;
+}
+
+export async function findPrimaryCatalogs(): Promise<CatalogSimpleDto[]> {
+    const primaries = await headerRepo.findByCatalogTypeAndStatus(CATALOG_TYPE_PRIMARIO, 1);
+    const hierarchicals = await headerRepo.findByCatalogTypeAndStatus(CATALOG_TYPE_HIERARCHICAL, 1);
+    return elementMapper.toSimpleDtoList([...primaries, ...hierarchicals]);
+}
+
+export async function findActiveElements(catalogId: number): Promise<CatalogElementDto[]> {
+    const elements = await detailRepo.findByHeaderIdAndStatus(catalogId, CatalogDetail.STATUS_ACTIVE);
+    return elementMapper.toDtoList(elements);
+}
+
+export async function findCatalogById(catalogId: number): Promise<CatalogSimpleDto | null> {
+    const header = await headerRepo.findById(catalogId);
+    if (!header) return null;
+    return elementMapper.toSimpleDto(header);
+}
+

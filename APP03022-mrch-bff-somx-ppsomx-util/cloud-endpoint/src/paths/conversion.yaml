@@ -1,0 +1,243 @@
+conversions:
+  get:
+    tags:
+      - conversions
+    summary: Search conversions with filters and pagination
+    operationId: searchConversions
+    produces:
+      - application/json
+    parameters:
+      - name: idElementoOrigen
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: idElemento
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: elemento
+        in: query
+        required: false
+        type: string
+      - name: valorElemento
+        in: query
+        required: false
+        type: string
+      - name: catalogoOrigen
+        in: query
+        required: false
+        type: string
+      - name: estatus
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: page
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+      - name: pageSize
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 10
+      - name: sortBy
+        in: query
+        required: false
+        type: string
+        default: createdAt
+      - name: sortDir
+        in: query
+        required: false
+        type: string
+        enum: [asc, desc]
+        default: desc
+    responses:
+      "200":
+        description: Paginated result
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionPageResponse"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - conversions
+    summary: Create conversion
+    operationId: createConversion
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionCreateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionDto"
+      "400":
+        description: Invalid data
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Duplicated conversion
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - conversions
+    summary: Delete multiple conversions (batch)
+    operationId: deleteMultipleConversions
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionBatchDeleteDto"
+    responses:
+      "204":
+        description: Deleted
+    security:
+      - bearerAuth: []
+
+conversions-by-id:
+  get:
+    tags:
+      - conversions
+    summary: Get conversion by ID
+    operationId: getConversionById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Conversion
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  put:
+    tags:
+      - conversions
+    summary: Update conversion
+    operationId: updateConversion
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionUpdateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionDto"
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - conversions
+    summary: Delete conversion
+    operationId: deleteConversion
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+conversions-principal:
+  patch:
+    tags:
+      - conversions
+    summary: Set conversion as principal
+    operationId: setConversionPrincipal
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionPrincipalDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/conversion.yaml#/ConversionDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+

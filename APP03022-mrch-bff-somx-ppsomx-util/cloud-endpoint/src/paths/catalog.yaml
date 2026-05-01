@@ -1,0 +1,296 @@
+catalog-root:
+  get:
+    tags:
+      - catalog
+    summary: Get all catalogs
+    operationId: getAllCatalogs
+    produces:
+      - application/json
+    parameters:
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        enum: [1, 2, 3]
+        default: 1
+        description: Language (1=ES, 2=EN, 3=PT)
+    responses:
+      "200":
+        description: List of catalogs
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/catalog.yaml#/CatalogHeaderDto"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-by-module:
+  get:
+    tags:
+      - catalog
+    summary: Get catalogs by module
+    operationId: getCatalogsByModule
+    produces:
+      - application/json
+    parameters:
+      - name: module
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: List of catalogs
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/catalog.yaml#/CatalogHeaderDto"
+    security:
+      - bearerAuth: []
+
+catalog-by-code:
+  get:
+    tags:
+      - catalog
+    summary: Get catalog by code
+    operationId: getCatalogByCode
+    produces:
+      - application/json
+    parameters:
+      - name: code
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: Catalog with details
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogHeaderDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-details:
+  get:
+    tags:
+      - catalog
+    summary: Get catalog details (optionally filtered by dependency)
+    operationId: getCatalogDetails
+    produces:
+      - application/json
+    parameters:
+      - name: code
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+      - name: dependsOn
+        in: query
+        required: false
+        type: string
+        description: "Filter: CATALOG_CODE:EXTERNAL_KEY"
+    responses:
+      "200":
+        description: List of details
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/catalog.yaml#/CatalogDetailDto"
+      "400":
+        description: Invalid dependsOn format
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-detail-by-key:
+  get:
+    tags:
+      - catalog
+    summary: Get catalog detail by code and key
+    operationId: getCatalogDetailByKey
+    produces:
+      - application/json
+    parameters:
+      - name: code
+        in: path
+        required: true
+        type: string
+      - name: key
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: Detail
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-message:
+  get:
+    tags:
+      - catalog
+    summary: Get message by key
+    operationId: getMessageByKey
+    produces:
+      - application/json
+    parameters:
+      - name: key
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: Message
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-message-format:
+  get:
+    tags:
+      - catalog
+    summary: Get message formatted with placeholders
+    operationId: getMessageByKeyFormatted
+    produces:
+      - application/json
+    parameters:
+      - name: key
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+      - name: params
+        in: query
+        required: false
+        type: array
+        collectionFormat: csv
+        items:
+          type: string
+    responses:
+      "200":
+        description: Formatted message
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogDetailDto"
+      "400":
+        description: Incorrect param count
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+catalog-by-id:
+  get:
+    tags:
+      - catalog
+    summary: Get catalog by ID
+    operationId: getCatalogByIdReadOnly
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: Catalog
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogHeaderDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+catalog-by-prefix:
+  get:
+    tags:
+      - catalog
+    summary: Get catalog by prefix
+    operationId: getCatalogByPrefix
+    produces:
+      - application/json
+    parameters:
+      - name: prefix
+        in: path
+        required: true
+        type: string
+      - name: lang
+        in: query
+        required: false
+        type: integer
+        format: int32
+        default: 1
+    responses:
+      "200":
+        description: Catalog
+        schema:
+          $ref: "../definitions/catalog.yaml#/CatalogHeaderDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+

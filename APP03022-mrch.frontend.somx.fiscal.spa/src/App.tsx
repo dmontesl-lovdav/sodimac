@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import singleSpaReact from 'single-spa-react';
 
@@ -12,6 +13,30 @@ import ComplementRelatedInvoices from './features/complement/ComplementRelatedIn
 import { Layout } from './shared/components/container/Layout';
 import './App.css';
 import PublishCreditNote from './features/creditNote/PublishCreditNote';
+
+import { localHomeStore } from './store/localStore';
+import {
+    handleSubscribeToGlobalAuthenticationChange,
+    handleSubscribeToGlobalConfigurationChange,
+} from './services/globalStateService';
+
+const APP_DEV = String(process.env.APP_DEV).toLowerCase() === 'true';
+
+function GlobalStateBridge() {
+    useEffect(() => {
+        if (APP_DEV) return;
+
+        const unsubscribeAuth = handleSubscribeToGlobalAuthenticationChange();
+        const unsubscribeConfig = handleSubscribeToGlobalConfigurationChange();
+
+        return () => {
+            if (typeof unsubscribeAuth === 'function') unsubscribeAuth();
+            if (typeof unsubscribeConfig === 'function') unsubscribeConfig();
+        };
+    }, []);
+
+    return null;
+}
 
 function AppRoutes() {
     return (
@@ -33,9 +58,12 @@ function AppRoutes() {
 
 const App: React.FC = () => {
     return (
-        <HashRouter>
-            <AppRoutes />
-        </HashRouter>
+        <Provider store={localHomeStore}>
+            <HashRouter>
+                {!APP_DEV && <GlobalStateBridge />}
+                <AppRoutes />
+            </HashRouter>
+        </Provider>
     );
 };
 

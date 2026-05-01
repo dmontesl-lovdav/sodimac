@@ -112,6 +112,7 @@ module.exports = () => ({
       },
       exposes: {
         './App': './src/App.tsx',
+        './Card': './src/Card.tsx',
       },
       shared: {
         react: {

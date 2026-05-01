@@ -1,0 +1,121 @@
+ConversionDto:
+  type: object
+  properties:
+    idConversion:
+      type: integer
+      format: int32
+    idElementoOrigen:
+      type: integer
+      format: int32
+    elementoOrigen:
+      type: string
+    valorElementoOrigen:
+      type: string
+    estatusElementoOrigen:
+      type: string
+    catalogoElementoOrigen:
+      type: string
+    idElemento:
+      type: integer
+      format: int32
+    elemento:
+      type: string
+    valor:
+      type: string
+    catalogoOrigen:
+      type: string
+    fechaInicioVigencia:
+      type: string
+      format: date
+    fechaFinVigencia:
+      type: string
+      format: date
+    estatus:
+      type: string
+    esPrincipal:
+      type: boolean
+    idUsuarioRegistro:
+      type: string
+    fechaRegistro:
+      type: string
+      format: date-time
+    idUsuarioActualizacion:
+      type: string
+    fechaActualizacion:
+      type: string
+      format: date-time
+
+ConversionCreateDto:
+  type: object
+  required:
+    - sourceElementId
+    - targetElementId
+  properties:
+    sourceElementId:
+      type: integer
+      format: int32
+    targetElementId:
+      type: integer
+      format: int32
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    isPrincipal:
+      type: boolean
+
+ConversionUpdateDto:
+  type: object
+  required:
+    - targetElementId
+  properties:
+    targetElementId:
+      type: integer
+      format: int32
+    validFrom:
+      type: string
+      format: date
+    validTo:
+      type: string
+      format: date
+    status:
+      type: integer
+      format: int32
+
+ConversionPageResponse:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/ConversionDto"
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+    total:
+      type: integer
+      format: int64
+    totalPages:
+      type: integer
+      format: int32
+
+ConversionPrincipalDto:
+  type: object
+  properties:
+    esPrincipal:
+      type: boolean
+
+ConversionBatchDeleteDto:
+  type: object
+  properties:
+    ids:
+      type: array
+      items:
+        type: integer
+        format: int32
+

@@ -1,0 +1,175 @@
+status-train:
+  post:
+    tags:
+      - status-train
+    summary: Create transition rule
+    operationId: createStatusTrain
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainCreateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainDto"
+      "400":
+        description: Invalid data
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+status-train-validate:
+  get:
+    tags:
+      - status-train
+    summary: Validate status transition
+    operationId: validateStatusTransition
+    produces:
+      - application/json
+    parameters:
+      - name: optionId
+        in: query
+        required: true
+        type: integer
+        format: int32
+      - name: sourceStatus
+        in: query
+        required: true
+        type: integer
+        format: int32
+      - name: targetStatus
+        in: query
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Valid transition
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainValidationResponse"
+      "400":
+        description: Invalid transition
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainValidationResponse"
+    security:
+      - bearerAuth: []
+
+status-train-allowed-destinations:
+  get:
+    tags:
+      - status-train
+    summary: Get allowed status destinations
+    operationId: getAllowedDestinations
+    produces:
+      - application/json
+    parameters:
+      - name: optionId
+        in: query
+        required: true
+        type: integer
+        format: int32
+      - name: sourceStatus
+        in: query
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List of allowed destinations
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainListResponse"
+      "400":
+        description: Source status not cataloged
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainListResponse"
+    security:
+      - bearerAuth: []
+
+status-train-by-id:
+  get:
+    tags:
+      - status-train
+    summary: Get transition rule by ID
+    operationId: getStatusTrainById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Rule
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  put:
+    tags:
+      - status-train
+    summary: Update transition rule
+    operationId: updateStatusTrain
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: optionId
+        in: query
+        required: true
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainUpdateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/status-train.yaml#/StatusTrainDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - status-train
+    summary: Delete transition rule
+    operationId: deleteStatusTrain
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+

@@ -1,0 +1,99 @@
+.dual-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dual-header h2 {
+  margin: 0;
+}
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  gap: 10px;
+}
+
+.dual-column {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+}
+
+.dual-column > header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.dual-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dual-search label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: #334155;
+}
+
+.dual-items {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dual-item {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dual-item--draggable {
+  cursor: grab;
+  user-select: none;
+}
+
+.dual-item--draggable:active {
+  cursor: grabbing;
+}
+
+.dual-item--draggable input[type='checkbox'] {
+  cursor: pointer;
+}
+
+.dual-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.dual-item small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dual-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+

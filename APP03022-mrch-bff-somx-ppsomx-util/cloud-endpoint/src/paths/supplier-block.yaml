@@ -1,0 +1,233 @@
+supplier-blocks:
+  get:
+    tags:
+      - supplier-blocks
+    summary: List supplier blocks
+    operationId: listSupplierBlocks
+    produces:
+      - application/json
+    parameters:
+      - name: status
+        in: query
+        required: false
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierBlockDto"
+    security:
+      - bearerAuth: []
+
+  post:
+    tags:
+      - supplier-blocks
+    summary: Create block
+    operationId: createSupplierBlock
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierBlockCreateDto"
+    responses:
+      "201":
+        description: Created
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierBlockResponseDto"
+      "400":
+        description: Invalid data / overlapping block
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+supplier-blocks-by-id:
+  get:
+    tags:
+      - supplier-blocks
+    summary: Get block by ID
+    operationId: getSupplierBlockById
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Block
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierBlockDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  put:
+    tags:
+      - supplier-blocks
+    summary: Update block
+    operationId: updateSupplierBlock
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierBlockUpdateDto"
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/supplier.yaml#/SupplierBlockResponseDto"
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+  delete:
+    tags:
+      - supplier-blocks
+    summary: Deactivate block
+    operationId: deleteSupplierBlock
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+        format: int32
+      - name: X-User-Id
+        in: header
+        required: false
+        type: string
+    responses:
+      "204":
+        description: Deleted
+      "404":
+        description: Not found
+    security:
+      - bearerAuth: []
+
+supplier-blocks-by-supplier:
+  get:
+    tags:
+      - supplier-blocks
+    summary: Blocks for supplier
+    operationId: listBlocksBySupplier
+    produces:
+      - application/json
+    parameters:
+      - name: supplierNumber
+        in: path
+        required: true
+        type: string
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierBlockDto"
+    security:
+      - bearerAuth: []
+
+supplier-blocks-by-supplier-active:
+  get:
+    tags:
+      - supplier-blocks
+    summary: Currently active blocks for supplier
+    operationId: listCurrentActiveBlocks
+    produces:
+      - application/json
+    parameters:
+      - name: supplierNumber
+        in: path
+        required: true
+        type: string
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierBlockDto"
+    security:
+      - bearerAuth: []
+
+supplier-blocks-is-blocked:
+  get:
+    tags:
+      - supplier-blocks
+    summary: Check if supplier is currently blocked
+    operationId: isSupplierBlocked
+    produces:
+      - application/json
+    parameters:
+      - name: supplierNumber
+        in: path
+        required: true
+        type: string
+    responses:
+      "200":
+        description: Block state
+        schema:
+          $ref: "../definitions/supplier.yaml#/IsBlockedResponse"
+    security:
+      - bearerAuth: []
+
+supplier-blocks-at-date:
+  get:
+    tags:
+      - supplier-blocks
+    summary: Blocks for supplier at a specific date
+    operationId: listBlocksAtDate
+    produces:
+      - application/json
+    parameters:
+      - name: supplierNumber
+        in: path
+        required: true
+        type: string
+      - name: date
+        in: query
+        required: true
+        type: string
+        format: date
+    responses:
+      "200":
+        description: List
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/supplier.yaml#/SupplierBlockDto"
+    security:
+      - bearerAuth: []
+

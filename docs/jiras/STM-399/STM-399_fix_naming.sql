@@ -12,7 +12,7 @@
 -- Cambios:
 --   1. Renombrar tabla finanzas_payment_headers → payment_header
 --   2. Renombrar columnas en español → ingles
---   3. FK se mantiene nullable (hay 3 registros sin cabecera en prod)
+--   3. Hacer FK NOT NULL (no hay datos en produccion)
 --   4. Renombrar constraints e indices obsoletos
 -- =============================================================
 
@@ -64,8 +64,9 @@ ALTER TABLE tenant_finance.payment_detail
 ALTER TABLE tenant_finance.payment_detail
     RENAME COLUMN id_referencia_pago TO payment_header_uuid;
 
--- NOTA: FK se mantiene nullable porque hay 3 registros existentes
--- sin cabecera asignada. Se hara NOT NULL cuando la app los vincule.
+-- Hacer NOT NULL (no hay datos en produccion)
+ALTER TABLE tenant_finance.payment_detail
+    ALTER COLUMN payment_header_uuid SET NOT NULL;
 
 -- Recrear FK con nombre correcto
 ALTER TABLE tenant_finance.payment_detail

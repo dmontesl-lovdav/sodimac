@@ -27,7 +27,7 @@ function extractUserKey(request) {
     if (gcpInfo) {
         try {
             const payload = JSON.parse(Buffer.from(gcpInfo, "base64url").toString("utf8"));
-            return payload.preferred_username || payload.sub || null;
+            return payload.sub || payload.preferred_username || null;
         } catch { logger.warn("Failed to parse X-Endpoint-API-UserInfo"); }
     }
     const auth = request.headers["authorization"] || "";
@@ -37,7 +37,7 @@ function extractUserKey(request) {
             const parts = token.split(".");
             if (parts.length === 3) {
                 const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-                return payload.preferred_username || payload.sub || null;
+                return payload.sub || payload.preferred_username || null;
             }
         } catch { logger.warn("Failed to decode Bearer token"); }
     }

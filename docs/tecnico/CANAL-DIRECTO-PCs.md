@@ -397,3 +397,42 @@ ssh dmont@192.168.0.121
 **Nota:** la contraseña que se pide es **la de tu cuenta de Windows en A8** (con la que desbloqueas la PC), no una del servicio SSH. Si usas cuenta Microsoft, a veces es el PIN lo que va; en ese caso hay que setear una contraseña local.
 
 **Preferencia:** dejar con llave (Paso 3) — más seguro, sin password en red, y replica el patrón ya funcionando desde Indra.
+
+---
+
+## Configuración final adoptada (2026-04-15)
+
+**Flujo escogido:** SSH saliente desde PC Sodimac hacia A8 + repo git bare en A8.
+
+| Componente | Detalle |
+|------------|---------|
+| PC personal (A8) | IP `192.168.0.121`, usuario `dmont`, sshd Running, puerto 22 |
+| PC Sodimac | IP `192.168.0.141`, usuario `g_dco018`, SIN admin (sin sshd) |
+| Autenticación | Llave ed25519 `g_dco018@cd-rosas` agregada a `C:\ProgramData\ssh\administrators_authorized_keys` en A8 |
+| Repo bare en A8 | `C:\repos-bare\workspace-sodimac.git` |
+| Remote en PC Sodimac | `personal` → `ssh://dmont@192.168.0.121/C:/repos-bare/workspace-sodimac.git` |
+
+### Flujo de trabajo diario
+
+**Desde PC Sodimac (empujar cambios a A8):**
+```powershell
+cd C:\workspace-sodimac
+git push personal dmontes
+```
+
+**Desde A8 (revisar cambios recibidos):**
+```bash
+cd /c/repos-bare/workspace-sodimac.git
+git log --oneline dmontes -20
+git show <hash>
+```
+
+**Transferir archivos sueltos (sin git):** WinSCP desde PC Sodimac contra `192.168.0.121`, usuario `dmont`, autenticación por llave.
+
+### Descartes
+
+- **SMB**: requiere admin en PC Sodimac para crear share → no viable.
+- **sshd en Sodimac**: instalar OpenSSH Server requiere admin → no viable. LAPS gestionado por IT.
+- **Syncthing**: útil si a futuro se necesita sync de archivos no-git (docs, dumps). No prioritario.
+- **Túnel inverso para shell remoto**: requiere sshd portable en Sodimac → riesgo de alerta con Netskope/ForeScout. Descartado.
+- **Túnel inverso para servicios (DBs/APIs locales de Sodimac)**: viable cuando se necesite, sin admin. Documentar si surge el caso.

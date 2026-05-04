@@ -50,26 +50,28 @@ echo "=========================================="
 echo "ALTERNATIVA: Prueba directa al backend"
 echo "=========================================="
 
-echo "--- Proveedor 11111 (4 esperados) ---"
+BODY='{"page":0,"size":20,"tipoDocumento":"I","fechaInicioRecepcion":"2025-01-01","fechaFinalRecepcion":"2025-06-30"}'
+
+echo "--- Proveedor 11111 ---"
 curl -s -X POST "${BASE_API}/invoices/search" \
   -H "x-user-vendors: 11111" \
   -H "Content-Type: application/json" \
-  -d '{"page": 0, "size": 20}' | jq '.totalElements'
+  -d "$BODY" | jq '.totalElements'
 
-echo "--- Proveedores 11111,22222 (8 esperados) ---"
+echo "--- Proveedores 11111,22222 (OR lógico) ---"
 curl -s -X POST "${BASE_API}/invoices/search" \
   -H "x-user-vendors: 11111,22222" \
   -H "Content-Type: application/json" \
-  -d '{"page": 0, "size": 20}' | jq '.totalElements'
+  -d "$BODY" | jq '.totalElements'
 
-echo "--- Acceso total -1 (23 esperados) ---"
+echo "--- Acceso total -1 ---"
 curl -s -X POST "${BASE_API}/invoices/search" \
   -H "x-user-vendors: -1" \
   -H "Content-Type: application/json" \
-  -d '{"page": 0, "size": 20}' | jq '.totalElements'
+  -d "$BODY" | jq '.totalElements'
 
 echo "--- Sin atributos (WRN7029) ---"
 curl -s -X POST "${BASE_API}/invoices/search" \
   -H "x-user-vendors: " \
   -H "Content-Type: application/json" \
-  -d '{"page": 0, "size": 20}' | jq .
+  -d "$BODY" | jq '{code,message,success}'

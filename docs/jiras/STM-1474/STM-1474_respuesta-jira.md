@@ -37,14 +37,17 @@ Subquery JPA Criteria que filtra pagos por proveedor vía addendum:
 
 ```java
 // payments_uuid IN (SELECT payments_uuid FROM addendum
-//                   WHERE supplier_number::text IN (allowedVendors)
+//                   WHERE supplier_number IN (allowedVendors)
 //                   AND payments_uuid IS NOT NULL)
+List<BigDecimal> vendorNumbers = allowedVendors.stream()
+    .map(v -> new BigDecimal(v.trim()))
+    .collect(Collectors.toList());
 Subquery<UUID> sub = query.subquery(UUID.class);
 Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
 sub.select(addRoot.get("paymentsUuid"))
    .where(cb.and(
        cb.isNotNull(addRoot.get("paymentsUuid")),
-       addRoot.get("supplierNumber").as(String.class).in(allowedVendors)
+       addRoot.get("supplierNumber").in(vendorNumbers)
    ));
 predicates.add(root.get("paymentsUuid").in(sub));
 ```

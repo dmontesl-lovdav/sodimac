@@ -40,11 +40,9 @@ JOIN tenant_fiscal.addendum a ON a.payments_uuid = p.payments_uuid
 GROUP BY a.supplier_number
 ORDER BY a.supplier_number;
 
--- Resultado actual:
--- 12345 → 4 complementos
--- NOTA: Los vendors 11111/22222 (USR_FERNANDO/USR_JOSE) NO tienen complementos
---       registrados en addendum. El filtro funciona correctamente pero devuelve
---       0 resultados para estos usuarios con los datos de prueba actuales.
+-- Resultado:
+-- 1 → 4 complementos
+-- Vendors sin complementos en addendum retornan 0 resultados (filtro activo correctamente)
 
 
 -- -----------------------------------------------------------------------------

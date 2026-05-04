@@ -85,7 +85,7 @@ WHERE i.invoice_uuid IN (
 -- -----------------------------------------------------------------------------
 SELECT COUNT(*) AS total_resultado
 FROM tenant_fiscal.invoice;
--- Esperado: 127 facturas (sin filtro de addendum)
+-- Esperado: 121 facturas (sin filtro de addendum)
 
 
 -- -----------------------------------------------------------------------------

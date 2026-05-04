@@ -15,7 +15,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -38,7 +38,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -61,7 +61,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -84,7 +84,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -107,7 +107,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -130,7 +130,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {
@@ -153,7 +153,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}",
+          "raw": "{\n  \"page\": 0,\n  \"size\": 20,\n  \"tipoDocumento\": \"I\",\n  \"fechaInicioRecepcion\": \"2025-01-01\",\n  \"fechaFinalRecepcion\": \"2025-06-30\"\n}",
           "options": { "raw": { "language": "json" } }
         },
         "url": {

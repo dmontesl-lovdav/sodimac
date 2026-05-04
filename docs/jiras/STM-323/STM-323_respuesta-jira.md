@@ -9,9 +9,10 @@ Se implementó el filtro de seguridad por atributo de usuario en el módulo de *
 ## Flujo implementado
 
 ```
-Frontend → JWT → GCP Cloud Endpoints
-    → BFF fiscal (extrae userKey del token, consulta util-api, inyecta headers)
-        → fiscal-api (filtra facturas según headers)
+Frontend (recupera token JWT, envía Authorization header)
+    → GCP Cloud Endpoints (valida token)
+        → BFF fiscal (consulta util-api, inyecta headers de seguridad)
+            → fiscal-api (filtra facturas según headers)
 ```
 
 Headers inyectados por BFF:

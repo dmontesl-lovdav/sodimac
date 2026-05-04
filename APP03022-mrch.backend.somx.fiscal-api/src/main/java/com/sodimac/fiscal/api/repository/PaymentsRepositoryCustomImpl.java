@@ -217,13 +217,15 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
                                     List<String> allowedVendors,
                                     List<Predicate> predicates) {
         if (allowedVendors == null || allowedVendors.isEmpty()) return;
-        // payments_uuid IN (SELECT payments_uuid FROM addendum WHERE CAST(supplier_number AS TEXT) IN (...))
+        List<java.math.BigDecimal> vendorNumbers = allowedVendors.stream()
+            .map(v -> new java.math.BigDecimal(v.trim()))
+            .collect(java.util.stream.Collectors.toList());
         Subquery<UUID> sub = query.subquery(UUID.class);
         Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
         sub.select(addRoot.get("paymentsUuid"))
            .where(cb.and(
                cb.isNotNull(addRoot.get("paymentsUuid")),
-               addRoot.get("supplierNumber").as(String.class).in(allowedVendors)
+               addRoot.get("supplierNumber").in(vendorNumbers)
            ));
         predicates.add(root.get("paymentsUuid").in(sub));
     }

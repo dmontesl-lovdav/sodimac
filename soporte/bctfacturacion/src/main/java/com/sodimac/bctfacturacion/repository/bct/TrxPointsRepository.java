@@ -139,8 +139,35 @@ public interface TrxPointsRepository extends JpaRepository<TrxPointsEntity, Inte
 	, nativeQuery = true)
 	
 	public List<Object[]> findPuntosCes(@Param("pFecha") String pFecha);
-	
-	
+
+
+	@Query(value =
+		"select \r\n"
+		+ "    hdr.NUM_TRX ticket \r\n"
+		+ ",   TO_CHAR(hdr.FECHA_TRX,'YYYY-MM-DD') fechaVenta \r\n"
+		+ ",   hdr.NUM_TIENDA tienda \r\n"
+		+ ",   hdr.TIPO_TRX tipoTransaccion \r\n"
+		+ ",   hdr.MNT_TOTAL_A_PAGAR montoVenta \r\n"
+		+ ",   hdr.MNT_TOT_SN_IMPTOS montoSinImpuestos \r\n"
+		+ ",   hdr.MNT_REDONDEO montoRedondeo \r\n"
+		+ ",   SUM(((SELECT distinct ext.f_conv FROM SW_CEM.trx_points_ext ext WHERE ext.id = p.ID) * TO_NUMBER(p.POINTS))) montoPuntos \r\n"
+		+ ",   p.ID idPuntos \r\n"
+		+ ",   p.TRANSACTIONTYPE tipoTransaccionCes \r\n"
+		+ ",   p.POINTS puntos \r\n"
+		+ "from  TRX_HDR hdr \r\n"
+		+ "    , sw_cem.TRX_POINTS p \r\n"
+		+ "where (TO_CHAR(\"DATE\",'YYYYMMDD') || p.BRANCH || lpad(p.POS, 3, '0') || lpad(p.SEQUENCE, 4, '0')) = hdr.NUM_TRX \r\n"
+		+ "AND   hdr.NUM_TRX IN (:pTickets) \r\n"
+		+ "AND   p.IDENTIFICATIONNUMBER LIKE '1000%' AND LENGTH(p.IDENTIFICATIONNUMBER) = 10 \r\n"
+		+ "AND   NVL(p.POINTS,0) != 0 \r\n"
+		+ "AND   p.TRANSACTIONTYPE = 'sale' \r\n"
+		+ "group by hdr.NUM_TRX, hdr.FECHA_TRX, hdr.NUM_TIENDA, hdr.TIPO_TRX, hdr.MNT_TOTAL_A_PAGAR, \r\n"
+		+ "hdr.MNT_TOT_SN_IMPTOS, hdr.MNT_REDONDEO, p.ID, p.TRANSACTIONTYPE, p.POINTS \r\n"
+		+ "ORDER BY 1"
+	, nativeQuery = true)
+	public List<Object[]> findPuntosCesByTickets(@Param("pTickets") List<String> pTickets);
+
+
 	@Query(value = "select ID "
 			+ "     , SKU "
 			+ "     , CASE WHEN returned > 0 THEN returned ELSE POINTS END POINTS "

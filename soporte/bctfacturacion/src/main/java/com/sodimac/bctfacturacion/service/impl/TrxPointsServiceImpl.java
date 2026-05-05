@@ -28,7 +28,13 @@ public class TrxPointsServiceImpl implements ITrxPointsService {
 		List<Object[]> listObject = this.pointsRepository.findPuntosCes(fecha);
 		return AdminPuntosCesMapper.convertObjectToDtos(listObject);
 	}
-	
+
+	@Override
+	public List<AdminPuntosCesModel> obtenerPuntosCesPorTickets(List<String> tickets) {
+		List<Object[]> listObject = this.pointsRepository.findPuntosCesByTickets(tickets);
+		return AdminPuntosCesMapper.convertObjectToDtos(listObject);
+	}
+
 	@Override
 	public ListaPuntosSkuModel obtenerSkuPuntos(Long idPuntosCes) {
 		List<Object[]> listObject = this.pointsRepository.findSkuPuntosById(idPuntosCes);

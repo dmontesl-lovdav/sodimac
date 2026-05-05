@@ -11,7 +11,9 @@ import com.sodimac.bctfacturacion.model.VentaDetImpuestoModel;
 public interface ITrxPointsService {
 
 	public List<AdminPuntosCesModel> obtenerPuntosCes(String fecha);
-	
+
+	public List<AdminPuntosCesModel> obtenerPuntosCesPorTickets(List<String> tickets);
+
 	public ListaPuntosSkuModel obtenerSkuPuntos(Long idPuntosCes);
 
 	public List<VentaCabModel> obtenerTicket(String ticket) throws ParseException;

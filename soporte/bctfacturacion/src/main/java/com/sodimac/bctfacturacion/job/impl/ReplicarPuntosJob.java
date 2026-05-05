@@ -52,18 +52,130 @@ public class ReplicarPuntosJob implements SodimacJob {
 	
 	@Override
 	public void sincroniza() throws ParseException  {
-		
+
+		boolean ticketsActivo = Boolean.valueOf(env.getProperty("puntos.ces.tickets.activo")).booleanValue();
+		if (ticketsActivo) {
+			String csv = env.getProperty("puntos.ces.tickets.lista");
+			if (csv == null || csv.trim().isEmpty()) {
+				logger.warn("puntos.ces.tickets.activo=true pero puntos.ces.tickets.lista esta vacio. Abortando.");
+				return;
+			}
+			List<String> tickets = Arrays.asList(csv.split("\\s*,\\s*"));
+			this.sincronizarPorTickets(tickets);
+			return;
+		}
+
 		boolean rangoFechas = Boolean.valueOf(env.getProperty("puntos.ces.rango.fechas")).booleanValue();
 		int diasAtraso = Integer.valueOf( env.getProperty("puntos.ces.dias") ).intValue();
 		String fechaInicio = env.getProperty("puntos.ces.fecha.inicio");
 		String fechaFin = env.getProperty("puntos.ces.fecha.fin");
-		
+
 		if (rangoFechas) {
 			this.sincronizar(fechaInicio, fechaFin);
 		} else {
 			this.sincronizar(diasAtraso);
 		}
-		
+
+	}
+
+	private void sincronizarPorTickets(List<String> tickets) throws ParseException {
+		String fechaControl = "MANUAL-" + new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime());
+		logger.info("Inicia sincronizacion por tickets puntuales. fechaControl=" + fechaControl + " total=" + tickets.size());
+		logger.info("Tickets: " + tickets);
+
+		List<AdminPuntosCesModel> listPuntosCes = trxPointsService.obtenerPuntosCesPorTickets(tickets);
+		int i = 0;
+		if (listPuntosCes != null && listPuntosCes.size() > 0) {
+			logger.info("#### Total de registros a sincronizar: " + listPuntosCes.size() + " ###");
+
+			Integer idControlCes = null;
+			boolean existeControlCES = this.controlVentaCeservice.existeControlCes(fechaControl);
+			if (existeControlCES) {
+				idControlCes = this.controlVentaCeservice.getIdControlCesPorFecha(fechaControl);
+				logger.info("Ya existe control MANUAL: " + idControlCes);
+			} else {
+				idControlCes = this.controlVentaCeservice.getIdControlCes();
+				this.controlVentaCeservice.registraControlCes(idControlCes, fechaControl, Integer.valueOf(listPuntosCes.size()));
+				logger.info("Registra control MANUAL: " + idControlCes);
+			}
+
+			String[] tiposPermitidos = this.controlVentaCeservice.getTipoTransCesPermitidos();
+
+			for (AdminPuntosCesModel adminPuntosCes : listPuntosCes) {
+				logger.info("Registro: " + i);
+				logger.info(adminPuntosCes.toString());
+				boolean existeAdminVentaCESCab = this.adminPuntosCesService.existeTicket(adminPuntosCes.getTicket()
+						, adminPuntosCes.getTipoTransaccionCes());
+				logger.info("existeAdminVentaCESCab: " + existeAdminVentaCESCab);
+
+				if (!existeAdminVentaCESCab) {
+
+					if (adminPuntosCes.getMontoPuntos() == null) {
+						logger.info("Ticket con MontoPuntos en nulo: " + adminPuntosCes.getTicket());
+						continue;
+					}
+
+					Long idPuntosCes = Long.valueOf(adminPuntosCes.getId());
+					ListaPuntosSkuModel listSkuPuntos = this.trxPointsService.obtenerSkuPuntos(idPuntosCes);
+
+					this.adminPuntosCesService.guardar(adminPuntosCes);
+
+					double factor = adminPuntosCes.getMontoPuntos() / adminPuntosCes.getPuntos();
+
+					if (Arrays.asList(tiposPermitidos).contains(adminPuntosCes.getTipoTransaccionCes())) {
+
+						List<VentaCabModel> listTicketBct = this.trxPointsService.obtenerTicket(adminPuntosCes.getTicket());
+						if (listTicketBct != null) {
+							for (VentaCabModel ventaCab : listTicketBct) {
+
+								List<VentaDetImpuestoModel> listImpuestosBct = this.trxPointsService.obtenerImpuestos(ventaCab.getTicket());
+								boolean existeTicket = this.ventaCabService.existeTicket(ventaCab.getTicket());
+
+								if (!existeTicket) {
+									Integer idVentaCab = this.ventaCabService.obtenerIdVentaCab();
+									ventaCab.setIdVentaCab(idVentaCab);
+									ventaCab.setIdPuntosCes(idPuntosCes);
+									ventaCab.setTipoTransaccionCes(adminPuntosCes.getTipoTransaccionCes());
+									ventaCab.setEstatusContable(EEstatusContable.NO_CONTABILIZADO.getId());
+
+									this.ventaCabService.guardar(ventaCab);
+
+									if (listImpuestosBct != null) {
+										for (VentaDetImpuestoModel ventaDetImp : listImpuestosBct) {
+
+											boolean existeVentaDetImpuesto = this.ventaDetImpuestoService.existeVentaDetImpuesto(ventaDetImp.getTicket(), ventaDetImp.getNumLinea());
+											if (!existeVentaDetImpuesto) {
+												Integer puntos = null;
+												Integer idVentaDetImpuesto = this.ventaDetImpuestoService.obtnerIdVentaDetImpuesto();
+												PuntosSkuModel puntosSku = listSkuPuntos.getPuntosSku(ventaDetImp.getSku());
+
+												if (puntosSku != null) {
+													puntos = puntosSku.getPuntos();
+												}
+
+												ventaDetImp.setIdVentaCab(idVentaCab);
+												ventaDetImp.setIdVentaDetImpuesto(idVentaDetImpuesto);
+												ventaDetImp.setPuntos(puntos);
+												ventaDetImp.setMontoPuntos(puntos * factor);
+
+												this.ventaDetImpuestoService.guardar(ventaDetImp);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				i++;
+			}
+
+			logger.info("marcando registro de control MANUAL");
+			this.controlVentaCeservice.actualizaControlCes(idControlCes, Integer.valueOf(EEstatusControlVenta.CORRECTO.getId()), Integer.valueOf(i));
+		} else {
+			logger.warn("Sin registros para los tickets indicados.");
+		}
+		logger.info("Finaliza sincronizacion por tickets puntuales.");
 	}
 	
 	private void sincronizar(int diasAtraso) throws ParseException {

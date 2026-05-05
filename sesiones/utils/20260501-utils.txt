@@ -1,0 +1,547 @@
+Bonelli mira se manda por los headers en Authorization
+imagen (4).png
+
+Que onda Bonelli, 
+Bien, ya veo el end point, reviso y si tengo dudas te mando un msg, 
+ 
+Gracias
+
+
+Fer
+Que tal Fer, si me compartes el ejercicio que comentaste en el daily, para buscarlo en código
+ 
+Hola David, claro, en dev está más funcional el asunto porque en uat falta el tema del BFF pero te paso el endpoint
+ 
+básicamente hay que montar el ambiente dev en el local y consultas este endpoint como GET
+localhost:3712/api/security/user-details/sb000002
+el sb00002 vendría siendo el id del usuario del token en el header 
+ 
+puedes usar los usuarios de prueba que tengo en lo que se monta bien toto el tema de tokens en uat, los usuarios que tengo son sb000001, sb000002, y así hasta el 5 solo el 1 y 2 tienen roles, permisos
+
+imagen (2).jpg
+ 
+vas a recibir un json como este donde vienen desglosados permisos, eventos, apps asignadas, etc en formato clave valor 
+ 
+Ah vale, gracias 
+ 
+estte es un token válido que voy a mandar por bearer token 
+ 
+eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJTc3A0Zmx5ZzRKZUxvTlZzZi1OOUk4dzFfTkdfbkQ0X3hWU3Z6SmZ0NFhZIn0.eyJleHAiOjE3NzY5NjI5NjAsImlhdCI6MTc3Njk2MjY2MCwiYXV0aF90aW1lIjoxNzc2OTYyNDE1LCJqdGkiOiI1MDQ3ZDM1Yy1iOThjLTQyOGEtODlhNy1lMTMyY2YwMzA4YjQiLCJpc3MiOiJodHRwczovL3FhLWFjY2Vzcy1rZXktY29ycC5mYWxhYmVsbGEudGVjaC9hdXRoL3JlYWxtcy9jb3JwIiwiYXVkIjpbInBvcnRhbCIsImZiYy1tYXJrZXQtaW5zaWdodHMiLCJmdHAtY2xpZW50IiwicmViYXRlLW1hbmFnZW1lbnQtY2xpZW50IiwidmVuZG9yLWJhY2tlbmQiLCJycG0tcG9ydGFsIiwiY29zdC1tYW5hZ2VtZW50Iiwicm9sZS1wcm9maWxlLXBvcnRhbCIsImZiYy1wcm9mb3JtYS1pbnZvaWNlIiwiYnJva2VyIiwiYXBpY3VyaW8tc3R1ZGlvIiwiZmJjLXZjbS1vbmJvYXJkaW5nIiwicnBjLXBvcnRhbCIsInJpbSIsImZiYy1wb20iLCJmYmMtZmluYW5jZSIsImZiYy12Y20tYWRtaW4iLCJmdWxmaWxsbWVudC1wb3J0YWwtcHVibGljIiwiZmJjLWFjbGFyYWNpb25lcyIsImZiYy12ZXYiLCJhY2NvdW50Il0sInN1YiI6ImQ0NGY0Nzg1LWMyZTYtNDA0Yy1iYzNiLWJhZDY3MTJhMDI4OCIsInR5cCI6IkJlYXJlciIsImF6cCI6InBvcnRhbCIsInNpZCI6IjhiYjVjNTM0LTVhYmUtNDNmNC04NGRlLTQ2ZTRmODBhZmJhYyIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDozMDAwLyoiLCIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLWNvcnAiLCJGQkNfU1VQRVJfQURNSU5fVVNFUiIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJzci1yZWFkb25seSJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImZiYy1tYXJrZXQtaW5zaWdodHMiOnsicm9sZXMiOlsiYWRtaW5fdXNlciJdfSwiZnRwLWNsaWVudCI6eyJyb2xlcyI6WyJVcGxvYWQgUGFja2luZyBMaXN0IiwiQ29uZmlybSBQcmUtQWxsb2NhdGlvbiIsIlZpZXcgTWFpbnRhaW5lciIsIlZpZXcgQm9va2luZyBDb21wbGV0ZWQiLCJVcGRhdGUgUG9ydHMgb2YgUHVyY2hhc2UgT3JkZXIiLCJDcmVhdGUgSXRpbmVyYXJ5IiwiVmlldyBBbGxvY2F0aW9ucyBQbGFubmVyIiwiVmlldyBHZW5lcmF0ZSBFYXJseSBCb29raW5nIFJlcXVlc3QiLCJWaWV3IEJvb2tpbmcgQ29vcmRpbmF0ZSIsIkNhbmNlbCBTY2hlZHVsZSIsIlVwZGF0ZSBDb250cmFjdCBpbiBNYWludGFpbmVyIiwiVmlldyBQdXJjaGFzZSBPcmRlciBJbnNwZWN0aW9uIE1hbmFnZW1lbnQiLCJWaWV3IEluc3BlY3Rpb24iLCJDb25maXJtIEJvb2tpbmcgUmVxdWVzdCBDb250YWluZXIiLCJVcGRhdGUgUE8gTG9jayBNYWludGFpbmVyIiwiQ29uZmlybSBQYWxsZXQgQ3JlYXRpb24iLCJJbXBvcnRzIEFjY2VzcyIsIlVwZGF0ZSBCb29raW5nIFJlcXVlc3QgUXVhbnRpdHkiLCJVcGRhdGUgUHVyY2hhc2UgT3JkZXIgQ2FyZ28gUmVhZHkgRGF0ZSIsIkNvbmZpcm0gQm9va2luZyBSZXF1ZXN0IEl0aW5lcmFyeSIsIlZpZXcgSW5zcGVjdGlvbiBFeGVjdXRpb24iLCJWaWV3IEJvb2tpbmcgQ29udGFpbmVyIiwiVXBkYXRlIEFjY2VwdCBJdGluZXJhcnkiLCJDb25maXJtIFJldmlldyBCb29raW5nIFJlcXVlc3QgRG9jdW1lbnQiLCJHZW5lcmF0ZSBDYXJ0b24gTGFiZWwiLCJWaWV3IEJvb2tpbmcgUGFja2luZyBMaXN0IiwiVmlldyBQTyBMb2NrIE1haW50YWluZXIiLCJSZXNlbmQgQktFIiwiQ2FuY2VsIFBhbGxldCIsIlZpZXcgQ29uc29saWRhdGlvbiIsIlVwZGF0ZSBCb29raW5nIFJlcXVlc3QgQ29tbWVudCIsIlZpZXcgQ2FycmllciBNYWludGFpbmVyIiwiVmlldyBDb25maXJtIERvY3VtZW50IiwiVXBkYXRlIEJvbmRlZCBXYXJlaG91c2UiLCJDb25maXJtIEFsbG9jYXRpb25zIFBsYW5uZXIgQWRtaW4iLCJVcGRhdGUgQm9va2luZyBSZXF1ZXN0IEl0aW5lcmFyeSIsIlZpZXcgU2hpcG1lbnQgU2VjdGlvbiIsIkNvbmZpcm0gQXR0YWNoIEJvb2tpbmcgUmVxdWVzdCBEb2N1bWVudCIsIlVwbG9hZCBQcmUtQWxsb2NhdGlvbiIsIkJvb2tpbmcgUmVxdWVzdCBBZG1pbiIsIlZpZXcgU2VhcmNoIEJvb2tpbmcgUmVxdWVzdCIsIkNhbmNlbCBCb29raW5nIFJlcXVlc3QiLCJEb3dubG9hZCBQYWNraW5nIExpc3QiLCJDb25maXJtIEdlbmVyYXRlIGJ5IFBhbGxldCIsIlZpZXcgUGFsbGV0IENyZWF0aW9uIiwiVmlldyBNYWludGFpbmVyIFNlY3Rpb24iLCJWaWV3IEdlbmVyYXRlIEJvb2tpbmcgUmVxdWVzdCIsIlZpZXcgRG9jdW1lbnRzIE1haW50YWluZXIiLCJVcGRhdGUgUGFja2luZyBMaXN0IiwiVmlldyBCdWxrIE1haW50YWluZXIiLCJVcGRhdGUgQ2FyZ28gUmVhZHkgRGF0ZSBHZW5lcmF0ZSIsIlZpZXcgUmVwb3J0IFNlY3Rpb24iLCJWaWV3IENvbnRyYWN0IE1haW50YWluZXIiLCJVcGRhdGUgQ29uc2lnbmVlIiwiVXBkYXRlIFJldmlldyBCb29raW5nIFJlcXVlc3QgRG9jdW1lbnRzIiwiUmVxdWVzdCBCb29raW5nIFJlcXVlc3QgSXRpbmVyYXJ5IiwiQ29uZmlybSBBbGxvY2F0aW9ucyBQbGFubmVyIiwiVmlldyBCb29raW5nIENhbmNlbGVkIiwiVXBkYXRlIERvY3VtZW50cyBNYWludGFpbmVyIiwiVXBkYXRlIENvbnRhaW5lciBhbmQgU2VhbCBBc3NpZ25tZW50IiwiVmlldyBBdHRhY2ggRG9jdW1lbnQiLCJWaWV3IFJlY2VwdGlvbiIsIlVwZGF0ZSBIc2NvZGUiLCJWaWV3IEhzQ29kZXMgTWFpbnRhaW5lciIsIkFwcHJvdmUgQWxsIEJvb2tpbmcgUmVxdWVzdCBEb2N1bWVudCIsIlVwZGF0ZSBCb29raW5nIFJlcXVlc3QgQ3VzdG9tcyBBZ2VudCIsIlJlc2VuZCBBU04iLCJWaWV3IEluc3BlY3Rpb24gUmV2aWV3IiwiQ3JlYXRlIENvbnRyYWN0IGluIE1haW50YWluZXIiLCJWaWV3IEJvb2tpbmcgQ29uZmlybSIsIlZpZXcgQ3VzdG9tIENsZWFyYW5jZSIsIlZpZXcgTG9naXN0aWMgSW5zaWdodCBSZXBvcnQiLCJDb25maXJtIFBhY2tpbmcgTGlzdCIsIlVwZGF0ZSBCb29raW5nIFJlcXVlc3QgRVREIiwiVmlldyBBbGxvY2F0aW9uIiwiQ29uZmlybSBSZWNlcHRpb24iLCJVcGRhdGUgSHNDb2RlcyBNYWludGFpbmVyIiwiVXBsb2FkIEJvb2tpbmcgUmVxdWVzdCBEb2N1bWVudCIsIlVwZGF0ZSBDYXJnbyBSZWFkeSBEYXRlIEFsbCIsIlVwZGF0ZSBCb29raW5nIFJlcXVlc3QgQ29udGFpbmVyIFF1YW50aXR5IiwiVmlldyBBbGxvY2F0aW9ucyBQbGFubmVyIEFkbWluIiwiVmlldyBHZW5lcmF0ZSBieSBQYWxsZXQiLCJVcGRhdGUgRG9jdW1lbnQgSW5mb3JtYXRpb24iLCJDcmVhdGUgYW5kIERlbGV0ZSBCb29raW5nIFJlcXVlc3QgQ29udGFpbmVyIFR5cGUiLCJCb29raW5nIFJlcXVlc3QgSXRpbmVyYXJ5IFJlamVjdCIsIlZpZXcgQm9uZGVkIFdhcmVob3VzZSIsIlNlbmQgQ29tbWVyY2lhbCBJbnZvaWNlIl19LCJyZWJhdGUtbWFuYWdlbWVudC1jbGllbnQiOnsicm9sZXMiOlsicmJtLWFjY2Vzcy1leGNsdXNpb25zIiwicmJtLWFjY2Vzcy1jb250cmFjdHMiLCJ2ZW5kb3ItcmJtLXJlcG9ydCIsInJibS1jcmVhdGUtZmlsbC1yYXRlLWV4Y2x1c2lvbiJdfSwidmVuZG9yLWJhY2tlbmQiOnsicm9sZXMiOlsidmVuZG9yIl19LCJycG0tcG9ydGFsIjp7InJvbGVzIjpbInByaWNlcy1sb2FkLXR1cmJvIiwicHJpY2VzLWFwcm92YWwiLCJwcmljZXMtbG9hZC1leHRlcm0iLCJwcmljZXMtdHlwZS1vZmZlciIsInByaWNlcy1jdXJyZW50LXByaWNlcyIsInByaWNlcy1oaXN0b3JpYy1wcmljZXMiLCJwcmljZXMtdHlwZS1jbXIiLCJwcmljZXMtY2hhbm5lbC1lY29tIiwicHJpY2VzLWNoYW5uZWwtc3RvcmUiLCJwcmljZXMtY2hhbm5lbC1vbW5pIiwicHJpY2VzLWxvYWQtcHJvZ3JhbSIsInByaWNlcy1tYXJnaW4iXX0sImNvc3QtbWFuYWdlbWVudCI6eyJyb2xlcyI6WyJleGNoYW5nZS1yYXRlLWFkbWluIiwidmlldy1kb2MtZXhwZGF0ZSIsInNoaXBwaW5nLWRvY3VtZW50LWFkbWluIiwidmlldy1kb2N1bWVudCIsInZpZXctcmVsZWFzZS1kb2MiLCJkb2N1bWVudC1hZG1pbiIsInZpZXctbmF0aW9uYWwtZG9jdW1lbnQiLCJ2aWV3LWNvbGxlY3Rpb24tbm90ZSIsInZpZXctYWNjb3VudGluZyIsIm5hdGlvbmFsLWRvY3VtZW50LWFkbWluIiwiY29sbGVjdGlvbi1ub3RlLWFkbWluIiwiY2xvc2UtZm9sZGVyIiwiYWNjb3VudGluZy1tYWludC1hZG1pbiIsInZpZXctYWNjb3VudGluZy1ydWxlcyIsInZpZXctbWFuYWdlLWRvYyIsInZpZXctdG9sZXJhbmNlLWNvc3QiLCJ2aWV3LWZvcndhcmQtZG9jIiwiYWNjb3VudGluZy1hZG1pbiIsImFjY291bnRpbmctcnVsZXMtYWRtaW4iLCJtYWludGFpbmVyLWFkbWluIiwiY29zdC1tYW5hZ2VtZW50LWFkbWluIiwidHJhY2tpbmctYWRtaW4iLCJ2aWV3LW1haW50YWluZXIiLCJ2aWV3LWV4Y2hhbmdlLXJhdGUiLCJhbGxvdy1lZGl0LWRpc3RyaWJ1dGlvbiIsImludGVybm1lbnQtZG9jdW1lbnQtYWRtaW4iLCJpbXBvcnQtdHJhY2tpbmctYWRtaW4iLCJ1cGRhdGUtc3RhdHVzLWRvYyIsInZpZXctdXBkYXRlLWNvc3Rkb2MiLCJ2aWV3LWludGVybm1lbnQtZG9jdW1lbnQiLCJyZWxlYXNlLWRvYy1hZG1pbiIsInZpZXctc2hpcHBpbmctZG9jdW1lbnQiLCJ2aWV3LWltcG9ydC10cmFja2luZyIsInZpZXctdHJhY2tpbmciXX0sInJvbGUtcHJvZmlsZS1wb3J0YWwiOnsicm9sZXMiOlsicm9sZS1wcm9maWxlLXZpZXctdGF4aWRzIiwicm9sZS1wcm9maWxlLXZpZXctdXNlciIsInJvbGUtcHJvZmlsZS1lZGl0LXVzZXItaW50ZXJuYWwiLCJyb2xlLXByb2ZpbGUtZWRpdC11c2VyLWV4dGVybmFsIiwicm9sZS1wcm9maWxlLWNyZWF0ZS11c2VyLWV4dGVybmFsIiwicm9sZS1wcm9maWxlLW1hbmFnZS1wcm9maWxlcyIsInJvbGUtcHJvZmlsZS1jcmVhdGUtdXNlci1pbnRlcm5hbCIsInJvbGUtcHJvZmlsZS12aWV3LW1pY3JvUm9sZXMiLCJyb2xlLXByb2ZpbGUtY3JlYXRlLWFkbWluLXVzZXIiLCJyb2xlLXByb2ZpbGUtdmlldy11c2VycyIsInJvbGUtcHJvZmlsZS12aWV3LW1hY3JvUm9sZXMiLCJyb2xlLXByb2ZpbGUtZGVsZXRlLXVzZXItZXh0ZXJuYWwiLCJyb2xlLXByb2ZpbGUtZGVsZXRlLWFkbWluLXVzZXIiLCJyb2xlLXByb2ZpbGUtZGVsZXRlLXVzZXItaW50ZXJuYWwiLCJyb2xlLXByb2ZpbGUtdmlldy10ZW5hbnRzIl19LCJmYmMtcHJvZm9ybWEtaW52b2ljZSI6eyJyb2xlcyI6WyJ2aWV3Il19LCJicm9rZXIiOnsicm9sZXMiOlsicmVhZC10b2tlbiJdfSwiYXBpY3VyaW8tc3R1ZGlvIjp7InJvbGVzIjpbInJlYWQtdG9rZW4iLCJzci1yZWFkb25seSJdfSwiZmJjLXZjbS1vbmJvYXJkaW5nIjp7InJvbGVzIjpbInZpZXciXX0sInJwYy1wb3J0YWwiOnsicm9sZXMiOlsiY2VydGlmaWNhdGVzLXByb2R1Y3Qtdmlld2VyIiwiY2VydGlmaWNhdGVzLXJlcXVpZXJlbWVudC1jcmVhdGUiLCJwcm9kdWN0LWFwcm92YWwiLCJwcm9kdWN0LWxpc3QiLCJwcm9kdWN0LWRvd25sb2FkIiwicHJvZHVjdC1hcHJvdmFsLW1hc1h2ZSIsInByb2R1Y3QtY3JlYXRlIiwiY2VydGlmaWNhdGVzLXByb2R1Y3QtbG9hZC1tYXNYdmUiLCJjZXJ0aWZpY2F0ZXMtcHJvZHVjdC1sb2FkIiwicHJvZHVjdC1lZGl0IiwicHJvZHVjdC1jcmVhdGUtbWFzWHZlIiwiY2VydGlmaWNhdGVzLXJlcXVpcmVtZW50LXZpZXdlciIsImNlcnRpZmljYXRlcy1yZXF1aWVyZW1lbnQtYXNzb2NpYXRlIiwicHJvZHVjdC1lZGl0LW1hc1h2ZSJdfSwicmltIjp7InJvbGVzIjpbIlBST1ZJU0lPTkVTX0NPUlBfQURNSU4iLCJQUk9WSVNJT05FU19DT1JQX1VTRVIiXX0sImZiYy1wb20iOnsicm9sZXMiOlsidmlldyJdfSwiZmJjLWZpbmFuY2UiOnsicm9sZXMiOlsidmlldyJdfSwiZmJjLXZjbS1hZG1pbiI6eyJyb2xlcyI6WyJ2aWV3IiwiZWRpdCIsImNyZWF0ZSJdfSwiZnVsZmlsbG1lbnQtcG9ydGFsLXB1YmxpYyI6eyJyb2xlcyI6WyJ2ZW5kb3JfYXBwb2ludG1lbnQiLCJ2ZW5kb3IiLCJ2ZW5kb3JfZUFTTiIsInZlbmRvcl9WRVZfRFAiLCJ2ZW5kb3JfdmV2X2RwIl19LCJmYmMtYWNsYXJhY2lvbmVzIjp7InJvbGVzIjpbInBwc29teC1hZG1pbiJdfSwiZmJjLXZldiI6eyJyb2xlcyI6WyJib29raW5nX3ZpZXciLCJzdG9ja191cGxvYWQiLCJzdG9ja192aWV3Il19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIHBvcnRhbCBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJ2ZW5kb3JzLXRheHMiOlt7Im5hbWUiOiJCVElDSU5PIEFaVUwiLCJ0YXhJZCI6IjIwMTAwMTgzNTg4Iiwib3BlcmF0aW9uIjpbeyJidXNpbmVzc1VuaXQiOiJTT0QiLCJjb3VudHJ5IjpbIlBFIl19LHsiYnVzaW5lc3NVbml0IjoiRkFMIiwiY291bnRyeSI6WyJQRSJdfSx7ImJ1c2luZXNzVW5pdCI6IlRPVCIsImNvdW50cnkiOlsiUEUiXX1dLCJjb3VudHJ5IjoiUEUifSx7Im5hbWUiOiJDZWxhIENvc21ldGljb3MiLCJ0YXhJZCI6Ijk2OTIwODQwNyIsIm9wZXJhdGlvbiI6W3siYnVzaW5lc3NVbml0IjoiU09EIiwiY291bnRyeSI6WyJDTCJdfSx7ImJ1c2luZXNzVW5pdCI6IkZBTCIsImNvdW50cnkiOlsiQ0wiXX0seyJidXNpbmVzc1VuaXQiOiJUT1QiLCJjb3VudHJ5IjpbIkNMIl19XSwiY291bnRyeSI6IkNMIn0seyJuYW1lIjoiRSBMRUdUUklDIFMuQS5TLiIsInRheElkIjoiOTAwNDgwMTI2MiIsIm9wZXJhdGlvbiI6W3siYnVzaW5lc3NVbml0IjoiU09EIiwiY291bnRyeSI6WyJDTyJdfSx7ImJ1c2luZXNzVW5pdCI6IkZBTCIsImNvdW50cnkiOlsiQ08iXX1dLCJjb3VudHJ5IjoiQ08ifSx7Im5hbWUiOiIzTSBBUkdFTlRJTkEgUy5BLiIsInRheElkIjoiMzU1Mjk5OTQzOTMiLCJvcGVyYXRpb24iOlt7ImJ1c2luZXNzVW5pdCI6IlNPRCIsImNvdW50cnkiOlsiQVIiXX1dLCJjb3VudHJ5IjoiQVIifSx7Im5hbWUiOiJQT1JDRUxBTklURSIsInRheElkIjoiUExBMDcxMjA2VFM0Iiwib3BlcmF0aW9uIjpbeyJidXNpbmVzc1VuaXQiOiJTT0QiLCJjb3VudHJ5IjpbIk1YIl19XSwiY291bnRyeSI6Ik1YIn0seyJuYW1lIjoiS0FUTUVOIFMuQS4iLCJ0YXhJZCI6IjIxMTgzMDUyMDAxMyIsIm9wZXJhdGlvbiI6W3siYnVzaW5lc3NVbml0IjoiU09EIiwiY291bnRyeSI6WyJVWSJdfV0sImNvdW50cnkiOiJVWSJ9LHsibmFtZSI6IklNUExBVEVDIiwidGF4SWQiOiI4MDcwOTg3NjAwMDczNiIsIm9wZXJhdGlvbiI6W3siYnVzaW5lc3NVbml0IjoiU09EIiwiY291bnRyeSI6WyJCUiJdfV0sImNvdW50cnkiOiJCUiJ9XSwidmVuZG9ycy10YXhzX21hc2l2ZSI6WyJbe1wibmFtZVwiOlwiQlRJQ0lOTyBBWlVMXCIsXCJ0YXhJZFwiOlwiMjAxMDAxODM1ODhcIixcIm9wZXJhdGlvblwiOlt7XCJidXNpbmVzc1VuaXRcIjpcIlNPRFwiLFwiY291bnRyeVwiOltcIlBFXCJdfSx7XCJidXNpbmVzc1VuaXRcIjpcIkZBTFwiLFwiY291bnRyeVwiOltcIlBFXCJdfSx7XCJidXNpbmVzc1VuaXRcIjpcIlRPVFwiLFwiY291bnRyeVwiOltcIlBFXCJdfV0sXCJjb3VudHJ5XCI6XCJQRVwifSx7XCJuYW1lXCI6XCJDZWxhIENvc21ldGljb3NcIixcInRheElkXCI6XCI5NjkyMDg0MDdcIixcIm9wZXJhdGlvblwiOlt7XCJidXNpbmVzc1VuaXRcIjpcIlNPRFwiLFwiY291bnRyeVwiOltcIkNMXCJdfSx7XCJidXNpbmVzc1VuaXRcIjpcIkZBTFwiLFwiY291bnRyeVwiOltcIkNMXCJdfSx7XCJidXNpbmVzc1VuaXRcIjpcIlRPVFwiLFwiY291bnRyeVwiOltcIkNMXCJdfV0sXCJjb3VudHJ5XCI6XCJDTFwifSx7XCJuYW1lXCI6XCJFIExFR1RSSUMgUy5BLlMuXCIsXCJ0YXhJZFwiOlwiOTAwNDgwMTI2MlwiLFwib3BlcmF0aW9uXCI6W3tcImJ1c2luZXNzVW5pdFwiOlwiU09EXCIsXCJjb3VudHJ5XCI6W1wiQ09cIl19LHtcImJ1c2luZXNzVW5pdFwiOlwiRkFMXCIsXCJjb3VudHJ5XCI6W1wiQ09cIl19XSxcImNvdW50cnlcIjpcIkNPXCJ9LHtcIm5hbWVcIjpcIjNNIEFSR0VOVElOQSBTLkEuXCIsXCJ0YXhJZFwiOlwiMzU1Mjk5OTQzOTNcIixcIm9wZXJhdGlvblwiOlt7XCJidXNpbmVzc1VuaXRcIjpcIlNPRFwiLFwiY291bnRyeVwiOltcIkFSXCJdfV0sXCJjb3VudHJ5XCI6XCJBUlwifSx7XCJuYW1lXCI6XCJQT1JDRUxBTklURVwiLFwidGF4SWRcIjpcIlBMQTA3MTIwNlRTNFwiLFwib3BlcmF0aW9uXCI6W3tcImJ1c2luZXNzVW5pdFwiOlwiU09EXCIsXCJjb3VudHJ5XCI6W1wiTVhcIl19XSxcImNvdW50cnlcIjpcIk1YXCJ9LHtcIm5hbWVcIjpcIktBVE1FTiBTLkEuXCIsXCJ0YXhJZFwiOlwiMjExODMwNTIwMDEzXCIsXCJvcGVyYXRpb25cIjpbe1wiYnVzaW5lc3NVbml0XCI6XCJTT0RcIixcImNvdW50cnlcIjpbXCJVWVwiXX1dLFwiY291bnRyeVwiOlwiVVlcIn0se1wibmFtZVwiOlwiSU1QTEFURUNcIixcInRheElkXCI6XCI4MDcwOTg3NjAwMDczNlwiLFwib3BlcmF0aW9uXCI6W3tcImJ1c2luZXNzVW5pdFwiOlwiU09EXCIsXCJjb3VudHJ5XCI6W1wiQlJcIl19XSxcImNvdW50cnlcIjpcIkJSXCJ9XSJdLCJuYW1lIjoicHBzb214IHZlbmRvciIsImdyb3VwcyI6WyIvT21uaWNoYW5uZWwtUmV0YWlsL01lcmNoYW5kaXNlL0NPUlAvU09EL0FSIiwiL09tbmljaGFubmVsLVJldGFpbC9NZXJjaGFuZGlzZS9DT1JQL1NPRC9CUiIsIi9PbW5pY2hhbm5lbC1SZXRhaWwvTWVyY2hhbmRpc2UvQ09SUC9UT1QvQ0wiLCIvT21uaWNoYW5uZWwtUmV0YWlsL01lcmNoYW5kaXNlL0NPUlAvU09EL0NMIiwiL09tbmljaGFubmVsLVJldGFpbC9NZXJjaGFuZGlzZS9DT1JQL0ZBTC9DTCIsIi9PbW5pY2hhbm5lbC1SZXRhaWwvTWVyY2hhbmRpc2UvQ09SUC9TT0QvQ08iLCIvT21uaWNoYW5uZWwtUmV0YWlsL01lcmNoYW5kaXNlL0NPUlAvRkFML0NPIiwiL09tbmljaGFubmVsLVJldGFpbC9NZXJjaGFuZGlzZS9DT1JQL1NPRC9NWCIsIi9PbW5pY2hhbm5lbC1SZXRhaWwvTWVyY2hhbmRpc2UvQ09SUC9TT0QvUEUiLCIvT21uaWNoYW5uZWwtUmV0YWlsL01lcmNoYW5kaXNlL0NPUlAvVE9UL1BFIiwiL09tbmljaGFubmVsLVJldGFpbC9NZXJjaGFuZGlzZS9DT1JQL0ZBTC9QRSIsIi9PbW5pY2hhbm5lbC1SZXRhaWwvTWVyY2hhbmRpc2UvQ09SUC9TT0QvVVkiXSwicHJlZmVycmVkX3VzZXJuYW1lIjoiemVkbGF2LnNkMThAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6InBwc29teCIsImZhbWlseV9uYW1lIjoidmVuZG9yIiwiZW1haWwiOiJ6ZWRsYXYuc2QxOEBnbWFpbC5jb20ifQ.QZetT0j5n0kwJlEomfwBVfCsjnDB2-17l56gU4OV9Ki6WZ9LX2eGVdh-4VxcVbfOUZ8J2xvVTP48pC4hTFgpUU1braSg2ju7V0KjkIBMdXyKV9Yq6STv_BkvckwiDHks7_56sbUQi3X_t-7d8tITTDNUnjqJNePVf4uq2u9NbESNesYDMsaBj_b9kERPYkj2BUdJdjFSIri6aQdVnutgI8fK4B4rPZ3vIN__OcT5V6NH76HsJR6QgEDnQPS5px8TpngsLEqeoqZIVqIpEqLhKBsLmjHtxy64LN9Rlk42WcZqTwcVId26Wof29f2bxHhgFC3VO9wTdhYxRdkNritVVA
+ 
+si lo parseas pro aqui
+JSON Web Tokens - jwt.io
+JWT.IO
+JSON Web Tokens are an open, industry standard RFC 7519 method for representing claims securely between two parties.
+ 
+verás un atributo llamado sub, ese es compartido que vamos a usar todos como identificador de usuario
+
+================================================================================
+COMANDOS SODIMAC PC - 2026-05-01
+Proyectos modificados: fiscal-api, finanzas-api, util-api + BFFs
+================================================================================
+
+--- FISCAL-API ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+C:\workspace-fbc-github\APP03022-mrch.frontend.somx.util.spa>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log --oneline -5
+fb4fff4 (HEAD -> develop, origin/develop) feat(STM-704/STM-272): integrar bitacora auditoria-api en facturas y complemento de pago
+bebf877 fix: STM-335 WRN7023 en flujo StatusTrainService
+0e3971d feat: STM-335 relación de facturas-NC
+e6a06f3 update invoice-api Se corrige Error en el desglose de la factura
+40af234 fix: corregir error 500 al retornar codigo BUS048 en actualizacion de facturas
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+# Rebuild y arrancar
+mvn clean package -DskipTests -q
+java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+
+--- FINANZAS-API ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git log --oneline -5
+a06576c (HEAD -> develop, origin/develop) Merge pull request #39 from falabella-stores-and-merchandise/feature/Three-way-job
+9e844b0 Merge branch 'develop' of https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.finanzas-api into feature/Three-way-job
+804105f feat: job improvements
+ba506a1 Merge pull request #37 from falabella-stores-and-merchandise/feature/healthcheck
+cd48f04 (origin/feature/healthcheck) feat: healthcheck
+
+
+
+# Rebuild y arrancar
+npm install
+npm run start:dev
+
+--- UTIL-API ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git log --oneline -5
+66d5199 (HEAD -> develop, origin/develop) Merge pull request #22 from falabella-stores-and-merchandise/uat
+484e907 (origin/uat) Merge pull request #21 from falabella-stores-and-merchandise/fix-catalogos-schema
+7c291e7 (origin/fix-catalogos-schema) fix: schema de catalogos cambio de propiedad
+750194e Merge pull request #20 from falabella-stores-and-merchandise/feat/migracion-catalogos
+b09fa5b (origin/feat/migracion-catalogos) Merge branch 'uat' into feat/migracion-catalogos
+
+
+# Rebuild y arrancar
+npm install
+npm run start:dev
+
+--- BFF FISCAL ---
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+# Arrancar
+npm install
+npm start
+
+--- BFF FINANZAS ---
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+# Arrancar
+npm install
+npm start
+
+--- BFF UTIL ---
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+git log --oneline -5
+git diff HEAD~1 HEAD --name-only
+
+# Arrancar
+npm install
+npm start
+
+================================================================================
+PRUEBAS FISCAL-API - STM-1474 y STM-323
+fiscal-api: http://localhost:8082
+================================================================================
+
+--- STM-1474: Complementos de Pago (PowerShell - directo al backend) ---
+
+# Vendor con datos
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="12345"}).totalElements
+
+026-05-03T23:38:02.908-06:00  INFO 56276 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.c.PaymentRegistrationController  : B├║squeda complementos de pago - Filtros: PaymentSearchRequest(paymentsUuid=null, rfcEmisor=null, rfcReceptor=null, folio=null, serie=null, numeroProveedor=null, fechaPagoInicio=null, fechaPagoFin=null, status=null, montoMinimo=null, montoMaximo=null, page=0, size=20, sortBy=paymentDate, sortDirection=DESC), vendors: [12345]
+2026-05-03T23:38:02.988-06:00  INFO 56276 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.PaymentQueryServiceImpl   : Buscando complementos de pago con filtro de vendors: [12345]
+2026-05-03T23:38:03.146-06:00  WARN 56276 --- [fiscal-api] [nio-8082-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 0, SQLState: 42883
+2026-05-03T23:38:03.146-06:00 ERROR 56276 --- [fiscal-api] [nio-8082-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : ERROR: operator does not exist: numeric = character varying
+  Hint: No operator matches the given name and argument types. You might need to add explicit type casts.
+  Position: 844
+2026-05-03T23:38:03.259-06:00 ERROR 56276 --- [fiscal-api] [nio-8082-exec-1] c.s.fiscal.api.config.ControllerAdvisor  : UNHANDLED ERROR OCCURRED: JDBC exception executing SQL [select pe1_0.payments_uuid,pe1_0.certification_date,pe1_0.created_at,pe1_0.created_by,pe1_0.fiscal_uuid,pe1_0.folio,i1_0.issuer_uuid,i1_0.created_at,i1_0.created_by,i1_0.name,i1_0.rfc,i1_0.tax_regime,i1_0.updated_at,i1_0.updated_by,pe1_0.issuer_uuid,pe1_0.payment_date,r1_0.receiver_uuid,r1_0.created_at,r1_0.created_by,r1_0.name,r1_0.rfc,r1_0.tax_regime,r1_0.updated_at,r1_0.updated_by,pe1_0.receiver_uuid,pe1_0.series,pe1_0.status,pe1_0.updated_at,pe1_0.updated_by,pe1_0.version,pe1_0.xml_content from tenant_fiscal.payments pe1_0 left join tenant_fiscal.issuer i1_0 on i1_0.issuer_uuid=pe1_0.issuer_uuid left join tenant_fiscal.receiver r1_0 on r1_0.receiver_uuid=pe1_0.receiver_uuid where pe1_0.payments_uuid in ((select ae1_0.payments_uuid from tenant_fiscal.addendum ae1_0 where ae1_0.payments_uuid is not null and ae1_0.supplier_number in (?))) order by pe1_0.payment_date desc offset ? rows fetch first ? rows only] [ERROR: operator does not exist: numeric = character varying
+  Hint: No operator matches the given name and argument types. You might need to add explicit type casts.
+  Position: 844] [n/a]; SQL [n/a] - CAUSE: org.hibernate.exception.SQLGrammarException: JDBC exception executing SQL [select pe1_0.payments_uuid,pe1_0.certification_date,pe1_0.created_at,pe1_0.created_by,pe1_0.fiscal_uuid,pe1_0.folio,i1_0.issuer_uuid,i1_0.created_at,i1_0.created_by,i1_0.name,i1_0.rfc,i1_0.tax_regime,i1_0.updated_at,i1_0.updated_by,pe1_0.issuer_uuid,pe1_0.payment_date,r1_0.receiver_uuid,r1_0.created_at,r1_0.created_by,r1_0.name,r1_0.rfc,r1_0.tax_regime,r1_0.updated_at,r1_0.updated_by,pe1_0.receiver_uuid,pe1_0.series,pe1_0.status,pe1_0.updated_at,pe1_0.updated_by,pe1_0.version,pe1_0.xml_content from tenant_fiscal.payments pe1_0 left join tenant_fiscal.issuer i1_0 on i1_0.issuer_uuid=pe1_0.issuer_uuid left join tenant_fiscal.receiver r1_0 on r1_0.receiver_uuid=pe1_0.receiver_uuid where pe1_0.payments_uuid in ((select ae1_0.payments_uuid from tenant_fiscal.addendum ae1_0 where ae1_0.payments_uuid is not null and ae1_0.supplier_number in (?))) order by pe1_0.payment_date desc offset ? rows fetch first ? rows only] [ERROR: operator does not exist: numeric = character varying
+  Hint: No operator matches the given name and argument types. You might need to add explicit type casts.
+  Position: 844] [n/a] - AT: org.springframework.orm.jpa.vendor.HibernateJpaDialect.convertHibernateAccessException(HibernateJpaDialect.java:277)
+
+2026-05-03T23:44:53.284-06:00  INFO 31808 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.c.PaymentRegistrationController  : B├║squeda complementos de pago - Filtros: PaymentSearchRequest(paymentsUuid=null, rfcEmisor=null, rfcReceptor=null, folio=null, serie=null, numeroProveedor=null, fechaPagoInicio=null, fechaPagoFin=null, status=null, montoMinimo=null, montoMaximo=null, page=0, size=20, sortBy=paymentDate, sortDirection=DESC), vendors: [12345]
+2026-05-03T23:44:53.363-06:00  INFO 31808 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.PaymentQueryServiceImpl   : Buscando complementos de pago con filtro de vendors: [12345]
+2026-05-03T23:44:53.632-06:00  INFO 31808 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.s.impl.PaymentQueryServiceImpl   : Se encontraron 0 complementos de pago (P├ígina 1/0)
+2026-05-03T23:44:53.696-06:00  INFO 31808 --- [fiscal-api] [nio-8082-exec-1] c.s.f.a.c.PaymentRegistrationController  : B├║squeda completada - 0/0 resultados, p├ígina 1/0
+2026-05-03T23:44:53.775-06:00  WARN 31808 --- [fiscal-api] [nio-8082-exec-1] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+        For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+        or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+
+# Acceso total -1 (sin filtro, mas resultados)
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="-1"}).totalElements
+
+PS C:\Users\g_dco018> (Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="-1"}).totalElements
+19
+
+
+# Vendor sin datos → 0
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="11111"}).totalElements
+
+# Sin atributos → WRN7029 (HTTP 400 - capturar body del error)
+try { Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"=""} } catch { $_.ErrorDetails.Message | ConvertFrom-Json | Select-Object code,message,success }
+
+PS C:\Users\g_dco018> Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"=""} | Select-Object code,message,success
+Invoke-RestMethod : Error en el servidor remoto: (400) Solicitud incorrecta.
+En línea: 1 Carácter: 1
++ Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pag ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (System.Net.HttpWebRequest:HttpWebRequest) [Invoke-RestMethod], WebException
+    + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShell.Commands.InvokeRestMethodCommand
+
+PS C:\Users\g_dco018>
+
+2026-05-03T23:45:36.757-06:00  INFO 31808 --- [fiscal-api] [nio-8082-exec-2] c.s.f.a.c.PaymentRegistrationController  : B├║squeda completada - 19/19 resultados, p├ígina 1/1
+2026-05-03T23:46:20.191-06:00 DEBUG 31808 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : No se detect├│ idioma, usando default: es
+2026-05-03T23:46:20.191-06:00 DEBUG 31808 --- [fiscal-api] [nio-8082-exec-3] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para request: /fiscal/complementos-pago/buscar
+2026-05-03T23:46:50.367-06:00 DEBUG 31808 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : No se detect├│ idioma, usando default: es
+2026-05-03T23:46:50.367-06:00 DEBUG 31808 --- [fiscal-api] [nio-8082-exec-4] c.s.fiscal.api.filter.LocaleFilter       : Locale establecido: es para 
+
+--- STM-323: Facturas (PowerShell - directo al backend) ---
+
+$body = '{"page":0,"size":20}'
+
+# Proveedor con facturas
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="11111";"Content-Type"="application/json"} -Body $body).totalElements
+
+# Acceso total -1
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="-1";"Content-Type"="application/json"} -Body $body).totalElements
+
+# Sin atributos → WRN7029 (HTTP 400 - capturar body del error)
+try { Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="";"Content-Type"="application/json"} -Body $body } catch { $_.ErrorDetails.Message | ConvertFrom-Json | Select-Object code,message,success }
+
+================================================================================
+CONSULTAS BD - VALIDAR DATOS REALES (correr en BD Sodimac)
+================================================================================
+
+-- STM-1474: Ver que vendors tienen complementos de pago
+SELECT
+    CAST(a.supplier_number AS TEXT) AS vendor,
+    COUNT(DISTINCT p.payments_uuid) AS complementos
+FROM tenant_fiscal.payments p
+JOIN tenant_fiscal.addendum a ON a.payments_uuid = p.payments_uuid
+GROUP BY a.supplier_number
+ORDER BY complementos DESC;
+
+1	4
+
+-- STM-323: Ver que vendors tienen facturas
+SELECT
+    CAST(a.supplier_number AS TEXT) AS vendor,
+    COUNT(DISTINCT i.invoice_uuid) AS facturas
+FROM tenant_fiscal.invoice i
+JOIN tenant_fiscal.addendum a ON a.invoice_uuid = i.invoice_uuid
+GROUP BY a.supplier_number
+ORDER BY facturas DESC;
+
+11111	15
+54321	14
+44444	13
+67890	13
+55555	13
+33333	12
+12345	10
+22222	9
+1	    1
+
+-- Total sin filtro (acceso total -1)
+SELECT COUNT(*) FROM tenant_fiscal.payments;  --> 19
+SELECT COUNT(*) FROM tenant_fiscal.invoice;   --> 121
+
+================================================================================
+CURLS CON DATOS REALES - STM-1474 y STM-323
+================================================================================
+
+--- STM-1474: Complementos de Pago ---
+-- vendor 1 = 4 complementos | total -1 = 19
+
+# vendor 1 → esperado: 4
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="1"}).totalElements
+
+# acceso total -1 → esperado: 19
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="-1"}).totalElements
+
+# vendor sin complementos → esperado: 0
+(Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"="11111"}).totalElements
+
+# sin atributos → WRN7029
+try { Invoke-RestMethod -Uri "http://localhost:8082/fiscal/complementos-pago/buscar" -Method GET -Headers @{"x-user-vendors"=""} } catch { $_.ErrorDetails.Message | ConvertFrom-Json | Select-Object code,message,success }
+
+--- STM-323: Facturas ---
+-- 11111=15 | 22222=9 | 11111+22222=24 | total -1=121
+
+$body = '{"page":0,"size":20}'
+
+# vendor 11111 → esperado: 15
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="11111";"Content-Type"="application/json"} -Body $body).totalElements
+
+# vendor 22222 → esperado: 9
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="22222";"Content-Type"="application/json"} -Body $body).totalElements
+
+# multi vendor 11111,22222 → esperado: 24
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="11111,22222";"Content-Type"="application/json"} -Body $body).totalElements
+
+# acceso total -1 → esperado: 121
+(Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="-1";"Content-Type"="application/json"} -Body $body).totalElements
+
+# sin atributos → WRN7029
+try { Invoke-RestMethod -Uri "http://localhost:8082/invoices/search" -Method POST -Headers @{"x-user-vendors"="";"Content-Type"="application/json"} -Body $body } catch { $_.ErrorDetails.Message | ConvertFrom-Json | Select-Object code,message,success }
+
+================================================================================
+FIX STM-1474 - supplier_number es BigDecimal (numeric en PG)
+PaymentsRepositoryCustomImpl.java - convertir allowedVendors a List<BigDecimal>
+================================================================================
+
+# 1. Pull del fix en monorepo
+cd C:\local
+git pull
+
+# 2. Copiar archivo corregido al repo separado
+copy "C:\local\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\repository\PaymentsRepositoryCustomImpl.java" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\repository\PaymentsRepositoryCustomImpl.java"
+
+# 3. Rebuild fiscal-api con el fix
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+mvn clean package -DskipTests -q
+java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+
+================================================================================
+COMMIT Y PUSH - STM-1403
+================================================================================
+
+--- FISCAL-API --- (STM-323 y STM-1474 validados ✅)
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git status
+git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+git add src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+git add src/main/java/com/sodimac/fiscal/api/model/dto/request/PaymentRegistrationRequest.java
+git add src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustom.java
+git add src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustomImpl.java
+git add src/main/java/com/sodimac/fiscal/api/repository/specification/InvoiceSpecification.java
+git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+git add src/main/java/com/sodimac/fiscal/api/service/PaymentQueryService.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/PaymentQueryServiceImpl.java
+git add pom.xml
+git commit -m "feat: STM-1403 STM-323 STM-1474 filtro seguridad por vendor en facturas y complementos de pago"
+git push origin develop
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git pull
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   pom.xml
+        modified:   src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+        modified:   src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+        modified:   src/main/java/com/sodimac/fiscal/api/model/dto/request/PaymentRegistrationRequest.java
+        modified:   src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustom.java
+        modified:   src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustomImpl.java
+        modified:   src/main/java/com/sodimac/fiscal/api/repository/specification/InvoiceSpecification.java
+        modified:   src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+        modified:   src/main/java/com/sodimac/fiscal/api/service/PaymentQueryService.java
+        modified:   src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+        modified:   src/main/java/com/sodimac/fiscal/api/service/impl/PaymentQueryServiceImpl.java
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        nul
+        postman/Fiscal-API_Facturas_NC.postman_collection.json
+        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
+        postman/STM-829_Payments_Screen.postman_collection.json
+        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/model/dto/request/PaymentRegistrationRequest.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustom.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustomImpl.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/repository/specification/InvoiceSpecification.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/PaymentQueryService.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add src/main/java/com/sodimac/fiscal/api/service/impl/PaymentQueryServiceImpl.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git add pom.xml
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git commit -m "feat: STM-1403 STM-323 STM-1474 filtro seguridad por vendor en facturas y complementos de pago"
+[develop 8027d79] feat: STM-1403 STM-323 STM-1474 filtro seguridad por vendor en facturas y complementos de pago
+ 11 files changed, 193 insertions(+), 16 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git push origin develop
+Enumerating objects: 53, done.
+Counting objects: 100% (53/53), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (25/25), done.
+Writing objects: 100% (28/28), 7.08 KiB | 724.00 KiB/s, done.
+Total 28 (delta 17), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (17/17), completed with 16 local objects.
+remote:
+remote: GitHub found 1 vulnerability on falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api's default branch (1 moderate). To find out more, visit:
+remote:      https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/security/dependabot/1
+remote:
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api.git
+   fb4fff4..8027d79  develop -> develop
+
+--- FINANZAS-API --- (pendiente validacion y commit)
+# 1. Pull del monorepo
+cd C:\local
+git pull
+
+# 2. Copiar archivos modificados
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\app.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\app.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\accountStatement.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\accountStatement.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\shippingGuide.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\shippingGuide.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\threeWayMatch.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\threeWayMatch.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\middlewares\security.middleware.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\middlewares\security.middleware.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\repositories\accountStatement.repo.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\repositories\accountStatement.repo.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\repositories\threeWayMatch.repo.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\repositories\threeWayMatch.repo.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\accountStatement.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\accountStatement.service.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\shippingGuide.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\shippingGuide.service.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\threeWayMatchQuery.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\threeWayMatchQuery.service.ts"
+
+# 3. Validar, commitear y hacer push
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git status
+git add src/app.ts
+git add src/controllers/accountStatement.controller.ts
+git add src/controllers/shippingGuide.controller.ts
+git add src/controllers/threeWayMatch.controller.ts
+git add src/middlewares/security.middleware.ts
+git add src/repositories/accountStatement.repo.ts
+git add src/repositories/threeWayMatch.repo.ts
+git add src/services/accountStatement.service.ts
+git add src/services/shippingGuide.service.ts
+git add src/services/threeWayMatchQuery.service.ts
+git commit -m "feat: STM-1403 filtro seguridad por vendor en finanzas (TWM, estado cuenta, guias)"
+git push origin develop
+
+--- UTIL-API ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+git status
+git add src/config/typeorm-datasource.ts
+git add src/controllers/security.controller.ts
+git add src/controllers/supplier.controller.ts
+git add src/entities/Supplier.entity.ts
+git add src/repositories/security.repo.ts
+git add src/repositories/supplier.repo.ts
+git add src/routes/index.ts
+git add src/routes/security.routes.ts
+git add src/routes/supplier.routes.ts
+git add src/services/security.service.ts
+git add src/services/supplier.service.ts
+git commit -m "feat: STM-1403 STM-1525 endpoint suppliers con filtro por tipo proveedor"
+git push origin develop
+
+--- BFF FISCAL ---
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git status
+git add src/App.js
+git commit -m "feat: STM-1403 inyeccion de headers de seguridad en BFF fiscal"
+git push origin develop
+
+--- BFF FINANZAS ---
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+git status
+git add src/App.js
+git add kustomization/development/env
+git add kustomization/production/env
+git add kustomization/uat/env
+git commit -m "feat: STM-1403 inyeccion de headers de seguridad en BFF finanzas"
+git push origin develop
+
+--- BFF UTIL ---
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+git status
+git add src/App.js
+git add kustomization/development/env
+git add kustomization/production/env
+git add kustomization/uat/env
+git commit -m "feat: STM-1403 inyeccion de headers de seguridad en BFF util"
+git push origin develop
+
+================================================================================
+PRUEBAS FINANZAS-API - STM-321, STM-1461, STM-1524
+finanzas-api: http://localhost:3001/api
+================================================================================
+
+--- PASO 1: Copiar archivos al repo separado ---
+cd C:\local
+git pull
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\app.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\app.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\accountStatement.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\accountStatement.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\shippingGuide.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\shippingGuide.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\controllers\threeWayMatch.controller.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\threeWayMatch.controller.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\middlewares\security.middleware.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\middlewares\security.middleware.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\repositories\accountStatement.repo.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\repositories\accountStatement.repo.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\repositories\threeWayMatch.repo.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\repositories\threeWayMatch.repo.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\accountStatement.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\accountStatement.service.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\shippingGuide.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\shippingGuide.service.ts"
+copy "C:\local\APP03022-mrch.backend.somx.finanzas-api\src\services\threeWayMatchQuery.service.ts" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\threeWayMatchQuery.service.ts"
+
+--- PASO 2: Levantar finanzas-api ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+npm install
+npm run start:dev
+
+--- PASO 3: Correr queries de BD para obtener vendors reales ---
+-- Ver STM-321_queries.sql, STM-1461_queries.sql, STM-1524_queries.sql
+-- en C:\local\sesiones\utils\ (disponibles tras git pull)
+
+--- PASO 4: STM-321 Three Way Match ---
+$BASE = "http://localhost:3001/api"
+$PARAMS = "tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31"
+
+# Acceso total -1 (saber total primero)
+(Invoke-RestMethod -Uri "$BASE/three-way-match?$PARAMS" -Method GET -Headers @{"x-user-vendors"="-1"}).total
+
+# Vendor con datos (actualizar VENDOR_REAL con resultado de query BD)
+(Invoke-RestMethod -Uri "$BASE/three-way-match?$PARAMS" -Method GET -Headers @{"x-user-vendors"="VENDOR_REAL"}).total
+
+# Sin atributos -> WRN7029
+try { Invoke-RestMethod -Uri "$BASE/three-way-match?$PARAMS" -Method GET -Headers @{"x-user-vendors"=""} } catch { $s=$_.Exception.Response.GetResponseStream(); $r=New-Object System.IO.StreamReader($s); $r.ReadToEnd() | ConvertFrom-Json | Select-Object code,message }
+
+--- PASO 5: STM-1461 Guias Carta Porte ---
+$PARAMS2 = "from=2024-01-01&to=2025-12-31"
+
+# Acceso total -1
+(Invoke-RestMethod -Uri "$BASE/shipping-guide?$PARAMS2" -Method GET -Headers @{"x-user-vendors"="-1"}).data.Count
+
+# Vendor con datos (actualizar VENDOR_REAL)
+(Invoke-RestMethod -Uri "$BASE/shipping-guide?$PARAMS2" -Method GET -Headers @{"x-user-vendors"="VENDOR_REAL"}).data.Count
+
+# Sin atributos -> WRN7029
+try { Invoke-RestMethod -Uri "$BASE/shipping-guide?$PARAMS2" -Method GET -Headers @{"x-user-vendors"=""} } catch { $s=$_.Exception.Response.GetResponseStream(); $r=New-Object System.IO.StreamReader($s); $r.ReadToEnd() | ConvertFrom-Json | Select-Object code,message }
+
+--- PASO 6: STM-1524 Estado de Cuenta ---
+$PARAMS3 = "year=2026"
+
+# Acceso total -1
+(Invoke-RestMethod -Uri "$BASE/account-statement?$PARAMS3" -Method GET -Headers @{"x-user-vendors"="-1"}).total
+
+# Vendor con datos (actualizar VENDOR_REAL)
+(Invoke-RestMethod -Uri "$BASE/account-statement?$PARAMS3" -Method GET -Headers @{"x-user-vendors"="VENDOR_REAL"}).total
+
+# Sin atributos -> WRN7029
+try { Invoke-RestMethod -Uri "$BASE/account-statement?$PARAMS3" -Method GET -Headers @{"x-user-vendors"=""} } catch { $s=$_.Exception.Response.GetResponseStream(); $r=New-Object System.IO.StreamReader($s); $r.ReadToEnd() | ConvertFrom-Json | Select-Object code,message }
+
+--- PASO 7: Commit finanzas-api ---
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git status
+git add src/app.ts
+git add src/controllers/accountStatement.controller.ts
+git add src/controllers/shippingGuide.controller.ts
+git add src/controllers/threeWayMatch.controller.ts
+git add src/middlewares/security.middleware.ts
+git add src/repositories/accountStatement.repo.ts
+git add src/repositories/threeWayMatch.repo.ts
+git add src/services/accountStatement.service.ts
+git add src/services/shippingGuide.service.ts
+git add src/services/threeWayMatchQuery.service.ts
+git commit -m "feat: STM-1403 STM-321 STM-1461 STM-1524 filtro seguridad por vendor en finanzas"
+git push origin develop
+
+================================================================================

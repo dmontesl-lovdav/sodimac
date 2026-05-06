@@ -1,6 +1,7 @@
 -- =============================================================================
--- STM-1524: Estado de Cuenta — Consultas de validación en BD
--- DB: b2b_portal (PostgreSQL, puerto 5434)
+-- STM-1524: Estado de Cuenta (Account Statement) — Consultas de validación en BD
+-- DB: b2b_portal (PostgreSQL)
+-- year mínimo = 2026 (validación en schema)
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -21,7 +22,7 @@ LEFT JOIN shared_catalogs.catalog_detail cd_val
 WHERE cd_type.key = 'ATR001'
 ORDER BY ud.preferred_username;
 
--- Resultado esperado:
+-- Resultado:
 -- USR_FERNANDO  → ATR001 = 11111
 -- USR_JOSE      → ATR001 = 11111, 22222
 -- zedlav.sd18   → ATR001 = -1  (acceso total)
@@ -29,21 +30,22 @@ ORDER BY ud.preferred_username;
 
 
 -- -----------------------------------------------------------------------------
--- 2. Distribución de proveedores en account_statement
+-- 2. Distribución de proveedores en account_statement año 2026
 -- -----------------------------------------------------------------------------
 SELECT
-    vendor_number,
+    CAST(vendor_number AS TEXT) AS vendor,
     year,
     COUNT(*) AS total_estados
 FROM tenant_finance.account_statement
+WHERE year = 2026
 GROUP BY vendor_number, year
-ORDER BY vendor_number, year;
+ORDER BY vendor_number;
 
--- Resultado actual:
--- 1001 → 1 estado (2026)
--- 1002 → 1 estado (2026)
--- 1003 → 2 estados (2026)
--- NOTA: Los vendors 11111/22222 NO existen en esta tabla.
+-- Resultado:
+-- 11111 → 3 estados (meses 1, 2, 3)
+-- 22222 → 2 estados (meses 1, 2)
+-- 33333 → 1 estado  (mes 1)
+-- Total → 6
 
 
 -- -----------------------------------------------------------------------------
@@ -51,73 +53,46 @@ ORDER BY vendor_number, year;
 -- -----------------------------------------------------------------------------
 SELECT COUNT(*) AS total_resultado
 FROM tenant_finance.account_statement
-WHERE CAST(vendor_number AS TEXT) IN ('11111');
--- Esperado: 0 (vendor 11111 no existe en finanzas — ver NOTA)
+WHERE year = 2026
+  AND CAST(vendor_number AS TEXT) IN ('11111');
+-- Resultado: 3
 
 
 -- -----------------------------------------------------------------------------
--- 4. Simular filtro: USR_JOSE (ATR001 = 11111, 22222)
--- -----------------------------------------------------------------------------
-SELECT COUNT(*) AS total_resultado
-FROM tenant_finance.account_statement
-WHERE CAST(vendor_number AS TEXT) IN ('11111', '22222');
--- Esperado: 0
-
-
--- -----------------------------------------------------------------------------
--- 5. Simular filtro: Ivan (ATR001 = -1 → sin filtro, todos los estados)
--- -----------------------------------------------------------------------------
-SELECT COUNT(*) AS total_resultado
-FROM tenant_finance.account_statement;
--- Esperado: 4 (todos los registros)
-
-
--- -----------------------------------------------------------------------------
--- 6. Ejemplo filtro con vendor real (validar mecanismo CAST IN)
---    Equivale a usuario con ATR001 = 1001
+-- 4. Simular filtro: USR_JOSE (ATR001 = 11111, 22222 — OR lógico)
 -- -----------------------------------------------------------------------------
 SELECT
-    account_statement_uuid,
-    vendor_number,
-    year,
-    month,
-    status,
-    initial_balance,
-    final_balance
+    CAST(vendor_number AS TEXT) AS vendor,
+    COUNT(*) AS total
 FROM tenant_finance.account_statement
-WHERE CAST(vendor_number AS TEXT) IN ('1001')
-ORDER BY year, month;
--- Esperado: 1 registro del proveedor 1001
-
-
--- -----------------------------------------------------------------------------
--- 7. Filtro multi-vendor con datos reales (1001 + 1002)
--- -----------------------------------------------------------------------------
-SELECT vendor_number, COUNT(*) AS total
-FROM tenant_finance.account_statement
-WHERE CAST(vendor_number AS TEXT) IN ('1001', '1002')
+WHERE year = 2026
+  AND CAST(vendor_number AS TEXT) IN ('11111', '22222')
 GROUP BY vendor_number ORDER BY vendor_number;
--- Esperado: 1001→1, 1002→1 (total 2)
+-- Resultado: 11111→3, 22222→2 (total 5)
 
 
 -- -----------------------------------------------------------------------------
--- 8. Verificar que el filtro aplica también en consulta por UUID (getById)
---    Si vendor_number del UUID no está en allowedVendors → sin resultados (404)
+-- 5. Simular filtro: Ivan (ATR001 = -1 → sin filtro)
 -- -----------------------------------------------------------------------------
--- Primero obtener un UUID de ejemplo:
-SELECT account_statement_uuid, vendor_number
+SELECT COUNT(*) AS total_resultado
 FROM tenant_finance.account_statement
-ORDER BY vendor_number LIMIT 3;
-
--- Simular consulta getById con filtro de vendor 1001:
--- (Reemplazar el UUID con uno real del query anterior)
--- SELECT * FROM tenant_finance.account_statement
--- WHERE account_statement_uuid = '<UUID>'
--- AND CAST(vendor_number AS TEXT) IN ('1001');
+WHERE year = 2026;
+-- Resultado: 6
 
 
 -- -----------------------------------------------------------------------------
--- 9. Verificar USR_ANA → WRN7029 (tiene ATR002 pero NO ATR001)
+-- 6. Obtener UUIDs para prueba de getById con filtro (escenario 5)
+-- -----------------------------------------------------------------------------
+SELECT account_statement_uuid, CAST(vendor_number AS TEXT) AS vendor, year, month
+FROM tenant_finance.account_statement
+WHERE year = 2026
+ORDER BY vendor_number, month;
+-- Usar UUID de vendor 11111 con x-user-vendors=11111 → 200
+-- Usar UUID de vendor 33333 con x-user-vendors=11111 → 404
+
+
+-- -----------------------------------------------------------------------------
+-- 7. Verificar USR_ANA → WRN7029
 -- -----------------------------------------------------------------------------
 SELECT
     ud.preferred_username,
@@ -128,4 +103,4 @@ JOIN core_security.user_attribute ua ON ua.user_data_id = ud.user_data_id
 JOIN shared_catalogs.catalog_detail cd_type ON cd_type.id = ua.catalog_detail_attribute_type_id
 LEFT JOIN shared_catalogs.catalog_detail cd_val ON cd_val.id = ua.catalog_detail_attribute_value_id
 WHERE ud.preferred_username = 'USR_ANA';
--- Esperado: ATR002 = TPR001 → sin ATR001 → x-user-vendors vacío → WRN7029
+-- Esperado: ATR002 = TPR001 → sin ATR001 → WRN7029

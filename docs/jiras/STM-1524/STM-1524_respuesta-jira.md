@@ -92,14 +92,14 @@ x-user-vendors: 1001
 
 ---
 
-## Pruebas ejecutadas (vía BFF local)
+## Pruebas ejecutadas (directo a finanzas-api — puerto 3001)
 
-| Usuario | Atributo ATR001 | Resultado |
-|---------|-----------------|-----------|
-| fernando | 1001 | Solo estados del proveedor 1001 ✅ |
-| jose | 1001, 1002 | Estados de 1001 ó 1002 ✅ |
-| ivan | -1 | Todos los estados ✅ |
-| ana | (sin ATR001) | HTTP 400 — WRN7029 ✅ |
+| Header `x-user-vendors` | Estados (year=2026) | Resultado |
+|--------------------------|---------------------|-----------|
+| `11111` | 3 | Filtro activo ✅ |
+| `22222` | 2 | Filtro activo ✅ |
+| `-1` | 6 | Acceso total ✅ |
+| `""` (vacío) | — | HTTP 400 — WRN7029 ✅ |
 
 ---
 

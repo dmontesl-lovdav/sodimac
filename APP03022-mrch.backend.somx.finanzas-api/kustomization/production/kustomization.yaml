@@ -5,7 +5,6 @@ resources:
   - ../base
   - hpa-config.yaml
 
-
 configMapGenerator:
   - name: ${PROJECT_NAME}-configmap
     envs:
@@ -19,17 +18,15 @@ secretGenerator:
       - env-secrets
     options:
       disableNameSuffixHash: true
-      
+
 namespace: ${NAMESPACE_PROD}
 
 patches:
   - path: env-var.yaml
   - path: resources.yaml
   - path: workload-identity.yaml
+  - path: three-way-match-cronjob-patch.yaml
 #  - path: espv2.yaml
-
-
-
 
 images:
   - name: foo/bar

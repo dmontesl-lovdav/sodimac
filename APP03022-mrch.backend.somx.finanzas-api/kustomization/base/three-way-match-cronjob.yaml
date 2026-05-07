@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: three-way-match-batch
+spec:
+  schedule: "0 9 * * *" # 03:00 AM México
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: three-way-match-batch
+              image: foo/bar
+              imagePullPolicy: IfNotPresent
+              command: [ "node" ]
+              args:
+                - "dist/workers/threeWayMatch.batch.js"
+                - "--run"
+              env:
+                - name: CI_JOB_ID
+                  value: "${CI_JOB_ID}"
+                - name: DB_SCHEMA
+                  value: "tenant_finance"
+                - name: NODE_ENV
+                  value: "production"

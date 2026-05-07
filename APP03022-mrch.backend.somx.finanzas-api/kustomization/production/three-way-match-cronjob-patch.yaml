@@ -1,0 +1,7 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: three-way-match-batch
+spec:
+  suspend: false
+  schedule: "0 9 * * *"

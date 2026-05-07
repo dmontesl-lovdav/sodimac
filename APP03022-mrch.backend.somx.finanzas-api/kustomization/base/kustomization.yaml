@@ -1,6 +1,7 @@
 resources:
   - deployment.yaml
   - service.yaml
+  - three-way-match-cronjob.yaml
 
 commonLabels:
   app: ${PROJECT_NAME}

@@ -15,12 +15,22 @@ function parseSearchFilters(req: Request): securityService.SecurityFilters {
     };
     if (req.query.entityId) filters.entityId = String(req.query.entityId);
     if (req.query.entityName) filters.entityName = String(req.query.entityName);
+    if (req.query.email) filters.email = String(req.query.email);
+    if (req.query.name) filters.fullName = String(req.query.name);
     if (req.query.status !== undefined && req.query.status !== '') {
         filters.status = Number(req.query.status);
     }
     if (req.query.langId !== undefined && req.query.langId !== '') {
         filters.langId = Number(req.query.langId);
     }
+    if (req.query.page !== undefined && req.query.page !== '') {
+        filters.page = Number(req.query.page);
+    }
+    if (req.query.limit !== undefined && req.query.limit !== '') {
+        filters.limit = Number(req.query.limit);
+    }
+    if (req.query.sortBy) filters.sortBy = String(req.query.sortBy);
+    if (req.query.sortDir) filters.sortDir = String(req.query.sortDir);
     return filters;
 }
 
@@ -288,17 +298,112 @@ export async function saveModuleProcessAssignment(req: Request, res: Response, n
     }
 }
 
-/** GET /api/security/user-details/:userKey — detalle por user_data (preferred_username, sub, email o id). */
-export async function getUserAttributesByKey(req: Request, res: Response, next: NextFunction) {
+/** GET /api/security/user-catalog/csv */
+export async function exportUserCatalogCsv(req: Request, res: Response, next: NextFunction) {
     try {
-        const userKey = decodeURIComponent(String(req.params.userKey ?? ''));
-        const data = await securityService.getUserAttributesByKey(userKey, parseLangId(req));
+        const { rows, truncated } = await securityService.exportUserCatalogCsvLines(parseSearchFilters(req));
+        const escape = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+        const header = [
+            'Id Usuario',
+            'Usuario',
+            'Nombre',
+            'Email',
+            'Fecha Creacion',
+            'Fecha Modificacion',
+            'Estatus',
+        ].join(',');
+        const body = rows
+            .map((r) =>
+                [
+                    escape(r.id),
+                    escape(r.username),
+                    escape(r.fullName),
+                    escape(r.email ?? ''),
+                    escape(r.createdAt),
+                    escape(r.modifiedAt),
+                    escape(r.status === 1 ? 'Activo' : 'Inactivo'),
+                ].join(','),
+            )
+            .join('\n');
+        const bom = '\uFEFF';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="catalogo-usuarios.csv"');
+        res.send(bom + header + '\n' + body + (truncated ? '\n' : ''));
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** GET /api/security/user-catalog */
+export async function searchUserCatalog(req: Request, res: Response, next: NextFunction) {
+    try {
+        const data = await securityService.searchUserCatalog(parseSearchFilters(req));
         res.json({ success: true, data });
     } catch (error) {
         next(error);
     }
 }
 
+/** GET /api/security/users/:id/catalog-detail */
+export async function getUserCatalogDetail(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = Number(req.params.id);
+        const opts: Parameters<typeof securityService.getUserCatalogDetail>[1] = {};
+        const lang = parseLangId(req);
+        if (lang !== undefined) opts.langId = lang;
+        if (req.query.rolesPage !== undefined && req.query.rolesPage !== '') opts.rolesPage = Number(req.query.rolesPage);
+        if (req.query.applicationsPage !== undefined && req.query.applicationsPage !== '')
+            opts.applicationsPage = Number(req.query.applicationsPage);
+        if (req.query.attributesPage !== undefined && req.query.attributesPage !== '')
+            opts.attributesPage = Number(req.query.attributesPage);
+        if (req.query.matrixPage !== undefined && req.query.matrixPage !== '') opts.matrixPage = Number(req.query.matrixPage);
+        if (req.query.matrixPageSize !== undefined && req.query.matrixPageSize !== '')
+            opts.matrixPageSize = Number(req.query.matrixPageSize);
+        const data = await securityService.getUserCatalogDetail(id, opts);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** GET /api/security/users/:userId/applications/:moduleId/events-catalog */
+export async function getUserApplicationEventsCatalog(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userId = Number(req.params.userId);
+        const moduleId = Number(req.params.moduleId);
+        const data = await securityService.getUserApplicationEventsCatalog(userId, moduleId, parseLangId(req));
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** PUT /api/security/users/:userId/module-processes/:moduleProcessId */
+export async function setUserModuleProcessAssigned(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userId = Number(req.params.userId);
+        const moduleProcessId = Number(req.params.moduleProcessId);
+        const assign = Boolean(req.body?.assign);
+        await securityService.setUserModuleProcessAssigned(userId, moduleProcessId, assign, parseActorId(req));
+        res.json({ success: true, message: assign ? 'Evento asignado al usuario' : 'Evento retirado del usuario' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** POST /api/security/users/:id/profiles — alta incremental de perfil (sin quitar otros) */
+export async function appendUserProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = Number(req.params.id);
+        const profileId = Number(req.body?.profileId);
+        await securityService.appendUserProfileLink(id, profileId, parseActorId(req));
+        res.status(201).json({ success: true, message: 'Perfil vinculado al usuario' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** GET /api/security/user-details/:userKey — detalle por user_data (preferred_username, sub, email o id). */
 export async function getUserDetailsByCatalogKey(req: Request, res: Response, next: NextFunction) {
     try {
         const userKey = decodeURIComponent(String(req.params.userKey ?? ''));

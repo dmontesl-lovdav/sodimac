@@ -66,8 +66,16 @@ export interface SecurityFilters {
     endDate: string;
     entityId?: string;
     entityName?: string;
+    /** Filtro opcional catálogo usuario (correo) */
+    email?: string;
+    /** Filtro opcional nombre para mostrar / nombre */
+    fullName?: string;
     status?: number;
     langId?: number;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortDir?: string;
 }
 
 export interface AssignmentPayload {
@@ -558,6 +566,322 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
     return response;
 }
 
+function toUserCatalogApiRow(row: import('@/repositories/security.repo.js').UserCatalogListRow) {
+    return {
+        id: row.id,
+        username: row.username,
+        fullName: row.fullName,
+        email: row.email,
+        status: row.status,
+        createdAt: row.createdAt.toISOString(),
+        modifiedAt: row.modifiedAt.toISOString(),
+    };
+}
+
+function toSecuritySearchFilter(filters: SecurityFilters): import('@/repositories/security.repo.js').SecuritySearchFilter {
+    const out: import('@/repositories/security.repo.js').SecuritySearchFilter = {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+    };
+    if (filters.entityId !== undefined) out.entityId = filters.entityId;
+    if (filters.entityName !== undefined) out.entityName = filters.entityName;
+    if (filters.email !== undefined) out.email = filters.email;
+    if (filters.fullName !== undefined) out.fullName = filters.fullName;
+    if (filters.status !== undefined) out.status = filters.status;
+    if (filters.langId !== undefined) out.langId = filters.langId;
+    return out;
+}
+
+function sliceSection<T>(arr: T[], page: number, pageSize: number) {
+    const p = Math.max(1, page);
+    const size = Math.max(1, pageSize);
+    const start = (p - 1) * size;
+    return {
+        items: arr.slice(start, start + size),
+        total: arr.length,
+        page: p,
+        pageSize: size,
+    };
+}
+
+export async function searchUserCatalog(filters: SecurityFilters) {
+    ensureDateRange(filters);
+    const repoFilters = toSecuritySearchFilter(withDefaultActiveStatus(filters));
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 10));
+    const sortBy = filters.sortBy ?? 'id';
+    const sortDir = filters.sortDir === 'DESC' ? 'DESC' : ('ASC' as const);
+    const { items, total } = await securityRepo.listUsersCatalogPaginated(repoFilters, page, limit, sortBy, sortDir);
+    return {
+        items: items.map(toUserCatalogApiRow),
+        total,
+        page,
+        limit,
+        sortBy,
+        sortDir,
+        warningCode: total ? undefined : 'WRN7002',
+        warningMessage: total ? undefined : 'No existe informacion con los filtros de busqueda capturados.',
+    };
+}
+
+export async function exportUserCatalogCsvLines(filters: SecurityFilters, maxRows = 10_000) {
+    ensureDateRange(filters);
+    const repoFilters = toSecuritySearchFilter(withDefaultActiveStatus(filters));
+    const { items, total, truncated } = await securityRepo.listUsersCatalogForExport(repoFilters, maxRows);
+    return {
+        rows: items.map(toUserCatalogApiRow),
+        total,
+        truncated,
+    };
+}
+
+export async function getUserCatalogDetail(
+    userId: number,
+    opts: {
+        langId?: number;
+        rolesPage?: number;
+        applicationsPage?: number;
+        attributesPage?: number;
+        matrixPage?: number;
+        matrixPageSize?: number;
+        sectionSize?: number;
+    },
+) {
+    const user = await securityRepo.findActiveUserById(userId);
+    if (!user) {
+        throw { status: 404, message: `No existe el usuario ${userId}` };
+    }
+    const key = securityRepo.userDataLookupKey(user);
+    const snap = await securityRepo.getSecurityUserDetailsByCatalogKey(key, opts.langId);
+    if (!snap) {
+        throw { status: 404, message: `No se pudo obtener el detalle de seguridad del usuario ${userId}` };
+    }
+
+    const headerRow = await securityRepo.getUserCatalogHeaderById(userId);
+    const header = headerRow
+        ? toUserCatalogApiRow(headerRow)
+        : {
+              id: user.idUserData,
+              username: user.preferredUsername ?? user.sub,
+              fullName: [user.givenName, user.familyName].filter(Boolean).join(' ').trim() || user.preferredUsername || user.sub,
+              email: user.email,
+              status: user.status,
+              createdAt: user.createdAt.toISOString(),
+              modifiedAt: user.createdAt.toISOString(),
+          };
+
+    const sectionSize = Math.min(50, Math.max(1, opts.sectionSize ?? 5));
+
+    const mapRef = (c: import('@/repositories/security.repo.js').SecurityCatalogRef) => ({
+        id: c.id,
+        name: c.label,
+        description: c.catalogKey ?? '',
+    });
+
+    const primaryProfile = snap.profiles.length > 0 ? mapRef(snap.profiles[0]!) : null;
+    const multipleProfilesDetected = snap.profiles.length > 1;
+
+    const permissionEventMatrixAll = buildPermissionEventMatrixRows(snap);
+    const matrixPage = Math.max(1, opts.matrixPage ?? 1);
+    const matrixPageSize = Math.min(200, Math.max(10, opts.matrixPageSize ?? 20));
+    const matrixStart = (matrixPage - 1) * matrixPageSize;
+    const permissionEventMatrix = {
+        items: permissionEventMatrixAll.slice(matrixStart, matrixStart + matrixPageSize),
+        total: permissionEventMatrixAll.length,
+        page: matrixPage,
+        pageSize: matrixPageSize,
+    };
+
+    const attrs = await listUserAttributes(userId, Math.max(1, opts.attributesPage ?? 1), sectionSize, opts.langId);
+
+    const attrItems = attrs.items.map((a) => ({
+        id: a.id,
+        name: a.name || a.attributeTypeName,
+        description: [a.attributeTypeName, a.attributeValueName].filter(Boolean).join(' — ') || '',
+    }));
+
+    const applicationsSlice = sliceSection(snap.applications.map(mapRef), opts.applicationsPage ?? 1, sectionSize);
+    const applicationsItems = await Promise.all(
+        applicationsSlice.items.map(async (app) => {
+            const events = await securityRepo.listModuleProcessesWithUserAssignment(userId, app.id, opts.langId);
+            return {
+                ...app,
+                events: events.map((e) => ({
+                    moduleProcessId: e.moduleProcessId,
+                    processId: e.processId,
+                    name: e.name,
+                    description: e.description,
+                    assigned: e.assigned,
+                })),
+            };
+        }),
+    );
+
+    return {
+        header,
+        profile: primaryProfile,
+        multipleProfilesDetected,
+        roles: sliceSection(snap.roles.map(mapRef), opts.rolesPage ?? 1, sectionSize),
+        applications: {
+            ...applicationsSlice,
+            items: applicationsItems,
+        },
+        permissionEventMatrix,
+        attributes: {
+            items: attrItems,
+            total: attrs.total,
+            page: Math.max(1, opts.attributesPage ?? 1),
+            pageSize: sectionSize,
+        },
+        userLookupKey: key,
+    };
+}
+
+type PermissionEventMatrixRow = {
+    permissionId: number;
+    permissionName: string;
+    permissionKey: string;
+    roleId: number;
+    roleName: string;
+    moduleId: number;
+    moduleName: string;
+    processId: number;
+    processName: string;
+    processKey: string;
+    effective: boolean;
+};
+
+function buildPermissionEventMatrixRows(
+    snap: import('@/repositories/security.repo.js').SecurityUserDetailsResponse,
+): PermissionEventMatrixRow[] {
+    const eventMap = new Map<
+        string,
+        { moduleId: number; moduleName: string; processId: number; processName: string; processKey: string }
+    >();
+    for (const row of snap.applicationModuleProcesses) {
+        const k = `${row.module.id}-${row.process.id}`;
+        if (!eventMap.has(k)) {
+            eventMap.set(k, {
+                moduleId: row.module.id,
+                moduleName: row.module.label,
+                processId: row.process.id,
+                processName: row.process.label,
+                processKey: row.process.catalogKey,
+            });
+        }
+    }
+    const events = [...eventMap.values()].sort(
+        (a, b) =>
+            a.moduleName.localeCompare(b.moduleName, 'es') || a.processName.localeCompare(b.processName, 'es'),
+    );
+
+    const permMap = new Map<
+        number,
+        { permissionId: number; permissionName: string; permissionKey: string; roleId: number; roleName: string }
+    >();
+    for (const p of snap.permissions) {
+        if (!permMap.has(p.permission.id)) {
+            permMap.set(p.permission.id, {
+                permissionId: p.permission.id,
+                permissionName: p.permission.label,
+                permissionKey: p.permission.catalogKey,
+                roleId: p.role.id,
+                roleName: p.role.label,
+            });
+        }
+    }
+    const perms = [...permMap.values()].sort(
+        (a, b) =>
+            a.roleName.localeCompare(b.roleName, 'es') || a.permissionName.localeCompare(b.permissionName, 'es'),
+    );
+
+    const rows: PermissionEventMatrixRow[] = [];
+    for (const perm of perms) {
+        for (const ev of events) {
+            rows.push({
+                permissionId: perm.permissionId,
+                permissionName: perm.permissionName,
+                permissionKey: perm.permissionKey,
+                roleId: perm.roleId,
+                roleName: perm.roleName,
+                moduleId: ev.moduleId,
+                moduleName: ev.moduleName,
+                processId: ev.processId,
+                processName: ev.processName,
+                processKey: ev.processKey,
+                effective: true,
+            });
+        }
+    }
+    return rows;
+}
+
+export async function getUserApplicationEventsCatalog(userId: number, moduleId: number, langId?: number) {
+    const user = await securityRepo.findActiveUserById(userId);
+    if (!user) {
+        throw { status: 404, message: `No existe el usuario ${userId}` };
+    }
+    const mod = await securityRepo.findActiveApplicationById(moduleId);
+    if (!mod) {
+        throw { status: 404, message: `No existe el aplicativo ${moduleId}` };
+    }
+    const lang = resolveLangId(langId);
+    const label =
+        (mod.value && String(mod.value).trim()) !== ''
+            ? String(mod.value).trim()
+            : "";
+    const events = await securityRepo.listModuleProcessesWithUserAssignment(userId, moduleId, lang);
+    return {
+        application: {
+            id: mod.id,
+            name: label,
+            description: "",
+        },
+        events,
+    };
+}
+
+function resolveLangId(langId?: number): number {
+    return Number.isInteger(langId) && Number(langId) > 0 ? Number(langId) : 1;
+}
+
+export async function setUserModuleProcessAssigned(userId: number, moduleProcessId: number, assign: boolean, actorId: string) {
+    const user = await securityRepo.findActiveUserById(userId);
+    if (!user) {
+        throw { status: 404, message: `No existe el usuario ${userId}` };
+    }
+    const mp = await securityRepo.findModuleProcessRow(moduleProcessId);
+    if (!mp) {
+        throw { status: 404, message: `No existe el aplicativo-evento ${moduleProcessId}` };
+    }
+    const moduleCatalogId = mp.idCatalogDetailModule;
+    const profiles = await securityRepo.findProfileIdsLinkingUserToModule(userId, moduleCatalogId);
+    if (assign && profiles.length === 0) {
+        throw {
+            status: 400,
+            message: 'El usuario no tiene el aplicativo en ningún perfil; asigne primero el aplicativo al perfil correspondiente.',
+        };
+    }
+    if (!assign && profiles.length === 0) {
+        return;
+    }
+    await securityRepo.setUserModuleProcessForProfiles(profiles, moduleProcessId, assign, actorId);
+    await invalidateUserDetailsCache(securityRepo.userDataLookupKey(user));
+}
+
+export async function appendUserProfileLink(userId: number, profileId: number, actorId: string) {
+    const user = await securityRepo.findActiveUserById(userId);
+    if (!user) {
+        throw { status: 404, message: `No existe el usuario ${userId}` };
+    }
+    const profile = await securityRepo.findActiveProfileById(profileId);
+    if (!profile) {
+        throw { status: 404, message: `No existe el perfil ${profileId}` };
+    }
+    await securityRepo.linkProfileUserOnly(userId, profileId, actorId);
+    await invalidateUserDetailsCache(securityRepo.userDataLookupKey(user));
+}
+
 export async function invalidateUserDetailsCache(userKey?: string, idProfile?: number, langId?: number) {
     if (!userKey) {
         const cleared = ACCESS_CONTEXT_CACHE.size;
@@ -584,26 +908,4 @@ export async function invalidateUserDetailsCache(userKey?: string, idProfile?: n
     const cacheKey = accessContextCacheKey(String(userKey).trim(), idProfile, langId);
     const existed = ACCESS_CONTEXT_CACHE.delete(cacheKey);
     return { cleared: existed ? 1 : 0 };
-}
-
-/** Atributos de un usuario por userKey (sub, preferred_username, email o id). Uso BFF. */
-export async function getUserAttributesByKey(userKey: string, langId?: number) {
-    const key = String(userKey ?? '').trim();
-    if (!key) throw { status: 400, message: 'userKey es obligatorio' };
-
-    const user = await securityRepo.findUserByLookupKey(key);
-    if (!user) throw { status: 404, message: `No existe usuario activo con la clave '${key}'` };
-
-    const result = await securityRepo.listUserAttributes(user.idUserData, 1, 1000, langId);
-
-    return {
-        userDataId: user.idUserData,
-        sub: user.sub,
-        preferredUsername: user.preferredUsername,
-        email: user.email,
-        attributes: result.items.map((a) => ({
-            typeKey:  a.attributeTypeKey ?? String(a.attributeTypeId),
-            valueKey: a.attributeValueKey ?? null,
-        })),
-    };
 }

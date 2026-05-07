@@ -28,13 +28,17 @@ export interface SecuritySearchFilter {
     endDate: string;
     entityId?: string;
     entityName?: string;
+    /** Filtro opcional específico de catálogo usuario (correo) */
+    email?: string;
+    /** Filtro opcional: nombre completo / nombre para mostrar */
+    fullName?: string;
     status?: number;
     langId?: number;
 }
 
 export interface SecuritySummaryRow {
     id: number;
-    /** Clave lógica del detalle en catalog_detail (`key`), p. ej. PERM_PAGO_APROBAR */
+    /** Clave lÃ³gica del detalle en catalog_detail (`key`), p. ej. PERM_PAGO_APROBAR */
     catalogKey: string;
     name: string;
     description: string;
@@ -57,7 +61,6 @@ export interface UserAttributeRow {
     name: string;
     attributeTypeId: number;
     attributeTypeName: string;
-    attributeTypeKey: string | null;
     attributeValueId: number | null;
     attributeValueName: string | null;
     attributeValueKey: string | null;
@@ -158,7 +161,7 @@ export interface SecurityUserDetailsResponse {
 
 /** Texto visible para filas de catalog_detail */
 function detailLabelExpr(alias: string): string {
-    return `COALESCE(NULLIF(TRIM(${alias}.value), ''), ${alias}.detailKey)`;
+    return `COALESCE(NULLIF(TRIM(${alias}.value), ''), ${alias}.key)`;
 }
 
 function resolveLangId(langId?: number): number {
@@ -187,10 +190,10 @@ function catalogRefFromDetailEntity(d: CatalogDetail): SecurityCatalogRef {
     const label =
         (d.value && String(d.value).trim()) !== ''
             ? String(d.value).trim()
-            : d.detailKey;
+            : d.key;
     return {
         id: d.id,
-        catalogKey: d.detailKey,
+        catalogKey: d.key,
         dictId: d.dictId,
         label,
         status: d.status,
@@ -222,7 +225,7 @@ function applyCatalogDetailFilters(
     if (filters.entityName) {
         const trim = filters.entityName.trim();
         qb.andWhere(
-            `(LOWER(${alias}.detailKey) LIKE LOWER(:entityName) OR LOWER(COALESCE(${alias}.value, '')) LIKE LOWER(:entityName))`,
+            `(LOWER(${alias}.key) LIKE LOWER(:entityName) OR LOWER(COALESCE(${alias}.value, '')) LIKE LOWER(:entityName))`,
             { entityName: `%${trim}%` },
         );
     }
@@ -262,6 +265,19 @@ function applyUserDataFilters(
     if (!options?.skipStatus && filters.status !== undefined) {
         qb.andWhere(`${alias}.status = :status`, { status: filters.status });
     }
+
+    if (filters.email?.trim()) {
+        const trim = filters.email.trim();
+        qb.andWhere(`LOWER(COALESCE(${alias}.email, '')) LIKE LOWER(:emailOnly)`, { emailOnly: `%${trim}%` });
+    }
+
+    if (filters.fullName?.trim()) {
+        const trim = filters.fullName.trim();
+        qb.andWhere(
+            `(LOWER(TRIM(CONCAT(COALESCE(${alias}.given_name,''),' ',COALESCE(${alias}.family_name,'')))) LIKE LOWER(:fullNameOnly) OR LOWER(COALESCE(${alias}.preferred_username, '')) LIKE LOWER(:fullNameOnly))`,
+            { fullNameOnly: `%${trim}%` },
+        );
+    }
 }
 
 function toSummaryRows(rows: Array<Record<string, unknown>>): SecuritySummaryRow[] {
@@ -293,12 +309,12 @@ export async function listProfileUsers(filters: SecuritySearchFilter): Promise<S
         .addSelect('profile.status', 'status')
         .addSelect('COUNT(DISTINCT profileUser.user_data_id)', 'totalAssigned')
         .addSelect('profile.updated_at', 'updatedAt')
-        .addSelect('profile.detailKey', 'catalogKey')
+        .addSelect('profile.key', 'catalogKey')
         .groupBy('profile.id');
 
     applyCatalogDetailFilters(qb, 'profile', filters);
     qb.addGroupBy('profile.value')
-        .addGroupBy('profile.detailKey')
+        .addGroupBy('profile.key')
         .addGroupBy('profile.status')
         .addGroupBy('profile.updated_at')
         .orderBy(dictionaryLabelExpr('profile', langId), 'ASC');
@@ -319,12 +335,12 @@ export async function listRoleUsers(filters: SecuritySearchFilter): Promise<Secu
         .addSelect('role.status', 'status')
         .addSelect('COUNT(DISTINCT roleUser.user_data_id)', 'totalAssigned')
         .addSelect('role.updated_at', 'updatedAt')
-        .addSelect('role.detailKey', 'catalogKey')
+        .addSelect('role.key', 'catalogKey')
         .groupBy('role.id');
 
     applyCatalogDetailFilters(qb, 'role', filters);
     qb.addGroupBy('role.value')
-        .addGroupBy('role.detailKey')
+        .addGroupBy('role.key')
         .addGroupBy('role.status')
         .addGroupBy('role.updated_at')
         .orderBy(dictionaryLabelExpr('role', langId), 'ASC');
@@ -349,12 +365,12 @@ export async function listRolePermissions(filters: SecuritySearchFilter): Promis
         .addSelect('role.status', 'status')
         .addSelect('COUNT(DISTINCT rolePermission.catalog_detail_permission_id)', 'totalAssigned')
         .addSelect('role.updated_at', 'updatedAt')
-        .addSelect('role.detailKey', 'catalogKey')
+        .addSelect('role.key', 'catalogKey')
         .groupBy('role.id');
 
     applyCatalogDetailFilters(qb, 'role', filters);
     qb.addGroupBy('role.value')
-        .addGroupBy('role.detailKey')
+        .addGroupBy('role.key')
         .addGroupBy('role.status')
         .addGroupBy('role.updated_at')
         .orderBy(dictionaryLabelExpr('role', langId), 'ASC');
@@ -460,7 +476,7 @@ export async function findRolePermissionAssignment(
         .where('permission.status = 1')
         .select('permission.id', 'id')
         .addSelect(dictionaryLabelExpr('permission', langId), 'title')
-        .addSelect(`COALESCE(permission.value, permission.detailKey)`, 'subtitle')
+        .addSelect(`COALESCE(permission.value, permission.key)`, 'subtitle')
         .addSelect(`ARRAY[permission."key"]::varchar[]`, 'tags');
 
     const assigned = await baseSelect
@@ -640,10 +656,9 @@ export async function listUserAttributes(
         .addSelect(dictionaryLabelExpr('attributeType', langId), 'name')
         .addSelect('userAttribute.catalog_detail_attribute_type_id', 'attributeTypeId')
         .addSelect(dictionaryLabelExpr('attributeType', langId), 'attributeTypeName')
-        .addSelect('attributeType.detailKey', 'attributeTypeKey')
         .addSelect('userAttribute.catalog_detail_attribute_value_id', 'attributeValueId')
         .addSelect(dictionaryLabelExpr('attributeValue', langId), 'attributeValueName')
-        .addSelect('attributeValue.detailKey', 'attributeValueKey')
+        .addSelect('attributeValue.key', 'attributeValueKey')
         .addSelect('userAttribute.status', 'status')
         .addSelect('userAttribute.created_by', 'createdBy')
         .addSelect('userAttribute.created_at', 'createdAt')
@@ -668,7 +683,6 @@ export async function listUserAttributes(
             name: String(item.name),
             attributeTypeId: Number(item.attributeTypeId),
             attributeTypeName: String(item.attributeTypeName),
-            attributeTypeKey: item.attributeTypeKey == null ? null : String(item.attributeTypeKey),
             attributeValueId: item.attributeValueId == null ? null : Number(item.attributeValueId),
             attributeValueName: item.attributeValueName == null ? null : String(item.attributeValueName),
             attributeValueKey: item.attributeValueKey == null ? null : String(item.attributeValueKey),
@@ -707,7 +721,7 @@ export async function getAttributeValuesByType(
         .where('t.id = :id', { id: idAttributeType })
         .andWhere('t.status = 1')
         .select('t.id', 'id')
-        .addSelect('t.detailKey', 'catalogKey')
+        .addSelect('t.key', 'catalogKey')
         .addSelect(dictionaryLabelExpr('t', langId), 'displayName')
         .getRawOne<Record<string, unknown>>();
 
@@ -734,7 +748,7 @@ export async function getAttributeValuesByType(
         .where('v.status = 1')
         .andWhere('v.header_id = :headerId', { headerId: targetHeaderId })
         .select('v.id', 'id')
-        .addSelect('v.detailKey', 'catalogKey')
+        .addSelect('v.key', 'catalogKey')
         .addSelect(dictionaryLabelExpr('v', langId), 'name')
         .orderBy(dictionaryLabelExpr('v', langId), 'ASC')
         .getRawMany<Record<string, unknown>>();
@@ -809,12 +823,12 @@ export async function listProfileModules(filters: SecuritySearchFilter): Promise
         .addSelect('profile.status', 'status')
         .addSelect('COUNT(DISTINCT pm.catalog_detail_module_id)', 'totalAssigned')
         .addSelect('profile.updated_at', 'updatedAt')
-        .addSelect('profile.detailKey', 'catalogKey')
+        .addSelect('profile.key', 'catalogKey')
         .groupBy('profile.id');
 
     applyCatalogDetailFilters(qb, 'profile', filters);
     qb.addGroupBy('profile.value')
-        .addGroupBy('profile.detailKey')
+        .addGroupBy('profile.key')
         .addGroupBy('profile.status')
         .addGroupBy('profile.updated_at')
         .orderBy(dictionaryLabelExpr('profile', langId), 'ASC');
@@ -910,12 +924,12 @@ export async function listProfileModuleProcesses(filters: SecuritySearchFilter):
         .addSelect('profile.status', 'status')
         .addSelect('COUNT(DISTINCT pmp.module_process_id)', 'totalAssigned')
         .addSelect('profile.updated_at', 'updatedAt')
-        .addSelect('profile.detailKey', 'catalogKey')
+        .addSelect('profile.key', 'catalogKey')
         .groupBy('profile.id');
 
     applyCatalogDetailFilters(qb, 'profile', filters);
     qb.addGroupBy('profile.value')
-        .addGroupBy('profile.detailKey')
+        .addGroupBy('profile.key')
         .addGroupBy('profile.status')
         .addGroupBy('profile.updated_at')
         .orderBy(dictionaryLabelExpr('profile', langId), 'ASC');
@@ -944,7 +958,7 @@ export async function findProfileModuleProcessAssignment(
         .where('mp.status = 1')
         .select('mp.module_process_id', 'id')
         .addSelect(`CONCAT(${dictionaryLabelExpr('cm', langId)}, ' | ', ${dictionaryLabelExpr('cp', langId)})`, 'title')
-        .addSelect(`CONCAT('M', cm.id, ' · E', cp.id)`, 'subtitle')
+        .addSelect(`CONCAT('M', cm.id, ' Â· E', cp.id)`, 'subtitle')
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
@@ -967,7 +981,7 @@ export async function findProfileModuleProcessAssignment(
         )
         .select('mp.module_process_id', 'id')
         .addSelect(`CONCAT(${dictionaryLabelExpr('cm', langId)}, ' | ', ${dictionaryLabelExpr('cp', langId)})`, 'title')
-        .addSelect(`CONCAT('M', cm.id, ' · E', cp.id)`, 'subtitle')
+        .addSelect(`CONCAT('M', cm.id, ' Â· E', cp.id)`, 'subtitle')
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
@@ -1024,12 +1038,12 @@ export async function listApplicationEvents(filters: SecuritySearchFilter): Prom
         .addSelect('1', 'status')
         .addSelect('COUNT(DISTINCT mp.module_process_id)', 'totalAssigned')
         .addSelect('mod.updated_at', 'updatedAt')
-        .addSelect('mod.detailKey', 'catalogKey')
+        .addSelect('mod.key', 'catalogKey')
         .groupBy('mod.id');
 
     applyCatalogDetailFilters(qb, 'mod', filters, { skipStatus: true });
     qb.addGroupBy('mod.value')
-        .addGroupBy('mod.detailKey')
+        .addGroupBy('mod.key')
         .addGroupBy('mod.dictId')
         .addGroupBy('mod.updated_at')
         .orderBy(dictionaryLabelExpr('mod', langId), 'ASC');
@@ -1242,7 +1256,7 @@ export async function findUserByLookupKey(loginKey: string): Promise<UserData | 
 }
 
 /**
- * Resumen estructural: perfiles, aplicativos (vía perfil), pares app+evento, roles, permisos, proveedores y atributos.
+ * Resumen estructural: perfiles, aplicativos (vÃ­a perfil), pares app+evento, roles, permisos, proveedores y atributos.
  */
 export async function getSecurityUserDetailsByCatalogKey(
     userKey: string,
@@ -1264,7 +1278,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         .andWhere('pu.status = 1')
         .andWhere('p.status = 1')
         .select('p.id', 'id')
-        .addSelect('p.detailKey', 'catalogKey')
+        .addSelect('p.key', 'catalogKey')
         .addSelect('p.dictId', 'dictId')
         .addSelect(catalogRefLabelExpr('p', langId), 'label')
         .addSelect('p.status', 'status')
@@ -1285,7 +1299,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         .where('pm.status = 1')
         .andWhere('m.status = 1')
         .select('m.id', 'id')
-        .addSelect('m.detailKey', 'catalogKey')
+        .addSelect('m.key', 'catalogKey')
         .addSelect('m.dictId', 'dictId')
         .addSelect(catalogRefLabelExpr('m', langId), 'label')
         .addSelect('m.status', 'status')
@@ -1321,17 +1335,17 @@ export async function getSecurityUserDetailsByCatalogKey(
         .andWhere('pf.status = 1')
         .select('mp.module_process_id', 'idModuleProcess')
         .addSelect('cm.id', 'mid')
-        .addSelect('cm.detailKey', 'mCatalogKey')
+        .addSelect('cm.key', 'mCatalogKey')
         .addSelect('cm.dictId', 'mDictId')
         .addSelect(catalogRefLabelExpr('cm', langId), 'mLabel')
         .addSelect('cm.status', 'mStatus')
         .addSelect('cp.id', 'pid')
-        .addSelect('cp.detailKey', 'pCatalogKey')
+        .addSelect('cp.key', 'pCatalogKey')
         .addSelect('cp.dictId', 'pDictId')
         .addSelect(catalogRefLabelExpr('cp', langId), 'pLabel')
         .addSelect('cp.status', 'pStatus')
         .addSelect('pf.id', 'pfid')
-        .addSelect('pf.detailKey', 'pfCatalogKey')
+        .addSelect('pf.key', 'pfCatalogKey')
         .addSelect('pf.dictId', 'pfDictId')
         .addSelect(catalogRefLabelExpr('pf', langId), 'pfLabel')
         .addSelect('pf.status', 'pfStatus')
@@ -1349,7 +1363,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         .andWhere('ru.status = 1')
         .andWhere('r.status = 1')
         .select('r.id', 'id')
-        .addSelect('r.detailKey', 'catalogKey')
+        .addSelect('r.key', 'catalogKey')
         .addSelect('r.dictId', 'dictId')
         .addSelect(catalogRefLabelExpr('r', langId), 'label')
         .addSelect('r.status', 'status')
@@ -1373,12 +1387,12 @@ export async function getSecurityUserDetailsByCatalogKey(
         .andWhere('perm.status = 1')
         .andWhere('role.status = 1')
         .select('perm.id', 'permId')
-        .addSelect('perm.detailKey', 'permCatalogKey')
+        .addSelect('perm.key', 'permCatalogKey')
         .addSelect('perm.dictId', 'permDictId')
         .addSelect(catalogRefLabelExpr('perm', langId), 'permLabel')
         .addSelect('perm.status', 'permStatus')
         .addSelect('role.id', 'roleId')
-        .addSelect('role.detailKey', 'roleCatalogKey')
+        .addSelect('role.key', 'roleCatalogKey')
         .addSelect('role.dictId', 'roleDictId')
         .addSelect(catalogRefLabelExpr('role', langId), 'roleLabel')
         .addSelect('role.status', 'roleStatus')
@@ -1403,12 +1417,12 @@ export async function getSecurityUserDetailsByCatalogKey(
         .andWhere('prv.status = 1')
         .andWhere('role.status = 1')
         .select('prv.id', 'prvId')
-        .addSelect('prv.detailKey', 'prvCatalogKey')
+        .addSelect('prv.key', 'prvCatalogKey')
         .addSelect('prv.dictId', 'prvDictId')
         .addSelect(catalogRefLabelExpr('prv', langId), 'prvLabel')
         .addSelect('prv.status', 'prvStatus')
         .addSelect('role.id', 'roleId')
-        .addSelect('role.detailKey', 'roleCatalogKey')
+        .addSelect('role.key', 'roleCatalogKey')
         .addSelect('role.dictId', 'roleDictId')
         .addSelect(catalogRefLabelExpr('role', langId), 'roleLabel')
         .addSelect('role.status', 'roleStatus')
@@ -1433,7 +1447,7 @@ export async function getSecurityUserDetailsByCatalogKey(
                   .innerJoin(CatalogHeader, 'ht', joinHeader('t', 'ht', SECURITY_CATALOG_HEADER.tipoAtributo))
                   .where('t.id IN (:...ids)', { ids: attrTypeIds })
                   .select('t.id', 'id')
-                  .addSelect('t.detailKey', 'catalogKey')
+                  .addSelect('t.key', 'catalogKey')
                   .addSelect('t.dictId', 'dictId')
                   .addSelect(catalogRefLabelExpr('t', langId), 'label')
                   .addSelect('t.status', 'status')
@@ -1448,7 +1462,7 @@ export async function getSecurityUserDetailsByCatalogKey(
                   .where('v.id IN (:...ids)', { ids: attrValueIds })
                   .andWhere('v.status = 1')
                   .select('v.id', 'id')
-                  .addSelect('v.detailKey', 'catalogKey')
+                  .addSelect('v.key', 'catalogKey')
                   .addSelect('v.dictId', 'dictId')
                   .addSelect(catalogRefLabelExpr('v', langId), 'label')
                   .addSelect('v.status', 'status')
@@ -1558,5 +1572,311 @@ export async function getSecurityUserDetailsByCatalogKey(
         permissions: [...permissionsSet.values()],
         providers: [...providersSet.values()],
         attributes,
+    };
+}
+
+/** Fila del listado Catálogo Usuarios */
+export interface UserCatalogListRow {
+    id: number;
+    username: string;
+    fullName: string;
+    email: string | null;
+    status: number;
+    createdAt: Date;
+    modifiedAt: Date;
+}
+
+export interface CatalogDetailGridRow {
+    id: number;
+    name: string;
+    description: string;
+}
+
+export interface UserModuleProcessEventRow {
+    moduleProcessId: number;
+    processId: number;
+    name: string;
+    description: string;
+    assigned: boolean;
+}
+
+function buildUserCatalogBaseQuery(filters: SecuritySearchFilter) {
+    const qb = datasource.getRepository(UserData).createQueryBuilder('ud');
+    applyUserDataFilters(qb, 'ud', filters);
+    return qb;
+}
+
+const USER_CATALOG_SORT_FIELDS = new Set(['id', 'createdAt', 'username', 'fullName']);
+
+export async function listUsersCatalogPaginated(
+    filters: SecuritySearchFilter,
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortDir: 'ASC' | 'DESC',
+): Promise<{ items: UserCatalogListRow[]; total: number }> {
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const safePage = Math.max(1, page);
+    const sort = USER_CATALOG_SORT_FIELDS.has(sortBy) ? sortBy : 'id';
+    const dir = sortDir === 'DESC' ? 'DESC' : 'ASC';
+
+    const base = buildUserCatalogBaseQuery(filters);
+    const total = await base.clone().getCount();
+
+    const modifiedSub = `(SELECT MAX(m) FROM (
+        SELECT MAX(pu.updated_at) AS m FROM core_security.profile_user pu WHERE pu.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ru.updated_at) FROM core_security.role_user ru WHERE ru.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ua.updated_at) FROM core_security.user_attribute ua WHERE ua.user_data_id = ud.user_data_id
+    ) s)`;
+
+    let orderExpr: string;
+    switch (sort) {
+        case 'createdAt':
+            orderExpr = 'ud.created_at';
+            break;
+        case 'username':
+            orderExpr = 'COALESCE(ud.preferred_username, ud.sub)';
+            break;
+        case 'fullName':
+            orderExpr = `LOWER(TRIM(CONCAT(COALESCE(ud.given_name,''),' ',COALESCE(ud.family_name,''))))`;
+            break;
+        default:
+            orderExpr = 'ud.user_data_id';
+    }
+
+    const rows = await base
+        .clone()
+        .select('ud.user_data_id', 'id')
+        .addSelect('COALESCE(ud.preferred_username, ud.sub)', 'username')
+        .addSelect(`TRIM(CONCAT(COALESCE(ud.given_name,''),' ',COALESCE(ud.family_name,'')))`, 'fullName')
+        .addSelect('ud.email', 'email')
+        .addSelect('ud.status', 'status')
+        .addSelect('ud.created_at', 'createdAt')
+        .addSelect(`COALESCE(${modifiedSub}, ud.created_at)`, 'modifiedAt')
+        .orderBy(orderExpr, dir)
+        .skip((safePage - 1) * safeLimit)
+        .take(safeLimit)
+        .getRawMany<Record<string, unknown>>();
+
+    const items: UserCatalogListRow[] = rows.map((row) => ({
+        id: Number(row.id),
+        username: String(row.username ?? ''),
+        fullName: String(row.fullName ?? '').trim() || String(row.username ?? ''),
+        email: row.email == null || row.email === '' ? null : String(row.email),
+        status: Number(row.status ?? 0),
+        createdAt: new Date(String(row.createdAt)),
+        modifiedAt: new Date(String(row.modifiedAt ?? row.createdAt)),
+    }));
+
+    return { items, total };
+}
+
+export async function listUsersCatalogForExport(
+    filters: SecuritySearchFilter,
+    maxRows: number,
+): Promise<{ items: UserCatalogListRow[]; total: number; truncated: boolean }> {
+    const cap = Math.min(50_000, Math.max(1, maxRows));
+    const base = buildUserCatalogBaseQuery(filters);
+    const total = await base.clone().getCount();
+
+    const modifiedSub = `(SELECT MAX(m) FROM (
+        SELECT MAX(pu.updated_at) AS m FROM core_security.profile_user pu WHERE pu.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ru.updated_at) FROM core_security.role_user ru WHERE ru.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ua.updated_at) FROM core_security.user_attribute ua WHERE ua.user_data_id = ud.user_data_id
+    ) s)`;
+
+    const rows = await base
+        .clone()
+        .select('ud.user_data_id', 'id')
+        .addSelect('COALESCE(ud.preferred_username, ud.sub)', 'username')
+        .addSelect(`TRIM(CONCAT(COALESCE(ud.given_name,''),' ',COALESCE(ud.family_name,'')))`, 'fullName')
+        .addSelect('ud.email', 'email')
+        .addSelect('ud.status', 'status')
+        .addSelect('ud.created_at', 'createdAt')
+        .addSelect(`COALESCE(${modifiedSub}, ud.created_at)`, 'modifiedAt')
+        .orderBy('ud.user_data_id', 'ASC')
+        .take(cap)
+        .getRawMany<Record<string, unknown>>();
+
+    const items: UserCatalogListRow[] = rows.map((row) => ({
+        id: Number(row.id),
+        username: String(row.username ?? ''),
+        fullName: String(row.fullName ?? '').trim() || String(row.username ?? ''),
+        email: row.email == null || row.email === '' ? null : String(row.email),
+        status: Number(row.status ?? 0),
+        createdAt: new Date(String(row.createdAt)),
+        modifiedAt: new Date(String(row.modifiedAt ?? row.createdAt)),
+    }));
+
+    return { items, total, truncated: total > cap };
+}
+
+export async function findModuleProcessRow(idModuleProcess: number): Promise<ModuleProcess | null> {
+    return datasource.getRepository(ModuleProcess).findOne({
+        where: { idModuleProcess, status: 1 },
+    });
+}
+
+export async function findProfileIdsLinkingUserToModule(userId: number, moduleCatalogId: number): Promise<number[]> {
+    const raw = await datasource
+        .getRepository(ProfileModule)
+        .createQueryBuilder('pm')
+        .innerJoin(
+            ProfileUser,
+            'pu',
+            'pu.catalog_detail_profile_id = pm.catalog_detail_profile_id AND pu.user_data_id = :userId AND pu.status = 1',
+            { userId },
+        )
+        .where('pm.catalog_detail_module_id = :moduleId', { moduleId: moduleCatalogId })
+        .andWhere('pm.status = 1')
+        .select('pm.catalog_detail_profile_id', 'pid')
+        .distinct(true)
+        .getRawMany<Record<string, unknown>>();
+    return raw.map((r) => Number(r.pid));
+}
+
+export async function setUserModuleProcessForProfiles(
+    profileIds: number[],
+    moduleProcessId: number,
+    assign: boolean,
+    actorId: string,
+): Promise<void> {
+    if (!profileIds.length) return;
+    await datasource.transaction(async (manager) => {
+        const repo = manager.getRepository(ProfileModuleProcess);
+        if (assign) {
+            for (const profileId of profileIds) {
+                await upsertComposite(
+                    manager,
+                    ProfileModuleProcess,
+                    { idCatalogDetailProfile: profileId, idModuleProcess: moduleProcessId },
+                    {
+                        idCatalogDetailProfile: profileId,
+                        idModuleProcess: moduleProcessId,
+                        status: 1,
+                        createdBy: actorId,
+                    },
+                    { status: 1, updatedBy: actorId, updatedAt: new Date() },
+                );
+            }
+        } else {
+            await repo
+                .createQueryBuilder()
+                .update(ProfileModuleProcess)
+                .set({ status: 0, updatedBy: actorId, updatedAt: new Date() })
+                .where('module_process_id = :mpid', { mpid: moduleProcessId })
+                .andWhere('catalog_detail_profile_id IN (:...pids)', { pids: profileIds })
+                .andWhere('status = 1')
+                .execute();
+        }
+    });
+}
+
+export async function listModuleProcessesWithUserAssignment(
+    userId: number,
+    moduleCatalogId: number,
+    langIdParam?: number,
+): Promise<UserModuleProcessEventRow[]> {
+    const langId = resolveLangId(langIdParam);
+    const rows = await datasource
+        .getRepository(ModuleProcess)
+        .createQueryBuilder('mp')
+        .innerJoin(CatalogDetail, 'cp', 'cp.id = mp.catalog_detail_process_id')
+        .innerJoin(CatalogHeader, 'hcp', joinHeader('cp', 'hcp', SECURITY_CATALOG_HEADER.evento))
+        .where('mp.catalog_detail_module_id = :moduleId', { moduleId: moduleCatalogId })
+        .andWhere('mp.status = 1')
+        .andWhere('cp.status = 1')
+        .select('mp.module_process_id', 'moduleProcessId')
+        .addSelect('cp.id', 'processId')
+        .addSelect(catalogRefLabelExpr('cp', langId), 'name')
+        .addSelect(`COALESCE(NULLIF(TRIM(cp.value), ''), cp.detailKey)`, 'description')
+        .addSelect(
+            `EXISTS (
+                SELECT 1 FROM core_security.profile_module_process pmp
+                INNER JOIN core_security.profile_user pu ON pu.catalog_detail_profile_id = pmp.catalog_detail_profile_id
+                    AND pu.user_data_id = :userId AND pu.status = 1
+                WHERE pmp.module_process_id = mp.module_process_id AND pmp.status = 1
+            )`,
+            'assigned',
+        )
+        .setParameter('userId', userId)
+        .orderBy(catalogRefLabelExpr('cp', langId), 'ASC')
+        .getRawMany<Record<string, unknown>>();
+
+    return rows.map((row) => ({
+        moduleProcessId: Number(row.moduleProcessId),
+        processId: Number(row.processId),
+        name: String(row.name ?? ''),
+        description: String(row.description ?? ''),
+        assigned: row.assigned === true || row.assigned === 'true' || String(row.assigned) === '1',
+    }));
+}
+
+export async function findActiveApplicationById(moduleId: number): Promise<CatalogDetail | null> {
+    return datasource
+        .getRepository(CatalogDetail)
+        .createQueryBuilder('m')
+        .innerJoin(CatalogHeader, 'hm', joinHeader('m', 'hm', SECURITY_CATALOG_HEADER.aplicativo))
+        .where('m.id = :id', { id: moduleId })
+        .andWhere('m.status = 1')
+        .getOne();
+}
+
+export async function linkProfileUserOnly(userId: number, profileId: number, actorId: string): Promise<void> {
+    await datasource.transaction(async (manager) => {
+        await upsertComposite(
+            manager,
+            ProfileUser,
+            { idCatalogDetailProfile: profileId, userDataId: userId },
+            {
+                idCatalogDetailProfile: profileId,
+                userDataId: userId,
+                status: 1,
+                createdBy: actorId,
+            },
+            { status: 1, updatedBy: actorId, updatedAt: new Date() },
+        );
+    });
+}
+
+export function userDataLookupKey(user: UserData): string {
+    return String(user.preferredUsername ?? user.sub ?? user.idUserData);
+}
+
+export async function getUserCatalogHeaderById(userId: number): Promise<UserCatalogListRow | null> {
+    const modifiedSub = `(SELECT MAX(m) FROM (
+        SELECT MAX(pu.updated_at) AS m FROM core_security.profile_user pu WHERE pu.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ru.updated_at) FROM core_security.role_user ru WHERE ru.user_data_id = ud.user_data_id
+        UNION ALL
+        SELECT MAX(ua.updated_at) FROM core_security.user_attribute ua WHERE ua.user_data_id = ud.user_data_id
+    ) s)`;
+
+    const row = await datasource
+        .getRepository(UserData)
+        .createQueryBuilder('ud')
+        .where('ud.user_data_id = :id', { id: userId })
+        .select('ud.user_data_id', 'id')
+        .addSelect('COALESCE(ud.preferred_username, ud.sub)', 'username')
+        .addSelect(`TRIM(CONCAT(COALESCE(ud.given_name,''),' ',COALESCE(ud.family_name,'')))`, 'fullName')
+        .addSelect('ud.email', 'email')
+        .addSelect('ud.status', 'status')
+        .addSelect('ud.created_at', 'createdAt')
+        .addSelect(`COALESCE(${modifiedSub}, ud.created_at)`, 'modifiedAt')
+        .getRawOne<Record<string, unknown>>();
+
+    if (!row) return null;
+    return {
+        id: Number(row.id),
+        username: String(row.username ?? ''),
+        fullName: String(row.fullName ?? '').trim() || String(row.username ?? ''),
+        email: row.email == null || row.email === '' ? null : String(row.email),
+        status: Number(row.status ?? 0),
+        createdAt: new Date(String(row.createdAt)),
+        modifiedAt: new Date(String(row.modifiedAt ?? row.createdAt)),
     };
 }

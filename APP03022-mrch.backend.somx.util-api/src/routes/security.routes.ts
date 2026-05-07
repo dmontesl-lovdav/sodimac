@@ -33,7 +33,14 @@ router.get('/catalogs/attribute-values', securityController.listAttributeValuesB
 
 router.delete('/user-details/cache', securityController.invalidateUserDetailsCache);
 router.get('/user-details/:userKey', securityController.getUserDetailsByCatalogKey);
-router.get('/user-attributes-by-key/:userKey', securityController.getUserAttributesByKey);
+
+router.get('/user-catalog', securityController.searchUserCatalog);
+router.get('/user-catalog/csv', securityController.exportUserCatalogCsv);
+
+router.get('/users/:id/catalog-detail', securityController.getUserCatalogDetail);
+router.get('/users/:userId/applications/:moduleId/events-catalog', securityController.getUserApplicationEventsCatalog);
+router.put('/users/:userId/module-processes/:moduleProcessId', securityController.setUserModuleProcessAssigned);
+router.post('/users/:id/profiles', securityController.appendUserProfile);
 
 router.get('/modules/:id/processes', securityController.getModuleProcessAssignment);
 router.put('/modules/:id/processes', securityController.saveModuleProcessAssignment);

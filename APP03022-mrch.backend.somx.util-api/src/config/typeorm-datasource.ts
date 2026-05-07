@@ -6,7 +6,6 @@ import { DataSource } from 'typeorm';
 import type { DataSourceOptions } from 'typeorm';
 import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional-cls-hooked';
 
-// Load local .env with priority over system variables
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -15,7 +14,6 @@ dotenv.config({
     override: true,
 });
 
-// Importar entidades
 import { CatParameter } from '../entities/CatParameter.entity.js';
 import { CatModule } from '../entities/CatModule.entity.js';
 import { CatMessage } from '../entities/CatMessage.entity.js';
@@ -23,8 +21,8 @@ import { ApplicationMsg } from '../entities/ApplicationMsg.entity.js';
 import { CatProcess } from '../entities/CatProcess.entity.js';
 import { CatItemType } from '../entities/CatItemType.entity.js';
 import { CatItem } from '../entities/CatItem.entity.js';
-import { CatalogDetail } from '../entities/CatalogDetail.entity.js';
-import { CatalogHeader } from '../entities/CatalogHeader.entity.js';
+import { ActivityLogs } from '@/entities/ActivityLogs.entity.js';
+
 import {
     ModuleProcess,
     ProfileModule,
@@ -36,13 +34,19 @@ import {
     UserAttribute,
     UserData,
 } from '../entities/SecurityRelations.entity.js';
-import { ActivityLogs } from '@/entities/ActivityLogs.entity.js';
-import { Supplier } from '@/entities/Supplier.entity.js';
 
-// Registrar entidades
+import { CatalogHeader } from '../entities/CatalogHeader.entity.js';
+import { CatalogDetail } from '../entities/CatalogDetail.entity.js';
+import { CatalogDetailRelation } from '../entities/CatalogDetailRelation.entity.js';
+import { CatalogConversion } from '../entities/CatalogConversion.entity.js';
+import { DictionaryLang } from '../entities/DictionaryLang.entity.js';
+import { PaymentCondition } from '../entities/PaymentCondition.entity.js';
+import { StatusTrain } from '../entities/StatusTrain.entity.js';
+import { Supplier } from '../entities/Supplier.entity.js';
+import { SupplierBlock } from '../entities/SupplierBlock.entity.js';
+import { SupplierType } from '../entities/SupplierType.entity.js';
+
 const ENTITIES = [
-    ActivityLogs,
-    Supplier,
     CatParameter,
     CatModule,
     CatMessage,
@@ -50,8 +54,7 @@ const ENTITIES = [
     CatProcess,
     CatItemType,
     CatItem,
-    CatalogHeader,
-    CatalogDetail,
+    ActivityLogs,
     UserData,
     ModuleProcess,
     ProfileModule,
@@ -61,6 +64,16 @@ const ENTITIES = [
     RolePermission,
     RoleProvider,
     UserAttribute,
+    CatalogHeader,
+    CatalogDetail,
+    CatalogDetailRelation,
+    CatalogConversion,
+    DictionaryLang,
+    PaymentCondition,
+    StatusTrain,
+    Supplier,
+    SupplierBlock,
+    SupplierType
 ];
 
 const dbHost = process.env.DB_HOST;
@@ -110,7 +123,7 @@ export async function initDataSource() {
     console.log('[INIT] DataSource entity metadata count BEFORE init:', datasource.entityMetadatas?.length || 0);
 
     if (!datasource.isInitialized) {
-         console.log('[DB CONNECT]', {
+        console.log('[DB CONNECT]', {
             host: dbHost,
             port: dbPort,
             user: dbUser,

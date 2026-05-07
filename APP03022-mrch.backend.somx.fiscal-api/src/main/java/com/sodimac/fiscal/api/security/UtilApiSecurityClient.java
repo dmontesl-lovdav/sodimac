@@ -34,7 +34,7 @@ public class UtilApiSecurityClient {
     private final ObjectMapper mapper;
     private final Map<String, CachedContext> cache = new ConcurrentHashMap<>();
 
-    public UtilApiSecurityClient(@Value("${fiscal.util-api.url:http://localhost:3712}") String utilApiUrl) {
+    public UtilApiSecurityClient(@Value("${utils.api.url:http://localhost:3712}") String utilApiUrl) {
         this.utilApiUrl = utilApiUrl;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         this.mapper = new ObjectMapper();

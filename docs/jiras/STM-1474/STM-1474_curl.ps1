@@ -1,6 +1,6 @@
 # STM-1474 — Complementos de Pago (fiscal-api) — Pruebas filtro seguridad (PowerShell)
 
-$BaseApi = "http://localhost:8082/api"
+$BaseApi = "http://localhost:8082"
 
 $JwtFernando = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
 $JwtAna      = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."

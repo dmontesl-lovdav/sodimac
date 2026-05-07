@@ -31,6 +31,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
     private final String apiDocsPath;
     private final JwtParser jwtParser;
     private final String authHeader;
+    private final boolean unsecured;
 
     public JwtTokenInterceptor(
             @Value("${fiscal.jwt.signing.publicKey}") String b64PublicKey,
@@ -38,7 +39,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
             @Value("${springdoc.swagger-ui.path}") String swaggerPath,
             @Value("${springdoc.api-docs.path}") String apiDocsPath) {
 
-        if (b64PublicKey != null) {
+        if (b64PublicKey != null && !b64PublicKey.isBlank()) {
             try {
                 PublicKey publicKeySpec = CertificateFactory
                         .getInstance("X509")
@@ -47,12 +48,14 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
                 this.jwtParser = Jwts.parser()
                         .verifyWith(publicKeySpec)
                         .build();
+                this.unsecured = false;
             } catch (Exception e) {
                 throw new IllegalArgumentException(
                         "REQUIRED VALUE fiscal.jwt.signing.publicKey IS NOT A VALID RSA public key.");
             }
         } else {
             this.jwtParser = Jwts.parser().unsecured().build();
+            this.unsecured = true;
         }
         this.authHeader = authHeader;
         this.swaggerPath = ".*" + swaggerPath + ".*";
@@ -84,18 +87,23 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         }
 
         authorization = authorization.replace("Bearer ", "");
-        Jws<Claims> claims;
+        Claims payload;
         try {
-            claims = this.jwtParser.parseSignedClaims(authorization);
+            if (this.unsecured) {
+                payload = this.jwtParser.parseUnsecuredClaims(authorization).getPayload();
+            } else {
+                Jws<Claims> claims = this.jwtParser.parseSignedClaims(authorization);
+                payload = claims.getPayload();
+            }
         } catch (Exception e) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return false;
         }
 
-        String name = claims.getPayload().get("name", String.class);
-        String email = claims.getPayload().get("email", String.class);
+        String name = payload.get("name", String.class);
+        String email = payload.get("email", String.class);
         List<String> groups = null;
-        Object groupsObj = claims.getPayload().get("groups");
+        Object groupsObj = payload.get("groups");
         if (groupsObj instanceof List<?>) {
             groups = ((List<?>) groupsObj).stream()
                     .filter(String.class::isInstance)

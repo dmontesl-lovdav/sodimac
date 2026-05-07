@@ -1,13 +1,13 @@
 # STM-323 — Facturas (fiscal-api) — Pruebas filtro seguridad (PowerShell)
 
-$BaseApi = "http://localhost:8082/api"
+$BaseApi = "http://localhost:8082"
 
 $JwtFernando = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
 $JwtAna      = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."
 $JwtJose     = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9."
 $JwtIvan     = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9."
 
-$Body = '{"page": 0, "size": 20}'
+$Body = '{"fechaInicioRecepcion":"2025-01-01","fechaFinalRecepcion":"2026-12-31","tipoDocumento":"FACTURA","page":0,"size":20}'
 
 function Invoke-Tests {
     param([string]$Title, [hashtable]$Headers)

@@ -57,20 +57,18 @@ public class SecurityContextFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         if (!securityEnabled) {
-            // Dev: deja headers del cliente intactos para tests directos.
             chain.doFilter(request, response);
             return;
         }
 
         String sub = extractSub(request);
         if (sub == null) {
-            // Sin JWT valido: deja request sin headers de seguridad.
-            // JwtTokenInterceptor (corre despues) responde 401 si auth strict.
             chain.doFilter(request, response);
             return;
         }
 
         UtilApiSecurityClient.SecurityAttributes attrs = utilApi.getAttributesBySub(sub);
+        log.debug("STM-1403 sub={} vendors={} types={} groups={}", sub, attrs.vendors(), attrs.types(), attrs.groups());
 
         Map<String, String> overrides = new HashMap<>();
         overrides.put("x-user-vendors", joinOrEmpty(attrs.vendors()));
@@ -88,7 +86,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
         if (token.isEmpty()) return null;
 
         try {
-            String[] parts = token.split("\\.");
+            String[] parts = token.split("\\.", -1);
             if (parts.length != 3) return null;
             byte[] payloadBytes = Base64.getUrlDecoder().decode(parts[1]);
             JsonNode payload = MAPPER.readTree(payloadBytes);

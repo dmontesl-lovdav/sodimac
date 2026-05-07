@@ -1,75 +1,39 @@
 #!/bin/bash
 # STM-1524 — Estado de Cuenta — Pruebas de filtro de seguridad
-# BFF finanzas: http://localhost:3000  (inyecta headers via util-api)
-# Backend directo: http://localhost:3001/api
+#
+# Pre-requisitos:
+#   - finanzas-api en :3001 con SECURITY_ENABLED=true
+#   - util-api en :3712
 
-BASE_BFF="http://localhost:3000"
 BASE_API="http://localhost:3001/api"
+YEAR="2026"
 
-echo "=========================================="
-echo "ESCENARIO 1: USR_FERNANDO — proveedor 11111"
-echo "  ATR001=11111 (vendor no existe en finanzas → 0 resultados)"
-echo "=========================================="
-curl -s -X GET "${BASE_BFF}/account-statement?year=2026" \
-  -H "x-user-key: USR_FERNANDO" \
-  -H "Content-Type: application/json" | jq .
+JWT_FERNANDO="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
+JWT_ANA="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."
+JWT_JOSE="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9."
+JWT_IVAN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9."
 
-echo ""
-echo "=========================================="
-echo "ESCENARIO 2: USR_JOSE — proveedores 11111,22222"
-echo "  ATR001=11111,22222 (vendors no existen en finanzas → 0 resultados)"
-echo "=========================================="
-curl -s -X GET "${BASE_BFF}/account-statement?year=2026" \
-  -H "x-user-key: USR_JOSE" \
-  -H "Content-Type: application/json" | jq .
+run() {
+    echo ""
+    echo "=========================================="
+    echo "$1"
+    echo "=========================================="
+    curl -s -i -X GET "${BASE_API}/account-statement?year=${YEAR}" \
+      -H "Authorization: Bearer $2"
+    echo ""
+}
 
-echo ""
-echo "=========================================="
-echo "ESCENARIO 3: zedlav.sd18@gmail.com — acceso total (-1)"
-echo "  ATR001=-1 → sin filtro → 4 estados de cuenta"
-echo "=========================================="
-curl -s -X GET "${BASE_BFF}/account-statement?year=2026" \
-  -H "x-user-key: zedlav.sd18@gmail.com" \
-  -H "Content-Type: application/json" | jq .
+run "ESCENARIO 1: FERNANDO — ATR001=11111 (3 estados año 2026)" "$JWT_FERNANDO"
+run "ESCENARIO 2: JOSE — ATR001=11111,22222 (5 estados)" "$JWT_JOSE"
+run "ESCENARIO 3: Iván — ATR001=-1 (6 estados, sin filtro)" "$JWT_IVAN"
+run "ESCENARIO 4: ANA — sin ATR001 → WRN7029" "$JWT_ANA"
 
 echo ""
 echo "=========================================="
-echo "ESCENARIO 4: USR_ANA — sin ATR001 → WRN7029"
-echo "  Tiene ATR002=TPR001 pero NO ATR001 → HTTP 400"
+echo "ESCENARIO 5: Spoof intentado (x-user-vendors=-1)"
+echo "  Backend IGNORA header cliente: filtro sigue a 11111 (FERNANDO)"
 echo "=========================================="
-curl -s -X GET "${BASE_BFF}/account-statement?year=2026" \
-  -H "x-user-key: USR_ANA" \
-  -H "Content-Type: application/json" | jq .
-
+curl -s -i -X GET "${BASE_API}/account-statement?year=${YEAR}" \
+  -H "Authorization: Bearer ${JWT_FERNANDO}" \
+  -H "x-user-vendors: -1"
 echo ""
-echo "=========================================="
-echo "ESCENARIO 5: Consulta por UUID con filtro"
-echo "  Reemplazar {uuid} con un UUID real"
-echo "=========================================="
-# curl -s -X GET "${BASE_BFF}/account-statement/{uuid}" \
-#   -H "x-user-key: fernando" | jq .
-
-echo ""
-echo "=========================================="
-echo "ALTERNATIVA: Prueba directa al backend"
-echo "=========================================="
-
-echo "--- Proveedor 1001 ---"
-curl -s -X GET "${BASE_API}/account-statement?year=2025" \
-  -H "x-user-vendors: 1001" \
-  -H "Content-Type: application/json" | jq '.total // .data | length'
-
-echo "--- Proveedores 1001,1002 ---"
-curl -s -X GET "${BASE_API}/account-statement?year=2025" \
-  -H "x-user-vendors: 1001,1002" \
-  -H "Content-Type: application/json" | jq '.total // .data | length'
-
-echo "--- Acceso total -1 ---"
-curl -s -X GET "${BASE_API}/account-statement?year=2025" \
-  -H "x-user-vendors: -1" \
-  -H "Content-Type: application/json" | jq '.total // .data | length'
-
-echo "--- Sin atributos (WRN7029) ---"
-curl -s -X GET "${BASE_API}/account-statement?year=2025" \
-  -H "x-user-vendors: " \
-  -H "Content-Type: application/json" | jq .

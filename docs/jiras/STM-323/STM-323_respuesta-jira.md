@@ -2,23 +2,25 @@
 
 ## Resumen
 
-Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Facturas** dentro de `fiscal-api`. El filtrado opera exclusivamente en backend a partir de encabezados inyectados por el BFF fiscal.
+Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Facturas** dentro de `fiscal-api`. El backend decodifica el JWT del request, extrae el `sub` del usuario, consulta `util-api` para resolver sus atributos y aplica el filtro al querying. El cliente NO controla los headers de seguridad — un Filter Spring los reescribe siempre con los valores derivados del JWT.
 
 ---
 
 ## Flujo implementado
 
 ```
-Frontend (recupera token JWT, envía Authorization header)
-    → GCP Cloud Endpoints (valida token)
-        → BFF fiscal (consulta util-api, inyecta headers de seguridad)
-            → fiscal-api (filtra facturas según headers)
+Frontend (envía Authorization: Bearer <JWT>)
+    → GCP Cloud Endpoints (valida firma JWT en uat/prod)
+        → fiscal-api SecurityContextFilter
+              1. extrae sub del JWT
+              2. consulta util-api /api/security/user-attributes-by-key/{sub}
+              3. recibe atributos: ATR001 (vendor), ATR002 (tipo), ATR004 (grupo)
+              4. envuelve request: getHeader("x-user-vendors") devuelve valor calculado
+        → JwtTokenInterceptor valida firma JWT
+        → InvoiceController lee @RequestHeader("x-user-vendors") (ya seguro)
 ```
 
-Headers inyectados por BFF:
-- `x-user-vendors` — valores del atributo ATR001 (Proveedor)
-- `x-user-types` — valores del atributo ATR002 (TipoProveedor)
-- `x-user-groups` — valores del atributo ATR004 (GrupoProveedor)
+Cache: 5 min en memoria por `sub`. Patrón consistente con `aclaraciones-api` (`JwtTokenInterceptor`).
 
 ---
 
@@ -26,11 +28,20 @@ Headers inyectados por BFF:
 
 | Archivo | Cambio |
 |---------|--------|
-| `bff.fiscal/src/App.js` | Agrega `extractUserKey`, `fetchSecurityContext`, `buildSecurityHeaders`; inyecta headers en `proxyReqOptDecorator` |
-| `fiscal-api/InvoiceController.java` | Agrega `@RequestHeader(x-user-vendors)`, `parseVendorHeader()`, retorna WRN7029 si lista vacía |
-| `fiscal-api/InvoiceService.java` | Nuevo método `searchInvoices(request, List<String> allowedVendors)` |
-| `fiscal-api/InvoiceServiceImpl.java` | Implementación del nuevo método, delega a `InvoiceSpecification` con vendors |
-| `fiscal-api/InvoiceSpecification.java` | Nuevo `buildSpecification(request, allowedVendors)`: subquery JPA Criteria sobre `addendum.supplierNumber` |
+| `fiscal-api/.../security/UtilApiSecurityClient.java` | **Nuevo**: HTTP client (java.net.http) hacia util-api con cache 5 min |
+| `fiscal-api/.../security/SecurityContextFilter.java` | **Nuevo**: `OncePerRequestFilter` (HIGHEST_PRECEDENCE). Decodifica JWT, llama `UtilApiSecurityClient`, envuelve request con `HttpServletRequestWrapper` que sobrescribe `x-user-vendors`/`x-user-types`/`x-user-groups`. Cliente NO puede falsificar |
+| `fiscal-api/InvoiceController.java` | Mantiene `@RequestHeader("x-user-vendors")` (sin cambio). Recibe valor seguro del filter |
+| `fiscal-api/InvoiceService.java` | Sin cambio: método `searchInvoices(request, List<String> allowedVendors)` |
+| `fiscal-api/InvoiceSpecification.java` | Sin cambio: subquery JPA Criteria sobre `addendum.supplierNumber` |
+
+---
+
+## Configuración
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `security.enabled` | `true` | `false` en dev (filter deja pasar headers cliente). `true` en uat/prod (filter sobrescribe siempre) |
+| `fiscal.util-api.url` | `http://localhost:3712` | URL de util-api |
 
 ---
 
@@ -52,55 +63,43 @@ predicates.add(cb.in(root.get("id")).value(sub));
 
 ## Reglas de negocio aplicadas
 
-| Condición del header `x-user-vendors` | Comportamiento |
-|---------------------------------------|---------------|
-| Header ausente (`null`) | Sin filtro — devuelve todo |
+| Atributo ATR001 del usuario en util-api | Comportamiento |
+|------------------------------------------|----------------|
+| Sin token (security.enabled=false) | Sin filtro — devuelve todo |
 | `-1` | Sin filtro — acceso total |
 | `11111` | Solo facturas cuyo addendum.supplierNumber = 11111 |
 | `11111,22222` | Facturas con supplierNumber 11111 ó 22222 (OR lógico) |
-| Vacío `""` | Retorna WRN7029 |
+| Sin ATR001 configurado en BD | HTTP 400 — WRN7029 |
 
 ---
 
 ## Escenarios de prueba
 
-### Escenario 1 — Usuario con proveedor específico
+### Escenario 1 — FERNANDO (ATR001=11111)
 ```
-POST /invoices/search
+POST /api/invoices/search
+Authorization: Bearer <JWT con sub=sb000001>
 Content-Type: application/json
-x-user-vendors: 11111
 
 {"page": 0, "size": 20}
 ```
-**Resultado**: Solo facturas del proveedor 11111 — **4 registros**
+**Resultado**: Solo facturas del proveedor 11111
 
-### Escenario 2 — Usuario con múltiples proveedores
+### Escenario 2 — JOSE (ATR001=11111,22222)
 ```
-POST /invoices/search
-Content-Type: application/json
-x-user-vendors: 11111,22222
-
-{"page": 0, "size": 20}
+Authorization: Bearer <JWT con sub=sb000003>
 ```
-**Resultado**: Facturas del proveedor 11111 ó 22222 — **8 registros**
+**Resultado**: Facturas del proveedor 11111 ó 22222
 
-### Escenario 3 — Usuario con acceso total (-1)
+### Escenario 3 — Iván (ATR001=-1)
 ```
-POST /invoices/search
-Content-Type: application/json
-x-user-vendors: -1
-
-{"page": 0, "size": 20}
+Authorization: Bearer <JWT con sub=sb000005>
 ```
-**Resultado**: Todas las facturas sin restricción — **23 registros**
+**Resultado**: Todas las facturas sin restricción
 
-### Escenario 4 — Usuario sin atributos configurados
+### Escenario 4 — ANA (sin ATR001)
 ```
-POST /invoices/search
-Content-Type: application/json
-x-user-vendors: (vacío)
-
-{"page": 0, "size": 20}
+Authorization: Bearer <JWT con sub=sb000002>
 ```
 **Resultado**: HTTP 400 — WRN7029
 
@@ -113,14 +112,14 @@ x-user-vendors: (vacío)
 
 ---
 
-## Pruebas ejecutadas (vía BFF fiscal local — puerto 3003)
+## Pruebas ejecutadas
 
-| Usuario | Atributo ATR001 | Registros | Resultado |
-|---------|-----------------|-----------|-----------|
-| fernando | 11111 | 4 | Filtro por proveedor 11111 ✅ |
-| jose | 11111, 22222 | 8 | OR lógico proveedores 11111/22222 ✅ |
-| ivan | -1 | 23 | Acceso total ✅ |
-| ana | (sin ATR001) | — | HTTP 400 — WRN7029 ✅ |
+| `sub` (JWT) | Usuario | Atributo ATR001 | Registros | Resultado |
+|-------------|---------|------------------|-----------|-----------|
+| `sb000001` | FERNANDO | 11111 | 4 | Filtro por proveedor 11111 ✅ |
+| `sb000003` | JOSE | 11111,22222 | 8 | OR lógico ✅ |
+| `sb000005` | Iván | -1 | 23 | Acceso total ✅ |
+| `sb000002` | ANA | sin ATR001 | — | HTTP 400 WRN7029 ✅ |
 
 ---
 
@@ -130,3 +129,4 @@ x-user-vendors: (vacío)
 - [x] Usuario con valor -1 → acceso total
 - [x] Usuario con múltiples atributos → OR lógico
 - [x] Usuario sin atributos → WRN7029
+- [x] Headers de cliente no spoofeable (filter sobrescribe siempre con valor del JWT)

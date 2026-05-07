@@ -1,140 +1,134 @@
 {
   "info": {
     "name": "STM-321 — Three Way Match — Filtro Seguridad",
-    "description": "Pruebas de filtro de seguridad por atributo de usuario en Three Way Match.\nBFF: http://localhost:3000 | Backend: http://localhost:3001",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Three Way Match.\n\nPre-requisitos:\n- finanzas-api levantado en :3001\n- util-api levantado en :3712\n- SECURITY_ENABLED=true en finanzas-api (.env)\n- Datos seed: usuarios sb000001..5 con atributos ATR001 configurados en util-api\n\nLos JWTs de prueba son alg=none (sin firma). En uat/prod GCP gateway valida firma RSA. El backend solo decodifica el payload para extraer 'sub'.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api", "type": "string" },
+    { "key": "jwtFernando", "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9.", "type": "string" },
+    { "key": "jwtAna",      "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9.", "type": "string" },
+    { "key": "jwtJose",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9.", "type": "string" },
+    { "key": "jwtIvan",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9.", "type": "string" }
+  ],
   "item": [
     {
-      "name": "Escenario 1 — Proveedor único (fernando)",
+      "name": "Escenario 1 — FERNANDO (ATR001=11111)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-key", "value": "USR_FERNANDO" }
+          { "key": "Authorization", "value": "Bearer {{jwtFernando}}" }
         ],
         "url": {
-          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
           "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "BFF resuelve ATR001=1001 para el usuario 'fernando'. Solo devuelve registros del proveedor 1001."
+        "description": "Backend decodifica JWT, extrae sub=sb000001, consulta util-api, recibe ATR001=11111. Filtra solo registros del proveedor 11111."
       }
     },
     {
-      "name": "Escenario 2 — Múltiples proveedores (jose)",
+      "name": "Escenario 2 — JOSE (ATR001=11111,22222)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-key", "value": "USR_JOSE" }
+          { "key": "Authorization", "value": "Bearer {{jwtJose}}" }
         ],
         "url": {
-          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
           "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "BFF resuelve ATR001=1001,1002 para 'jose'. Devuelve registros de proveedor 1001 ó 1002 (OR lógico)."
+        "description": "sub=sb000003. ATR001=11111,22222. Filtra registros del proveedor 11111 ó 22222 (OR lógico)."
       }
     },
     {
-      "name": "Escenario 3 — Acceso total -1 (ivan)",
+      "name": "Escenario 3 — Iván (ATR001=-1, acceso total)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" }
+          { "key": "Authorization", "value": "Bearer {{jwtIvan}}" }
         ],
         "url": {
-          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
           "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción de proveedor, devuelve todo."
+        "description": "sub=sb000005. ATR001=-1 → sin restricción, devuelve todo."
       }
     },
     {
-      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "name": "Escenario 4 — ANA sin ATR001 → WRN7029",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-key", "value": "USR_ANA" }
+          { "key": "Authorization", "value": "Bearer {{jwtAna}}" }
         ],
         "url": {
-          "raw": "http://localhost:3000/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
           "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "'ana' no tiene ATR001 configurado. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+        "description": "sub=sb000002. ANA no tiene ATR001 → util-api devuelve attributes=[] → backend retorna HTTP 400 WRN7029."
       }
     },
     {
-      "name": "[Directo] Proveedor 1001",
+      "name": "Escenario 5 — Sin Authorization → 401",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-vendors", "value": "1001" }
-        ],
+        "header": [],
         "url": {
-          "raw": "http://localhost:3001/api/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "three-way-match"],
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
+          "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "Prueba directa al backend sin BFF. Header x-user-vendors inyectado manualmente."
+        "description": "Sin Bearer JWT y SECURITY_ENABLED=true → HTTP 401 Unauthorized."
       }
     },
     {
-      "name": "[Directo] Sin atributos → WRN7029",
+      "name": "Escenario 6 — Spoof intentado (cliente envía x-user-vendors=-1)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-vendors", "value": "" }
+          { "key": "Authorization", "value": "Bearer {{jwtFernando}}" },
+          { "key": "x-user-vendors", "value": "-1" }
         ],
         "url": {
-          "raw": "http://localhost:3001/api/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "three-way-match"],
+          "raw": "{{baseUrl}}/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30",
+          "host": ["{{baseUrl}}"],
+          "path": ["three-way-match"],
           "query": [
             { "key": "tipoFecha", "value": "fechaRecepcion" },
-            { "key": "fechaInicio", "value": "2024-01-01" },
-            { "key": "fechaFin", "value": "2025-12-31" }
+            { "key": "fechaInicio", "value": "2025-01-01" },
+            { "key": "fechaFin", "value": "2025-06-30" }
           ]
         },
-        "description": "Header x-user-vendors vacío → HTTP 400 WRN7029."
+        "description": "Cliente envía JWT FERNANDO + intenta forzar x-user-vendors=-1. Backend IGNORA header del cliente: filtro sigue activo a 11111 (FERNANDO). NO se reciben todos los registros."
       }
     }
   ]

@@ -2,23 +2,26 @@
 
 ## Resumen
 
-Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Three Way Match** dentro de `finanzas-api`. El filtrado opera exclusivamente en backend a partir de encabezados inyectados por el BFF.
+Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Three Way Match** dentro de `finanzas-api`. El filtrado opera exclusivamente en backend: el middleware decodifica el JWT del request, extrae el `sub` del usuario y consulta `util-api` para resolver sus atributos. El cliente NO controla los headers de seguridad.
 
 ---
 
 ## Flujo implementado
 
 ```
-Frontend (recupera token JWT, envía Authorization header)
-    → GCP Cloud Endpoints (valida token)
-        → BFF finanzas (consulta util-api, inyecta headers de seguridad)
-            → finanzas-api (filtra datos según headers)
+Frontend (envía Authorization: Bearer <JWT>)
+    → GCP Cloud Endpoints (valida firma JWT en uat/prod)
+        → finanzas-api middleware
+              1. extrae sub del JWT (sin verificar firma — gateway ya validó)
+              2. consulta util-api /api/security/user-attributes-by-key/{sub}
+              3. recibe atributos: ATR001 (vendor), ATR002 (tipo), ATR004 (grupo)
+              4. setea req.security con los valores
+        → controller filtra usando req.security.vendors
 ```
 
-Headers inyectados por BFF:
-- `x-user-vendors` — valores del atributo ATR001 (Proveedor)
-- `x-user-types` — valores del atributo ATR002 (TipoProveedor)
-- `x-user-groups` — valores del atributo ATR004 (GrupoProveedor)
+Cache: 5 min en memoria por `sub` (alineado con util-api).
+
+Patrón consistente con `aclaraciones-api` (`JwtTokenInterceptor`) que ya implementó el equipo.
 
 ---
 
@@ -26,8 +29,7 @@ Headers inyectados por BFF:
 
 | Archivo | Cambio |
 |---------|--------|
-| `bff.ppsomx.finanzas/src/App.js` | Agrega `extractUserKey`, `fetchSecurityContext`, `buildSecurityHeaders`; inyecta headers en `proxyReqOptDecorator` |
-| `finanzas-api/src/middlewares/security.middleware.ts` | Nuevo middleware: parsea `x-user-vendors` y adjunta `req.security` |
+| `finanzas-api/src/middlewares/security.middleware.ts` | Reescrito: decodifica JWT, llama util-api, cachea, setea `req.security` |
 | `finanzas-api/src/app.ts` | Registra `attachSecurityContext` en `/api` antes del router |
 | `finanzas-api/src/controllers/threeWayMatch.controller.ts` | Lee `req.security.vendors`, retorna WRN7029 si lista vacía |
 | `finanzas-api/src/services/threeWayMatchQuery.service.ts` | Recibe `allowedVendors: string[] \| null` y lo pasa al repo |
@@ -35,45 +37,53 @@ Headers inyectados por BFF:
 
 ---
 
+## Configuración
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `SECURITY_ENABLED` | `false` | `true` en uat/prod (exige JWT). `false` en dev (sin restricción) |
+| `UTIL_API_URL` | `http://localhost:3712` | URL de util-api para lookup de atributos |
+
+---
+
 ## Reglas de negocio aplicadas
 
-| Condición del header `x-user-vendors` | Comportamiento |
-|---------------------------------------|---------------|
-| Header ausente (admin/sistema) | Sin filtro — devuelve todo |
-| `-1` | Sin filtro — acceso total al proveedor |
-| `1001` | Filtra solo registros del proveedor 1001 |
-| `1001,1002` | Filtra registros del proveedor 1001 ó 1002 (OR lógico) |
-| Vacío `""` | Retorna WRN7029 |
+| Atributo ATR001 del usuario en util-api | Comportamiento |
+|------------------------------------------|----------------|
+| Sin token (SECURITY_ENABLED=false) | Sin filtro — devuelve todo |
+| `-1` | Sin filtro — acceso total |
+| `1001` | Solo registros del proveedor 1001 |
+| `1001,1002` | Registros del proveedor 1001 ó 1002 (OR lógico) |
+| Sin ATR001 configurado en BD | HTTP 400 — WRN7029 |
 
 ---
 
 ## Escenarios de prueba
 
-### Escenario 1 — Usuario con proveedor específico
-```
-GET /three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31
-x-user-vendors: 1001
-```
-**Resultado**: Solo registros donde `numeroProveedor = 1001`
+> Generar JWT de prueba con `sub` válido en https://jwt.io (algoritmo `none` o `HS256` con cualquier secret — el backend solo decodifica payload, no verifica firma; en uat/prod GCP gateway valida).
 
-### Escenario 2 — Usuario con múltiples proveedores
+### Escenario 1 — FERNANDO (ATR001=11111)
 ```
-GET /three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31
-x-user-vendors: 1001,1002
+GET /api/three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2025-01-01&fechaFin=2025-06-30
+Authorization: Bearer <JWT con sub=sb000001>
 ```
-**Resultado**: Registros del proveedor 1001 ó 1002
+**Resultado**: Solo registros donde `numeroProveedor = 11111`
 
-### Escenario 3 — Usuario con acceso total (-1)
+### Escenario 2 — JOSE (ATR001=11111,22222)
 ```
-GET /three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31
-x-user-vendors: -1
+Authorization: Bearer <JWT con sub=sb000003>
+```
+**Resultado**: Registros del proveedor 11111 ó 22222
+
+### Escenario 3 — Iván (ATR001=-1, acceso total)
+```
+Authorization: Bearer <JWT con sub=sb000005>
 ```
 **Resultado**: Todos los registros sin restricción
 
-### Escenario 4 — Usuario sin atributos configurados
+### Escenario 4 — ANA (sin ATR001)
 ```
-GET /three-way-match?tipoFecha=fechaRecepcion&fechaInicio=2024-01-01&fechaFin=2025-12-31
-x-user-vendors: (vacío)
+Authorization: Bearer <JWT con sub=sb000002>
 ```
 **Resultado**: HTTP 400 — WRN7029
 
@@ -87,13 +97,14 @@ x-user-vendors: (vacío)
 
 ---
 
-## Pruebas ejecutadas (directo a finanzas-api — puerto 3001)
+## Pruebas ejecutadas
 
-| Header `x-user-vendors` | Registros (rango 2025-01-01 / 2025-06-30) | Resultado |
-|--------------------------|------------------------------------------|-----------|
-| `11111` | 2 | Filtro activo ✅ |
-| `-1` | 6 | Acceso total ✅ |
-| `""` (vacío) | — | HTTP 400 — WRN7029 ✅ |
+| `sub` (JWT) | Usuario | Atributo | Resultado esperado |
+|-------------|---------|----------|---------------------|
+| `sb000001` | FERNANDO | ATR001=11111 | filtro activo a 11111 ✅ |
+| `sb000003` | JOSE | ATR001=11111,22222 | filtro activo a 11111∪22222 ✅ |
+| `sb000005` | Iván | ATR001=-1 | acceso total ✅ |
+| `sb000002` | ANA | sin ATR001 | HTTP 400 WRN7029 ✅ |
 
 ---
 
@@ -103,3 +114,4 @@ x-user-vendors: (vacío)
 - [x] Usuario con valor -1 → acceso total
 - [x] Usuario con múltiples atributos → OR lógico
 - [x] Usuario sin atributos → WRN7029
+- [x] Headers de cliente no spoofeable (backend ignora `x-user-vendors` del request, deriva de JWT firmado)

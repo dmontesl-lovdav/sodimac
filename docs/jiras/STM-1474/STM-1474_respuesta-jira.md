@@ -2,21 +2,25 @@
 
 ## Resumen
 
-Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Complementos de Pago** (Recepción) dentro de `fiscal-api`. El filtrado opera a nivel backend filtrando por `addendum.supplier_number` vinculado al complemento vía `addendum.payments_uuid`.
+Se implementó el filtro de seguridad por atributo de usuario en el módulo de **Complementos de Pago** (Recepción) dentro de `fiscal-api`. El backend decodifica el JWT del request, extrae el `sub`, consulta `util-api` para los atributos y filtra por `addendum.supplier_number` vinculado al complemento vía `addendum.payments_uuid`. El cliente NO controla los headers de seguridad — un Filter Spring los reescribe siempre con los valores derivados del JWT.
 
 ---
 
 ## Flujo implementado
 
 ```
-Frontend (recupera token JWT, envía Authorization header)
-    → GCP Cloud Endpoints (valida token)
-        → BFF fiscal (consulta util-api, inyecta headers de seguridad)
-            → fiscal-api (filtra complementos según headers)
+Frontend (envía Authorization: Bearer <JWT>)
+    → GCP Cloud Endpoints (valida firma JWT en uat/prod)
+        → fiscal-api SecurityContextFilter
+              1. extrae sub del JWT
+              2. consulta util-api /api/security/user-attributes-by-key/{sub}
+              3. recibe atributos: ATR001 (vendor)
+              4. envuelve request: getHeader("x-user-vendors") devuelve valor calculado
+        → JwtTokenInterceptor valida firma JWT
+        → PaymentRegistrationController lee @RequestHeader("x-user-vendors") (ya seguro)
 ```
 
-Headers inyectados por BFF:
-- `x-user-vendors` — valores del atributo ATR001 (Proveedor)
+Cache: 5 min en memoria por `sub`. Patrón consistente con `aclaraciones-api` (`JwtTokenInterceptor`).
 
 ---
 
@@ -24,11 +28,22 @@ Headers inyectados por BFF:
 
 | Archivo | Cambio |
 |---------|--------|
-| `fiscal-api/PaymentRegistrationController.java` | Agrega `@RequestHeader(x-user-vendors)`, `parseVendorHeader()`, WRN7029 en `buscarComplementosPago()` |
-| `fiscal-api/PaymentQueryService.java` | Agrega overload `searchPayments(request, List<String> allowedVendors)` |
-| `fiscal-api/PaymentQueryServiceImpl.java` | Implementa overload, delega a repositorio con vendors |
-| `fiscal-api/PaymentsRepositoryCustom.java` | Agrega overload con allowedVendors |
-| `fiscal-api/PaymentsRepositoryCustomImpl.java` | Implementa `searchPayments(request, vendors)` con subquery JPA sobre `addendum.supplier_number` |
+| `fiscal-api/.../security/UtilApiSecurityClient.java` | **Nuevo (compartido con STM-323)**: HTTP client hacia util-api con cache 5 min |
+| `fiscal-api/.../security/SecurityContextFilter.java` | **Nuevo (compartido con STM-323)**: `OncePerRequestFilter` que envuelve request con header de seguridad calculado del JWT lookup |
+| `fiscal-api/PaymentRegistrationController.java` | Mantiene `@RequestHeader("x-user-vendors")` (sin cambio). Recibe valor seguro del filter |
+| `fiscal-api/PaymentQueryService.java` | Sin cambio: overload `searchPayments(request, List<String> allowedVendors)` |
+| `fiscal-api/PaymentQueryServiceImpl.java` | Sin cambio |
+| `fiscal-api/PaymentsRepositoryCustom.java` | Sin cambio |
+| `fiscal-api/PaymentsRepositoryCustomImpl.java` | Sin cambio: subquery JPA sobre `addendum.supplier_number` |
+
+---
+
+## Configuración
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `security.enabled` | `true` | `false` en dev (filter pasa headers cliente). `true` en uat/prod |
+| `fiscal.util-api.url` | `http://localhost:3712` | URL de util-api |
 
 ---
 
@@ -57,24 +72,24 @@ predicates.add(root.get("paymentsUuid").in(sub));
 
 ## Reglas de negocio aplicadas
 
-| Condición del header `x-user-vendors` | Comportamiento |
-|---------------------------------------|---------------|
-| Header ausente | Sin filtro — devuelve todo |
+| Atributo ATR001 del usuario | Comportamiento |
+|------------------------------|----------------|
+| Sin token (security.enabled=false) | Sin filtro — devuelve todo |
 | `-1` | Sin filtro — acceso total |
 | `11111` | Solo complementos cuyo addendum.supplier_number = 11111 |
 | `11111,22222` | Complementos de supplier 11111 ó 22222 (OR lógico) |
-| Vacío `""` | Retorna WRN7029 |
+| Sin ATR001 configurado en BD | HTTP 400 — WRN7029 |
 
 ---
 
-## Pruebas ejecutadas (vía BFF fiscal — puerto 3003)
+## Pruebas ejecutadas
 
-| Usuario | Atributo ATR001 | Complementos | Resultado |
-|---------|-----------------|--------------|-----------|
-| USR_FERNANDO | 11111 | 0 | Filtro activo (sin datos para vendor 11111 en payments) ✅ |
-| USR_JOSE | 11111, 22222 | 0 | Filtro activo OR lógico ✅ |
-| zedlav.sd18@gmail.com | -1 | 19 | Acceso total ✅ |
-| USR_ANA | (sin ATR001) | — | HTTP 400 — WRN7029 ✅ |
+| `sub` (JWT) | Usuario | Atributo ATR001 | Complementos | Resultado |
+|-------------|---------|------------------|--------------|-----------|
+| `sb000001` | FERNANDO | 11111 | 0 | Filtro activo (sin datos en payments) ✅ |
+| `sb000003` | JOSE | 11111,22222 | 0 | Filtro activo OR lógico ✅ |
+| `sb000005` | Iván | -1 | 19 | Acceso total ✅ |
+| `sb000002` | ANA | sin ATR001 | — | HTTP 400 WRN7029 ✅ |
 
 ---
 
@@ -84,3 +99,4 @@ predicates.add(root.get("paymentsUuid").in(sub));
 - [x] Usuario con valor -1 → acceso total (19 complementos)
 - [x] Usuario con múltiples atributos → OR lógico
 - [x] Usuario sin atributos → WRN7029
+- [x] Headers de cliente no spoofeable (filter sobrescribe siempre con valor del JWT)

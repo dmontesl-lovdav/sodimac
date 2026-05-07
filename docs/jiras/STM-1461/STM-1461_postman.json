@@ -1,134 +1,103 @@
 {
   "info": {
-    "name": "STM-1461 — Carta Porte — Filtro Seguridad",
-    "description": "Pruebas de filtro de seguridad por atributo de usuario en Guías de Carta Porte.\nBFF: http://localhost:3000 | Backend: http://localhost:3001",
+    "name": "STM-1461 — Carta Porte (Shipping Guide) — Filtro Seguridad",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Carta Porte.\n\nPre-requisitos:\n- finanzas-api levantado en :3001 con SECURITY_ENABLED=true\n- util-api levantado en :3712\n- Datos seed con usuarios sb000001..5\n\nJWTs alg=none (sin firma). En uat/prod GCP gateway valida firma RSA.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api", "type": "string" },
+    { "key": "jwtFernando", "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9.", "type": "string" },
+    { "key": "jwtAna",      "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9.", "type": "string" },
+    { "key": "jwtJose",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9.", "type": "string" },
+    { "key": "jwtIvan",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9.", "type": "string" }
+  ],
   "item": [
     {
-      "name": "Escenario 1 — Proveedor único (fernando)",
+      "name": "Escenario 1 — FERNANDO (ATR001=11111)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_FERNANDO" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtFernando}}" }],
         "url": {
-          "raw": "http://localhost:3000/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/shipping-guide?from=2024-01-01&to=2025-12-31",
+          "host": ["{{baseUrl}}"],
           "path": ["shipping-guide"],
           "query": [
             { "key": "from", "value": "2024-01-01" },
             { "key": "to", "value": "2025-12-31" }
           ]
         },
-        "description": "BFF resuelve ATR001=1001 para 'fernando'. Solo guías del proveedor 1001."
+        "description": "sub=sb000001. ATR001=11111. Filtra solo guías del proveedor 11111."
       }
     },
     {
-      "name": "Escenario 2 — Múltiples proveedores (jose)",
+      "name": "Escenario 2 — JOSE (ATR001=11111,22222)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_JOSE" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtJose}}" }],
         "url": {
-          "raw": "http://localhost:3000/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/shipping-guide?from=2024-01-01&to=2025-12-31",
+          "host": ["{{baseUrl}}"],
           "path": ["shipping-guide"],
           "query": [
             { "key": "from", "value": "2024-01-01" },
             { "key": "to", "value": "2025-12-31" }
           ]
         },
-        "description": "BFF resuelve ATR001=1001,1002 para 'jose'. Guías del proveedor 1001 ó 1002 (OR lógico)."
+        "description": "sub=sb000003. ATR001=11111,22222. Filtra guías 11111 ó 22222."
       }
     },
     {
-      "name": "Escenario 3 — Acceso total -1 (ivan)",
+      "name": "Escenario 3 — Iván (ATR001=-1)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtIvan}}" }],
         "url": {
-          "raw": "http://localhost:3000/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/shipping-guide?from=2024-01-01&to=2025-12-31",
+          "host": ["{{baseUrl}}"],
           "path": ["shipping-guide"],
           "query": [
             { "key": "from", "value": "2024-01-01" },
             { "key": "to", "value": "2025-12-31" }
           ]
         },
-        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción, todas las guías."
+        "description": "sub=sb000005. ATR001=-1 → todas las guías."
       }
     },
     {
-      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "name": "Escenario 4 — ANA sin ATR001 → WRN7029",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_ANA" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtAna}}" }],
         "url": {
-          "raw": "http://localhost:3000/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/shipping-guide?from=2024-01-01&to=2025-12-31",
+          "host": ["{{baseUrl}}"],
           "path": ["shipping-guide"],
           "query": [
             { "key": "from", "value": "2024-01-01" },
             { "key": "to", "value": "2025-12-31" }
           ]
         },
-        "description": "'ana' sin ATR001. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+        "description": "sub=sb000002. Sin ATR001 → HTTP 400 WRN7029."
       }
     },
     {
-      "name": "[Directo] Proveedor 1001",
+      "name": "Escenario 5 — Spoof intentado (x-user-vendors=-1)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-vendors", "value": "1001" }
+          { "key": "Authorization", "value": "Bearer {{jwtFernando}}" },
+          { "key": "x-user-vendors", "value": "-1" }
         ],
         "url": {
-          "raw": "http://localhost:3001/api/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "shipping-guide"],
+          "raw": "{{baseUrl}}/shipping-guide?from=2024-01-01&to=2025-12-31",
+          "host": ["{{baseUrl}}"],
+          "path": ["shipping-guide"],
           "query": [
             { "key": "from", "value": "2024-01-01" },
             { "key": "to", "value": "2025-12-31" }
           ]
         },
-        "description": "Prueba directa al backend sin BFF."
-      }
-    },
-    {
-      "name": "[Directo] Sin atributos → WRN7029",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-vendors", "value": "" }
-        ],
-        "url": {
-          "raw": "http://localhost:3001/api/shipping-guide?from=2024-01-01&to=2025-12-31",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "shipping-guide"],
-          "query": [
-            { "key": "from", "value": "2024-01-01" },
-            { "key": "to", "value": "2025-12-31" }
-          ]
-        },
-        "description": "x-user-vendors vacío → HTTP 400 WRN7029."
+        "description": "Cliente intenta spoofear con x-user-vendors=-1. Backend IGNORA: filtro sigue activo a 11111."
       }
     }
   ]

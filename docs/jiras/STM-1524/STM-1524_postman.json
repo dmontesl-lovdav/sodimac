@@ -1,145 +1,101 @@
 {
   "info": {
     "name": "STM-1524 — Estado de Cuenta — Filtro Seguridad",
-    "description": "Pruebas de filtro de seguridad por atributo de usuario en Estado de Cuenta.\nBFF: http://localhost:3000 | Backend: http://localhost:3001",
+    "description": "Pruebas de filtro de seguridad por atributo de usuario en Estado de Cuenta.\n\nPre-requisitos:\n- finanzas-api levantado en :3001 con SECURITY_ENABLED=true\n- util-api levantado en :3712\n- Datos seed con usuarios sb000001..5 y account_statement con vendors 11111/22222/33333\n\nJWTs alg=none (sin firma). En uat/prod GCP gateway valida firma RSA.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api", "type": "string" },
+    { "key": "jwtFernando", "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9.", "type": "string" },
+    { "key": "jwtAna",      "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9.", "type": "string" },
+    { "key": "jwtJose",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9.", "type": "string" },
+    { "key": "jwtIvan",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9.", "type": "string" }
+  ],
   "item": [
     {
-      "name": "Escenario 1 — Proveedor único (fernando)",
+      "name": "Escenario 1 — FERNANDO (ATR001=11111) year=2026",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_FERNANDO" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtFernando}}" }],
         "url": {
-          "raw": "http://localhost:3000/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/account-statement?year=2026",
+          "host": ["{{baseUrl}}"],
           "path": ["account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
+          "query": [{ "key": "year", "value": "2026" }]
         },
-        "description": "BFF resuelve ATR001=1001 para 'fernando'. Solo estados de cuenta del proveedor 1001."
+        "description": "sub=sb000001. Filtra solo estados de cuenta del proveedor 11111."
       }
     },
     {
-      "name": "Escenario 2 — Múltiples proveedores (jose)",
+      "name": "Escenario 2 — JOSE (ATR001=11111,22222)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_JOSE" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtJose}}" }],
         "url": {
-          "raw": "http://localhost:3000/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/account-statement?year=2026",
+          "host": ["{{baseUrl}}"],
           "path": ["account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
+          "query": [{ "key": "year", "value": "2026" }]
         },
-        "description": "BFF resuelve ATR001=1001,1002 para 'jose'. Estados del proveedor 1001 ó 1002 (OR lógico)."
+        "description": "sub=sb000003. Estados del proveedor 11111 ó 22222."
       }
     },
     {
-      "name": "Escenario 3 — Acceso total -1 (ivan)",
+      "name": "Escenario 3 — Iván (ATR001=-1)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "zedlav.sd18@gmail.com" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtIvan}}" }],
         "url": {
-          "raw": "http://localhost:3000/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/account-statement?year=2026",
+          "host": ["{{baseUrl}}"],
           "path": ["account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
+          "query": [{ "key": "year", "value": "2026" }]
         },
-        "description": "BFF resuelve ATR001=-1 para 'ivan'. Sin restricción, devuelve todos los estados."
+        "description": "sub=sb000005. ATR001=-1 → todos los estados."
       }
     },
     {
-      "name": "Escenario 4 — Sin atributos → WRN7029 (ana)",
+      "name": "Escenario 4 — ANA sin ATR001 → WRN7029",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-key", "value": "USR_ANA" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtAna}}" }],
         "url": {
-          "raw": "http://localhost:3000/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
+          "raw": "{{baseUrl}}/account-statement?year=2026",
+          "host": ["{{baseUrl}}"],
           "path": ["account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
+          "query": [{ "key": "year", "value": "2026" }]
         },
-        "description": "'ana' sin ATR001. BFF inyecta x-user-vendors vacío. Backend retorna HTTP 400 WRN7029."
+        "description": "sub=sb000002. Sin ATR001 → HTTP 400 WRN7029."
       }
     },
     {
-      "name": "Escenario 5 — Filtro en detalle por UUID",
+      "name": "Escenario 5 — getById con filtro activo (404 si no autorizado)",
       "request": {
         "method": "GET",
-        "header": [
-          { "key": "x-user-vendors", "value": "1001" }
-        ],
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwtFernando}}" }],
         "url": {
-          "raw": "http://localhost:3001/api/account-statement/REEMPLAZAR-UUID-AQUI",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "account-statement", "REEMPLAZAR-UUID-AQUI"]
+          "raw": "{{baseUrl}}/account-statement/{{accountStatementUuid}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["account-statement", "{{accountStatementUuid}}"]
         },
-        "description": "Si el estado pertenece a otro proveedor, retorna 404. Si es del 1001, retorna 200."
+        "description": "FERNANDO (ATR001=11111). Si UUID pertenece a vendor 11111 → 200. Si pertenece a otro vendor → 404 (filtro aplica también a getById)."
       }
     },
     {
-      "name": "[Directo] Proveedor 1001",
+      "name": "Escenario 6 — Spoof intentado (x-user-vendors=-1)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-user-vendors", "value": "1001" }
+          { "key": "Authorization", "value": "Bearer {{jwtFernando}}" },
+          { "key": "x-user-vendors", "value": "-1" }
         ],
         "url": {
-          "raw": "http://localhost:3001/api/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
+          "raw": "{{baseUrl}}/account-statement?year=2026",
+          "host": ["{{baseUrl}}"],
+          "path": ["account-statement"],
+          "query": [{ "key": "year", "value": "2026" }]
         },
-        "description": "Prueba directa al backend."
-      }
-    },
-    {
-      "name": "[Directo] Sin atributos → WRN7029",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-vendors", "value": "" }
-        ],
-        "url": {
-          "raw": "http://localhost:3001/api/account-statement?year=2026",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3001",
-          "path": ["api", "account-statement"],
-          "query": [
-            { "key": "year", "value": "2026" }
-          ]
-        },
-        "description": "x-user-vendors vacío → HTTP 400 WRN7029."
+        "description": "Backend ignora x-user-vendors del cliente: sigue filtrando a 11111."
       }
     }
   ]

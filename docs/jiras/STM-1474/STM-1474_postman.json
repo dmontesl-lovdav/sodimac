@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8082/api", "type": "string" },
+    { "key": "baseUrl", "value": "http://localhost:8082", "type": "string" },
     { "key": "jwtFernando", "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9.", "type": "string" },
     { "key": "jwtAna",      "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9.", "type": "string" },
     { "key": "jwtJose",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9.", "type": "string" },

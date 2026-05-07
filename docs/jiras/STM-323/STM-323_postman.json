@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8082/api", "type": "string" },
+    { "key": "baseUrl", "value": "http://localhost:8082", "type": "string" },
     { "key": "jwtFernando", "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9.", "type": "string" },
     { "key": "jwtAna",      "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9.", "type": "string" },
     { "key": "jwtJose",     "value": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9.", "type": "string" },
@@ -20,7 +20,7 @@
           { "key": "Authorization", "value": "Bearer {{jwtFernando}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"page\": 0, \"size\": 20}" },
+        "body": { "mode": "raw", "raw": "{\"fechaInicioRecepcion\":\"2025-01-01\",\"fechaFinalRecepcion\":\"2026-12-31\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":20}" },
         "url": {
           "raw": "{{baseUrl}}/invoices/search",
           "host": ["{{baseUrl}}"],
@@ -37,7 +37,7 @@
           { "key": "Authorization", "value": "Bearer {{jwtJose}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"page\": 0, \"size\": 20}" },
+        "body": { "mode": "raw", "raw": "{\"fechaInicioRecepcion\":\"2025-01-01\",\"fechaFinalRecepcion\":\"2026-12-31\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":20}" },
         "url": {
           "raw": "{{baseUrl}}/invoices/search",
           "host": ["{{baseUrl}}"],
@@ -54,7 +54,7 @@
           { "key": "Authorization", "value": "Bearer {{jwtIvan}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"page\": 0, \"size\": 20}" },
+        "body": { "mode": "raw", "raw": "{\"fechaInicioRecepcion\":\"2025-01-01\",\"fechaFinalRecepcion\":\"2026-12-31\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":20}" },
         "url": {
           "raw": "{{baseUrl}}/invoices/search",
           "host": ["{{baseUrl}}"],
@@ -71,7 +71,7 @@
           { "key": "Authorization", "value": "Bearer {{jwtAna}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"page\": 0, \"size\": 20}" },
+        "body": { "mode": "raw", "raw": "{\"fechaInicioRecepcion\":\"2025-01-01\",\"fechaFinalRecepcion\":\"2026-12-31\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":20}" },
         "url": {
           "raw": "{{baseUrl}}/invoices/search",
           "host": ["{{baseUrl}}"],
@@ -89,7 +89,7 @@
           { "key": "x-user-vendors", "value": "-1" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"page\": 0, \"size\": 20}" },
+        "body": { "mode": "raw", "raw": "{\"fechaInicioRecepcion\":\"2025-01-01\",\"fechaFinalRecepcion\":\"2026-12-31\",\"tipoDocumento\":\"I\",\"page\":0,\"size\":20}" },
         "url": {
           "raw": "{{baseUrl}}/invoices/search",
           "host": ["{{baseUrl}}"],

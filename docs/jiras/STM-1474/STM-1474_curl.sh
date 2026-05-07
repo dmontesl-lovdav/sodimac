@@ -5,7 +5,7 @@
 #   - fiscal-api en :8082 con security.enabled=true
 #   - util-api en :3712
 
-BASE_API="http://localhost:8082/api"
+BASE_API="http://localhost:8082"
 
 JWT_FERNANDO="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
 JWT_ANA="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."

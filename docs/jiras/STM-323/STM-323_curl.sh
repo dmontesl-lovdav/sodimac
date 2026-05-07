@@ -5,14 +5,14 @@
 #   - fiscal-api en :8082 con security.enabled=true
 #   - util-api en :3712
 
-BASE_API="http://localhost:8082/api"
+BASE_API="http://localhost:8082"
 
 JWT_FERNANDO="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
 JWT_ANA="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."
 JWT_JOSE="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMyJ9."
 JWT_IVAN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9."
 
-BODY='{"page": 0, "size": 20}'
+BODY='{"fechaInicioRecepcion":"2025-01-01","fechaFinalRecepcion":"2026-12-31","tipoDocumento":"I","page":0,"size":20}'
 
 run() {
     echo ""

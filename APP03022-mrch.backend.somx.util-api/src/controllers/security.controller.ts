@@ -403,6 +403,17 @@ export async function appendUserProfile(req: Request, res: Response, next: NextF
     }
 }
 
+/** GET /api/security/user-attributes-by-key/:userKey — atributos del usuario para BFF. */
+export async function getUserAttributesByKey(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userKey = decodeURIComponent(String(req.params.userKey ?? ''));
+        const data = await securityService.getUserAttributesByKey(userKey, parseLangId(req));
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
 /** GET /api/security/user-details/:userKey — detalle por user_data (preferred_username, sub, email o id). */
 export async function getUserDetailsByCatalogKey(req: Request, res: Response, next: NextFunction) {
     try {

@@ -1,0 +1,607 @@
+SecuritySummaryRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    catalogKey:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    status:
+      type: integer
+      format: int32
+    totalAssigned:
+      type: integer
+      format: int32
+    updatedAt:
+      type: string
+      format: date-time
+
+SecuritySummaryListData:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/SecuritySummaryRow"
+    warningCode:
+      type: string
+    warningMessage:
+      type: string
+
+SecuritySummaryListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/SecuritySummaryListData"
+
+AssignableItemRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    title:
+      type: string
+    subtitle:
+      type: string
+    tags:
+      type: array
+      items:
+        type: string
+
+AssignmentData:
+  type: object
+  properties:
+    available:
+      type: array
+      items:
+        $ref: "#/AssignableItemRow"
+    assigned:
+      type: array
+      items:
+        $ref: "#/AssignableItemRow"
+
+AssignmentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/AssignmentData"
+
+AssignmentSavePayload:
+  type: object
+  required:
+    - selectedIds
+  properties:
+    selectedIds:
+      type: array
+      items:
+        type: integer
+        format: int32
+    createdBy:
+      type: string
+    updatedBy:
+      type: string
+
+GenericSuccessResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+
+UserAttributeRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    userId:
+      type: integer
+      format: int32
+    name:
+      type: string
+    attributeTypeId:
+      type: integer
+      format: int32
+    attributeTypeName:
+      type: string
+    attributeValueId:
+      type: integer
+      format: int32
+    attributeValueName:
+      type: string
+    attributeValueKey:
+      type: string
+    status:
+      type: integer
+      format: int32
+    createdBy:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedBy:
+      type: string
+    updatedAt:
+      type: string
+      format: date-time
+
+UserAttributePageData:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/UserAttributeRow"
+    total:
+      type: integer
+      format: int32
+
+UserAttributeListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/UserAttributePageData"
+
+CreateUserAttributePayload:
+  type: object
+  required:
+    - attributeTypeId
+    - attributeValueId
+  properties:
+    attributeTypeId:
+      type: integer
+      format: int32
+    attributeValueId:
+      type: integer
+      format: int32
+    createdBy:
+      type: string
+
+AttributeTypeRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+
+AttributeTypeListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/AttributeTypeRow"
+    count:
+      type: integer
+      format: int32
+
+AttributeValueOption:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    catalogKey:
+      type: string
+    name:
+      type: string
+
+AttributeValueListData:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/AttributeValueOption"
+    warningCode:
+      type: string
+    warningMessage:
+      type: string
+
+AttributeValueListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/AttributeValueListData"
+
+UserCatalogRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    username:
+      type: string
+    fullName:
+      type: string
+    email:
+      type: string
+    status:
+      type: integer
+      format: int32
+    createdAt:
+      type: string
+      format: date-time
+    modifiedAt:
+      type: string
+      format: date-time
+
+UserCatalogListData:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/UserCatalogRow"
+    total:
+      type: integer
+      format: int32
+    page:
+      type: integer
+      format: int32
+    limit:
+      type: integer
+      format: int32
+    sortBy:
+      type: string
+    sortDir:
+      type: string
+    warningCode:
+      type: string
+    warningMessage:
+      type: string
+
+UserCatalogListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/UserCatalogListData"
+
+CatalogDetailGridRow:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+    description:
+      type: string
+
+CatalogDetailGridSection:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/CatalogDetailGridRow"
+    total:
+      type: integer
+      format: int32
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+
+UserModuleProcessEventRow:
+  type: object
+  properties:
+    moduleProcessId:
+      type: integer
+      format: int32
+    processId:
+      type: integer
+      format: int32
+    name:
+      type: string
+    description:
+      type: string
+    assigned:
+      type: boolean
+
+UserApplicationItem:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+    description:
+      type: string
+    events:
+      type: array
+      items:
+        $ref: "#/UserModuleProcessEventRow"
+
+UserApplicationsSection:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/UserApplicationItem"
+    total:
+      type: integer
+      format: int32
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+
+PermissionEventMatrixRow:
+  type: object
+  properties:
+    permissionId:
+      type: integer
+      format: int32
+    permissionName:
+      type: string
+    permissionKey:
+      type: string
+    roleId:
+      type: integer
+      format: int32
+    roleName:
+      type: string
+    moduleId:
+      type: integer
+      format: int32
+    moduleName:
+      type: string
+    processId:
+      type: integer
+      format: int32
+    processName:
+      type: string
+    processKey:
+      type: string
+    effective:
+      type: boolean
+
+PermissionEventMatrixSection:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/PermissionEventMatrixRow"
+    total:
+      type: integer
+      format: int32
+    page:
+      type: integer
+      format: int32
+    pageSize:
+      type: integer
+      format: int32
+
+UserCatalogDetailData:
+  type: object
+  properties:
+    header:
+      $ref: "#/UserCatalogRow"
+    profile:
+      $ref: "#/CatalogDetailGridRow"
+    multipleProfilesDetected:
+      type: boolean
+    roles:
+      $ref: "#/CatalogDetailGridSection"
+    applications:
+      $ref: "#/UserApplicationsSection"
+    permissionEventMatrix:
+      $ref: "#/PermissionEventMatrixSection"
+    attributes:
+      $ref: "#/CatalogDetailGridSection"
+    userLookupKey:
+      type: string
+
+UserCatalogDetailResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/UserCatalogDetailData"
+
+UserApplicationEventsCatalogData:
+  type: object
+  properties:
+    application:
+      $ref: "#/CatalogDetailGridRow"
+    events:
+      type: array
+      items:
+        $ref: "#/UserModuleProcessEventRow"
+
+UserApplicationEventsCatalogResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/UserApplicationEventsCatalogData"
+
+SetUserModuleProcessPayload:
+  type: object
+  required:
+    - assign
+  properties:
+    assign:
+      type: boolean
+    updatedBy:
+      type: string
+
+AppendUserProfilePayload:
+  type: object
+  required:
+    - profileId
+  properties:
+    profileId:
+      type: integer
+      format: int32
+    createdBy:
+      type: string
+
+AccessContextRoleRef:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+
+AccessContextRefWithRole:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+    rol:
+      $ref: "#/AccessContextRoleRef"
+
+AccessContextEvent:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+
+AccessContextApplication:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+    events:
+      type: array
+      items:
+        $ref: "#/AccessContextEvent"
+
+AccessContextProfileRef:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+
+AccessContextAttributeKind:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+
+AccessContextAttribute:
+  type: object
+  properties:
+    type:
+      $ref: "#/AccessContextAttributeKind"
+    value:
+      $ref: "#/AccessContextAttributeKind"
+
+AccessContextUser:
+  type: object
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+    email:
+      type: string
+
+AccessContextResponseData:
+  type: object
+  properties:
+    version:
+      type: string
+      example: v1
+    user:
+      $ref: "#/AccessContextUser"
+    profiles:
+      type: array
+      items:
+        $ref: "#/AccessContextProfileRef"
+    apps:
+      type: array
+      items:
+        $ref: "#/AccessContextApplication"
+    roles:
+      type: array
+      items:
+        $ref: "#/AccessContextRoleRef"
+    permissions:
+      type: array
+      items:
+        $ref: "#/AccessContextRefWithRole"
+    providers:
+      type: array
+      items:
+        $ref: "#/AccessContextRefWithRole"
+    attributes:
+      type: array
+      items:
+        $ref: "#/AccessContextAttribute"
+
+AccessContextResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/AccessContextResponseData"
+
+InvalidateUserDetailsCacheData:
+  type: object
+  properties:
+    cleared:
+      type: integer
+      format: int32
+
+InvalidateUserDetailsCacheResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/InvalidateUserDetailsCacheData"

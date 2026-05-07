@@ -6,7 +6,8 @@ info:
   description: >
     Support RESTful operations for utils flow. This API provides access to
     parameters, modules, messages, application messages, processes, item types,
-    items, and activity logs.
+    items, shared catalogs, suppliers, supplier blocks, status train,
+    conversions and catalog layout validation.
   title: Utils API
   version: 2.0.0
   x-business-acronym: mrch
@@ -61,10 +62,140 @@ paths:
   /items/{id}:
     $ref: "./paths/item.yaml#/items-by-id"
 
-  /activity-logs:
-    $ref: "./paths/activity-logs.yaml#/activity-logs"
-  /activity-logs/uuid:
-    $ref: "./paths/activity-logs.yaml#/activity-logs-uuid"
+  /catalog:
+    $ref: "./paths/catalog.yaml#/catalog-root"
+  /catalog/module/{module}:
+    $ref: "./paths/catalog.yaml#/catalog-by-module"
+  /catalog/{code}:
+    $ref: "./paths/catalog.yaml#/catalog-by-code"
+  /catalog/{code}/details:
+    $ref: "./paths/catalog.yaml#/catalog-details"
+  /catalog/{code}/details/{key}:
+    $ref: "./paths/catalog.yaml#/catalog-detail-by-key"
+  /catalog/message/{key}:
+    $ref: "./paths/catalog.yaml#/catalog-message"
+  /catalog/message/{key}/format:
+    $ref: "./paths/catalog.yaml#/catalog-message-format"
+  /catalog/id/{id}:
+    $ref: "./paths/catalog.yaml#/catalog-by-id"
+  /catalog/prefix/{prefix}:
+    $ref: "./paths/catalog.yaml#/catalog-by-prefix"
+
+  /catalogos:
+    $ref: "./paths/catalogos.yaml#/catalogos"
+  /catalogos/{id}:
+    $ref: "./paths/catalogos.yaml#/catalogos-by-id"
+  /catalogos/primarios:
+    $ref: "./paths/catalogos.yaml#/catalogos-primarios"
+  /catalogos/{catalogId}/detalle:
+    $ref: "./paths/catalogos.yaml#/catalogos-detalle"
+  /catalogos/{catalogId}/elementos:
+    $ref: "./paths/catalogos.yaml#/catalogos-elementos"
+  /catalogos/{catalogId}/elementos/activos:
+    $ref: "./paths/catalogos.yaml#/catalogos-elementos-activos"
+  /catalogos/{catalogId}/elementos/{elementId}:
+    $ref: "./paths/catalogos.yaml#/catalogos-elementos-by-id"
+  /catalogos/elementos/{elementId}/estatus:
+    $ref: "./paths/catalogos.yaml#/catalogos-elementos-estatus"
+  /catalogos/validate-layout:
+    $ref: "./paths/catalogos.yaml#/catalogos-validate-layout"
+  /validation-reports/{reportId}:
+    $ref: "./paths/catalogos.yaml#/validation-reports"
+
+  /suppliers:
+    $ref: "./paths/supplier.yaml#/suppliers"
+  /suppliers/{id}:
+    $ref: "./paths/supplier.yaml#/suppliers-by-id"
+  /suppliers/number/{supplierNumber}:
+    $ref: "./paths/supplier.yaml#/suppliers-by-number"
+  /suppliers/rfc/{rfc}:
+    $ref: "./paths/supplier.yaml#/suppliers-by-rfc"
+  /suppliers/types:
+    $ref: "./paths/supplier.yaml#/suppliers-types"
+  /suppliers/payment-conditions:
+    $ref: "./paths/supplier.yaml#/suppliers-payment-conditions"
+  /suppliers/filter:
+    $ref: "./paths/supplier.yaml#/suppliers-filter"
+
+  /supplier-blocks:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks"
+  /supplier-blocks/{id}:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks-by-id"
+  /supplier-blocks/supplier/{supplierNumber}:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks-by-supplier"
+  /supplier-blocks/supplier/{supplierNumber}/active:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks-by-supplier-active"
+  /supplier-blocks/supplier/{supplierNumber}/is-blocked:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks-is-blocked"
+  /supplier-blocks/supplier/{supplierNumber}/at-date:
+    $ref: "./paths/supplier-block.yaml#/supplier-blocks-at-date"
+
+  /status-train:
+    $ref: "./paths/status-train.yaml#/status-train"
+  /status-train/validate:
+    $ref: "./paths/status-train.yaml#/status-train-validate"
+  /status-train/allowed-destinations:
+    $ref: "./paths/status-train.yaml#/status-train-allowed-destinations"
+  /status-train/{id}:
+    $ref: "./paths/status-train.yaml#/status-train-by-id"
+
+  /conversions:
+    $ref: "./paths/conversion.yaml#/conversions"
+  /conversions/{id}:
+    $ref: "./paths/conversion.yaml#/conversions-by-id"
+  /conversions/{id}/principal:
+    $ref: "./paths/conversion.yaml#/conversions-principal"
+
+  /security/profile-users:
+    $ref: "./paths/security.yaml#/security-profile-users"
+  /security/profile-modules:
+    $ref: "./paths/security.yaml#/security-profile-modules"
+  /security/profile-module-processes:
+    $ref: "./paths/security.yaml#/security-profile-module-processes"
+  /security/application-events:
+    $ref: "./paths/security.yaml#/security-application-events"
+  /security/profiles/{id}/users:
+    $ref: "./paths/security.yaml#/security-profiles-users"
+  /security/profiles/{id}/modules:
+    $ref: "./paths/security.yaml#/security-profiles-modules"
+  /security/profiles/{id}/module-processes:
+    $ref: "./paths/security.yaml#/security-profiles-module-processes"
+  /security/role-users:
+    $ref: "./paths/security.yaml#/security-role-users"
+  /security/roles/{id}/users:
+    $ref: "./paths/security.yaml#/security-roles-users"
+  /security/role-permissions:
+    $ref: "./paths/security.yaml#/security-role-permissions"
+  /security/roles/{id}/permissions:
+    $ref: "./paths/security.yaml#/security-roles-permissions"
+  /security/user-attributes:
+    $ref: "./paths/security.yaml#/security-user-attributes"
+  /security/users/{id}/attributes:
+    $ref: "./paths/security.yaml#/security-users-attributes"
+  /security/users/{id}/attributes/{attributeId}:
+    $ref: "./paths/security.yaml#/security-users-attributes-by-id"
+  /security/catalogs/attribute-types:
+    $ref: "./paths/security.yaml#/security-attribute-types"
+  /security/catalogs/attribute-values:
+    $ref: "./paths/security.yaml#/security-attribute-values"
+  /security/user-details/cache:
+    $ref: "./paths/security.yaml#/security-user-details-cache"
+  /security/user-details/{userKey}:
+    $ref: "./paths/security.yaml#/security-user-details-by-key"
+  /security/user-catalog:
+    $ref: "./paths/security.yaml#/security-user-catalog"
+  /security/user-catalog/csv:
+    $ref: "./paths/security.yaml#/security-user-catalog-csv"
+  /security/users/{id}/catalog-detail:
+    $ref: "./paths/security.yaml#/security-users-catalog-detail"
+  /security/users/{userId}/applications/{moduleId}/events-catalog:
+    $ref: "./paths/security.yaml#/security-users-application-events-catalog"
+  /security/users/{userId}/module-processes/{moduleProcessId}:
+    $ref: "./paths/security.yaml#/security-users-module-process-assigned"
+  /security/users/{id}/profiles:
+    $ref: "./paths/security.yaml#/security-users-profiles"
+  /security/modules/{id}/processes:
+    $ref: "./paths/security.yaml#/security-modules-processes"
 
 definitions:
   ExceptionWrapper:
@@ -165,18 +296,174 @@ definitions:
   ParameterDeleteResponse:
     $ref: "./definitions/parameter.yaml#/ParameterDeleteResponse"
 
-  CreateActivityLogDto:
-    $ref: "./definitions/activity-logs.yaml#/CreateActivityLogDto"
-  ListActivityLogQueryDto:
-    $ref: "./definitions/activity-logs.yaml#/ListActivityLogQueryDto"
-  ActivityLogDto:
-    $ref: "./definitions/activity-logs.yaml#/ActivityLogDto"
-  ActivityLogListResponse:
-    $ref: "./definitions/activity-logs.yaml#/ActivityLogListResponse"
-  ActivityLogCreateResponse:
-    $ref: "./definitions/activity-logs.yaml#/ActivityLogCreateResponse"
-  ActivityLogUuidResponse:
-    $ref: "./definitions/activity-logs.yaml#/ActivityLogUuidResponse"
+  CatalogDetailDto:
+    $ref: "./definitions/catalog.yaml#/CatalogDetailDto"
+  CatalogHeaderDto:
+    $ref: "./definitions/catalog.yaml#/CatalogHeaderDto"
+  CatalogSimpleDto:
+    $ref: "./definitions/catalog.yaml#/CatalogSimpleDto"
+  CatalogResponseDto:
+    $ref: "./definitions/catalog.yaml#/CatalogResponseDto"
+  CatalogCreateDto:
+    $ref: "./definitions/catalog.yaml#/CatalogCreateDto"
+  CatalogUpdateDto:
+    $ref: "./definitions/catalog.yaml#/CatalogUpdateDto"
+  CatalogElementDto:
+    $ref: "./definitions/catalog.yaml#/CatalogElementDto"
+  CatalogElementCreateDto:
+    $ref: "./definitions/catalog.yaml#/CatalogElementCreateDto"
+  CatalogElementUpdateDto:
+    $ref: "./definitions/catalog.yaml#/CatalogElementUpdateDto"
+  CatalogElementStatusDto:
+    $ref: "./definitions/catalog.yaml#/CatalogElementStatusDto"
+  CatalogElementPageResponse:
+    $ref: "./definitions/catalog.yaml#/CatalogElementPageResponse"
+  CatalogPageResponse:
+    $ref: "./definitions/catalog.yaml#/CatalogPageResponse"
+  LayoutValidationError:
+    $ref: "./definitions/catalog.yaml#/LayoutValidationError"
+  LayoutValidationResponse:
+    $ref: "./definitions/catalog.yaml#/LayoutValidationResponse"
+
+  SupplierTypeDto:
+    $ref: "./definitions/supplier.yaml#/SupplierTypeDto"
+  PaymentConditionDto:
+    $ref: "./definitions/supplier.yaml#/PaymentConditionDto"
+  SupplierDto:
+    $ref: "./definitions/supplier.yaml#/SupplierDto"
+  SupplierCreateDto:
+    $ref: "./definitions/supplier.yaml#/SupplierCreateDto"
+  SupplierUpdateDto:
+    $ref: "./definitions/supplier.yaml#/SupplierUpdateDto"
+  SupplierBlockInfoDto:
+    $ref: "./definitions/supplier.yaml#/SupplierBlockInfoDto"
+  SupplierFilterDto:
+    $ref: "./definitions/supplier.yaml#/SupplierFilterDto"
+  SupplierBlockDto:
+    $ref: "./definitions/supplier.yaml#/SupplierBlockDto"
+  SupplierBlockResponseDto:
+    $ref: "./definitions/supplier.yaml#/SupplierBlockResponseDto"
+  SupplierBlockCreateDto:
+    $ref: "./definitions/supplier.yaml#/SupplierBlockCreateDto"
+  SupplierBlockUpdateDto:
+    $ref: "./definitions/supplier.yaml#/SupplierBlockUpdateDto"
+  IsBlockedResponse:
+    $ref: "./definitions/supplier.yaml#/IsBlockedResponse"
+
+  StatusTrainDto:
+    $ref: "./definitions/status-train.yaml#/StatusTrainDto"
+  StatusTrainCreateDto:
+    $ref: "./definitions/status-train.yaml#/StatusTrainCreateDto"
+  StatusTrainUpdateDto:
+    $ref: "./definitions/status-train.yaml#/StatusTrainUpdateDto"
+  StatusTrainValidationResponse:
+    $ref: "./definitions/status-train.yaml#/StatusTrainValidationResponse"
+  StatusTrainListResponse:
+    $ref: "./definitions/status-train.yaml#/StatusTrainListResponse"
+
+  ConversionDto:
+    $ref: "./definitions/conversion.yaml#/ConversionDto"
+  ConversionCreateDto:
+    $ref: "./definitions/conversion.yaml#/ConversionCreateDto"
+  ConversionUpdateDto:
+    $ref: "./definitions/conversion.yaml#/ConversionUpdateDto"
+  ConversionPageResponse:
+    $ref: "./definitions/conversion.yaml#/ConversionPageResponse"
+  ConversionPrincipalDto:
+    $ref: "./definitions/conversion.yaml#/ConversionPrincipalDto"
+  ConversionBatchDeleteDto:
+    $ref: "./definitions/conversion.yaml#/ConversionBatchDeleteDto"
+
+  SecuritySummaryRow:
+    $ref: "./definitions/security.yaml#/SecuritySummaryRow"
+  SecuritySummaryListData:
+    $ref: "./definitions/security.yaml#/SecuritySummaryListData"
+  SecuritySummaryListResponse:
+    $ref: "./definitions/security.yaml#/SecuritySummaryListResponse"
+  AssignableItemRow:
+    $ref: "./definitions/security.yaml#/AssignableItemRow"
+  AssignmentData:
+    $ref: "./definitions/security.yaml#/AssignmentData"
+  AssignmentResponse:
+    $ref: "./definitions/security.yaml#/AssignmentResponse"
+  AssignmentSavePayload:
+    $ref: "./definitions/security.yaml#/AssignmentSavePayload"
+  GenericSuccessResponse:
+    $ref: "./definitions/security.yaml#/GenericSuccessResponse"
+  UserAttributeRow:
+    $ref: "./definitions/security.yaml#/UserAttributeRow"
+  UserAttributePageData:
+    $ref: "./definitions/security.yaml#/UserAttributePageData"
+  UserAttributeListResponse:
+    $ref: "./definitions/security.yaml#/UserAttributeListResponse"
+  CreateUserAttributePayload:
+    $ref: "./definitions/security.yaml#/CreateUserAttributePayload"
+  AttributeTypeRow:
+    $ref: "./definitions/security.yaml#/AttributeTypeRow"
+  AttributeTypeListResponse:
+    $ref: "./definitions/security.yaml#/AttributeTypeListResponse"
+  AttributeValueOption:
+    $ref: "./definitions/security.yaml#/AttributeValueOption"
+  AttributeValueListData:
+    $ref: "./definitions/security.yaml#/AttributeValueListData"
+  AttributeValueListResponse:
+    $ref: "./definitions/security.yaml#/AttributeValueListResponse"
+  UserCatalogRow:
+    $ref: "./definitions/security.yaml#/UserCatalogRow"
+  UserCatalogListData:
+    $ref: "./definitions/security.yaml#/UserCatalogListData"
+  UserCatalogListResponse:
+    $ref: "./definitions/security.yaml#/UserCatalogListResponse"
+  CatalogDetailGridRow:
+    $ref: "./definitions/security.yaml#/CatalogDetailGridRow"
+  CatalogDetailGridSection:
+    $ref: "./definitions/security.yaml#/CatalogDetailGridSection"
+  UserModuleProcessEventRow:
+    $ref: "./definitions/security.yaml#/UserModuleProcessEventRow"
+  UserApplicationItem:
+    $ref: "./definitions/security.yaml#/UserApplicationItem"
+  UserApplicationsSection:
+    $ref: "./definitions/security.yaml#/UserApplicationsSection"
+  PermissionEventMatrixRow:
+    $ref: "./definitions/security.yaml#/PermissionEventMatrixRow"
+  PermissionEventMatrixSection:
+    $ref: "./definitions/security.yaml#/PermissionEventMatrixSection"
+  UserCatalogDetailData:
+    $ref: "./definitions/security.yaml#/UserCatalogDetailData"
+  UserCatalogDetailResponse:
+    $ref: "./definitions/security.yaml#/UserCatalogDetailResponse"
+  UserApplicationEventsCatalogData:
+    $ref: "./definitions/security.yaml#/UserApplicationEventsCatalogData"
+  UserApplicationEventsCatalogResponse:
+    $ref: "./definitions/security.yaml#/UserApplicationEventsCatalogResponse"
+  SetUserModuleProcessPayload:
+    $ref: "./definitions/security.yaml#/SetUserModuleProcessPayload"
+  AppendUserProfilePayload:
+    $ref: "./definitions/security.yaml#/AppendUserProfilePayload"
+  AccessContextRoleRef:
+    $ref: "./definitions/security.yaml#/AccessContextRoleRef"
+  AccessContextRefWithRole:
+    $ref: "./definitions/security.yaml#/AccessContextRefWithRole"
+  AccessContextEvent:
+    $ref: "./definitions/security.yaml#/AccessContextEvent"
+  AccessContextApplication:
+    $ref: "./definitions/security.yaml#/AccessContextApplication"
+  AccessContextProfileRef:
+    $ref: "./definitions/security.yaml#/AccessContextProfileRef"
+  AccessContextAttributeKind:
+    $ref: "./definitions/security.yaml#/AccessContextAttributeKind"
+  AccessContextAttribute:
+    $ref: "./definitions/security.yaml#/AccessContextAttribute"
+  AccessContextUser:
+    $ref: "./definitions/security.yaml#/AccessContextUser"
+  AccessContextResponseData:
+    $ref: "./definitions/security.yaml#/AccessContextResponseData"
+  AccessContextResponse:
+    $ref: "./definitions/security.yaml#/AccessContextResponse"
+  InvalidateUserDetailsCacheData:
+    $ref: "./definitions/security.yaml#/InvalidateUserDetailsCacheData"
+  InvalidateUserDetailsCacheResponse:
+    $ref: "./definitions/security.yaml#/InvalidateUserDetailsCacheResponse"
 
 securityDefinitions:
   api_key:
@@ -207,3 +494,4 @@ x-components: {}
 x-google-endpoints:
   - allowCors: true
     name: ${DOMAIN_OPENAPI}
+

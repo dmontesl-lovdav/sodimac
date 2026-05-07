@@ -5,7 +5,6 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccountName: ${WORLOAD_IDENTITY_UAT}
+      serviceAccountName: fbc-bff-workload-identity
       containers:
         - name: ${PROJECT_NAME}
-

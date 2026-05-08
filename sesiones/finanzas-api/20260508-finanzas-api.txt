@@ -1,0 +1,117 @@
+================================================================================
+STM-1403 — finanzas-api: Filtro seguridad por atributo de usuario
+================================================================================
+
+Repo: APP03022-mrch.backend.somx.finanzas-api
+Rama destino: develop
+PR: feature/STM-1403-security-context → develop
+Reviewer: Marco Antonio
+
+================================================================================
+CAMBIOS
+================================================================================
+
+2 archivos:
+
+MODIFICADO:
+  src/middlewares/security.middleware.ts
+    ANTES: lee x-user-vendors/types/groups del header (confía en el BFF)
+    AHORA: decodifica JWT → consulta util-api → cache TTL 5min → req.security
+    - decodeJwtSub(): extrae sub del Bearer token
+    - fetchSecurityContext(): GET util-api /api/security/user-attributes-by-key/{sub}
+    - buildSecurityContext(): mapea ATR001=vendors, ATR002=types, ATR004=groups
+    - SECURITY_ENABLED=false → req.security={null,null,null} (dev sin restricción)
+
+  src/app.ts
+    Solo comentario actualizado en línea 34:
+    ANTES: // Security context (lee headers x-user-vendors/types/groups del BFF)
+    AHORA: // Security context: decode JWT del request -> lookup util-api -> req.security
+
+================================================================================
+PASO 1: Preparar rama
+================================================================================
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git checkout develop
+git pull origin develop
+git checkout -b feature/STM-1403-security-context
+
+================================================================================
+PASO 2: Copiar archivos desde mirror
+================================================================================
+
+robocopy "C:\workspace-sodimac\APP03022-mrch.backend.somx.finanzas-api\src\middlewares" "src\middlewares" security.middleware.ts /IS
+robocopy "C:\workspace-sodimac\APP03022-mrch.backend.somx.finanzas-api\src" "src" app.ts /IS
+
+git diff --stat
+-- Debe mostrar: 2 files changed
+
+================================================================================
+PASO 3: Variables de entorno para prueba local (NO commitear)
+================================================================================
+
+Agregar al .env local:
+  SECURITY_ENABLED=true
+  UTIL_API_URL=http://localhost:3712
+
+================================================================================
+PASO 4: Levantar y probar
+================================================================================
+
+npm run dev
+
+-- En otra terminal --
+$base = "http://localhost:3001"
+$jwtFernando = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMSJ9."
+$jwtAna      = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwMiJ9."
+$jwtIvan     = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJzYjAwMDAwNSJ9."
+
+# STM-321: Estado de Cuenta
+# IVAN → todos
+(Invoke-RestMethod "$base/api/account-statement" -Headers @{"Authorization"="Bearer $jwtIvan"}).totalElements
+# FERNANDO → solo sus registros
+(Invoke-RestMethod "$base/api/account-statement" -Headers @{"Authorization"="Bearer $jwtFernando"}).totalElements
+# ANA → WRN7029
+try { Invoke-RestMethod "$base/api/account-statement" -Headers @{"Authorization"="Bearer $jwtAna"} } catch { $_.ErrorDetails.Message }
+
+================================================================================
+PASO 5: Commit y push
+================================================================================
+
+git add src/middlewares/security.middleware.ts
+git add src/app.ts
+
+git commit -m "feat: STM-1403 finanzas-api security context decode JWT + util-api lookup"
+
+git push origin feature/STM-1403-security-context
+
+================================================================================
+PASO 6: PR
+================================================================================
+
+URL:
+  https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.finanzas-api/compare/develop...feature/STM-1403-security-context
+
+Título: feat: STM-1403 finanzas-api security context decode JWT + util-api
+Reviewer: Marco Antonio
+
+Descripción:
+------------------------------------------------------------------
+## STM-1403 — Filtro de seguridad por atributo de usuario (finanzas-api)
+
+### Cambios
+- **security.middleware.ts** (modificado): `attachSecurityContext` reescrito.
+  Decodifica JWT (`sub`), consulta util-api, construye `req.security` con
+  vendors/types/groups. Cache in-memory TTL 5 min.
+  - `SECURITY_ENABLED=false` → acceso total (dev/legacy mode)
+  - `ATR001` → vendors, `ATR002` → types, `ATR004` → groups
+- **app.ts** (modificado): comentario actualizado.
+
+### Pruebas validadas
+- Iván (ATR001=-1): acceso total ✓
+- Fernando (ATR001=11111): filtro activo ✓
+- Ana (sin ATR001): HTTP 400 WRN7029 ✓
+- Spoof bloqueado: header inyectado por cliente sobreescrito ✓
+------------------------------------------------------------------
+
+================================================================================

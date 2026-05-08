@@ -9,8 +9,9 @@ import {
     type CreateTransactionIdDto,
     type TransactionIdFolioParamDto,
 } from "@/schemas/transactionId.schema.js";
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
-export async function create(req: Request, res: Response, next: NextFunction) {
+export async function create(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const dto: CreateTransactionIdDto = CreateTransactionIdSchema.parse(req.body);
 
@@ -24,7 +25,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
             dto.origen ||
             "finanzas-api";
 
-        const created = await svc.create(dto, { idUsuario, origen });
+        const created = await svc.create(dto, req.authToken ?? '', { idUsuario, origen });
 
         res.status(StatusCodes.CREATED).json({
             ...ResponseHandler.responseBuilder(

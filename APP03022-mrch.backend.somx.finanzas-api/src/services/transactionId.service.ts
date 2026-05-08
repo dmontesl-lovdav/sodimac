@@ -25,7 +25,7 @@ function encodeBase34(value: number): string {
     return result.padStart(FOLIO_LENGTH, "0").slice(-FOLIO_LENGTH);
 }
 
-async function validateCatalogOrigin(codigoModulo: string, pantallaOrigen: string) {
+async function validateCatalogOrigin(codigoModulo: string, pantallaOrigen: string, token: string) {
     const baseUrl = process.env.CATALOGS_API_URL_BBF ?? "";
     const validatePath = process.env.CATALOGS_API_VALIDATE_TRANSACTION_ORIGIN ?? "";
 
@@ -33,7 +33,7 @@ async function validateCatalogOrigin(codigoModulo: string, pantallaOrigen: strin
         return true;
     }
 
-    const response: any = await svcAxios.axiosGet(`${baseUrl}${validatePath}`, {
+    const response: any = await svcAxios.axiosGet(`${baseUrl}${validatePath}`, token, {
         codigoModulo,
         pantallaOrigen,
     });
@@ -101,6 +101,7 @@ async function saveError(args: {
 
 export async function create(
     dto: CreateTransactionIdDto,
+    token: string,
     context?: { idUsuario?: string; origen?: string }
 ) {
     const idUsuario = context?.idUsuario || dto.idUsuario || "system";
@@ -110,7 +111,7 @@ export async function create(
     let uuidInterno: string | null = null;
 
     try {
-        await validateCatalogOrigin(dto.codigoModulo, dto.pantallaOrigen);
+        await validateCatalogOrigin(dto.codigoModulo, dto.pantallaOrigen, token);
 
         const sequenceValue = await repo.getNextSequenceValue();
         folioVisible = buildVisibleFolio(dto.codigoModulo, sequenceValue);

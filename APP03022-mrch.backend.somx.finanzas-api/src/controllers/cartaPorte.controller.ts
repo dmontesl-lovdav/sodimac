@@ -27,10 +27,12 @@ import { logActivity, getTraceId } from '@/middlewares/logger.js';
 import * as svc from "@/services/shippingGuide.service.js";
 import * as svcAxios from "@/services/axios.service.js";
 import 'dotenv/config';
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+import * as constants from "@/constants/catalogConstantsCodes.js";
 
 
 // POST /carta-porte/guia-embarque
-export async function createGuia(req: Request, res: Response, next: NextFunction) {
+export async function createGuia(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const dtoParent: BaseArrayFilesDtoParent = BaseArrayFilesSchemaParent.parse(req.body);
         const shippingGuideSchmaString: string = dtoParent.content;
@@ -38,11 +40,11 @@ export async function createGuia(req: Request, res: Response, next: NextFunction
         const createShippingGuideDto: CreateShippingGuideDto[] = dataList.shippingGuideList; 
         const files = req.files as Express.Multer.File[];
 
-        const created =  await cartaPorteService.createGuia(createShippingGuideDto, files, dtoParent.folder, Number(dtoParent.origen));
+        const created =  await cartaPorteService.createGuia(createShippingGuideDto, files, dtoParent.folder, Number(dtoParent.origen), req.authToken ?? '');
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
         logger.error("❌ Register 'Guias Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC007);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC007, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la GUIA DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
 
@@ -51,18 +53,18 @@ export async function createGuia(req: Request, res: Response, next: NextFunction
 }
 
 // POST /carta-porte/oc
-export async function createOc(req: Request, res: Response, next: NextFunction) {
+export async function createOc(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const dtoParent: BaseDtoParent = BaseSchemaParent.parse(req.body);
         const stringContent: string = dtoParent.content;
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(JSON.parse(stringContent));
 
-        const created = await cartaPorteService.createOc(dto, Number(dto.origen));
+        const created = await cartaPorteService.createOc(dto, Number(dto.origen), req.authToken ?? '');
         res.status(201).json({...created, trace_id: getTraceId()});
 
     } catch (e) {
         logger.error("❌ Register 'OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC008);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC008, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la OC DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
@@ -70,18 +72,18 @@ export async function createOc(req: Request, res: Response, next: NextFunction) 
 }
 
 // POST /carta-porte/all
-export async function createall(req: Request, res: Response, next: NextFunction) {
+export async function createall(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const dtoParent: BaseArrayFilesDtoParent = BaseArrayFilesSchemaParent.parse(req.body);
         const shippingAndOCSchmaString: string = dtoParent.content;
         const createPurchaseOrderDto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(JSON.parse(shippingAndOCSchmaString));
         const files = req.files as Express.Multer.File[];
 
-        const created = await cartaPorteService.createAll(createPurchaseOrderDto, files, dtoParent.folder, Number(dtoParent.origen));
+        const created = await cartaPorteService.createAll(createPurchaseOrderDto, files, dtoParent.folder, Number(dtoParent.origen), req.authToken ?? '');
         res.status(201).json({created, trace_id: getTraceId()});
     } catch (e) { 
         logger.error("❌ Register 'Guias y OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC009);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC009, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la OC Y LA DOCUMENTACION DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
@@ -89,13 +91,13 @@ export async function createall(req: Request, res: Response, next: NextFunction)
 }
 
 // GET /findAllGuia
-export async function findAllGuia(request: Request, response: Response, next: NextFunction) {
+export async function findAllGuia(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const dto: ListShippingGuideQuery = ListShippingGuideQuerySchema.parse(request.body);
         const finded = await svc.findAll(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
     } catch (e) { 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC010);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC010, request.authToken ?? '');
         logActivity(true,'ERROR: No fue posible encontrar las guias', e, request.params );
         response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e); 
@@ -103,13 +105,13 @@ export async function findAllGuia(request: Request, response: Response, next: Ne
 }
 
 // GET /updateAllStatus
-export async function updateAllStatusGuia(request: Request, response: Response, next: NextFunction) {
+export async function updateAllStatusGuia(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const dto: ShippginGuideSummaryListDto = ShippginGuideSummaryListSchema.parse(request.body);
         const finded = await svc.updateAllStatusGuia(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
     } catch (e) { 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC011);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC011, request.authToken ?? '');
         logActivity(true,'ERROR: AL ACTULIAZAR LOS ESTATUS DE LAS GUIAS', e, request.params );
         response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e); 

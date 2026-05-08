@@ -16,6 +16,7 @@ import {
 } from "@/schemas/base.shema.js";
 import { activityLogger, logBeforeMethod } from '@/middlewares/logger.js';
 import {uploadMiddleware} from '@/middlewares/upload.Middleware.js'
+import { attachAuthToken } from "@/middlewares/authToken.js";
 
 const router = Router();
 
@@ -26,6 +27,8 @@ const CreateShippingGuideSchemaError = "";
 // Aplica el middleware SOLO a este router con su serviceName
 const controllerName = 'CartaPorte';
 router.use(activityLogger(controllerName));
+router.use(attachAuthToken)
+
 router.post("/guia-embarque", uploadMiddleware(2) , validateArrayFilesAndCPObj(CreateShippingGuideSchemaList, BaseArrayFilesSchemaParent), logBeforeMethod( 'guia-embarque') , ctrl.createGuia );
 router.post("/oc", uploadMiddleware(0), validateFormData(CreatePurchaseOrderSchema, BaseSchemaParent), logBeforeMethod('oc'), ctrl.createOc);
 router.post("/all", uploadMiddleware(2), validateArrayFilesAndCPObj(CreatePurchaseOrderSchema, BaseArrayFilesSchemaParent), logBeforeMethod('all'), ctrl.createall);

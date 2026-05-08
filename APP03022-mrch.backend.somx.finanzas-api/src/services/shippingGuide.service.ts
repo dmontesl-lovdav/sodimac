@@ -20,6 +20,8 @@ import 'dotenv/config';
 
 import { logger } from "@/utils/logger.js";
 import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
+import * as constants from "@/constants/catalogConstantsCodes.js";
+import { logActivity, getTraceId } from '@/middlewares/logger.js';
 
 //export class MyService {
 const HEADERS_NAME = [
@@ -163,10 +165,10 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
     return ResponseHandler.responseBuilder("", responsePageableDTO, 0, StatusCodes.OK, true, "");
 }
 
-export async function get(id: string) {
+export async function get(id: string, token: string) {
     const entity = await guides.findById(id);
     if (entity == null || entity == undefined) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS206);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS206, token);
         logger.info("❌ get shippingGuide NOT FOUND → data={} ", entity);
         return ResponseHandler.responseBuilder(CatMsgExc.description, entity, 0, StatusCodes.NOT_FOUND, true, "");
     }
@@ -176,9 +178,9 @@ export async function get(id: string) {
 
 export async function create(createShippingGuideList: CreateShippingGuideDto[] = []
     , files: Express.Multer.File[] | null, folder: string | null, origin: number
-    , status: number, transactionalEntityManager: EntityManager) {
+    , status: number, transactionalEntityManager: EntityManager, token: string) {
 
-    let enviados = true;
+    let enviados = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
     let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
 
     // files.forEach(async (file, index) => {
@@ -227,21 +229,25 @@ export async function create(createShippingGuideList: CreateShippingGuideDto[] =
     const entityCreated = await transactionalEntityManager.save(entityCreatedList);
 
     if (origin == 2 && files != null && folder != null) { //Solo se guardan los documentos de CP
-        enviados = await svcAxios.sendFilesToBucket(files, folder);
-        if (!enviados) {
-            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207);
+        const nameFiles = files.map(f => f.originalname).join(',');
+        enviados = await svcAxios.sendFilesToBucket(files, folder, token);
+        if (!enviados.success) {
+            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
             logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
+            logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
             throw new Error(CatMsgExc.description);
+        } else {
+            logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
         }
     }
-    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208);
+    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
     logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
     resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
 
     return resp;
 }
 
-export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto) {
+export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto, token: string) {
     const patch = {
         ...dto,
         updatedAt: new Date(),
@@ -251,18 +257,18 @@ export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto) {
     const entityUpdated = await guides.updateOneByUuid(id, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }
     return response;
 }
 
-export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingGuideDto) {
+export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingGuideDto, token: string) {
     const patch = {
         ...dto,
         updatedAt: new Date(),
@@ -272,11 +278,11 @@ export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingG
     const entityUpdated = await guides.updateOneByGuide(guideNumber, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }

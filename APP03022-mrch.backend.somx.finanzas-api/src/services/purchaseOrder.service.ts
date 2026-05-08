@@ -33,8 +33,7 @@ import * as svcAxios from "@/services/axios.service.js";
 import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 import { DeepPartial } from 'typeorm';
-import { add } from "winston";
-import { Raw } from 'typeorm';
+import * as constants from "@/constants/catalogConstantsCodes.js";
 
 
 export async function listOrders(q: ListReceptionQueryDto) {
@@ -53,9 +52,9 @@ export async function listOrders(q: ListReceptionQueryDto) {
     //return ResponseHandler.responseBuilder("",responsePageableDTO,0, StatusCodes.OK, true, "");
 }
 
-export async function listReception(q: ListReceptionQueryDto) {
+export async function listReception(q: ListReceptionQueryDto, token: string) {
 
-    const supplierList = await svcAxios.GetSuppliers();
+    const supplierList = await svcAxios.GetSuppliers(token);
     const receptionDateAtEnd = q.receptionDateAtEnd;
     const parsedDateEnd = z.coerce.date().parse(receptionDateAtEnd);
     parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
@@ -92,7 +91,7 @@ export async function listReception(q: ListReceptionQueryDto) {
 }
 
 
-export async function updateReception(dto: UpdatePurchaseOrderDto) {
+export async function updateReception(dto: UpdatePurchaseOrderDto, token: string) {
     const filter: FindOptionsWhere<PurchaseOrder> = {};
 
     if (dto.supplierNumber !== undefined) filter.supplierNumber = dto.supplierNumber;
@@ -101,14 +100,14 @@ export async function updateReception(dto: UpdatePurchaseOrderDto) {
     const purchaseOrder = await purchaseOrderRepo.findByOrderNumber(filter);
     let response = ResponseHandler.responseBuilder("",purchaseOrder,0, StatusCodes.OK, true, "");
     if (!purchaseOrder) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_ADVERTENCIA + process.env.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301);
+        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301, token);
         response = ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,0, StatusCodes.NOT_FOUND, false, "");
     }
     
         // UPDATES status ONLY
     const persistenceList: Reception[] = purchaseOrder?.receptions ?? [];
     if (persistenceList.length == 0) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_ADVERTENCIA + process.env.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302);
+        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302, token);
         response = ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,-1, StatusCodes.NOT_FOUND, false, "");
     } else {
           
@@ -116,7 +115,7 @@ export async function updateReception(dto: UpdatePurchaseOrderDto) {
             if(recep.receptionNumber == dto.receptionNumber){
                 
                 if(dto.uuid != null && dto.uuid != undefined && dto.status == 2){ // ES ADDENDA MANUAL
-                    const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber);
+                    const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
                     let addendaManual = new AddendumManual();
                     addendaManual.supplierNumber = dto.supplierNumber;
                     addendaManual.orderNumber = dto.orderNumber;
@@ -137,18 +136,18 @@ export async function updateReception(dto: UpdatePurchaseOrderDto) {
         });
         const reception = receiptionToUpdate.at(0)?? new Reception();
         const persistence: Reception = reception;
-        const valStatus = await validarStatus(persistence, dto.status, 5);
+        const valStatus = await validarStatus(persistence, dto.status, 5, token);
         persistence.status = dto.status;
         persistence.comment = dto.comments;
         persistence.updatedAt = new Date();
 
         if (reception?.receptionId && valStatus) {
             const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId, persistence);
-            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXITOSO + process.env.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205);
+            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
             response = ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
         } else {
 
-            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_ADVERTENCIA + process.env.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103);
+            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103, token);
             response = ResponseHandler.responseBuilder(CatMsg.description ,dto,-1, StatusCodes.BAD_REQUEST, false, CatMsg.key + "=" + CatMsg.description);
         }
 
@@ -158,9 +157,9 @@ export async function updateReception(dto: UpdatePurchaseOrderDto) {
     return response
 }
 
-async function validarStatus(reception: Reception, newStatus: number, optionId: number){
+async function validarStatus(reception: Reception, newStatus: number, optionId: number, token?: string){
     const statusActual = reception.status;
-    const isValid = await svcAxios.ValidStatus((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_STATUS_TRAIN + process.env.CATALOGS_API_VALID_TRAIN, optionId, (statusActual?? 0) ,newStatus  );
+    const isValid = await svcAxios.ValidStatus((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogStatusTrain.CATALOGS_API_STATUS_TRAIN + constants.CatalogStatusTrain.CATALOGS_API_VALID_TRAIN, optionId, (statusActual?? 0) ,newStatus, token ?? ''  );
     return isValid;
 
     // let response = false;
@@ -197,15 +196,15 @@ async function validarStatus(reception: Reception, newStatus: number, optionId: 
 
 
 export async function create(dto: CreatePurchaseOrderDto, transactionalEntityManager: EntityManager
-    ,files: Express.Multer.File[] | null, folder: string | null , origin: number) {
+    ,files: Express.Multer.File[] | null, folder: string | null , origin: number, token: string) {
 
     var resp = ResponseHandler.responseBuilder("",null,0, StatusCodes.CREATED, true, "");
 
         //let receptionsList: Array<Partial<Reception>> = new Array();
         let receptionsList: DeepPartial<Reception>[] = [];
         let receptionsSkuList: Partial<ReceptionSku>[] = [];
-        const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber);
-        const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BBF ?? "") + process.env.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details");
+        const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+        const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details",  token);
 
         dto.receptionList.forEach(async function (reception){
             if(supplier != undefined && supplier != null  && supplier.supplierType.id == 2 && reception.guideNumber != undefined){
@@ -347,9 +346,9 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
             const status = 2; //Nace Guia de embarque Con OC
             let created : ResponseHandlerDTO;
             
-            created = await svcShipping.create(dto.shippingGuideList, files, folder, origin, status, transactionalEntityManager);
+            created = await svcShipping.create(dto.shippingGuideList, files, folder, origin, status, transactionalEntityManager, token);
             if(!created.success){    
-                const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC015);
+                const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC015, token);
                 throw new Error(CatMsgExc.description + created.message + created.detailError);
             }
             logger.info("✅ ShippingGuide Created → data={}", created);
@@ -366,7 +365,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
 
                 const shippingGuide = await transactionalEntityManager.findOneBy(ShippingGuide, filter);
                 if (!shippingGuide) {
-                    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016);
+                    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016, token);
                     throw new Error(CatMsgExc.description + dto.guideNumber[i]?.guide + ' Con la OC: ' + dto.orderNumber);
                 }
                 const shippingPurchase: Partial<ShippingGuidePurchaseOrder> = {
@@ -382,7 +381,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
             logger.info("✅ entityCreatedShippingOrder Created → data={}", entityCreatedShippingOrder);
         }
 
-        const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_NEGOCIO + process.env.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS212);
+        const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS212, token);
         logger.info("✅ purchaseOrder Created → data={}", entityCreatedOrder);
         resp =  ResponseHandler.responseBuilder(CatMsg.description,entityCreatedOrder,0, StatusCodes.CREATED, true, "");
 

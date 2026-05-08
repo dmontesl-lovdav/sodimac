@@ -3,12 +3,10 @@ import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { Reception } from "@/entities/Reception.entity.js";
 import { HttpError } from "@/utils/HttpError.js";
 import type { NextFunction, Request, Response } from "express";
-import { Router } from "express";
 import { Between, Equal, FindOperator, FindOptionsWhere, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
 import {
     CreatePurchaseOrderSchema,
     UpdateStatusReceptionSchema,
-    UpdateStatusReceptionSchemaByUuid,
     ListPurchaseOrderQuerySchema,
     type CreatePurchaseOrderDto,
     type UpdatePurchaseOrderDto,
@@ -18,7 +16,7 @@ import {
     ListReceptionQuerySchema,
     type ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
-import { validateBody, validateParams, validateQuery } from "@/middlewares/validate.js";
+
 import * as svc from "@/services/purchaseOrder.service.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
@@ -31,6 +29,8 @@ import { activityLogger, logActivity, getTraceId, logBeforeMethod } from '@/midd
 import * as svcAxios from "@/services/axios.service.js";
 import { Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+import * as constants from "@/constants/catalogConstantsCodes.js";
 
 
 // CONFIG
@@ -47,16 +47,16 @@ interface PurchaseOrderCriteria {
 }
 
 // POST /
-async function save(request: Request, response: Response, next: NextFunction) {
+export async function save(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(request.body);
         await getDataSource().transaction( async (transactionalEntityManager) => {
-            const created = await svc.create(dto, transactionalEntityManager, null, null, Number(dto.origen));
+            const created = await svc.create(dto, transactionalEntityManager, null, null, Number(dto.origen), request.authToken ?? '');
             response.status(201).json({...created, trace_id: getTraceId()});
         });
     } catch (e) {
         logActivity(true, 'ERROR: ', e,  request.body );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
 
@@ -64,10 +64,10 @@ async function save(request: Request, response: Response, next: NextFunction) {
 }
 
 // GET /
-async function list(request: Request, response: Response, next: NextFunction) {
+export async function list(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
 
-        const supplierList = await svcAxios.GetSuppliers();
+        const supplierList = await svcAxios.GetSuppliers(request.authToken ?? '');
         const dto: ListPurchaseOrderQueryDto = ListPurchaseOrderQuerySchema.parse(request.query);
 
         const purchaseOrderQuery = await datasource.manager
@@ -141,14 +141,14 @@ async function list(request: Request, response: Response, next: NextFunction) {
 
     } catch (e) {
         logActivity(true, 'ERROR: ', e,  request.body );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
     }
 }
 
 // GET /:uuid
-async function getById(request: Request, response: Response, next: NextFunction) {
+export async function getById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
         if (!rows || rows.length === 0) response.json({});
@@ -161,14 +161,14 @@ async function getById(request: Request, response: Response, next: NextFunction)
 
     } catch (e) { 
         logActivity(true,'ERROR', e, request.params );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC002);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC002, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
     }
 }
 
 // GET /reception/:uuid
-async function getReceptionById(request: Request, response: Response, next: NextFunction) {
+export async function getReceptionById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
 
   
@@ -197,7 +197,7 @@ async function getReceptionById(request: Request, response: Response, next: Next
         .where('po.purchase_order_uuid = CAST(:purchaseOrderId AS uuid)', { purchaseOrderId: row?.purchaseOrderId })
         .getOne();
 
-        const foundSupplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(order?.supplierNumber ?? 0);
+        const foundSupplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(order?.supplierNumber ?? 0, request.authToken ?? '');
         (order as any).supplier = foundSupplier;
         
         const data = {
@@ -209,14 +209,14 @@ async function getReceptionById(request: Request, response: Response, next: Next
 
     } catch (e) { 
         logActivity(true,'ERROR', e, request.params );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC003);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC003, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
 
 // PATCH /reception/:uuid
-async function updateReceptionStatusByUuid(request: Request, response: Response, next: NextFunction) {
+export async function updateReceptionStatusByUuid(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const reference: Reception = request.body;
         if (!reference) {
@@ -238,14 +238,14 @@ async function updateReceptionStatusByUuid(request: Request, response: Response,
         response.json(persistence);
     } catch (e) { 
         logActivity(true,'ERROR', e, request.params );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
 
 // PATCH /:uuid
-async function updateById(request: Request, response: Response, next: NextFunction) {
+export async function updateById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const reference: PurchaseOrder = request.body;
         if (!reference) {
@@ -267,36 +267,36 @@ async function updateById(request: Request, response: Response, next: NextFuncti
         response.json({...persistence, trace_id: getTraceId()});
     } catch (e) { 
         logActivity(true,'ERROR', e, request.params );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC005);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC005, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
 }
 
 // GET /listReception
-async function listReception(request: Request, response: Response, next: NextFunction) {
+export async function listReception(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const q: ListReceptionQueryDto = ListReceptionQuerySchema.parse(request.body);
-        const res = await svc.listReception(q); 
+        const res = await svc.listReception(q, request.authToken ?? ''); 
         return response.status(res.httpStatus).json({...res, trace_id: getTraceId()});
 
     } catch (e) {
         logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e , request.body);
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e);
     }
 }
 
 // PATCH /updateReception
-async function updateReception(request: Request, response: Response, next: NextFunction) {
+export async function updateReception(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const dto: UpdatePurchaseOrderDto = UpdateStatusReceptionSchema.parse(request.body);
-        const updated = await svc.updateReception(dto);
+        const updated = await svc.updateReception(dto, request.authToken ?? '');
         return response.status(updated.httpStatus).json({...updated, trace_id: getTraceId()});
     } catch (e) { 
         logActivity(true,'ERROR', e, request.params );
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  process.env.CATALOGS_API_EXCEPTION + process.env.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004, request.authToken ?? '');
         response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e));
         next(e); 
     }
@@ -337,16 +337,5 @@ function buildCriteria(criteria: PurchaseOrderCriteria): FindOptionsWhere<Purcha
     return where;
 }
 
-// ROUTES
-const controllerName = 'PurchaseOrder';
-export default Router()
-    .use(activityLogger(controllerName))
-    .get("/listReception",validateBody(ListReceptionQuerySchema), logBeforeMethod('listReception'), listReception)
-    .patch("/updateReception",validateBody(UpdateStatusReceptionSchema), logBeforeMethod('updateReception'), updateReception)
-    .get("/reception/:uuid", logBeforeMethod('getReceptionById'), getReceptionById)
-    .patch("/reception/:uuid",validateBody(UpdateStatusReceptionSchemaByUuid), logBeforeMethod('updateReceptionStatusByUuid'), updateReceptionStatusByUuid)
-    
-    .post("/",validateBody(CreatePurchaseOrderSchema), logBeforeMethod('save'), save)
-    .get("/", validateQuery(ListPurchaseOrderQuerySchema), logBeforeMethod('list'), list)
-    .get("/:uuid", logBeforeMethod('getById'), getById)
-    .patch("/:uuid", logBeforeMethod('updateById'), updateById)
+
+

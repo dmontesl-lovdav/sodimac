@@ -19,6 +19,7 @@ const WRN7029 = {
 const SECURITY_CACHE = new Map<string, CachedContext>();
 const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
     namespace Express {
         interface Request {

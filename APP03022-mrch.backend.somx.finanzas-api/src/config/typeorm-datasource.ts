@@ -98,7 +98,7 @@ const dbUser = process.env.DB_USER;
 const dbPass = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbSchema = process.env.DB_SCHEMA || 'tenant_finance';
-const dbSSL = process.env.DB_SSL === 'false';
+const dbSSL = process.env.DB_SSL !== 'false';
 
 if (!dbHost || !dbPort || !dbUser || !dbPass || !dbName) {
     throw new Error(

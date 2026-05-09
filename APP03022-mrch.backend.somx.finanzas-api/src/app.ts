@@ -31,7 +31,7 @@ app.get("/actuator/health", healthCheck);
 app.get("/actuator/health/liveness", livenessProbe);
 app.get("/actuator/health/readiness", readinessProbe);
 
-// Security context (lee headers x-user-vendors/types/groups del BFF)
+// Security context: decode JWT del request -> lookup util-api -> req.security
 app.use("/api", attachSecurityContext);
 
 // Rutas de la API

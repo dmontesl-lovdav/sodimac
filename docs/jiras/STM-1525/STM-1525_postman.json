@@ -1,139 +1,216 @@
 {
   "info": {
-    "name": "STM-1525 — Catálogo Proveedor — Filtro Seguridad",
-    "description": "Pruebas de filtro de seguridad por TipoProveedor (ATR002) en Catálogo Proveedor.\nutil-api: http://localhost:3712",
+    "name": "STM-1525 — util-api: user-attributes-by-key + Catálogo Proveedor",
+    "description": "Pruebas directas a util-api (puerto 3712):\n1. GET /api/security/user-attributes-by-key/:userKey — devuelve atributos de usuario (consumido por fiscal-api/finanzas-api para STM-1403).\n2. GET /api/suppliers — Catálogo Proveedor con filtro por TipoProveedor (ATR002) vía header x-user-types.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3712", "type": "string" }
+  ],
   "item": [
     {
-      "name": "Escenario 1 — Sin header (admin) → 22 proveedores",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?pageSize=5",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [{ "key": "pageSize", "value": "5" }]
+      "name": "USER-ATTRIBUTES",
+      "item": [
+        {
+          "name": "Fernando (sb000001) → ATR001=11111",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/sb000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "sb000001"]
+            },
+            "description": "sub=sb000001. attributes: [{ATR001, 11111}]"
+          }
         },
-        "description": "Sin x-user-types. Admin/sistema. Devuelve todos los proveedores (22 total)."
-      }
+        {
+          "name": "Jose (sb000003) → ATR001=11111,22222",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/sb000003",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "sb000003"]
+            },
+            "description": "sub=sb000003. attributes: [{ATR001, 11111}, {ATR001, 22222}]"
+          }
+        },
+        {
+          "name": "Iván (sb000005) → ATR001=-1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/sb000005",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "sb000005"]
+            },
+            "description": "sub=sb000005. attributes: [{ATR001, -1}] (acceso total)"
+          }
+        },
+        {
+          "name": "Ana (sb000002) → ATR002=TPR001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/sb000002",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "sb000002"]
+            },
+            "description": "sub=sb000002. attributes: [{ATR002, TPR001}] (tras seed STM-1525_seed_atr002_user_attributes.sql)"
+          }
+        },
+        {
+          "name": "Inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/noexiste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "noexiste"]
+            },
+            "description": "Usuario inexistente → HTTP 404"
+          }
+        },
+        {
+          "name": "userKey vacío → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/security/user-attributes-by-key/%20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "user-attributes-by-key", "%20"]
+            },
+            "description": "userKey con espacio → HTTP 400 userKey obligatorio"
+          }
+        }
+      ]
     },
     {
-      "name": "Escenario 2 — USR_ANA (TPR001) → 11 proveedores tipo 1",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "TPR001" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?pageSize=20",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [{ "key": "pageSize", "value": "20" }]
+      "name": "SUPPLIERS",
+      "item": [
+        {
+          "name": "Sin header (admin) → 22 proveedores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?pageSize=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [{ "key": "pageSize", "value": "5" }]
+            },
+            "description": "Sin x-user-types. Devuelve todos los proveedores (22)."
+          }
         },
-        "description": "ATR002=TPR001 → external_key=1 → supplier_type_id=1. Esperado: 11 proveedores."
-      }
-    },
-    {
-      "name": "Escenario 3 — Multi tipo TPR001,TPR002 → 14 proveedores",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "TPR001,TPR002" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?pageSize=20",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [{ "key": "pageSize", "value": "20" }]
+        {
+          "name": "USR_ANA (TPR001) → 11 proveedores tipo 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "TPR001" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [{ "key": "pageSize", "value": "20" }]
+            },
+            "description": "ATR002=TPR001 → external_key=1 → supplier_type_id=1. Esperado: 11 proveedores."
+          }
         },
-        "description": "ATR002=TPR001,TPR002 OR lógico → supplier_type_id IN (1,2). Esperado: 14 proveedores."
-      }
-    },
-    {
-      "name": "Escenario 4 — Acceso total (-1) → 22 proveedores",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "-1" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?pageSize=5",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [{ "key": "pageSize", "value": "5" }]
+        {
+          "name": "Multi TPR001,TPR002 → 14 proveedores",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "TPR001,TPR002" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [{ "key": "pageSize", "value": "20" }]
+            },
+            "description": "OR lógico → supplier_type_id IN (1,2). Esperado: 14 proveedores."
+          }
         },
-        "description": "-1 = acceso total, sin filtro de tipo."
-      }
-    },
-    {
-      "name": "Escenario 5 — Sin ATR002 → WRN7029",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"]
+        {
+          "name": "Acceso total (-1) → 22 proveedores",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "-1" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?pageSize=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [{ "key": "pageSize", "value": "5" }]
+            },
+            "description": "-1 = acceso total, sin filtro."
+          }
         },
-        "description": "x-user-types vacío → BFF inyecta vacío cuando usuario no tiene ATR002. HTTP 400 WRN7029."
-      }
-    },
-    {
-      "name": "Búsqueda con filtros adicionales",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "TPR001" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?businessName=Distribu&status=1&page=1&pageSize=10",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [
-            { "key": "businessName", "value": "Distribu" },
-            { "key": "status", "value": "1" },
-            { "key": "page", "value": "1" },
-            { "key": "pageSize", "value": "10" }
-          ]
+        {
+          "name": "Sin ATR002 → WRN7029",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"]
+            },
+            "description": "x-user-types vacío → HTTP 400 WRN7029."
+          }
         },
-        "description": "Filtro combinado: tipo TPR001 + busca 'Distribu' en businessName + status=1."
-      }
-    },
-    {
-      "name": "Filtro por supplierNumber",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "x-user-types", "value": "TPR001" }
-        ],
-        "url": {
-          "raw": "http://localhost:3712/api/suppliers?supplierNumber=MERC",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3712",
-          "path": ["api", "suppliers"],
-          "query": [
-            { "key": "supplierNumber", "value": "MERC" }
-          ]
+        {
+          "name": "Búsqueda combinada (TPR001 + businessName)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "TPR001" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?businessName=Distribu&status=1&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [
+                { "key": "businessName", "value": "Distribu" },
+                { "key": "status", "value": "1" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            },
+            "description": "Filtro combinado: tipo TPR001 + busca 'Distribu' en businessName + status=1."
+          }
         },
-        "description": "Busca proveedores con supplierNumber que contiene 'MERC' dentro de los del tipo TPR001."
-      }
+        {
+          "name": "Filtro por supplierNumber",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-types", "value": "TPR001" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?supplierNumber=MERC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"],
+              "query": [
+                { "key": "supplierNumber", "value": "MERC" }
+              ]
+            },
+            "description": "Busca supplierNumber que contiene 'MERC' dentro del tipo TPR001."
+          }
+        }
+      ]
     }
   ]
 }

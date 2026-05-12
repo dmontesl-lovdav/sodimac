@@ -182,6 +182,8 @@ paths:
     $ref: "./paths/security.yaml#/security-user-details-cache"
   /security/user-details/{userKey}:
     $ref: "./paths/security.yaml#/security-user-details-by-key"
+  /security/user-attributes-by-key/{userKey}:
+    $ref: "./paths/security.yaml#/security-user-attributes-by-key"
   /security/user-catalog:
     $ref: "./paths/security.yaml#/security-user-catalog"
   /security/user-catalog/csv:

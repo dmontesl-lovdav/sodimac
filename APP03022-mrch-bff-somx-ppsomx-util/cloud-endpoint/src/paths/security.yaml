@@ -1055,6 +1055,64 @@ security-user-details-cache:
     security:
       - bearerAuth: []
 
+security-user-attributes-by-key:
+  get:
+    tags:
+      - security
+    summary: Get user attributes (ATR001/ATR002/ATR004) by user_data sub key
+    description: STM-1525 — consumido por fiscal-api y finanzas-api para resolver contexto de seguridad desde el JWT sub
+    operationId: getUserAttributesByKey
+    produces:
+      - application/json
+    parameters:
+      - name: userKey
+        in: path
+        required: true
+        description: User lookup key (sub claim from JWT)
+        type: string
+    responses:
+      "200":
+        description: User attributes
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            data:
+              type: object
+              properties:
+                userDataId:
+                  type: integer
+                sub:
+                  type: string
+                preferredUsername:
+                  type: string
+                email:
+                  type: string
+                attributes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      typeKey:
+                        type: string
+                      valueKey:
+                        type: string
+      "400":
+        description: Bad request — userKey obligatorio
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: User not found / inactive
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
 security-user-details-by-key:
   get:
     tags:

@@ -154,6 +154,8 @@ paths:
     $ref: "./paths/security.yaml#/security-profile-module-processes"
   /security/application-events:
     $ref: "./paths/security.yaml#/security-application-events"
+  /security/user-utility:
+    $ref: "./paths/security.yaml#/security-user-utility"
   /security/profiles/{id}/users:
     $ref: "./paths/security.yaml#/security-profiles-users"
   /security/profiles/{id}/modules:

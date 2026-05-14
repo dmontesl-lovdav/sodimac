@@ -225,14 +225,16 @@ function applyCatalogDetailFilters(
 
     if (filters.entityName) {
         const trim = filters.entityName.trim();
+        const langId = resolveLangId(filters.langId);
+        const labelExpr = catalogRefLabelExpr(alias, langId);
         qb.andWhere(
-            `(LOWER(${alias}.key) LIKE LOWER(:entityName) OR LOWER(COALESCE(${alias}.value, '')) LIKE LOWER(:entityName))`,
+            `(LOWER(${alias}.key) LIKE LOWER(:entityName) OR LOWER(COALESCE(${alias}.value, '')) LIKE LOWER(:entityName) OR LOWER(${labelExpr}) LIKE LOWER(:entityName))`,
             { entityName: `%${trim}%` },
         );
     }
 
-    if (!options?.skipStatus && filters.status !== undefined) {
-        qb.andWhere(`${alias}.status = :status`, { status: filters.status });
+    if (!options?.skipStatus && filters.status !== undefined && Number.isFinite(Number(filters.status))) {
+        qb.andWhere(`${alias}.status = :status`, { status: Number(filters.status) });
     }
 }
 
@@ -263,8 +265,8 @@ function applyUserDataFilters(
         );
     }
 
-    if (!options?.skipStatus && filters.status !== undefined) {
-        qb.andWhere(`${alias}.status = :status`, { status: filters.status });
+    if (!options?.skipStatus && filters.status !== undefined && Number.isFinite(Number(filters.status))) {
+        qb.andWhere(`${alias}.status = :status`, { status: Number(filters.status) });
     }
 
     if (filters.email?.trim()) {
@@ -1192,7 +1194,34 @@ export async function findActiveRoleById(idRole: number): Promise<CatalogDetail 
 
 export async function findActiveUserById(idUser: number): Promise<UserData | null> {
     return datasource.getRepository(UserData).findOne({
-        where: { idUserData: idUser, status: 1 },
+        where: { idUserData: idUser },
+    });
+}
+
+/** Alta o toque de updated_at al entrar a utilería (JWT Bearer). */
+export async function upsertUtilityCatalogUser(payload: {
+    sub: string;
+    email?: string | null;
+    preferredUsername?: string | null;
+    givenName?: string | null;
+    familyName?: string | null;
+}): Promise<void> {
+    const repo = datasource.getRepository(UserData);
+    const existing = await repo.findOne({ where: { sub: payload.sub } });
+    const now = new Date();
+
+    if (existing) {
+        await repo.update({ idUserData: existing.idUserData }, { updatedAt: now });
+        return;
+    }
+
+    await repo.insert({
+        sub: payload.sub,
+        email: payload.email ?? null,
+        preferredUsername: payload.preferredUsername ?? null,
+        givenName: payload.givenName ?? null,
+        familyName: payload.familyName ?? null,
+        status: 1,
     });
 }
 
@@ -1796,12 +1825,14 @@ export async function listModuleProcessesWithUserAssignment(
         .select('mp.module_process_id', 'moduleProcessId')
         .addSelect('cp.id', 'processId')
         .addSelect(catalogRefLabelExpr('cp', langId), 'name')
-        .addSelect(`COALESCE(NULLIF(TRIM(cp.value), ''), cp.detailKey)`, 'description')
+        .addSelect(`COALESCE(NULLIF(TRIM(cp.value), ''), cp.key)`, 'description')
         .addSelect(
             `EXISTS (
                 SELECT 1 FROM core_security.profile_module_process pmp
                 INNER JOIN core_security.profile_user pu ON pu.catalog_detail_profile_id = pmp.catalog_detail_profile_id
                     AND pu.user_data_id = :userId AND pu.status = 1
+                INNER JOIN core_security.profile_module pm ON pm.catalog_detail_profile_id = pmp.catalog_detail_profile_id
+                    AND pm.catalog_detail_module_id = mp.catalog_detail_module_id AND pm.status = 1
                 WHERE pmp.module_process_id = mp.module_process_id AND pmp.status = 1
             )`,
             'assigned',

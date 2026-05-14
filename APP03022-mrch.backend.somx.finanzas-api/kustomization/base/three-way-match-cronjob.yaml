@@ -4,7 +4,7 @@ metadata:
   name: three-way-match-batch
 spec:
   schedule: "0 9 * * *" # 03:00 AM México
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -18,7 +18,7 @@ spec:
             - name: three-way-match-batch
               image: foo/bar
               imagePullPolicy: IfNotPresent
-              command: [ "node" ]
+              command: ["node"]
               args:
                 - "dist/workers/threeWayMatch.batch.js"
                 - "--run"

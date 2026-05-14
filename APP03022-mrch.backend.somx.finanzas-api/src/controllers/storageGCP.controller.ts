@@ -18,8 +18,8 @@ import { logger } from "@/utils/logger.js";
 
 // Configura el cliente de GCS
 const storage = new Storage();
-const bucketName = 'mi-bucket';
-//const bucketName = process.env.GCS_BUCKET ?? "";
+//const bucketName = 'mi-bucket';
+const bucketName = process.env.GCS_BUCKET ?? "";
 const bucket = storage.bucket(bucketName);
 let gcsPrefixTmp = (process.env.GCS_PREFIX ?? "");
 gcsPrefixTmp = "";

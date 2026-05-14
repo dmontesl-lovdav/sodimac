@@ -44,7 +44,7 @@ export async function createAll(dtoPurchase: CreatePurchaseOrderDto, files: Expr
   await getDataSource().transaction( async (transactionalEntityManager) => {     
     const createdOC = await svcPurchaseO.create(dtoPurchase, transactionalEntityManager, files, folder, origin, token);
   });
-  const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS211, token);
+  const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS211, token);
   return ResponseHandler.responseBuilder(CatMsgExc.description ,null,0, StatusCodes.CREATED, true, "");
 }
 

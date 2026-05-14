@@ -44,7 +44,7 @@ export async function createGuia(req: AuthenticatedRequest, res: Response, next:
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
         logger.error("❌ Register 'Guias Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC007, req.authToken ?? '');
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC007, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la GUIA DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
 
@@ -64,7 +64,7 @@ export async function createOc(req: AuthenticatedRequest, res: Response, next: N
 
     } catch (e) {
         logger.error("❌ Register 'OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC008, req.authToken ?? '');
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC008, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la OC DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
@@ -83,7 +83,7 @@ export async function createall(req: AuthenticatedRequest, res: Response, next: 
         res.status(201).json({created, trace_id: getTraceId()});
     } catch (e) { 
         logger.error("❌ Register 'Guias y OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC009, req.authToken ?? '');
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC009, req.authToken ?? '');
         logActivity(true, 'ERROR : No fue posible registrar la OC Y LA DOCUMENTACION DE carta porte, Favor de validar', e , req.body);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e);
@@ -97,7 +97,7 @@ export async function findAllGuia(request: AuthenticatedRequest, response: Respo
         const finded = await svc.findAll(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
     } catch (e) { 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC010, request.authToken ?? '');
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC010, request.authToken ?? '');
         logActivity(true,'ERROR: No fue posible encontrar las guias', e, request.params );
         response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e); 
@@ -111,7 +111,7 @@ export async function updateAllStatusGuia(request: AuthenticatedRequest, respons
         const finded = await svc.updateAllStatusGuia(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
     } catch (e) { 
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC011, request.authToken ?? '');
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC011, request.authToken ?? '');
         logActivity(true,'ERROR: AL ACTULIAZAR LOS ESTATUS DE LAS GUIAS', e, request.params );
         response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
         next(e); 

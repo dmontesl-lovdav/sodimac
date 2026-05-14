@@ -3,4 +3,4 @@ kind: CronJob
 metadata:
   name: three-way-match-batch
 spec:
-  suspend: true
+  suspend: false

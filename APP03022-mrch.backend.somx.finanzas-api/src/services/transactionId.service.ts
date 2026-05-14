@@ -26,7 +26,7 @@ function encodeBase34(value: number): string {
 }
 
 async function validateCatalogOrigin(codigoModulo: string, pantallaOrigen: string, token: string) {
-    const baseUrl = process.env.CATALOGS_API_URL_BBF ?? "";
+    const baseUrl = process.env.CATALOGS_API_URL_BFF ?? "";
     const validatePath = process.env.CATALOGS_API_VALIDATE_TRANSACTION_ORIGIN ?? "";
 
     if (!baseUrl || !validatePath) {

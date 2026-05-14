@@ -1,8 +1,6 @@
 import axios from 'axios';
 import FormData from 'form-data';
-import dotenv from 'dotenv';
-import path from 'path';
-import multer from 'multer';
+
 import { logger } from "@/utils/logger.js";
 import { GenericCatalogDetails, Supplier, ValidStatus } from '@/response/GenericCatalogDetails.dto.js';
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
@@ -11,15 +9,9 @@ import {uploadMultiple} from '@/services/storageGcp.service.js';
 
 import { StatusCodes } from "http-status-codes";
 import { ResponseHandler } from "@/response/ResponseHandler.js";
-import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
-// Load local .env with priority over system variables
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({
-    path: path.resolve(__dirname, '../../.env'),
-    override: true,
-});
+
 /**
  * Envía archivos y datos adicionales a una API externa usando axios
  * @param {string} url - URL de la API externa
@@ -120,38 +112,65 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: st
 
 }
 
+
 export async function axiosGet(url: string, token: string, params?: any) {
-
-    let response: any;
-    if (params == undefined) {
-        params = {};
-    }
-
-    if (token == undefined) {
-        token = '';
-    }
-
-    await axios.get(url, { 
-        params,
-        headers: {
-            Authorization: `Bearer ${token}`
+  try {
+        await logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
+        if (params == undefined) {
+            params = {};
         }
+        if (token == undefined) {
+            token = '';
+        }
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      params: params
+    });
 
-        })
-        .then(function (_response) {
-            response = _response;
-            console.log(_response);
-        })
-        .catch(function (error) {
-            response = error.response;
-            console.log(error);
-            logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
-        })
-        .finally(function () {
-            console.log();
-        });
-    return response;
+    return response; // ✅ IMPORTANTE
+  } catch (error: any) {
+    console.error("❌ axiosGet error:", error?.response?.data || error.message);
+    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
+    return undefined; // o throw error;
+  }
 }
+
+
+// export async function axiosGet(url: string, token: string, params?: any) {
+
+//     logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
+//     let response: any;
+//     if (params == undefined) {
+//         params = {};
+//     }
+
+//     if (token == undefined) {
+//         token = '';
+//     }
+
+//     await axios.get(url, { 
+//         params,
+//         headers: {
+//             Authorization: `Bearer ${token}`
+//         }
+
+//         })
+//         .then(function (_response) {
+//             response = _response;
+//             console.log(_response);
+//         })
+//         .catch(function (error) {
+//             response = error.response;
+//             console.log(error);
+//             logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
+//         })
+//         .finally(function () {
+//             console.log();
+//         });
+//     return response;
+// }
 
 export async function axiosPost(url: string, data: any, token: string) {
 
@@ -188,7 +207,7 @@ export async function GetSuppliers(token: string) {
 }
 
 export async function GetSupplierBySupplierNumber(supplierNumber: number, token: string) {
-    const supplierTmp: any = await axiosGet((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_GET_SUPPLIER + "/" + supplierNumber, token);
+    const supplierTmp: any = await axiosGet((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_GET_SUPPLIER + "/" + supplierNumber, token);
     if (supplierTmp.data == '') {
         return undefined;
     } else {
@@ -199,9 +218,18 @@ export async function GetSupplierBySupplierNumber(supplierNumber: number, token:
 }
 
 export async function GetCatalogDetail(url: string, token: string) {
-    const CatCatalog: any = await axiosGet(url, token, undefined);
-    const msgObj: GenericCatalogDetails = CatCatalog.data as GenericCatalogDetails;
-    return msgObj;
+    
+  const CatCatalog: any = await axiosGet(url, token, undefined);
+
+  if (!CatCatalog) {
+    throw new Error("Error: axiosGet no regresó respuesta");
+  }
+
+  return CatCatalog.data as GenericCatalogDetails;
+
+    // const CatCatalog: any = await axiosGet(url, token, undefined);
+    // const msgObj: GenericCatalogDetails = CatCatalog.data as GenericCatalogDetails;
+    // return msgObj;
 }
 
 export async function GetCatalogDetailList(url: string, token: string) {

@@ -64,3 +64,170 @@ ReceiptDto:
     status:
       type: integer
       description: Receipt status
+
+CreatePurchaseOrderDto:
+  type: object
+  properties:
+    supplierNumber:
+      type: integer
+    orderNumber:
+      type: string
+    amount:
+      type: string
+    purchaseOrderDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+    createdBy:
+      type: integer
+    receptionList:
+      type: array
+      items:
+        $ref: "./purchase-orders.yaml#/CreateReceiptionDto"
+    guideNumber:
+      type: array
+      items:
+        $ref: "./purchase-orders.yaml#/GuideNumberDto"
+    shippingGuideList:
+      type: array
+      items:
+        $ref: "./purchase-orders.yaml#/ShippingGuideDto"
+    origen:
+      type: string
+
+CreateReceiptionSkuDto:
+  type: object
+  properties:
+    sku:
+      type: string
+    description:
+      type: string
+    quantity:
+      type: integer
+    unitCost:
+      type: string
+    totalCost:
+      type: string
+    status:
+      type: integer
+    createdBy:
+      type: string
+
+CreateReceiptionDto:
+  type: object
+  properties:
+    receptionNumber:
+      type: string
+    originId:
+      type: integer
+    origin:
+      type: string
+    destinationId:
+      type: integer
+    amount:
+      type: string
+    comments:
+      type: string
+    guideNumber:
+      type: string
+    receptionDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+    createdBy:
+      type: string
+    receiptSkuList:
+      type: array
+      items:
+        $ref: "./purchase-orders.yaml#/CreateReceiptionSkuDto"
+
+GuideNumberDto:
+  type: object
+  properties:
+    guide:
+      type: string
+
+ShippingGuideDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier
+    guideNumber:
+      type: string
+      description: Shipping guide number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    shipmentDate:
+      type: string
+      format: date-time
+      description: Shipment date
+    deliveryDate:
+      type: string
+      format: date-time
+      description: Expected delivery date
+    origin:
+      type: string
+      description: Origin location
+    destination:
+      type: string
+      description: Destination location
+    status:
+      type: integer
+      description: Shipping status
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+ListReceptionDto:
+  type: object
+  properties:
+    receptionDateAtInitial:
+      type: string
+      description: Start date (YYYY-MM-DD)
+    receptionDateAtEnd:
+      type: string
+      description: End date (YYYY-MM-DD)
+    pageNumber:
+      type: integer
+    pageSize:
+      type: integer
+
+ReceptionDto:
+  type: object
+  properties:
+    receptionId:
+      type: string
+    receptionNumber:
+      type: string
+      description: Receipt number
+    purchaseOrderId:
+      type: string
+    originId:
+      type: string
+    destinationId:
+      type: string
+    amount:
+      type: string
+      description: Receipt amount
+    comment:
+      type: string
+    receptionDate:
+      type: string
+      format: date-time
+      description: Receipt date
+    status:
+      type: string
+    guideNumber:
+      type: string
+    createdBy:
+      type: string
+    createdAt:
+      type: string

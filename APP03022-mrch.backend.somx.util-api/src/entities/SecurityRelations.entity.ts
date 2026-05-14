@@ -32,6 +32,9 @@ export class UserData {
 
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt!: Date;
+
+    @Column({ name: 'updated_at', type: 'timestamp', nullable: true })
+    updatedAt?: Date | null;
 }
 
 @Entity({ schema: 'core_security', name: 'module_process' })

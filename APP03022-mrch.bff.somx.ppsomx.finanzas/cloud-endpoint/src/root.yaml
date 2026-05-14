@@ -6,7 +6,7 @@ info:
   description: >
     Support RESTful operations for finanzas flow. This BFF provides access to
     financial operations including accounts payable, rebates, fiscal payments,
-    shipping guides, vendor management, three way match, and MIGO.
+    shipping guides, carta porte, vendor management, three way match, and MIGO.
   title: Finanzas BFF API
   version: 2.0.0
   x-business-acronym: mrch
@@ -227,6 +227,23 @@ paths:
     $ref: "./paths/purchase-orders.yaml#/purchase-orders"
   /purchase-orders/{uuid}:
     $ref: "./paths/purchase-orders.yaml#/purchase-orders-by-uuid"
+  /purchase-orders/listReception:
+    $ref: "./paths/purchase-orders.yaml#/purchase-orders-list-reception"
+  /purchase-orders/updateReception:
+    $ref: "./paths/purchase-orders.yaml#/purchase-orders-update-reception"
+  /purchase-orders/reception/{uuid}:
+    $ref: "./paths/purchase-orders.yaml#/purchase-orders-reception-by-uuid"
+
+  /carta-porte/guia-embarque:
+    $ref: "./paths/carta-porte.yaml#/carta-porte-guia-embarque"
+  /carta-porte/oc:
+    $ref: "./paths/carta-porte.yaml#/carta-porte-oc"
+  /carta-porte/all:
+    $ref: "./paths/carta-porte.yaml#/carta-porte-all"
+  /carta-porte/findAllGuia:
+    $ref: "./paths/carta-porte.yaml#/carta-porte-find-all-guia"
+  /carta-porte/updateAllStatusGuia:
+    $ref: "./paths/carta-porte.yaml#/carta-porte-update-all-status-guia"
 
 definitions:
   ExceptionWrapper:
@@ -352,6 +369,38 @@ definitions:
     $ref: "./definitions/purchase-orders.yaml#/UpdatePurchaseOrderDto"
   ReceiptDto:
     $ref: "./definitions/purchase-orders.yaml#/ReceiptDto"
+  CreatePurchaseOrderDto:
+    $ref: "./definitions/purchase-orders.yaml#/CreatePurchaseOrderDto"
+  CreateReceiptionDto:
+    $ref: "./definitions/purchase-orders.yaml#/CreateReceiptionDto"
+  CreateReceiptionSkuDto:
+    $ref: "./definitions/purchase-orders.yaml#/CreateReceiptionSkuDto"
+  ListReceptionDto:
+    $ref: "./definitions/purchase-orders.yaml#/ListReceptionDto"
+  ReceptionDto:
+    $ref: "./definitions/purchase-orders.yaml#/ReceptionDto"
+  
+
+  CartaPorteShippingGuideDocumentItem:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteShippingGuideDocumentItem"
+  CartaPorteCreateShippingGuideItem:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteCreateShippingGuideItem"
+  CartaPorteShippingGuideListContent:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteShippingGuideListContent"
+  CartaPorteReceiptSkuItem:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteReceiptSkuItem"
+  CartaPorteReceptionItem:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteReceptionItem"
+  CartaPorteGuideNumberItem:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteGuideNumberItem"
+  CartaPorteCreatePurchaseOrderContent:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteCreatePurchaseOrderContent"
+  ListShippingGuideQueryCartaPorte:
+    $ref: "./definitions/carta-porte.yaml#/ListShippingGuideQueryCartaPorte"
+  ShippginGuideSummaryListDto:
+    $ref: "./definitions/carta-porte.yaml#/ShippginGuideSummaryListDto"
+  CartaPorteServiceResponseEnvelope:
+    $ref: "./definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
 
   AuditLogDto:
     $ref: "./definitions/audit-logs.yaml#/AuditLogDto"

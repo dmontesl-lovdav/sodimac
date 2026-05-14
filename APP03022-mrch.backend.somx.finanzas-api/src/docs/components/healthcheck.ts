@@ -7,7 +7,7 @@ export const healthcheckSchemas: Record<string, OpenAPIV3.SchemaObject> = {
             healthcheckUuid: { type: "string", format: "uuid" },
             serviceName: { type: "string", example: "finanzas-api" },
             status: { type: "string", example: "OK" },
-            message: { type: "string", nullable: true, example: "Healthcheck record alive" },
+            message: { type: "string", nullable: true, example: "Finanzas healthcheck OK - Swagger updated", },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time", nullable: true },
         },

@@ -168,7 +168,7 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
 export async function get(id: string, token: string) {
     const entity = await guides.findById(id);
     if (entity == null || entity == undefined) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS206, token);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS206, token);
         logger.info("❌ get shippingGuide NOT FOUND → data={} ", entity);
         return ResponseHandler.responseBuilder(CatMsgExc.description, entity, 0, StatusCodes.NOT_FOUND, true, "");
     }
@@ -232,7 +232,7 @@ export async function create(createShippingGuideList: CreateShippingGuideDto[] =
         const nameFiles = files.map(f => f.originalname).join(',');
         enviados = await svcAxios.sendFilesToBucket(files, folder, token);
         if (!enviados.success) {
-            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
+            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
             logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
             logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
             throw new Error(CatMsgExc.description);
@@ -240,7 +240,7 @@ export async function create(createShippingGuideList: CreateShippingGuideDto[] =
             logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
         }
     }
-    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
+    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
     logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
     resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
 
@@ -257,11 +257,11 @@ export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto, t
     const entityUpdated = await guides.updateOneByUuid(id, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }
@@ -278,11 +278,11 @@ export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingG
     const entityUpdated = await guides.updateOneByGuide(guideNumber, patch as any);
     let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
     if (!entityUpdated) {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209, token);
         logger.info("✅ shippingGuide  NOT updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.NOT_FOUND, false, "Guia de Embarque no encontrada");
     } else {
-        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BBF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210, token);
         logger.info("✅ shippingGuide updated → data={}", entityUpdated);
         response = ResponseHandler.responseBuilder(CatMsgExc.description, entityUpdated, 0, StatusCodes.OK, true, "");
     }

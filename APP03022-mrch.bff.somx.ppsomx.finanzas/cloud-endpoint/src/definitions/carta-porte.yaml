@@ -1,0 +1,248 @@
+# Contratos Carta Porte (backend cartaPorte.controller / rutas POST)
+# multipart: campo `content` es JSON serializado como string (validación Zod en API).
+
+CartaPorteShippingGuideDocumentItem:
+  type: object
+  required:
+    - fileName
+    - fileType
+    - status
+  properties:
+    fileName:
+      type: string
+    fileType:
+      type: integer
+    status:
+      type: integer
+
+CartaPorteCreateShippingGuideItem:
+  type: object
+  required:
+    - guideNumber
+    - vendorNumber
+    - truckPlate
+    - originId
+    - deliveryType
+    - deliveryDate
+    - shipingGuideDocumentList
+  properties:
+    guideNumber:
+      type: string
+    vendorNumber:
+      type: integer
+    truckPlate:
+      type: string
+      maxLength: 20
+    trailerPlate:
+      type: string
+      maxLength: 20
+    driverName:
+      type: string
+      maxLength: 100
+    driverLicense:
+      type: string
+      maxLength: 50
+    originId:
+      type: integer
+    destinationId:
+      type: integer
+    deliveryType:
+      type: integer
+    status:
+      type: integer
+    comments:
+      type: string
+    deliveryDate:
+      type: string
+      format: date-time
+    shippingDate:
+      type: string
+      format: date-time
+    estimatedArrival:
+      type: string
+      format: date-time
+    actualArrival:
+      type: string
+      format: date-time
+    sentAt:
+      type: string
+      format: date-time
+    createdBy:
+      type: integer
+    shipingGuideDocumentList:
+      type: array
+      items:
+        $ref: "#/CartaPorteShippingGuideDocumentItem"
+
+CartaPorteShippingGuideListContent:
+  type: object
+  required:
+    - shippingGuideList
+  properties:
+    shippingGuideList:
+      type: array
+      items:
+        $ref: "#/CartaPorteCreateShippingGuideItem"
+
+CartaPorteReceiptSkuItem:
+  type: object
+  required:
+    - sku
+    - description
+    - quantity
+    - unitCost
+    - totalCost
+    - status
+    - createdBy
+  properties:
+    sku:
+      type: string
+    description:
+      type: string
+    quantity:
+      type: integer
+      minimum: 1
+    unitCost:
+      type: string
+    totalCost:
+      type: string
+    status:
+      type: integer
+    createdBy:
+      type: integer
+
+CartaPorteReceptionItem:
+  type: object
+  required:
+    - receptionNumber
+    - destinationId
+    - amount
+    - comments
+    - receptionDate
+    - status
+    - createdBy
+    - receiptSkuList
+  properties:
+    receptionNumber:
+      type: string
+    originId:
+      type: integer
+    destinationId:
+      type: integer
+    amount:
+      type: string
+    comments:
+      type: string
+    receptionDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+    createdBy:
+      type: integer
+    sapDocument:
+      type: string
+    receiptSkuList:
+      type: array
+      items:
+        $ref: "#/CartaPorteReceiptSkuItem"
+
+CartaPorteGuideNumberItem:
+  type: object
+  required:
+    - guide
+  properties:
+    guide:
+      type: string
+
+CartaPorteCreatePurchaseOrderContent:
+  type: object
+  required:
+    - supplierNumber
+    - orderNumber
+    - amount
+    - purchaseOrderDate
+    - status
+    - createdBy
+    - receptionList
+    - origen
+  properties:
+    supplierNumber:
+      type: integer
+    orderNumber:
+      type: string
+    amount:
+      type: string
+    purchaseOrderDate:
+      type: string
+      format: date-time
+    status:
+      type: integer
+    createdBy:
+      type: integer
+    origen:
+      type: string
+    receptionList:
+      type: array
+      items:
+        $ref: "#/CartaPorteReceptionItem"
+      minItems: 1
+    guideNumber:
+      type: array
+      items:
+        $ref: "#/CartaPorteGuideNumberItem"
+    shippingGuideList:
+      type: array
+      items:
+        $ref: "#/CartaPorteCreateShippingGuideItem"
+
+ListShippingGuideQueryCartaPorte:
+  type: object
+  properties:
+    id:
+      type: string
+    guideNumber:
+      type: string
+    status:
+      type: integer
+    vendorNumber:
+      type: integer
+    originId:
+      type: integer
+    destinationId:
+      type: integer
+    deliveryType:
+      type: integer
+    isStatusUpdated:
+      type: boolean
+    from:
+      type: string
+      format: date
+    to:
+      type: string
+      format: date
+    pageNumber:
+      type: integer
+      default: 1
+    pageSize:
+      type: integer
+      default: 10
+
+ShippginGuideSummaryListDto:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        type: string
+      description: Lista de IDs (UUID en string) de shipping guides.
+
+CartaPorteServiceResponseEnvelope:
+  type: object
+  description: Payload del backend; incluye correlación cuando aplica (trace_id).
+  additionalProperties: true
+  properties:
+    trace_id:
+      type: string

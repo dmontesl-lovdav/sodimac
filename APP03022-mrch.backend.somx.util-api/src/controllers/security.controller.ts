@@ -8,6 +8,14 @@ function parseActorId(req: Request): string {
     return actorId || 'SYSTEM';
 }
 
+function parseQueryStatus(raw: unknown): number | undefined {
+    if (raw === undefined || raw === null) return undefined;
+    const v = Array.isArray(raw) ? raw[0] : raw;
+    if (v === '' || v === null || v === undefined) return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+}
+
 function parseSearchFilters(req: Request): securityService.SecurityFilters {
     const filters: securityService.SecurityFilters = {
         startDate: String(req.query.startDate ?? ''),
@@ -17,9 +25,8 @@ function parseSearchFilters(req: Request): securityService.SecurityFilters {
     if (req.query.entityName) filters.entityName = String(req.query.entityName);
     if (req.query.email) filters.email = String(req.query.email);
     if (req.query.name) filters.fullName = String(req.query.name);
-    if (req.query.status !== undefined && req.query.status !== '') {
-        filters.status = Number(req.query.status);
-    }
+    const st = parseQueryStatus(req.query.status);
+    if (st !== undefined) filters.status = st;
     if (req.query.langId !== undefined && req.query.langId !== '') {
         filters.langId = Number(req.query.langId);
     }
@@ -440,6 +447,16 @@ export async function invalidateUserDetailsCache(req: Request, res: Response, ne
             idPerfilRaw == null || String(idPerfilRaw).trim() === '' ? undefined : Number(idPerfilRaw);
         const data = await securityService.invalidateUserDetailsCache(userKey, idProfile, parseLangId(req));
         res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** POST /api/security/user-utility — alta o toque de catálogo desde JWT (entrada a utilería). */
+export async function postUserUtilitySession(req: Request, res: Response, next: NextFunction) {
+    try {
+        await securityService.registerUserFromUtilitySession(req);
+        res.json({ success: true, message: 'Usuario registrado o actualizado en catálogo' });
     } catch (error) {
         next(error);
     }

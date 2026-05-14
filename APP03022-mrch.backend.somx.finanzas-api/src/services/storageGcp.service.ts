@@ -7,6 +7,7 @@ import { logger } from "@/utils/logger.js";
 import { DownloadBulkSchema, DownloadFileSchema, UploadFilesSchema, type DownloadBulkDto, type DownloadFileDto, type UploadFilesDto } from "@/schemas/storageGcp.schema.js";
 import archiver from "archiver";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
+import 'dotenv/config';
 
 const bucketName = process.env.GCS_BUCKET;
 if (!bucketName) throw new Error("Missing env var GCS_BUCKET for Google Cloud Storage integration");

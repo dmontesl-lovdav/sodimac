@@ -1,0 +1,231 @@
+# Rutas montadas en /carta-porte (api/src/routes/cartaPorte.routes.ts — todos POST)
+carta-porte-guia-embarque:
+  post:
+    tags:
+      - carta-porte
+    summary: Registrar guías de embarque (Carta Porte, lote)
+    description: >-
+      multipart/form-data: campo `content` debe ser una cadena JSON con estructura
+      CartaPorteShippingGuideListContent (lista shippingGuideList). Adjuntar hasta 2
+      archivos en el campo `files` (csv/xml) cuando aplica por origen.
+      Nota: Cloud Endpoints no soporta declarar parámetros `type: file`,
+      por eso los archivos no se listan en `parameters`; el backend los sigue
+      recibiendo vía multipart/form-data.
+    operationId: cartaPorteCreateGuiaEmbarque
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    parameters:
+      - in: formData
+        name: folder
+        type: string
+        required: true
+        description: Carpeta destino para almacenamiento.
+      - in: formData
+        name: origen
+        type: string
+        required: true
+        description: Origen Carta Porte (valor catálogo en string).
+      - in: formData
+        name: content
+        type: string
+        required: true
+        description: >-
+          JSON stringificado conforme definición CartaPorteShippingGuideListContent.
+      - in: formData
+        name: id
+        type: string
+        required: false
+      - in: formData
+        name: extra1
+        type: string
+        required: false
+      - in: formData
+        name: extra2
+        type: string
+        required: false
+    responses:
+      "201":
+        description: Creado
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
+      "400":
+        description: Error de validación o negocio
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: No autorizado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+carta-porte-oc:
+  post:
+    tags:
+      - carta-porte
+    summary: Registrar orden de compra (Carta Porte)
+    description: >-
+      multipart/form-data sin archivos. `content` es JSON serializado conforme
+      CartaPorteCreatePurchaseOrderContent (órden Carta Porte con recepciones, etc.).
+    operationId: cartaPorteCreateOc
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    parameters:
+      - in: formData
+        name: content
+        type: string
+        required: true
+      - in: formData
+        name: id
+        type: string
+        required: false
+      - in: formData
+        name: extra1
+        type: string
+        required: false
+      - in: formData
+        name: extra2
+        type: string
+        required: false
+    responses:
+      "201":
+        description: Creado
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
+      "400":
+        description: Error de validación o negocio
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: No autorizado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+carta-porte-all:
+  post:
+    tags:
+      - carta-porte
+    summary: Registrar OC y documentación Carta Porte (lote)
+    description: >-
+      multipart/form-data igual que guía pero `content` es JSON conforme
+      CartaPorteCreatePurchaseOrderContent (puede incluir shippingGuideList, guideNumber).
+      Puede adjuntar hasta 2 archivos en el campo `files` (csv/xml).
+      Nota: Cloud Endpoints no soporta declarar parámetros `type: file`,
+      por eso los archivos no se listan en `parameters`; el backend los sigue
+      recibiendo vía multipart/form-data.
+    operationId: cartaPorteCreateAll
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    parameters:
+      - in: formData
+        name: folder
+        type: string
+        required: true
+      - in: formData
+        name: origen
+        type: string
+        required: true
+      - in: formData
+        name: content
+        type: string
+        required: true
+        description: JSON stringificado conforme definición CartaPorteCreatePurchaseOrderContent.
+      - in: formData
+        name: id
+        type: string
+        required: false
+      - in: formData
+        name: extra1
+        type: string
+        required: false
+      - in: formData
+        name: extra2
+        type: string
+        required: false
+    responses:
+      "201":
+        description: Creado
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
+      "400":
+        description: Error de validación o negocio
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: No autorizado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+carta-porte-find-all-guia:
+  post:
+    tags:
+      - carta-porte
+    summary: Listar / filtrar guías Carta Porte
+    operationId: cartaPorteFindAllGuia
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/ListShippingGuideQueryCartaPorte"
+    responses:
+      "200":
+        description: Resultado paginado o lista según backend
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
+      "400":
+        description: Error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: No autorizado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+carta-porte-update-all-status-guia:
+  post:
+    tags:
+      - carta-porte
+    summary: Actualizar estado de guías tras cambios Carta Porte
+    operationId: cartaPorteUpdateAllStatusGuia
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/ShippginGuideSummaryListDto"
+    responses:
+      "200":
+        description: Actualización aplicada (ver httpStatus del cuerpo)
+        schema:
+          $ref: "../definitions/carta-porte.yaml#/CartaPorteServiceResponseEnvelope"
+      "400":
+        description: Error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: No autorizado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

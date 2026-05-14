@@ -4,7 +4,7 @@ info:
     email: jrcastillo@falabella.cl
     name: Arquitectura Falabella Tecnologia Corp.
   description: |
-    Support RESTful operations for finanzas flow. This BFF provides access to financial operations including accounts payable, rebates, fiscal payments, shipping guides, vendor management, three way match, and MIGO.
+    Support RESTful operations for finanzas flow. This BFF provides access to financial operations including accounts payable, rebates, fiscal payments, shipping guides, carta porte, vendor management, three way match, and MIGO.
   title: Finanzas BFF API
   version: 2.0.0
   x-business-acronym: mrch
@@ -2528,6 +2528,38 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+    post:
+      tags:
+        - purchase-orders
+      summary: save purchase orders with recetpion and ReceptionsSKU
+      operationId: savePurchaseOrders
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreatePurchaseOrderDto'
+      responses:
+        '200':
+          description: List of purchase orders saved with receipts
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PurchaseOrderDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   '/purchase-orders/{uuid}':
     get:
       tags:
@@ -2600,6 +2632,353 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
         '500':
           description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /purchase-orders/listReception:
+    get:
+      tags:
+        - purchase-orders
+      summary: List Receptions
+      operationId: listReceptions
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListReceptionDto'
+      responses:
+        '200':
+          description: List of receiptions
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ReceptionDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /purchase-orders/updateReception:
+    patch:
+      tags:
+        - purchase-orders
+      summary: update Reception status by purchase Order
+      operationId: updateReception
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListReceptionDto'
+      responses:
+        '200':
+          description: Reception Updated
+          schema:
+            $ref: '#/definitions/ReceptionDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/purchase-orders/reception/{uuid}':
+    get:
+      tags:
+        - purchase-orders
+      summary: Get Reception by ID
+      operationId: getReceptionById
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Reception UUID
+          type: string
+      responses:
+        '200':
+          description: reception with skus
+          schema:
+            $ref: '#/definitions/ReceptionDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - purchase-orders
+      summary: Update reception by UUID
+      operationId: updateReceptionStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Reception UUID
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ReceptionDto'
+      responses:
+        '200':
+          description: Updated purchase order
+          schema:
+            $ref: '#/definitions/ReceptionDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /carta-porte/guia-embarque:
+    post:
+      tags:
+        - carta-porte
+      summary: 'Registrar guías de embarque (Carta Porte, lote)'
+      description: 'multipart/form-data: campo `content` debe ser una cadena JSON con estructura CartaPorteShippingGuideListContent (lista shippingGuideList). Adjuntar hasta 2 archivos en el campo `files` (csv/xml) cuando aplica por origen. Nota: Cloud Endpoints no soporta declarar parámetros `type: file`, por eso los archivos no se listan en `parameters`; el backend los sigue recibiendo vía multipart/form-data.'
+      operationId: cartaPorteCreateGuiaEmbarque
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - in: formData
+          name: folder
+          type: string
+          required: true
+          description: Carpeta destino para almacenamiento.
+        - in: formData
+          name: origen
+          type: string
+          required: true
+          description: Origen Carta Porte (valor catálogo en string).
+        - in: formData
+          name: content
+          type: string
+          required: true
+          description: JSON stringificado conforme definición CartaPorteShippingGuideListContent.
+        - in: formData
+          name: id
+          type: string
+          required: false
+        - in: formData
+          name: extra1
+          type: string
+          required: false
+        - in: formData
+          name: extra2
+          type: string
+          required: false
+      responses:
+        '201':
+          description: Creado
+          schema:
+            $ref: '#/definitions/CartaPorteServiceResponseEnvelope'
+        '400':
+          description: Error de validación o negocio
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: No autorizado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /carta-porte/oc:
+    post:
+      tags:
+        - carta-porte
+      summary: Registrar orden de compra (Carta Porte)
+      description: 'multipart/form-data sin archivos. `content` es JSON serializado conforme CartaPorteCreatePurchaseOrderContent (órden Carta Porte con recepciones, etc.).'
+      operationId: cartaPorteCreateOc
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - in: formData
+          name: content
+          type: string
+          required: true
+        - in: formData
+          name: id
+          type: string
+          required: false
+        - in: formData
+          name: extra1
+          type: string
+          required: false
+        - in: formData
+          name: extra2
+          type: string
+          required: false
+      responses:
+        '201':
+          description: Creado
+          schema:
+            $ref: '#/definitions/CartaPorteServiceResponseEnvelope'
+        '400':
+          description: Error de validación o negocio
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: No autorizado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /carta-porte/all:
+    post:
+      tags:
+        - carta-porte
+      summary: Registrar OC y documentación Carta Porte (lote)
+      description: 'multipart/form-data igual que guía pero `content` es JSON conforme CartaPorteCreatePurchaseOrderContent (puede incluir shippingGuideList, guideNumber). Puede adjuntar hasta 2 archivos en el campo `files` (csv/xml). Nota: Cloud Endpoints no soporta declarar parámetros `type: file`, por eso los archivos no se listan en `parameters`; el backend los sigue recibiendo vía multipart/form-data.'
+      operationId: cartaPorteCreateAll
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - in: formData
+          name: folder
+          type: string
+          required: true
+        - in: formData
+          name: origen
+          type: string
+          required: true
+        - in: formData
+          name: content
+          type: string
+          required: true
+          description: JSON stringificado conforme definición CartaPorteCreatePurchaseOrderContent.
+        - in: formData
+          name: id
+          type: string
+          required: false
+        - in: formData
+          name: extra1
+          type: string
+          required: false
+        - in: formData
+          name: extra2
+          type: string
+          required: false
+      responses:
+        '201':
+          description: Creado
+          schema:
+            $ref: '#/definitions/CartaPorteServiceResponseEnvelope'
+        '400':
+          description: Error de validación o negocio
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: No autorizado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /carta-porte/findAllGuia:
+    post:
+      tags:
+        - carta-porte
+      summary: Listar / filtrar guías Carta Porte
+      operationId: cartaPorteFindAllGuia
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListShippingGuideQueryCartaPorte'
+      responses:
+        '200':
+          description: Resultado paginado o lista según backend
+          schema:
+            $ref: '#/definitions/CartaPorteServiceResponseEnvelope'
+        '400':
+          description: Error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: No autorizado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /carta-porte/updateAllStatusGuia:
+    post:
+      tags:
+        - carta-porte
+      summary: Actualizar estado de guías tras cambios Carta Porte
+      operationId: cartaPorteUpdateAllStatusGuia
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ShippginGuideSummaryListDto'
+      responses:
+        '200':
+          description: Actualización aplicada (ver httpStatus del cuerpo)
+          schema:
+            $ref: '#/definitions/CartaPorteServiceResponseEnvelope'
+        '400':
+          description: Error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: No autorizado
           schema:
             $ref: '#/definitions/ExceptionWrapper'
       security:
@@ -3826,6 +4205,398 @@ definitions:
       status:
         type: integer
         description: Receipt status
+  CreatePurchaseOrderDto:
+    type: object
+    properties:
+      supplierNumber:
+        type: integer
+      orderNumber:
+        type: string
+      amount:
+        type: string
+      purchaseOrderDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+      createdBy:
+        type: integer
+      receptionList:
+        type: array
+        items:
+          $ref: '#/definitions/CreateReceiptionDto'
+      guideNumber:
+        type: array
+        items:
+          type: object
+          properties:
+            guide:
+              type: string
+      shippingGuideList:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Unique identifier
+            guideNumber:
+              type: string
+              description: Shipping guide number
+            vendorNumber:
+              type: integer
+              description: Vendor identifier
+            shipmentDate:
+              type: string
+              format: date-time
+              description: Shipment date
+            deliveryDate:
+              type: string
+              format: date-time
+              description: Expected delivery date
+            origin:
+              type: string
+              description: Origin location
+            destination:
+              type: string
+              description: Destination location
+            status:
+              type: integer
+              description: Shipping status
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+      origen:
+        type: string
+  CreateReceiptionDto:
+    type: object
+    properties:
+      receptionNumber:
+        type: string
+      originId:
+        type: integer
+      origin:
+        type: string
+      destinationId:
+        type: integer
+      amount:
+        type: string
+      comments:
+        type: string
+      guideNumber:
+        type: string
+      receptionDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+      createdBy:
+        type: string
+      receiptSkuList:
+        type: array
+        items:
+          $ref: '#/definitions/CreateReceiptionSkuDto'
+  CreateReceiptionSkuDto:
+    type: object
+    properties:
+      sku:
+        type: string
+      description:
+        type: string
+      quantity:
+        type: integer
+      unitCost:
+        type: string
+      totalCost:
+        type: string
+      status:
+        type: integer
+      createdBy:
+        type: string
+  ListReceptionDto:
+    type: object
+    properties:
+      receptionDateAtInitial:
+        type: string
+        description: Start date (YYYY-MM-DD)
+      receptionDateAtEnd:
+        type: string
+        description: End date (YYYY-MM-DD)
+      pageNumber:
+        type: integer
+      pageSize:
+        type: integer
+  ReceptionDto:
+    type: object
+    properties:
+      receptionId:
+        type: string
+      receptionNumber:
+        type: string
+        description: Receipt number
+      purchaseOrderId:
+        type: string
+      originId:
+        type: string
+      destinationId:
+        type: string
+      amount:
+        type: string
+        description: Receipt amount
+      comment:
+        type: string
+      receptionDate:
+        type: string
+        format: date-time
+        description: Receipt date
+      status:
+        type: string
+      guideNumber:
+        type: string
+      createdBy:
+        type: string
+      createdAt:
+        type: string
+  CartaPorteShippingGuideDocumentItem:
+    type: object
+    required:
+      - fileName
+      - fileType
+      - status
+    properties:
+      fileName:
+        type: string
+      fileType:
+        type: integer
+      status:
+        type: integer
+  CartaPorteCreateShippingGuideItem:
+    type: object
+    required:
+      - guideNumber
+      - vendorNumber
+      - truckPlate
+      - originId
+      - deliveryType
+      - deliveryDate
+      - shipingGuideDocumentList
+    properties:
+      guideNumber:
+        type: string
+      vendorNumber:
+        type: integer
+      truckPlate:
+        type: string
+        maxLength: 20
+      trailerPlate:
+        type: string
+        maxLength: 20
+      driverName:
+        type: string
+        maxLength: 100
+      driverLicense:
+        type: string
+        maxLength: 50
+      originId:
+        type: integer
+      destinationId:
+        type: integer
+      deliveryType:
+        type: integer
+      status:
+        type: integer
+      comments:
+        type: string
+      deliveryDate:
+        type: string
+        format: date-time
+      shippingDate:
+        type: string
+        format: date-time
+      estimatedArrival:
+        type: string
+        format: date-time
+      actualArrival:
+        type: string
+        format: date-time
+      sentAt:
+        type: string
+        format: date-time
+      createdBy:
+        type: integer
+      shipingGuideDocumentList:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteShippingGuideDocumentItem'
+  CartaPorteShippingGuideListContent:
+    type: object
+    required:
+      - shippingGuideList
+    properties:
+      shippingGuideList:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteCreateShippingGuideItem'
+  CartaPorteReceiptSkuItem:
+    type: object
+    required:
+      - sku
+      - description
+      - quantity
+      - unitCost
+      - totalCost
+      - status
+      - createdBy
+    properties:
+      sku:
+        type: string
+      description:
+        type: string
+      quantity:
+        type: integer
+        minimum: 1
+      unitCost:
+        type: string
+      totalCost:
+        type: string
+      status:
+        type: integer
+      createdBy:
+        type: integer
+  CartaPorteReceptionItem:
+    type: object
+    required:
+      - receptionNumber
+      - destinationId
+      - amount
+      - comments
+      - receptionDate
+      - status
+      - createdBy
+      - receiptSkuList
+    properties:
+      receptionNumber:
+        type: string
+      originId:
+        type: integer
+      destinationId:
+        type: integer
+      amount:
+        type: string
+      comments:
+        type: string
+      receptionDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+      createdBy:
+        type: integer
+      sapDocument:
+        type: string
+      receiptSkuList:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteReceiptSkuItem'
+  CartaPorteGuideNumberItem:
+    type: object
+    required:
+      - guide
+    properties:
+      guide:
+        type: string
+  CartaPorteCreatePurchaseOrderContent:
+    type: object
+    required:
+      - supplierNumber
+      - orderNumber
+      - amount
+      - purchaseOrderDate
+      - status
+      - createdBy
+      - receptionList
+      - origen
+    properties:
+      supplierNumber:
+        type: integer
+      orderNumber:
+        type: string
+      amount:
+        type: string
+      purchaseOrderDate:
+        type: string
+        format: date-time
+      status:
+        type: integer
+      createdBy:
+        type: integer
+      origen:
+        type: string
+      receptionList:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteReceptionItem'
+        minItems: 1
+      guideNumber:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteGuideNumberItem'
+      shippingGuideList:
+        type: array
+        items:
+          $ref: '#/definitions/CartaPorteCreateShippingGuideItem'
+  ListShippingGuideQueryCartaPorte:
+    type: object
+    properties:
+      id:
+        type: string
+      guideNumber:
+        type: string
+      status:
+        type: integer
+      vendorNumber:
+        type: integer
+      originId:
+        type: integer
+      destinationId:
+        type: integer
+      deliveryType:
+        type: integer
+      isStatusUpdated:
+        type: boolean
+      from:
+        type: string
+        format: date
+      to:
+        type: string
+        format: date
+      pageNumber:
+        type: integer
+        default: 1
+      pageSize:
+        type: integer
+        default: 10
+  ShippginGuideSummaryListDto:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: array
+        items:
+          type: string
+        description: Lista de IDs (UUID en string) de shipping guides.
+  CartaPorteServiceResponseEnvelope:
+    type: object
+    description: Payload del backend; incluye correlación cuando aplica (trace_id).
+    additionalProperties: true
+    properties:
+      trace_id:
+        type: string
   AuditLogDto:
     type: object
     properties:

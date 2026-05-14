@@ -46,6 +46,38 @@ purchase-orders:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+  post:
+    tags:
+      - purchase-orders
+    summary: save purchase orders with recetpion and ReceptionsSKU
+    operationId: savePurchaseOrders
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/CreatePurchaseOrderDto"
+    responses:
+      '200':
+        description: List of purchase orders saved with receipts
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/purchase-orders.yaml#/PurchaseOrderDto"
+      '401':
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '500':
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
 
 purchase-orders-by-uuid:
   get:
@@ -118,6 +150,143 @@ purchase-orders-by-uuid:
         schema:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
       "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+purchase-orders-list-reception:
+  get:
+    tags:
+      - purchase-orders
+    summary: List Receptions
+    operationId: listReceptions
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ListReceptionDto"
+    responses:
+      '200':
+        description: List of receiptions
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/purchase-orders.yaml#/ReceptionDto"
+      '401':
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '500':
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+purchase-orders-update-reception:
+  patch:
+    tags:
+      - purchase-orders
+    summary: update Reception status by purchase Order
+    operationId: updateReception
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ListReceptionDto"
+    responses:
+      '200':
+        description: Reception Updated
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ReceptionDto"
+      '401':
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '500':
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+purchase-orders-reception-by-uuid:
+  get:
+    tags:
+      - purchase-orders
+    summary: Get Reception by ID
+    operationId: getReceptionById
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Reception UUID
+        type: string
+    responses:
+      '200':
+        description: reception with skus
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ReceptionDto"
+      '401':
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '404':
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '500':
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  patch:
+    tags:
+      - purchase-orders
+    summary: Update reception by UUID
+    operationId: updateReceptionStatus
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        description: Reception UUID
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ReceptionDto"
+    responses:
+      '200':
+        description: Updated purchase order
+        schema:
+          $ref: "../definitions/purchase-orders.yaml#/ReceptionDto"
+      '400':
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '401':
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '404':
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      '500':
         description: Internal error
         schema:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"

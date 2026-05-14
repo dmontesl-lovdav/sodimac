@@ -3,6 +3,8 @@ import * as securityController from '@/controllers/security.controller.js';
 
 const router = Router();
 
+router.post('/user-utility', securityController.postUserUtilitySession);
+
 router.get('/profile-users', securityController.searchProfileUsers);
 router.get('/profile-modules', securityController.searchProfileModules);
 router.get('/profile-module-processes', securityController.searchProfileModuleProcesses);

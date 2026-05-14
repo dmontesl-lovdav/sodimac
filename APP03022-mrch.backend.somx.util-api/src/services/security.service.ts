@@ -1,3 +1,5 @@
+import type { Request } from 'express';
+import { decodeJwt, jwtVerify, type JWTPayload } from 'jose';
 import * as securityRepo from '@/repositories/security.repo.js';
 
 export type { SecurityUserDetailsResponse, SecurityUserRef } from '@/repositories/security.repo.js';
@@ -587,7 +589,9 @@ function toSecuritySearchFilter(filters: SecurityFilters): import('@/repositorie
     if (filters.entityName !== undefined) out.entityName = filters.entityName;
     if (filters.email !== undefined) out.email = filters.email;
     if (filters.fullName !== undefined) out.fullName = filters.fullName;
-    if (filters.status !== undefined) out.status = filters.status;
+    if (filters.status !== undefined && Number.isFinite(Number(filters.status))) {
+        out.status = Number(filters.status);
+    }
     if (filters.langId !== undefined) out.langId = filters.langId;
     return out;
 }
@@ -606,7 +610,7 @@ function sliceSection<T>(arr: T[], page: number, pageSize: number) {
 
 export async function searchUserCatalog(filters: SecurityFilters) {
     ensureDateRange(filters);
-    const repoFilters = toSecuritySearchFilter(withDefaultActiveStatus(filters));
+    const repoFilters = toSecuritySearchFilter(filters);
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 10));
     const sortBy = filters.sortBy ?? 'id';
@@ -626,7 +630,7 @@ export async function searchUserCatalog(filters: SecurityFilters) {
 
 export async function exportUserCatalogCsvLines(filters: SecurityFilters, maxRows = 10_000) {
     ensureDateRange(filters);
-    const repoFilters = toSecuritySearchFilter(withDefaultActiveStatus(filters));
+    const repoFilters = toSecuritySearchFilter(filters);
     const { items, total, truncated } = await securityRepo.listUsersCatalogForExport(repoFilters, maxRows);
     return {
         rows: items.map(toUserCatalogApiRow),
@@ -930,4 +934,76 @@ export async function getUserAttributesByKey(userKey: string, langId?: number) {
             valueKey: a.attributeValueKey ?? null,
         })),
     };
+}
+
+function parseBearerToken(req: Request): string | null {
+    const raw = req.header('authorization') ?? req.header('Authorization');
+    if (!raw) return null;
+    const m = /^Bearer\s+(.+)$/i.exec(String(raw).trim());
+    const token = m?.[1];
+    return token ? token.trim() : null;
+}
+
+async function readJwtPayloadFromRequest(token: string): Promise<JWTPayload> {
+    const secret = process.env.JWT_SECRET?.trim() || process.env.AUTH_JWT_SECRET?.trim();
+    if (secret) {
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+        return payload;
+    }
+    console.warn(
+        '[security:user-utility] JWT_SECRET/AUTH_JWT_SECRET no definidos; se decodifica el JWT sin verificar firma.',
+    );
+    return decodeJwt(token);
+}
+
+function stringClaim(payload: JWTPayload, ...keys: string[]): string | null {
+    const o = payload as Record<string, unknown>;
+    for (const k of keys) {
+        const v = o[k];
+        if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+    return null;
+}
+
+/**
+ * POST /api/security/user-utility — Registra o actualiza `updated_at` en catálogo (core_security.user_data)
+ * según claims del JWT enviado en Authorization Bearer.
+ */
+export async function registerUserFromUtilitySession(req: Request): Promise<void> {
+    const token = parseBearerToken(req);
+    if (!token) {
+        throw { status: 401, message: 'Se requiere encabezado Authorization: Bearer <token>' };
+    }
+
+    let payload: JWTPayload;
+    try {
+        payload = await readJwtPayloadFromRequest(token);
+    } catch (e) {
+        console.error('[security:user-utility] JWT inválido', e);
+        throw { status: 401, message: 'Token JWT inválido o no verificable' };
+    }
+
+    const sub = stringClaim(payload, 'sub');
+    if (!sub) {
+        throw { status: 400, message: 'El token no contiene sub' };
+    }
+
+    const email = stringClaim(payload, 'email');
+    const preferredUsername = stringClaim(payload, 'preferred_username', 'preferredUsername');
+    let givenName = stringClaim(payload, 'given_name', 'givenName');
+    let familyName = stringClaim(payload, 'family_name', 'familyName');
+    const fullName = stringClaim(payload, 'name');
+    if (!givenName && !familyName && fullName) {
+        const parts = fullName.split(/\s+/).filter(Boolean);
+        givenName = parts[0] ?? null;
+        familyName = parts.length > 1 ? parts.slice(1).join(' ') : null;
+    }
+
+    await securityRepo.upsertUtilityCatalogUser({
+        sub,
+        email,
+        preferredUsername,
+        givenName,
+        familyName,
+    });
 }

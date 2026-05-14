@@ -6,7 +6,7 @@ export const healthcheckPaths: OpenAPIV3.PathsObject = {
             tags: ["Healthcheck"],
             summary: "Validate Finanzas API and database health",
             description:
-                "Returns one internal healthcheck record from database. If data is returned, the API and DB connection are alive.",
+                "Returns the Finanzas API healthcheck status from database. If this record is returned, the API, database connection, and healthcheck endpoint are working correctly.",
             responses: {
                 200: {
                     description: "Healthcheck data found",

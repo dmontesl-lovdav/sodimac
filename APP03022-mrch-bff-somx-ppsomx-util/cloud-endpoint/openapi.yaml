@@ -3309,6 +3309,44 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /security/user-utility:
+    post:
+      tags:
+        - security
+      summary: Register or touch catalog user from JWT (utility entry)
+      description: |
+        Uses Authorization Bearer JWT; upserts core_security.user_data by claim `sub` or updates `updated_at` if the row exists. Intended once per client session when opening the utility home screen.
+      operationId: postUserUtilitySession
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: false
+          schema:
+            type: object
+            description: Optional empty JSON object; claims are taken from the Bearer token.
+      responses:
+        '200':
+          description: User registered or catalog row updated
+          schema:
+            $ref: '#/definitions/GenericSuccessResponse'
+        '400':
+          description: Bad request (e.g. token without sub)
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized or invalid JWT
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   '/security/profiles/{id}/users':
     get:
       tags:

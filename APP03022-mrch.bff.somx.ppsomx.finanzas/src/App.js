@@ -1,4 +1,3 @@
-import bodyParser from 'body-parser';
 import { X509Certificate } from "crypto";
 import dotenv from 'dotenv';
 import app from 'express';
@@ -229,12 +228,6 @@ docsAliases.forEach((route) => {
         `);
     });
 });
-
-// INCREASING MAX PAYLOAD SIZE
-const maximumPayloadSize = '66mb';
-localService.use(bodyParser.json({ limit: maximumPayloadSize }));
-localService.use(bodyParser.raw({ limit: maximumPayloadSize }));
-localService.use(bodyParser.urlencoded({ limit: maximumPayloadSize, extended: true }));
 
 logger.info(" CONFIGURING PROXY ");
 const remoteResolver = proxy(remoteUrl, {

@@ -113,7 +113,7 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: st
 }
 
 
-export async function axiosGet(url: string, token: string, params?: any) {
+/*export async function axiosGet(url: string, token: string, params?: any) {
   try {
         await logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
         if (params == undefined) {
@@ -134,6 +134,32 @@ export async function axiosGet(url: string, token: string, params?: any) {
     console.error("❌ axiosGet error:", error?.response?.data || error.message);
     logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
     return undefined; // o throw error;
+  }
+}
+*/
+
+
+export async function axiosGet(url: string, token: string, params?: any) {
+  try {
+    logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
+
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token ?? ''}` },
+      params: params ?? {}
+    });
+
+    return response;
+
+  } catch (error: any) {
+    console.error("❌ axiosGet error:", error?.response?.data || error.message);
+
+    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
+
+    return {
+      url: url,
+      data: null,
+      status: error?.response?.status ?? 500
+    };
   }
 }
 

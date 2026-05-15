@@ -27,8 +27,3 @@ patches:
   - path: workload-identity.yaml
   - path: three-way-match-cronjob-patch.yaml
 #  - path: espv2.yaml
-
-images:
-  - name: foo/bar
-    newName: ${CI_REGISTRY_IMAGE}/${GCP_PROJECT_ID_PROD}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}
-    newTag: "${CI_COMMIT_SHORT_SHA}"

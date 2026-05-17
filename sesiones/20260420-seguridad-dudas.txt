@@ -1,4 +1,0 @@
-¿Dónde vive Three Way Match? (tabla existe, no hay endpoint)
-¿Dónde vive Estado de Cuenta? (tabla existe, no hay endpoint)
-¿grupoProveedor viene en JWT o hay que consultarlo en core_security?
-¿Qué header(s) exactos pasa el BFF al backend?

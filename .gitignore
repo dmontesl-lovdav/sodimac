@@ -28,6 +28,9 @@ Thumbs.db
 # PowerShell scripts temporales
 emp.txt
 
+# Sesiones temporales (working notes locales)
+sesiones/
+
 # Comprimidos
 *.zip
 *.rar

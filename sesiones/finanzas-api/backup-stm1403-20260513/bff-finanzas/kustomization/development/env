@@ -1,8 +1,0 @@
-REMOTE_URL=http://mrch-backend-somx-finanzas-api:8082
-LOCAL_PORT=8080
-LOCAL_CONTEXT=/
-HEALTH_PATH=/health
-AUTH_PUBLIC_KEY=
-DOMAIN_OPENAPI=mrch-bff-somx-ppsomx-finanzas.endpoints.fal-corp-mrch-foundational-dev.cloud.goog
-
-UTIL_API_URL=http://localhost:3712

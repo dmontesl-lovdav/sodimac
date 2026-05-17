@@ -1,6 +1,18 @@
 # Documentacion FBC - Indice Maestro
 
-> Ultima actualizacion: 2025-12-10
+> Ultima actualizacion: 2026-05-15
+
+## 📚 WIKI DE NEGOCIO — ENTRADA RECOMENDADA
+
+Para preguntas tipo "¿dónde guardo X?", "¿para qué sirve esta tabla?", "¿cómo fluye este proceso?":
+
+→ **[Wiki Sodimac](wiki/README.md)** — punto único de entrada navegable
+
+- [Conceptos clave (pago vs descuento, rebate, etc.)](wiki/conceptos-clave.md)
+- [Glosario de tablas y términos](wiki/glosario.md)
+- [Dónde vive qué (Q&A)](wiki/donde-vive-que.md)
+- [Procesos de negocio](wiki/README.md#procesos)
+- [Módulos: Fiscal](wiki/modulos/fiscal.md) · [Finanzas](wiki/modulos/finanzas.md)
 
 ## Estructura de Carpetas
 
@@ -31,6 +43,7 @@ docs/
 | [RESUMEN_TABLAS_ER_VS_IMPLEMENTACION.md](analisis/RESUMEN_TABLAS_ER_VS_IMPLEMENTACION.md) | Resumen ER vs Implementacion |
 | [SCHEMA_CORRECTIONS_CHANGELOG.md](analisis/SCHEMA_CORRECTIONS_CHANGELOG.md) | Changelog de correcciones de schema |
 | [TRABAJO_COMPLETADO_RESUMEN.md](analisis/TRABAJO_COMPLETADO_RESUMEN.md) | Resumen de trabajo completado |
+| [db/fks-20260515/](db/fks-20260515/) | Scripts agregar FKs faltantes a tenant_fiscal + tenant_finance (audit + cleanup + ADD CONSTRAINT, idempotente). Validado local, pendiente UAT. |
 
 ### Archivos de Datos (CSV/XLSX)
 

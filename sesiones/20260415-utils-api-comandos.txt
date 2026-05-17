@@ -1,0 +1,1180 @@
+================================================================
+SESION VIVA SODIMAC <-> A8
+================================================================
+
+
+## Estado actual detectado
+
+- Proyecto: util-api (APP03022-mrch.backend.somx.util-api)
+- Rama: develop
+- Estado: clean, al dia con origin/develop (HEAD = 7c1cadc)
+- Remote: GitHub falabella-stores-and-merchandise
+- Ultimos commits (recientes a viejos):
+    7c1cadc  feat: config improvements
+    3df5e51  fix: passWithNoTests en jest
+    df6feb2  Change language js->node in pipeline
+    553f442  init github
+    84254ac  fix: correccion de errores TypeScript
+
+## Observaciones Claude
+
+Tu repo formal esta al dia con GitHub en la rama develop.
+Pero OJO: no sabemos aun si hay OTRAS ramas remotas donde el equipo
+este trabajando (ej. feature/STM-XXX). Hay que barrerlas antes de meter
+tus cambios, porque tus cambios presumiblemente iran en una rama nueva
+que sale de develop, y no quieres chocar con algo que alguien ya tenga
+en review.
+
+
+================================================================
+PASO 3 - Barrer actividad remota del equipo
+================================================================
+
+Ejecutar en la MISMA carpeta (APP03022-mrch.backend.somx.util-api):
+
+    git fetch origin --prune
+    git for-each-ref --sort=-committerdate refs/remotes/origin --count=20 --format="%(committerdate:relative) | %(authorname) | %(refname:short) | %(subject)"
+
+--- SALIDA PASO 3 ---
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git fetch origin --prune
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git for-each-ref --sort=-committerdate refs/remotes/origin --count=20 --format="%(committerdate:relative) | %(authorname) | %(refname:short) | %(subject)"
+19 hours ago | g_dti26 | origin/uat | Merge pull request #13 from falabella-stores-and-merchandise/develop
+13 days ago | Oscar Bonelli | origin/develop | feat: config improvements
+5 weeks ago | JOSUE LOPEZ SALCEDO | origin/develop-Fixes | se corrige la forma de subir archivos el bucket GCP
+4 months ago | roberto | origin/STM-1267 | add storage and resolved conflicts merge
+7 months ago | Jhonatan  Castillo | origin | Initial commit
+7 months ago | Jhonatan  Castillo | origin/main | Initial commit
+
+
+================================================================
+PASO 4 - Listar autores que han tocado util-api en las ultimas 2 semanas
+================================================================
+
+    git log --all --since="2 weeks ago" --format="%h %an %ad %s" --date=short
+
+--- SALIDA PASO 4 ---
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git log --all --since="2 weeks ago" --format="%h %an %ad %s" --date=short
+f9195b4 g_dti26 2026-04-14 Merge pull request #13 from falabella-stores-and-merchandise/develop
+7c1cadc Oscar Bonelli 2026-04-02 feat: config improvements
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+
+
+================================================================
+PASO 5 - Ver si hay PRs abiertos (opcional, requiere gh CLI)
+================================================================
+
+    gh pr list --repo falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api
+
+Si no tienes gh instalado o no estas logueado, PON "gh no disponible" y lo saltamos.
+
+--- SALIDA PASO 5 ---
+gh : El término 'gh' no se reconoce como nombre de un cmdlet, función, archivo de script o programa ejecutable. Compruebe si escribió
+
+
+
+================================================================
+OBSERVACIONES Claude
+================================================================
+
+1. `git fetch origin --prune` fallo con "Permission denied (publickey)".
+   Esto significa que la llave SSH de Sodimac NO esta autorizada en GitHub
+   para este usuario. Sin esto no vas a poder pushear NI traer cambios
+   nuevos. Hay que arreglarlo.
+
+2. Actividad remota conocida (snapshot del ultimo clone, puede estar
+   desactualizado por el problema anterior):
+
+   Rama              | Ultimo commit        | Autor
+   ------------------|----------------------|--------------------
+   origin/uat        | hace 19 horas        | g_dti26 (merge #13 develop->uat)
+   origin/develop    | hace 13 dias (7c1cadc) | Oscar Bonelli (feat: config)
+   origin/develop-Fixes | hace 5 semanas    | JOSUE LOPEZ (storage GCP)
+   origin/STM-1267   | hace 4 meses         | roberto
+   origin/main       | hace 7 meses         | init
+
+   Actividad de CODIGO en develop = nada desde el 2 abril. Oscar Bonelli
+   es el ultimo que metio algo funcional. g_dti26 solo hizo merge
+   develop->uat (despliegue), no toco codigo.
+
+3. Conclusion: puedes meter tus cambios de STM-1463 sin riesgo de
+   plancharle nada a nadie *en develop* AHORA MISMO, pero despues de
+   arreglar el SSH y hacer un fetch real.
+
+
+================================================================
+PASO 6 - Verificar estado de la llave SSH para GitHub
+================================================================
+
+    ssh -T git@github.com
+
+Si responde "Hi <usuario>! You've successfully authenticated..." → SSH OK.
+Si responde "Permission denied (publickey)" → hay que registrar llave.
+
+    Test-Path $HOME\.ssh\id_ed25519.pub
+
+Si devuelve True ya hay llave generada. Si es False, hay que crearla.
+
+    Get-Content $HOME\.ssh\id_ed25519.pub
+
+(Si True, muestra la llave publica que tenemos que registrar en GitHub.)
+
+--- SALIDA PASO 6 ---
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> ssh -T git@github.com
+git@github.com: Permission denied (publickey).
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> Test-Path $HOME\.ssh\id_ed25519.pub
+True
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> Get-Content $HOME\.ssh\id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqMgxuU2evsnBlX0QBJWPj3wndknkufMvaB8FIVS33d g_dco018@cd-rosas
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+
+================================================================
+OBSERVACIONES Claude (paso 6)
+================================================================
+
+- La llave `id_ed25519` ya existe (es la misma que usas para conectar
+  a A8 por SSH). No hay que generar ninguna nueva.
+- Solo hay que REGISTRARLA en GitHub, en la cuenta que tiene acceso
+  al repo `falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api`.
+
+Llave publica a registrar:
+
+    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqMgxuU2evsnBlX0QBJWPj3wndknkufMvaB8FIVS33d g_dco018@cd-rosas
+
+
+================================================================
+PASO 7 - Registrar la llave publica en GitHub
+================================================================
+
+1. En navegador en la PC Sodimac: https://github.com/settings/keys
+   (inicia sesion con la cuenta GitHub que esta en la org
+   falabella-stores-and-merchandise).
+
+2. Click en "New SSH key" (boton verde arriba a la derecha).
+
+3. Llenar el formulario:
+   - Title: `Sodimac - cd-rosas` (o el nombre que quieras, descriptivo)
+   - Key type: `Authentication Key` (default)
+   - Key: pegar EXACTAMENTE la linea de la llave publica de arriba
+          (copiar desde "ssh-ed25519" hasta "g_dco018@cd-rosas")
+
+4. Click "Add SSH key". Pide confirmacion con password de GitHub.
+
+5. Regresar a PowerShell y probar:
+
+    ssh -T git@github.com
+
+   Respuesta esperada:
+   "Hi <tu-usuario>! You've successfully authenticated, but GitHub
+    does not provide shell access."
+
+6. Ahora si intentar el fetch:
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git fetch origin --prune
+
+--- SALIDA PASO 7 ---
+Hi g-dco018_FTC! You've successfully authenticated, but GitHub does not provide shell access.
+
+ERROR: The 'falabella-stores-and-merchandise' organization has enabled or enforced SAML SSO.
+To access this repository, you must use the HTTPS remote with a personal access token or SSH with an SSH key and passphrase that has been authorized for this organization.
+Visit https://docs.github.com/articles/authenticating-to-a-github-organization-with-saml-single-sign-on/ for more information.
+
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+
+
+================================================================
+OBSERVACIONES Claude (paso 7)
+================================================================
+
+- Autenticacion a GitHub: OK. Usuario = `g-dco018_FTC`.
+- La llave esta registrada, PERO la org `falabella-stores-and-merchandise`
+  tiene SAML SSO obligatorio. Cada llave SSH debe ser AUTORIZADA
+  explicitamente para la org (un paso adicional al de registrar).
+
+
+================================================================
+PASO 8 - Autorizar la llave SSH para la org (SAML SSO)
+================================================================
+
+1. En navegador: https://github.com/settings/keys
+
+2. Al lado de la llave que acabas de crear ("Sodimac - cd-rosas" o el
+   nombre que le pusiste) vas a ver un boton o enlace:
+
+       "Configure SSO"  o  "Enable SSO"  (boton gris)
+
+   Haz click.
+
+3. Se despliega lista de organizaciones. Busca:
+
+       falabella-stores-and-merchandise
+
+4. Junto a esa org, click en "Authorize".
+
+5. GitHub te redirige al Single Sign-On (probablemente pagina de
+   Azure AD / Okta de Falabella). Inicia sesion con las credenciales
+   corporativas.
+
+6. Al volver, la llave ya esta autorizada para la org. Vuelve a probar:
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git fetch origin --prune
+
+--- SALIDA PASO 8 ---
+The public key is no longer authorized to access falabella-stores-and-merchandise.
+
+
+================================================================
+OBSERVACIONES Claude (paso 8)
+================================================================
+
+El mensaje "The public key is NO LONGER authorized" significa que la
+llave ESTUVO autorizada en algun momento pero fue revocada (o la
+sesion SSO expiro). Hay que re-autorizarla desde cero.
+
+Causas posibles:
+- La llave se agrego a la cuenta pero el flujo "Configure SSO" no
+  termino correctamente.
+- La sesion SAML caducó (TTL suele ser 24h en Azure AD) y hay que
+  re-login.
+- La llave fue revocada por un admin.
+
+
+================================================================
+PASO 9 - Re-autorizar la llave SSO
+================================================================
+
+1. Ir a: https://github.com/settings/keys
+
+2. Localiza tu llave (la que tiene como comentario "g_dco018@cd-rosas").
+
+3. En la MISMA fila vas a ver:
+   - Un boton/link "Configure SSO" con un icono de candado
+   - O "SSO" en azul al lado de la llave
+
+4. Click en "Configure SSO".
+
+5. Se despliega la lista con el nombre "falabella-stores-and-merchandise".
+
+   ¿Que ves a la derecha de esa org?
+
+   (a) Un boton "Authorize"
+   (b) Un boton "Revoke" (indicaria que ya esta autorizada)
+   (c) Mensaje tipo "Pending authorization" / "Revoked"
+   (d) Nada / la org no aparece
+
+6. Segun lo que veas:
+
+   - Si (a): click Authorize -> login SSO -> regresar -> reintentar fetch.
+   - Si (b): click Revoke, luego Authorize de nuevo -> login SSO -> reintentar.
+   - Si (c): click en el enlace para completar autorizacion.
+   - Si (d): problema de permisos, dimelo y vemos.
+
+7. Tras autorizar, LIMPIA posibles credenciales cacheadas en Windows y
+   prueba de nuevo:
+
+    ssh -T git@github.com
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git fetch origin --prune
+
+--- SALIDA PASO 9 ---
+<pega: que boton/estado viste en Configure SSO + salida final de
+ssh -T y git fetch>
+
+Veo el botón, luego falabella-stores-and-merchandise --> Autorizar y finalmente --> Me llevo al login 
+S C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> ssh -T git@github.com
+Hi g-dco018_FTC! You've successfully authenticated, but GitHub does not provide shell access.
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git fetch origin --prune
+ERROR: The 'falabella-stores-and-merchandise' organization has enabled or enforced SAML SSO.
+To access this repository, you must use the HTTPS remote with a personal access token or SSH with an SSH key and passphrase that has been authorized for this organization.
+Visit https://docs.github.com/articles/authenticating-to-a-github-organization-with-saml-single-sign-on/ for more information.
+
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+
+================================================================
+OBSERVACIONES Claude (paso 9)
+================================================================
+
+Muy raro: `ssh -T git@github.com` responde OK (Hi g-dco018_FTC) pero
+`git fetch` sigue exigiendo SAML SSO. Esto pasa cuando:
+
+  (a) La autorizacion SSO no quedo guardada (la sesion SAML expiro
+      justo al redirigir).
+  (b) GitHub esta usando un cache/estado raro por haberlo intentado
+      varias veces.
+  (c) ssh esta ofreciendo una llave distinta a la que autorizaste en
+      GitHub.
+
+Hay que verificar los 3.
+
+
+================================================================
+PASO 10 - Diagnostico fino
+================================================================
+
+### 10.1 - Confirmar estado en GitHub
+
+1. Ir a: https://github.com/settings/keys
+2. Al lado de la llave "g_dco018@cd-rosas" deberia aparecer ahora:
+   - Un link/boton en verde: "Authorized"  o
+   - Un boton "Revoke" (rojo o gris) para esa org
+3. Hacer SCREENSHOT mental del estado y pegalo como texto abajo.
+
+### 10.2 - Ver que llave esta usando ssh realmente
+
+En PowerShell:
+
+    ssh -vT git@github.com 2>&1 | Select-String -Pattern "Offering|Authenticated|identity file"
+
+Esto muestra cual llave ofrece y si la autenticacion tiene exito.
+
+### 10.3 - Comparar fingerprints
+
+Fingerprint de tu llave local:
+
+    ssh-keygen -lf $HOME\.ssh\id_ed25519.pub
+
+Copia el SHA256 que imprime.
+
+Luego en GitHub: https://github.com/settings/keys -> al lado de la
+llave aparece el fingerprint SHA256 corto. DEBEN COINCIDIR.
+
+### 10.4 - Forzar reautorizacion limpia
+
+Si todo lo anterior esta OK pero sigue fallando, vamos a forzar:
+
+1. En https://github.com/settings/keys -> borrar (Delete) la llave.
+2. Volver a agregarla (New SSH key, pegar la misma llave publica,
+   mismo titulo).
+3. Configure SSO -> Authorize.
+4. Completar el login SAML.
+5. Reintentar:
+
+    git fetch origin --prune
+
+--- SALIDA PASO 10 ---
+10.1 (que boton/estado ves): ___
+10.2 (salida de ssh -vT): 
+
+
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_rsa type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_rsa-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ecdsa type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ecdsa-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ecdsa_sk type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ecdsa_sk-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ed25519 type 3
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ed25519-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ed25519_sk type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_ed25519_sk-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_xmss type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_xmss-cert type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_dsa type -1
+debug1: identity file C:\\Users\\g_dco018/.ssh/id_dsa-cert type -1
+debug1: Offering public key: C:\\Users\\g_dco018/.ssh/id_ed25519 ED25519 SHA256:fTSiNU6yv8D17LOOqMswjrKz/jiK/qyUHzOkQrj8AWA
+Authenticated to github.com ([140.82.112.4]:22) using "publickey".
+Hi g-dco018_FTC! You've successfully authenticated, but GitHub does not provide shell access.
+
+
+
+
+10.3 (fingerprint local SHA256 vs el de GitHub): ___
+10.4 (si hiciste Delete + re-add + Authorize y el git fetch funciono): ___
+
+
+================================================================
+OBSERVACIONES Claude (paso 10)
+================================================================
+
+ssh -vT confirma: la llave correcta se ofrece y la auth de usuario
+es exitosa. Fingerprint usado: fTSiNU6yv8D17LOOqMswjrKz/jiK/qyUHzOkQrj8AWA.
+La llave NO es el problema.
+
+El usuario ya lo habia autorizado antes y funcionaba. La sesion SAML
+de la org caduca cada ~24h. Eso explica el "no longer authorized":
+GitHub sigue teniendo la llave, pero tu sesion corporativa ya vencio.
+
+
+================================================================
+PASO 11 - Renovar sesion SAML (sin borrar llave)
+================================================================
+
+1. Abrir en navegador:
+
+     https://github.com/orgs/falabella-stores-and-merchandise/sso
+
+   Debe pedirte login corporativo (Azure AD / Okta Falabella).
+   Completa el login.
+
+2. Al volver, regresa a PowerShell y reintenta:
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git fetch origin --prune
+
+--- SALIDA PASO 11 ---
+ERROR: The 'falabella-stores-and-merchandise' organization has enabled or enforced SAML SSO.
+To access this repository, you must use the HTTPS remote with a personal access token or SSH with an SSH key and passphrase that has been authorized for this organization.
+Visit https://docs.github.com/articles/authenticating-to-a-github-organization-with-saml-single-sign-on/ for more information.
+
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+
+================================================================
+OBSERVACIONES Claude (paso 11)
+================================================================
+
+El re-login SSO te da sesion en la UI, pero la LLAVE SSH sigue
+desvinculada de la org. GitHub trata la autorizacion llave<->org
+como un enlace independiente que no se renueva con el login. Hay
+que forzarlo borrando la llave y agregandola de nuevo (ya sabemos
+que la llave funciona porque ssh -T autentica bien).
+
+
+================================================================
+PASO 12 - Borrar llave y re-agregarla (plan B)
+================================================================
+
+### 12.1 - Copiar la llave publica (para pegarla luego)
+
+En PowerShell:
+
+    Get-Content $HOME\.ssh\id_ed25519.pub | clip
+
+(El texto queda en portapapeles; puedes pegarlo con Ctrl+V.)
+
+### 12.2 - En navegador
+
+1. Ir a: https://github.com/settings/keys
+2. Localizar la llave "g_dco018@cd-rosas" (o como se llame).
+3. Click en "Delete" (o el boton rojo para borrar). Confirmar.
+
+4. Inmediatamente despues:
+   "New SSH key" (boton verde).
+   - Title: Sodimac - cd-rosas
+   - Key: Ctrl+V (la que copiaste en 12.1)
+   - Add SSH key.
+
+5. Confirmar la accion con password de GitHub si lo pide.
+
+6. La llave recien creada aparece en la lista. A su derecha debe verse
+   "Configure SSO" (gris).
+
+7. Click "Configure SSO" -> "falabella-stores-and-merchandise" ->
+   "Authorize" -> login corporativo si lo pide.
+
+8. IMPORTANTE: al volver, la llave debe mostrar al lado el estado
+   "Authorized" para la org (en vez de "Configure SSO").
+
+### 12.3 - Probar fetch
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git fetch origin --prune
+
+### 12.4 - Si sigue fallando: limpiar agente SSH
+
+    Get-Service ssh-agent
+    # Si esta Running:
+    ssh-add -l
+
+Si algun `ssh-add` devuelve llaves cacheadas que no son la nuestra,
+limpiarlas:
+
+    ssh-add -D
+
+Luego reintentar fetch.
+
+--- SALIDA PASO 12 ---
+12.2 (estado final de la llave en github.com/settings/keys): Agregue imagen en el directorio
+12.3 (salida de git fetch): PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git fetch origin --prune
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+12.4 (solo si 12.3 fallo): ___
+
+
+================================================================
+OBSERVACIONES Claude (paso 12)
+================================================================
+
+El fetch corrio SIN error (no imprimio nada = no hay cambios remotos
+que no tengas). Eso significa que la conectividad a GitHub quedo OK.
+
+Nota sobre la imagen: hay 2 llaves registradas ("PC Sodimac" y
+"Sodimac"), ambas con boton "Configure SSO" gris. Deberiamos dejar
+SOLO la que estamos usando (la que hicimos re-add). Lo limpiamos
+mas adelante; por ahora seguimos.
+
+
+================================================================
+PASO 13 - Validar que el fetch realmente jalo refs
+================================================================
+
+    git for-each-ref --sort=-committerdate refs/remotes/origin --count=20 --format="%(committerdate:relative) | %(authorname) | %(refname:short) | %(subject)"
+
+    git log HEAD..origin/develop --oneline
+
+--- SALIDA PASO 13 ---
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git for-each-ref --sort=-committerdate refs/remotes/origin --count=20 --format="%(committerdate:relative) | %(authorname) | %(refname:short) | %(subject)"
+20 hours ago | g_dti26 | origin/uat | Merge pull request #13 from falabella-stores-and-merchandise/develop
+13 days ago | Oscar Bonelli | origin/develop | feat: config improvements
+5 weeks ago | JOSUE LOPEZ SALCEDO | origin/develop-Fixes | se corrige la forma de subir archivos el bucket GCP
+4 months ago | roberto | origin/STM-1267 | add storage and resolved conflicts merge
+7 months ago | Jhonatan  Castillo | origin | Initial commit
+7 months ago | Jhonatan  Castillo | origin/main | Initial commit
+
+
+ git log HEAD..origin/develop --oneline
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+================================================================
+PASO 14 - Crear rama de trabajo para STM-1463
+================================================================
+
+(NO ejecutar hasta ver salida del paso 13.)
+
+Si estas en develop y esta limpia:
+
+    git checkout -b STM-1463/migrar-auditoria-util-api
+
+Esto crea una rama nueva saliendo del develop actual donde vamos a
+poner tus cambios de migracion.
+
+--- SALIDA PASO 14 ---
+git checkout -b STM-1463/migrar-auditoria-util-api
+Switched to a new branch 'STM-1463/migrar-auditoria-util-api'
+
+
+================================================================
+OBSERVACIONES Claude (paso 13 + 14)
+================================================================
+
+- develop en el repo formal esta limpio, 0 commits nuevos del equipo
+  que no tengas (HEAD...origin/develop vacio).
+- Rama STM-1463/migrar-auditoria-util-api creada OK.
+
+Ahora hay que traer los cambios de la migracion desde A8 al repo
+formal. La migracion esta en el commit 93b774f de mi repo GitHub
+`dmontesl-lovdav/sodimac` (tambien esta en A8 directamente). Pero
+NO es un repo independiente: alla util-api es una carpeta dentro
+del monorepo `workspace-sodimac`. En el repo formal, util-api ES
+el repo completo.
+
+Entonces NO podemos cherry-pick directo (los hashes son de proyectos
+distintos). Plan:
+  (a) Copiar los archivos modificados/creados desde A8 a Sodimac
+      (sin pasar por git) — via WinSCP/SFTP o via escritura directa
+      desde VS Code Remote-SSH.
+  (b) Una vez copiados, hacer commit formal en la rama.
+
+
+================================================================
+PASO 15 - Enumerar los archivos que hay que copiar
+================================================================
+
+Esto lo hago yo aqui (A8). Te paso la lista exacta:
+
+CAMBIOS EN util-api (desde el repo A8 commit 93b774f):
+
+Nuevos archivos (11):
+  src/entities/ActivityLogs.entity.ts
+  src/schemas/activityLog.schema.ts
+  src/utils/logger.ts
+  src/repositories/activityLogs.repo.ts
+  src/services/activityLogs.service.ts
+  src/controllers/activityLogs.controller.ts
+  src/routes/activityLogs.routes.ts
+  src/middlewares/logger.ts
+  src/middlewares/validate.ts
+
+Modificados (4):
+  src/config/typeorm-datasource.ts
+  src/routes/index.ts
+  src/middlewares/index.ts
+  .env.example
+  package-lock.json  (opcional, depende si tu equipo lo versiona)
+
+¿Procedemos de esta forma?
+
+  OPCION A - Yo (Claude) conecto por SSH/WinSCP ya que tu Notepad++
+  no soporta editor externo: te dicto cada archivo y tu lo pegas
+  directo en VS Code Remote-SSH (que esta apuntando a A8). Abres
+  cada archivo que ya existe en A8 (dentro de workspace-sodimac\
+  APP03022-mrch.backend.somx.util-api), seleccionas todo, copias,
+  pegas en el mismo archivo dentro de C:\workspace-fbc-github\
+  APP03022-mrch.backend.somx.util-api\.
+
+  OPCION B - Mas limpio: desde VS Code en Sodimac conectado a A8
+  por Remote-SSH, explorar el arbol remoto del repo formal
+  (C:/workspace-fbc-github/APP03022-mrch.backend.somx.util-api)
+  y tambien el de A8 (workspace-sodimac/APP03022-mrch.backend.somx
+  .util-api). Copiar archivos entre carpetas remotas.
+
+  OPCION C - Si tienes WinSCP corriendo: abrir dos paneles,
+  uno contra A8\workspace-sodimac\...\util-api, otro... pero el
+  segundo no puede ser local de Sodimac via WinSCP (seria 2 hosts).
+  Descartada.
+
+  OPCION D (recomendada) - Yo genero un ZIP con los 11-15 archivos
+  en A8; lo bajas por WinSCP a Sodimac; lo descomprimes encima de
+  C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api.
+
+¿Cual prefieres? Dimelo en este mismo archivo abajo.
+
+--- RESPUESTA USUARIO (A/B/C/D) ---
+<responde aqui>
+
+
+================================================================
+OBSERVACIONES Claude (paso 15)
+================================================================
+
+Preparé una carpeta staging en A8 con TODO util-api excluyendo:
+  - .git
+  - node_modules
+  - dist
+
+Ruta en A8: C:\workspace-sodimac\sesiones\util-api-payload\
+Tamaño: 811 KB
+Incluye: .env (tu .env local con credenciales de sodimac-pg)
+
+Tambien sobra un archivo util-api.zip fallido de ~126KB, lo puedes
+borrar despues.
+
+================================================================
+PASO 16 - Copiar la carpeta staging al repo formal
+================================================================
+
+### 16.1 - Desde VS Code Remote-SSH (el que ya tienes abierto contra A8)
+
+1. En el explorador de archivos de VS Code, navega a:
+      C:\workspace-sodimac\sesiones\util-api-payload
+
+2. Click derecho sobre la carpeta `util-api-payload` → "Download..."
+
+3. VS Code te deja elegir destino en TU PC (Sodimac). Selecciona:
+      C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+
+4. Cuando te pregunte por archivos que ya existen, elige "Replace".
+
+### 16.2 - Verificar que se copiaron los archivos nuevos
+
+En PowerShell en Sodimac:
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git status
+
+Deberias ver los archivos nuevos y modificados listados.
+
+--- SALIDA PASO 16 ---
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git status
+On branch STM-1463/migrar-auditoria-util-api
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   .env.example
+        modified:   package-lock.json
+        modified:   src/config/typeorm-datasource.ts
+        modified:   src/middlewares/index.ts
+        modified:   src/routes/index.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        src/controllers/activityLogs.controller.ts
+        src/entities/ActivityLogs.entity.ts
+        src/middlewares/logger.ts
+        src/middlewares/validate.ts
+        src/repositories/activityLogs.repo.ts
+        src/routes/activityLogs.routes.ts
+        src/schemas/
+        src/services/activityLogs.service.ts
+        src/utils/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+
+================================================================
+OBSERVACIONES Claude (paso 16)
+================================================================
+
+Archivos detectados: 4 modificados + 9 nuevos. Todo correcto.
+.env NO aparece (lo ignora .gitignore del repo formal). Perfecto.
+
+Una validacion antes de commitear todo: ver si package-lock.json es
+cambio real o solo ruido. Tambien confirmar que .env esta ignorado.
+
+
+================================================================
+PASO 17 - Validaciones finales antes de commit
+================================================================
+
+### 17.1 - Confirmar que .env esta en .gitignore
+
+    Get-Content .gitignore | Select-String -Pattern "\.env"
+
+(Deberia mostrar una linea tipo `.env`.)
+
+### 17.2 - Ver diff de package-lock.json (solo el resumen, no todo)
+
+    git diff --stat package-lock.json
+    git diff package-lock.json | Select-Object -First 30
+
+### 17.3 - Ver diff de los 4 archivos modificados de src
+
+    git diff --stat src\
+
+--- SALIDA PASO 17 ---
+17.1 (.env ignorado?): ___
+17.2 (stat de package-lock y primeras 30 lineas del diff): ___
+17.3 (stat de src/): ___
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>  Get-Content .gitignore | Select-String -Pattern "\.env"
+
+.env
+.env.local
+.env.*.local
+
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git diff --stat package-lock.json
+ package-lock.json | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git diff package-lock.json | Select-Object -First 30
+diff --git a/package-lock.json b/package-lock.json
+index 5a7ca8f..fa45bdd 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -126,6 +126,7 @@
+       "integrity": "sha512-CGOfOJqWjg2qW/Mb6zNsDm+u5vFQ8DxXfbM09z69p5Z6+mE1ikP2jUXw+j42Pf1XTYED2Rni5f95npYeuwMDQA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.29.0",
+         "@babel/generator": "^7.29.0",
+@@ -2291,6 +2292,7 @@
+       "integrity": "sha512-rLoGZIf9afaRBYsPUMtvkDWykwXwUPL60HebR4JgTI8mxfFe2cQTu3AGitANp4b9B2QlVru6WzjgB2IzJKiCSA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "8.58.0",
+         "@typescript-eslint/types": "8.58.0",
+@@ -2784,6 +2786,7 @@
+       "integrity": "sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3200,6 +3203,7 @@
+         }
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>  git diff --stat src\
+ src/config/typeorm-datasource.ts | 4 +++-
+ src/middlewares/index.ts         | 2 ++
+ src/routes/index.ts              | 2 ++
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+================================================================
+PASO 18 - Commit y push (cuando 17 este revisado)
+================================================================
+
+(NO ejecutar aun. Solo cuando validemos las salidas del paso 17.)
+
+    git add .
+    git status
+
+Revisar que se stagearon los archivos esperados. Despues:
+
+    git commit -m "feat: migrar modulo de auditoria desde auditoria-api (STM-1463)
+
+Fusiona el codigo BackEnd del modulo de auditoria dentro de util-api
+para evitar el desfase del pipeline DevOps corporativo.
+
+- Entity ActivityLogs registrada con schema: 'core_audit'.
+- Endpoints migrados bajo el prefijo /api/activity-logs:
+    GET  /uuid, GET /, POST /
+- Middleware de trazabilidad (AsyncLocalStorage) con trace_front_id.
+- Logger pino, UUID con crypto.randomUUID.
+- Datasource registra ActivityLogs junto a las 7 entidades existentes.
+
+Referencias: Epic STM-1403."
+
+    git push -u origin STM-1463/migrar-auditoria-util-api
+
+--- SALIDA PASO 18 ---
+<pega cuando ejecutes>
+
+
+================================================================
+OBSERVACIONES Claude (paso 17)
+================================================================
+
+- .env correctamente ignorado ✅
+- src/: 3 archivos con +7/-1 lineas. Limpio ✅
+- package-lock.json: +13/-2 agregando "peer": true a 3 deps. Es ruido
+  inocuo de npm (no aporta a STM-1463). Mejor revertirlo para dejar
+  el commit enfocado solo en la migracion.
+
+
+================================================================
+PASO 18 (ACTUALIZADO) - Revertir package-lock, stage, commit, push
+================================================================
+
+### 18.1 - Revertir package-lock.json (dejarlo como estaba en develop)
+
+    git checkout -- package-lock.json
+    git status
+
+(Ya no debe aparecer package-lock.json como modificado.)
+
+### 18.2 - Stage de todo lo que queda
+
+    git add .
+    git status
+
+Debe quedar staged:
+  - modificados (3): .env.example, src/config/typeorm-datasource.ts,
+                     src/middlewares/index.ts, src/routes/index.ts
+  - nuevos (9): activityLogs.*, ActivityLogs.entity, middlewares/
+                logger y validate, schemas/, utils/
+
+### 18.3 - Commit
+
+Copia el comando completo (incluyendo las comillas triples):
+
+    git commit -m "feat: migrar modulo de auditoria desde auditoria-api (STM-1463)" -m "Fusiona el codigo BackEnd del modulo de auditoria dentro de util-api para evitar el desfase del pipeline DevOps corporativo." -m "- Entity ActivityLogs con schema core_audit (la tabla no se mueve)" -m "- Endpoints bajo /api/activity-logs: GET /uuid, GET /, POST /" -m "- Middleware de trazabilidad (AsyncLocalStorage) con trace_front_id" -m "- Logger pino, UUID con crypto.randomUUID" -m "- .env.example extendido con bloque de variables de auditoria" -m "Referencias: Epic STM-1403."
+
+### 18.4 - Push al remoto
+
+    git push -u origin STM-1463/migrar-auditoria-util-api
+
+--- SALIDA PASO 18 ---
+18.1 (git status tras checkout): ___
+18.2 (git status tras add): ___
+18.3 (salida del commit): ___
+18.4 (salida del push): ___
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git checkout -- package-lock.json
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git status
+On branch STM-1463/migrar-auditoria-util-api
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   .env.example
+        modified:   src/config/typeorm-datasource.ts
+        modified:   src/middlewares/index.ts
+        modified:   src/routes/index.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        src/controllers/activityLogs.controller.ts
+        src/entities/ActivityLogs.entity.ts
+        src/middlewares/logger.ts
+        src/middlewares/validate.ts
+        src/repositories/activityLogs.repo.ts
+        src/routes/activityLogs.routes.ts
+        src/schemas/
+        src/services/activityLogs.service.ts
+        src/utils/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git add .
+warning: in the working copy of 'src/controllers/activityLogs.controller.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/entities/ActivityLogs.entity.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/middlewares/logger.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/middlewares/validate.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/repositories/activityLogs.repo.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/routes/activityLogs.routes.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/schemas/activityLog.schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/services/activityLogs.service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/utils/logger.ts', LF will be replaced by CRLF the next time Git touches it
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>     git status
+On branch STM-1463/migrar-auditoria-util-api
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   .env.example
+        modified:   src/config/typeorm-datasource.ts
+        new file:   src/controllers/activityLogs.controller.ts
+        new file:   src/entities/ActivityLogs.entity.ts
+        modified:   src/middlewares/index.ts
+        new file:   src/middlewares/logger.ts
+        new file:   src/middlewares/validate.ts
+        new file:   src/repositories/activityLogs.repo.ts
+        new file:   src/routes/activityLogs.routes.ts
+        modified:   src/routes/index.ts
+        new file:   src/schemas/activityLog.schema.ts
+        new file:   src/services/activityLogs.service.ts
+        new file:   src/utils/logger.ts
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git commit -m "feat: migrar modulo de auditoria desde auditoria-api (STM-1463)" -m "Fusiona el codigo BackEnd del modulo de auditoria dentro de util-api para evitar el desfase del pipeline DevOps corporativo." -m "- Entity ActivityLogs con schema core_audit (la tabla no se mueve)" -m "- Endpoints bajo /api/activity-logs: GET /uuid, GET /, POST /" -m "- Middleware de trazabilidad (AsyncLocalStorage) con trace_front_id" -m "- Logger pino, UUID con crypto.randomUUID" -m "- .env.example extendido con bloque de variables de auditoria" -m "Referencias: Epic STM-1403."
+[STM-1463/migrar-auditoria-util-api 8b0696b] feat: migrar modulo de auditoria desde auditoria-api (STM-1463)
+ 13 files changed, 519 insertions(+), 1 deletion(-)
+ create mode 100644 src/controllers/activityLogs.controller.ts
+ create mode 100644 src/entities/ActivityLogs.entity.ts
+ create mode 100644 src/middlewares/logger.ts
+ create mode 100644 src/middlewares/validate.ts
+ create mode 100644 src/repositories/activityLogs.repo.ts
+ create mode 100644 src/routes/activityLogs.routes.ts
+ create mode 100644 src/schemas/activityLog.schema.ts
+ create mode 100644 src/services/activityLogs.service.ts
+ create mode 100644 src/utils/logger.ts
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api> git push -u origin STM-1463/migrar-auditoria-util-api
+Enumerating objects: 38, done.
+Counting objects: 100% (38/38), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (23/23), done.
+Writing objects: 100% (25/25), 8.02 KiB | 513.00 KiB/s, done.
+Total 25 (delta 11), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (11/11), completed with 11 local objects.
+remote:
+remote: Create a pull request for 'STM-1463/migrar-auditoria-util-api' on GitHub by visiting:
+remote:      https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/new/STM-1463/migrar-auditoria-util-api
+remote:
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api.git
+ * [new branch]      STM-1463/migrar-auditoria-util-api -> STM-1463/migrar-auditoria-util-api
+branch 'STM-1463/migrar-auditoria-util-api' set up to track 'origin/STM-1463/migrar-auditoria-util-api'.
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+================================================================
+OBSERVACIONES Claude (paso 18)
+================================================================
+
+✅ Commit 8b0696b creado: 13 archivos, +519 / -1.
+✅ Push OK. Rama `STM-1463/migrar-auditoria-util-api` creada en remoto.
+✅ GitHub ofrece link directo para crear PR.
+
+
+================================================================
+PASO 19 - Abrir Pull Request
+================================================================
+
+Opcion 1 - Navegador (recomendado, es lo de siempre):
+
+    https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/new/STM-1463/migrar-auditoria-util-api
+
+Completar:
+  - Base: develop
+  - Compare: STM-1463/migrar-auditoria-util-api
+  - Title: feat: migrar modulo de auditoria desde auditoria-api (STM-1463)
+  - Description: copiar desde C:\workspace-sodimac\docs\jiras\STM-1463\retro.md
+                 (es el que ya redactamos en la PC personal)
+
+  - Reviewers: asignar a Oscar Bonelli / quien corresponda en el equipo.
+  - Labels: si hay, poner algo como "backend", "util-api".
+  - Linked issues: link al JIRA STM-1463 si GitHub esta integrado.
+
+Click "Create pull request".
+
+
+================================================================
+PASO 20 - Siguientes pasos
+================================================================
+
+Una vez el PR este creado:
+
+1. Esperar CI del pipeline (pasa tests/lint).
+2. Responder review si hay comentarios.
+3. Cuando aprueben -> merge a develop.
+4. Comentar en JIRA STM-1463 con el link del PR + link al commit.
+
+Para el JIRA comment: usar el texto de retro.md (sin emojis ni
+headings grandes, letras normales + negritas) que tenemos en A8.
+
+
+================================================================
+SESION COMPLETADA ✅
+================================================================
+
+Resumen de lo logrado:
+- Canal SSH A8 <-> Sodimac validado (ed25519 + Remote-SSH VS Code).
+- Llave SSH registrada en GitHub con SAML SSO.
+- Rama STM-1463/migrar-auditoria-util-api creada en el repo formal.
+- 13 archivos commiteados (sin package-lock ni .env).
+- Push a origin completado, PR listo para abrirse.
+- Sesion viva via comandos.txt comprobo ser eficaz.
+
+Link del PR creado: https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+
+Actions CI (DevSecOps Security Scan) paso en verde ✅
+
+---
+
+### MENSAJE PARA MARCO (reviewer + approver)
+
+Opcion 1 (directa):
+
+Hola Marco, subi el PR de STM-1463 (migrar modulo de auditoria a
+util-api). Cuando puedas, ¿te paso a revisar? Son 13 archivos, lo
+probe punta a punta en local (util-api 3712 + sodimac-pg, registros
+quedando en core_audit.activity_logs). No toque package-lock ni .env.
+Cualquier cambio que pidas lo ajusto en el PR.
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+
+Gracias!
+
+---
+
+Opcion 2 (muy breve):
+
+Marco, PR STM-1463 listo para review cuando puedas:
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+Probado en local (auditoria escribe a core_audit.activity_logs desde util-api).
+Gracias.
+
+
+================================================================
+MENSAJE PARA MARCO (Teams)
+================================================================
+
+Marco es PM, no va a revisar codigo — el mensaje para el es de
+NOTIFICACION (saber que la historia avanzo), no de code review.
+Si hay algun dev del equipo (Oscar Bonelli, otro tech) debes ping
+POR SEPARADO para la revision tecnica.
+
+---
+
+Opcion 1 - Mensaje para PM Marco (informativo):
+
+Hola Marco, te comento que ya subi el PR de STM-1463 (migrar modulo
+de auditoria a util-api). Lo probe punta a punta en local y quedo
+listo para revision tecnica. En cuanto aprueben y se mergee a develop
+te aviso para que actualices el estado del JIRA.
+
+PR: https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+
+---
+
+Opcion 2 - Mensaje corto:
+
+Marco, STM-1463 ya con PR abierto:
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+Probado end-to-end en local. Pendiente review + merge a develop.
+
+---
+
+### Mensaje adicional para el reviewer tecnico (si aplica)
+
+Si tienes que pinguear a alguien para code review (Oscar Bonelli u
+otro dev), usa este:
+
+Hola [nombre], cuando tengas un momento podrias revisar este PR de
+STM-1463? Son 13 archivos, probado end-to-end en local (util-api +
+sodimac-pg, registros insertandose en core_audit.activity_logs). Sin
+tocar package-lock ni .env. Cualquier comentario lo atiendo por el PR.
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+Gracias.
+
+
+================================================================
+PASO 20 - Cleanup local tras merge a develop
+================================================================
+
+Marco aprobo y mergeo el PR -> ahora develop tiene tus cambios y
+GCP DEV esta desplegado. Limpia tu rama local:
+
+    cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+    git checkout develop
+    git pull origin develop
+    git branch -d STM-1463/migrar-auditoria-util-api
+    git fetch --prune
+
+Resultado esperado:
+- develop al dia con tu commit mergeado.
+- rama STM-1463/... eliminada local.
+- referencias remotas obsoletas limpiadas.
+
+--- SALIDA PASO 20 ---
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git checkout develop
+Switched to branch 'develop'
+Your branch is up to date with 'origin/develop'.
+                                                            git pull origin develop
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (1/1), 974 bytes | 22.00 KiB/s, done.
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api
+ * branch            develop    -> FETCH_HEAD
+   7c1cadc..74cae54  develop    -> origin/develop
+Updating 7c1cadc..74cae54
+Fast-forward
+ .env.example                               |  11 ++
+ src/config/typeorm-datasource.ts           |   4 +-
+ src/controllers/activityLogs.controller.ts |  49 ++++++++
+ src/entities/ActivityLogs.entity.ts        |  43 +++++++
+ src/middlewares/index.ts                   |   2 +
+ src/middlewares/logger.ts                  | 187 +++++++++++++++++++++++++++++
+ src/middlewares/validate.ts                |  52 ++++++++
+ src/repositories/activityLogs.repo.ts      |  26 ++++
+ src/routes/activityLogs.routes.ts          |  15 +++
+ src/routes/index.ts                        |   2 +
+ src/schemas/activityLog.schema.ts          |  58 +++++++++
+ src/services/activityLogs.service.ts       |  57 +++++++++
+ src/utils/logger.ts                        |  14 +++
+ 13 files changed, 519 insertions(+), 1 deletion(-)
+ create mode 100644 src/controllers/activityLogs.controller.ts
+ create mode 100644 src/entities/ActivityLogs.entity.ts
+ create mode 100644 src/middlewares/logger.ts
+ create mode 100644 src/middlewares/validate.ts
+ create mode 100644 src/repositories/activityLogs.repo.ts
+ create mode 100644 src/routes/activityLogs.routes.ts
+ create mode 100644 src/schemas/activityLog.schema.ts
+ create mode 100644 src/services/activityLogs.service.ts
+ create mode 100644 src/utils/logger.ts
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git branch -d STM-1463/migrar-auditoria-util-api
+Deleted branch STM-1463/migrar-auditoria-util-api (was 8b0696b).
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git fetch --prune
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>
+
+
+================================================================
+PASO 21 - Validar DEV y actualizar JIRA
+================================================================
+
+1. Smoke test en GCP DEV (necesitas la URL del ingress):
+
+    curl -s https://<host-dev-util-api>/api/activity-logs/uuid
+
+   Si responde UUID -> OK.
+
+2. En JIRA STM-1463, agregar comentario:
+
+   PR mergeado a develop y desplegado en GCP DEV.
+   Smoke test OK. Listo para validacion QA en ambiente DEV.
+
+   - PR: https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/pull/14
+   - Commit: 8b0696b
+   - Ambiente: DEV
+
+3. Cambiar estado del JIRA segun tu flujo: "En QA" / "Listo para QA"
+   / "In Review" (confirma con Marco cual es el correcto).
+
+4. Avisar por Teams a QA / Marco que esta en DEV:
+
+   Ya desplegado STM-1463 en DEV. Endpoint /api/utils/activity-logs
+   (GET/POST/uuid). Tabla core_audit.activity_logs. Listo para
+   pruebas.

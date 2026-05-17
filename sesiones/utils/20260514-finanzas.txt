@@ -1,0 +1,1474 @@
+La explicación: Se revisó el incidente del endpoint POST /ppsomx/backend-finanzas/fiscal-payments en UAT, donde externamente respondía 504 Gateway Timeout luego de aproximadamente 15 segundos, mientras el healthcheck seguía operativo con 200 OK.
+Hallazgos con evidencia técnica:
+El backend APP03022-mrch.backend.somx.finanzas-api sí tiene expuesto el endpoint fiscal-payments y lo monta bajo /api.
+El servicio backend-finanzas estaba sano a nivel aplicación y conectividad básica:
+GET /health respondió correctamente.
+En logs del pod se observaban SELECT 1 y actividad normal de healthcheck.
+Se validó que la tabla tenant_finance.fiscal_payments existe, pero durante la prueba original no aparecían INSERT en base de datos.
+Se reprodujo el flujo dentro del cluster para aislar LB/Cloudflare/GCP:
+POST directo al backend: http://mrch-backend-somx-finanzas-api:8082/api/fiscal-payments con body {} respondió 400 en 0.014s.
+GET al BFF interno: http://mrch-bff-somx-ppsomx-finanzas:8080/fiscal-payments respondió inmediatamente.
+POST al BFF interno: http://mrch-bff-somx-ppsomx-finanzas:8080/fiscal-payments con body {} respondió 504 en 15.003s con mensaje upstream request timeout.
+Con esto se descartó que la causa raíz estuviera en Cloudflare, en el Load Balancer GCP o en el backend mismo, porque el error se reproduce llamando directamente al service interno del BFF.
+En los logs del backend, durante el POST vía BFF, quedó evidencia de aborto de request antes de procesar el body:
+BadRequestError: request aborted
+code: ECONNABORTED
+expected: 2
+received: 0
+url: POST /api/fiscal-payments
+Esta evidencia confirma que el request sí alcanzaba al backend, pero el body llegaba truncado o consumido antes de que el controller pudiera procesarlo, por eso no se veía actividad de INSERT en Postgres.
+Causa raíz:
+En el BFF APP03022-mrch.bff.somx.ppsomx.finanzas se estaba parseando el body con bodyParser.json/raw/urlencoded antes del proxy.
+Luego el proxy express-http-proxy estaba configurado con parseReqBody: false.
+Esa combinación provoca que el stream del body llegue consumido al proxy y falle especialmente en métodos POST/PUT/PATCH, generando timeout aguas arriba.
+Mejora aplicada
+Se corrigió el BFF removiendo los bodyParser globales previos al proxy para permitir que el body viaje intacto hacia backend-finanzas.
+El cambio fue realizado en src/App.js del repo APP03022-mrch.bff.somx.ppsomx.finanzas.
+El ajuste ya fue pusheado a la rama uat.
+Estado actual
+Cambio enviado a uat.
+Quedamos a la espera de despliegue/validación en UAT para confirmar que el POST /ppsomx/backend-finanzas/fiscal-payments deje de responder 504 y pase a entregar su respuesta real del backend.
+ 
+
+
+ curl -i -X POST https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/fiscal-payments -H "Content-Type: application/json" --data-binary "@body.json"
+
+body.json
+ {"paymentNumber":"PAY-DBG-20260512-2330","company":1,"documentNumber":"DOC-DBG-001","referenceNumber":"REF-DBG-001","vendorNumber":1001,"amount":"15000.00","currency":"MXN","documentType":"PP","paymentDate":"2026-05-11","status":1}
+
+ response
+ 
+C:\log>curl -i -X POST https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/fiscal-payments -H "Content-Type: application/json" --data-binary "@body.json"
+HTTP/1.1 201 Created
+Date: Thu, 14 May 2026 23:16:08 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 499
+Connection: keep-alive
+x-powered-by: Express
+access-control-allow-origin: *
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+strict-transport-security: max-age=15552000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-xss-protection: 0
+etag: W/"1f3-dglXCoF0y0c8DxLOVeHrBgBbX+U"
+x-envoy-upstream-service-time: 15
+Server: cloudflare
+x-envoy-decorator-operation: ingress CreateFiscalPayment
+via: 1.1 google
+alt-svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=d2TAiomV_SRsPO82.dmXSGitjtb7J2Qw2Fpa3AiTB9E-1778800568.877687-1.0.1.1-PxXBiBlakZFZxLZ2Ui_n.8Iy_SLvmUe0UPEjgzrywKX289dKOPXTHwENnIgQT5KqYrUXr3rMAKUWoGwTc4DNvaSUAkx6TtLjceO.Kw2GTq.tM5Kc6sDwH4qcn0bxFwu.; HttpOnly; SameSite=None; Secure; Path=/; Domain=fbusinesscenter.com; Expires=Thu, 14 May 2026 23:46:08 GMT
+CF-RAY: 9fbd9be37dad8483-QRO
+
+{"fiscalPaymentUuid":"91afbe88-848f-469e-8116-3bb1bfd93c8b","paymentNumber":"PAY-DBG-20260512-2330","company":1,"documentNumber":"DOC-DBG-001","referenceNumber":"REF-DBG-001","vendorNumber":1001,"amount":"15000.00","currency":"MXN","documentType":"PP","sapDocument":null,"paymentDate":"2026-05-11T00:00:00.000Z","status":1,"paymentMethod":null,"bankAccount":null,"referencePayment":null,"createdBy":null,"createdAt":"2026-05-14T23:16:08.934Z","updatedBy":null,"updatedAt":"2026-05-14T23:16:08.934Z"}
+C:\log>
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+git log origin/develop --oneline -5
+git log origin/uat --oneline -5
+git diff origin/develop origin/uat -- src/App.js | head -20
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git log origin/develop --oneline -5
+9bc27bd (HEAD -> develop, origin/develop, origin/HEAD) Merge pull request #50 from falabella-stores-and-merchandise/feature/fix-BFF
+db33e8f (origin/feature/fix-BFF) Merge branch 'uat' of https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas into feature/fix-BFF
+b31bf20 (origin/uat) fix: avoid consuming request body before proxy in finanzas bff
+ad66b55 feat: STM-1403 bff-finanzas inject security headers (extractUserKey + util-api lookup + x-user-vendors/types/groups)
+1c2fe82 Merge pull request #45 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>
+
+git diff origin/develop origin/uat -- src/App.js
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git diff origin/develop origin/uat -- src/App.js
+diff --git a/src/App.js b/src/App.js
+index e0275ac..bad54d6 100644
+--- a/src/App.js
++++ b/src/App.js
+@@ -16,7 +16,6 @@ const remoteUrl = process.env.REMOTE_URL || 'http://localhost:3001';
+ const localPort = process.env.LOCAL_PORT || '3000';
+ const localContext = process.env.LOCAL_CONTEXT || '/';
+ const healthPath = process.env.HEALTH_PATH || '/health';
+-const utilApiUrl = process.env.UTIL_API_URL || 'http://localhost:3712';
+
+ const __filename = fileURLToPath(import.meta.url);
+ const __dirname = path.dirname(__filename);
+@@ -57,69 +56,6 @@ if (authPublicKey) {
+     logger.warn(" AUTH_PUBLIC_KEY not set - JWT validation disabled ");
+ }
+
+-// ---------------------------------------------------------------------------
+-// STM-1403: Security context — decode JWT + util-api lookup + inject headers
+-// ---------------------------------------------------------------------------
+-const SECURITY_CACHE = new Map();
+-const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
+-
+-function extractUserKey(request) {
+-    const gcpInfo = request.headers["x-endpoint-api-userinfo"];
+-    if (gcpInfo) {
+-        try {
+-            const payload = JSON.parse(Buffer.from(gcpInfo, "base64url").toString("utf8"));
+-            return payload.sub || payload.preferred_username || null;
+-        } catch { logger.warn("Failed to parse X-Endpoint-API-UserInfo"); }
+-    }
+-    const auth = request.headers["authorization"] || "";
+-    const token = auth.replace(/^Bearer\s+/i, "");
+-    if (token) {
+-        try {
+-            const parts = token.split(".");
+-            if (parts.length === 3) {
+-                const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+-                return payload.sub || payload.preferred_username || null;
+-            }
+-        } catch { logger.warn("Failed to decode Bearer token"); }
+-    }
+-    if (!decodedAuthKey) {
+-        const devKey = request.headers["x-user-key"];
+-        if (devKey) return devKey;
+-    }
+-    return null;
+-}
+-
+-async function fetchSecurityContext(userKey) {
+-    const now = Date.now();
+-    const cached = SECURITY_CACHE.get(userKey);
+-    if (cached && cached.expiresAt > now) return cached.data;
+-    try {
+-        const res = await fetch(`${utilApiUrl}/api/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
+-        if (!res.ok) { logger.warn({ userKey, status: res.status }, "util-api user-attributes non-ok"); return null; }
+-        const body = await res.json();
+-        const data = body?.data ?? body;
+-        SECURITY_CACHE.set(userKey, { data, expiresAt: now + SECURITY_CACHE_TTL_MS });
+-        return data;
+-    } catch (err) {
+-        logger.warn({ userKey, err: err.message }, "util-api user-attributes error");
+-        return null;
+-    }
+-}
+-
+-function buildSecurityHeaders(context) {
+-    if (!context) return {};
+-    const attrs = context.attributes ?? [];
+-    const valuesFor = (typeKey) => attrs.filter(a => a.typeKey === typeKey).map(a => a.valueKey).filter(Boolean);
+-    const vendors = valuesFor("ATR001");
+-    const types   = valuesFor("ATR002");
+-    const groups  = valuesFor("ATR004");
+-    return {
+-        "x-user-vendors": vendors.length ? vendors.join(",") : "",
+-        "x-user-types":   types.length   ? types.join(",")   : "",
+-        "x-user-groups":  groups.length  ? groups.join(",")  : "",
+-    };
+-}
+-
+ const localService = app();
+
+ const docsAliases = ["/docs", "/ppsomx/backend-finanzas/docs"];
+@@ -237,7 +173,7 @@ const remoteResolver = proxy(remoteUrl, {
+         const normalizedPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
+         return "/api" + normalizedPath;
+     },
+-    proxyReqOptDecorator: async (options, request) => {
++    proxyReqOptDecorator: (options, request) => {
+         if (request.method.toLowerCase() === "options") {
+             return options;
+         }
+@@ -246,18 +182,6 @@ const remoteResolver = proxy(remoteUrl, {
+             return options;
+         }
+
+-        const userKey = extractUserKey(request);
+-        if (!userKey) {
+-            logger.warn({ url: request.originalUrl }, "No userKey — skipping security context");
+-            return options;
+-        }
+-
+-        const context = await fetchSecurityContext(userKey);
+-        const secHeaders = buildSecurityHeaders(context);
+-
+-        options.headers = { ...options.headers, "x-user-key": userKey, ...secHeaders };
+-        logger.info({ userKey, vendors: secHeaders["x-user-vendors"], types: secHeaders["x-user-types"] }, "Security context injected");
+-
+         return options;
+     },
+     proxyErrorHandler: (error, response, nextFilter) => {
+(END)
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+git checkout uat
+git pull origin uat
+git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 inject security headers + bff fix)"
+git push origin uat
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git checkout uat
+branch 'uat' set up to track 'origin/uat'.
+Switched to a new branch 'uat'
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git pull origin uat
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas
+ * branch            uat        -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 inject security headers + bff fix)"
+Merge made by the 'ort' strategy.
+ src/App.js | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 77 insertions(+), 1 deletion(-)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git push origin uat
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 257 bytes | 128.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+remote:
+remote: GitHub found 4 vulnerabilities on falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas's default branch (3 high, 1 moderate). To find out more, visit:
+remote:      https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/security/dependabot
+remote:
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas.git
+   b31bf20..028577a  uat -> uat
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>
+
+
+REM === fiscal-api (Java backend) ===
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git fetch --all --prune
+git log origin/develop --oneline -5
+git log origin/uat --oneline -5
+git diff origin/develop origin/uat --stat
+
+REM === bff.fiscal (Node BFF) ===
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git fetch --all --prune
+git log origin/develop --oneline -5
+git log origin/uat --oneline -5
+git diff origin/develop origin/uat --stat
+
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>REM === fiscal-api (Java backend) ===
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git fetch --all --prune
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log origin/develop --oneline -5
+813f053 (HEAD -> develop, origin/develop) Merge pull request #31 from falabella-stores-and-merchandise/feature/STM-1403-security-context-filter
+f57cc75 feat: STM-1403 fiscal-api security context filter JWT + util-api lookup
+21c9ff2 Merge pull request #30 from falabella-stores-and-merchandise/feature/testing
+106ded2 feat: testing
+35881e9 chore: add nul to gitignore
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log origin/uat --oneline -5
+278412f (origin/uat) Merge pull request #29 from falabella-stores-and-merchandise/develop
+21c9ff2 Merge pull request #30 from falabella-stores-and-merchandise/feature/testing
+106ded2 feat: testing
+35881e9 chore: add nul to gitignore
+8027d79 feat: STM-1403 STM-323 STM-1474 filtro seguridad por vendor en facturas y complementos de pago
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git diff origin/develop origin/uat --stat
+ .gitignore                                         |   2 +
+ migration/STM-410_add_accounting_date.sql          |   6 +-
+ .../fiscal/api/security/JwtTokenInterceptor.java   |  20 +--
+ .../fiscal/api/security/SecurityContextFilter.java | 150 ---------------------
+ .../fiscal/api/security/UtilApiSecurityClient.java | 107 ---------------
+ src/main/resources/application-dev.properties      |   6 +-
+ 6 files changed, 13 insertions(+), 278 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>REM === bff.fiscal (Node BFF) ===
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git fetch --all --prune
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git log origin/develop --oneline -5
+f21b1c8 (HEAD -> develop, origin/develop) Merge pull request #32 from falabella-stores-and-merchandise/feature/STM-1403-bff-security-context
+b63b528 feat: STM-1403 bff-fiscal inyectar headers seguridad consultando util-api
+e418e33 Merge branch 'uat' into develop
+3965dc3 feat(STM-272): agregar idTransaccion en OpenAPI de complemento de pago
+ebdb355 Agregar endpoint PUT /invoices/{uuid}/status al BFF
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git log origin/uat --oneline -5
+065749e (origin/uat) Re-enable espv2 sidecar in uat and production
+a47dd21 Merge pull request #30 from falabella-stores-and-merchandise/develop
+e418e33 Merge branch 'uat' into develop
+3965dc3 feat(STM-272): agregar idTransaccion en OpenAPI de complemento de pago
+ebdb355 Agregar endpoint PUT /invoices/{uuid}/status al BFF
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git diff origin/develop origin/uat --stat
+ kustomization/production/kustomization.yaml |  2 +-
+ kustomization/uat/kustomization.yaml        |  2 +-
+ src/App.js                                  | 86 +++--------------------------
+ 3 files changed, 11 insertions(+), 79 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+
+
+
+
+REM ===== fiscal-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git checkout uat
+git pull origin uat
+git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 SecurityContextFilter + STM-323 facturas + STM-1474 complementos)"
+git push origin uat
+
+REM ===== bff.fiscal =====
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git checkout uat
+git pull origin uat
+git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 inject security headers)"
+git push origin uat
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>REM ===== fiscal-api =====
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout uat
+Switched to branch 'uat'
+Your branch is behind 'origin/uat' by 13 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git pull origin uat
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api
+ * branch            uat        -> FETCH_HEAD
+Updating 45b6e35..278412f
+Fast-forward
+ .gitignore                                         |   2 +
+ pom.xml                                            |  15 +-
+ .../sodimac/fiscal/api/FiscalApiApplication.java   |   2 +
+ .../fiscal/api/controller/HealthController.java    |  10 +-
+ .../fiscal/api/controller/InvoiceController.java   |  55 ++-
+ .../controller/PaymentRegistrationController.java  |  71 +++-
+ .../fiscal/api/model/dto/InvoiceSearchRequest.java |   9 +
+ .../api/model/dto/InvoiceSearchResponse.java       |   3 +
+ .../dto/request/PaymentRegistrationRequest.java    |   4 +
+ .../model/entity/InvoiceStatusHistoryEntity.java   |  51 +++
+ .../fiscal/api/model/enums/AuditAction.java        |  74 ++++
+ .../fiscal/api/model/enums/CreditNoteStatus.java   |   8 +-
+ .../fiscal/api/model/enums/FiscalMessageCode.java  |  15 +-
+ .../fiscal/api/model/enums/InvoiceStatus.java      |   8 +-
+ .../fiscal/api/repository/InvoiceRepository.java   |  25 ++
+ .../repository/InvoiceStatusHistoryRepository.java |  28 ++
+ .../api/repository/PaymentsRepositoryCustom.java   |   2 +
+ .../repository/PaymentsRepositoryCustomImpl.java   |  78 ++++
+ .../specification/InvoiceSpecification.java        |  33 ++
+ .../fiscal/api/service/ActivityLogService.java     |  42 +++
+ .../fiscal/api/service/AuditoriaApiService.java    |  43 +++
+ .../sodimac/fiscal/api/service/InvoiceService.java |   5 +-
+ .../fiscal/api/service/PaymentQueryService.java    |   2 +
+ .../api/service/PaymentRegistrationService.java    |   2 +-
+ .../api/service/impl/ActivityLogServiceImpl.java   |  88 +++++
+ .../api/service/impl/AuditoriaApiServiceImpl.java  | 105 ++++++
+ .../api/service/impl/InvoiceServiceImpl.java       | 394 ++++++++++++++++-----
+ .../api/service/impl/PaymentQueryServiceImpl.java  |  10 +
+ .../impl/PaymentRegistrationServiceImpl.java       | 207 ++++++++++-
+ .../service/impl/PaymentXmlParserServiceImpl.java  |  59 ++-
+ .../service/impl/StatusTrainApiServiceImpl.java    |  40 ++-
+ src/main/resources/application-dev.properties      |   6 +-
+ src/main/resources/application-prod.properties     |  52 ++-
+ 33 files changed, 1400 insertions(+), 148 deletions(-)
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/model/entity/InvoiceStatusHistoryEntity.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/model/enums/AuditAction.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/repository/InvoiceStatusHistoryRepository.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/service/ActivityLogService.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/service/AuditoriaApiService.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/service/impl/ActivityLogServiceImpl.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/service/impl/AuditoriaApiServiceImpl.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 SecurityContextFilter + STM-323 facturas + STM-1474 complementos)"
+Merge made by the 'ort' strategy.
+ .gitignore                                         |   2 -
+ .../fiscal/api/security/JwtTokenInterceptor.java   |  20 ++-
+ .../fiscal/api/security/SecurityContextFilter.java | 150 +++++++++++++++++++++
+ .../fiscal/api/security/UtilApiSecurityClient.java | 107 +++++++++++++++
+ src/main/resources/application-dev.properties      |   6 +-
+ 5 files changed, 275 insertions(+), 10 deletions(-)
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/security/SecurityContextFilter.java
+ create mode 100644 src/main/java/com/sodimac/fiscal/api/security/UtilApiSecurityClient.java
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git push origin uat
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (2/2), 342 bytes | 171.00 KiB/s, done.
+Total 2 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+remote:
+remote: GitHub found 1 vulnerability on falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api's default branch (1 moderate). To find out more, visit:
+remote:      https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/security/dependabot/1
+remote:
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api.git
+   278412f..e10b2cc  uat -> uat
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>REM ===== bff.fiscal =====
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git checkout uat
+Switched to branch 'uat'
+Your branch is behind 'origin/uat' by 35 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git pull origin uat
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.fiscal
+ * branch            uat        -> FETCH_HEAD
+Updating 87196bd..065749e
+Fast-forward
+ Dockerfile                                  |  31 +++-
+ api.yml                                     | 116 ++++++++++++++
+ cloud-endpoint/openapi-bundled.yaml         |  12 ++
+ cloud-endpoint/openapi.json                 |  16 ++
+ cloud-endpoint/openapi.yaml                 | 128 +++++++++++++++
+ kustomization/production/kustomization.yaml |   2 +-
+ kustomization/uat/kustomization.yaml        |   2 +-
+ package-lock.json                           | 235 ++++++++++++++--------------
+ package.json                                |  20 ++-
+ src/App.js                                  | 153 ++++++++++--------
+ 10 files changed, 517 insertions(+), 198 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git merge origin/develop --no-ff -m "merge: develop into uat (STM-1403 inject security headers)"
+Merge made by the 'ort' strategy.
+ src/App.js | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 77 insertions(+), 9 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git push origin uat
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (2/2), 311 bytes | 103.00 KiB/s, done.
+Total 2 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.fiscal.git
+   065749e..f865ece  uat -> uat
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+
+
+
+REM ===== util-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+git fetch --all --prune
+git diff origin/develop origin/uat --stat
+
+REM ===== bff-util =====
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+git fetch --all --prune
+git diff origin/develop origin/uat --stat
+
+REM ===== finanzas-api backend =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git fetch --all --prune
+git diff origin/develop origin/uat --stat
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>REM ===== util-api =====
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git fetch --all --prune
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git diff origin/develop origin/uat --stat
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>REM ===== bff-util =====
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>git fetch --all --prune
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>git diff origin/develop origin/uat --stat
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>REM ===== finanzas-api backend =====
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git fetch --all --prune
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git diff origin/develop origin/uat --stat
+ kustomization/development/kustomization.yaml       |  5 ----
+ kustomization/production/kustomization.yaml        |  5 ----
+ kustomization/uat/kustomization.yaml               |  5 ----
+ .../uat/three-way-match-cronjob-patch.yaml         |  7 +++++
+ src/services/axios.service.ts                      | 30 ++++++++++++++++++++--
+ 5 files changed, 35 insertions(+), 17 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>
+
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+
+REM 1. Ver qué commits únicos tiene cada rama
+echo === commits en develop pero no en uat ===
+git log origin/uat..origin/develop --oneline
+echo === commits en uat pero no en develop ===
+git log origin/develop..origin/uat --oneline
+
+REM 2. Ver el diff de axios.service.ts (la divergencia mayor)
+git diff origin/develop origin/uat -- src/services/axios.service.ts | more
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>REM 1. Ver qué commits únicos tiene cada rama
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>echo === commits en develop pero no en uat ===
+=== commits en develop pero no en uat ===
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git log origin/uat..origin/develop --oneline
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>echo === commits en uat pero no en develop ===
+=== commits en uat pero no en develop ===
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git log origin/develop..origin/uat --oneline
+83a4932 (origin/uat) fix: set uat image for three-way-match cronjob
+a542502 fix: use CI_APPLICATION_IMAGE for three-way-match cronjob
+4d8c48a edit job
+9759062 Merge pull request #63 from falabella-stores-and-merchandise/develop
+2c139f2 Merge pull request #61 from falabella-stores-and-merchandise/develop
+91828c5 Merge pull request #59 from falabella-stores-and-merchandise/develop
+df508f6 Merge pull request #57 from falabella-stores-and-merchandise/develop
+4daec64 Refactor axiosGet for better error handling
+91d1ed6 Merge pull request #55 from falabella-stores-and-merchandise/develop
+841d38c Merge pull request #53 from falabella-stores-and-merchandise/develop
+f08d904 Merge pull request #51 from falabella-stores-and-merchandise/develop
+f91eaa1 Merge pull request #49 from falabella-stores-and-merchandise/develop
+daf89cb Merge pull request #47 from falabella-stores-and-merchandise/develop
+8f13a61 Merge pull request #45 from falabella-stores-and-merchandise/develop
+90aab21 Merge pull request #43 from falabella-stores-and-merchandise/develop
+d2be3e6 Merge pull request #42 from falabella-stores-and-merchandise/develop
+695145b Merge pull request #40 from falabella-stores-and-merchandise/develop
+966aeaf Merge pull request #38 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>REM 2. Ver el diff de axios.service.ts (la divergencia mayor)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git diff origin/develop origin/uat -- src/services/axios.service.ts | more
+diff --git a/src/services/axios.service.ts b/src/services/axios.service.ts
+index d3598d4..2bc0e88 100644
+--- a/src/services/axios.service.ts
++++ b/src/services/axios.service.ts
+@@ -113,7 +113,7 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: st
+ }
+
+
+-export async function axiosGet(url: string, token: string, params?: any) {
++/*export async function axiosGet(url: string, token: string, params?: any) {
+   try {
+         await logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
+         if (params == undefined) {
+@@ -136,6 +136,32 @@ export async function axiosGet(url: string, token: string, params?: any) {
+     return undefined; // o throw error;
+   }
+ }
++*/
++
++
++export async function axiosGet(url: string, token: string, params?: any) {
++  try {
++    logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
++
++    const response = await axios.get(url, {
++      headers: { Authorization: `Bearer ${token ?? ''}` },
++      params: params ?? {}
++    });
++
++    return response;
++
++  } catch (error: any) {
++    console.error("ÔØî axiosGet error:", error?.response?.data || error.message);
++
++    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
++
++    return {
++      url: url,
++      data: null,
++      status: error?.response?.status ?? 500
++    };
++  }
++}
+
+
+ // export async function axiosGet(url: string, token: string, params?: any) {
+@@ -252,4 +278,4 @@ export async function ValidStatus(url: string, optionId: number, sourceStatus: n
+         return false;
+     }
+
+-}
+\ No newline at end of file
++}
+
+
+
+
+
+REM ===== util-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+REM ===== bff-util =====
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+REM ===== finanzas-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+REM ===== fiscal-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+REM ===== bff.finanzas =====
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+REM ===== bff.fiscal =====
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git checkout develop
+git pull origin develop
+git log origin/develop..origin/uat --oneline
+
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>REM ===== util-api =====
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>git log origin/develop..origin/uat --oneline
+372da14 (origin/uat) Merge pull request #29 from falabella-stores-and-merchandise/develop
+03a39bf Merge pull request #28 from falabella-stores-and-merchandise/develop
+d5e58cc Merge pull request #26 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>e
+"e" no se reconoce como un comando interno o externo,
+programa o archivo por lotes ejecutable.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>git log origin/develop..origin/uat --oneline
+801de91 (origin/uat) Merge pull request #29 from falabella-stores-and-merchandise/develop
+4fd0c1e Merge pull request #23 from falabella-stores-and-merchandise/develop
+57feaea Merge pull request #19 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.finanzas-api
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git log origin/develop..origin/uat --oneline
+83a4932 (origin/uat) fix: set uat image for three-way-match cronjob
+a542502 fix: use CI_APPLICATION_IMAGE for three-way-match cronjob
+4d8c48a edit job
+9759062 Merge pull request #63 from falabella-stores-and-merchandise/develop
+2c139f2 Merge pull request #61 from falabella-stores-and-merchandise/develop
+91828c5 Merge pull request #59 from falabella-stores-and-merchandise/develop
+df508f6 Merge pull request #57 from falabella-stores-and-merchandise/develop
+4daec64 Refactor axiosGet for better error handling
+91d1ed6 Merge pull request #55 from falabella-stores-and-merchandise/develop
+841d38c Merge pull request #53 from falabella-stores-and-merchandise/develop
+f08d904 Merge pull request #51 from falabella-stores-and-merchandise/develop
+f91eaa1 Merge pull request #49 from falabella-stores-and-merchandise/develop
+daf89cb Merge pull request #47 from falabella-stores-and-merchandise/develop
+8f13a61 Merge pull request #45 from falabella-stores-and-merchandise/develop
+90aab21 Merge pull request #43 from falabella-stores-and-merchandise/develop
+d2be3e6 Merge pull request #42 from falabella-stores-and-merchandise/develop
+695145b Merge pull request #40 from falabella-stores-and-merchandise/develop
+966aeaf Merge pull request #38 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout develop
+Switched to branch 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git log origin/develop..origin/uat --oneline
+e10b2cc (origin/uat, uat) merge: develop into uat (STM-1403 SecurityContextFilter + STM-323 facturas + STM-1474 complementos)
+278412f Merge pull request #29 from falabella-stores-and-merchandise/develop
+6cd2bcf Merge pull request #28 from falabella-stores-and-merchandise/develop
+45b6e35 Merge branch 'develop' into uat
+bf2812c Merge branch 'develop' into uat
+5539294 Merge pull request #8 from falabella-stores-and-merchandise/develop
+04f708e feat(STM-410): script migracion columna accounting_date
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git checkout develop
+Switched to branch 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>git log origin/develop..origin/uat --oneline
+028577a (origin/uat, uat) merge: develop into uat (STM-1403 inject security headers + bff fix)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git checkout develop
+Switched to branch 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git pull origin develop
+From github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.fiscal
+ * branch            develop    -> FETCH_HEAD
+Already up to date.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git log origin/develop..origin/uat --oneline
+f865ece (origin/uat, uat) merge: develop into uat (STM-1403 inject security headers)
+065749e Re-enable espv2 sidecar in uat and production
+a47dd21 Merge pull request #30 from falabella-stores-and-merchandise/develop
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api && git diff origin/develop origin/uat --stat
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util && git diff origin/develop origin/uat --stat
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas && git diff origin/develop origin/uat --stat
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api && git diff origin/develop origin/uat --stat
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api>cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util && git diff origin/develop origin/uat --stat
+
+C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas && git diff origin/develop origin/uat --stat
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>
+
+
+REM ===== finanzas-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+git checkout develop
+git merge origin/uat --no-ff -m "merge: uat into develop (sync hotfixes cronjob image + axiosGet refactor)"
+git push origin develop
+
+REM ===== fiscal-api =====
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git checkout develop
+git merge origin/uat --no-ff -m "merge: uat into develop (sync STM-410 accounting_date migration)"
+git push origin develop
+
+REM ===== bff.fiscal =====
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+git checkout develop
+git merge origin/uat --no-ff -m "merge: uat into develop (sync espv2 sidecar re-enable)"
+git push origin develop
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git merge origin/uat --no-ff -m "merge: uat into develop (sync hotfixes cronjob image + axiosGet refactor)"
+Merge made by the 'ort' strategy.
+ kustomization/development/kustomization.yaml       |  5 ----
+ kustomization/production/kustomization.yaml        |  5 ----
+ kustomization/uat/kustomization.yaml               |  5 ----
+ .../uat/three-way-match-cronjob-patch.yaml         |  7 +++++
+ src/services/axios.service.ts                      | 30 ++++++++++++++++++++--
+ 5 files changed, 35 insertions(+), 17 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>git push origin develop
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 258 bytes | 129.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.finanzas-api.git
+   aa24e86..504fd6c  develop -> develop
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api>cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git merge origin/uat --no-ff -m "merge: uat into develop (sync STM-410 accounting_date migration)"
+Merge made by the 'ort' strategy.
+ migration/STM-410_add_accounting_date.sql | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>git push origin develop
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 250 bytes | 83.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+remote:
+remote: GitHub found 1 vulnerability on falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api's default branch (1 moderate). To find out more, visit:
+remote:      https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/security/dependabot/1
+remote:
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api.git
+   813f053..720070a  develop -> develop
+
+C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git checkout develop
+Already on 'develop'
+Your branch is up to date with 'origin/develop'.
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git merge origin/uat --no-ff -m "merge: uat into develop (sync espv2 sidecar re-enable)"
+Merge made by the 'ort' strategy.
+ kustomization/production/kustomization.yaml | 2 +-
+ kustomization/uat/kustomization.yaml        | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>git push origin develop
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 240 bytes | 60.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+To github.com:falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.fiscal.git
+   f21b1c8..82e2d2e  develop -> develop
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+
+
+
+
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api C:\local\APP03022-mrch.backend.somx.fiscal-api /MIR /XD .git node_modules dist coverage .vscode target
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api C:\local\APP03022-mrch.backend.somx.finanzas-api /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api C:\local\APP03022-mrch.backend.somx.util-api /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal C:\local\APP03022-mrch.bff.somx.ppsomx.fiscal /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas C:\local\APP03022-mrch.bff.somx.ppsomx.finanzas /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util C:\local\APP03022-mrch-bff-somx-ppsomx-util /MIR /XD .git node_modules dist coverage .vscode
+
+cd C:\local
+git branch --show-current
+git status -s | more
+
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api C:\local\APP03022-mrch.backend.somx.fiscal-api /MIR /XD .git node_modules dist coverage .vscode target
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:45 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\
+     Destino : C:\local\APP03022-mrch.backend.somx.fiscal-api\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+            target
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                          18    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\
+100%      Más reciente              1087        .gitignore
+100%      Más reciente              9172        pom.xml
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.github\workflows\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.m2\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.mvn\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.mvn\wrapper\
+                           5    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\.settings\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\gateway\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\kustomization\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\kustomization\base\
+                           8    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\kustomization\development\
+                           8    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\kustomization\production\
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\kustomization\uat\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\migration\
+100%      Más reciente              1227        STM-410_add_accounting_date.sql
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\postman\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\facturacion\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\facturacion\util\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\
+100%      Más reciente               411        FiscalApiApplication.java
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\config\
+                          21    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\controller\
+100%      Más reciente               942        HealthController.java
+100%      Más reciente             39972        InvoiceController.java
+100%      Más reciente              8916        PaymentRegistrationController.java
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\detecno\
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\detecno\wsdl\
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\exception\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\filter\
+                          14    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\mapper\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\
+                          32    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\dto\
+100%      Más reciente              4824        InvoiceSearchRequest.java
+100%      Más reciente              7638        InvoiceSearchResponse.java
+                          32    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\dto\invoicexml\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\dto\request\
+100%      Más reciente              1848        PaymentRegistrationRequest.java
+                           8    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\dto\response\
+                          22    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\entity\
+100%      Más reciente              1340        InvoiceStatusHistoryEntity.java
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\model\enums\
+100%      Más reciente              4183        AuditAction.java
+100%      Más reciente              3432        CreditNoteStatus.java
+100%      Más reciente             13378        FiscalMessageCode.java
+100%      Más reciente              3988        InvoiceStatus.java
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\pdf\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\pdf\impl\
+                          20    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\repository\
+100%      Más reciente              2533        InvoiceRepository.java
+100%      Más reciente               903        InvoiceStatusHistoryRepository.java
+100%      Más reciente               940        PaymentsRepositoryCustom.java
+100%      Más reciente             11307        PaymentsRepositoryCustomImpl.java
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\repository\specification\
+100%      Más reciente             12223        InvoiceSpecification.java
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\response\
+                           6    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\security\
+100%      Más reciente              5322        JwtTokenInterceptor.java
+100%      Más reciente              6046        SecurityContextFilter.java
+100%      Más reciente              4201        UtilApiSecurityClient.java
+                          37    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\service\
+100%      Más reciente              1487        ActivityLogService.java
+100%      Más reciente              1651        AuditoriaApiService.java
+100%      Más reciente              7092        InvoiceService.java
+100%      Más reciente              1073        PaymentQueryService.java
+100%      Más reciente              1117        PaymentRegistrationService.java
+                          37    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\service\impl\
+100%      Más reciente              3314        ActivityLogServiceImpl.java
+100%      Más reciente              3846        AuditoriaApiServiceImpl.java
+100%      Más reciente            116725        InvoiceServiceImpl.java
+100%      Más reciente              5051        PaymentQueryServiceImpl.java
+100%      Más reciente             30807        PaymentRegistrationServiceImpl.java
+100%      Más reciente             16130        PaymentXmlParserServiceImpl.java
+100%      Más reciente              6430        StatusTrainApiServiceImpl.java
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\java\com\sodimac\fiscal\api\util\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\resources\
+100%      Más reciente              2644        application-dev.properties
+100%      Más reciente              2622        application-prod.properties
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\resources\invoice\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\resources\META-INF\
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\resources\xsd\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\main\resources\xsl\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\sodimac\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\sodimac\fiscal\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\sodimac\fiscal\api\
+                           6    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\sodimac\fiscal\api\controller\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\java\com\sodimac\fiscal\api\service\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\resources\
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\src\test\resources\xml-samples\
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        64         0        64         0         0         0
+ Archivos:       358        37       321         0         0         0
+    Bytes:    2.07 m   337.7 k    1.74 m         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+Velocidad:             516,923 Bytes/s
+Velocidad:              29.579 Megabytes/min
+   Finalizado: viernes, 15 de mayo de 2026 03:36:46 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api C:\local\APP03022-mrch.backend.somx.finanzas-api /MIR /XD .git node_modules dist coverage .vscode
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:46 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\
+     Destino : C:\local\APP03022-mrch.backend.somx.finanzas-api\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                          17    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\.github\workflows\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\kustomization\
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\kustomization\base\
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\kustomization\development\
+100%      Más reciente               580        kustomization.yaml
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\kustomization\production\
+100%      Más reciente               590        kustomization.yaml
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\kustomization\uat\
+100%      Más reciente               580        kustomization.yaml
+100%      Más reciente               404        three-way-match-cronjob-patch.yaml
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\scripts\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\auth\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\clients\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\config\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\constants\
+                          19    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\controllers\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\debug\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\docs\
+                          14    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\docs\components\
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\docs\paths\
+                          38    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\entities\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\lib\
+                           8    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\middlewares\
+                           5    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\migrations\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\models\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\monitoring\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\providers\
+                          20    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\repositories\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\response\
+                          18    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\routes\
+                          20    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\schemas\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\schemas\rebateFiscal\
+                          22    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\services\
+100%      Más reciente              9721        axios.service.ts
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\types\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\utils\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\workers\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\__mocks__\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api\src\__tests__\
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        39         0        39         0         0         0
+ Archivos:       254         5       249         0         0         0
+    Bytes:    1.77 m    11.5 k    1.76 m         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+Velocidad:             130,494 Bytes/s
+Velocidad:               7.467 Megabytes/min
+   Finalizado: viernes, 15 de mayo de 2026 03:36:46 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api C:\local\APP03022-mrch.backend.somx.util-api /MIR /XD .git node_modules dist coverage .vscode
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:46 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\
+     Destino : C:\local\APP03022-mrch.backend.somx.util-api\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                           9    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\.github\workflows\
+                           0    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\kustomization\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\kustomization\base\
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\kustomization\development\
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\kustomization\production\
+                           7    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\kustomization\uat\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\clients\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\config\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\constants\
+                          18    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\controllers\
+                          19    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\database\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\database\consolidated\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\docs\
+                          10    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\docs\components\
+                          13    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\docs\paths\
+                           5    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\dto\
+                          20    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\entities\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\enums\
+                           4    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\exceptions\
+                           5    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\mappers\
+                           5    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\middlewares\
+                           2    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\migrations\
+                          19    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\repositories\
+                           3    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\response\
+                          17    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\routes\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\schemas\
+                          18    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\services\
+                           1    C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api\src\utils\
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        33         0        33         0         0         0
+ Archivos:       205         0       205         0         0         0
+    Bytes:    1.23 m         0    1.23 m         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+   Finalizado: viernes, 15 de mayo de 2026 03:36:47 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal C:\local\APP03022-mrch.bff.somx.ppsomx.fiscal /MIR /XD .git node_modules dist coverage .vscode
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:47 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\
+     Destino : C:\local\APP03022-mrch.bff.somx.ppsomx.fiscal\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                          11    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\
+100%      Más reciente             77807        api.yml
+100%      Más reciente               798        Dockerfile
+100%      Más reciente             64681        package-lock.json
+100%      Más reciente               596        package.json
+                           0    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\.github\workflows\
+                           3    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\cloud-endpoint\
+100%      Más reciente             70679        openapi-bundled.yaml
+100%      Más reciente            100000        openapi.json
+100%      Más reciente             61294        openapi.yaml
+                           0    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\kustomization\
+                           3    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\kustomization\base\
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\kustomization\development\
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\kustomization\production\
+100%      Más reciente               727        kustomization.yaml
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\kustomization\uat\
+100%      Más reciente               715        kustomization.yaml
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal\src\
+100%      Más reciente              6635        App.js
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        12         0        12         0         0         0
+ Archivos:        46        10        36         0         0         0
+    Bytes:   408.1 k   374.9 k    33.2 k         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+Velocidad:           1,279,773 Bytes/s
+Velocidad:              73.229 Megabytes/min
+   Finalizado: viernes, 15 de mayo de 2026 03:36:47 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas C:\local\APP03022-mrch.bff.somx.ppsomx.finanzas /MIR /XD .git node_modules dist coverage .vscode
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:47 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\
+     Destino : C:\local\APP03022-mrch.bff.somx.ppsomx.finanzas\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                           6    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\
+                           0    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\.github\workflows\
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\cloud-endpoint\
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\cloud-endpoint\src\
+                          15    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\cloud-endpoint\src\definitions\
+                          14    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\cloud-endpoint\src\paths\
+                           0    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\kustomization\
+                           3    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\kustomization\base\
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\kustomization\development\
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\kustomization\production\
+                           9    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\kustomization\uat\
+                           1    C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas\src\
+100%      Más reciente             11304        App.js
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        15         0        15         0         0         0
+ Archivos:        69         1        68         0         0         0
+    Bytes:   354.8 k    11.0 k   343.7 k         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+Velocidad:             434,769 Bytes/s
+Velocidad:              24.878 Megabytes/min
+   Finalizado: viernes, 15 de mayo de 2026 03:36:47 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>robocopy C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util C:\local\APP03022-mrch-bff-somx-ppsomx-util /MIR /XD .git node_modules dist coverage .vscode
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Herramienta para copia eficaz de archivos
+-------------------------------------------------------------------------------
+
+  Iniciado : viernes, 15 de mayo de 2026 03:36:48 a. m.
+   Origen : C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\
+     Destino : C:\local\APP03022-mrch-bff-somx-ppsomx-util\
+
+    Archivos: *.*
+
+ Dirs. de ejecutables: .git
+            node_modules
+            dist
+            coverage
+            .vscode
+
+  Opciones: *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+                           8    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\
+                           0    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\.github\
+                           1    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\.github\workflows\
+                           1    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\cloud-endpoint\
+                           1    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\cloud-endpoint\src\
+                          14    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\cloud-endpoint\src\definitions\
+                          15    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\cloud-endpoint\src\paths\
+                           0    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\kustomization\
+                           3    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\kustomization\base\
+                           9    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\kustomization\development\
+                           9    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\kustomization\production\
+                           9    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\kustomization\uat\
+                           1    C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util\src\
+
+------------------------------------------------------------------------------
+
+               Total   Copiado   OmitidoNo coincidencia     ERROR    Extras
+Director.:        15         0        15         0         0         0
+ Archivos:        71         0        71         0         0         0
+    Bytes:   447.3 k         0   447.3 k         0         0         0
+   Tiempo:   0:00:00   0:00:00                       0:00:00   0:00:00
+   Finalizado: viernes, 15 de mayo de 2026 03:36:48 a. m.
+
+
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>
+C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal>cd C:\local
+
+C:\local>git branch --show-current
+dmontes
+
+C:\local>git status -s | more
+ M APP03022-mrch.backend.somx.finanzas-api/kustomization/development/kustomization.yaml
+ M APP03022-mrch.backend.somx.finanzas-api/kustomization/production/kustomization.yaml
+ M APP03022-mrch.backend.somx.finanzas-api/kustomization/uat/kustomization.yaml
+ M APP03022-mrch.backend.somx.finanzas-api/kustomization/uat/three-way-match-cronjob-patch.yaml
+ M APP03022-mrch.backend.somx.finanzas-api/src/services/axios.service.ts
+ M APP03022-mrch.backend.somx.fiscal-api/migration/STM-410_add_accounting_date.sql
+ M APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/model/entity/InvoiceStatusHistoryEntity.java
+ M APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/repository/InvoiceStatusHistoryRepository.java
+ M APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/ActivityLogService.java
+ M APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/service/impl/ActivityLogServiceImpl.java
+ M APP03022-mrch.bff.somx.ppsomx.fiscal/kustomization/production/kustomization.yaml
+ M APP03022-mrch.bff.somx.ppsomx.fiscal/kustomization/uat/kustomization.yaml
+
+cd C:\local
+git add APP03022-mrch.backend.somx.fiscal-api/ APP03022-mrch.backend.somx.finanzas-api/ APP03022-mrch.backend.somx.util-api/ APP03022-mrch.bff.somx.ppsomx.fiscal/ APP03022-mrch.bff.somx.ppsomx.finanzas/ APP03022-mrch-bff-somx-ppsomx-util/
+git status -s | more
+git commit -m "sync: 6 proyectos desde Sodimac develop alineado con uat (hotfixes Bonelli finanzas + STM-410 fiscal + espv2 sidecar bff.fiscal)"
+git push origin dmontes
+
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/pull/52
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/pull/52/checks
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/actions
+
+
+winget install --id GitHub.cli
+gh auth login
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/actions/runs/25910107497
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/actions
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/actions
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/settings/environments
+
+C:\workspace-sodimac\sesiones\utils\image007.png
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/issues?q=is%3Aissue+is%3Aopen+Manual+Approval
+c:\workspace-sodimac\APP03022-mrch-bff-somx-ppsomx-util\.github\workflows\pipeline.yml
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/issues?q=is%3Aissue+is%3Aopen+author%3Aapp%2Fgithub-actions
+
+https://uat.somx.somx.cl/ppsomx/util/api/security/user-attributes-by-key/sb000001
+
+
+https://uat.fbusinesscenter.com/ppsomx/backend-util/items
+
+curl -i "https://uat.fbusinesscenter.com/ppsomx/backend-util/api/security/user-attributes-by-key/sb000001"
+
+HTTP/1.1 404 Not Found
+Date: Fri, 15 May 2026 17:04:25 GMT
+Content-Type: application/json
+Content-Length: 73
+Connection: keep-alive
+Server: cloudflare
+x-envoy-decorator-operation: ingress UnknownOperationName
+via: 1.1 google
+alt-svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=ygllHRXfWiqcbCHIMZI_Ctt.rs51RFRdgQaKT.40iv8-1778864665.8868923-1.0.1.1-BrnRO3Wf_BbYHJpcWtidAF4TxMVdQ3eiasswswJ7ISLddRuPcI7.P.61wpsZHkh6uVZqR_zWv1_z_xmGkbOowPaR02wX0YDWkczK.RpgQQOECRyDteKLfi4YaS_zYN14; HttpOnly; SameSite=None; Secure; Path=/; Domain=fbusinesscenter.com; Expires=Fri, 15 May 2026 17:34:25 GMT
+Strict-Transport-Security: max-age=15552000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+CF-RAY: 9fc3b8c1c90f9a5d-MEX
+
+{"message":"The current request is not defined by this API.","code":404}
+
+C:\local>
+
+
+bff.finanzas → UTIL_API_URL
+bff.fiscal → UTIL_API_URL
+fiscal-api → SECURITY_ENABLED=true, UTILS_API_ENABLED=true, UTILS_API_URL, UTILS_API_TIMEOUT=5000
+
+curl -i -X POST https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/fiscal-payments -H "Content-Type: application/json" --data-binary "@body.json"
+archivo:
+{"paymentNumber":"PAY-DBG-20260512-2330","company":1,"documentNumber":"DOC-DBG-001","referenceNumber":"REF-DBG-001","vendorNumber":1001,"amount":"15000.00","currency":"MXN","documentType":"PP","paymentDate":"2026-05-11","status":1}
+
+
+C:\log>curl -i -X POST https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/fiscal-payments -H "Content-Type: application/json" --data-binary "@body.json"
+HTTP/1.1 201 Created
+Date: Fri, 15 May 2026 19:19:03 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 499
+Connection: keep-alive
+x-powered-by: Express
+access-control-allow-origin: *
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+strict-transport-security: max-age=15552000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-xss-protection: 0
+etag: W/"1f3-OfXXOFyN/m1h5MSNFuezFs1gSJc"
+x-envoy-upstream-service-time: 97
+Server: cloudflare
+x-envoy-decorator-operation: ingress CreateFiscalPayment
+via: 1.1 google
+alt-svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+set-cookie: __cf_bm=MSgY__Phx5w7FWiAVPE1ZATl2TGKDn1a0ufs2mVzMw8-1778872743.312242-1.0.1.1-0hOy94uGYhAxYnqP7.9Edug9jUmRneJ34bp9fSWRJKVOKYTlkoDjLugr.u3HU1QmXyllZrRm8GXj.q7kW2NaGtM3zWWvIGTjWFpj8pDhnnC5D_yywrF.XLqMnnQjUSmJ; HttpOnly; SameSite=None; Secure; Path=/; Domain=fbusinesscenter.com; Expires=Fri, 15 May 2026 19:49:03 GMT
+CF-RAY: 9fc47df5b922eef2-QRO
+
+{"fiscalPaymentUuid":"eba316c2-f61a-4705-8c0e-ec38cae9ccf7","paymentNumber":"PAY-DBG-20260512-2330","company":1,"documentNumber":"DOC-DBG-001","referenceNumber":"REF-DBG-001","vendorNumber":1001,"amount":"15000.00","currency":"MXN","documentType":"PP","sapDocument":null,"paymentDate":"2026-05-11T00:00:00.000Z","status":1,"paymentMethod":null,"bankAccount":null,"referencePayment":null,"createdBy":null,"createdAt":"2026-05-15T19:19:03.371Z","updatedBy":null,"updatedAt":"2026-05-15T19:19:03.371Z"}
+C:\log>

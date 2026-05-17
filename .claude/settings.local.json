@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile *)",
+      "Bash(node -e \"for \\(const s of ['sb000001','sb000002','sb000003','sb000005']\\) { const h = Buffer.from\\(JSON.stringify\\({alg:'none',typ:'JWT'}\\)\\).toString\\('base64url'\\); const p = Buffer.from\\(JSON.stringify\\({sub:s}\\)\\).toString\\('base64url'\\); console.log\\(s + ' -> ' + h + '.' + p + '.'\\); }\")",
+      "Bash(SECURITY_ENABLED=true UTILS_API_URL=http://localhost:3712 java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev > /tmp/fiscal-api.log 2>&1 & *)",
+      "Bash(SECURITY_ENABLED=true UTILS_API_URL=http://localhost:3712 nohup java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(unzip -l /c/workspace-sodimac/APP03022-mrch.backend.somx.fiscal-api/target/fiscal-api-0.0.1-SNAPSHOT.jar)",
+      "Bash(/c/apache-maven-3.9.6/bin/mvn.cmd clean *)",
+      "Bash(unzip -l target/fiscal-api-0.0.1-SNAPSHOT.jar)",
+      "PowerShell(PowerShell -ExecutionPolicy Bypass -File \"C:\\\\workspace-sodimac\\\\docs\\\\jiras\\\\STM-323\\\\STM-323_curl.ps1\" 2>&1 | Out-String)",
+      "PowerShell($p = \\(Get-NetTCPConnection -LocalPort 8082 -ErrorAction SilentlyContinue\\).OwningProcess; if \\($p\\) { Stop-Process -Id $p -Force; Write-Output \"Killed $p\" } else { Write-Output \"no proc on 8082\" })",
+      "PowerShell($conn = Get-NetTCPConnection -LocalPort 8082 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { $conn | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force; Write-Output \"Killed $\\($_.OwningProcess\\)\" } } else { Write-Output \"no listener\" })",
+      "Bash(ps -W)",
+      "PowerShell($conn = Get-NetTCPConnection -LocalPort 8082 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { Stop-Process -Id $conn.OwningProcess -Force; \"Killed $\\($conn.OwningProcess\\)\" })",
+      "Bash(echo \"MVN EXIT=$?\")",
+      "Bash(nohup env SECURITY_ENABLED=true UTILS_API_URL=http://localhost:3712 java -jar target/fiscal-api-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev)",
+      "PowerShell(PowerShell -ExecutionPolicy Bypass -File \"C:\\\\workspace-sodimac\\\\docs\\\\jiras\\\\STM-1474\\\\STM-1474_curl.ps1\" 2>&1 | Out-String)",
+      "Bash(git checkout *)",
+      "Bash(echo \"FIS_PID=$!\")"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "info": {
+    "_postman_id": "f1a2b3c4-d5e6-4a7b-8c9d-0e1f2a3b4c5d",
+    "name": "BFF Finanzas - Pagos y Acuerdos Comerciales",
+    "description": "Pagos fiscales y acuerdos comerciales (rebates) via BFF Finanzas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "URL BFF Finanzas local. Cambiar a URL UAT/PROD segun ambiente."
+    },
+    {
+      "key": "jwt",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnX2RjbzAxOCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdfZGNvMDE4In0.fake",
+      "type": "string",
+      "description": "JWT fake con sub=g_dco018. Firma no validada en dev/local."
+    },
+    {
+      "key": "fiscalPaymentUuid",
+      "value": "",
+      "type": "string",
+      "description": "Se setea automaticamente tras POST /fiscal-payments."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{jwt}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Pagos Fiscales",
+      "description": "Registro y consulta de pagos fiscales (tabla `tenant_finance.fiscal_payments`).",
+      "item": [
+        {
+          "name": "POST /fiscal-payments - Registrar pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json && json.fiscalPaymentUuid) {",
+                  "    pm.collectionVariables.set('fiscalPaymentUuid', json.fiscalPaymentUuid);",
+                  "    console.log('fiscalPaymentUuid guardado:', json.fiscalPaymentUuid);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentNumber\": \"PAY-TEST-001\",\n  \"company\": 1,\n  \"documentNumber\": \"DOC-2026-001\",\n  \"referenceNumber\": \"REF-2026-001\",\n  \"vendorNumber\": 1001,\n  \"amount\": \"15000.00\",\n  \"currency\": \"MXN\",\n  \"documentType\": \"PP\",\n  \"sapDocument\": \"SAP-PAY-TEST-001\",\n  \"paymentDate\": \"2026-05-11\",\n  \"status\": 1,\n  \"paymentMethod\": \"03\",\n  \"bankAccount\": \"012180001234567890\",\n  \"referencePayment\": \"TRF-2026-0001\",\n  \"createdBy\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/fiscal-payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["fiscal-payments"]
+            },
+            "description": "Registra un pago fiscal. Validado contra `CreateFiscalPaymentSchema` (Zod).\n\n**Campos requeridos**: paymentNumber, company, documentNumber, referenceNumber, vendorNumber, amount, documentType, paymentDate.\n\n- `amount`: string con 2 decimales (regex)\n- `currency`: 3 chars, default MXN\n- `documentType`: max 5 chars (ej. PP)\n- `paymentDate`: ISO date\n\n**Respuesta**: 201 con el objeto creado (incluye `fiscalPaymentUuid` autogenerado). El test guarda el UUID en variable de coleccion."
+          }
+        },
+        {
+          "name": "GET /fiscal-payments - Listar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fiscal-payments?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["fiscal-payments"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "1", "disabled": true },
+                { "key": "vendorNumber", "value": "1001", "disabled": true },
+                { "key": "company", "value": "1", "disabled": true },
+                { "key": "documentType", "value": "PP", "disabled": true },
+                { "key": "from", "value": "2026-01-01", "disabled": true },
+                { "key": "to", "value": "2026-12-31", "disabled": true }
+              ]
+            },
+            "description": "Lista pagos. Filtros opcionales (deshabilitados): status, vendorNumber, company, documentType, from, to.\n\n- `limit`: 1-200, default 100\n- 404 si no hay registros que cumplan el filtro"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Acuerdos Comerciales (Rebates) - Consulta",
+      "description": "Consulta de acuerdos comerciales / descuentos (tabla `tenant_finance.rebate`).\n\n> POST de registro omitido por bug en backend (entity con props mal nombradas).",
+      "item": [
+        {
+          "name": "GET /rebates - Listar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rebates?limit=20&page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["rebates"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "page", "value": "0" },
+                { "key": "status", "value": "1", "disabled": true },
+                { "key": "vendorNumber", "value": "1001", "disabled": true },
+                { "key": "documentNumber", "value": "REB-2026-001", "disabled": true },
+                { "key": "source", "value": "1", "disabled": true },
+                { "key": "periodId", "value": "1", "disabled": true },
+                { "key": "from", "value": "2026-01-01", "disabled": true },
+                { "key": "to", "value": "2026-12-31", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de rebates. Filtros opcionales: status, vendorNumber, documentNumber, source, periodId, from, to.\n\n- `limit`: 1-1000, default 20\n- `page`: default 0"
+          }
+        },
+        {
+          "name": "GET /rebates/published - Solo publicados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rebates/published?limit=20&page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["rebates", "published"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "page", "value": "0" }
+              ]
+            },
+            "description": "Lista rebates con `status=1` (publicados)."
+          }
+        },
+        {
+          "name": "GET /rebates/vendor/:vendorNumber - Por proveedor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rebates/vendor/1001",
+              "host": ["{{baseUrl}}"],
+              "path": ["rebates", "vendor", "1001"]
+            },
+            "description": "Lista rebates de un proveedor especifico (status=1 implicito)."
+          }
+        }
+      ]
+    }
+  ]
+}

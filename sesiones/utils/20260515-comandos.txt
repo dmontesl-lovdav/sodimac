@@ -1,0 +1,22 @@
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api && git pull
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api && git pull
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api && git pull
+
+cd C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util && git pull
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas && git pull
+cd C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal && git pull
+
+for %d in (APP03022-mrch.backend.somx.fiscal-api APP03022-mrch.backend.somx.finanzas-api APP03022-mrch.backend.somx.util-api APP03022-mrch.bff.somx.ppsomx.fiscal APP03022-mrch.bff.somx.ppsomx.finanzas APP03022-mrch-bff-somx-ppsomx-util) do @echo === %d === & cd /d "C:\workspace-fbc-github\%d" & git branch --show-current
+
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api C:\local\APP03022-mrch.backend.somx.fiscal-api /MIR /XD .git node_modules dist coverage .vscode target
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.finanzas-api C:\local\APP03022-mrch.backend.somx.finanzas-api /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.backend.somx.util-api C:\local\APP03022-mrch.backend.somx.util-api /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.fiscal C:\local\APP03022-mrch.bff.somx.ppsomx.fiscal /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch.bff.somx.ppsomx.finanzas C:\local\APP03022-mrch.bff.somx.ppsomx.finanzas /MIR /XD .git node_modules dist coverage .vscode
+
+robocopy C:\workspace-fbc-github\APP03022-mrch-bff-somx-ppsomx-util C:\local\APP03022-mrch-bff-somx-ppsomx-util /MIR /XD .git node_modules dist coverage .vscode

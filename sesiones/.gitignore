@@ -1,0 +1,4 @@
+# Los archivos de sesion viva NO deben ir a git
+# Se sincronizan en tiempo real via WinSCP/SFTP entre A8 y la PC Sodimac
+sodimac-live.md
+*.log

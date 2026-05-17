@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,8082 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process \"Docker Desktop\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Service docker -ErrorAction SilentlyContinue)",
+      "PowerShell(Start-Process \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\" -WindowStyle Hidden)",
+      "Bash(docker start *)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -X POST http://localhost:3000/fiscal-payments -H \"Content-Type: application/json\" -H \"x-user-key: g_dco018\" -d '{\"paymentNumber\":\"PAY-TEST-001\",\"company\":1,\"documentNumber\":\"DOC-2026-001\",\"referenceNumber\":\"REF-2026-001\",\"vendorNumber\":1001,\"amount\":\"15000.00\",\"currency\":\"MXN\",\"documentType\":\"PP\",\"sapDocument\":\"SAP-PAY-TEST-001\",\"paymentDate\":\"2026-05-11\",\"status\":1,\"paymentMethod\":\"03\",\"bankAccount\":\"012180001234567890\",\"referencePayment\":\"TRF-2026-0001\",\"createdBy\":1}')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X POST http://localhost:3000/rebates -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnX2RjbzAxOCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdfZGNvMDE4In0.fake' -d '{\"documentNumber\":\"REB-2026-001\",\"referenceNumber\":\"REF-REB-2026-001\",\"sapDocument\":\"SAP-REB-001\",\"vendorNumber\":1001,\"amount\":\"5000.00\",\"source\":1,\"periodId\":1,\"dueDate\":\"2026-06-30\",\"postingDate\":\"2026-05-11\",\"status\":1,\"createdBy\":1}')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnX2RjbzAxOCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdfZGNvMDE4In0.fake' http://localhost:3000/fiscal-payments/c840aa05-d46c-4392-89df-309272f89dac)",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJnX2RjbzAxOCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdfZGNvMDE4In0.fake' 'http://localhost:3000/fiscal-payments?limit=5')"
+    ]
+  }
+}

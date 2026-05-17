@@ -1,0 +1,402 @@
+Run set -eo pipefail
+  set -eo pipefail
+  
+  BUILD_LOG=build.log
+  BUILD_SUCCESS="true"
+  START_TIME=$(date +%s)
+  
+  echo "## 🔨 Build Summary" >> $GITHUB_STEP_SUMMARY
+  echo "" >> $GITHUB_STEP_SUMMARY
+  echo "- Runtime detected: **$RUNTIME**" >> $GITHUB_STEP_SUMMARY
+  echo "- Runner: **Linux**" >> $GITHUB_STEP_SUMMARY
+  echo "" >> $GITHUB_STEP_SUMMARY
+  
+  case "$RUNTIME" in
+    node)
+      echo "### 🟢 Node.js Build" >> $GITHUB_STEP_SUMMARY
+  
+      if [ -f pnpm-lock.yaml ]; then
+        npm install -g pnpm 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        pnpm install 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+          pnpm run build 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      elif [ -f yarn.lock ]; then
+        corepack enable 2>/dev/null || true
+        yarn install 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+          yarn build 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      else
+        npm install --legacy-peer-deps 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+          npm run build 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      fi
+      ;;
+  
+    python)
+      echo "### 🐍 Python Build" >> $GITHUB_STEP_SUMMARY
+  
+      python -m venv .venv 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      source .venv/bin/activate
+      python -m pip install --upgrade pip setuptools wheel 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+  
+      sudo apt-get update
+      sudo apt-get install -y build-essential python3-dev libpq-dev libffi-dev libssl-dev pkg-config 2>&1 | tee -a $BUILD_LOG || true
+  
+      if [ -f requirements.txt ]; then
+        pip install --prefer-binary -r requirements.txt 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      elif [ -f pyproject.toml ]; then
+        if grep -qi '\[tool\.poetry\]' pyproject.toml; then
+          pip install poetry 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+          poetry install 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        else
+          pip install . 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      elif [ -f setup.py ]; then
+        pip install -e . 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      elif [ -f Pipfile ]; then
+        pip install pipenv 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        pipenv install --dev 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      else
+        echo "No Python dependency file found — skipping dependency install" | tee -a $BUILD_LOG
+      fi
+      ;;
+  
+    java)
+      echo "### ☕ Java Build" >> $GITHUB_STEP_SUMMARY
+  
+      NEXUS_ARGS=""
+      GRADLE_NEXUS_ARGS=""
+      HAS_NEXUS="false"
+  
+      if [ -n "$NEXUS_USER" ] && [ -n "$NEXUS_PASS" ]; then
+        HAS_NEXUS="true"
+        NEXUS_ARGS="-DNEXUS_USER=$NEXUS_USER -DNEXUS_PASS=$NEXUS_PASS"
+        GRADLE_NEXUS_ARGS="-PNEXUS_USER=$NEXUS_USER -PNEXUS_PASS=$NEXUS_PASS"
+        echo "- 🔐 Nexus credentials: **Configured**" >> $GITHUB_STEP_SUMMARY
+      else
+        echo "- 🔐 Nexus credentials: **Not configured**" >> $GITHUB_STEP_SUMMARY
+      fi
+  
+      SETTINGS_ARG=""
+      SETTINGS_FILE_USED=""
+      if [ -n "$JAVA_SETTINGS_FILE" ] && [ -f "$JAVA_SETTINGS_FILE" ]; then
+        SETTINGS_ARG="-s $JAVA_SETTINGS_FILE"
+        SETTINGS_FILE_USED="$JAVA_SETTINGS_FILE"
+      else
+        for sf in ".m2/settings.xml" "settings.xml" ".mvn/settings.xml"; do
+          if [ -f "$sf" ]; then
+            SETTINGS_ARG="-s $sf"
+            SETTINGS_FILE_USED="$sf"
+            break
+          fi
+        done
+      fi
+  
+      if [ -n "$SETTINGS_FILE_USED" ] && [ "$HAS_NEXUS" = "false" ]; then
+        USES_NEXUS_VARS=$(grep -E '\$\{NEXUS_USER\}|\$\{NEXUS_PASS\}' "$SETTINGS_FILE_USED" 2>/dev/null | wc -l | tr -d ' ')
+        HAS_GLOBAL_MIRROR=$(grep -E '<mirrorOf>\*</mirrorOf>|<mirrorOf>external:\*</mirrorOf>' "$SETTINGS_FILE_USED" 2>/dev/null | wc -l | tr -d ' ')
+  
+        USES_NEXUS_VARS=${USES_NEXUS_VARS:-0}
+        HAS_GLOBAL_MIRROR=${HAS_GLOBAL_MIRROR:-0}
+  
+        if [ "$USES_NEXUS_VARS" -gt 0 ] && [ "$HAS_GLOBAL_MIRROR" -gt 0 ]; then
+          echo "settings.xml requires Nexus credentials, but none were provided." | tee -a $BUILD_LOG
+          BUILD_SUCCESS="false"
+        fi
+      fi
+  
+      if [ -n "$JAVA_COMMAND_ADDITIONAL" ]; then
+        echo "Running additional Java command: $JAVA_COMMAND_ADDITIONAL" | tee -a $BUILD_LOG
+        eval "$JAVA_COMMAND_ADDITIONAL" 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      fi
+  
+      if [ -f pom.xml ]; then
+        echo "- Build tool: **Maven**" >> $GITHUB_STEP_SUMMARY
+  
+        if [ -n "$JAVA_COMMAND_BUILD" ]; then
+          BUILD_CMD="$JAVA_COMMAND_BUILD"
+          if echo "$BUILD_CMD" | grep -q "\./mvnw" && [ ! -f "./mvnw" ]; then
+            BUILD_CMD=$(echo "$BUILD_CMD" | sed 's|\./mvnw|mvn|g')
+          fi
+  
+          if [ "$HAS_NEXUS" = "true" ]; then
+            BUILD_CMD="$BUILD_CMD $NEXUS_ARGS"
+          else
+            BUILD_CMD=$(echo "$BUILD_CMD" | sed 's/-DNEXUS_USER=\$NEXUS_USER//g' | sed 's/-DNEXUS_PASS=\$NEXUS_PASS//g' | sed 's/-DNEXUS_USER=[^ ]*//g' | sed 's/-DNEXUS_PASS=[^ ]*//g')
+          fi
+  
+          echo "Running: $BUILD_CMD" | tee -a $BUILD_LOG
+          eval "$BUILD_CMD" 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        elif [ -f "./mvnw" ] && [ -f ".mvn/wrapper/maven-wrapper.properties" ]; then
+          chmod +x ./mvnw
+          ./mvnw -v 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+          ./mvnw -U $SETTINGS_ARG --batch-mode -Dmaven.repo.local=.m2/repository package -Dmaven.test.skip=true $NEXUS_ARGS 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        else
+          mvn -v 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+          mvn -B $SETTINGS_ARG -Dmaven.repo.local=.m2/repository clean package -DskipTests $NEXUS_ARGS 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      else
+        echo "- Build tool: **Gradle**" >> $GITHUB_STEP_SUMMARY
+  
+        if [ -n "$JAVA_COMMAND_BUILD" ]; then
+          BUILD_CMD="$JAVA_COMMAND_BUILD"
+          if echo "$BUILD_CMD" | grep -q "\./gradlew" && [ ! -f "./gradlew" ]; then
+            BUILD_CMD=$(echo "$BUILD_CMD" | sed 's|\./gradlew|gradle|g')
+          fi
+  
+          if [ "$HAS_NEXUS" = "true" ]; then
+            BUILD_CMD="$BUILD_CMD $GRADLE_NEXUS_ARGS"
+          else
+            BUILD_CMD=$(echo "$BUILD_CMD" | sed 's/-PNEXUS_USER=\$NEXUS_USER//g' | sed 's/-PNEXUS_PASS=\$NEXUS_PASS//g' | sed 's/-PNEXUS_USER=[^ ]*//g' | sed 's/-PNEXUS_PASS=[^ ]*//g')
+          fi
+  
+          echo "Running: $BUILD_CMD" | tee -a $BUILD_LOG
+          eval "$BUILD_CMD" 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        elif [ -f "./gradlew" ]; then
+          chmod +x ./gradlew
+          ./gradlew build -x test $GRADLE_NEXUS_ARGS 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        else
+          gradle build -x test $GRADLE_NEXUS_ARGS 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+        fi
+      fi
+  
+      mkdir -p target
+  
+      JAR=$(find . -path "./target/*.jar" -o -path "./build/libs/*.jar" 2>/dev/null | grep -v sources | grep -v javadoc | head -n 1)
+  
+      if [ -z "$JAR" ]; then
+        echo "❌ No jar generated" | tee -a $BUILD_LOG
+        BUILD_SUCCESS="false"
+      else
+        echo "Jar found at: $JAR" | tee -a $BUILD_LOG
+        JAR_NAME=$(basename "$JAR")
+  
+        DOCKERFILE_JAR=""
+        DOCKERFILE_JAR_DIR=""
+        if [ -f Dockerfile ]; then
+          COPY_LINE=$(grep -E 'COPY\s+.*\.jar' Dockerfile 2>/dev/null | grep -v '\-\-from=' | head -1 || true)
+          [ -z "$COPY_LINE" ] && COPY_LINE=$(grep -E 'ADD\s+.*\.jar' Dockerfile 2>/dev/null | grep -v '\-\-from=' | head -1 || true)
+          if [ -n "$COPY_LINE" ]; then
+            DOCKERFILE_JAR=$(echo "$COPY_LINE" | sed 's/^[[:space:]]*\(COPY\|ADD\)[[:space:]]*//' | sed 's/--[^[:space:]]*[[:space:]]*//g' | awk '{print $1}')
+          fi
+        fi
+  
+        if [ -n "$DOCKERFILE_JAR" ]; then
+          DOCKERFILE_JAR_DIR=$(dirname "$DOCKERFILE_JAR")
+          [ "$DOCKERFILE_JAR_DIR" != "." ] && mkdir -p "$DOCKERFILE_JAR_DIR"
+  
+          if echo "$DOCKERFILE_JAR" | grep -q '\*'; then
+            PATTERN_SUFFIX=$(echo "$DOCKERFILE_JAR" | sed 's/.*\*//')
+            if echo "$JAR_NAME" | grep -q "${PATTERN_SUFFIX}$"; then
+              cp "$JAR" "$DOCKERFILE_JAR_DIR/$JAR_NAME"
+            else
+              NEW_JAR_NAME="${JAR_NAME%.jar}${PATTERN_SUFFIX}"
+              cp "$JAR" "$DOCKERFILE_JAR_DIR/$NEW_JAR_NAME"
+            fi
+          else
+            cp "$JAR" "$DOCKERFILE_JAR"
+          fi
+        else
+          if [ "$JAR" != "./target/app.jar" ] && [ "$JAR" != "target/app.jar" ]; then
+            cp "$JAR" target/app.jar
+          fi
+        fi
+      fi
+      ;;
+  
+    go)
+      echo "### 🔵 Go Build" >> $GITHUB_STEP_SUMMARY
+      go version 2>&1 | tee -a $BUILD_LOG
+      go mod tidy 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      go build -o app 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      ;;
+  
+    dotnet)
+      echo "### 🟣 .NET Build" >> $GITHUB_STEP_SUMMARY
+      dotnet restore 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      dotnet build --no-restore 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      ;;
+  
+    c)
+      echo "### 🟤 C/C++ Build" >> $GITHUB_STEP_SUMMARY
+      sudo apt-get update
+      sudo apt-get install -y build-essential make gcc g++
+      make 2>&1 | tee -a $BUILD_LOG || BUILD_SUCCESS="false"
+      ;;
+  
+    *)
+      echo "No supported runtime detected" | tee -a $BUILD_LOG
+      BUILD_SUCCESS="false"
+      ;;
+  esac
+  
+  END_TIME=$(date +%s)
+  DURATION=$((END_TIME - START_TIME))
+  
+  echo "" >> $GITHUB_STEP_SUMMARY
+  echo "- ⏱ Build duration: ${DURATION}s" >> $GITHUB_STEP_SUMMARY
+  
+  if [ "$BUILD_SUCCESS" != "true" ]; then
+    echo "" >> $GITHUB_STEP_SUMMARY
+    echo "## ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+    echo "" >> $GITHUB_STEP_SUMMARY
+    echo "### 🔎 Last 40 log lines" >> $GITHUB_STEP_SUMMARY
+    echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+    tail -n 40 $BUILD_LOG >> $GITHUB_STEP_SUMMARY || true
+    echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+    exit 1
+  else
+    echo "" >> $GITHUB_STEP_SUMMARY
+    echo "## ✅ Build Successful" >> $GITHUB_STEP_SUMMARY
+  fi
+  shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+  env:
+    IMAGE_NAME: pr-scan-image
+    TAR_FILE: export.tar
+    ARTIFACT_NAME: image-tar
+    DOCKER_BUILD_ARGS: 
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    NEXUS_USER: 
+    NEXUS_PASS: 
+    JAVA_COMMAND_BUILD: 
+    JAVA_COMMAND_TEST: 
+    JAVA_COMMAND_ADDITIONAL: 
+    JAVA_SETTINGS_FILE: 
+    PYTHON_VERSION_INPUT: 
+    RUNTIME: java
+    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+    JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+Error: Process completed with exit code 1.
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+# Ver qué hay en uat que no está en develop
+git fetch origin
+git diff origin/develop..origin/uat --name-only
+Si aparecen archivos como settings.xml, .mvn/settings.xml, mvnw → hay que bajarlos a develop:
+
+
+git checkout origin/uat -- settings.xml
+# o
+git checkout origin/uat -- .mvn/settings.xml
+git add .
+git commit -m "chore: sync settings.xml from uat"
+git push origin develop
+
+
+PS C:\Users\g_dco018> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> # Ver qué hay en uat que no está en develop
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git fetch origin
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git diff origin/develop..origin/uat --name-only
+migration/STM-410_add_accounting_date.sql
+pom.xml
+src/main/java/com/sodimac/fiscal/api/controller/InvoiceController.java
+src/main/java/com/sodimac/fiscal/api/controller/PaymentRegistrationController.java
+src/main/java/com/sodimac/fiscal/api/model/dto/request/PaymentRegistrationRequest.java
+src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustom.java
+src/main/java/com/sodimac/fiscal/api/repository/PaymentsRepositoryCustomImpl.java
+src/main/java/com/sodimac/fiscal/api/repository/specification/InvoiceSpecification.java
+src/main/java/com/sodimac/fiscal/api/service/InvoiceService.java
+src/main/java/com/sodimac/fiscal/api/service/PaymentQueryService.java
+src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+src/main/java/com/sodimac/fiscal/api/service/impl/PaymentQueryServiceImpl.java
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> Si aparecen archivos como settings.xml, .mvn/settings.xml, mvnw → hay que bajarlos a develop:
+Set-Item : No se encuentra ningún parámetro de posición que acepte el argumento 'como'.
+En línea: 1 Carácter: 1
++ Si aparecen archivos como settings.xml, .mvn/settings.xml, mvnw → hay ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Set-Item], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.SetItemCommand
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git checkout origin/uat -- settings.xml
+error: pathspec 'settings.xml' did not match any file(s) known to git
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> # o
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git checkout origin/uat -- .mvn/settings.xml
+error: pathspec '.mvn/settings.xml' did not match any file(s) known to git
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git add .
+error: short read while indexing nul
+error: nul: failed to insert into database
+error: unable to index file 'nul'
+fatal: adding files failed
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git commit -m "chore: sync settings.xml from uat"
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        nul
+        postman/Fiscal-API_Facturas_NC.postman_collection.json
+        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
+        postman/STM-829_Payments_Screen.postman_collection.json
+        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+
+# Borrar el archivo nul (causa el error en git add)
+Remove-Item -Force "nul"
+
+# Verificar que desapareció
+git status
+
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> Remove-Item -Force "nul"
+Remove-Item : No se encuentra la ruta de acceso 'C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api\nul' porque no existe.
+En línea: 1 Carácter: 1
++ Remove-Item -Force "nul"
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\workspace-fb....fiscal-api\nul:String) [Remove-Item], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.RemoveItemCommand
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> # Verificar que desapareció
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        nul
+        postman/Fiscal-API_Facturas_NC.postman_collection.json
+        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
+        postman/STM-829_Payments_Screen.postman_collection.json
+        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
+
+nothing added to commit but untracked files present (use "git add" to track)
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+Add-Content .gitignore "`nnul"
+
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   .gitignore
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        postman/Fiscal-API_Facturas_NC.postman_collection.json
+        postman/Fiscal-BFF-DEV_Facturas_NC.postman_collection.json
+        postman/STM-829_Payments_Screen.postman_collection.json
+        postman/STM-829_Payments_Screen_BFF-DEV.postman_collection.json
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+git add .gitignore
+git commit -m "chore: add nul to gitignore"
+git push origin develop
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/pull/29

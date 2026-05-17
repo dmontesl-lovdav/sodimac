@@ -1,0 +1,22 @@
+SELECT 'invoice→issuer' AS rel, COUNT(*) AS huerfanos FROM tenant_fiscal.invoice i LEFT JOIN tenant_fiscal.issuer x ON i.issuer_uuid=x.issuer_uuid WHERE i.issuer_uuid IS NOT NULL AND x.issuer_uuid IS NULL
+UNION ALL SELECT 'invoice→receiver', COUNT(*) FROM tenant_fiscal.invoice i LEFT JOIN tenant_fiscal.receiver x ON i.receiver_uuid=x.receiver_uuid WHERE i.receiver_uuid IS NOT NULL AND x.receiver_uuid IS NULL
+UNION ALL SELECT 'tax→invoice', COUNT(*) FROM tenant_fiscal.tax t LEFT JOIN tenant_fiscal.invoice i ON t.invoice_uuid=i.invoice_uuid WHERE t.invoice_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'tax_detail→tax', COUNT(*) FROM tenant_fiscal.tax_detail td LEFT JOIN tenant_fiscal.tax t ON td.tax_uuid=t.tax_uuid WHERE td.tax_uuid IS NOT NULL AND t.tax_uuid IS NULL
+UNION ALL SELECT 'tax_transfer→tax', COUNT(*) FROM tenant_fiscal.tax_transfer tt LEFT JOIN tenant_fiscal.tax t ON tt.tax_uuid=t.tax_uuid WHERE tt.tax_uuid IS NOT NULL AND t.tax_uuid IS NULL
+UNION ALL SELECT 'tax_withholding→tax', COUNT(*) FROM tenant_fiscal.tax_withholding tw LEFT JOIN tenant_fiscal.tax t ON tw.tax_uuid=t.tax_uuid WHERE tw.tax_uuid IS NOT NULL AND t.tax_uuid IS NULL
+UNION ALL SELECT 'related_cfdi→invoice', COUNT(*) FROM tenant_fiscal.related_cfdi rc LEFT JOIN tenant_fiscal.invoice i ON rc.invoice_uuid=i.invoice_uuid WHERE rc.invoice_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'related_cfdi→related_invoice', COUNT(*) FROM tenant_fiscal.related_cfdi rc LEFT JOIN tenant_fiscal.invoice i ON rc.related_invoice_uuid=i.invoice_uuid WHERE rc.related_invoice_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'addendum→invoice', COUNT(*) FROM tenant_fiscal.addendum a LEFT JOIN tenant_fiscal.invoice i ON a.invoice_uuid=i.invoice_uuid WHERE a.invoice_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'addendum→payments', COUNT(*) FROM tenant_fiscal.addendum a LEFT JOIN tenant_fiscal.payments p ON a.payments_uuid=p.payments_uuid WHERE a.payments_uuid IS NOT NULL AND p.payments_uuid IS NULL
+UNION ALL SELECT 'invoice_status_history→invoice', COUNT(*) FROM tenant_fiscal.invoice_status_history ish LEFT JOIN tenant_fiscal.invoice i ON ish.invoice_uuid=i.invoice_uuid WHERE ish.invoice_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'payments→issuer', COUNT(*) FROM tenant_fiscal.payments p LEFT JOIN tenant_fiscal.issuer x ON p.issuer_uuid=x.issuer_uuid WHERE p.issuer_uuid IS NOT NULL AND x.issuer_uuid IS NULL
+UNION ALL SELECT 'payments→receiver', COUNT(*) FROM tenant_fiscal.payments p LEFT JOIN tenant_fiscal.receiver x ON p.receiver_uuid=x.receiver_uuid WHERE p.receiver_uuid IS NOT NULL AND x.receiver_uuid IS NULL
+UNION ALL SELECT 'payment→payments', COUNT(*) FROM tenant_fiscal.payment p LEFT JOIN tenant_fiscal.payments ps ON p.payments_uuid=ps.payments_uuid WHERE p.payments_uuid IS NOT NULL AND ps.payments_uuid IS NULL
+UNION ALL SELECT 'totals→payments', COUNT(*) FROM tenant_fiscal.totals t LEFT JOIN tenant_fiscal.payments p ON t.payments_uuid=p.payments_uuid WHERE t.payments_uuid IS NOT NULL AND p.payments_uuid IS NULL
+UNION ALL SELECT 'related_documents→payment', COUNT(*) FROM tenant_fiscal.related_documents rd LEFT JOIN tenant_fiscal.payment p ON rd.payment_uuid=p.payment_uuid WHERE rd.payment_uuid IS NOT NULL AND p.payment_uuid IS NULL
+UNION ALL SELECT 'related_documents→invoice', COUNT(*) FROM tenant_fiscal.related_documents rd LEFT JOIN tenant_fiscal.invoice i ON rd.document_uuid=i.invoice_uuid WHERE rd.document_uuid IS NOT NULL AND i.invoice_uuid IS NULL
+UNION ALL SELECT 'equivalence_dr→related_documents', COUNT(*) FROM tenant_fiscal.equivalence_dr e LEFT JOIN tenant_fiscal.related_documents rd ON e.related_document_uuid=rd.related_document_uuid WHERE e.related_document_uuid IS NOT NULL AND rd.related_document_uuid IS NULL
+UNION ALL SELECT 'authorized_receiver→receiver', COUNT(*) FROM tenant_fiscal.authorized_receiver_catalog a LEFT JOIN tenant_fiscal.receiver r ON a.receiver_uuid=r.receiver_uuid WHERE a.receiver_uuid IS NOT NULL AND r.receiver_uuid IS NULL
+UNION ALL SELECT 'version_catalog→pac_catalog', COUNT(*) FROM tenant_fiscal.version_catalog vc LEFT JOIN tenant_fiscal.pac_catalog pc ON vc.pac_id=pc.pac_id WHERE vc.pac_id IS NOT NULL AND pc.pac_id IS NULL
+UNION ALL SELECT 'payment_file_registry→payments', COUNT(*) FROM tenant_fiscal.payment_file_registry pfr LEFT JOIN tenant_fiscal.payments p ON pfr.payments_uuid=p.payments_uuid WHERE pfr.payments_uuid IS NOT NULL AND p.payments_uuid IS NULL
+ORDER BY 2 DESC;

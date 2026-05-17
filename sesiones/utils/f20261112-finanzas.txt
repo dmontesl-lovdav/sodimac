@@ -1,0 +1,57 @@
+Hola Bonelli,
+
+Subí los ajustes en develop para unos jiras que me asignó Ivan (STM-1403 y sub-jiras de seguridad por atributo de usuario). Para que el flujo funcione en UAT/PROD, hay que agregar estas variables de ambiente:
+
+Proyecto: APP03022-mrch.bff.somx.ppsomx.finanzas
+
+UTIL_API_URL → valor local mío: http://localhost:3712
+Proyecto: APP03022-mrch.bff.somx.ppsomx.fiscal
+
+UTIL_API_URL → valor local mío: http://localhost:3712
+Proyecto: APP03022-mrch.backend.somx.fiscal-api
+
+SECURITY_ENABLED → valor local mío: true
+UTILS_API_ENABLED → valor local mío: true
+UTILS_API_URL → valor local mío: http://localhost:3712
+UTILS_API_TIMEOUT → valor local mío: 5000
+
+
+Para pase a UAT desde develop en cada repo Sodimac (URL de comparar/crear PR):
+
+bff.finanzas (cambio STM-1403 que acabo de subir — ad66b55):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.finanzas/compare/uat...develop
+bff.fiscal (STM-1403 ya mergeado a develop antes):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.bff.somx.ppsomx.fiscal/compare/uat...develop
+fiscal-api (PR #31 STM-1403/STM-323/STM-1474):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/compare/uat...develop
+finanzas-api (STM-1403 base + STM-321/STM-1461/STM-1524, commit 128fa2a):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.finanzas-api/compare/uat...develop
+util-api (STM-1525):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.util-api/compare/uat...develop
+bff-util (STM-1525):
+
+
+https://github.com/falabella-stores-and-merchandise/APP03022-mrch-bff-somx-ppsomx-util/compare/uat...develop
+
+
+ docs/jiras/STM-1421/STM-1421.xml
+ docs/jiras/STM-1460/STM-1460.xml
+ docs/jiras/STM-1526/STM-1526.xml
+ docs/jiras/STM-1527/STM-1527.xml
+ docs/jiras/STM-1528/STM-1528.xml
+ docs/jiras/STM-314/STM-314.xml
+ docs/jiras/STM-322/STM-322.xml
+
+
+ 
+ 

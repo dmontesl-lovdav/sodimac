@@ -1,0 +1,665 @@
+UAT 
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+ 
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5432 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+
+
+
+Microsoft Windows [Versión 10.0.26100.7840]
+(c) Microsoft Corporation. Todos los derechos reservados.
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5434 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4033: 'not authorized'].
+
+C:\Users\g_dco018>
+
+========================================================================
+DIAGNOSTICO - Error 4033 "not authorized" en IAP tunnel UAT
+========================================================================
+
+Causa probable: cuenta gcloud no tiene rol "IAP-Secured Tunnel User"
+(roles/iap.tunnelResourceAccessor) en proyecto sod-mx-mrch-aclaraciones-uat.
+Dev funciona porque ahi si lo tenes asignado.
+
+------------------------------------------------------------------------
+PASO 1 - Ver cuenta activa y proyecto
+------------------------------------------------------------------------
+gcloud auth list
+gcloud config list
+
+------------------------------------------------------------------------
+PASO 2 - Confirmar bastion existe en UAT (nombre/zona correctos)
+------------------------------------------------------------------------
+gcloud compute instances list --project=sod-mx-mrch-aclaraciones-uat --filter="name~bastion"
+
+------------------------------------------------------------------------
+PASO 3 - Ver permisos IAM tuyos en UAT (requiere permiso listar IAM)
+------------------------------------------------------------------------
+gcloud projects get-iam-policy sod-mx-mrch-aclaraciones-uat --flatten="bindings[].members" --filter="bindings.members:g_dco018" --format="value(bindings.role)"
+
+------------------------------------------------------------------------
+PASO 4 - Comparar contra DEV (ver que roles SI tenes alli)
+------------------------------------------------------------------------
+gcloud projects get-iam-policy sod-mx-mrch-aclaraciones-dev --flatten="bindings[].members" --filter="bindings.members:g_dco018" --format="value(bindings.role)"
+
+------------------------------------------------------------------------
+PASO 5 - Probar tunel con verbose (mas detalle del 4033)
+------------------------------------------------------------------------
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5432 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat --verbosity=debug
+
+========================================================================
+DIAGNOSTICO FINAL
+========================================================================
+
+Causa: falta rol "roles/iap.tunnelResourceAccessor" en proyecto UAT.
+SSH web funciona porque usa path de consola (identidad distinta).
+gcloud CLI IAP tunnel requiere el rol explicito en el proyecto.
+
+DEV tiene:
+  - roles/iap.tunnelResourceAccessor  <-- clave
+  - roles/compute.osLogin
+
+UAT NO tiene ninguno de los dos.
+
+========================================================================
+MENSAJE A ENVIAR AL ADMIN GCP SODIMAC
+========================================================================
+
+Asunto: Acceso IAP a bastion UAT (sod-mx-mrch-aclaraciones-uat)
+
+Hola,
+
+Necesito acceso por IAP tunnel al bastion de UAT para conectarme a
+Cloud SQL (b2b-portal-db) desde mi equipo, mismo flujo que ya uso en DEV.
+
+Detalles:
+
+  Proyecto   : sod-mx-mrch-aclaraciones-uat
+  Usuario    : g_dco018@sodimac.com.mx
+  Recurso    : aclaraciones-bastion (us-east4-b)
+
+Roles requeridos (identicos a los que ya tengo en DEV):
+  - roles/iap.tunnelResourceAccessor
+  - roles/compute.osLogin
+
+Error actual al intentar abrir el tunel:
+
+  gcloud compute start-iap-tunnel aclaraciones-bastion 5434 \
+    --local-host-port=localhost:5434 \
+    --zone=us-east4-b \
+    --project=sod-mx-mrch-aclaraciones-uat
+
+  ERROR: (gcloud.compute.start-iap-tunnel) While checking if a
+  connection can be made: Error while connecting [4033: 'not authorized'].
+
+Verifique con get-iam-policy: en DEV ambos roles estan asignados a mi
+usuario, en UAT no aparecen. El bastion existe y esta RUNNING, no es
+problema de infra.
+
+Gracias.
+
+========================================================================
+Pegar salida de cada paso debajo:
+========================================================================
+
+Microsoft Windows [Versión 10.0.26100.7840]
+(c) Microsoft Corporation. Todos los derechos reservados.
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5434 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4033: 'not authorized'].
+
+C:\Users\g_dco018>gcloud auth list
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+     Credentialed Accounts
+ACTIVE  ACCOUNT
+*       g_dco018@sodimac.com.mx
+
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+
+
+Updates are available for some Google Cloud CLI components.  To install them,
+please run:
+  $ gcloud components update
+
+
+
+To take a quick anonymous survey, run:
+  $ gcloud survey
+
+
+C:\Users\g_dco018>gcloud config list
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+[accessibility]
+screen_reader = False
+[core]
+account = g_dco018@sodimac.com.mx
+disable_usage_reporting = True
+
+Your active configuration is: [aclaraciones]
+
+C:\Users\g_dco018>gcloud compute instances list --project=sod-mx-mrch-aclaraciones-uat --filter="name~bastion"
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+NAME                  ZONE        MACHINE_TYPE  PREEMPTIBLE  INTERNAL_IP   EXTERNAL_IP  STATUS
+aclaraciones-bastion  us-east4-b  f1-micro      true         192.168.20.2               RUNNING
+
+C:\Users\g_dco018>gcloud projects get-iam-policy sod-mx-mrch-aclaraciones-uat --flatten="bindings[].members" --filter="bindings.members:g_dco018" --format="value(bindings.role)"
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+roles/apigateway.admin
+roles/artifactregistry.admin
+roles/cloudfunctions.developer
+roles/cloudsql.admin
+roles/cloudsql.client
+roles/cloudsql.viewer
+roles/datastore.importExportAdmin
+roles/datastore.indexAdmin
+roles/datastore.user
+roles/errorreporting.viewer
+roles/iam.roleViewer
+roles/iam.serviceAccountUser
+roles/logging.viewer
+roles/monitoring.admin
+roles/pubsub.admin
+roles/run.admin
+roles/run.invoker
+roles/run.viewer
+roles/storage.admin
+roles/storage.objectCreator
+roles/storage.objectViewer
+roles/viewer
+
+C:\Users\g_dco018>gcloud projects get-iam-policy sod-mx-mrch-aclaraciones-dev --flatten="bindings[].members" --filter="bindings.members:g_dco018" --format="value(bindings.role)"
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+roles/apigateway.admin
+roles/artifactregistry.admin
+roles/cloudfunctions.developer
+roles/cloudsql.admin
+roles/cloudsql.client
+roles/cloudsql.viewer
+roles/compute.osLogin
+roles/datastore.importExportAdmin
+roles/datastore.indexAdmin
+roles/datastore.user
+roles/errorreporting.viewer
+roles/iam.roleViewer
+roles/iam.serviceAccountUser
+roles/iap.tunnelResourceAccessor
+roles/logging.viewer
+roles/monitoring.admin
+roles/pubsub.admin
+roles/run.admin
+roles/run.invoker
+roles/run.viewer
+roles/storage.admin
+roles/storage.objectCreator
+roles/storage.objectViewer
+roles/viewer
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5432 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat --verbosity=debug
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+DEBUG: Running [gcloud.compute.start-iap-tunnel] with arguments: [--local-host-port: "<googlecloudsdk.calliope.arg_parsers.HostPort object at 0x0000021B5BA20850>", --project: "sod-mx-mrch-aclaraciones-uat", --verbosity: "debug", --zone: "us-east4-b", INSTANCE_NAME: "aclaraciones-bastion", INSTANCE_PORT: "5432"]
+DEBUG: On GCE from disk cache: False
+DEBUG: (gcloud.compute.start-iap-tunnel) Local port [5432] is not available.
+Traceback (most recent call last):
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\googlecloudsdk\calliope\cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\googlecloudsdk\calliope\backend.py", line 967, in Run
+    resources = command_instance.Run(args)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\surface\compute\start_iap_tunnel.py", line 142, in Run
+    iap_tunnel_helper = self._CreateIapTunnelHelper(args, target)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\surface\compute\start_iap_tunnel.py", line 187, in _CreateIapTunnelHelper
+    local_host, local_port = self._GetLocalHostPort(args)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\surface\compute\start_iap_tunnel.py", line 268, in _GetLocalHostPort
+    local_port = iap_tunnel.DetermineLocalPort(port_arg=port_arg)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\lib\googlecloudsdk\command_lib\compute\iap_tunnel.py", line 294, in DetermineLocalPort
+    raise LocalPortUnavailableError('Local port [%d] is not available.' %
+googlecloudsdk.command_lib.compute.iap_tunnel.LocalPortUnavailableError: Local port [5432] is not available.
+ERROR: (gcloud.compute.start-iap-tunnel) Local port [5432] is not available.
+
+C:\Users\g_dco018>
+
+
+
+------------------- 20260423
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5434 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4003: 'failed to connect to backend']. (Failed to connect to port 5434)
+
+========================================================================
+DIAGNOSTICO 2026-04-23
+========================================================================
+
+Error 4003 = IAP ya autorizado (roles asignados OK).
+Problema: bastion no escucha en 5434. Cloud SQL proxy en bastion usa 5432.
+
+Error anterior "Local port [5432] is not available" = 5432 ocupado localmente (Docker local).
+
+SOLUCION: usar INSTANCE_PORT=5432 (donde corre el proxy en bastion)
+          y local-host-port en un puerto libre (5435).
+
+------------------------------------------------------------------------
+PASO - Abrir tunel correcto
+------------------------------------------------------------------------
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5435 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+
+SALIDA:
+<pega aqui>
+
+------------------------------------------------------------------------
+PASO - Si el tunel queda abierto, conectar con psql (otra ventana CMD)
+------------------------------------------------------------------------
+
+psql -h localhost -p 5435 -U wwwb2bportal -d b2b_portal
+
+SALIDA:
+<pega aqui>
+
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5434
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5434
+2026/04/23 16:36:52 Authorizing with Application Default Credentials
+2026/04/23 16:36:53 [sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db] Listening on [::]:5434
+2026/04/23 16:36:53 The proxy has started successfully and is ready for new connections!
+
+En mi PC 
+gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5434 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+psql -h localhost -p 5436 -U wwwb2bportal -d b2b_portal
+
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4003: 'failed to connect to backend']. (Failed to connect to port 5434)
+
+C:\Users\g_dco018>
+
+
+DEV
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-dev:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5434
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 5434 --local-host-port=localhost:5434 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-dev
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+ 
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5432 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+ 
+
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+
+psql -h localhost -p 5436 -U wwwb2bportal -d b2b_portal
+
+
+
+----------- 2026-04-24
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+2026/04/24 22:36:24 Authorizing with Application Default Credentials
+2026/04/24 22:36:24 The proxy has encountered a terminal error: unable to start: [sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db] Unable to mount socket: listen tcp 0.0.0.0:5432: bind: address already in use
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ 
+
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4003: 'failed to connect to backend']. (Failed to connect to port 5432)
+
+
+# Ver qué proceso ocupa 5432 y en qué interfaz
+sudo ss -tlnp | grep 5432
+Si muestra 127.0.0.1:5432 → proxy ligado a loopback, IAP no llega. Si muestra 0.0.0.0:5432 → proceso zombie.
+
+
+# Matar el proceso
+sudo kill $(sudo lsof -ti :5432)
+
+# Reiniciar proxy en todas las interfaces
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+Luego en PC el tunnel igual que antes:
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ sudo ss -tlnp | grep 5432
+LISTEN 0      200        127.0.0.1:5432      0.0.0.0:*    users:(("postgres",pid=381,fd=7))        
+LISTEN 0      200            [::1]:5432         [::]:*    users:(("postgres",pid=381,fd=6))        
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ 
+
+
+
+Bastion:
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5433
+PC (si funciona 5433):
+
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 5433 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5433
+2026/04/24 22:41:25 Authorizing with Application Default Credentials
+2026/04/24 22:41:25 [sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db] Listening on [::]:5433
+2026/04/24 22:41:25 The proxy has started successfully and is ready for new connections!
+
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5433 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4003: 'failed to connect to backend']. (Failed to connect to port 5433)
+
+
+gcloud compute ssh aclaraciones-bastion --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat --tunnel-through-iap -- -L 5436:localhost:5433 -N
+ 
+ OpenSSH_for_Windows_9.5p2, LibreSSL 3.8.2
+
+ gcloud config set ssh.binary "C:\Windows\System32\OpenSSH\ssh.exe"
+
+
+
+C:\Users\g_dco018>gcloud config set ssh.binary "C:\Windows\System32\OpenSSH\ssh.exe"
+no se encontr¾ Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci¾n > Aplicaciones > Configuraci¾n avanzada de aplicaciones > Alias de ejecuci¾n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+ERROR: (gcloud.config.set) Section [core] has no property [ssh.binary].
+
+C:\Users\g_dco018>
+
+
+Ventana 1 — abrir IAP tunnel al puerto SSH (22):
+
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 22 --local-host-port=localhost:2222 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+Ventana 2 — SSH con OpenSSH directo + port-forward:
+
+
+ssh -i %USERPROFILE%\.ssh\google_compute_engine -L 5436:localhost:5433 -p 2222 -N g_dco018_sodimac_com_mx@localhost
+Ventana 2 queda abierta sin prompt. Luego DBeaver a localhost:5436.
+
+
+C:\Users\g_dco018>ssh -i %USERPROFILE%\.ssh\google_compute_engine -L 5436:localhost:5433 -p 2222 -N g_dco018_sodimac_com_mx@localhost
+The authenticity of host '[localhost]:2222 ([::1]:2222)' can't be established.
+ED25519 key fingerprint is SHA256:5FWsVs0vezN40iELXoBHpORq2X4MQPLSF2XxmEdd1Bo.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[localhost]:2222' (ED25519) to the list of known hosts.
+Bad permissions. Try removing permissions for user: \\OWNER RIGHTS (S-1-3-4) on file C:/Users/g_dco018/.ssh/google_compute_engine.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Permissions for 'C:\\Users\\g_dco018\\.ssh\\google_compute_engine' are too open.
+It is required that your private key files are NOT accessible by others.
+This private key will be ignored.
+Load key "C:\\Users\\g_dco018\\.ssh\\google_compute_engine": bad permissions
+g_dco018_sodimac_com_mx@localhost: Permission denied (publickey).
+
+C:\Users\g_dco018>
+
+
+
+sudo kill 381
+Ese es el pid del postgres que ocupa 5432 (lo vimos en el ss). Luego:
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+Y en tu PC el comando original:
+
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+Nota: si el bastion reinicia, postgres vuelve a arrancar en 5432. Solución permanente = pedir al admin que lo deshabilite del startup del bastion UAT.
+
+
+
+C:\Users\g_dco018>gcloud compute start-iap-tunnel aclaraciones-bastion 5432 --local-host-port=localhost:5436 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+no se encontr� Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci�n > Aplicaciones > Configuraci�n avanzada de aplicaciones > Alias de ejecuci�n de aplicaciones.
+WARNING:  Python 3.9 will be deprecated on January 27th, 2026. Please use Python version 3.10 and up.
+
+If you have a compatible Python interpreter installed, you can use it by setting
+the CLOUDSDK_PYTHON environment variable to point to it.
+
+WARNING:
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Testing if tunnel connection works.
+ERROR: (gcloud.compute.start-iap-tunnel) While checking if a connection can be made: Error while connecting [4003: 'failed to connect to backend']. (Failed to connect to port 5432)
+
+C:\Users\g_dco018>
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 0.0.0.0 --port 5432
+2026/04/24 23:05:52 Authorizing with Application Default Credentials
+2026/04/24 23:05:52 [sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db] Listening on [::]:5432
+2026/04/24 23:05:52 The proxy has started successfully and is ready for new connections!
+
+
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Apr 24 22:35:49 2026 from 35.235.247.112
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ sudo ss -tlnp | grep 5432
+LISTEN 0      4096               *:5432            *:*    users:(("cloud-sql-proxy",pid=20787,fd=8))
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ 
+
+
+
+Ventana 1 — IAP tunnel al SSH (deja abierta):
+
+
+gcloud compute start-iap-tunnel aclaraciones-bastion 22 --local-host-port=localhost:2222 --zone=us-east4-b --project=sod-mx-mrch-aclaraciones-uat
+Ventana 2 — Fix permisos llave (una sola vez):
+
+
+icacls %USERPROFILE%\.ssh\google_compute_engine /inheritance:r /grant:r "%USERNAME%:R"
+Ventana 2 — SSH port-forward (deja abierta):
+
+
+ssh -i %USERPROFILE%\.ssh\google_compute_engine -L 5436:localhost:5432 -p 2222 -N g_dco018_sodimac_com_mx@localhost
+Nota: cambié 5433 → 5432 porque el proxy ya corre en 5432.
+
+DBeaver: host=localhost  port=5436  user=wwwb2bportal  db=b2b_portal
+
+
+kill $(pgrep cloud-sql-proxy)
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 127.0.0.1 --port 5432
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ kill $(pgrep cloud-sql-proxy)
+kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ 
+
+ps aux | grep cloud-sql-proxy
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ps aux | grep cloud-sql-proxy
+g_dco01+   20844  0.0  0.3   3888  1960 pts/0    S+   23:25   0:00 grep cloud-sql-proxy
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ 
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 127.0.0.1 --port 5432
+
+
+:\Users\g_dco018>ssh -i %USERPROFILE%\.ssh\google_compute_engine -L 5436:localhost:5432 -p 2222 -N g_dco018_sodimac_com_mx@localhost
+channel 2: open failed: connect failed: Connection refused
+
+
+ssh -i %USERPROFILE%\.ssh\google_compute_engine -L 5436:127.0.0.1:5432 -p 2222 -N g_dco018_sodimac_com_mx@localhost
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ sudo ss -tlnp | grep 5432
+LISTEN 0      4096       127.0.0.1:5432      0.0.0.0:*    users:(("cloud-sql-proxy",pid=20845,fd=8))
+
+
+
+kill 20845
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 127.0.0.1 --port 5432 --no-auto-tls
+
+
+./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 127.0.0.1 --port 5432 --disable-tls
+
+
+g_dco018_sodimac_com_mx@aclaraciones-bastion:~$ ./cloud-sql-proxy sod-mx-mrch-aclaraciones-uat:us-east4:b2b-portal-db --private-ip --address 127.0.0.1 --port 5432 --no-auto-tls
+Error: unknown flag: --no-auto-tls
+Usage:
+  cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
+
+Flags:
+  -a, --address string                       (*) Address to bind Cloud SQL instance listeners. (default "127.0.0.1")
+      --admin-port string                    Port for localhost-only admin server (default "9091")
+  -i, --auto-iam-authn                       (*) Enables Automatic IAM Authentication for all instances
+      --auto-ip                              Supports legacy behavior of v1 and will try to connect to first IP
+                                             address returned by the SQL Admin API. In most cases, this flag should not be used.
+                                             Prefer default of public IP or use --private-ip instead.
+  -c, --credentials-file string              Use service account key file as a source of IAM credentials.
+      --debug                                Enable pprof on the localhost admin server
+      --disable-metrics                      Disable Cloud Monitoring integration (used with --telemetry-project)
+      --disable-traces                       Disable Cloud Trace integration (used with --telemetry-project)
+      --fuse string                          Mount a directory at the path using FUSE to access Cloud SQL instances.
+      --fuse-tmp-dir string                  Temp dir for Unix sockets created with FUSE (default "/tmp/csql-tmp")
+  -g, --gcloud-auth                          Use gcloud's user credentials as a source of IAM credentials.
+                                             NOTE: this flag is a legacy feature and generally should not be used.
+                                             Instead prefer Application Default Credentials
+                                             (enabled with: gcloud auth application-default login) which
+                                             the Proxy will then pick-up automatically.
+      --health-check                         Enables health check endpoints /startup, /liveness, and /readiness on localhost.
+  -h, --help                                 Display help information for cloud-sql-proxy
+      --http-address string                  Address for Prometheus and health check server (default "localhost")
+      --http-port string                     Port for Prometheus and health check server (default "9090")
+      --impersonate-service-account string   Comma separated list of service accounts to impersonate. Last value
+                                             is the target account.
+  -j, --json-credentials string              Use service account key JSON as a source of IAM credentials.
+      --login-token string                   Use bearer token as a database password (used with token and auto-iam-authn only)
+      --max-connections uint                 Limit the number of connections. Default is no limit.
+      --max-sigterm-delay duration           Maximum number of seconds to wait for connections to close after receiving a TERM signal.
+  -p, --port int                             (*) Initial port for listeners. Subsequent listeners increment from this value.
+      --private-ip                           (*) Connect to the private ip address for all instances
+      --prometheus                           Enable Prometheus HTTP endpoint /metrics on localhost
+      --prometheus-namespace string          Use the provided Prometheus namespace for metrics
+      --psc                                  (*) Connect to the PSC endpoint for all instances
+      --quiet                                Log error messages only
+      --quitquitquit                         Enable quitquitquit endpoint on the localhost admin server
+      --quota-project string                 Specifies the project to use for Cloud SQL Admin API quota tracking.
+                                             The IAM principal must have the "serviceusage.services.use" permission
+                                             for the given project. See https://cloud.google.com/service-usage/docs/overview and
+                                             https://cloud.google.com/storage/docs/requester-pays
+      --run-connection-test                  Runs a connection test
+                                             against all specified instances. If an instance is unreachable, the Proxy exits with a failure
+                                             status code.
+      --sqladmin-api-endpoint string         API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
+  -l, --structured-logs                      Enable structured logging with LogEntry format
+      --telemetry-prefix string              Prefix for Cloud Monitoring metrics.
+      --telemetry-project string             Enable Cloud Monitoring and Cloud Trace with the provided project ID.
+      --telemetry-sample-rate int            Set the Cloud Trace sample rate. A smaller number means more traces. (default 10000)
+  -t, --token string                         Use bearer token as a source of IAM credentials.
+  -u, --unix-socket string                   (*) Enables Unix sockets for all listeners with the provided directory.
+      --user-agent string                    Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1
+  -v, --version                              Print the cloud-sql-proxy version

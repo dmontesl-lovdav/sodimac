@@ -23,19 +23,19 @@ export class Rebate {
     documentNumber!: string;
 
     @Column({ name: 'reference_number', type: 'varchar', length: 100, nullable: true })
-    documentReference?: string;
+    referenceNumber?: string;
 
     @Column({ name: 'sap_document', type: 'varchar', length: 50, nullable: true })
     sapDocument?: string;
 
     @Column({ name: 'vendor_number', type: 'integer', nullable: true })
-    supplierNumber?: number;
+    vendorNumber?: number;
 
     @Column({ name: 'amount', type: 'numeric', precision: 16, scale: 2, nullable: true })
     amount?: number;
 
     @Column({ name: 'source', type: 'integer', nullable: true })
-    originId?: number;
+    source?: number;
 
     @Column({ name: 'period_id', type: 'integer', nullable: true })
     periodId?: number;
@@ -68,7 +68,7 @@ export class Rebate {
     statusCatalog?: StatusCatalog;
 
     @ManyToOne(() => OriginCatalog)
-    @JoinColumn({ name: 'source' })
+    @JoinColumn({ name: 'source', referencedColumnName: 'originId' })
     origin?: OriginCatalog;
 
     @ManyToOne(() => StampedRebate, stampedRebate => stampedRebate.rebates)

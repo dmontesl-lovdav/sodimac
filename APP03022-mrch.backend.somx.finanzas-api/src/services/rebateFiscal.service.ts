@@ -110,11 +110,11 @@ export async function relateRebate(
     console.log('[relateRebate] Creando Rebate...');
     const rebate = rebateRepo.create({
         documentNumber: request.numeroDocumento,
-        documentReference: request.referenciaDocumento,
+        referenceNumber: request.referenciaDocumento,
         sapDocument: '', // Se llenará después
-        supplierNumber: parseInt(request.numeroProveedor),
+        vendorNumber: parseInt(request.numeroProveedor),
         amount: 0, // Se llenará después
-        originId: 1, // Default
+        source: 1, // Default
         periodId: parseInt(new Date().toISOString().slice(0, 7).replace('-', '')), // YYYYMM
         dueDate: new Date(),
         postingDate: new Date(),
@@ -157,9 +157,9 @@ export async function searchRebates(
     const rebateRepo = getDataSource().getRepository(Rebate);
     const queryBuilder = rebateRepo.createQueryBuilder('rebate');
 
-    // Filtro OBLIGATORIO: supplier_number
-    queryBuilder.where('rebate.supplierNumber = :supplierNumber', {
-        supplierNumber: parseInt(searchRequest.idProveedor)
+    // Filtro OBLIGATORIO: vendor_number
+    queryBuilder.where('rebate.vendorNumber = :vendorNumber', {
+        vendorNumber: parseInt(searchRequest.idProveedor)
     });
 
     // Filtros OPCIONALES
@@ -170,7 +170,7 @@ export async function searchRebates(
     }
 
     if (searchRequest.referenciaDocumento) {
-        queryBuilder.andWhere('rebate.documentReference = :refNum', {
+        queryBuilder.andWhere('rebate.referenceNumber = :refNum', {
             refNum: searchRequest.referenciaDocumento
         });
     }
@@ -206,9 +206,9 @@ export async function searchRebates(
         const dto: RebateSearchResponseDto = {
             rebateUuid: rebate.rebateId,
             documentNumber: rebate.documentNumber,
-            referenceNumber: rebate.documentReference || '',
+            referenceNumber: rebate.referenceNumber || '',
             sapDocument: rebate.sapDocument || '',
-            vendorNumber: rebate.supplierNumber || 0,
+            vendorNumber: rebate.vendorNumber || 0,
             amount: rebate.amount || 0,
             status: rebate.status || 0,
             statusName: getStatusName(rebate.status || 0),

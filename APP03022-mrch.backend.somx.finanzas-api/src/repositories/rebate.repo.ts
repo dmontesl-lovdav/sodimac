@@ -53,10 +53,10 @@ export async function findWithDynamicFilters(filters: RebateFilterDto) {
     const queryBuilder = repo().createQueryBuilder('rebate')
         .leftJoinAndSelect('rebate.stampedRebate', 'stampedRebate');
 
-    // Filtro por supplierNumber (igual)
+    // Filtro por vendorNumber (igual)
     if (filters.vendorNumber !== undefined) {
-        queryBuilder.andWhere('rebate.supplierNumber = :supplierNumber', {
-            supplierNumber: filters.vendorNumber
+        queryBuilder.andWhere('rebate.vendorNumber = :vendorNumber', {
+            vendorNumber: filters.vendorNumber
         });
     }
 

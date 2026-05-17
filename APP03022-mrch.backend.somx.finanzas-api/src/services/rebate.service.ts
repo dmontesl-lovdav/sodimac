@@ -12,9 +12,9 @@ export async function list(q: ListRebateQuery) {
     const filter: FindOptionsWhere<Rebate> = {};
 
     if (q.status !== undefined) filter.status = q.status;
-    if (q.vendorNumber !== undefined) filter.supplierNumber = q.vendorNumber;
+    if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
     if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
-    if (q.source !== undefined) filter.originId = q.source;
+    if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 
     if (q.from && q.to) filter.postingDate = Between(q.from, q.to);
@@ -28,9 +28,9 @@ export async function list(q: ListRebateQuery) {
 export async function listPublished(q: ListRebateQuery) {
     const filter: FindOptionsWhere<Rebate> = { status: 1 };
 
-    if (q.vendorNumber !== undefined) filter.supplierNumber = q.vendorNumber;
+    if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
     if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
-    if (q.source !== undefined) filter.originId = q.source;
+    if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 
     if (q.from && q.to) filter.postingDate = Between(q.from, q.to);
@@ -43,12 +43,12 @@ export async function listPublished(q: ListRebateQuery) {
 // Obtener rebates por número de proveedor
 export async function listByVendor(vendorNumber: number, q: ListRebateQuery) {
     const filter: FindOptionsWhere<Rebate> = {
-        supplierNumber: vendorNumber,
+        vendorNumber: vendorNumber,
         status: 1  // Solo publicados
     };
 
     if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
-    if (q.source !== undefined) filter.originId = q.source;
+    if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 
     if (q.from && q.to) filter.postingDate = Between(q.from, q.to);
@@ -98,11 +98,11 @@ function generateCsvFromRebates(rebates: Rebate[]): string {
     const rows = rebates.map(r => [
         r.rebateId,
         r.documentNumber,
-        r.documentReference || '',
+        r.referenceNumber || '',
         r.sapDocument || '',
-        r.supplierNumber || '',
+        r.vendorNumber || '',
         r.amount || '',
-        r.originId || '',
+        r.source || '',
         r.periodId || '',
         r.dueDate?.toISOString().split('T')[0] || '',
         r.postingDate?.toISOString().split('T')[0] || '',

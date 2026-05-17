@@ -31,7 +31,7 @@ if (authPublicKey) {
 
 const localService = app();
 
-// ADDING CUSTOM PATH FOR HEALTHCHECK
+// HEALTHCHECK
 localService.get(healthPath, (request, response) => {
   response.status(200).send({ message: "healthy" });
 });

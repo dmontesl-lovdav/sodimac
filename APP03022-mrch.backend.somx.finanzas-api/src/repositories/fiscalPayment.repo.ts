@@ -1,11 +1,22 @@
 import { getDataSource } from "@/config/typeorm-datasource.js";
 import { FiscalPayment } from "@/entities/FiscalPayment.entity.js";
-import type { FindOptionsWhere } from "typeorm";
+import { Between, type FindOptionsWhere } from "typeorm";
 
 export const repo = () => getDataSource().getRepository(FiscalPayment);
 
 export async function findAll(filter: FindOptionsWhere<FiscalPayment>, limit = 100) {
     return repo().find({ where: filter, take: limit, order: { paymentDate: "DESC" } });
+}
+
+export async function findByVendorAndPaymentDateRange(vendorNumber: number, start: Date, end: Date): Promise<FiscalPayment[]> {
+    return repo().find({
+        where: {
+            //vendorNumber,
+            paymentDate: Between(start, end) as any,
+        },
+        order: { paymentDate: 'DESC' },
+        take: 500,
+    });
 }
 
 export async function findById(id: string) {

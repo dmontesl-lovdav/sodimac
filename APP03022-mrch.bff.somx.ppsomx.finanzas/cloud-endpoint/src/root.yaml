@@ -5,8 +5,9 @@ info:
     name: Arquitectura Falabella Tecnologia Corp.
   description: >
     Support RESTful operations for finanzas flow. This BFF provides access to
-    financial operations including accounts payable, rebates, fiscal payments,
-    shipping guides, carta porte, vendor management, three way match, and MIGO.
+    financial operations including accounts payable, account statements, rebates,
+    fiscal payments, shipping guides, carta porte, vendor management,
+    three way match, and MIGO.
   title: Finanzas BFF API
   version: 2.0.0
   x-business-acronym: mrch
@@ -135,6 +136,17 @@ paths:
   /accounts-payable/{uuid}:
     $ref: "./paths/accounts-payable.yaml#/accounts-payable-by-uuid"
 
+  /account-statement:
+    $ref: "./paths/account-statement.yaml#/account-statement"
+  /account-statement/{uuid}/pdf:
+    $ref: "./paths/account-statement.yaml#/account-statement-pdf"
+  /account-statement/{uuid}/confirm-review:
+    $ref: "./paths/account-statement.yaml#/account-statement-confirm-review"
+  /account-statement/{uuid}/request-review:
+    $ref: "./paths/account-statement.yaml#/account-statement-request-review"
+  /account-statement/{uuid}:
+    $ref: "./paths/account-statement.yaml#/account-statement-by-uuid"
+
   /healthcheck:
     $ref: "./paths/healthcheck.yaml#/healthcheck"
 
@@ -260,6 +272,13 @@ definitions:
     $ref: "./definitions/accounts-payable.yaml#/CreateAccountsPayableDto"
   UpdateAccountsPayableDto:
     $ref: "./definitions/accounts-payable.yaml#/UpdateAccountsPayableDto"
+
+  AccountStatementListItemDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementListItemDto"
+  AccountStatementDetailDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementDetailDto"
+  AccountStatementListResponseDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementListResponseDto"
 
   FiscalPaymentDto:
     $ref: "./definitions/fiscal-payments.yaml#/FiscalPaymentDto"

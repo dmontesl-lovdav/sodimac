@@ -33,6 +33,18 @@ export async function findById(receptionId: string) {
     return repo().findOneBy({ receptionId });
 }
 
+export async function findByVendorAndDateRange(vendorNumber: number, start: Date, end: Date): Promise<Reception[]> {
+    return datasource.manager
+        .createQueryBuilder(Reception, 'r')
+        .leftJoinAndSelect('r.purchaseOrder', 'po')
+        //.where('po.supplierNumber = :vendorNumber', { vendorNumber })
+        .where('r.receptionDate BETWEEN :start AND :end', { start, end })
+        .andWhere('r.status != 8')
+        .orderBy('r.receptionDate', 'ASC')
+        .take(500)
+        .getMany();
+}
+
 export async function updateOne(receptionId: string, rec: Reception) {
     await repo().update({ receptionId }, rec);
     return findById(receptionId);

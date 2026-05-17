@@ -4,7 +4,7 @@ info:
     email: jrcastillo@falabella.cl
     name: Arquitectura Falabella Tecnologia Corp.
   description: |
-    Support RESTful operations for finanzas flow. This BFF provides access to financial operations including accounts payable, rebates, fiscal payments, shipping guides, carta porte, vendor management, three way match, and MIGO.
+    Support RESTful operations for finanzas flow. This BFF provides access to financial operations including accounts payable, account statements, rebates, fiscal payments, shipping guides, carta porte, vendor management, three way match, and MIGO.
   title: Finanzas BFF API
   version: 2.0.0
   x-business-acronym: mrch
@@ -276,6 +276,194 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /account-statement:
+    get:
+      tags:
+        - account-statement
+      summary: List account statements
+      operationId: listAccountStatements
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: vendorNumber
+          required: false
+          type: integer
+          format: int64
+        - in: query
+          name: year
+          required: true
+          type: integer
+          minimum: 2026
+        - in: query
+          name: month
+          required: false
+          type: string
+        - in: query
+          name: page
+          required: false
+          type: integer
+          minimum: 1
+          default: 1
+        - in: query
+          name: pageSize
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      responses:
+        '200':
+          description: Paged list
+          schema:
+            $ref: '#/definitions/AccountStatementListResponseDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/account-statement/{uuid}/pdf':
+    get:
+      tags:
+        - account-statement
+      summary: Get account statement PDF
+      operationId: getAccountStatementPdf
+      produces:
+        - application/pdf
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: PDF stream
+          schema:
+            type: string
+            format: binary
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/account-statement/{uuid}/confirm-review':
+    patch:
+      tags:
+        - account-statement
+      summary: Confirm account statement review
+      operationId: confirmAccountStatementReview
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/AccountStatementDetailDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/account-statement/{uuid}/request-review':
+    patch:
+      tags:
+        - account-statement
+      summary: Request review on account statement
+      operationId: requestAccountStatementReview
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Updated
+          schema:
+            $ref: '#/definitions/AccountStatementDetailDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/account-statement/{uuid}':
+    get:
+      tags:
+        - account-statement
+      summary: Get account statement by UUID
+      operationId: getAccountStatementByUuid
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Found
+          schema:
+            $ref: '#/definitions/AccountStatementDetailDto'
         '401':
           description: Unauthorized
           schema:
@@ -3130,6 +3318,111 @@ definitions:
         type: string
       updatedBy:
         type: integer
+  AccountStatementListItemDto:
+    type: object
+    properties:
+      accountStatementUuid:
+        type: string
+        format: uuid
+      vendorNumber:
+        type: integer
+        format: int64
+      vendorName:
+        type: string
+      year:
+        type: integer
+      month:
+        type: integer
+      status:
+        type: integer
+      statusLabel:
+        type: string
+      processedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      reviewedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+    required:
+      - accountStatementUuid
+      - vendorNumber
+      - vendorName
+      - year
+      - month
+      - status
+      - statusLabel
+  AccountStatementDetailDto:
+    type: object
+    properties:
+      accountStatementUuid:
+        type: string
+        format: uuid
+      vendorNumber:
+        type: integer
+        format: int64
+      vendorName:
+        type: string
+      year:
+        type: integer
+      month:
+        type: integer
+      version:
+        type: integer
+      status:
+        type: integer
+      statusLabel:
+        type: string
+      initialBalance:
+        type: string
+        x-nullable: true
+      finalBalance:
+        type: string
+        x-nullable: true
+      processedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      reviewedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      issuedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      periodStart:
+        type: string
+        format: date
+        x-nullable: true
+    required:
+      - accountStatementUuid
+      - vendorNumber
+      - vendorName
+      - year
+      - month
+      - version
+      - status
+      - statusLabel
+  AccountStatementListResponseDto:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementListItemDto'
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+      currentPage:
+        type: integer
+    required:
+      - items
+      - totalItems
+      - totalPages
+      - currentPage
   FiscalPaymentDto:
     type: object
     properties:

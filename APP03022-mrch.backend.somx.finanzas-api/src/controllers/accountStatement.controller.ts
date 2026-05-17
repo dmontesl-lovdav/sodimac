@@ -66,12 +66,14 @@ export async function requestReview(req: Request, res: Response, next: NextFunct
 export async function getPdf(req: Request, res: Response, next: NextFunction) {
     try {
         const { uuid } = UuidParamSchema.parse(req.params);
-        const result = await svc.getPdf(uuid);
-        if (!result) return res.status(404).json({ message: 'Not found' });
-        if (result.redirectUrl) {
-            return res.redirect(302, result.redirectUrl);
-        }
-        res.status(501).json({ message: 'PDF service not configured' });
+        const pdfBuffer = await svc.getPdf(uuid);
+        if (!pdfBuffer) return res.status(404).json({ message: 'Not found' });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="account_statement_${uuid}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length.toString());
+
+        return res.send(pdfBuffer);
     } catch (e) {
         next(e);
     }

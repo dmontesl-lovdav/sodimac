@@ -1,0 +1,192 @@
+account-statement:
+  get:
+    tags:
+      - account-statement
+    summary: List account statements
+    operationId: listAccountStatements
+    produces:
+      - application/json
+    parameters:
+      - in: query
+        name: vendorNumber
+        required: false
+        type: integer
+        format: int64
+      - in: query
+        name: year
+        required: true
+        type: integer
+        minimum: 2026
+      - in: query
+        name: month
+        required: false
+        type: string
+      - in: query
+        name: page
+        required: false
+        type: integer
+        minimum: 1
+        default: 1
+      - in: query
+        name: pageSize
+        required: false
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    responses:
+      "200":
+        description: Paged list
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementListResponseDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+account-statement-pdf:
+  get:
+    tags:
+      - account-statement
+    summary: Get account statement PDF
+    operationId: getAccountStatementPdf
+    produces:
+      - application/pdf
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: PDF stream
+        schema:
+          type: string
+          format: binary
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+account-statement-confirm-review:
+  patch:
+    tags:
+      - account-statement
+    summary: Confirm account statement review
+    operationId: confirmAccountStatementReview
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+account-statement-request-review:
+  patch:
+    tags:
+      - account-statement
+    summary: Request review on account statement
+    operationId: requestAccountStatementReview
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: Updated
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+account-statement-by-uuid:
+  get:
+    tags:
+      - account-statement
+    summary: Get account statement by UUID
+    operationId: getAccountStatementByUuid
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: Found
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

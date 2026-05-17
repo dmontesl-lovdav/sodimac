@@ -1,7 +1,7 @@
 import { getDataSource } from "@/config/typeorm-datasource.js";
 import { Rebate } from "@/entities/Rebate.entity.js";
 import type { RebateFilterDto } from "@/schemas/rebate.schema.js";
-import type { FindOptionsWhere } from "typeorm";
+import { Between, type FindOptionsWhere } from "typeorm";
 
 export const repo = () => getDataSource().getRepository(Rebate);
 
@@ -38,6 +38,17 @@ export async function findAllPublished() {
 }
 
 // Búsqueda con filtros dinámicos
+export async function findByVendorAndPostingDateRange(vendorNumber: number, start: Date, end: Date): Promise<Rebate[]> {
+    return repo().find({
+        where: {
+            //supplierNumber: vendorNumber,
+            postingDate: Between(start, end) as any,
+        },
+        order: { postingDate: 'DESC' },
+        take: 500,
+    });
+}
+
 export async function findWithDynamicFilters(filters: RebateFilterDto) {
     const queryBuilder = repo().createQueryBuilder('rebate')
         .leftJoinAndSelect('rebate.stampedRebate', 'stampedRebate');

@@ -1,0 +1,107 @@
+AccountStatementListItemDto:
+  type: object
+  properties:
+    accountStatementUuid:
+      type: string
+      format: uuid
+    vendorNumber:
+      type: integer
+      format: int64
+    vendorName:
+      type: string
+    year:
+      type: integer
+    month:
+      type: integer
+    status:
+      type: integer
+    statusLabel:
+      type: string
+    processedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+    reviewedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+  required:
+    - accountStatementUuid
+    - vendorNumber
+    - vendorName
+    - year
+    - month
+    - status
+    - statusLabel
+
+AccountStatementDetailDto:
+  type: object
+  properties:
+    accountStatementUuid:
+      type: string
+      format: uuid
+    vendorNumber:
+      type: integer
+      format: int64
+    vendorName:
+      type: string
+    year:
+      type: integer
+    month:
+      type: integer
+    version:
+      type: integer
+    status:
+      type: integer
+    statusLabel:
+      type: string
+    initialBalance:
+      type: string
+      x-nullable: true
+    finalBalance:
+      type: string
+      x-nullable: true
+    processedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+    reviewedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+    issuedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+    periodStart:
+      type: string
+      format: date
+      x-nullable: true
+  required:
+    - accountStatementUuid
+    - vendorNumber
+    - vendorName
+    - year
+    - month
+    - version
+    - status
+    - statusLabel
+
+AccountStatementListResponseDto:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        $ref: "#/AccountStatementListItemDto"
+    totalItems:
+      type: integer
+    totalPages:
+      type: integer
+    currentPage:
+      type: integer
+  required:
+    - items
+    - totalItems
+    - totalPages
+    - currentPage

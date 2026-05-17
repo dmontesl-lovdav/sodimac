@@ -1,5 +1,6 @@
 import * as r from '@/repositories/accountStatement.repo.js';
 import type { ListAccountStatementQuery } from '@/schemas/accountStatement.schema.js';
+import { generatePdfBuffer } from './accountStatementPdf.service.js';
 
 const STATUS_GENERATED = 1;
 const STATUS_PUBLISHED = 2;
@@ -75,13 +76,8 @@ export async function requestReview(uuid: string) {
     return r.updateReviewStatus(uuid, STATUS_REJECTED, new Date());
 }
 
-export async function getPdf(uuid: string): Promise<{ redirectUrl?: string } | null> {
+export async function getPdf(uuid: string): Promise<Buffer | null> {
     const row = await r.findById(uuid);
     if (!row) return null;
-    const baseUrl = process.env.ACCOUNT_STATEMENT_PDF_SERVICE_URL;
-    if (baseUrl) {
-        const url = `${baseUrl.replace(/\/+$/, '')}/${uuid}`;
-        return { redirectUrl: url };
-    }
-    return { redirectUrl: "" };
+    return generatePdfBuffer(uuid);
 }

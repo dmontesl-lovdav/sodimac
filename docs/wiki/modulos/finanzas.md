@@ -176,15 +176,19 @@ Concretamente:
 
 Hay 2 modelos coexistiendo:
 - **Legacy**: `fiscal_payments` (single-row por pago, lo que toca POST `/fiscal-payments`).
-- **Nuevo**: `payment_header` + `payment_detail` (header 1:N detail, lo que tocaría POST `/finanzas-payment`).
+- **Nuevo**: `payment_header` + `payment_detail` (header 1:N detail, lo que toca POST `/finanzas-payment/header-with-details`).
 
-Endpoint correcto para "alta de pago" depende de si el refactor está activo o no — confirmar con Ivan/Bonelli.
+**Pantalla FBC "Finanzas > Pagos"** (`uat.fbusinesscenter.com/finanzas#/finanzas/pagos`) consume `GET /finanzas-payment` → tabla `payment_detail`. En UAT **está vacía** al 2026-05-18 — la pantalla muestra "No se encontraron pagos" sin ser un error. Para poblarla: `POST /finanzas-payment/header-with-details`.
+
+Endpoint correcto para "alta de pago" depende de si el refactor está activo o no — confirmar con Bonelli.
 
 ### Sin FKs declaradas
 
 Igual que en `tenant_fiscal`, integridad referencial depende del código de aplicación. Cualquier ingestión SQL directa (ETL, seeds) puede dejar inconsistencias silenciosas.
 
-**Actualización 2026-05-15**: 4 FKs adicionales agregadas en local (`twm_logs→twm_ejecucion`, `twm_cifras_control→twm_ejecucion`, `stamped_rebate→fiscal.invoice`, `addendum_manual→fiscal.invoice`). `tenant_finance` pasó de 16 a 20 FKs. Script en [docs/db/fks-20260515/](../../db/fks-20260515/) pendiente de aplicar UAT.
+**Actualización 2026-05-15**: 4 FKs adicionales identificadas (`twm_logs→twm_ejecucion`, `twm_cifras_control→twm_ejecucion`, `stamped_rebate→fiscal.invoice`, `addendum_manual→fiscal.invoice`).
+
+**Actualización 2026-05-18 (UAT)**: Scripts aplicados en UAT. Se agregaron 8 PKs faltantes (1 en `tenant_fiscal.tax`, 7 en `tenant_finance`) y 25 FKs nuevas (21 en `tenant_fiscal`, 4 en `tenant_finance`). Scripts en [docs/db/fks-20260515/](../../db/fks-20260515/).
 
 ### Bug histórico encontrado en `rebate` (2026-05-15)
 

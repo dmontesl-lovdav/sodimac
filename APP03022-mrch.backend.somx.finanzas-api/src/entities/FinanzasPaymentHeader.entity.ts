@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
-@Entity({ name: 'finanzas_payment_headers' })
+@Entity({ name: 'payment_header' })
 export class FinanzasPaymentHeader {
     @PrimaryColumn('uuid', { name: 'payment_header_uuid' })
     paymentHeaderUuid!: string;

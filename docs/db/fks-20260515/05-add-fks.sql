@@ -1,8 +1,6 @@
 -- Script idempotente: solo agrega FKs que faltan.
 -- Verifica existencia por nombre antes de crear.
 
-BEGIN;
-
 DO $$
 DECLARE
   rec record;
@@ -51,10 +49,7 @@ BEGIN
   END LOOP;
 END $$;
 
-\echo === Total FKs por schema ===
 SELECT n.nspname AS schema, COUNT(*) AS fks
 FROM pg_constraint c JOIN pg_class cl ON c.conrelid = cl.oid JOIN pg_namespace n ON cl.relnamespace = n.oid
 WHERE c.contype = 'f' AND n.nspname IN ('tenant_fiscal','tenant_finance')
 GROUP BY n.nspname ORDER BY n.nspname;
-
-COMMIT;

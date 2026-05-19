@@ -110,7 +110,7 @@ localService.get('/health', (req, res) => res.status(200).send({ message: 'healt
 
 logger.info("CONFIGURING PROXY");
 const remoteResolver = proxy(remoteUrl, {
-  parseReqBody: true,
+  parseReqBody: false,
   proxyReqPathResolver: (request) => {
     const targetPath = request.originalUrl.replace(localContext, "");
     return targetPath.startsWith("/") ? targetPath : "/" + targetPath;

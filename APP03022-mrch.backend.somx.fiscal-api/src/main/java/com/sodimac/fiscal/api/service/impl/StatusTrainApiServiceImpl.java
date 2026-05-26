@@ -29,7 +29,7 @@ public class StatusTrainApiServiceImpl implements StatusTrainApiService {
     @Value("${status-train.api.enabled:true}")
     private boolean statusTrainEnabled;
 
-    @Value("${status-train.api.url:http://localhost:8083}")
+    @Value("${utils.api.url:http://localhost:3712}")
     private String statusTrainUrl;
 
     @Value("${status-train.api.timeout-ms:5000}")
@@ -53,7 +53,7 @@ public class StatusTrainApiServiceImpl implements StatusTrainApiService {
             return validateWithLocalEnums(optionId, sourceStatus, targetStatus);
         }
 
-        String url = String.format("%s/status-train/validate?optionId=%d&sourceStatus=%d&targetStatus=%d",
+        String url = String.format("%s/api/status-train/validate?optionId=%d&sourceStatus=%d&targetStatus=%d",
                 statusTrainUrl, optionId, sourceStatus, targetStatus);
 
         log.debug("Validando transición: optionId={}, sourceStatus={} -> targetStatus={}",

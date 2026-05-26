@@ -34,10 +34,10 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     private static final String CATALOG_TIPO_ADDENDA = "TipoAddenda";
     private static final String UNKNOWN = "Desconocido";
 
-    @Value("${catalogs.api.enabled:false}")
+    @Value("${sat-catalog.api.enabled:false}")
     private boolean catalogsApiEnabled;
 
-    @Value("${catalogs.api.url:http://catalogos-api:8080}")
+    @Value("${sat-catalog.api.url:http://utils-api:8080}")
     private String catalogsApiUrl;
 
     private final RestTemplate restTemplate;
@@ -97,10 +97,7 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         }
 
         try {
-            // Endpoint: GET /{catalogCode}/details/{externalKey}?lang={langId}
-            // Nota: El endpoint busca por key, pero necesitamos buscar por external_key
-            // Usamos el endpoint alternativo que busca por external_key
-            String url = String.format("%s/%s/details?lang=%d",
+            String url = String.format("%s/api/catalog/%s/details?lang=%d",
                     catalogsApiUrl, catalogCode, langId);
 
             ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);

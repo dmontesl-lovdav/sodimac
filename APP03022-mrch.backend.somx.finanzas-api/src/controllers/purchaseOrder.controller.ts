@@ -178,6 +178,8 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             (item as any).supplier = foundUser;
         });
 
+        await svc.enrichPurchaseOrdersRecepcionesOriginCatalog(result as PurchaseOrder[], request.authToken ?? '');
+
         const responsePageableDTO: ResponsePageableDTO = {
             content: result,
             totalElements: _totalItems,

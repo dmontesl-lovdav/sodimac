@@ -10,6 +10,7 @@ import { errorHandler } from "@/middlewares/errorHandler.js";
 import { healthCheck, livenessProbe, readinessProbe } from "@/controllers/health.controller.js";
 import { globalErrorHandler } from "@/middlewares/logger.js";
 import { attachSecurityContext } from "@/middlewares/security.middleware.js";
+import { attachAuthToken } from "@/middlewares/authToken.js";
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.get("/actuator/health/readiness", readinessProbe);
 
 // Security context (lee headers x-user-vendors/types/groups del BFF)
 app.use("/api", attachSecurityContext);
+
+// Auth token global para todas las rutas /api
+app.use("/api", attachAuthToken);
 
 // Rutas de la API
 console.log("[APP] Mounting router at /api, router type:", typeof router, "has stack:", !!(router as any).stack);

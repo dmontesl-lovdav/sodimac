@@ -8,16 +8,22 @@ import {
     CreateShippingGuideSchema
 } from "@/schemas/shippingGuide.schema.js";
 
-
+/** Query GET: los parámetros vienen como string; coercion explícita (como las fechas). */
+const optionalQueryInt = (): z.ZodType<number | undefined> =>
+    z.preprocess(
+        (val) =>
+            val === "" || val === null || typeof val === "undefined" ? undefined : val,
+        z.coerce.number().int().optional()
+    );
 
 export const ListPurchaseOrderQuerySchema = z.object({
     purchaseOrderDateAtInitial: z.coerce.date(),
     purchaseOrderDateAtEnd: z.coerce.date(),
     purchaseOrderId: z.string().optional(),
     orderNumber: z.string().optional(),
-    originId: z.number().int().optional(),
-    supplierNumber: z.number().int().optional(),
-    status: z.number().int().optional(),
+    originId: optionalQueryInt(),
+    supplierNumber: optionalQueryInt(),
+    status: optionalQueryInt(),
     pageNumber: z.string(),
     pageSize: z.string()
 });

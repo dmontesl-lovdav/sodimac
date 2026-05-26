@@ -1,29 +1,15 @@
 import type { Readable } from 'node:stream';
 import { Readable as StreamReadable } from 'node:stream';
-import { getDataSource } from '@/config/typeorm-datasource.js';
-import * as r from '@/repositories/accountStatement.repo.js';
-import * as poRepo from '@/repositories/purchaseOrder.repo.js';
-import * as recRepo from '@/repositories/reception.repo.js';
-import * as rebateRepo from '@/repositories/rebate.repo.js';
-import * as fpRepo from '@/repositories/fiscalPayment.repo.js';
-import { Invoice } from '@/entities/tenant_fiscal.invoice.entity.js';
-import { Addendum } from '@/entities/tenant_fiscal.addendum.entity.js';
 import type { PurchaseOrder } from '@/entities/PurchaseOrder.entity.js';
 import type { Reception } from '@/entities/Reception.entity.js';
 import type { Rebate } from '@/entities/Rebate.entity.js';
 import type { FiscalPayment } from '@/entities/FiscalPayment.entity.js';
+import { Invoice } from '@/entities/tenant_fiscal.invoice.entity.js';
 import { Catalogs } from '@/utils/mockups.js';
-
-async function findInvoicesByVendorAndPeriod(vendorNumber: number, start: Date, end: Date) {
-    return getDataSource()
-        .getRepository(Invoice)
-        .createQueryBuilder('i')
-        .innerJoin(Addendum, 'a', 'a.invoiceUuid = i.invoiceUuid')
-        .where('a.supplierNumber = :vendor', { vendor: vendorNumber })
-        .andWhere('i.issueDate BETWEEN :start AND :end', { start, end })
-        .orderBy('i.issueDate', 'ASC')
-        .getMany();
-}
+import {
+    buildAccountStatementReportData,
+    type AccountStatementReportPayload,
+} from './accountStatementReportData.service.js';
 
 const ISSUER = {
     name: 'Comercializadora SDMHC S.A. de C.V. (SODIMAC MÉXICO)',
@@ -501,52 +487,41 @@ export async function generatePdfStream(uuid: string): Promise<Readable | null> 
     return stream;
 }
 
-export async function generatePdfBuffer(uuid: string): Promise<Buffer | null> {
-    const row = await r.findById(uuid);
-    if (!row) return null;
-    const vendorNumber = 1001;
-    const periodStart = "2024-01-01";
-    const startDate = periodStart
-        ? new Date(periodStart)
-        : new Date(row.year, row.month - 1, 1);
-    const endDate = row.periodEnd
-        ? new Date(row.periodEnd)
-        : new Date(row.year, row.month, 0, 23, 59, 59);
+function reportPayloadToPdfData(payload: AccountStatementReportPayload): PdfData {
+    const receptions = payload.receptions as unknown as Reception[];
+    const purchaseOrders = payload.purchaseOrders as unknown as PurchaseOrder[];
+    const payments = payload.payments as unknown as FiscalPayment[];
+    const rebates = payload.rebates as unknown as Rebate[];
+    const facturas = payload.facturas as unknown as Invoice[];
+    const notasCredito = payload.notasCredito as unknown as Invoice[];
 
-    const [purchaseOrders, receptions, rebates, payments, invoices] = await Promise.all([
-        poRepo.findByVendorAndDateRange(vendorNumber, startDate, endDate),
-        recRepo.findByVendorAndDateRange(vendorNumber, startDate, endDate),
-        rebateRepo.findByVendorAndPostingDateRange(vendorNumber, startDate, endDate),
-        fpRepo.findByVendorAndPaymentDateRange(vendorNumber, startDate, endDate),
-        findInvoicesByVendorAndPeriod(vendorNumber, startDate, endDate),
-    ]);
+    const periodStartStr = payload.dates.periodStart
+        ? formatDate(payload.dates.periodStart)
+        : 'N/A';
+    const periodEndStr = payload.dates.periodEnd
+        ? formatDate(payload.dates.periodEnd)
+        : 'N/A';
+    const issueDate = payload.dates.issueDate
+        ? formatDate(payload.dates.issueDate)
+        : formatDate(new Date());
 
-    const facturas = invoices.filter((inv: Invoice) => inv.documentType === 'I');
-    const notasCredito = invoices.filter((inv: Invoice) => inv.documentType === 'E');
-    const totalOC = purchaseOrders.reduce((s: number, po: PurchaseOrder) => s + (Number(po.amount) || 0), 0);
-    const totalFacturasPendientes = facturas.reduce((s: number, i: Invoice) => s + (Number(i.total) || 0), 0);
-    const totalFacturasPagadas = payments.reduce((s: number, p: FiscalPayment) => s + parseNum(p.amount), 0);
-    const totalDescuentos = rebates.reduce((s: number, b: Rebate) => s + (Number(b.amount) || 0), 0);
-    const totalNotasCredito = notasCredito.reduce((s: number, i: Invoice) => s + (Number(i.total) || 0), 0);
-    const saldoPendiente = parseNum(row.finalBalance);
-
-    const data: PdfData = {
-        vendorNumber,
-        vendorName: `Proveedor ${vendorNumber}`,
-        providerRfc: 'N/A',
-        providerCp: '',
-        providerAddress: '',
-        providerContact: '',
-        providerEmail: '',
-        issueDate: row.issuedAt ? formatDate(row.issuedAt) : formatDate(new Date()),
-        periodStartStr: formatDate(startDate),
-        periodEndStr: formatDate(endDate),
-        totalOC,
-        totalFacturasPendientes,
-        totalFacturasPagadas,
-        totalDescuentos,
-        totalNotasCredito,
-        saldoPendiente,
+    return {
+        vendorNumber: payload.vendor.vendorNumber,
+        vendorName: payload.vendor.vendorName,
+        providerRfc: payload.vendor.providerRfc,
+        providerCp: payload.vendor.providerCp,
+        providerAddress: payload.vendor.providerAddress,
+        providerContact: payload.vendor.providerContact,
+        providerEmail: payload.vendor.providerEmail,
+        issueDate,
+        periodStartStr,
+        periodEndStr,
+        totalOC: payload.totals.totalOC,
+        totalFacturasPendientes: payload.totals.totalFacturasPendientes,
+        totalFacturasPagadas: payload.totals.totalFacturasPagadas,
+        totalDescuentos: payload.totals.totalDescuentos,
+        totalNotasCredito: payload.totals.totalNotasCredito,
+        saldoPendiente: payload.totals.saldoPendiente,
         purchaseOrders,
         receptions,
         payments,
@@ -554,8 +529,11 @@ export async function generatePdfBuffer(uuid: string): Promise<Buffer | null> {
         facturas,
         notasCredito,
     };
+}
 
-    const html = buildEstadoCuentaHtml(data);
-    const buffer = await htmlToPdfBuffer(html);
-    return buffer;
+export async function generatePdfBuffer(uuid: string): Promise<Buffer | null> {
+    const payload = await buildAccountStatementReportData(uuid);
+    if (!payload) return null;
+    const html = buildEstadoCuentaHtml(reportPayloadToPdfData(payload));
+    return htmlToPdfBuffer(html);
 }

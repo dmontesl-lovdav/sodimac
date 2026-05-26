@@ -67,6 +67,8 @@ export async function listReception(q: ListReceptionQueryDto, token: string) {
             (item as any).supplier = foundSupplier;
         });
 
+        await enrichReceptionsListOriginCatalog(result as Reception[], token);
+
     const _totalItems = Number(total?.valueOf() == null ? 0 : Number(total?.valueOf()));
     var _totalPages = _totalItems/q.pageSize;
 
@@ -396,6 +398,69 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
     return resp;
 }
 
+async function fetchReceptionOriginIdToLabel(token: string): Promise<Map<number, string>> {
+    const map = new Map<number, string>();
+    try {
+        const base =
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC +
+            "/details";
+        const rows = await svcAxios.GetCatalogDetailList(base, token);
+        for (const c of rows ?? []) {
+            const id = Number(c.internalStatus);
+            if (!Number.isFinite(id)) {
+                continue;
+            }
+            const label =
+                [c.description, c.value, c.externalKey, c.key].find(
+                    (s): s is string => typeof s === "string" && String(s).trim().length > 0,
+                )?.trim() ?? "";
+            if (label) {
+                map.set(id, label);
+            }
+        }
+    } catch (e) {
+        logger.warn("fetchReceptionOriginIdToLabel: catálogo de orígenes no disponible: {}", e);
+    }
+    return map;
+}
+
+function applyOriginCatalogLabels(receptions: Reception[], lookup: Map<number, string>): void {
+    for (const rec of receptions) {
+        const raw =
+            rec.originId === undefined || rec.originId === null
+                ? NaN
+                : Number(rec.originId);
+        const nm = Number.isFinite(raw) ? lookup.get(raw) ?? "" : "";
+        (rec as Reception & { originName?: string }).originName = nm;
+    }
+}
+
+/** Listado GET `/purchase-orders`: enriquece cada recepción anidada con `originName` (catálogo BFF). */
+export async function enrichPurchaseOrdersRecepcionesOriginCatalog(
+    purchaseOrders: PurchaseOrder[],
+    token: string,
+): Promise<void> {
+    if (!purchaseOrders?.length) {
+        return;
+    }
+    const lookup = await fetchReceptionOriginIdToLabel(token);
+    for (const po of purchaseOrders) {
+        applyOriginCatalogLabels(po.receptions ?? [], lookup);
+    }
+}
+
+/** Listado GET `/purchase-orders/listReception`. */
+export async function enrichReceptionsListOriginCatalog(
+    receptions: Reception[],
+    token: string,
+): Promise<void> {
+    if (!receptions?.length) {
+        return;
+    }
+    const lookup = await fetchReceptionOriginIdToLabel(token);
+    applyOriginCatalogLabels(receptions, lookup);
+}
 
 function buildCriteria(criteria: ListPurchaseOrderQueryDto): FindOptionsWhere<PurchaseOrder> {
     const filter: FindOptionsWhere<PurchaseOrder> = {};

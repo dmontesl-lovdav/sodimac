@@ -345,6 +345,43 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  '/account-statement/{uuid}/report-data':
+    get:
+      tags:
+        - account-statement
+      summary: Get account statement report data (JSON for client-side PDF)
+      description: >
+        Returns the full account statement payload (header, totals, purchase orders,
+        receptions, payments, rebates, invoices, credit notes and status catalogs)
+        used to render the statement in the portal.
+      operationId: getAccountStatementReportData
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Report data
+          schema:
+            $ref: '#/definitions/AccountStatementReportDataDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   '/account-statement/{uuid}/pdf':
     get:
       tags:
@@ -2316,6 +2353,39 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /migo/upload:
+    post:
+      tags:
+        - migo
+      summary: Upload MIGO CSV file
+      description: |
+        Recibe un archivo CSV con el layout de recepciones MIGO. Google Cloud
+        Endpoints (OpenAPI 2.0) no soporta `type: file` en formData para
+        uploads de archivos, por lo que el body no se describe aqui; el gateway
+        solo enruta la peticion al BFF/finanzas-api que se encarga del parseo
+        multipart.
+      operationId: uploadMigoCsv
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: CSV processed successfully
+          schema:
+            $ref: '#/definitions/MigoUploadResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /migo/reject:
     patch:
       tags:
@@ -3423,6 +3493,194 @@ definitions:
       - totalItems
       - totalPages
       - currentPage
+  AccountStatementReportIssuerDto:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      rfc:
+        type: string
+      phone:
+        type: string
+      email:
+        type: string
+  AccountStatementReportVendorDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      vendorName:
+        type: string
+      providerRfc:
+        type: string
+      providerCp:
+        type: string
+      providerAddress:
+        type: string
+      providerContact:
+        type: string
+      providerEmail:
+        type: string
+  AccountStatementReportMetaDto:
+    type: object
+    properties:
+      accountStatementUuid:
+        type: string
+        format: uuid
+      vendorNumber:
+        type: integer
+        format: int64
+      year:
+        type: integer
+      month:
+        type: integer
+      version:
+        type: integer
+      initialBalance:
+        type: number
+        format: double
+        x-nullable: true
+      finalBalance:
+        type: number
+        format: double
+        x-nullable: true
+  AccountStatementReportDatesDto:
+    type: object
+    properties:
+      issueDate:
+        type: string
+        format: date-time
+        x-nullable: true
+      periodStart:
+        type: string
+        format: date-time
+        x-nullable: true
+      periodEnd:
+        type: string
+        format: date-time
+        x-nullable: true
+      generatedAt:
+        type: string
+        format: date-time
+  AccountStatementReportTotalsCountsDto:
+    type: object
+    properties:
+      purchaseOrders:
+        type: integer
+      facturas:
+        type: integer
+      payments:
+        type: integer
+      rebates:
+        type: integer
+      notasCredito:
+        type: integer
+  AccountStatementReportTotalsDto:
+    type: object
+    properties:
+      totalOC:
+        type: number
+        format: double
+      totalFacturasPendientes:
+        type: number
+        format: double
+      totalFacturasPagadas:
+        type: number
+        format: double
+      totalDescuentos:
+        type: number
+        format: double
+      totalNotasCredito:
+        type: number
+        format: double
+      saldoPendiente:
+        type: number
+        format: double
+      counts:
+        $ref: '#/definitions/AccountStatementReportTotalsCountsDto'
+  AccountStatementStatusCatalogItemDto:
+    type: object
+    properties:
+      key:
+        type: string
+      description:
+        type: string
+      color:
+        type: string
+        x-nullable: true
+      sortOrder:
+        type: integer
+  AccountStatementReportCatalogsDto:
+    type: object
+    properties:
+      invoiceStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+      paymentStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+      creditNoteStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+  AccountStatementReportDataDto:
+    type: object
+    description: Full account statement dataset for client-side rendering (PDF/HTML).
+    properties:
+      meta:
+        $ref: '#/definitions/AccountStatementReportMetaDto'
+      issuer:
+        $ref: '#/definitions/AccountStatementReportIssuerDto'
+      vendor:
+        $ref: '#/definitions/AccountStatementReportVendorDto'
+      dates:
+        $ref: '#/definitions/AccountStatementReportDatesDto'
+      totals:
+        $ref: '#/definitions/AccountStatementReportTotalsDto'
+      purchaseOrders:
+        type: array
+        items:
+          type: object
+      receptions:
+        type: array
+        items:
+          type: object
+      payments:
+        type: array
+        items:
+          type: object
+      rebates:
+        type: array
+        items:
+          type: object
+      facturas:
+        type: array
+        items:
+          type: object
+      notasCredito:
+        type: array
+        items:
+          type: object
+      catalogs:
+        $ref: '#/definitions/AccountStatementReportCatalogsDto'
+    required:
+      - meta
+      - issuer
+      - vendor
+      - dates
+      - totals
+      - purchaseOrders
+      - receptions
+      - payments
+      - rebates
+      - facturas
+      - notasCredito
+      - catalogs
   FiscalPaymentDto:
     type: object
     properties:

@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: three-way-match-batch
-              image: foo/bar
+              image: ${CI_APPLICATION_IMAGE}
               imagePullPolicy: IfNotPresent
               command: ["node"]
               args:

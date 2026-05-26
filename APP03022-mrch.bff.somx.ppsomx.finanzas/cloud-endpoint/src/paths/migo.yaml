@@ -144,17 +144,15 @@ migo-upload:
     tags:
       - migo
     summary: Upload MIGO CSV file
+    description: |
+      Recibe un archivo CSV con el layout de recepciones MIGO. Google Cloud
+      Endpoints (OpenAPI 2.0) no soporta `type: file` en formData para
+      uploads de archivos, por lo que el body no se describe aqui; el gateway
+      solo enruta la peticion al BFF/finanzas-api que se encarga del parseo
+      multipart.
     operationId: uploadMigoCsv
-    consumes:
-      - multipart/form-data
     produces:
       - application/json
-    parameters:
-      - in: formData
-        name: file
-        type: file
-        required: true
-        description: CSV file
     responses:
       "200":
         description: CSV processed successfully

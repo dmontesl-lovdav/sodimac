@@ -1,7 +1,6 @@
 import { Router, type Router as RouterType } from "express";
 import * as controller from "@/controllers/finanzasPayment.controller.js";
 import { validateBody, validateParams, validateQuery } from "@/middlewares/validate.js";
-import { attachAuthToken } from "@/middlewares/authToken.js";
 import {
     CreateFinanzasPaymentSchema,
     UpdateFinanzasPaymentSchema,
@@ -14,7 +13,6 @@ import { activityLogger } from "@/middlewares/logger.js";
 const r: RouterType = Router();
 
 r.use(activityLogger("FinanzasPayment"));
-r.use(attachAuthToken);
 
 r.get("/", validateQuery(ListFinanzasPaymentsQuerySchema), controller.list);
 

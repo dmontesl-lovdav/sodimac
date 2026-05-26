@@ -156,16 +156,56 @@ async function getElementNameFromDict(detail: CatalogDetail): Promise<string> {
 }
 
 async function checkDuplicateElementName(
-    catalogId: number,
+    catalog: CatalogHeader,
     elementName: string,
+    parentCatalogId: number | null,
+    parentElementId: number | null,
     excludeId: number | null
 ): Promise<void> {
-    const existing = await detailRepo.findByHeaderIdOrderBySortOrder(catalogId);
+    const trimmedTarget = elementName.trim().toLowerCase();
+    if (!trimmedTarget) return;
+
+    const catalogType = (catalog.catalogType ?? '').toUpperCase();
+    const isPrimaryLike =
+        catalogType === CATALOG_TYPE_PRIMARIO ||
+        catalogType === CATALOG_TYPE_HIERARCHICAL;
+    const hasParentRelation = parentCatalogId != null && parentElementId != null;
+
+    const existing = await detailRepo.findByHeaderIdOrderBySortOrder(catalog.id);
+
     for (const el of existing) {
         if (excludeId != null && el.id === excludeId) continue;
+
         const existingName = await getElementNameFromDict(el);
-        if (existingName && existingName.trim().toLowerCase() === elementName.trim().toLowerCase()) {
-            throw new GenericException(400, 'Ya existe un elemento con este nombre en el catálogo.');
+        if (!existingName) continue;
+        if (existingName.trim().toLowerCase() !== trimmedTarget) continue;
+
+        if (isPrimaryLike) {
+            throw new GenericException(
+                400,
+                'Ya existe un elemento con este nombre en el catálogo.',
+            );
+        }
+
+        if (!hasParentRelation) {
+            const existingHasNoParent = el.parentCatalogId == null && el.parentElementId == null;
+            if (existingHasNoParent) {
+                throw new GenericException(
+                    400,
+                    'Ya existe un elemento con este nombre sin relación padre en el catálogo.',
+                );
+            }
+            continue;
+        }
+
+        if (
+            el.parentCatalogId === parentCatalogId &&
+            el.parentElementId === parentElementId
+        ) {
+            throw new GenericException(
+                400,
+                'Ya existe un elemento con este nombre para el elemento padre seleccionado.',
+            );
         }
     }
 }
@@ -224,7 +264,6 @@ export async function createElement(
         throw new GenericException(404, `Catálogo no encontrado con ID: ${catalogId}`);
     }
 
-    await checkDuplicateElementName(catalogId, dto.element, null);
     validateDates(dto.validFrom, dto.validTo);
 
     let parentCatId = dto.parentCatalogId ?? null;
@@ -237,6 +276,8 @@ export async function createElement(
     }
 
     await validateParentRelation(catalog, parentCatId, parentElemId);
+
+    await checkDuplicateElementName(catalog, dto.element, parentCatId, parentElemId, null);
 
     const generatedKey = await generateNextKey(catalog);
     const dictId = await createDictionaryEntry(dto.element);
@@ -289,31 +330,59 @@ export async function updateElement(
         throw new GenericException(404, `Elemento no encontrado con ID: ${elementId}`);
     }
 
-    if (dto.element && dto.element.trim() !== '') {
-        await checkDuplicateElementName(catalogId, dto.element, elementId);
-        await updateDictionaryEntry(detail.dictId, dto.element);
-    }
-
     if (dto.value != null) detail.value = dto.value;
     if (dto.validFrom != null) detail.validFrom = dto.validFrom;
     if (dto.validTo != null) detail.validTo = dto.validTo;
 
     validateDates(detail.validFrom, detail.validTo);
 
-    const parentCatId = dto.parentCatalogId;
-    const parentElemId = dto.parentElementId;
-    const parentChanged =
-        (parentCatId != null && parentCatId !== detail.parentCatalogId) ||
-        (parentElemId != null && parentElemId !== detail.parentElementId) ||
-        (parentCatId == null && detail.parentCatalogId != null) ||
-        (parentElemId == null && detail.parentElementId != null);
+    const dtoTouchesParent =
+        dto.parentCatalogId !== undefined || dto.parentElementId !== undefined;
 
-    if (parentChanged) {
-        if (parentCatId != null || parentElemId != null) {
-            await validateParentRelation(catalog, parentCatId, parentElemId);
+    let effectiveParentCatId: number | null = detail.parentCatalogId ?? null;
+    let effectiveParentElemId: number | null = detail.parentElementId ?? null;
+
+    if (dtoTouchesParent) {
+        let nextCatId = dto.parentCatalogId ?? null;
+        const nextElemId = dto.parentElementId ?? null;
+        if (nextElemId != null && nextCatId == null) {
+            const parent = await detailRepo.findById(nextElemId);
+            if (parent?.header) {
+                nextCatId = parent.header.id;
+            }
         }
-        detail.parentCatalogId = parentCatId ?? null;
-        detail.parentElementId = parentElemId ?? null;
+        await validateParentRelation(catalog, nextCatId, nextElemId);
+        effectiveParentCatId = nextCatId;
+        effectiveParentElemId = nextElemId;
+    }
+
+    const nameChanging = !!(dto.element && dto.element.trim() !== '');
+    const parentChanging =
+        effectiveParentCatId !== (detail.parentCatalogId ?? null) ||
+        effectiveParentElemId !== (detail.parentElementId ?? null);
+
+    if (nameChanging || parentChanging) {
+        const effectiveName = nameChanging
+            ? dto.element!
+            : await getElementNameFromDict(detail);
+        if (effectiveName && effectiveName.trim() !== '') {
+            await checkDuplicateElementName(
+                catalog,
+                effectiveName,
+                effectiveParentCatId,
+                effectiveParentElemId,
+                elementId,
+            );
+        }
+    }
+
+    if (nameChanging) {
+        await updateDictionaryEntry(detail.dictId, dto.element!);
+    }
+
+    if (dtoTouchesParent) {
+        detail.parentCatalogId = effectiveParentCatId;
+        detail.parentElementId = effectiveParentElemId;
     }
 
     if (dto.sortOrder != null) detail.sortOrder = dto.sortOrder;

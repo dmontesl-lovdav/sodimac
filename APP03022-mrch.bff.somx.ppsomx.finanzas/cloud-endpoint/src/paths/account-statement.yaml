@@ -54,6 +54,44 @@ account-statement:
     security:
       - bearerAuth: []
 
+account-statement-report-data:
+  get:
+    tags:
+      - account-statement
+    summary: Get account statement report data (JSON for client-side PDF)
+    description: >
+      Returns the full account statement payload (header, totals, purchase orders,
+      receptions, payments, rebates, invoices, credit notes and status catalogs)
+      used to render the statement in the portal.
+    operationId: getAccountStatementReportData
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: Report data
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementReportDataDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
 account-statement-pdf:
   get:
     tags:

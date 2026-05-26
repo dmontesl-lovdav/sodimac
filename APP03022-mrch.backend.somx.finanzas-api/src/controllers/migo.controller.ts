@@ -80,8 +80,15 @@ export async function exportReceptionsCsv(req: Request, res: Response, next: Nex
     try {
         const { id } = req.params;
         const csv = await migoService.exportReceptionsCsv(id!);
+
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const yyyymmdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+        const hhmmss = `${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}`;
+        const fileName = `recepcion_archivo_${id}_${yyyymmdd}_${hhmmss}.csv`;
+
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="recepciones-migo-${id}.csv"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         return res.send(csv);
     } catch (err) {
         next(err);

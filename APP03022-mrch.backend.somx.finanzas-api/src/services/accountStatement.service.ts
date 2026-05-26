@@ -1,6 +1,7 @@
 import * as r from '@/repositories/accountStatement.repo.js';
 import type { ListAccountStatementQuery } from '@/schemas/accountStatement.schema.js';
 import { generatePdfBuffer } from './accountStatementPdf.service.js';
+import { buildAccountStatementReportData } from './accountStatementReportData.service.js';
 
 const STATUS_GENERATED = 1;
 const STATUS_PUBLISHED = 2;
@@ -80,4 +81,10 @@ export async function getPdf(uuid: string): Promise<Buffer | null> {
     const row = await r.findById(uuid);
     if (!row) return null;
     return generatePdfBuffer(uuid);
+}
+
+export async function getReportData(uuid: string, allowedVendors: string[] | null = null) {
+    const row = await r.findById(uuid, allowedVendors);
+    if (!row) return null;
+    return buildAccountStatementReportData(uuid);
 }

@@ -138,6 +138,8 @@ paths:
 
   /account-statement:
     $ref: "./paths/account-statement.yaml#/account-statement"
+  /account-statement/{uuid}/report-data:
+    $ref: "./paths/account-statement.yaml#/account-statement-report-data"
   /account-statement/{uuid}/pdf:
     $ref: "./paths/account-statement.yaml#/account-statement-pdf"
   /account-statement/{uuid}/confirm-review:
@@ -219,6 +221,8 @@ paths:
 
   /migo:
     $ref: "./paths/migo.yaml#/migo"
+  /migo/upload:
+    $ref: "./paths/migo.yaml#/migo-upload"
   /migo/reject:
     $ref: "./paths/migo.yaml#/migo-reject"
   /migo/{id}:
@@ -279,6 +283,22 @@ definitions:
     $ref: "./definitions/account-statement.yaml#/AccountStatementDetailDto"
   AccountStatementListResponseDto:
     $ref: "./definitions/account-statement.yaml#/AccountStatementListResponseDto"
+  AccountStatementReportDataDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportDataDto"
+  AccountStatementReportMetaDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportMetaDto"
+  AccountStatementReportIssuerDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportIssuerDto"
+  AccountStatementReportVendorDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportVendorDto"
+  AccountStatementReportDatesDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportDatesDto"
+  AccountStatementReportTotalsDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportTotalsDto"
+  AccountStatementReportCatalogsDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementReportCatalogsDto"
+  AccountStatementStatusCatalogItemDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementStatusCatalogItemDto"
 
   FiscalPaymentDto:
     $ref: "./definitions/fiscal-payments.yaml#/FiscalPaymentDto"

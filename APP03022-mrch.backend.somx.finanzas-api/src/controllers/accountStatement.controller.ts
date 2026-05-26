@@ -63,6 +63,23 @@ export async function requestReview(req: Request, res: Response, next: NextFunct
     }
 }
 
+export async function getReportData(req: Request, res: Response, next: NextFunction) {
+    try {
+        const vendors = allowedVendors(req);
+        if (vendors === 'wrn7029') {
+            res.status(400).json(WRN7029);
+            return;
+        }
+
+        const { uuid } = UuidParamSchema.parse(req.params);
+        const data = await svc.getReportData(uuid, vendors);
+        if (!data) return res.status(404).json({ message: 'Not found' });
+        res.json(data);
+    } catch (e) {
+        next(e);
+    }
+}
+
 export async function getPdf(req: Request, res: Response, next: NextFunction) {
     try {
         const { uuid } = UuidParamSchema.parse(req.params);

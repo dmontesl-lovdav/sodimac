@@ -28,9 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class UtilsApiServiceImpl implements UtilsApiService {
 
-    @Value("${utils.api.enabled:false}")
-    private boolean utilsApiEnabled;
-
     @Value("${utils.api.url:http://localhost:3712}")
     private String utilsApiUrl;
 
@@ -65,11 +62,6 @@ public class UtilsApiServiceImpl implements UtilsApiService {
 
     @Override
     public String getParameterValue(String parameterName, int moduleId, String defaultValue) {
-        if (!utilsApiEnabled) {
-            log.debug("utils-api deshabilitado. Usando valor por defecto para {}: {}", parameterName, defaultValue);
-            return defaultValue;
-        }
-
         String cacheKey = parameterName + "_" + moduleId;
 
         // Verificar cache
@@ -80,11 +72,6 @@ public class UtilsApiServiceImpl implements UtilsApiService {
         }
 
         return getParameterFromApi(parameterName, moduleId, defaultValue, cacheKey);
-    }
-
-    @Override
-    public boolean isUtilsApiEnabled() {
-        return utilsApiEnabled;
     }
 
     /**

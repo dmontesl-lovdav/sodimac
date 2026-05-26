@@ -39,10 +39,4 @@ public interface UtilsApiService {
      */
     String getParameterValue(String parameterName, int moduleId, String defaultValue);
 
-    /**
-     * Indica si utils-api está habilitado.
-     *
-     * @return true si consulta utils-api, false si usa fallback
-     */
-    boolean isUtilsApiEnabled();
 }

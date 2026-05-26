@@ -13,19 +13,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Implementación del servicio de catálogos SAT y datos.
- *
- * Consulta catalogos-api para obtener descripciones de catálogos como:
- * - c_TipoRelacion: Tipos de relación entre CFDIs
- * - TipoAddenda: Tipos de addenda Sodimac
- *
- * Incluye fallback a descripciones hardcodeadas cuando catalogos-api no está disponible.
- *
- * @author Sodimac Tech Team
- * @version 1.0
- * @since 2025
- */
 @Service
 @Slf4j
 public class SatCatalogServiceImpl implements SatCatalogService {
@@ -34,18 +21,11 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     private static final String CATALOG_TIPO_ADDENDA = "TipoAddenda";
     private static final String UNKNOWN = "Desconocido";
 
-    @Value("${sat-catalog.api.enabled:false}")
-    private boolean catalogsApiEnabled;
-
-    @Value("${sat-catalog.api.url:http://utils-api:8080}")
-    private String catalogsApiUrl;
+    @Value("${utils.api.url:http://localhost:3712}")
+    private String utilsApiUrl;
 
     private final RestTemplate restTemplate;
 
-    /**
-     * Cache local de descripciones para evitar llamadas repetidas.
-     * Key: catalogCode_externalKey_langId, Value: descripción
-     */
     private final Map<String, String> descriptionCache = new ConcurrentHashMap<>();
 
     public SatCatalogServiceImpl(RestTemplate restTemplate) {
@@ -57,11 +37,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         if (tipoRelacion == null || tipoRelacion.isBlank()) {
             return UNKNOWN;
         }
-
-        if (!catalogsApiEnabled) {
-            return getFallbackTipoRelacion(tipoRelacion);
-        }
-
         String description = getCatalogDescription(CATALOG_TIPO_RELACION, tipoRelacion);
         return description != null ? description : getFallbackTipoRelacion(tipoRelacion);
     }
@@ -71,11 +46,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         if (tipoAddenda == null) {
             return UNKNOWN;
         }
-
-        if (!catalogsApiEnabled) {
-            return getFallbackTipoAddenda(tipoAddenda);
-        }
-
         String description = getCatalogDescription(CATALOG_TIPO_ADDENDA, tipoAddenda.toString());
         return description != null ? description : getFallbackTipoAddenda(tipoAddenda);
     }
@@ -90,7 +60,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         int langId = getCurrentLanguageId();
         String cacheKey = catalogCode + "_" + externalKey + "_" + langId;
 
-        // Verificar cache
         String cachedDescription = descriptionCache.get(cacheKey);
         if (cachedDescription != null) {
             return cachedDescription;
@@ -98,7 +67,7 @@ public class SatCatalogServiceImpl implements SatCatalogService {
 
         try {
             String url = String.format("%s/api/catalog/%s/details?lang=%d",
-                    catalogsApiUrl, catalogCode, langId);
+                    utilsApiUrl, catalogCode, langId);
 
             ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);
 
@@ -109,7 +78,7 @@ public class SatCatalogServiceImpl implements SatCatalogService {
                         String description = (String) detail.get("description");
                         if (description != null) {
                             descriptionCache.put(cacheKey, description);
-                            log.debug("Descripcion obtenida de catalogos-api para {}/{} (lang={}): {}",
+                            log.debug("Descripcion obtenida de util-api para {}/{} (lang={}): {}",
                                     catalogCode, externalKey, langId, description);
                             return description;
                         }
@@ -117,7 +86,7 @@ public class SatCatalogServiceImpl implements SatCatalogService {
                 }
             }
         } catch (Exception e) {
-            log.warn("Error consultando catalogos-api para {}/{} (lang={}): {}. Usando fallback.",
+            log.warn("Error consultando util-api para {}/{} (lang={}): {}. Usando fallback.",
                     catalogCode, externalKey, langId, e.getMessage());
         }
 
@@ -130,14 +99,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         log.info("Cache de catalogos SAT limpiado");
     }
 
-    @Override
-    public boolean isCatalogsApiEnabled() {
-        return catalogsApiEnabled;
-    }
-
-    /**
-     * Obtiene el ID de idioma actual desde el contexto del request.
-     */
     private int getCurrentLanguageId() {
         Locale locale = LocaleContextHolder.getLocale();
         int langId = LanguageIdMapper.getLanguageId(locale);
@@ -145,10 +106,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         return langId;
     }
 
-    /**
-     * Fallback para TipoRelacion cuando catalogos-api no está disponible.
-     * Basado en el catálogo c_TipoRelacion del SAT (Anexo 20 CFDI 4.0).
-     */
     private String getFallbackTipoRelacion(String tipoRelacion) {
         return switch (tipoRelacion) {
             case "01" -> "Nota de crédito de los documentos relacionados";
@@ -164,10 +121,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         };
     }
 
-    /**
-     * Fallback para TipoAddenda cuando catalogos-api no está disponible.
-     * Basado en la clasificación interna de Sodimac.
-     */
     private String getFallbackTipoAddenda(Integer tipoAddenda) {
         return switch (tipoAddenda) {
             case 1 -> "Addenda Estándar";

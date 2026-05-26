@@ -34,10 +34,4 @@ public interface AuditoriaApiService {
                      String messageDetail, Map<String, Object> details,
                      Long durationMs);
 
-    /**
-     * Verifica si el servicio de auditoría está habilitado.
-     *
-     * @return true si el servicio está habilitado
-     */
-    boolean isEnabled();
 }

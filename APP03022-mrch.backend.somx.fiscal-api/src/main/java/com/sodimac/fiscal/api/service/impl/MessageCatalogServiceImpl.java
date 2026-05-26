@@ -4,15 +4,12 @@ import com.sodimac.fiscal.api.exception.FiscalException;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.model.enums.FiscalWarningCode;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
-import com.sodimac.fiscal.api.util.LanguageIdMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,14 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class MessageCatalogServiceImpl implements MessageCatalogService {
 
-    @Value("${catalogs.api.enabled:false}")
-    private boolean catalogsApiEnabled;
-
-    @Value("${catalogs.api.url:http://catalogos-api:8080}")
-    private String catalogsApiUrl;
-
-    @Value("${catalogs.api.lang:1}")
-    private int defaultLangId;
+    @Value("${utils.api.url:http://localhost:3712}")
+    private String utilsApiUrl;
 
     private final RestTemplate restTemplate;
 
@@ -66,9 +57,6 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
 
     @Override
     public String getMessage(FiscalMessageCode messageCode) {
-        if (!catalogsApiEnabled) {
-            return messageCode.getMessage();
-        }
         return getMessageFromCatalog(messageCode.getCode(), messageCode.getMessage());
     }
 
@@ -80,9 +68,6 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
 
     @Override
     public String getWarningMessage(FiscalWarningCode warningCode) {
-        if (!catalogsApiEnabled) {
-            return warningCode.getMessage();
-        }
         return getMessageFromCatalog(warningCode.getCode(), warningCode.getMessage());
     }
 
@@ -198,33 +183,9 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
 
     // ========== MÉTODOS PRIVADOS ==========
 
-    /**
-     * Obtiene el ID de idioma actual desde el contexto del request.
-     * Usa LocaleContextHolder que es establecido por LocaleFilter.
-     *
-     * @return ID de idioma para catalogos-api
-     */
-    private int getCurrentLanguageId() {
-        Locale locale = LocaleContextHolder.getLocale();
-        int langId = LanguageIdMapper.getLanguageId(locale);
-        log.trace("Idioma del contexto: {} -> langId: {}", locale.getLanguage(), langId);
-        return langId;
-    }
-
-    /**
-     * Obtiene el mensaje desde catalogos-api o usa fallback.
-     *
-     * El idioma se obtiene automáticamente del contexto del request
-     * (establecido por LocaleFilter desde Accept-Language o X-Language header).
-     *
-     * @param catalogKey Clave del catálogo (ej: BUS034, ERR001)
-     * @param fallbackMessage Mensaje por defecto si falla
-     * @return Mensaje del catálogo o fallback
-     */
     @SuppressWarnings("unchecked")
     private String getMessageFromCatalog(String catalogKey, String fallbackMessage) {
-        int langId = getCurrentLanguageId();
-        String cacheKey = catalogKey + "_" + langId;
+        String cacheKey = catalogKey;
 
         // Verificar cache
         String cachedMessage = messageCache.get(cacheKey);
@@ -233,24 +194,27 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
         }
 
         try {
-            // Llamar a catalogos-api
-            String url = String.format("%s/message/%s?lang=%d",
-                    catalogsApiUrl, catalogKey, langId);
+            String url = String.format("%s/api/messages/code/%s", utilsApiUrl, catalogKey);
 
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
 
-            if (response.getStatusCode().is2xxSuccessful() &&
-                response.getBody() != null &&
-                response.getBody().containsKey("description")) {
-
-                String message = (String) response.getBody().get("description");
-                messageCache.put(cacheKey, message);
-                log.debug("Mensaje obtenido de catalogos-api para {} (lang={}): {}", catalogKey, langId, message);
-                return message;
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Boolean success = (Boolean) response.getBody().get("success");
+                if (Boolean.TRUE.equals(success)) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+                    if (data != null) {
+                        String message = (String) data.get("description");
+                        if (message != null) {
+                            messageCache.put(cacheKey, message);
+                            log.debug("Mensaje obtenido de util-api para {}: {}", catalogKey, message);
+                            return message;
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
-            log.warn("Error consultando catalogos-api para clave {} (lang={}): {}. Usando fallback.",
-                    catalogKey, langId, e.getMessage());
+            log.warn("Error consultando util-api para mensaje {}: {}. Usando fallback.", catalogKey, e.getMessage());
         }
 
         // Fallback: usar mensaje del enum
@@ -321,12 +285,4 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
         return messageCache.size();
     }
 
-    /**
-     * Indica si catalogos-api está habilitado.
-     *
-     * @return true si consulta catalogos-api, false si usa fallback
-     */
-    public boolean isCatalogsApiEnabled() {
-        return catalogsApiEnabled;
-    }
 }

@@ -97,10 +97,9 @@ logger.info("CONFIGURING EXPRESS");
 const localService = express();
 localService.set("trust proxy", true);
 
-// Parsers (antes de rutas/proxy)
-localService.use(express.json({ limit: maximumPayloadSize }));
-localService.use(express.raw({ limit: maximumPayloadSize }));
-localService.use(express.urlencoded({ limit: maximumPayloadSize, extended: true }));
+// Body parsers eliminados: el proxy con parseReqBody:false hace stream pass-through
+// de JSON, multipart y cualquier content-type. Si express.json() corre antes,
+// consume el stream y el body nunca llega al backend (síntoma: "Required request body is missing")
 
 // Health (antes del proxy)
 localService.get('/health', (req, res) => res.status(200).send({ message: 'healthy' }));

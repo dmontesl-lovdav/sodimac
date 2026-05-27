@@ -66,7 +66,7 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         }
 
         try {
-            String url = String.format("%s/api/catalog/%s/details?lang=%d",
+            String url = String.format("%s/catalog/%s/details?lang=%d",
                     utilsApiUrl, catalogCode, langId);
 
             ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);

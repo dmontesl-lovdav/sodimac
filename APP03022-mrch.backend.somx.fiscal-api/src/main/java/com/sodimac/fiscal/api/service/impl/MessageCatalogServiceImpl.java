@@ -194,7 +194,7 @@ public class MessageCatalogServiceImpl implements MessageCatalogService {
         }
 
         try {
-            String url = String.format("%s/api/messages/code/%s", utilsApiUrl, catalogKey);
+            String url = String.format("%s/messages/code/%s", utilsApiUrl, catalogKey);
 
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
 

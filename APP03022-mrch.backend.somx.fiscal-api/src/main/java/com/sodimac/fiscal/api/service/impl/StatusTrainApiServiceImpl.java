@@ -53,7 +53,7 @@ public class StatusTrainApiServiceImpl implements StatusTrainApiService {
             return validateWithLocalEnums(optionId, sourceStatus, targetStatus);
         }
 
-        String url = String.format("%s/api/status-train/validate?optionId=%d&sourceStatus=%d&targetStatus=%d",
+        String url = String.format("%s/status-train/validate?optionId=%d&sourceStatus=%d&targetStatus=%d",
                 statusTrainUrl, optionId, sourceStatus, targetStatus);
 
         log.debug("Validando transición: optionId={}, sourceStatus={} -> targetStatus={}",

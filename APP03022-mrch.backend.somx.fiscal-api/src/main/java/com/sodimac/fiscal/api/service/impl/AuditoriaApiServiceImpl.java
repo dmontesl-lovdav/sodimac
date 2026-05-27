@@ -19,7 +19,7 @@ import java.util.Map;
 public class AuditoriaApiServiceImpl implements AuditoriaApiService {
 
     private static final String MODULO = "fiscal-api";
-    private static final String ENDPOINT = "/api/activity-logs/";
+    private static final String ENDPOINT = "/activity-logs/";
     private static final int MAX_MESSAGE_LENGTH = 100;
 
     @Value("${utils.api.url:http://localhost:3712}")

@@ -77,7 +77,7 @@ public class UtilsApiServiceImpl implements UtilsApiService {
     /**
      * Consulta el parámetro desde utils-api.
      *
-     * Endpoint: GET /api/parameters?name={parameterName}&idModule={moduleId}
+     * Endpoint: GET /parameters?name={parameterName}&idModule={moduleId}
      *
      * Respuesta esperada:
      * {
@@ -91,7 +91,7 @@ public class UtilsApiServiceImpl implements UtilsApiService {
         try {
             // Construir URL con filtros
             StringBuilder urlBuilder = new StringBuilder(utilsApiUrl)
-                    .append("/api/parameters?name=")
+                    .append("/parameters?name=")
                     .append(parameterName);
 
             if (moduleId > 0) {

@@ -4,6 +4,19 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-05-05 | Reproceso puntos CES por tickets puntuales
+
+**Contexto**: Ivan compartio 126 tickets de tipo asignacion (`TRANSACTIONTYPE='sale'`) que requieren replicarse manualmente al modelo fiscal (`AdminPuntosCes` + `VentaCab` + `VentaDetImpuesto`) sin depender del rango de fechas del job.
+**Solucion**: Modo exclusivo nuevo en `ReplicarPuntosJob` controlado por dos props (`puntos.ces.tickets.activo`, `puntos.ces.tickets.lista`). Nuevo metodo de repo `findPuntosCesByTickets` filtra por `NUM_TRX IN (...)` y `TRANSACTIONTYPE='sale'`, sin filtro de fecha. Control CES con clave `MANUAL-yyyyMMdd`.
+**Proyecto**: `soporte/bctfacturacion`
+**Commit**: `3e568d8` (rama `dmontes`)
+**Detalle**: [docs/soporte/ivan/puntos-ces-tickets-puntuales.md](ivan/puntos-ces-tickets-puntuales.md)
+**Proceso completo**: [docs/wiki/procesos/10-puntos-ces.md](../wiki/procesos/10-puntos-ces.md)
+**Tickets**: `sesiones/soporte/20260505-puntos-ces.txt`
+**Estado**: Implementado y pusheado. Validacion en ejecucion — query devuelve 0 filas en algun ambiente, queries de diagnostico documentadas.
+
+---
+
 ## 2026-03-18 | Candado 60 días autofacturador no bloquea timbrado
 
 **Contexto**: Iván reporta que al timbrar desde el autofacturador, el sistema deja pasar tickets que deberían estar bloqueados por el candado de 60 días.

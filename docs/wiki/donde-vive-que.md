@@ -86,10 +86,13 @@
 → `tenant_finance.vendor_block` con `status` activo. Endpoint: `/api/vendor-blocks`.
 
 ### "Necesito capturar una addenda que el proveedor no incluyó"
-→ `tenant_finance.addendum_manual`. Endpoint: `/api/addendum/manual` (en finanzas-api).
+→ `tenant_finance.addendum_manual`. Se llena automático desde finanzas-api al asociar OC + recepción a la factura (`purchaseOrder.service.ts:119-131`). Ver [proceso addenda](procesos/09-addenda-sodimac.md).
 
 ### "La addenda viene dentro del CFDI"
-→ `tenant_fiscal.addendum`. Se persiste al cargar la factura.
+→ `tenant_fiscal.addendum`. Se persiste al cargar la factura. Tipos soportados: `Addenda_Sodimac` (local) y `Addenda_Sodimac_CartaPorte` (foráneo). Ver [proceso addenda](procesos/09-addenda-sodimac.md).
+
+### "Mi factura quedó en estatus Pendiente Addenda — ¿por qué?"
+→ El XML llegó sin nodo `<cfdi:Addenda>`. Respuesta `RES005`, estatus 1. Hay que completar la addenda antes de mover estatus (PUT da BUS048). Ver [proceso addenda](procesos/09-addenda-sodimac.md).
 
 ## Catálogos / Maestros
 
@@ -118,6 +121,28 @@
 | Catálogos compartidos SAT (regímenes, formas de pago, etc.) | `shared_catalogs` |
 | Utilerías (atributos de usuario, parámetros) | `core_utils` |
 | Bitácora cross-módulo legacy | `core_audit` (deprecada, migrada a `tenant_finance.activity_logs`) |
+
+## Rutas BFF en UAT (ppsomx)
+
+Dos prefijos diferentes en `uat.fbusinesscenter.com` — NO son equivalentes:
+
+| Prefijo | Apunta a | Acepta multipart POST |
+|---|---|---|
+| `/ppsomx/fiscal/` | **bff.fiscal** (proxy) → fiscal-api:8082 | Sí (`parseReqBody:false`) |
+| `/ppsomx/backend-fiscal/` | fiscal-api directo (sin BFF) | No: nginx devuelve `405 Not Allowed` para POST con body grande |
+
+**Ejemplo correcto** para subir XML:
+```
+POST https://uat.fbusinesscenter.com/ppsomx/fiscal/fiscal/xml/process/file
+```
+(doble `fiscal/` porque el BFF transparente conserva el path completo del backend)
+
+**No funciona**:
+```
+POST https://uat.fbusinesscenter.com/ppsomx/backend-fiscal/fiscal/xml/process/file  ← 405
+```
+
+Si el JWT (~8KB) causa `Request Header Or Cookie Too Large` en alguna ruta, el BFF tiene `--max-http-header-size=1048576` en su start script, pero nginx puede necesitar `proxy-buffer-size: "32k"` en el ingress K8s (pendiente Bonelli).
 
 ## Reglas mnemotécnicas
 

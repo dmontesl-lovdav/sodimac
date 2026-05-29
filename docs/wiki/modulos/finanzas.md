@@ -190,6 +190,32 @@ Igual que en `tenant_fiscal`, integridad referencial depende del código de apli
 
 **Actualización 2026-05-18 (UAT)**: Scripts aplicados en UAT. Se agregaron 8 PKs faltantes (1 en `tenant_fiscal.tax`, 7 en `tenant_finance`) y 25 FKs nuevas (21 en `tenant_fiscal`, 4 en `tenant_finance`). Scripts en [docs/db/fks-20260515/](../../db/fks-20260515/).
 
+### Bug `FinanzasPaymentHeader` entity name (2026-05-18)
+
+`APP03022-mrch.backend.somx.finanzas-api/src/entities/FinanzasPaymentHeader.entity.ts` tenía:
+
+```typescript
+@Entity({ name: 'finanzas_payment_headers' })  // ← tabla que NO existe en BD
+```
+
+La tabla real es `payment_header`. TypeORM lanzaba un queryRunner que colgaba silenciosamente en transacción → todos los `POST /finanzas-payment/header-with-details` y `GET /finanzas-payment` fallaban sin error explícito.
+
+**Fix aplicado**: `@Entity({ name: 'payment_header' })`. Commit `596fbfa`.
+
+---
+
+### Timezone drift en `payment_detail.created_at` (2026-05-18)
+
+La columna `payment_detail.created_at` es `timestamp without time zone`. El driver Node.js/TypeORM escribe en UTC. Un registro creado a las 18:38 CST (UTC-6) se almacena como `2026-05-19 00:38:00 UTC`.
+
+El endpoint `GET /finanzas-payment` filtra con `createdAtEnd` como límite de fecha (`YYYY-MM-DD`). Si se filtra `createdAtEnd=2026-05-18`, el límite superior es `2026-05-19 00:00:00` → los registros de 00:38 UTC quedan excluidos.
+
+**Workaround temporal**: usar `createdAtEnd = hoy+1` para que el filtro incluya el día completo en hora México.
+
+**Fix correcto**: cambiar `created_at` a `timestamp with time zone` (`timestamptz`) — pendiente con Bonelli.
+
+---
+
 ### Bug histórico encontrado en `rebate` (2026-05-15)
 
 Entity TypeORM tenía props (`supplierNumber`, `documentReference`, `originId`) distintas al contrato HTTP (Zod) y a BD (`vendor_number`, `reference_number`, `source`). POST `/rebates` quedaba con NULLs silenciosos hasta golpear `NOT NULL` constraint. Fix aplicado: alinear props TS con BD/contrato.

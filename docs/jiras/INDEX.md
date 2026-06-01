@@ -44,6 +44,8 @@ Arquitectura: BFF decodifica JWT + consulta `util-api /api/security/user-attribu
 
 | Jira | Tema | Estado | Carpeta |
 |------|------|--------|---------|
+| [STM-336](STM-336/) | **Epic** — módulo documentos fiscales pago y descuento a proveedores (padre de STM-1309 + batch rebate) | To Do (94.92%) | [STM-336/](STM-336/) |
+| [STM-1309](STM-1309/) | batch sincronización estatus facturas FBC (proyecto `invoice-status-sync` de Robert) — **Done en Jira pero modelo de estatus en conflicto con tren actual de fiscal-api**, ver análisis | Done · heredado por David | [STM-1309/](STM-1309/) |
 | [STM-1166](STM-1166/) | (ver carpeta) | — | [STM-1166/](STM-1166/) |
 | [STM-1167](STM-1167/) | batch trazabilidad SQL Server | — | [STM-1167/](STM-1167/) |
 | [STM-272](STM-272/) | bitácora registro complemento pago | — | [STM-272/](STM-272/) |

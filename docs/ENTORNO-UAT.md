@@ -2,13 +2,29 @@
 
 ## URLs de los BFFs
 
-| Servicio | URL base UAT |
-|---|---|
-| fiscal (BFF) | `https://uat.fbusinesscenter.com/ppsomx/fiscal/` |
-| util (BFF) | `https://uat.fbusinesscenter.com/ppsomx/backend-util/` |
-| finanzas (BFF) | `https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/` |
+| Servicio | URL base UAT | Llega a |
+|---|---|---|
+| fiscal (BFF) | `https://uat.fbusinesscenter.com/ppsomx/fiscal/` | bff.fiscal → fiscal-api |
+| util (BFF) | `https://uat.fbusinesscenter.com/ppsomx/backend-util/` | bff-util → util-api |
+| finanzas (BFF) | `https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/` | bff.finanzas → finanzas-api |
 
 > `uat.vendor.fbusinesscenter.com` existe en el ingress k8s pero requiere VPN/cert — usar siempre `uat.fbusinesscenter.com`.
+
+### ⚠ Trampa — paths inexistentes responden HTML 200 (SPA catchall)
+
+Cualquier path que NO esté en la lista anterior cae en el catchall del frontend FBC. Cloudflare devuelve 200 OK pero con HTML de la SPA en lugar de error.
+
+Ejemplos de paths que **NO existen** pero parecen funcionar:
+```bash
+curl -i "https://uat.fbusinesscenter.com/ppsomx/backend-fiscal/health"
+# → 200 OK + <!DOCTYPE html>...   ⚠ NO es respuesta del backend
+```
+
+Lectura rápida:
+- `Content-Type: text/html` → SPA catchall (path no enrutado)
+- `Content-Type: application/json` → respuesta real del BFF / backend
+
+Para diagnóstico completo de errores gateway: [docs/wiki/troubleshooting-envoy.md](wiki/troubleshooting-envoy.md).
 
 ---
 

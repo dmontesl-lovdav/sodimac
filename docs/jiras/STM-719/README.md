@@ -139,8 +139,70 @@ Script disponible en: `docs/jiras/STM-719/migration-sap-comprobante.sql`
 
 1. NC: Filtrar con estatus 2 o 3? (nuestro enum NC(2)="Recibido Parcial", no "Pendiente Contabilizar")
 2. NC error: Estatus 5 del JIRA = exito en nuestro enum. Usar 11 (Rechazo Contable)?
-3. SODIMAC_SAP_DEV: DDL oficial o nuestro diseno?
+3. **⚠️ BLOQUEANTE — SODIMAC_SAP_DEV: DDL oficial o nuestro diseno?** Ver seccion abajo "Hallazgo 2026-05-28".
 4. XML: Desde fiscal-api (campo xmlContent) o directamente del portal FBC?
+
+## Hallazgo 2026-05-28: mismatch entre codigo batch y SAP_DEV Sodimac
+
+Al validar el batch contra Sodimac DEV SQL Server (`10.138.153.10:1433`) se confirma que:
+
+### A) 3 tablas no existen en Sodimac
+
+El codigo escribe a 8 tablas (`Comprobante`, `Emisor`, `Receptor`, `Concepto`, `Impuestos`, `Traslado`, `Retencion`, `DetalleImpuesto`). En `SODIMAC_SAP_DEV` real **no existen**:
+
+- `Impuestos` (totales generales del comprobante)
+- `Traslado` (traslados a nivel comprobante)
+- `Retencion` (retenciones a nivel comprobante)
+
+Si existen: `Comprobante`, `Emisor`, `Receptor`, `Concepto`, `DetalleImpuesto` (con estructura distinta — ver punto B).
+
+### B) Tabla Comprobante con modelo viejo (autofacturador)
+
+| Java entity espera (modelo nuevo) | Sodimac SAP_DEV real (autofacturador) |
+|---|---|
+| `id_comprobante INT IDENTITY` (PK) | `Uuid VARCHAR` (PK) |
+| `lugar_expedicion` snake_case | `LugarExpedicion` PascalCase |
+| `metodo_pago` | `MetodoPago` |
+| `forma_pago` | `FormaPago` |
+| `tipo_comprobante` | `TipoDeComprobante` |
+| `condiciones_pago` | `CondicionDePago` |
+| `xml_completo` | `Xml` |
+| `estatus_proceso` VARCHAR | `Estatus` INT |
+| `exportacion`, `no_certificado`, `sello`, `certificado`, `fecha_timbrado`, `rfc_prov_certif`, `no_certificado_sat`, `fecha_registro` | **No existen** |
+| `fiscal_uuid`, `invoice_uuid` | ya agregadas via `migration-sap-comprobante.sql` |
+
+### Workaround temporal aplicado
+
+Para destrabar la prueba local (Docker tiene el modelo nuevo aplicado), se **comento en el codigo** todo lo relacionado con las 3 tablas faltantes:
+
+Archivo: `APP03022-mrch.batch.somx.fiscal-download/src/main/java/com/sodimac/batch/fiscal/download/service/CfdiDesgloseService.java`
+
+- Field declarations: `impuestosRepository`, `trasladoRepository`, `retencionRepository`
+- Parametros del constructor + asignaciones
+- Llamada a `extractImpuestos` dentro de `desglosar()` (paso 5)
+- Metodos `extractImpuestos()`, `saveTraslado()`, `saveRetencion()`
+
+Los datos NO se pierden:
+- `DetalleImpuesto` (que si existe) guarda traslados/retenciones a nivel concepto
+- `xml_completo` guarda el XML integro
+- Totales a nivel comprobante se pueden derivar con `SUM()` o leyendo el XML
+
+### Opciones para resolver el bloqueante (preguntar a Ivan/Bonelli)
+
+| Opcion | DDL en Sodimac | Cambios codigo | Funcionalidad |
+|---|---|---|---|
+| 1. Aplicar `sap-dev-dll.sql` completo en DB nueva `SODIMAC_FBC_SAP_DEV` | DB nueva + 8 tablas | 0 | Completa |
+| 2. Migracion hibrida: ALTER Comprobante existente + crear 3 faltantes en `SODIMAC_SAP_DEV` | ALTER + CREATE x3 | 0 | Completa pero modelo mixto |
+| 3. Refactor batch a modelo viejo Sodimac (Uuid PK, PascalCase) | Solo ALTER ya aplicado | Mucho (5 entities + mappers + service) | Reducida (pierde sello/certificado/timbrado/etc.) |
+| 4. Mantener workaround (sin las 3 tablas) + refactor de las otras 5 entities al modelo viejo | 0 | Moderado | Reducida pero sin tocar Sodimac |
+
+**Recomendacion personal**: opcion 1 — DB nueva separa concerns, no toca modelo viejo del autofacturador, codigo funciona como esta.
+
+### Estado actual
+
+- **Docker local (modelo nuevo aplicado)**: batch funciona end-to-end. 9 facturas + 3 NCs procesadas con SUCCESS.
+- **Sodimac DEV**: bloqueado. Necesita decision de Ivan/Bonelli antes de avanzar.
+- **UAT**: bloqueado por dependencia de Sodimac DEV.
 
 ## Verificacion
 

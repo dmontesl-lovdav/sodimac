@@ -28,26 +28,28 @@ public class CfdiDesgloseService {
     private final EmisorRepository emisorRepository;
     private final ReceptorRepository receptorRepository;
     private final ConceptoRepository conceptoRepository;
-    private final ImpuestosRepository impuestosRepository;
-    private final TrasladoRepository trasladoRepository;
-    private final RetencionRepository retencionRepository;
+    // STM-719: comentado - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac (pendiente decision Ivan/Bonelli)
+    // private final ImpuestosRepository impuestosRepository;
+    // private final TrasladoRepository trasladoRepository;
+    // private final RetencionRepository retencionRepository;
     private final DetalleImpuestoRepository detalleImpuestoRepository;
 
     public CfdiDesgloseService(ComprobanteRepository comprobanteRepository,
                                 EmisorRepository emisorRepository,
                                 ReceptorRepository receptorRepository,
                                 ConceptoRepository conceptoRepository,
-                                ImpuestosRepository impuestosRepository,
-                                TrasladoRepository trasladoRepository,
-                                RetencionRepository retencionRepository,
+                                // STM-719: params comentados - repos no inyectados temporalmente
+                                // ImpuestosRepository impuestosRepository,
+                                // TrasladoRepository trasladoRepository,
+                                // RetencionRepository retencionRepository,
                                 DetalleImpuestoRepository detalleImpuestoRepository) {
         this.comprobanteRepository = comprobanteRepository;
         this.emisorRepository = emisorRepository;
         this.receptorRepository = receptorRepository;
         this.conceptoRepository = conceptoRepository;
-        this.impuestosRepository = impuestosRepository;
-        this.trasladoRepository = trasladoRepository;
-        this.retencionRepository = retencionRepository;
+        // this.impuestosRepository = impuestosRepository;
+        // this.trasladoRepository = trasladoRepository;
+        // this.retencionRepository = retencionRepository;
         this.detalleImpuestoRepository = detalleImpuestoRepository;
     }
 
@@ -101,13 +103,16 @@ public class CfdiDesgloseService {
         }
 
         // 5. Impuestos (nivel comprobante)
-        NodeList impuestosNodes = root.getElementsByTagNameNS(NS_CFDI, "Impuestos");
-        for (int i = 0; i < impuestosNodes.getLength(); i++) {
-            Element impNode = (Element) impuestosNodes.item(i);
-            if (impNode.getParentNode().getLocalName().equals("Comprobante")) {
-                extractImpuestos(impNode, idComp);
-            }
-        }
+        // STM-719: comentado - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac
+        // Los totales a nivel comprobante se pueden derivar de DetalleImpuesto (nivel concepto) o del xml_completo
+        // Pendiente decision con Ivan/Bonelli en daily
+        // NodeList impuestosNodes = root.getElementsByTagNameNS(NS_CFDI, "Impuestos");
+        // for (int i = 0; i < impuestosNodes.getLength(); i++) {
+        //     Element impNode = (Element) impuestosNodes.item(i);
+        //     if (impNode.getParentNode().getLocalName().equals("Comprobante")) {
+        //         extractImpuestos(impNode, idComp);
+        //     }
+        // }
 
         log.info("Desglose completado: uuid={} comprobante_id={}", comprobante.getFiscalUuid(), idComp);
         return comprobante;
@@ -196,49 +201,51 @@ public class CfdiDesgloseService {
         detalleImpuestoRepository.save(detalle);
     }
 
-    private void extractImpuestos(Element node, int idComprobante) {
-        ImpuestosEntity impuestos = ImpuestosMapper.toEntity(
-                idComprobante,
-                decimal(attr(node, "TotalImpuestosTrasladados")),
-                decimal(attr(node, "TotalImpuestosRetenidos")));
-        impuestos = impuestosRepository.save(impuestos);
+    // STM-719: metodos comentados - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac
+    // Pendiente decision con Ivan/Bonelli en daily
+    // private void extractImpuestos(Element node, int idComprobante) {
+    //     ImpuestosEntity impuestos = ImpuestosMapper.toEntity(
+    //             idComprobante,
+    //             decimal(attr(node, "TotalImpuestosTrasladados")),
+    //             decimal(attr(node, "TotalImpuestosRetenidos")));
+    //     impuestos = impuestosRepository.save(impuestos);
+    //
+    //     // Traslados a nivel comprobante
+    //     NodeList trasladosWrapper = node.getElementsByTagNameNS(NS_CFDI, "Traslados");
+    //     if (trasladosWrapper.getLength() > 0) {
+    //         NodeList traslados = ((Element) trasladosWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Traslado");
+    //         for (int i = 0; i < traslados.getLength(); i++) {
+    //             saveTraslado((Element) traslados.item(i), impuestos.getIdImpuesto());
+    //         }
+    //     }
+    //
+    //     // Retenciones a nivel comprobante
+    //     NodeList retencionesWrapper = node.getElementsByTagNameNS(NS_CFDI, "Retenciones");
+    //     if (retencionesWrapper.getLength() > 0) {
+    //         NodeList retenciones = ((Element) retencionesWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Retencion");
+    //         for (int i = 0; i < retenciones.getLength(); i++) {
+    //             saveRetencion((Element) retenciones.item(i), impuestos.getIdImpuesto());
+    //         }
+    //     }
+    // }
 
-        // Traslados a nivel comprobante
-        NodeList trasladosWrapper = node.getElementsByTagNameNS(NS_CFDI, "Traslados");
-        if (trasladosWrapper.getLength() > 0) {
-            NodeList traslados = ((Element) trasladosWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Traslado");
-            for (int i = 0; i < traslados.getLength(); i++) {
-                saveTraslado((Element) traslados.item(i), impuestos.getIdImpuesto());
-            }
-        }
+    // private void saveTraslado(Element node, int idImpuesto) {
+    //     TrasladoEntity traslado = TrasladoMapper.toEntity(
+    //             idImpuesto, decimal(attr(node, "Base")),
+    //             attr(node, "Impuesto"), attr(node, "TipoFactor"),
+    //             decimal(attr(node, "TasaOCuota")),
+    //             decimal(attr(node, "Importe")));
+    //     trasladoRepository.save(traslado);
+    // }
 
-        // Retenciones a nivel comprobante
-        NodeList retencionesWrapper = node.getElementsByTagNameNS(NS_CFDI, "Retenciones");
-        if (retencionesWrapper.getLength() > 0) {
-            NodeList retenciones = ((Element) retencionesWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Retencion");
-            for (int i = 0; i < retenciones.getLength(); i++) {
-                saveRetencion((Element) retenciones.item(i), impuestos.getIdImpuesto());
-            }
-        }
-    }
-
-    private void saveTraslado(Element node, int idImpuesto) {
-        TrasladoEntity traslado = TrasladoMapper.toEntity(
-                idImpuesto, decimal(attr(node, "Base")),
-                attr(node, "Impuesto"), attr(node, "TipoFactor"),
-                decimal(attr(node, "TasaOCuota")),
-                decimal(attr(node, "Importe")));
-        trasladoRepository.save(traslado);
-    }
-
-    private void saveRetencion(Element node, int idImpuesto) {
-        RetencionEntity retencion = RetencionMapper.toEntity(
-                idImpuesto, decimal(attr(node, "Base")),
-                attr(node, "Impuesto"), attr(node, "TipoFactor"),
-                decimal(attr(node, "TasaOCuota")),
-                decimal(attr(node, "Importe")));
-        retencionRepository.save(retencion);
-    }
+    // private void saveRetencion(Element node, int idImpuesto) {
+    //     RetencionEntity retencion = RetencionMapper.toEntity(
+    //             idImpuesto, decimal(attr(node, "Base")),
+    //             attr(node, "Impuesto"), attr(node, "TipoFactor"),
+    //             decimal(attr(node, "TasaOCuota")),
+    //             decimal(attr(node, "Importe")));
+    //     retencionRepository.save(retencion);
+    // }
 
     // ── Validacion de Addenda ───────────────────────────────────
 

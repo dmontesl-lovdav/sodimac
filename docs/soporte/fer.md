@@ -4,6 +4,26 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-05-28 | BUS048 al cambiar estatus de factura recién subida
+
+**Contexto**: Fer subió XML Truper (`0118413484.xml`) vía POST `/ppsomx/fiscal/invoices/register` → respuesta `RES005` "Pendiente de Addenda". Luego PUT a estatus 2 → recibió `BUS048` "La addenda del documento no se encuentra registrada en el sistema".
+**Pregunta**: ¿Es normal este error?
+**Respuesta**: Sí, comportamiento esperado. El XML de Truper no trae nodo `<cfdi:Addenda>`. Sodimac acepta 2 escenarios:
+1. **XML CON addenda Sodimac** (`Addenda_Sodimac` local o `Addenda_Sodimac_CartaPorte` foráneo) → respuesta `RES004`, estatus normal.
+2. **XML SIN addenda** → respuesta `RES005`, estatus 1 (Pendiente Addenda). Se guarda OK pero el PUT a estatus 2 falla con `BUS048` hasta completar la addenda manual desde finanzas-api (vinculación OC + recepción).
+
+**Diagnóstico técnico**:
+- `AddendaValidationServiceImpl.java:60-66` → sin addenda = `return false`, NO error
+- `InvoiceServiceImpl.java:934-967` (`validateSupplierOwnership`) → exige addenda registrada para validar propiedad del proveedor en PUT
+- Comentario en código: "Si el documento NO tiene addenda, es un ERROR (no debería ocurrir)" — regla confirmada por Ivan
+- Vinculación manual: `purchaseOrder.service.ts:119-131` crea `AddendumManual` cuando se asocia recepción a factura con `status=2` + `uuid`
+
+**Pendiente confirmar con Ivan**: si addendum_manual de finanzas alimenta tenant_fiscal.addendum (que es de donde fiscal-api lee).
+**Documentación generada**: [docs/wiki/procesos/09-addenda-sodimac.md](../wiki/procesos/09-addenda-sodimac.md)
+**Estado**: Resuelto (información entregada, doc de wiki creado)
+
+---
+
 ## 2026-03-25 | Relacionar descuento comercial con nota de crédito
 
 **Contexto**: Fer tiene un ticket para pantalla de relacionar descuento comercial con NC. Ya sabe que el endpoint de subir NC es `/api/fiscal/xml/process/file` pero pregunta cómo relacionar el descuento con la NC.

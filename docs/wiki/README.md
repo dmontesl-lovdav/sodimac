@@ -31,6 +31,7 @@
 | 02 | [Descuento comercial (rebate)](procesos/08-descuento-comercial.md) | ✅ |
 | 03 | [Facturación CFDI](procesos/04-facturacion-cfdi.md) | ✅ |
 | 04 | [Three Way Match (conciliación)](procesos/05-three-way-match.md) | ✅ |
+| 05 | [Addenda Sodimac](procesos/09-addenda-sodimac.md) | ✅ |
 | — | Alta proveedor | 📝 pendiente |
 | — | Orden de compra | 📝 pendiente |
 | — | Recepción | 📝 pendiente |
@@ -38,7 +39,6 @@
 | — | Nota de crédito | 📝 pendiente |
 | — | Estado de cuenta | 📝 pendiente |
 | — | Bloqueo de proveedor | 📝 pendiente |
-| — | Addenda | 📝 pendiente |
 
 Procesos pendientes se llenan a demanda — cuando aparezca la pregunta.
 
@@ -70,10 +70,19 @@ Cuando alguien pregunte algo nuevo:
 
 La wiki **crece reactivamente** — solo se agrega lo que alguien preguntó. Evita sobre-documentar.
 
+## Operación / DevOps (técnico)
+
+| Tema | Doc |
+|---|---|
+| GitHub Actions Pipeline + Cloud Endpoint approval | [Pipeline Actions](pipeline-actions.md) |
+| Diagnosticar errores Envoy / gateway UAT | [Troubleshooting Envoy](troubleshooting-envoy.md) |
+| URLs UAT + vars k8s + curls validación | [ENTORNO-UAT.md](../ENTORNO-UAT.md) |
+
 ## Referencias técnicas (fuera de wiki)
 
 - [docs/analisis/](../analisis/) — análisis técnicos, refactors, hallazgos de bugs
 - [docs/arquitectura/](../arquitectura/) — diagramas, modelos ER, decisiones de arq
 - [docs/jiras/](../jiras/) — documentación por ticket (implementaciones)
+- [docs/aprendizaje/](../aprendizaje/) — plan de estudio DevOps
 - [docs/BASE-DE-DATOS.md](../BASE-DE-DATOS.md) — conexión y credenciales
 - [docs/ENTORNO-LOCAL.md](../ENTORNO-LOCAL.md) — levantamiento local

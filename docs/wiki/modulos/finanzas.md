@@ -216,6 +216,41 @@ El endpoint `GET /finanzas-payment` filtra con `createdAtEnd` como límite de fe
 
 ---
 
+### Bug rutas `:uuid` vs schema `id` en finanzas-api (2026-05-12, activo)
+
+Rutas `fiscalPayment.routes.ts` y `rebate.routes.ts` declaran param como `:uuid`:
+
+```ts
+router.get("/:uuid", ctrl.getById);
+router.put("/:uuid", ctrl.update);
+router.delete("/:uuid", ctrl.remove);
+```
+
+Pero `IdParamSchema = z.object({ id: UUID })` y controllers parsean `const { id } = IdParamSchema.parse(req.params)`. Express expone el param como `uuid`, schema espera `id` → 400 `"expected string, received undefined"`.
+
+Afecta: `GET/PUT/DELETE /api/fiscal-payments/:uuid` y `/api/rebates/:uuid`. POST y GET list funcionan OK.
+
+Fix simple: renombrar params en routes a `:id` (schema + controller ya están alineados con `id`).
+
+---
+
+### Query params requeridos `GET /finanzas-payment` (2026-05-12)
+
+`ListFinanzasPaymentsQuerySchema` marca con `nonoptional`:
+- `createdAtInitial` (date)
+- `createdAtEnd` (date)
+- `pageNumber` (int)
+- `pageSize` (int)
+
+Sin alguno → 400 `"Invalid field ... cannot be empty, null or blank"`. Opcionales: `vendorNumber`, `finanzasPaymentUuid`, `paymentDate`, `documentNumber`, `sapDocument`.
+
+Curl mínimo válido:
+```bash
+curl -X GET "https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/finanzas-payment?createdAtInitial=2021-03-31&createdAtEnd=2026-05-01&pageNumber=1&pageSize=10" -H "Authorization: Bearer <TOKEN>"
+```
+
+---
+
 ### Bug histórico encontrado en `rebate` (2026-05-15)
 
 Entity TypeORM tenía props (`supplierNumber`, `documentReference`, `originId`) distintas al contrato HTTP (Zod) y a BD (`vendor_number`, `reference_number`, `source`). POST `/rebates` quedaba con NULLs silenciosos hasta golpear `NOT NULL` constraint. Fix aplicado: alinear props TS con BD/contrato.

@@ -23,14 +23,15 @@ datasource:
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     username: SA
     password: 'Sodimac2026#Dev'
-  # SAPITO normalmente es Oracle; en local lo emulamos sobre SQL Server (misma tabla Envios_Ap)
+  # SAPITO = Oracle real (contenedor sodimac-oracle, schema UODSRMX). Ya NO homologado en SQL Server.
   sapito:
-    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
-    username: SA
-    password: 'Sodimac2026#Dev'
+    jdbc-url: jdbc:oracle:thin:@localhost:1521/FREEPDB1
+    driver-class-name: oracle.jdbc.OracleDriver
+    username: UODSRMX
+    password: uodsrmx47q8
+  # i213 = SQL Server, DB propia AdmIF213ProdDB (no SAP_DEV)
   i213:
-    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
+    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=AdmIF213ProdDB;encrypt=false;trustServerCertificate=true
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     username: SA
     password: 'Sodimac2026#Dev'

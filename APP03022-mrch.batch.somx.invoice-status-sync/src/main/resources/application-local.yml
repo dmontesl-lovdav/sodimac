@@ -1,0 +1,63 @@
+# Perfil LOCAL (David) — validacion en Docker local, sin Oracle.
+# SAP / SAPITO / i213 apuntan todos a SQL Server local (SODIMAC_SAP_DEV) con tablas/SPs mock.
+# Control -> SODIMAC_BATCH_DEV local. FBC en mock. Host port 1434 -> 1433 contenedor.
+spring:
+  datasource:
+    jdbc-url: jdbc:h2:mem:invoicedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+server:
+  port: 8085
+
+# DataSources reales -> redirigidos a SQL Server local
+datasource:
+  sodimac-sap:
+    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: SA
+    password: 'Sodimac2026#Dev'
+  # SAPITO normalmente es Oracle; en local lo emulamos sobre SQL Server (misma tabla Envios_Ap)
+  sapito:
+    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: SA
+    password: 'Sodimac2026#Dev'
+  i213:
+    jdbc-url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: SA
+    password: 'Sodimac2026#Dev'
+
+batch:
+  scheduler:
+    enabled: true
+    cron: "0 30 7 * * *"
+    max-retries: 0
+    retry-interval-minutes: 1
+    max-execution-minutes: 15
+  datasource:
+    url: jdbc:sqlserver://localhost:1434;databaseName=SODIMAC_BATCH_DEV;encrypt=false;trustServerCertificate=true
+    username: SA
+    password: 'Sodimac2026#Dev'
+
+fbc:
+  portal:
+    url: http://localhost:8081
+    mock-enabled: true
+
+alert:
+  notification:
+    email:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.invoicesync: DEBUG

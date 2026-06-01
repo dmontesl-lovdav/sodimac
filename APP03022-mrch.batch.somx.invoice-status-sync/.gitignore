@@ -1,0 +1,48 @@
+
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+.claude/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env
+
+# Build
+build/
+out/
+bin/
+
+# Test
+test-output/
+coverage/
+
+# Credentials
+*.pem
+*.key
+credentials.json
+secrets.yml

@@ -1,0 +1,105 @@
+# =============================================================================
+# PERFIL PARA PRUEBAS DE CONEXIÓN A BASES DE DATOS REALES
+# =============================================================================
+# Uso: mvn spring-boot:run -Dspring-boot.run.profiles=test-db
+# =============================================================================
+
+spring:
+  application:
+    name: invoice-status-sync
+
+  # Base de datos principal (H2 para pruebas locales)
+  datasource:
+    url: jdbc:h2:mem:invoicedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+  h2:
+    console:
+      enabled: false
+
+server:
+  port: 8080
+
+# =============================================================================
+# CONEXIONES A BASES DE DATOS EXTERNAS (REALES)
+# =============================================================================
+datasource:
+  sodimac-sap:
+    jdbc-url: jdbc:sqlserver://10.138.153.10:1433;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true;loginTimeout=10
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: ${SODIMAC_SAP_USER:SodimacETLUSR}
+    password: ${SODIMAC_SAP_PASSWORD}
+    initialization-fail-timeout: -1
+    connection-timeout: 10000
+
+  sapito:
+    jdbc-url: jdbc:oracle:thin:@ensenada:1541:odsrmxts
+    driver-class-name: oracle.jdbc.OracleDriver
+    username: ${SAPITO_USER:UODSRMX}
+    password: ${SAPITO_PASSWORD}
+    initialization-fail-timeout: -1
+    connection-timeout: 10000
+
+  i213:
+    jdbc-url: jdbc:sqlserver://98.200.28.19;databaseName=AdmIF213ProdDB;encrypt=false;trustServerCertificate=true;loginTimeout=10
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: ${I213_USER:L_SODIMAC_IF213}
+    password: ${I213_PASSWORD}
+    initialization-fail-timeout: -1
+    connection-timeout: 10000
+
+# Batch Scheduler deshabilitado para pruebas
+batch:
+  scheduler:
+    enabled: false
+    cron: "0 30 7 * * *"
+    max-retries: 2
+    retry-interval-minutes: 30
+    max-execution-minutes: 15
+
+# FBC Portal en modo mock para pruebas
+fbc:
+  portal:
+    url: ${FBC_PORTAL_URL:http://localhost:8081}
+    mock-enabled: true
+
+# Alertas deshabilitadas para pruebas
+alert:
+  notification:
+    email:
+      enabled: false
+      recipients: ${ALERT_RECIPIENTS:soporte@empresa.com}
+
+# Resilience4j
+resilience4j:
+  retry:
+    instances:
+      fbcPortal:
+        max-attempts: 3
+        wait-duration: 2s
+
+# Actuator - exponer todos los endpoints de health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,scheduledtasks
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+# Logging detallado para pruebas
+logging:
+  level:
+    root: INFO
+    com.invoicesync: DEBUG
+    org.springframework.jdbc: DEBUG

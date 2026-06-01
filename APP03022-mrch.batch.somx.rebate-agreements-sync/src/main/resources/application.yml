@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: rebate-agreements-sync
+
+  profiles:
+    active: dev
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.SQLServerDialect
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+  datasource:
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+server:
+  port: 8081
+
+logging:
+  level:
+    root: INFO
+    com.rebatesync: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Rebate Sync Configuration
+rebate:
+  sync:
+    cron: "0 0 3 * * ?"  # Every day at 03:00 AM
+    timezone: "America/Mexico_City"
+
+  external:
+    api:
+      contracts-url: https://rebate-management-prd.eastus2.cloudapp.azure.com/rebate-management-cl-sod-api/v1/contracts/MX
+      agreements-url: https://rebate-management-prd.eastus2.cloudapp.azure.com/rebate-management-cl-sod-api/v1/contracts/MX/agreements
+      api-key: cPcKEF45gbC23sdfOsdfCXfO47gfybd3RF
+      timeout: 120000  # 120 seconds (2 minutes)
+
+# Resilience4j Configuration
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 3  # Initial attempt + 2 retries
+        waitDuration: 1800000  # 30 minutes in milliseconds
+        retryExceptions:
+          - java.lang.Exception
+    instances:
+      rebateSync:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

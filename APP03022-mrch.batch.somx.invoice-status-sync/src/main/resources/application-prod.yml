@@ -1,0 +1,72 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:invoicedb}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  h2:
+    console:
+      enabled: false
+
+# Multiple DataSources - Production
+datasource:
+  sodimac-sap:
+    jdbc-url: jdbc:sqlserver://10.138.153.10:1433;databaseName=SODIMAC_SAP_DEV;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: ${SODIMAC_SAP_USER:SodimacETLUSR}
+    password: ${SODIMAC_SAP_PASSWORD}
+  sapito:
+    jdbc-url: jdbc:oracle:thin:@ensenada:1541:odsrmxts
+    driver-class-name: oracle.jdbc.OracleDriver
+    username: ${SAPITO_USER:UODSRMX}
+    password: ${SAPITO_PASSWORD}
+  i213:
+    jdbc-url: jdbc:sqlserver://98.200.28.19;databaseName=AdmIF213ProdDB;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: ${I213_USER:L_SODIMAC_IF213}
+    password: ${I213_PASSWORD}
+
+# Batch Scheduler (HU STM-1309)
+batch:
+  scheduler:
+    enabled: true
+    cron: "0 30 7 * * *"
+    max-retries: 2
+    retry-interval-minutes: 30
+    max-execution-minutes: 15
+
+# FBC Portal - Production
+fbc:
+  portal:
+    url: ${FBC_PORTAL_URL}
+    mock-enabled: false
+
+# Alerts
+alert:
+  notification:
+    email:
+      enabled: true
+      recipients: ${ALERT_RECIPIENTS:soporte@sodimac.com}
+
+# Resilience4j
+resilience4j:
+  retry:
+    instances:
+      fbcPortal:
+        max-attempts: 5
+        wait-duration: 5s
+
+# Logging
+logging:
+  level:
+    root: WARN
+    com.invoicesync: INFO
+  file:
+    name: /var/log/invoice-sync/application.log

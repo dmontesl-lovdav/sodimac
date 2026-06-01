@@ -1,0 +1,48 @@
+spring:
+  datasource:
+    url: jdbc:sqlserver://10.138.153.10:1433;databaseName=SODIMAC_REBATES_DEV;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true;characterEncoding=UTF-8
+    username: SodimacETLUSR
+    password: $DEV50dimac2026
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+
+logging:
+  level:
+    com.rebatesync: DEBUG
+    org.springframework.web: DEBUG
+
+# Development-specific Rebate Sync Configuration
+rebate:
+  sync:
+    cron: "0 0 3 * * ?"  # Every day at 03:00 AM (can be overridden for testing)
+
+  external:
+    api:
+      contracts-url: https://rebate-management-prd.eastus2.cloudapp.azure.com/rebate-management-cl-sod-api/v1/contracts/MX
+      agreements-url: https://rebate-management-prd.eastus2.cloudapp.azure.com/rebate-management-cl-sod-api/v1/contracts/MX/agreements
+      timeout: 120000
+
+# For batch/control tables
+batch:
+  datasource:
+    url: jdbc:sqlserver://10.138.153.10:1433;databaseName=SODIMAC_BATCH_DEV;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true;characterEncoding=UTF-8
+    username: SodimacETLUSR
+    password: $DEV50dimac2026

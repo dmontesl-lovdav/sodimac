@@ -32,6 +32,7 @@ import 'dotenv/config';
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import 'dotenv/config';
+import { IsNull } from "typeorm";
 
 
 
@@ -53,7 +54,7 @@ export async function save(request: AuthenticatedRequest, response: Response, ne
     try {
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(request.body);
         await getDataSource().transaction(async (transactionalEntityManager) => {
-            const created = await svc.create(dto, transactionalEntityManager, null, null, Number(dto.origen), request.authToken ?? '');
+            const created = await svc.create(request, dto, transactionalEntityManager, null, Number(dto.origen), request.authToken ?? '', undefined);
             response.status(201).json({ ...created, trace_id: getTraceId() });
         });
     } catch (e) {
@@ -101,7 +102,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             .leftJoinAndSelect('addendum.invoice', 'invoice');
 
         purchaseOrderQuery.andWhere(
-            "purchaseOrder.purchaseOrderDate BETWEEN :startDate AND :endDate ",
+            "reception.receptionDate BETWEEN :startDate AND :endDate ",
             {
                 startDate: dto.purchaseOrderDateAtInitial,
                 endDate: dto.purchaseOrderDateAtEnd,
@@ -123,9 +124,11 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             purchaseOrderQuery.andWhere("purchaseOrder.originId = :originId", { originId: dto.originId });
         }
 
-        if (dto.status && dto.status != 8) {
-            console.log("[purchaseOrder.list] applying status:", dto.status);
-            purchaseOrderQuery.andWhere("purchaseOrder.status = :status", { status: dto.status });
+        if (typeof dto.status === "number" && dto.status !== 8) {
+            console.log("[purchaseOrder.list] applying reception status:", dto.status);
+            purchaseOrderQuery.andWhere("reception.status = :receptionStatus", {
+                receptionStatus: dto.status,
+            });
         }
 
         const skip = (parseInt(dto.pageNumber) - 1) * parseInt(dto.pageSize);
@@ -161,7 +164,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
         } else {
             _totalPages = Math.trunc(_totalPages);
         }
-
+        const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , request.authToken ?? '');
         result.forEach((item, index) => {
             console.log("[purchaseOrder.list] mapping supplier item:", {
                 index,
@@ -169,13 +172,24 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
                 supplierNumber: item.supplierNumber,
             });
 
-            const foundUser: Supplier | undefined = supplierList.find(
-                Supplier => Supplier.supplierNumber === item.supplierNumber
+            const foundSupplier: Supplier | undefined = supplierList.find(
+                (supplier) =>
+                    Number(supplier.supplierNumber) === Number(item.supplierNumber)
             );
 
-            console.log("[purchaseOrder.list] found supplier:", JSON.stringify(foundUser ?? null, null, 2));
+            console.log("[purchaseOrder.list] found supplier:", JSON.stringify(foundSupplier ?? null, null, 2));
 
-            (item as any).supplier = foundUser;
+            (item as any).supplier = foundSupplier;
+            (item as any).vendorName = foundSupplier?.businessName ?? "";
+
+            item.receptions?.forEach((reception) => {
+                (reception as any).supplier = foundSupplier;
+                (reception as any).vendorName = foundSupplier?.businessName ?? "";
+                const result = CatEstatusRecepcion.find(ite => ite.value === reception.status?.toString());
+                if(result){
+                    (reception as any).color = result.color;
+                }
+            });
         });
 
         await svc.enrichPurchaseOrdersRecepcionesOriginCatalog(result as PurchaseOrder[], request.authToken ?? '');
@@ -240,10 +254,31 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
 export async function getById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
+        // const rows = await getPurchaseOrdersRepo()
+        //                     .createQueryBuilder("r")
+        //                     .where("r.purchase_order_uuid = :id", {
+        //         id: request.params.uuid?.trim()
+        //     }).getMany();
+
         if (!rows || rows.length === 0) response.json({});
 
         for (const row of rows) {
-            row.receptions = await getReceiptsRepo().findBy({ purchaseOrderId: row.purchaseOrderId });
+            const purchaseOrderId = row.purchaseOrderId;
+            if (!purchaseOrderId) {
+                return response.json({ ...rows[0], trace_id: getTraceId() });
+            }
+            const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , request.authToken ?? '');
+            row.receptions = await getReceiptsRepo().createQueryBuilder("r").where("r.purchase_order_uuid = :id::uuid", {
+                id: row.purchaseOrderId
+            })  .getMany();
+
+            row.receptions?.forEach((it, idx) =>{
+                const result = CatEstatusRecepcion.find(ite => ite.value === it.status?.toString());
+                if(result){
+                    (it as any).color = result.color;
+                }
+            });
+
         }
 
         return response.json({ ...rows[0], trace_id: getTraceId() });
@@ -281,6 +316,13 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
         if (row == null) {
             return response.json({ ...ResponseHandler.responseBuilder("", request.params.uuid, 0, StatusCodes.NOT_FOUND, true, ""), trace_id: getTraceId() });
         }
+
+        const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , request.authToken ?? '');
+        const result = CatEstatusRecepcion.find(ite => ite.value === row.status?.toString());
+        if(result){
+            (row as any).color = result.color;
+        }
+
         const order = await getPurchaseOrdersRepo()
             .createQueryBuilder('po')
             .where('po.purchase_order_uuid = CAST(:purchaseOrderId AS uuid)', { purchaseOrderId: row?.purchaseOrderId })
@@ -291,6 +333,8 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
 
         const data = {
             ...row,
+            supplier: foundSupplier,
+            vendorName: foundSupplier?.businessName ?? "",
             order: order
         };
 

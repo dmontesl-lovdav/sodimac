@@ -52,6 +52,8 @@ import { TransactionIdErrorLog } from '../entities/TransactionIdErrorLog.entity.
 import { SharedCatalogHeader } from '../entities/SharedCatalogHeader.entity.js';
 import { SharedCatalogDetail } from '../entities/SharedCatalogDetail.entity.js';
 import { SharedSupplier } from '../entities/SharedSupplier.entity.js';
+import { SharedSupplierType } from '../entities/SharedSupplierType.entity.js';
+import { SharedCatalogDictionaryLang } from '../entities/SharedCatalogDictionaryLang.entity.js';
 
 // Registrar entidades explícitamente
 const ENTITIES = [
@@ -90,6 +92,8 @@ const ENTITIES = [
     SharedCatalogHeader,
     SharedCatalogDetail,
     SharedSupplier,
+    SharedSupplierType,
+    SharedCatalogDictionaryLang,
 ];
 
 const dbHost = process.env.DB_HOST;

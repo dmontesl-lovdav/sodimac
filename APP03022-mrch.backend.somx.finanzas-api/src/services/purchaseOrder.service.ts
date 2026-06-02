@@ -4,10 +4,12 @@ import * as shippingRepo from "@/repositories/shippingGuide.repo.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 import { string, z } from "zod/v4";
+import type { Request } from "express";
 import type {
 CreatePurchaseOrderDto,
 UpdatePurchaseOrderDto,
-ListPurchaseOrderQueryDto
+ListPurchaseOrderQueryDto,
+GuideNumberDto
 } from "@/schemas/purchaseOrder.schema.js";
 import type {
 ListReceptionQueryDto
@@ -34,6 +36,7 @@ import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetail
 import 'dotenv/config';
 import { DeepPartial } from 'typeorm';
 import * as constants from "@/constants/catalogConstantsCodes.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
 
 export async function listOrders(q: ListReceptionQueryDto) {
@@ -54,17 +57,32 @@ export async function listOrders(q: ListReceptionQueryDto) {
 
 export async function listReception(q: ListReceptionQueryDto, token: string) {
 
+    const {
+        statusList,
+        tipoProveedorList,
+        tipoEntregaGuiaList,
+        catOrigenCartaPorteList,
+    } = await sharedCatalogService.getShippingGuideCatalogContext();
+
     const supplierList = await svcAxios.GetSuppliers(token);
+    //const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
     const receptionDateAtEnd = q.receptionDateAtEnd;
     const parsedDateEnd = z.coerce.date().parse(receptionDateAtEnd);
     parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
     q.receptionDateAtEnd = parsedDateEnd;
+    const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , token);
 
     var [result, total, _numberOfElements] = await rececetionRepo.findAllPaginated(q, q.pageSize, q.pageNumber);
         result = result as Reception[];
         result.forEach((item, index) => {
             const foundSupplier: Supplier | undefined = supplierList.find(Supplier => Supplier.supplierNumber == item.purchaseOrder?.supplierNumber);
             (item as any).supplier = foundSupplier;
+
+            const result = CatEstatusRecepcion.find(ite => ite.value === item.status?.toString());
+            if(result){
+                (item as any).color = result.color;
+            }
+
         });
 
         await enrichReceptionsListOriginCatalog(result as Reception[], token);
@@ -113,37 +131,36 @@ export async function updateReception(dto: UpdatePurchaseOrderDto, token: string
         response = ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,-1, StatusCodes.NOT_FOUND, false, "");
     } else {
           
-        let receiptionToUpdate = persistenceList.filter(async function(recep) {
-            if(recep.receptionNumber == dto.receptionNumber){
-                
-                if(dto.uuid != null && dto.uuid != undefined && dto.status == 2){ // ES ADDENDA MANUAL
-                    const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
-                    let addendaManual = new AddendumManual();
-                    addendaManual.supplierNumber = dto.supplierNumber;
-                    addendaManual.orderNumber = dto.orderNumber;
-                    addendaManual.invoiceId = dto.uuid;
-                    addendaManual.createdAt = new Date();
-                    addendaManual.receptionId = recep.receptionId;
-                    if(supplier != undefined){
-                        addendaManual.supplierTypeId = supplier.supplierType.id;
-                    }
-                    
-                    recep.addendumManual = addendaManual;
-                }
-                
+        const receptionMatch = persistenceList.find(
+            (recep) => recep.receptionNumber === dto.receptionNumber
+        );
 
-                return recep;
+        if (!receptionMatch) {
+            const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302, token);
+            return ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,-1, StatusCodes.NOT_FOUND, false, "");
+        }
+
+        const persistence: Reception = receptionMatch;
+
+        if (dto.uuid != null && dto.uuid != undefined && dto.status == 2) {
+            const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+            const addendaManual = new AddendumManual();
+            addendaManual.supplierNumber = dto.supplierNumber;
+            addendaManual.orderNumber = dto.orderNumber;
+            addendaManual.invoiceId = dto.uuid;
+            addendaManual.createdAt = new Date();
+            addendaManual.receptionId = persistence.receptionId;
+            if (supplier != undefined) {
+                addendaManual.supplierTypeId = supplier.supplierType.id;
             }
-   
-        });
-        const reception = receiptionToUpdate.at(0)?? new Reception();
-        const persistence: Reception = reception;
+            persistence.addendumManual = addendaManual;
+        }
         const valStatus = await validarStatus(persistence, dto.status, 5, token);
         persistence.status = dto.status;
         persistence.comment = dto.comments;
         persistence.updatedAt = new Date();
 
-        if (reception?.receptionId && valStatus) {
+        if (persistence?.receptionId && valStatus) {
             const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId, persistence);
             const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
             response = ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
@@ -197,8 +214,8 @@ async function validarStatus(reception: Reception, newStatus: number, optionId: 
 }
 
 
-export async function create(dto: CreatePurchaseOrderDto, transactionalEntityManager: EntityManager
-    ,files: Express.Multer.File[] | null, folder: string | null , origin: number, token: string) {
+export async function create(req: Request, dto: CreatePurchaseOrderDto, transactionalEntityManager: EntityManager
+    ,files: Express.Multer.File[] | null, origin: number, token: string, folder?: string) {
 
     var resp = ResponseHandler.responseBuilder("",null,0, StatusCodes.CREATED, true, "");
 
@@ -208,7 +225,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
         const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
         const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details",  token);
 
-        dto.receptionList.forEach(async function (reception){
+        dto.receptionList.forEach(function (reception){
             if(supplier != undefined && supplier != null  && supplier.supplierType.id == 2 && reception.guideNumber != undefined){
                 throw new Error('El tipo de proveedor que desea ingresar en la recepción no acepta este tipo de guías, favor de validar.');
             }
@@ -245,6 +262,9 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
                 const foundCatalog: GenericCatalogDetails | undefined = tipoReceptionSodimacList.find(Cat => Cat.externalKey == reception.origin);
                 reception.originId = (foundCatalog == undefined) ? 1 : foundCatalog.internalStatus;
             };
+            
+            const guide = dto.guideNumber?.[0]?.guide; //guia de carta porte
+
             const datarec: Partial<Reception> = {
                 originId: reception.originId,
                 destinationId: reception.destinationId,
@@ -255,7 +275,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
                 receptionDate: reception.receptionDate,
                 receptionSkus: receptionsSkuList,
                 receptionNumber: reception.receptionNumber,
-                guideNumber: (reception.guideNumber == undefined) ? "" : reception.guideNumber,
+                guideNumber: (reception.guideNumber == undefined) ? (guide?? "") : reception.guideNumber,
                 
             };
 
@@ -297,7 +317,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
             let recsactuales = await rececetionRepo.findAll(purchaseOrder.purchaseOrderId);
 
             //Verifica que no se de alta alguna recepcion que ya esta en la base
-            receptionsList.forEach(async function (reception){
+            receptionsList.forEach(function (reception){
                 const foundReception: Reception | undefined = recsactuales.find(rec => rec.receptionNumber == reception.receptionNumber);
                 if(foundReception != undefined || foundReception != null ){
                         throw new Error('Ya existe una recepción dada de alta que se encuentra en la Peticion. ReceptionNumber: ' + reception.receptionNumber);
@@ -348,7 +368,7 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
             const status = 2; //Nace Guia de embarque Con OC
             let created : ResponseHandlerDTO;
             
-            created = await svcShipping.create(dto.shippingGuideList, files, folder, origin, status, transactionalEntityManager, token);
+            created = await svcShipping.create(req, dto.shippingGuideList, files,origin, status, transactionalEntityManager, token, folder);
             if(!created.success){    
                 const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC015, token);
                 throw new Error(CatMsgExc.description + created.message + created.detailError);
@@ -370,6 +390,13 @@ export async function create(dto: CreatePurchaseOrderDto, transactionalEntityMan
                     const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016, token);
                     throw new Error(CatMsgExc.description + dto.guideNumber[i]?.guide + ' Con la OC: ' + dto.orderNumber);
                 }
+
+                const shippingGuideUpdate: Partial<ShippingGuide> = {
+                    status: 2, //La Guia ya se le actualiza estatus = 2 "Pendiente de Facturar",
+                    updatedAt : new Date()
+                    
+                };
+                const entityShippingGuide = transactionalEntityManager.update(ShippingGuide, { shippingGuideId: shippingGuide.shippingGuideId }, shippingGuideUpdate);
                 const shippingPurchase: Partial<ShippingGuidePurchaseOrder> = {
                     purchaseOrderId: entityCreatedOrder.purchaseOrderId,
                     shippingGuideId: shippingGuide.shippingGuideId,

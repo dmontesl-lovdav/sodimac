@@ -20,6 +20,9 @@ export interface SupplierDto {
     supplierType?: SupplierTypeDto | null;
     logo?: string | null;
     paymentCondition?: PaymentConditionDto | null;
+    emailPrincipal?: string | null;
+    emailFinancial?: string | null;
+    emailCommercial?: string | null;
     status: number;
 }
 
@@ -41,6 +44,22 @@ export interface SupplierFilterDto {
     blockInfo?: SupplierBlockInfoDto | null;
 }
 
+const emailRequired = (label: string) => z
+    .string()
+    .trim()
+    .min(1, `${label} es requerido`)
+    .max(255, `${label} no puede exceder 255 caracteres`)
+    .email(`${label} no tiene un formato válido`);
+
+const emailOptional = (label: string) => z
+    .string()
+    .trim()
+    .max(255, `${label} no puede exceder 255 caracteres`)
+    .email(`${label} no tiene un formato válido`)
+    .optional()
+    .nullable()
+    .or(z.literal('').transform(() => null));
+
 export const SupplierCreateSchema = z.object({
     supplierNumber: z
         .string()
@@ -56,7 +75,10 @@ export const SupplierCreateSchema = z.object({
         .max(255, 'La razon social no puede exceder 255 caracteres'),
     supplierTypeId: z.number().int().optional().nullable(),
     logo: z.string().max(500, 'La URL del logo no puede exceder 500 caracteres').optional().nullable(),
-    paymentConditionId: z.number().int().optional().nullable()
+    paymentConditionId: z.number().int().optional().nullable(),
+    emailPrincipal: emailRequired('El Email Principal'),
+    emailFinancial: emailRequired('El Email CXC'),
+    emailCommercial: emailOptional('El Email Comercial')
 });
 export type SupplierCreateDto = z.infer<typeof SupplierCreateSchema>;
 
@@ -71,6 +93,9 @@ export const SupplierUpdateSchema = z.object({
     supplierTypeId: z.number().int().optional().nullable(),
     logo: z.string().max(500, 'La URL del logo no puede exceder 500 caracteres').optional().nullable(),
     paymentConditionId: z.number().int().optional().nullable(),
+    emailPrincipal: emailRequired('El Email Principal').optional(),
+    emailFinancial: emailRequired('El Email CXC').optional(),
+    emailCommercial: emailOptional('El Email Comercial'),
     status: z.number().int().optional().nullable()
 });
 export type SupplierUpdateDto = z.infer<typeof SupplierUpdateSchema>;

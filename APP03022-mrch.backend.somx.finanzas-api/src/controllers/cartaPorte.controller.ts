@@ -40,13 +40,18 @@ export async function createGuia(req: AuthenticatedRequest, res: Response, next:
         const createShippingGuideDto: CreateShippingGuideDto[] = dataList.shippingGuideList; 
         const files = req.files as Express.Multer.File[];
 
-        const created =  await cartaPorteService.createGuia(createShippingGuideDto, files, dtoParent.folder, Number(dtoParent.origen), req.authToken ?? '');
+        const created =  await cartaPorteService.createGuia(req, createShippingGuideDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder);
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
-        logger.error("❌ Register 'Guias Carta Porte' FAILED → data={} cause={}", req.body, e); 
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logger.error("❌ Register 'Guias Carta Porte' FAILED → data={} cause={}", req.body, err); 
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC007, req.authToken ?? '');
-        logActivity(true, 'ERROR : No fue posible registrar la GUIA DE carta porte, Favor de validar', e , req.body);
-        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        logActivity(true, 'ERROR : No fue posible registrar la GUIA DE carta porte, Favor de validar', err , req.body);
+
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, err),trace_id: getTraceId()});
 
         next(e);
     }
@@ -59,14 +64,16 @@ export async function createOc(req: AuthenticatedRequest, res: Response, next: N
         const stringContent: string = dtoParent.content;
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(JSON.parse(stringContent));
 
-        const created = await cartaPorteService.createOc(dto, Number(dto.origen), req.authToken ?? '');
+        const created = await cartaPorteService.createOc(req, dto, Number(dto.origen), req.authToken ?? '');
         res.status(201).json({...created, trace_id: getTraceId()});
 
     } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        const errorStack = e instanceof Error ? e.stack : String(e);
         logger.error("❌ Register 'OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC008, req.authToken ?? '');
-        logActivity(true, 'ERROR : No fue posible registrar la OC DE carta porte, Favor de validar', e , req.body);
-        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        logActivity(true, 'ERROR : No fue posible registrar la OC DE carta porte, Favor de validar', errorMessage + errorStack  , req.body);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, errorMessage + errorStack),trace_id: getTraceId()});
         next(e);
     }
 }
@@ -79,13 +86,17 @@ export async function createall(req: AuthenticatedRequest, res: Response, next: 
         const createPurchaseOrderDto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(JSON.parse(shippingAndOCSchmaString));
         const files = req.files as Express.Multer.File[];
 
-        const created = await cartaPorteService.createAll(createPurchaseOrderDto, files, dtoParent.folder, Number(dtoParent.origen), req.authToken ?? '');
-        res.status(201).json({created, trace_id: getTraceId()});
+        const created = await cartaPorteService.createAll(req, createPurchaseOrderDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder,);
+        res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
+                let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
         logger.error("❌ Register 'Guias y OC Carta Porte' FAILED → data={} cause={}", req.body, e); 
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC009, req.authToken ?? '');
-        logActivity(true, 'ERROR : No fue posible registrar la OC Y LA DOCUMENTACION DE carta porte, Favor de validar', e , req.body);
-        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        logActivity(true, 'ERROR : No fue posible registrar la OC Y LA DOCUMENTACION DE carta porte, Favor de validar', err , req.body);
+        res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, err),trace_id: getTraceId()});
         next(e);
     }
 }

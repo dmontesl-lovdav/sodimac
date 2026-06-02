@@ -459,20 +459,19 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
         };
     }
 
-    const eventsByAppKey = new Map<string, { appName: string; events: Map<string, string> }>();
+    const eventsByAppKey = new Map<string, Map<string, string>>();
     for (const row of data.applicationModuleProcesses) {
         if (idProfile !== undefined && row.profile.id !== idProfile) continue;
         const appKey = row.module.catalogKey;
-        const appName = row.module.label;
         const eventKey = row.process.catalogKey;
         const eventName = row.process.label;
         if (!eventsByAppKey.has(appKey)) {
-            eventsByAppKey.set(appKey, { appName, events: new Map() });
+            eventsByAppKey.set(appKey, new Map());
         }
-        eventsByAppKey.get(appKey)?.events.set(eventKey, eventName);
+        eventsByAppKey.get(appKey)?.set(eventKey, eventName);
     }
 
-    if (eventsByAppKey.size === 0) {
+    if (data.applications.length === 0) {
         throw {
             status: 400,
             code: 'WRN7031',
@@ -480,17 +479,17 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
         };
     }
 
-    const apps: AccessContextApplication[] = [...eventsByAppKey.entries()]
-        .map(([appKey, appInfo]) => ({
-            key: appKey,
-            name: appInfo.appName,
-            events: [...appInfo.events.entries()]
-                .map(([eventKey, eventName]) => ({
-                    key: eventKey,
-                    name: eventName,
-                }))
-                .sort((a, b) => a.name.localeCompare(b.name, 'es')),
-        }))
+    const apps: AccessContextApplication[] = data.applications
+        .map((app) => {
+            const eventsMap = eventsByAppKey.get(app.catalogKey) ?? new Map<string, string>();
+            return {
+                key: app.catalogKey,
+                name: app.label,
+                events: [...eventsMap.entries()]
+                    .map(([eventKey, eventName]) => ({ key: eventKey, name: eventName }))
+                    .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+            };
+        })
         .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
     const roles: AccessContextRoleRef[] = [...new Map(

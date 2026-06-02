@@ -4210,6 +4210,63 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  '/security/user-attributes-by-key/{userKey}':
+    get:
+      tags:
+        - security
+      summary: Get user attributes (ATR001/ATR002/ATR004) by user_data sub key
+      description: STM-1525 — consumido por fiscal-api y finanzas-api para resolver contexto de seguridad desde el JWT sub
+      operationId: getUserAttributesByKey
+      produces:
+        - application/json
+      parameters:
+        - name: userKey
+          in: path
+          required: true
+          description: User lookup key (sub claim from JWT)
+          type: string
+      responses:
+        '200':
+          description: User attributes
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: object
+                properties:
+                  userDataId:
+                    type: integer
+                  sub:
+                    type: string
+                  preferredUsername:
+                    type: string
+                  email:
+                    type: string
+                  attributes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        typeKey:
+                          type: string
+                        valueKey:
+                          type: string
+        '400':
+          description: Bad request — userKey obligatorio
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: User not found / inactive
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /security/user-catalog:
     get:
       tags:
@@ -5712,6 +5769,15 @@ definitions:
         type: string
       paymentCondition:
         $ref: '#/definitions/PaymentConditionDto'
+      emailPrincipal:
+        type: string
+        description: Email Principal del proveedor.
+      emailFinancial:
+        type: string
+        description: Email de Cuentas por Cobrar del proveedor.
+      emailCommercial:
+        type: string
+        description: Email de la cuenta clave comercial del proveedor.
       status:
         type: integer
         format: int32
@@ -5721,6 +5787,8 @@ definitions:
       - supplierNumber
       - rfc
       - businessName
+      - emailPrincipal
+      - emailFinancial
     properties:
       supplierNumber:
         type: string
@@ -5738,6 +5806,18 @@ definitions:
       paymentConditionId:
         type: integer
         format: int32
+      emailPrincipal:
+        type: string
+        description: Email Principal del proveedor (obligatorio).
+        example: principal@proveedor.com
+      emailFinancial:
+        type: string
+        description: Email de Cuentas por Cobrar (obligatorio).
+        example: cxc@proveedor.com
+      emailCommercial:
+        type: string
+        description: Email de la cuenta clave comercial (opcional).
+        example: comercial@proveedor.com
   SupplierUpdateDto:
     type: object
     properties:
@@ -5753,6 +5833,15 @@ definitions:
       paymentConditionId:
         type: integer
         format: int32
+      emailPrincipal:
+        type: string
+        description: Email Principal del proveedor.
+      emailFinancial:
+        type: string
+        description: Email de Cuentas por Cobrar.
+      emailCommercial:
+        type: string
+        description: Email de la cuenta clave comercial.
       status:
         type: integer
         format: int32

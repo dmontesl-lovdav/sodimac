@@ -1,5 +1,5 @@
 import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
-
+import type { Request } from "express";
 import * as guides from "@/repositories/shippingGuide.repo.js";
 import type {
     CreateShippingGuideDto,
@@ -20,6 +20,7 @@ import 'dotenv/config';
 
 import { logger } from "@/utils/logger.js";
 import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
+import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
 
@@ -140,6 +141,7 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
 
         const SGPO: ShippingGuidePurchaseOrder[] = item.shippingGuidePurchaseOrders as ShippingGuidePurchaseOrder[];
         (item as any).orderNumber = SGPO[0]?.purchaseOrder?.orderNumber;
+        (item as any).purchaseOrderStatus = SGPO[0]?.purchaseOrder?.status ?? null;
         delete item.shippingGuidePurchaseOrders;
     });
 
@@ -165,6 +167,84 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
     return ResponseHandler.responseBuilder("", responsePageableDTO, 0, StatusCodes.OK, true, "");
 }
 
+/** Evita referencias circulares (guía ↔ vínculos OC) al serializar el detalle. */
+function mapShippingGuideToDetailPayload(
+    item: ShippingGuide,
+    ctx: {
+        statusList: GenericCatalogDetails[];
+        tipoEntregaGuiaList: GenericCatalogDetails[];
+        catOrigenCartaPorteList: GenericCatalogDetails[];
+        supplierList: Supplier[];
+    }
+) {
+    const foundSupplier = ctx.supplierList.find(
+        (supplier) =>
+            supplier.supplierNumber?.toString() === item.vendorNumber?.toString()
+    );
+    const foundStatus = ctx.statusList.find(
+        (it) => it.internalStatus?.toString() === item.status?.toString()
+    );
+    const foundTipoEntrega = ctx.tipoEntregaGuiaList.find(
+        (it) => it.internalStatus?.toString() === item.deliveryType?.toString()
+    );
+    const foundOriginCP = ctx.catOrigenCartaPorteList.find(
+        (it) => it.internalStatus?.toString() === item.originId?.toString()
+    );
+
+    const shippingGuidePurchaseOrders = (
+        item.shippingGuidePurchaseOrders ?? []
+    ).map((link) => {
+        const po = link.purchaseOrder as PurchaseOrder | undefined;
+        return {
+            shippingGuidePurchaseOrderId: link.shippingGuidePurchaseOrderId,
+            shippingGuideId: link.shippingGuideId,
+            purchaseOrderId: link.purchaseOrderId,
+            createdBy: link.createdBy,
+            createdAt: link.createdAt,
+            updatedBy: link.updatedBy,
+            updatedAt: link.updatedAt,
+            purchaseOrder: po
+                ? {
+                      purchaseOrderId: po.purchaseOrderId,
+                      orderNumber: po.orderNumber,
+                      supplierNumber: po.supplierNumber,
+                      originId: po.originId,
+                      amount: po.amount,
+                      status: po.status,
+                      purchaseOrderDate: po.purchaseOrderDate,
+                      createdBy: po.createdBy,
+                      createdAt: po.createdAt,
+                      updatedBy: po.updatedBy,
+                      updatedAt: po.updatedAt,
+                  }
+                : null,
+        };
+    });
+
+    return {
+        shippingGuideId: item.shippingGuideId,
+        guideNumber: item.guideNumber,
+        vendorNumber: item.vendorNumber,
+        truckPlate: item.truckPlate,
+        trailerPlate: item.trailerPlate,
+        originId: item.originId,
+        deliveryType: foundTipoEntrega ?? item.deliveryType,
+        status: foundStatus ?? item.status,
+        comments: item.comments,
+        deliveryDate: item.deliveryDate,
+        shippingDate: item.shippingDate,
+        createdBy: item.createdBy,
+        createdAt: item.createdAt,
+        updatedBy: item.updatedBy,
+        updatedAt: item.updatedAt,
+        isStatusUpdated: item.isStatusUpdated,
+        supplier: foundSupplier,
+        tipoProveedor: foundSupplier?.supplierType,
+        OrigenCartaPorte: foundOriginCP,
+        shippingGuidePurchaseOrders,
+    };
+}
+
 export async function get(id: string, token: string) {
     const entity = await guides.findById(id);
     if (entity == null || entity == undefined) {
@@ -172,78 +252,100 @@ export async function get(id: string, token: string) {
         logger.info("❌ get shippingGuide NOT FOUND → data={} ", entity);
         return ResponseHandler.responseBuilder(CatMsgExc.description, entity, 0, StatusCodes.NOT_FOUND, true, "");
     }
-    logger.info("✅ get shippingGuide → data={} ", entity);
-    return ResponseHandler.responseBuilder("", entity, 0, StatusCodes.OK, true, "");
+
+    const {
+        statusList,
+        tipoProveedorList,
+        tipoEntregaGuiaList,
+        catOrigenCartaPorteList,
+    } = await sharedCatalogService.getShippingGuideCatalogContext();
+    const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
+
+    const payload = mapShippingGuideToDetailPayload(entity, {
+        statusList,
+        tipoEntregaGuiaList,
+        catOrigenCartaPorteList,
+        supplierList,
+    });
+
+    logger.info("✅ get shippingGuide → data={} ", payload);
+    return ResponseHandler.responseBuilder("", payload, 0, StatusCodes.OK, true, "");
 }
 
-export async function create(createShippingGuideList: CreateShippingGuideDto[] = []
-    , files: Express.Multer.File[] | null, folder: string | null, origin: number
-    , status: number, transactionalEntityManager: EntityManager, token: string) {
+export async function create(req: Request, createShippingGuideList: CreateShippingGuideDto[] = []
+    , files: Express.Multer.File[] | null,  origin: number
+    , status: number, transactionalEntityManager: EntityManager, token: string, folder?: string) {
 
     let enviados = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
     let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
 
-    // files.forEach(async (file, index) => {
-    //     console.log(`Archivo ${index + 1}:`);
-    //     console.log('Nombre:', file.originalname);
-    //     console.log('Tipo:', file.mimetype);
-    //     console.log('Tamaño:', file.size);
-    //     // Ejemplo: convertir a string si es texto
-    //     const contenido = file.buffer.toString('utf-8');
-    //     //console.log('Contenido:', contenido);             
-    // });
-
     const entityCreatedList: ShippingGuide[] = [];
-    createShippingGuideList.forEach((dto) => {
-        const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
-        if (dto.shipingGuideDocumentList != null && dto.shipingGuideDocumentList.length > 0) {
-            dto.shipingGuideDocumentList.forEach((shipdoc) => {
-                const datarec: Partial<ShippingGuideDocument> = {
-                    fileName: shipdoc.fileName,
-                    fileType: shipdoc.fileType,
-                    status: 1, //Nace con el Status 1
-                };
-
-                shippingGuideDocumentList.push(datarec);
-            });
+    for (const dto of createShippingGuideList) {
+        //Verifica que no exista la guia de embarque en la  base
+        const filter: FindOptionsWhere<ShippingGuide> = {};
+        if (dto.guideNumber !== undefined) {
+            let guia = dto.guideNumber ?? '';
+            filter.guideNumber = guia;
         }
 
-        const data = {
-            guideNumber: dto.guideNumber,
-            vendorNumber: dto.vendorNumber,
-            shippingDate: dto.deliveryDate,
-            truckPlate: dto.truckPlate,
-            originId: origin,
-            status: status,
-            deliveryDate: dto.deliveryDate,
-            deliveryType: dto.deliveryType,
-            shippingGuideDocuments: shippingGuideDocumentList,
-            createdBy: 1,
-            createdAt: new Date(),
-            isStatusUpdated: false,
-        };
+        const shippingGuide =  await transactionalEntityManager.findOneBy(ShippingGuide, filter);
+        if (!shippingGuide) {
+            //const CatMsgExc = svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016, token);
+            const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
+            if (dto.shipingGuideDocumentList != null && dto.shipingGuideDocumentList.length > 0) {
+                dto.shipingGuideDocumentList.forEach((shipdoc) => {
+                    const datarec: Partial<ShippingGuideDocument> = {
+                        fileName: shipdoc.fileName,
+                        fileType: shipdoc.fileType,
+                        status: 1, //Nace con el Status 1
+                    };
 
-        const temp = transactionalEntityManager.create(ShippingGuide, data);
-        entityCreatedList.push(temp);
-    });
-    const entityCreated = await transactionalEntityManager.save(entityCreatedList);
+                    shippingGuideDocumentList.push(datarec);
+                });
+            }
 
-    if (origin == 2 && files != null && folder != null) { //Solo se guardan los documentos de CP
-        const nameFiles = files.map(f => f.originalname).join(',');
-        enviados = await svcAxios.sendFilesToBucket(files, folder, token);
-        if (!enviados.success) {
-            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
-            logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
-            logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
-            throw new Error(CatMsgExc.description);
+            const data = {
+                guideNumber: dto.guideNumber,
+                vendorNumber: dto.vendorNumber,
+                shippingDate: dto.deliveryDate,
+                truckPlate: dto.truckPlate,
+                originId: dto.originId,
+                destinationId: dto.destinationId,
+                status: status,
+                deliveryDate: dto.deliveryDate,
+                deliveryType: dto.deliveryType,
+                shippingGuideDocuments: shippingGuideDocumentList,
+                createdBy: 1,
+                createdAt: new Date(),
+                isStatusUpdated: false,
+            };
+
+            const temp =  await transactionalEntityManager.create(ShippingGuide, data);
+            entityCreatedList.push(temp);
+        
+    
+            const entityCreated =  await transactionalEntityManager.save(entityCreatedList);
+
+            if (origin == 2 && files != null  ) { //Solo se guardan los documentos de CP
+                const nameFiles = files.map(f => f.originalname).join(',');
+                enviados = await svcAxios.sendFilesToBucket(req, files, token, folder);
+                if (!enviados.success) {
+                    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
+                    logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
+                    logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
+                    let err = JSON.stringify(enviados.detailError);
+                    throw new Error(CatMsgExc.description + JSON.stringify(enviados.detailError));
+                } else {
+                    logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
+                }
+            }
+            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
+            logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
+            resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
         } else {
-            logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
+            resp = ResponseHandler.responseBuilder("La Guia de embarque ya se encuentra creada en FBC", null, 0, StatusCodes.CREATED, true, "", "BUS208");
         }
     }
-    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
-    logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
-    resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
-
     return resp;
 }
 
@@ -291,6 +393,58 @@ export async function updateOneByGuide(guideNumber: string, dto: UpdateShippingG
 
 export async function remove(id: string) {
     await guides.deleteOne(id);
+}
+
+/** Cancelación lógica: estatus 9 (ECF009). */
+export async function cancelGuides(
+    dto: { shippingGuideIds: string[]; reasonId: number; comment?: string },
+    token: string
+) {
+    const comment = dto.comment?.trim() ?? "";
+    const updated: ShippingGuide[] = [];
+
+    for (const id of dto.shippingGuideIds) {
+        const entityUpdated = await guides.updateOneByUuid(id, {
+            status: 9,
+            comments: comment || undefined,
+            updatedAt: new Date(),
+            isStatusUpdated: true,
+        } as any);
+
+        if (entityUpdated) updated.push(entityUpdated);
+    }
+
+    if (updated.length === 0) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            CatMsgExc.description,
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            "Guía de Embarque no encontrada"
+        );
+    }
+
+    const CatMsg = await svcAxios.GetCatalogDetail(
+        (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+            constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210,
+        token
+    );
+    return ResponseHandler.responseBuilder(
+        CatMsg.description,
+        { updatedCount: updated.length },
+        0,
+        StatusCodes.OK,
+        true,
+        ""
+    );
 }
 
 export async function findAll(dto: ListShippingGuideQuery) {

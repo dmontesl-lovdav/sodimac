@@ -57,7 +57,7 @@ export const CreatePurchaseOrderSchema = CreateShippingGuideSchemaList.extend({
     //originId: z.string().nonempty({message: "Invalid field `originId` on PurchaseOrder. value cannot be empty, null or blank"}),
     amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "decimal with 2 places"),
     purchaseOrderDate: z.coerce.date().nonoptional({message: "Invalid field `purchaseOrderDate` on PurchaseOrder. value cannot be empty, null or blank"}),
-    status: z.number().int().min(1,{message: "Invalid field `status` on PurchaseOrder. value : 0"}),
+    status: z.number().int().min(0,{message: "Invalid field `status` on PurchaseOrder. value : 0"}),
     createdBy: z.number().int().min(1,{message: "Invalid field `createdBy` on PurchaseOrder. value : 0"}),
     receptionList: z.array(CreateReceiptionSchema).min(1),
     guideNumber: z.array(GuideNumberSchema).optional(),  //Aplica para Carta Porte
@@ -118,6 +118,7 @@ export const CreatePurchaseOrderSchemaList = z.object({
 export type ListPurchaseOrderQueryDto = z.infer<typeof ListPurchaseOrderQuerySchema>;
 export type CreatePurchaseOrderDto = z.infer<typeof CreatePurchaseOrderSchema>;
 export type UpdatePurchaseOrderDto = z.infer<typeof UpdateStatusReceptionSchema>;
+export type GuideNumberDto = z.infer<typeof GuideNumberSchema>;
 
 
 

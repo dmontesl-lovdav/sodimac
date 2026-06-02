@@ -217,3 +217,37 @@ shipping-guide-by-idGuide:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
+shipping-guide-cancel:
+  post:
+    tags:
+      - shipping-guide
+    summary: Cancel shipping guides
+    operationId: cancelShippingGuides
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/CancelShippingGuidesDto"
+    responses:
+      "200":
+        description: Guides cancelled successfully
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

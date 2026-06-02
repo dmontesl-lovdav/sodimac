@@ -144,6 +144,27 @@ export async function findMaxKeyByHeaderId(headerId: number): Promise<string | n
     return result?.maxKey ?? null;
 }
 
+export async function findMaxKeyNumberByHeaderIdAndPrefix(
+    headerId: number,
+    prefix: string
+): Promise<number> {
+    const result = await repo()
+        .createQueryBuilder('d')
+        .select(
+            `COALESCE(MAX(NULLIF(REGEXP_REPLACE(d.key, '^' || :prefix, ''), '')::INTEGER), 0)`,
+            'maxNum'
+        )
+        .where('d.headerId = :headerId', { headerId })
+        .andWhere('d.key LIKE :prefixLike', { prefixLike: `${prefix}%` })
+        .andWhere(`REGEXP_REPLACE(d.key, '^' || :prefix, '') ~ '^[0-9]+$'`, { prefix })
+        .setParameters({ prefix })
+        .getRawOne<{ maxNum: number | string | null }>();
+
+    if (!result?.maxNum) return 0;
+    const n = typeof result.maxNum === 'string' ? Number.parseInt(result.maxNum, 10) : result.maxNum;
+    return Number.isFinite(n) ? n : 0;
+}
+
 export async function countByHeaderId(headerId: number): Promise<number> {
     return repo().count({ where: { headerId } });
 }

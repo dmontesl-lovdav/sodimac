@@ -4,3 +4,15 @@ metadata:
   name: three-way-match-batch
 spec:
   suspend: false
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: three-way-match-batch
+              image: gcr.io/fal-corp-mrch-foundational-dev/falabella-stores-and-merchandise/app03022-mrch.backend.somx.finanzas-api:${CI_JOB_ID}-develop
+              envFrom:
+                - configMapRef:
+                    name: ${PROJECT_NAME}-configmap
+                - secretRef:
+                    name: ${PROJECT_NAME}-secret

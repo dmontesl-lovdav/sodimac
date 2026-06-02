@@ -4,7 +4,8 @@ import { validateBody, validateParams, validateQuery } from "@/middlewares/valid
 import {
     IdParamSchema,
     ListShippingGuideQuerySchema,
-    UpdateShippingGuideSchema
+    UpdateShippingGuideSchema,
+    CancelShippingGuidesSchema,
 } from "@/schemas/shippingGuide.schema.js";
 import { activityLogger, logBeforeMethod } from "@/middlewares/logger.js";
 
@@ -16,6 +17,7 @@ router.use(activityLogger(controllerName));
 
 router.get("/", validateQuery(ListShippingGuideQuerySchema), logBeforeMethod("list"), ctrl.list);
 router.get("/csv", validateQuery(ListShippingGuideQuerySchema), logBeforeMethod("csvExport"), ctrl.csvExport);
+router.post("/cancel", validateBody(CancelShippingGuidesSchema), logBeforeMethod("cancel"), ctrl.cancel);
 router.get("/:uuid", validateParams(IdParamSchema), logBeforeMethod("getById"), ctrl.getById);
 router.put("/:uuid", validateBody(UpdateShippingGuideSchema), logBeforeMethod("updateByUuid"), ctrl.updateByUuid);
 router.patch("/guide/:idGuide", validateBody(UpdateShippingGuideSchema), logBeforeMethod("updateByGuide"), ctrl.updateByGuide);

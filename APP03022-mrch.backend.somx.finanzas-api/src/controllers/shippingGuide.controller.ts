@@ -2,11 +2,13 @@ import {
     IdParamSchema,
     ListShippingGuideQuerySchema,
     UpdateShippingGuideSchema,
+    CancelShippingGuidesSchema,
     IdParamGuideSchema,
     type ListShippingGuideQuery,
     type UpdateShippingGuideDto,
     type IdParamSchemaDto,
-    type IdParamGuideDto
+    type IdParamGuideDto,
+    type CancelShippingGuidesDto,
 } from "@/schemas/shippingGuide.schema.js";
 import * as shippingGuideService from "@/services/shippingGuide.service.js";
 import type { NextFunction, Request, Response } from "express";
@@ -43,7 +45,7 @@ function allowedVendors(req: Request): number[] | null | 'wrn7029' {
     return sec.vendors ? sec.vendors.map(Number).filter(n => !isNaN(n)) : null;
 }
 
-// GET /shipping-guides STM 577
+// GET /shipping-guide STM 577
 export async function list(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const vendors = allowedVendors(req);
@@ -131,6 +133,35 @@ export async function updateByGuide(req: AuthenticatedRequest, res: Response, ne
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014, req.authToken ?? '');
         logActivity(true, CatMsgExc.description , e , req.query);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        next(e);
+    }
+}
+
+// POST /shipping-guide/cancel
+export async function cancel(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        const dto: CancelShippingGuidesDto = CancelShippingGuidesSchema.parse(req.body);
+        const response = await shippingGuideService.cancelGuides(dto, req.authToken ?? "");
+        res.status(response.httpStatus).json({ ...response, trace_id: getTraceId() });
+    } catch (e) {
+        logActivity(true, "ERROR cancel shipping guides", e, req.body);
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogException.CATALOGS_API_EXCEPTION +
+                constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014,
+            req.authToken ?? ""
+        );
+        res.status(400).json({
+            ...ResponseHandler.responseBuilder(
+                "ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                e
+            ),
+            trace_id: getTraceId(),
+        });
         next(e);
     }
 }

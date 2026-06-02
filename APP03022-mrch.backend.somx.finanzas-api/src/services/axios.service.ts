@@ -1,4 +1,10 @@
-import axios from 'axios';
+import axios, {AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axiosRetry from "axios-retry";
+import type { Request } from "express";
+import { createBreaker } from "@/services/circuitBreaker.service.js";
+import { getBreaker } from "@/services/breakerRegistry.js";
+import { getCache, setCache } from "@/services/cache.service.js";
+
 import FormData from 'form-data';
 
 import { logger } from "@/utils/logger.js";
@@ -10,6 +16,100 @@ import {uploadMultiple} from '@/services/storageGcp.service.js';
 import { StatusCodes } from "http-status-codes";
 import { ResponseHandler } from "@/response/ResponseHandler.js";
 import 'dotenv/config';
+
+
+/**
+ * Cliente axios base
+ */
+const axiosClient = axios.create({
+  timeout: 5000,
+});
+
+
+/**
+ * Politica de reintentos
+ */
+axiosRetry(axiosClient, {
+  retries: 3, // 🔁 número de reintentos
+  retryDelay: (count) => Math.pow(2, count) * 1000,
+//   retryDelay: (retryCount) => {
+//     console.log(`🔁 Retry intento #${retryCount}`);
+//     return retryCount * 1000; // backoff simple: 1s, 2s, 3s
+//   },
+
+  retryCondition: (error: AxiosError) => {
+    // ✅ solo retry en estos casos
+    
+    const method = error.config?.method;
+
+    if (method !== "get") return false;  //EVITAR RETRY EN POST PARA EVITAR DUPLICADOS
+
+    // error de red
+    if (axiosRetry.isNetworkError(error)) return true;
+
+    // status 5xx (server down)
+    const status = error.response?.status;
+    if (status !== undefined && status >= 500) {
+    return true;
+    }
+
+
+    // timeout
+    if (error.code === "ECONNABORTED") return true;
+
+    return false; // ❌ NO retry en 4xx
+  },
+});
+
+/**
+ * Interceptor de request (agrega headers automáticamente)
+ */
+axiosClient.interceptors.request.use((config) => {
+  // puedes agregar headers globales aquí si quieres
+  console.log("➡️ Request:", config.method?.toUpperCase(), config.url);
+  return config;
+});
+
+/**
+ * Interceptor de response
+ */
+axiosClient.interceptors.response.use(
+  (response) => {
+    console.log("✅ Response:", response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error("❌ Axios error:", error?.response?.data || error.message);
+    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + error.config.url, error, JSON.stringify({ trace_id: getTraceId() }));
+    return Promise.reject(error);
+  }
+);
+
+/**
+ * request base sin resiliencia
+ */
+const axiosGetRaw = async (url: string, token?: string, params?: any) => {
+
+    console.log("🔥 Llamando API:", url)
+    if (params == undefined) {
+        params = {};
+    }
+    const config: AxiosRequestConfig = {
+      url,
+      method: "GET",
+      params,
+      headers: {},
+    };
+
+    if (token) {
+      config.headers!["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response: AxiosResponse = await axiosClient(config);
+    console.log("✅ API respondió:", response.status)
+  return response.data;
+};
+
 
 
 /**
@@ -57,60 +157,73 @@ async function sendFilesWithData(url: string, files: Express.Multer.File[], extr
     }
 }
 
-export async function sendFilesToBucket(files: Express.Multer.File[], folder: string, token: string) {
+export async function sendFilesToBucket(req: Request,files: Express.Multer.File[], token: string, folder?: string) {
     try {
-        //return true; //PARA PRUEBAS
+
 
         let apiResponse = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
-        apiResponse = await uploadMultiple(files, folder);
-
-        // const extraData = {
-        //     folder: folder,
-        // };
-
-        // const apiResponse = await sendFilesWithData(
-        //     (process.env.UTILERIAS_API_URL_BBF ?? "") + (process.env.UTILIERIAS_API_URI_UPLOAD_FILES ?? ""),
-        //     files,
-        //     extraData,
-        //     { Authorization: `Bearer ${token}` }
-        // );
+        apiResponse = await uploadMultiple(req, files, folder);
 
         return apiResponse;
-
 
     } catch (e) {
         logActivity(true, 'ERROR : No fue posible registrar los archivos en google cloud', e, JSON.stringify({ trace_id: getTraceId() }));
         return ResponseHandler.responseBuilder("ERROR : No fue posible registrar los archivos en google cloud", e, -1, StatusCodes.CREATED, false, "", "");
     }
 
-
-    // if (files.length > 0) {
-    //     // Procesar cada archivo en memoria
-    //     const formData = new FormData();
-    //     files.forEach((file, index) => {
-    //         console.log(`Archivo ${index + 1}:`);
-    //         console.log('Nombre:', file.originalname);
-    //         console.log('Tipo:', file.mimetype);
-    //         console.log('Tamaño:', file.size);
-    //         // Ejemplo: convertir a string si es texto
-    //         const contenido = file.buffer.toString('utf-8');
-
-    //         formData.append('files', file.buffer, file.originalname);
-    //     });
-
-    // Ejemplo: enviar a una API externa
-    // const response = await axios.post('https://api.ejemplo.com/upload', formData, {
-    //     headers: {
-    //         ...formData.getHeaders(), // Necesario para multipart/form-data
-    //         Authorization: 'Bearer TU_TOKEN_AQUI' // Si la API requiere autenticación
-    //     }
-    // });
-
-    // } else {
-
-    // }
-
 }
+
+
+/**
+ * GET generico
+ */
+export async function axiosGet<T>(
+  url: string,
+  token?: string,
+  params?: any
+): Promise<T | null> {
+
+    const cacheKey = url;
+
+    // ✅ 1. revisar cache primero
+    const cached = getCache<T>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    const type = resolveEndpointType(url);
+    const key = type; // o combinación si quieres más granular
+  try {
+    
+    
+    // ✅ breaker por endpoint
+    const breaker = getBreaker(key, axiosGetRaw, type);
+
+    // ✅ 2. usar breaker + retry
+    const data = await breaker.fire(url, token, params);
+
+    
+    if (data) {
+      // ✅ 3. guardar en cache (ej: 30 min)
+      setCache(cacheKey, data, 30 * 60 * 1000);
+    }
+
+    return data;
+
+  } catch (error: any) {
+    console.error("axiosGet failed:", error?.response?.data || error.message);
+    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
+    
+    // ✅ fallback manual
+    const cachedFallback = getCache<T>(cacheKey);
+    if (cachedFallback) return cachedFallback;
+
+    return buildDefaultCatalog("error", url) as T;
+
+    //return null;
+  }
+}
+
 
 
 /*export async function axiosGet(url: string, token: string, params?: any) {
@@ -122,14 +235,14 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: st
         if (token == undefined) {
             token = '';
         }
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      params: params
-    });
+        const response = await axios.get(url, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+        params: params
+        });
 
-    return response; // ✅ IMPORTANTE
+    return response;
   } catch (error: any) {
     console.error("❌ axiosGet error:", error?.response?.data || error.message);
     logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
@@ -139,66 +252,80 @@ export async function sendFilesToBucket(files: Express.Multer.File[], folder: st
 */
 
 
-export async function axiosGet(url: string, token: string, params?: any) {
+
+
+
+const axiosPostRaw = async (
+  url: string,
+  token?: string,
+  body?: any
+) => {
+
+  console.log("🔥 POST API:", url);
+
+  if (!body) {
+    body = {};
+  }
+
+  const config: AxiosRequestConfig = {
+    url,
+    method: "POST",
+    data: body, // 👈 🔥 CAMBIO IMPORTANTE
+    headers: {},
+  };
+
+  if (token) {
+    config.headers!["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response: AxiosResponse = await axiosClient(config);
+
+  console.log("✅ API respondió:", response.status);
+
+  return response.data;
+};
+
+/**
+ * POST generico
+ */
+export async function axiosPost<T>(
+  url: string,
+  body: any,
+  token?: string
+): Promise<T | null> {
   try {
-    logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
+    console.log("🔥 POST API:", url);
 
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token ?? ''}` },
-      params: params ?? {}
-    });
+    if (!body) {
+        body = {};
+    }
 
-    return response;
+    const config: AxiosRequestConfig = {
+        url,
+        method: "POST",
+        data: body, // 👈 🔥 CAMBIO IMPORTANTE
+        headers: {},
+    };
+
+    if (token) {
+        config.headers!["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response: AxiosResponse = await axiosClient(config);
+
+    console.log("✅ API respondió:", response.status);
+
+    return response.data;
+
 
   } catch (error: any) {
-    console.error("❌ axiosGet error:", error?.response?.data || error.message);
-
-    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
-
-    return {
-      url: url,
-      data: null,
-      status: error?.response?.status ?? 500
-    };
+    console.error("axiosPost failed:", error?.response?.data || error.message);
+    return null;
   }
 }
 
 
-// export async function axiosGet(url: string, token: string, params?: any) {
-
-//     logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
-//     let response: any;
-//     if (params == undefined) {
-//         params = {};
-//     }
-
-//     if (token == undefined) {
-//         token = '';
-//     }
-
-//     await axios.get(url, { 
-//         params,
-//         headers: {
-//             Authorization: `Bearer ${token}`
-//         }
-
-//         })
-//         .then(function (_response) {
-//             response = _response;
-//             console.log(_response);
-//         })
-//         .catch(function (error) {
-//             response = error.response;
-//             console.log(error);
-//             logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
-//         })
-//         .finally(function () {
-//             console.log();
-//         });
-//     return response;
-// }
-
-export async function axiosPost(url: string, data: any, token: string) {
+export async function axiosPostBack(url: string, data: any, token: string) {
 
     //const response2 = await axios.get(url);
     if (token == undefined) {
@@ -228,13 +355,19 @@ export async function axiosPost(url: string, data: any, token: string) {
 
 export async function GetSuppliers(token: string) {
     const allSuppliers: any = await axiosGet((process.env.CATALOGS_API_URL_BFF) +  constants.CatalogSupplierUrls.CATALOGS_API_GET_ALL_SUPPLIERS, token);
-    const supplierList: Supplier[] = allSuppliers.data as Supplier[];
+    const supplierList: Supplier[] = allSuppliers as Supplier[];
     return supplierList;
+}
+
+export async function GetStores(token: string) {
+    const allStores: any = await axiosGet((process.env.CATALOGS_API_URL_BFF) +  constants.CatalogStores.CATALOGS_API_STORES, token);
+    const storeList: GenericCatalogDetails[] = allStores as GenericCatalogDetails[];
+    return storeList;
 }
 
 export async function GetSupplierBySupplierNumber(supplierNumber: number, token: string) {
     const supplierTmp: any = await axiosGet((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_GET_SUPPLIER + "/" + supplierNumber, token);
-    if (supplierTmp.data == '') {
+    if (supplierTmp == '' || supplierTmp == undefined) {
         return undefined;
     } else {
         const supplier: Supplier = supplierTmp.data as Supplier;
@@ -243,24 +376,40 @@ export async function GetSupplierBySupplierNumber(supplierNumber: number, token:
 
 }
 
-export async function GetCatalogDetail(url: string, token: string) {
-    
-  const CatCatalog: any = await axiosGet(url, token, undefined);
 
-  if (!CatCatalog) {
-    throw new Error("Error: axiosGet no regresó respuesta");
+export async function GetCatalogDetail(
+  url: string,
+  token: string
+): Promise<GenericCatalogDetails> {
+
+  const data = await axiosGet<GenericCatalogDetails>(url, token);
+
+  if (!data) {
+    console.warn("⚠️ catálogo no disponible");
+    logActivity(true, 'ERROR: EN AXIOS POST. URL:' + url, "catálogo no disponible", JSON.stringify({ trace_id: getTraceId() }));
+    return buildDefaultCatalog("empty",url)
   }
 
-  return CatCatalog.data as GenericCatalogDetails;
-
-    // const CatCatalog: any = await axiosGet(url, token, undefined);
-    // const msgObj: GenericCatalogDetails = CatCatalog.data as GenericCatalogDetails;
-    // return msgObj;
+  return data;
 }
+
+
+function buildDefaultCatalog(type: "error" | "empty", url?: string): GenericCatalogDetails {
+    return {
+        key: type,
+        description: `Sin información (${url ?? "unknown"})`,
+        value: '',
+        color: '',
+        externalKey: '',
+        internalStatus: 0,
+        success : false,
+    };
+}
+
 
 export async function GetCatalogDetailList(url: string, token: string) {
     const CatCatalog: any = await axiosGet(url,token, undefined);
-    const msgObj: GenericCatalogDetails[] = CatCatalog.data as GenericCatalogDetails[];
+    const msgObj: GenericCatalogDetails[] = CatCatalog as GenericCatalogDetails[];
     return msgObj;
 }
 
@@ -271,11 +420,19 @@ export async function ValidStatus(url: string, optionId: number, sourceStatus: n
         targetStatus: targetStatus
     }
     const CatCatalog: any = await axiosGet(url,token, params);
-    const msgObj: ValidStatus = CatCatalog.data as ValidStatus;
+    const msgObj: ValidStatus = CatCatalog as ValidStatus;
     if (msgObj.success && msgObj.valid) {
         return true;
     } else {
         return false;
     }
 
+}
+
+function resolveEndpointType(url: string): string {
+  if (url.includes("/catalog")) return "catalog";
+  if (url.includes("/supplier")) return "supplier";
+  if (url.includes("/status")) return "status";
+
+  return "default";
 }

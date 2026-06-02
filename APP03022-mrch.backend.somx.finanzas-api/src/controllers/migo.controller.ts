@@ -5,6 +5,7 @@ import type {
     ListMigoReceptionsQueryDto,
     RejectMigoDto,
 } from "@/schemas/migo.schema.js";
+import type { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
 export async function listDocuments(req: Request, res: Response, next: NextFunction) {
     try {
@@ -30,7 +31,8 @@ export async function listReceptions(req: Request, res: Response, next: NextFunc
     try {
         const q = res.locals.query as ListMigoReceptionsQueryDto;
         q.migoDocumentId = req.params.id!;
-        const result = await migoService.listReceptions(q);
+        const authToken = (req as AuthenticatedRequest).authToken ?? '';
+        const result = await migoService.listReceptions(q, authToken);
         return res.status(result.httpStatus).json(result);
     } catch (err) {
         next(err);

@@ -39,6 +39,9 @@ export function toDto(entity: Supplier | null | undefined): SupplierDto | null {
         supplierType: toSupplierTypeDto(entity.supplierType),
         logo: entity.logo ?? null,
         paymentCondition: toPaymentConditionDto(entity.paymentCondition),
+        emailPrincipal: entity.emailPrincipal ?? null,
+        emailFinancial: entity.emailFinancial ?? null,
+        emailCommercial: entity.emailCommercial ?? null,
         status: entity.status
     };
 }
@@ -63,7 +66,10 @@ export function toEntity(dto: SupplierCreateDto): Partial<Supplier> {
         supplierNumber: dto.supplierNumber,
         rfc: dto.rfc,
         businessName: dto.businessName,
-        logo: dto.logo ?? null
+        logo: dto.logo ?? null,
+        emailPrincipal: dto.emailPrincipal,
+        emailFinancial: dto.emailFinancial,
+        emailCommercial: dto.emailCommercial ?? null
     };
 }
 

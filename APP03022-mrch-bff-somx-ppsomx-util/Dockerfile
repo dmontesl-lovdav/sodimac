@@ -1,12 +1,12 @@
+FROM registrysecaas.azurecr.io/secaas/node:22.22.3-alpine3.22-dhi
 
-FROM node:22-alpine
 WORKDIR /usr/src/app
 
 # Instala deps con lockfile (si tienes package-lock.json, no lo borres en CI)
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copia el código
+# Copia el cÃ³digo
 COPY . .
 
 # Expone 8080 (GKE/Cloud Run friendly)

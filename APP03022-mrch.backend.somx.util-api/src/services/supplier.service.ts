@@ -103,6 +103,9 @@ export async function update(id: number, dto: SupplierUpdateDto, updatedBy: stri
     if (dto.rfc != null) supplier.rfc = dto.rfc;
     if (dto.businessName != null) supplier.businessName = dto.businessName;
     if (dto.logo !== undefined) supplier.logo = dto.logo ?? null;
+    if (dto.emailPrincipal !== undefined) supplier.emailPrincipal = dto.emailPrincipal ?? null;
+    if (dto.emailFinancial !== undefined) supplier.emailFinancial = dto.emailFinancial ?? null;
+    if (dto.emailCommercial !== undefined) supplier.emailCommercial = dto.emailCommercial ?? null;
     if (dto.status != null) supplier.status = dto.status;
 
     if (dto.supplierTypeId != null) {

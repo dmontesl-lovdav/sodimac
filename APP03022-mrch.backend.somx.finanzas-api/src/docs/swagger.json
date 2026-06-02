@@ -185,6 +185,211 @@
         }
       }
     },
+    "/account-statement": {
+      "get": {
+        "tags": [
+          "AccountStatement"
+        ],
+        "summary": "List account statements",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "vendorNumber",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged list",
+            "schema": {
+              "$ref": "#/components/schemas/AccountStatementListResponse"
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "/account-statement/{uuid}/pdf": {
+      "get": {
+        "tags": [
+          "AccountStatement"
+        ],
+        "summary": "Download account statement PDF",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF binary",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "/account-statement/{uuid}/confirm-review": {
+      "patch": {
+        "tags": [
+          "AccountStatement"
+        ],
+        "summary": "Confirm review",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/components/schemas/AccountStatementDetail"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "/account-statement/{uuid}/request-review": {
+      "patch": {
+        "tags": [
+          "AccountStatement"
+        ],
+        "summary": "Request review (reject)",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/components/schemas/AccountStatementDetail"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "/account-statement/{uuid}": {
+      "get": {
+        "tags": [
+          "AccountStatement"
+        ],
+        "summary": "Get account statement by UUID",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Found",
+            "schema": {
+              "$ref": "#/components/schemas/AccountStatementDetail"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
     "/audit-logs": {
       "get": {
         "tags": [
@@ -2071,6 +2276,146 @@
           "format": "date"
         }
       }
+    },
+    "AccountStatementListItem": {
+      "type": "object",
+      "properties": {
+        "accountStatementUuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "vendorName": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer"
+        },
+        "month": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusLabel": {
+          "type": "string"
+        },
+        "processedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        }
+      },
+      "required": [
+        "accountStatementUuid",
+        "vendorNumber",
+        "vendorName",
+        "year",
+        "month",
+        "status",
+        "statusLabel"
+      ]
+    },
+    "AccountStatementDetail": {
+      "type": "object",
+      "properties": {
+        "accountStatementUuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "vendorNumber": {
+          "type": "integer"
+        },
+        "vendorName": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer"
+        },
+        "month": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusLabel": {
+          "type": "string"
+        },
+        "initialBalance": {
+          "type": "string",
+          "nullable": true
+        },
+        "finalBalance": {
+          "type": "string",
+          "nullable": true
+        },
+        "processedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date",
+          "nullable": true
+        }
+      },
+      "required": [
+        "accountStatementUuid",
+        "vendorNumber",
+        "vendorName",
+        "year",
+        "month",
+        "version",
+        "status",
+        "statusLabel"
+      ]
+    },
+    "AccountStatementListResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AccountStatementListItem"
+          }
+        },
+        "totalItems": {
+          "type": "integer"
+        },
+        "totalPages": {
+          "type": "integer"
+        },
+        "currentPage": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "totalItems",
+        "totalPages",
+        "currentPage"
+      ]
     },
     "AuditLog": {
       "type": "object",

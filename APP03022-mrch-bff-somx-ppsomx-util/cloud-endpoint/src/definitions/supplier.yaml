@@ -39,6 +39,15 @@ SupplierDto:
       type: string
     paymentCondition:
       $ref: "#/PaymentConditionDto"
+    emailPrincipal:
+      type: string
+      description: "Email Principal del proveedor."
+    emailFinancial:
+      type: string
+      description: "Email de Cuentas por Cobrar del proveedor."
+    emailCommercial:
+      type: string
+      description: "Email de la cuenta clave comercial del proveedor."
     status:
       type: integer
       format: int32
@@ -49,6 +58,8 @@ SupplierCreateDto:
     - supplierNumber
     - rfc
     - businessName
+    - emailPrincipal
+    - emailFinancial
   properties:
     supplierNumber:
       type: string
@@ -66,6 +77,18 @@ SupplierCreateDto:
     paymentConditionId:
       type: integer
       format: int32
+    emailPrincipal:
+      type: string
+      description: "Email Principal del proveedor (obligatorio)."
+      example: "principal@proveedor.com"
+    emailFinancial:
+      type: string
+      description: "Email de Cuentas por Cobrar (obligatorio)."
+      example: "cxc@proveedor.com"
+    emailCommercial:
+      type: string
+      description: "Email de la cuenta clave comercial (opcional)."
+      example: "comercial@proveedor.com"
 
 SupplierUpdateDto:
   type: object
@@ -82,6 +105,15 @@ SupplierUpdateDto:
     paymentConditionId:
       type: integer
       format: int32
+    emailPrincipal:
+      type: string
+      description: "Email Principal del proveedor."
+    emailFinancial:
+      type: string
+      description: "Email de Cuentas por Cobrar."
+    emailCommercial:
+      type: string
+      description: "Email de la cuenta clave comercial."
     status:
       type: integer
       format: int32

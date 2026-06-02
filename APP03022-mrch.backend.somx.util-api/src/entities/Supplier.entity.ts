@@ -52,6 +52,12 @@ export class Supplier {
     @Column({ name: 'email_financial', type: 'varchar', length: 255, nullable: true })
     emailFinancial?: string | null;
 
+    @Column({ name: 'email_principal', type: 'varchar', length: 255, nullable: true })
+    emailPrincipal?: string | null;
+
+    @Column({ name: 'email_commercial', type: 'varchar', length: 255, nullable: true })
+    emailCommercial?: string | null;
+
     @Column({ name: 'status', type: 'integer', nullable: false, default: 1 })
     status!: number;
 

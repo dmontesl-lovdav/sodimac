@@ -6,14 +6,16 @@ import type {
     RebateFilterDto,
 } from "@/schemas/rebate.schema.js";
 import type { Rebate } from "@/entities/Rebate.entity.js";
-import { Between, LessThanOrEqual, MoreThanOrEqual, FindOptionsWhere } from "typeorm";
+import { Between, LessThanOrEqual, MoreThanOrEqual, FindOptionsWhere, Like } from "typeorm";
 
 export async function list(q: ListRebateQuery) {
     const filter: FindOptionsWhere<Rebate> = {};
 
     if (q.status !== undefined) filter.status = q.status;
     if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
-    if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
+    if (q.documentNumber !== undefined) {
+        filter.documentNumber = Like(`%${q.documentNumber}%`);
+    }
     if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 
@@ -29,7 +31,9 @@ export async function listPublished(q: ListRebateQuery) {
     const filter: FindOptionsWhere<Rebate> = { status: 1 };
 
     if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
-    if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
+    if (q.documentNumber !== undefined) {
+        filter.documentNumber = Like(`%${q.documentNumber}%`);
+    }
     if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 
@@ -47,7 +51,9 @@ export async function listByVendor(vendorNumber: number, q: ListRebateQuery) {
         status: 1  // Solo publicados
     };
 
-    if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
+    if (q.documentNumber !== undefined) {
+        filter.documentNumber = Like(`%${q.documentNumber}%`);
+    }
     if (q.source !== undefined) filter.source = q.source;
     if (q.periodId !== undefined) filter.periodId = q.periodId;
 

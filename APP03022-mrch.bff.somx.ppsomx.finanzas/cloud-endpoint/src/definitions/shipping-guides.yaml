@@ -62,10 +62,91 @@ CreateShippingGuideDto:
 UpdateShippingGuideDto:
   type: object
   properties:
+    guideNumber:
+      type: string
+      maxLength: 50
+      description: Shipping guide number
+    vendorNumber:
+      type: integer
+      description: Vendor identifier
+    truckPlate:
+      type: string
+      maxLength: 20
+      nullable: true
+      description: Truck license plate
+    trailerPlate:
+      type: string
+      maxLength: 20
+      nullable: true
+      description: Trailer license plate
+    driverName:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: Driver full name
+    driverLicense:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Driver license number
+    originId:
+      type: integer
+      description: Origin location identifier
+    destinationId:
+      type: integer
+      nullable: true
+      description: Destination location identifier
+    deliveryType:
+      type: integer
+      description: Delivery type identifier
     status:
       type: integer
+      description: Shipping status
+    comments:
+      type: string
+      nullable: true
+      description: Additional comments
     deliveryDate:
       type: string
       format: date-time
-    destination:
+      description: Expected delivery date
+    estimatedArrival:
       type: string
+      format: date-time
+      nullable: true
+      description: Estimated arrival date
+    actualArrival:
+      type: string
+      format: date-time
+      nullable: true
+      description: Actual arrival date
+    sentAt:
+      type: string
+      format: date-time
+      nullable: true
+      description: Date when guide was sent
+    updatedBy:
+      type: integer
+      description: ID of user who last updated the record
+
+CancelShippingGuidesDto:
+  type: object
+  required:
+    - shippingGuideIds
+    - reasonId
+  properties:
+    shippingGuideIds:
+      type: array
+      minItems: 1
+      description: List of shipping guide UUIDs to cancel
+      items:
+        type: string
+        format: uuid
+    reasonId:
+      type: integer
+      description: Cancellation reason identifier
+    comment:
+      type: string
+      maxLength: 254
+      description: Optional cancellation comment
+      default: ""

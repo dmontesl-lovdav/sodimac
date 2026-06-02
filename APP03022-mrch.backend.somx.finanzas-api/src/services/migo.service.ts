@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import * as migoRepo from "@/repositories/migo.repo.js";
+import * as svcAxios from "@/services/axios.service.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
@@ -9,6 +10,8 @@ import { logger } from "@/utils/logger.js";
 import { datasource } from "@/config/typeorm-datasource.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { MigoDocumentReception } from "@/entities/MigoDocumentReception.entity.js";
+import { In } from "typeorm";
+import type { Supplier } from "@/response/GenericCatalogDetails.dto.js";
 import type {
     ListMigoDocumentsQueryDto,
     ListMigoReceptionsQueryDto,
@@ -61,14 +64,68 @@ export async function getDocumentById(id: string) {
     return ResponseHandler.responseBuilder("", doc, 0, StatusCodes.OK, true, "");
 }
 
-export async function listReceptions(q: ListMigoReceptionsQueryDto) {
+async function buildSupplierIndexByOc(
+    rows: MigoDocumentReception[],
+    authToken: string,
+): Promise<Map<string, { vendorName: string; emailFinancial: string }>> {
+    const index = new Map<string, { vendorName: string; emailFinancial: string }>();
+    const distinctOcs = [...new Set(rows.map(r => String(r.nroOc)).filter(Boolean))];
+    if (distinctOcs.length === 0) return index;
+
+    let purchaseOrders: PurchaseOrder[] = [];
+    try {
+        purchaseOrders = await datasource.getRepository(PurchaseOrder).find({
+            where: { orderNumber: In(distinctOcs) },
+        });
+    } catch (err) {
+        logger.warn(`[MIGO] No se pudieron resolver PurchaseOrders por nroOc: ${(err as Error).message}`);
+        return index;
+    }
+
+    if (purchaseOrders.length === 0) return index;
+
+    let supplierList: Supplier[] = [];
+    try {
+        supplierList = await svcAxios.GetSuppliers(authToken);
+    } catch (err) {
+        logger.warn(`[MIGO] No se pudo obtener catálogo de proveedores: ${(err as Error).message}`);
+        return index;
+    }
+
+    const supplierByNumber = new Map<number, Supplier>();
+    for (const s of supplierList) {
+        const n = Number(s.supplierNumber);
+        if (Number.isFinite(n)) supplierByNumber.set(n, s);
+    }
+
+    for (const po of purchaseOrders) {
+        const supplier = supplierByNumber.get(Number(po.supplierNumber));
+        index.set(po.orderNumber, {
+            vendorName: supplier?.businessName ?? "",
+            emailFinancial: supplier?.emailFinancial ?? "",
+        });
+    }
+    return index;
+}
+
+export async function listReceptions(q: ListMigoReceptionsQueryDto, authToken = "") {
     const { result, total } = await migoRepo.findReceptionsByDocumentPaginated(q);
     const totalPages = Math.ceil(total / q.pageSize);
 
+    const supplierIndex = await buildSupplierIndexByOc(result, authToken);
+    const enrichedRows = result.map(row => {
+        const supplierInfo = supplierIndex.get(String(row.nroOc));
+        return {
+            ...row,
+            vendorName: supplierInfo?.vendorName ?? "",
+            emailFinancial: supplierInfo?.emailFinancial ?? "",
+        };
+    });
+
     const page: ResponsePageableDTO = {
-        content: result,
+        content: enrichedRows,
         totalElements: total,
-        numberOfElements: result.length,
+        numberOfElements: enrichedRows.length,
         totalPages,
         pageNumber: q.pageNumber,
         pageSize: q.pageSize,
@@ -201,6 +258,11 @@ function extractDriverDetails(err: unknown): DriverError {
     return out;
 }
 
+function resolveSchema(manager: import('typeorm').EntityManager): string {
+    const opts = manager.connection.options as { schema?: string };
+    return opts.schema ?? process.env.DB_SCHEMA ?? 'tenant_finance';
+}
+
 async function rawInsertReception(
     manager: import('typeorm').EntityManager,
     data: {
@@ -217,6 +279,7 @@ async function rawInsertReception(
 ): Promise<string> {
     const receptionId = randomUUID();
     const now = new Date();
+    const schema = resolveSchema(manager);
 
     const columns: string[] = [
         'reception_id',
@@ -254,7 +317,7 @@ async function rawInsertReception(
     }
 
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
-    const sql = `INSERT INTO reception (${columns.join(', ')}) VALUES (${placeholders})`;
+    const sql = `INSERT INTO "${schema}".reception (${columns.join(', ')}) VALUES (${placeholders})`;
     await manager.query(sql, values);
     return receptionId;
 }
@@ -274,6 +337,7 @@ async function rawInsertReceptionSku(
 ): Promise<void> {
     const skuId = randomUUID();
     const now = new Date();
+    const schema = resolveSchema(manager);
 
     const columns: string[] = [
         'reception_sku_id',
@@ -302,7 +366,7 @@ async function rawInsertReceptionSku(
         values.push(data.createdBy);
     }
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
-    const sql = `INSERT INTO reception_sku (${columns.join(', ')}) VALUES (${placeholders})`;
+    const sql = `INSERT INTO "${schema}".reception_sku (${columns.join(', ')}) VALUES (${placeholders})`;
     await manager.query(sql, values);
 }
 
@@ -336,8 +400,9 @@ async function promoteMigoReceptionsToNormalReceptions(
             const first = rows[0]!;
             const receptionNumber = String(first.nroRecepcion);
 
+            const schema = resolveSchema(manager);
             const existsRows = await manager.query(
-                'SELECT 1 FROM reception WHERE reception_number = $1 LIMIT 1',
+                `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 LIMIT 1`,
                 [receptionNumber],
             );
             if (Array.isArray(existsRows) && existsRows.length > 0) {

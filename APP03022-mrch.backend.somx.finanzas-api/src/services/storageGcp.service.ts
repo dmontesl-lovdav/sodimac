@@ -54,9 +54,12 @@ function resolvePrefix(req: Request): string {
     }
 }
 
-function buildObjectName(prefix: string, folder: string, fileName: string): string {
-    const safeFolder = sanitizeSegment(folder);
+function buildObjectName(prefix: string, fileName: string, folder?: string): string {
+    const safeFolder = sanitizeSegment(folder?? '');
     const safeFileName = path.posix.basename(fileName);
+    if(folder == undefined || folder == ""){
+        return [prefix, safeFileName].filter(Boolean).join("/");
+    }
     return [prefix, safeFolder, safeFileName].filter(Boolean).join("/");
 }
 
@@ -65,7 +68,71 @@ function toPublicUrl(objectName: string): string {
     return `${publicBaseUrl}/${encoded}`;
 }
 
-async function uploadFile(prefix: string, folder: string, file: Express.Multer.File): Promise<string> {
+
+function serializeError(e: unknown) {
+    if (e instanceof Error) {
+        return {
+            message: e.message,
+            stack: e.stack,
+            name: e.name
+        };
+    }
+    return e;
+}
+
+function shouldRetry(err: any): boolean {
+  if (!err) return false;
+
+  const retryableCodes = [
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "EAI_AGAIN",
+  ];
+
+  if (retryableCodes.includes(err.code)) return true;
+
+  const status = err.code || err.statusCode;
+
+  // Retry únicamente errores de servidor
+  if (status && status >= 500) return true;
+
+  return false;
+}
+
+async function retry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  baseDelay = 300,
+    context?: { fileName?: string }
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+
+      if (!shouldRetry(err) || attempt === retries) {
+        break;
+      }
+
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      const jitter = Math.random() * 100;
+
+      logger.warn(
+        `Retry ${attempt}/${retries} en ${delay}ms → file=${context?.fileName ?? "unknown"} → error=${(err as Error).message}`
+      );
+
+
+      await new Promise((res) => setTimeout(res, delay + jitter));
+    }
+  }
+
+  throw lastError;
+}
+
+async function uploadFileBack(prefix: string, folder: string, file: Express.Multer.File): Promise<string> {
     const objectName = buildObjectName(prefix, folder, file.originalname);
     const blob = bucket.file(objectName);
 
@@ -75,7 +142,7 @@ async function uploadFile(prefix: string, folder: string, file: Express.Multer.F
             : blob.createWriteStream({ resumable: false });
 
         blobStream.on("error", (err) => {
-            logger.error(`GCS upload failed: ${err.message}`);
+            logger.error(`GCS upload failed: ${err.message}`);         
             reject(err);
         });
 
@@ -94,17 +161,51 @@ async function uploadFile(prefix: string, folder: string, file: Express.Multer.F
     });
 }
 
+async function uploadFile(prefix: string, file: Express.Multer.File, folder?: string): Promise<string> {
+  return retry(() => {
+    const objectName = buildObjectName(prefix, file.originalname, folder);
+    const blob = bucket.file(objectName);
+
+    return new Promise<string>((resolve, reject) => {
+      const blobStream = file.mimetype
+        ? blob.createWriteStream({ resumable: false, contentType: file.mimetype })
+        : blob.createWriteStream({ resumable: false });
+
+        blobStream.on("error", reject);
+    //   blobStream.on("error", (err) => {
+    //     logger.error(`GCS upload error: ${err.message}`);
+    //     reject(err);
+    //   });
+
+      blobStream.on("finish", async () => {
+        try {
+          if (shouldMakePublic) {
+            await blob.makePublic();
+          }
+        } catch (err) {
+          logger.warn(`makePublic falló: ${(err as Error).message}`);
+        }
+
+        resolve(toPublicUrl(objectName));
+      });
+
+      blobStream.end(file.buffer);
+    });
+  }, 3, 300, { fileName: file.originalname });
+}
+
+
 // POST /storage-gcp/upload
-export async function uploadMultiple(files: Express.Multer.File[], folder: string) {
+export async function uploadMultiple(req: Request, files: Express.Multer.File[], folder?: string) {
     try {
-        const prefix = prefixMx;
+        const files = req.files as Express.Multer.File[];
 
         if (!files?.length) {
             return ResponseHandler.responseBuilder("No se enviaron archivos", null, -1, StatusCodes.BAD_REQUEST, false, null)
             
         }
-
-        const urls = await Promise.all(files.map((file) => uploadFile(prefix, folder, file)));
+        const prefix = resolvePrefix(req);
+        const urls = await Promise.all(files.map((file) => uploadFile(prefix, file, folder)));
         logger.info(`✅ GCS upload OK → bucket=${bucketName} prefix=${prefix} count=${urls.length}`);
 
         return ResponseHandler.responseBuilder("Archivos subidos correctamente", { urls }, 0, StatusCodes.OK, true, null)
@@ -112,7 +213,10 @@ export async function uploadMultiple(files: Express.Multer.File[], folder: strin
     } catch (e) {
         logger.error(`GCS upload FAILED → bucket=${bucketName} cause=${(e as Error).message}`);
         logActivity(true, `GCS upload FAILED → bucket=${bucketName}`, e, JSON.stringify({ trace_id: getTraceId() }));
-        return ResponseHandler.responseBuilder("Hubo un error en el guardado de los arcvhios en GCP", e, -1, StatusCodes.METHOD_FAILURE, false, null)
+
+        const errorInfo = JSON.stringify(serializeError(e));  
+
+        return ResponseHandler.responseBuilder("Hubo un error en el guardado de los arcvhios en GCP", errorInfo, -1, StatusCodes.INTERNAL_SERVER_ERROR, false, errorInfo)
     }
 }
 

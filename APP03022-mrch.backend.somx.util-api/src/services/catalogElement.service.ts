@@ -210,26 +210,27 @@ async function checkDuplicateElementName(
     }
 }
 
-async function generateNextKey(catalog: CatalogHeader): Promise<string> {
+async function generateNextKey(catalog: CatalogHeader, startingFrom?: number): Promise<string> {
     const prefix = catalog.prefix ?? 'EL';
-    const maxKey = await detailRepo.findMaxKeyByHeaderId(catalog.id);
-
-    let nextNum = 1;
-    if (maxKey && maxKey.startsWith(prefix)) {
-        const numPart = maxKey.substring(prefix.length);
-        const parsed = Number.parseInt(numPart, 10);
-        if (!Number.isNaN(parsed)) {
-            nextNum = parsed + 1;
-        } else {
-            const count = await detailRepo.countByHeaderId(catalog.id);
-            nextNum = count + 1;
-        }
-    } else if (maxKey) {
-        const count = await detailRepo.countByHeaderId(catalog.id);
-        nextNum = count + 1;
-    }
-
+    const maxNum = await detailRepo.findMaxKeyNumberByHeaderIdAndPrefix(catalog.id, prefix);
+    const nextNum = Math.max(maxNum + 1, startingFrom ?? 1);
     return `${prefix}${String(nextNum).padStart(4, '0')}`;
+}
+
+function isUniqueKeyViolation(err: unknown): boolean {
+    const e = err as { code?: string; driverError?: { code?: string }; detail?: string };
+    const code = e?.code ?? e?.driverError?.code;
+    if (code !== '23505') return false;
+    const detail = (e?.detail ?? '').toLowerCase();
+    return detail.includes('header_id') && detail.includes('key');
+}
+
+function extractKeyNumberFromError(err: unknown, prefix: string): number | null {
+    const detail = (err as { detail?: string })?.detail ?? '';
+    const match = detail.match(new RegExp(`${prefix.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(\\d+)`));
+    if (!match || !match[1]) return null;
+    const parsed = Number.parseInt(match[1], 10);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 async function createDictionaryEntry(elementName: string): Promise<number> {
@@ -279,28 +280,53 @@ export async function createElement(
 
     await checkDuplicateElementName(catalog, dto.element, parentCatId, parentElemId, null);
 
-    const generatedKey = await generateNextKey(catalog);
     const dictId = await createDictionaryEntry(dto.element);
-
     const detailRepoInstance = datasource.getRepository(CatalogDetail);
-    const detail = detailRepoInstance.create({
-        header: catalog,
-        headerId: catalog.id,
-        key: generatedKey,
-        value: dto.value ?? null,
-        validFrom: dto.validFrom ?? null,
-        validTo: dto.validTo ?? null,
-        parentCatalogId: parentCatId,
-        parentElementId: parentElemId,
-        externalKey: dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null,
-        sortOrder: dto.sortOrder ?? 0,
-        attributes: dto.attributes ?? null,
-        status: CatalogDetail.STATUS_ACTIVE,
-        dictId,
-        createdBy: userId
-    });
 
-    const saved = await detailRepoInstance.save(detail);
+    const MAX_KEY_ATTEMPTS = 5;
+    let saved: CatalogDetail | null = null;
+    let attempt = 0;
+    let startingFrom: number | undefined;
+
+    while (attempt < MAX_KEY_ATTEMPTS) {
+        attempt++;
+        const generatedKey = await generateNextKey(catalog, startingFrom);
+
+        const detail = detailRepoInstance.create({
+            header: catalog,
+            headerId: catalog.id,
+            key: generatedKey,
+            value: dto.value ?? null,
+            validFrom: dto.validFrom ?? null,
+            validTo: dto.validTo ?? null,
+            parentCatalogId: parentCatId,
+            parentElementId: parentElemId,
+            externalKey: dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null,
+            sortOrder: dto.sortOrder ?? 0,
+            attributes: dto.attributes ?? null,
+            status: CatalogDetail.STATUS_ACTIVE,
+            dictId,
+            createdBy: userId
+        });
+
+        try {
+            saved = await detailRepoInstance.save(detail);
+            break;
+        } catch (err) {
+            if (!isUniqueKeyViolation(err) || attempt >= MAX_KEY_ATTEMPTS) {
+                throw err;
+            }
+            const collisionNum = extractKeyNumberFromError(err, catalog.prefix ?? 'EL');
+            startingFrom = collisionNum != null ? collisionNum + 1 : (startingFrom ?? 1) + 1;
+        }
+    }
+
+    if (!saved) {
+        throw new GenericException(
+            500,
+            'No fue posible generar una clave única para el elemento después de varios intentos. Inténtalo nuevamente.'
+        );
+    }
 
     if (catalog.status === 0) {
         catalog.status = 1;

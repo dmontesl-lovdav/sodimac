@@ -133,11 +133,30 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         //     );
         
                 //Las columnas de fechas son obligatorias
-        receptionQuery.andWhere("reception.receptionDate BETWEEN :startDate AND :endDate " +
-                                " AND reception.status != 8 "  //No incluye las Recepciones borradas
+                receptionQuery.andWhere("reception.receptionDate BETWEEN :startDate AND :endDate " +
+                                " AND reception.status != 8 "
                                     , { startDate: filter.receptionDateAtInitial,
                                         endDate: filter.receptionDateAtEnd
                                         });
+
+        if (filter.orderNumber !== undefined) {
+            receptionQuery.andWhere("purchaseOrder.orderNumber = :orderNumber", {
+                orderNumber: filter.orderNumber,
+            });
+        }
+        if (filter.supplierNumber !== undefined) {
+            receptionQuery.andWhere("purchaseOrder.supplierNumber = :supplierNumber", {
+                supplierNumber: filter.supplierNumber,
+            });
+        }
+        if (typeof filter.status === "number" && filter.status !== 8) {
+            receptionQuery.andWhere("reception.status = :status", { status: filter.status });
+        }
+        if (filter.receptionId !== undefined) {
+            receptionQuery.andWhere("reception.receptionId = CAST(:receptionId AS uuid)", {
+                receptionId: filter.receptionId,
+            });
+        }
         
                 // Get the total count with pagination
 

@@ -38,7 +38,7 @@ export const CreateShippingGuideSchema = z.object({
     driverName: z.string().max(100).optional().nullable(),
     driverLicense: z.string().max(50).optional().nullable(),
     originId: z.number().int(),
-    destinationId: z.number().int().optional().nullable(),
+    destinationId: z.number().int(),
     deliveryType: z.number().int(),
     status: z.number().int().default(1),
     comments: z.string().optional().nullable(),
@@ -113,6 +113,12 @@ export const ShippginGuideSummaryListSchema = z.object({
   data: z.array(z.string())   //Lista de shippingGuideId
 });
 
+export const CancelShippingGuidesSchema = z.object({
+    shippingGuideIds: z.array(UUID).min(1),
+    reasonId: z.coerce.number().int(),
+    comment: z.string().max(254).optional().default(""),
+});
+
 // export const ListShippingGuideQuerySchema = z.object({
 //     id: z.coerce.string().optional(),
 //     guideNumber: z.coerce.string().optional(),
@@ -137,6 +143,7 @@ export type UpdateShippingGuideDto = z.infer<typeof UpdateShippingGuideSchema>;
 export type ListShippingGuideQuery = z.infer<typeof ListShippingGuideQuerySchema>;
 export type CreateShippingGuideDtoList = z.infer<typeof CreateShippingGuideSchemaList>;
 export type ShippginGuideSummaryListDto = z.infer<typeof ShippginGuideSummaryListSchema>;
+export type CancelShippingGuidesDto = z.infer<typeof CancelShippingGuidesSchema>;
 export type IdParamSchemaDto = z.infer<typeof IdParamSchema>;
 export type IdParamGuideDto = z.infer<typeof IdParamGuideSchema>;
 

@@ -41,11 +41,19 @@ CATALOGS_API_STATUS_TRAIN: "/status-train",
 CATALOGS_API_VALID_TRAIN: "/validate",
 } as const;
 
+export const CatEstatusRecepcion = {
+CATALOGS_API_STATUS_RECEPTION: "/catalog/CatEstatusRecepcion/details",
+} as const;
+
 export const CatalogAdvertencia = {
 CATALOGS_API_ADVERTENCIA: "/catalog/CatMsgAdvertencia",
 CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103: "/details/WRN103",
 CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301: "/details/WRN301",
 CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302: "/details/WRN302",
+} as const;
+
+export const CatalogStores = {
+CATALOGS_API_STORES: "/catalog/CatStores/details",
 } as const;
 
 export const CatalogExitoso = {

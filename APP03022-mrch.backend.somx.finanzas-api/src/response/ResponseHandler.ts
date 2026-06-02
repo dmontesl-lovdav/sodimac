@@ -1,7 +1,7 @@
 
 import { ResponseHandlerDTO } from "@/response/ResponseHandler.dto.js";
 export class ResponseHandler {
-    static responseBuilder(_message: string, _data: unknown, _errorCode: number, _httpStatus: number, _success: boolean, _detailError: unknown, _code = "")
+    static responseBuilder(_message: string, _data: any, _errorCode: number, _httpStatus: number, _success: boolean, _detailError: any, _code = "")
                             : ResponseHandlerDTO {
         return {
                     data: _data,

@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { QueryFailedError } from 'typeorm';
 import { logActivity } from '@/middlewares/logger.js';
 
+
 export interface HttpError extends Error {
     status?: number;
     code?: string;
@@ -59,6 +60,11 @@ export function errorHandler(
     res: Response,
     _next: NextFunction
 ) {
+    
+    if (res.headersSent) {
+    return _next(err);
+    }
+
     void _next;
 
     console.error('💥 Error capturado:', err);

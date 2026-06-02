@@ -21,7 +21,7 @@ export const BaseSchemaParent = z.object({
 });
 
 export const BaseArrayFilesSchemaParent = BaseSchemaParent.extend({
-    folder: z.string(),
+    folder: z.string().optional(),
     origen: z.string(),
     files: z.array(multerFile).optional().refine((files) => {
         if(files != undefined){

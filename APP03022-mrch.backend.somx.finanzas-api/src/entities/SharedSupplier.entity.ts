@@ -46,4 +46,10 @@ export class SharedSupplier {
 
     @Column({ name: 'email_financial', type: 'varchar', length: 255, nullable: true })
     emailFinancial?: string;
+
+    @Column({ name: 'email_principal', type: 'varchar', length: 255, nullable: true })
+    emailPrincipal?: string;
+
+    @Column({ name: 'email_commercial', type: 'varchar', length: 255, nullable: true })
+    emailCommercial?: string;
 }

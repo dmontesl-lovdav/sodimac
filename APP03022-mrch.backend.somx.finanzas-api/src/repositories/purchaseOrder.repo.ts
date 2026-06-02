@@ -24,7 +24,9 @@ export async function findById(purchaseOrderId: string) {
 }
 
 export async function findByOrderNumber(filter: FindOptionsWhere<PurchaseOrder>) {
-    const entity = await repo().findOne({ where: filter});
+    const entity = await repo().findOne({
+        where: filter
+    });
     return entity;
 }
 

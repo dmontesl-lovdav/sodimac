@@ -3,6 +3,8 @@ import { getDataSource } from "@/config/typeorm-datasource.js";
 import { SharedCatalogHeader } from "@/entities/SharedCatalogHeader.entity.js";
 import { SharedCatalogDetail } from "@/entities/SharedCatalogDetail.entity.js";
 import { SharedSupplier } from "@/entities/SharedSupplier.entity.js";
+import { SharedSupplierType } from "@/entities/SharedSupplierType.entity.js";
+import { SharedCatalogDictionaryLang } from "@/entities/SharedCatalogDictionaryLang.entity.js";
 import type { GenericCatalogDetails, Supplier } from "@/response/GenericCatalogDetails.dto.js";
 
 const CATALOG_CODES = {
@@ -12,23 +14,24 @@ const CATALOG_CODES = {
     origenCartaPorte: "CatOrigenCartaPorte",
 } as const;
 
-function mapCatalogDetailToDto(entity: SharedCatalogDetail): GenericCatalogDetails {
+function mapCatalogDetailToDto(entity: SharedCatalogDetail, dictLangEntity: SharedCatalogDictionaryLang[]): GenericCatalogDetails {
     return {
         key: entity.key ?? "",
         value: entity.value ?? "",
         color: entity.color ?? "",
         externalKey: entity.externalKey ?? "",
         internalStatus: entity.internalStatus ?? 0,
-        description: entity.value ?? "",
+        description: dictLangEntity.find(item => item.dictId === entity.dictId)?.description ?? "", //entity.dictId.value ?? "",
+        success: true
     };
 }
 
 function buildSupplierType(
     supplierTypeId: number | undefined,
-    tipoProveedorList: GenericCatalogDetails[],
+    entitySupplierType: SharedSupplierType[],
 ) {
-    const foundTipoProveedor = tipoProveedorList.find(
-        (it) => it.internalStatus?.toString() === supplierTypeId?.toString()
+    const foundTipoProveedor = entitySupplierType.find(
+        (it) => it.id?.toString() === supplierTypeId?.toString()
     );
 
     if (!foundTipoProveedor) {
@@ -40,27 +43,31 @@ function buildSupplierType(
     }
 
     return {
-        id: foundTipoProveedor.internalStatus ?? 0,
-        code: foundTipoProveedor.key ?? "",
-        description: foundTipoProveedor.description ?? foundTipoProveedor.value ?? "",
+        id: foundTipoProveedor.id ?? 0,
+        code: foundTipoProveedor.code ?? "",
+        description: foundTipoProveedor.description ?? "",
     };
 }
 
 function mapSupplierToDto(
     entity: SharedSupplier,
-    tipoProveedorList: GenericCatalogDetails[],
+    entitySupplierType: SharedSupplierType[],
 ): Supplier {
     return {
         supplierNumber: Number(entity.supplierNumber) || 0,
         rfc: entity.rfc ?? "",
         businessName: entity.businessName ?? "",
-        supplierType: buildSupplierType(entity.supplierTypeId, tipoProveedorList),
+        supplierType: buildSupplierType(entity.supplierTypeId, entitySupplierType),
+        emailFinancial: entity.emailFinancial ?? "",
+        emailPrincipal: entity.emailPrincipal ?? "",
+        emailCommercial: entity.emailCommercial ?? "",
     };
 }
 
 export async function getShippingGuideCatalogContext() {
     const headerRepo = getDataSource().getRepository(SharedCatalogHeader);
     const detailRepo = getDataSource().getRepository(SharedCatalogDetail);
+    const dictLangRepo = getDataSource().getRepository(SharedCatalogDictionaryLang);
 
     const headers = await headerRepo.find({
         where: {
@@ -100,12 +107,23 @@ export async function getShippingGuideCatalogContext() {
             id: "ASC",
         },
     });
+    const dictIds = details.map(item => item.dictId);
+    const dictLangs = await dictLangRepo.find({
+        where: {
+            dictId: In(dictIds),
+            langId: 1,
+        },
+        order: {
+            dictId: "ASC",
+            id: "ASC",
+        },
+    });
 
     const detailsByHeaderId = new Map<number, GenericCatalogDetails[]>();
 
     details.forEach((detail) => {
         const current = detailsByHeaderId.get(detail.headerId) ?? [];
-        current.push(mapCatalogDetailToDto(detail));
+        current.push(mapCatalogDetailToDto(detail, dictLangs));
         detailsByHeaderId.set(detail.headerId, current);
     });
 
@@ -121,10 +139,15 @@ export async function getAllSuppliers(
     tipoProveedorList: GenericCatalogDetails[],
 ): Promise<Supplier[]> {
     const supplierRepo = getDataSource().getRepository(SharedSupplier);
+    const supplierTypeRepo = getDataSource().getRepository(SharedSupplierType);
 
     const suppliers = await supplierRepo.find({
         order: { id: "ASC" },
     });
 
-    return suppliers.map((supplier) => mapSupplierToDto(supplier, tipoProveedorList));
+    const suppliersTypes = await supplierTypeRepo.find({
+        order: { id: "ASC" },
+    });
+
+    return suppliers.map((supplier) => mapSupplierToDto(supplier, suppliersTypes));
 }

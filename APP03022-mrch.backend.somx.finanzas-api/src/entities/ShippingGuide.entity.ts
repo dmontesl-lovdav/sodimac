@@ -33,8 +33,11 @@ export class ShippingGuide {
     @Column({ name: 'trailer_plate', type: 'varchar', length: 30, nullable: true })
     trailerPlate?: string;
 
-    @Column({ name: 'source_id', type: 'numeric', precision: 3, nullable: false })
+    @Column({ name: 'source_id', type: 'numeric', nullable: false })
     originId?: number;
+
+    @Column({ name: 'destination_id', type: 'numeric', nullable: false })
+    destinationId?: number;
 
     @Column({ name: 'delivery_type', type: 'numeric', nullable: false })
     deliveryType?: number;

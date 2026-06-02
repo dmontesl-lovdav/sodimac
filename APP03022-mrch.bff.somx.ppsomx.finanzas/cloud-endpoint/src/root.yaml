@@ -209,6 +209,8 @@ paths:
     $ref: "./paths/shipping-guides.yaml#/shipping-guide-by-uuid"
   /shipping-guide/guide/{idGuide}:
     $ref: "./paths/shipping-guides.yaml#/shipping-guide-by-idGuide"
+  /shipping-guide/cancel:
+    $ref: "./paths/shipping-guides.yaml#/shipping-guide-cancel"
 
   /three-way-match:
     $ref: "./paths/three-way-match.yaml#/three-way-match"
@@ -368,6 +370,8 @@ definitions:
     $ref: "./definitions/shipping-guides.yaml#/CreateShippingGuideDto"
   UpdateShippingGuideDto:
     $ref: "./definitions/shipping-guides.yaml#/UpdateShippingGuideDto"
+  CancelShippingGuidesDto:
+    $ref: "./definitions/shipping-guides.yaml#/CancelShippingGuidesDto"
 
   ThreeWayMatchItem:
     $ref: "./definitions/three-way-match.yaml#/ThreeWayMatchItem"

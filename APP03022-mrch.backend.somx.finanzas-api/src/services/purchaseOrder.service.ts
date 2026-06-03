@@ -110,6 +110,26 @@ export async function listReception(q: ListReceptionQueryDto, token: string) {
   
 }
 
+function formatCatalogMessage(
+    template: string,
+    ...params: Array<string | number | undefined | null>
+): string {
+    let message = template;
+    params.forEach((value, index) => {
+        const replacement =
+            value == null || String(value).trim() === "" ? "N/D" : String(value);
+        message = message.replace(new RegExp(`\\{${index}\\}`, "g"), replacement);
+    });
+    return message;
+}
+
+function buildCatalogWarningMessage(
+    catalogMsg: GenericCatalogDetails,
+    ...params: Array<string | number | undefined | null>
+): string {
+    const description = formatCatalogMessage(catalogMsg.description ?? "", ...params);
+    return `WARNING: ${catalogMsg.key}. ${description}`;
+}
 
 export async function updateReception(dto: UpdatePurchaseOrderDto, token: string) {
     const filter: FindOptionsWhere<PurchaseOrder> = {};
@@ -118,62 +138,111 @@ export async function updateReception(dto: UpdatePurchaseOrderDto, token: string
     if (dto.orderNumber !== undefined) filter.orderNumber = dto.orderNumber;
 
     const purchaseOrder = await purchaseOrderRepo.findByOrderNumber(filter);
-    let response = ResponseHandler.responseBuilder("",purchaseOrder,0, StatusCodes.OK, true, "");
+    const catalogBase =
+        (process.env.CATALOGS_API_URL_BFF ?? "") +
+        constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA;
+
     if (!purchaseOrder) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301, token);
-        response = ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,0, StatusCodes.NOT_FOUND, false, "");
-    }
-    
-        // UPDATES status ONLY
-    const persistenceList: Reception[] = purchaseOrder?.receptions ?? [];
-    if (persistenceList.length == 0) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302, token);
-        response = ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,-1, StatusCodes.NOT_FOUND, false, "");
-    } else {
-          
-        const receptionMatch = persistenceList.find(
-            (recep) => recep.receptionNumber === dto.receptionNumber
+        const CatMsgWrn = await svcAxios.GetCatalogDetail(
+            catalogBase +
+                constants.CatalogAdvertencia
+                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301,
+            token
         );
-
-        if (!receptionMatch) {
-            const CatMsgWrn = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302, token);
-            return ResponseHandler.responseBuilder("WARNING: " + CatMsgWrn.key + ". " + CatMsgWrn.description,purchaseOrder,-1, StatusCodes.NOT_FOUND, false, "");
-        }
-
-        const persistence: Reception = receptionMatch;
-
-        if (dto.uuid != null && dto.uuid != undefined && dto.status == 2) {
-            const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
-            const addendaManual = new AddendumManual();
-            addendaManual.supplierNumber = dto.supplierNumber;
-            addendaManual.orderNumber = dto.orderNumber;
-            addendaManual.invoiceId = dto.uuid;
-            addendaManual.createdAt = new Date();
-            addendaManual.receptionId = persistence.receptionId;
-            if (supplier != undefined) {
-                addendaManual.supplierTypeId = supplier.supplierType.id;
-            }
-            persistence.addendumManual = addendaManual;
-        }
-        const valStatus = await validarStatus(persistence, dto.status, 5, token);
-        persistence.status = dto.status;
-        persistence.comment = dto.comments;
-        persistence.updatedAt = new Date();
-
-        if (persistence?.receptionId && valStatus) {
-            const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId, persistence);
-            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
-            response = ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
-        } else {
-
-            const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103, token);
-            response = ResponseHandler.responseBuilder(CatMsg.description ,dto,-1, StatusCodes.BAD_REQUEST, false, CatMsg.key + "=" + CatMsg.description);
-        }
-
+        return ResponseHandler.responseBuilder(
+            buildCatalogWarningMessage(
+                CatMsgWrn,
+                dto.orderNumber,
+                dto.supplierNumber
+            ),
+            purchaseOrder,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
     }
 
+    const persistenceList = await rececetionRepo.findAll(
+        purchaseOrder.purchaseOrderId
+    );
 
-    return response
+    if (persistenceList.length === 0) {
+        const CatMsgWrn = await svcAxios.GetCatalogDetail(
+            catalogBase +
+                constants.CatalogAdvertencia
+                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            buildCatalogWarningMessage(
+                CatMsgWrn,
+                dto.orderNumber,
+                dto.supplierNumber
+            ),
+            purchaseOrder,
+            -1,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
+    }
+
+    const receptionMatch = persistenceList.find(
+        (recep) =>
+            String(recep.receptionNumber).trim() ===
+            String(dto.receptionNumber).trim()
+    );
+
+    if (!receptionMatch) {
+        const CatMsgWrn = await svcAxios.GetCatalogDetail(
+            catalogBase +
+                constants.CatalogAdvertencia
+                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            buildCatalogWarningMessage(
+                CatMsgWrn,
+                dto.orderNumber,
+                dto.supplierNumber
+            ),
+            purchaseOrder,
+            -1,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
+    }
+
+    const persistence: Reception = receptionMatch;
+
+    if (dto.uuid != null && dto.uuid != undefined && dto.status == 2) {
+        const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+        const addendaManual = new AddendumManual();
+        addendaManual.supplierNumber = dto.supplierNumber;
+        addendaManual.orderNumber = dto.orderNumber;
+        addendaManual.invoiceId = dto.uuid;
+        addendaManual.createdAt = new Date();
+        addendaManual.receptionId = persistence.receptionId;
+        if (supplier != undefined) {
+            addendaManual.supplierTypeId = supplier.supplierType.id;
+        }
+        persistence.addendumManual = addendaManual;
+    }
+    const valStatus = await validarStatus(persistence, dto.status, 5, token);
+    persistence.status = dto.status;
+    persistence.comment = dto.comments;
+    persistence.updatedAt = new Date();
+
+    if (persistence?.receptionId && valStatus) {
+        const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId, persistence);
+        const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
+        return ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
+    }
+
+    const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103, token);
+    return ResponseHandler.responseBuilder(CatMsg.description ,dto,-1, StatusCodes.BAD_REQUEST, false, CatMsg.key + "=" + CatMsg.description);
 }
 
 async function validarStatus(reception: Reception, newStatus: number, optionId: number, token?: string){

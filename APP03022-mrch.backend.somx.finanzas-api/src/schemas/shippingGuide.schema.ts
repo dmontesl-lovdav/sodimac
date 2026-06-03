@@ -113,11 +113,49 @@ export const ShippginGuideSummaryListSchema = z.object({
   data: z.array(z.string())   //Lista de shippingGuideId
 });
 
+/** POST /shipping-guide/cancel — contrato alineado con Finanzas SPA. */
 export const CancelShippingGuidesSchema = z.object({
     shippingGuideIds: z.array(UUID).min(1),
     reasonId: z.coerce.number().int(),
     comment: z.string().max(254).optional().default(""),
 });
+
+/** POST /shipping-guide/status — contrato alineado con Finanzas SPA. */
+export const UpdateShippingGuideStatusSchema = z
+    .object({
+        shippingGuideId: UUID,
+        targetStatus: z.coerce.number().int(),
+        reasonId: z.coerce.number().int(),
+        series: z.string().max(100).optional(),
+        folio: z.string().max(100).optional(),
+        uuid: z.string().max(36).optional(),
+        comment: z.string().min(1).max(254),
+    })
+    .superRefine((data, ctx) => {
+        if (data.targetStatus === 3) {
+            if (!data.series?.trim()) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["series"],
+                    message: "Serie es obligatoria para estatus Consumida manual (3).",
+                });
+            }
+            if (!data.folio?.trim()) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["folio"],
+                    message: "Folio es obligatorio para estatus Consumida manual (3).",
+                });
+            }
+            if (!data.uuid?.trim()) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["uuid"],
+                    message: "UUID es obligatorio para estatus Consumida manual (3).",
+                });
+            }
+        }
+    });
 
 // export const ListShippingGuideQuerySchema = z.object({
 //     id: z.coerce.string().optional(),
@@ -144,6 +182,9 @@ export type ListShippingGuideQuery = z.infer<typeof ListShippingGuideQuerySchema
 export type CreateShippingGuideDtoList = z.infer<typeof CreateShippingGuideSchemaList>;
 export type ShippginGuideSummaryListDto = z.infer<typeof ShippginGuideSummaryListSchema>;
 export type CancelShippingGuidesDto = z.infer<typeof CancelShippingGuidesSchema>;
+export type UpdateShippingGuideStatusDto = z.infer<
+    typeof UpdateShippingGuideStatusSchema
+>;
 export type IdParamSchemaDto = z.infer<typeof IdParamSchema>;
 export type IdParamGuideDto = z.infer<typeof IdParamGuideSchema>;
 

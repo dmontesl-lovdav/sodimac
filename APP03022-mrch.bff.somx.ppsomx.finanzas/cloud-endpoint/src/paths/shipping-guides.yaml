@@ -173,6 +173,86 @@ shipping-guide-by-uuid:
     security:
       - bearerAuth: []
 
+shipping-guide-cancel:
+  post:
+    tags:
+      - shipping-guide
+    summary: Cancel shipping guides (logical delete, status 9)
+    operationId: cancelShippingGuides
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/CancelShippingGuidesDto"
+    responses:
+      "200":
+        description: Guides cancelled
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/CancelShippingGuidesResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+shipping-guide-status:
+  post:
+    tags:
+      - shipping-guide
+    summary: Update shipping guide status
+    operationId: updateShippingGuideStatus
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/UpdateShippingGuideStatusDto"
+    responses:
+      "200":
+        description: Status updated
+        schema:
+          $ref: "../definitions/shipping-guides.yaml#/ShippingGuideDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
 shipping-guide-by-idGuide:
   patch:
     tags:
@@ -209,40 +289,6 @@ shipping-guide-by-idGuide:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
       "404":
         description: Not found
-        schema:
-          $ref: "../definitions/common.yaml#/ExceptionWrapper"
-      "500":
-        description: Internal error
-        schema:
-          $ref: "../definitions/common.yaml#/ExceptionWrapper"
-    security:
-      - bearerAuth: []
-
-shipping-guide-cancel:
-  post:
-    tags:
-      - shipping-guide
-    summary: Cancel shipping guides
-    operationId: cancelShippingGuides
-    consumes:
-      - application/json
-    produces:
-      - application/json
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          $ref: "../definitions/shipping-guides.yaml#/CancelShippingGuidesDto"
-    responses:
-      "200":
-        description: Guides cancelled successfully
-      "400":
-        description: Bad request
-        schema:
-          $ref: "../definitions/common.yaml#/ExceptionWrapper"
-      "401":
-        description: Unauthorized
         schema:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
       "500":

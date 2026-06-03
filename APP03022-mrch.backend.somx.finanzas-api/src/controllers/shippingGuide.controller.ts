@@ -3,12 +3,14 @@ import {
     ListShippingGuideQuerySchema,
     UpdateShippingGuideSchema,
     CancelShippingGuidesSchema,
+    UpdateShippingGuideStatusSchema,
     IdParamGuideSchema,
     type ListShippingGuideQuery,
     type UpdateShippingGuideDto,
     type IdParamSchemaDto,
     type IdParamGuideDto,
     type CancelShippingGuidesDto,
+    type UpdateShippingGuideStatusDto,
 } from "@/schemas/shippingGuide.schema.js";
 import * as shippingGuideService from "@/services/shippingGuide.service.js";
 import type { NextFunction, Request, Response } from "express";
@@ -133,6 +135,46 @@ export async function updateByGuide(req: AuthenticatedRequest, res: Response, ne
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014, req.authToken ?? '');
         logActivity(true, CatMsgExc.description , e , req.query);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        next(e);
+    }
+}
+
+// POST /shipping-guide/status
+export async function updateStatus(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const dto: UpdateShippingGuideStatusDto =
+            UpdateShippingGuideStatusSchema.parse(req.body);
+        const response = await shippingGuideService.updateGuideStatus(
+            dto,
+            req.authToken ?? ""
+        );
+        res.status(response.httpStatus).json({
+            ...response,
+            trace_id: getTraceId(),
+        });
+    } catch (e) {
+        logActivity(true, "ERROR update shipping guide status", e, req.body);
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogException.CATALOGS_API_EXCEPTION +
+                constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC014,
+            req.authToken ?? ""
+        );
+        res.status(400).json({
+            ...ResponseHandler.responseBuilder(
+                "ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description,
+                null,
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                e
+            ),
+            trace_id: getTraceId(),
+        });
         next(e);
     }
 }

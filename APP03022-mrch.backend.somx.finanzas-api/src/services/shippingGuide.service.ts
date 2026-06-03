@@ -195,6 +195,24 @@ function mapShippingGuideToDetailPayload(
         item.shippingGuidePurchaseOrders ?? []
     ).map((link) => {
         const po = link.purchaseOrder as PurchaseOrder | undefined;
+        const poSupplier = po
+            ? ctx.supplierList.find(
+                  (supplier) =>
+                      supplier.supplierNumber?.toString() ===
+                      po.supplierNumber?.toString()
+              )
+            : undefined;
+
+        const receptionDates = (po?.receptions ?? [])
+            .map((r) => r.receptionDate)
+            .filter((d): d is Date => d != null);
+        const receptionDate =
+            receptionDates.length > 0
+                ? receptionDates.reduce((earliest, d) =>
+                      d < earliest ? d : earliest
+                  )
+                : undefined;
+
         return {
             shippingGuidePurchaseOrderId: link.shippingGuidePurchaseOrderId,
             shippingGuideId: link.shippingGuideId,
@@ -208,10 +226,13 @@ function mapShippingGuideToDetailPayload(
                       purchaseOrderId: po.purchaseOrderId,
                       orderNumber: po.orderNumber,
                       supplierNumber: po.supplierNumber,
+                      supplierBusinessName:
+                          poSupplier?.businessName ?? null,
                       originId: po.originId,
                       amount: po.amount,
                       status: po.status,
                       purchaseOrderDate: po.purchaseOrderDate,
+                      receptionDate: receptionDate ?? null,
                       createdBy: po.createdBy,
                       createdAt: po.createdAt,
                       updatedBy: po.updatedBy,
@@ -395,18 +416,196 @@ export async function remove(id: string) {
     await guides.deleteOne(id);
 }
 
-/** Cancelación lógica: estatus 9 (ECF009). */
-export async function cancelGuides(
-    dto: { shippingGuideIds: string[]; reasonId: number; comment?: string },
+const ALLOWED_SOURCE_STATUSES = [1, 4] as const;
+
+function isAllowedGuideStatusTransition(
+    sourceStatus: number,
+    targetStatus: number
+): boolean {
+    if (sourceStatus === 1) return targetStatus === 3 || targetStatus === 4;
+    if (sourceStatus === 4) return targetStatus === 1;
+    return false;
+}
+
+function buildStatusChangeComment(dto: {
+    targetStatus: number;
+    reasonId: number;
+    series?: string | undefined;
+    folio?: string | undefined;
+    uuid?: string | undefined;
+    comment: string;
+}): string {
+    const userComment = dto.comment.trim();
+    if (dto.targetStatus === 3) {
+        const meta = `S:${dto.series?.trim()}|F:${dto.folio?.trim()}|U:${dto.uuid?.trim()}|R:${dto.reasonId}`;
+        const combined = `${meta} ${userComment}`;
+        return combined.length <= 100 ? combined : combined.slice(0, 100);
+    }
+    const withReason = `[R:${dto.reasonId}] ${userComment}`;
+    return withReason.length <= 100 ? withReason : withReason.slice(0, 100);
+}
+
+/** Cambio de estatus (1→3, 1→4, 4→1) — POST /shipping-guide/status. */
+export async function updateGuideStatus(
+    dto: {
+        shippingGuideId: string;
+        targetStatus: number;
+        reasonId: number;
+        series?: string | undefined;
+        folio?: string | undefined;
+        uuid?: string | undefined;
+        comment: string;
+    },
     token: string
 ) {
-    const comment = dto.comment?.trim() ?? "";
+    const guide = await guides.findById(dto.shippingGuideId);
+    if (!guide) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            CatMsgExc.description,
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            "Guía de Embarque no encontrada"
+        );
+    }
+
+    const sourceStatus = Number(guide.status ?? 0);
+    if (
+        !ALLOWED_SOURCE_STATUSES.includes(
+            sourceStatus as (typeof ALLOWED_SOURCE_STATUSES)[number]
+        )
+    ) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA +
+                constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            CatMsgExc.description ??
+                "Solo puedes actualizar guías en estatus 1 o 4.",
+            null,
+            -1,
+            StatusCodes.BAD_REQUEST,
+            false,
+            "Estatus origen no permitido"
+        );
+    }
+
+    let transitionOk = isAllowedGuideStatusTransition(
+        sourceStatus,
+        dto.targetStatus
+    );
+    const optionId = Number(process.env.SHIPPING_GUIDE_STATUS_OPTION_ID ?? 0);
+    if (optionId > 0) {
+        try {
+            const catalogOk = await svcAxios.ValidStatus(
+                (process.env.CATALOGS_API_URL_BFF ?? "") +
+                    constants.CatalogStatusTrain.CATALOGS_API_STATUS_TRAIN +
+                    constants.CatalogStatusTrain.CATALOGS_API_VALID_TRAIN,
+                optionId,
+                sourceStatus,
+                dto.targetStatus,
+                token
+            );
+            if (catalogOk) transitionOk = true;
+        } catch {
+            /* fallback a reglas locales */
+        }
+    }
+
+    if (!transitionOk) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA +
+                constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            CatMsgExc.description ??
+                "Transición no permitida. Solo se permite: 1→3, 1→4 o 4→1.",
+            null,
+            -1,
+            StatusCodes.BAD_REQUEST,
+            false,
+            "Transición de estatus no válida"
+        );
+    }
+
+    const comments = buildStatusChangeComment(dto);
+    const entityUpdated = await guides.updateOneByUuid(dto.shippingGuideId, {
+        status: dto.targetStatus,
+        comments,
+        updatedAt: new Date(),
+        isStatusUpdated: true,
+    } as Partial<ShippingGuide>);
+
+    if (!entityUpdated) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+                constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS209,
+            token
+        );
+        return ResponseHandler.responseBuilder(
+            CatMsgExc.description,
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            "Guía de Embarque no encontrada"
+        );
+    }
+
+    const CatMsg = await svcAxios.GetCatalogDetail(
+        (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+            constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS210,
+        token
+    );
+    return ResponseHandler.responseBuilder(
+        CatMsg.description,
+        entityUpdated,
+        0,
+        StatusCodes.OK,
+        true,
+        ""
+    );
+}
+
+function buildCancelComment(
+    reasonId: number,
+    comment?: string | undefined
+): string | undefined {
+    const userComment = (comment ?? "").trim();
+    const withReason = `[R:${reasonId}]${userComment ? ` ${userComment}` : ""}`;
+    const stored = withReason.length <= 100 ? withReason : withReason.slice(0, 100);
+    return stored || undefined;
+}
+
+/** Cancelación lógica: estatus 9 (ECF009). */
+export async function cancelGuides(
+    dto: {
+        shippingGuideIds: string[];
+        reasonId: number;
+        comment?: string | undefined;
+    },
+    token: string
+) {
+    const comments = buildCancelComment(dto.reasonId, dto.comment);
     const updated: ShippingGuide[] = [];
 
     for (const id of dto.shippingGuideIds) {
         const entityUpdated = await guides.updateOneByUuid(id, {
             status: 9,
-            comments: comment || undefined,
+            comments,
             updatedAt: new Date(),
             isStatusUpdated: true,
         } as any);

@@ -350,10 +350,8 @@ paths:
       tags:
         - account-statement
       summary: Get account statement report data (JSON for client-side PDF)
-      description: >
-        Returns the full account statement payload (header, totals, purchase orders,
-        receptions, payments, rebates, invoices, credit notes and status catalogs)
-        used to render the statement in the portal.
+      description: |
+        Returns the full account statement payload (header, totals, purchase orders, receptions, payments, rebates, invoices, credit notes and status catalogs) used to render the statement in the portal.
       operationId: getAccountStatementReportData
       produces:
         - application/json
@@ -1934,6 +1932,84 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /shipping-guide/cancel:
+    post:
+      tags:
+        - shipping-guide
+      summary: 'Cancel shipping guides (logical delete, status 9)'
+      operationId: cancelShippingGuides
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CancelShippingGuidesDto'
+      responses:
+        '200':
+          description: Guides cancelled
+          schema:
+            $ref: '#/definitions/CancelShippingGuidesResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /shipping-guide/status:
+    post:
+      tags:
+        - shipping-guide
+      summary: Update shipping guide status
+      operationId: updateShippingGuideStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateShippingGuideStatusDto'
+      responses:
+        '200':
+          description: Status updated
+          schema:
+            $ref: '#/definitions/ShippingGuideDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   '/shipping-guide/{uuid}':
     get:
       tags:
@@ -3493,141 +3569,6 @@ definitions:
       - totalItems
       - totalPages
       - currentPage
-  AccountStatementReportIssuerDto:
-    type: object
-    properties:
-      name:
-        type: string
-      address:
-        type: string
-      rfc:
-        type: string
-      phone:
-        type: string
-      email:
-        type: string
-  AccountStatementReportVendorDto:
-    type: object
-    properties:
-      vendorNumber:
-        type: integer
-        format: int64
-      vendorName:
-        type: string
-      providerRfc:
-        type: string
-      providerCp:
-        type: string
-      providerAddress:
-        type: string
-      providerContact:
-        type: string
-      providerEmail:
-        type: string
-  AccountStatementReportMetaDto:
-    type: object
-    properties:
-      accountStatementUuid:
-        type: string
-        format: uuid
-      vendorNumber:
-        type: integer
-        format: int64
-      year:
-        type: integer
-      month:
-        type: integer
-      version:
-        type: integer
-      initialBalance:
-        type: number
-        format: double
-        x-nullable: true
-      finalBalance:
-        type: number
-        format: double
-        x-nullable: true
-  AccountStatementReportDatesDto:
-    type: object
-    properties:
-      issueDate:
-        type: string
-        format: date-time
-        x-nullable: true
-      periodStart:
-        type: string
-        format: date-time
-        x-nullable: true
-      periodEnd:
-        type: string
-        format: date-time
-        x-nullable: true
-      generatedAt:
-        type: string
-        format: date-time
-  AccountStatementReportTotalsCountsDto:
-    type: object
-    properties:
-      purchaseOrders:
-        type: integer
-      facturas:
-        type: integer
-      payments:
-        type: integer
-      rebates:
-        type: integer
-      notasCredito:
-        type: integer
-  AccountStatementReportTotalsDto:
-    type: object
-    properties:
-      totalOC:
-        type: number
-        format: double
-      totalFacturasPendientes:
-        type: number
-        format: double
-      totalFacturasPagadas:
-        type: number
-        format: double
-      totalDescuentos:
-        type: number
-        format: double
-      totalNotasCredito:
-        type: number
-        format: double
-      saldoPendiente:
-        type: number
-        format: double
-      counts:
-        $ref: '#/definitions/AccountStatementReportTotalsCountsDto'
-  AccountStatementStatusCatalogItemDto:
-    type: object
-    properties:
-      key:
-        type: string
-      description:
-        type: string
-      color:
-        type: string
-        x-nullable: true
-      sortOrder:
-        type: integer
-  AccountStatementReportCatalogsDto:
-    type: object
-    properties:
-      invoiceStatus:
-        type: array
-        items:
-          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
-      paymentStatus:
-        type: array
-        items:
-          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
-      creditNoteStatus:
-        type: array
-        items:
-          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
   AccountStatementReportDataDto:
     type: object
     description: Full account statement dataset for client-side rendering (PDF/HTML).
@@ -3681,6 +3622,139 @@ definitions:
       - facturas
       - notasCredito
       - catalogs
+  AccountStatementReportMetaDto:
+    type: object
+    properties:
+      accountStatementUuid:
+        type: string
+        format: uuid
+      vendorNumber:
+        type: integer
+        format: int64
+      year:
+        type: integer
+      month:
+        type: integer
+      version:
+        type: integer
+      initialBalance:
+        type: number
+        format: double
+        x-nullable: true
+      finalBalance:
+        type: number
+        format: double
+        x-nullable: true
+  AccountStatementReportIssuerDto:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      rfc:
+        type: string
+      phone:
+        type: string
+      email:
+        type: string
+  AccountStatementReportVendorDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      vendorName:
+        type: string
+      providerRfc:
+        type: string
+      providerCp:
+        type: string
+      providerAddress:
+        type: string
+      providerContact:
+        type: string
+      providerEmail:
+        type: string
+  AccountStatementReportDatesDto:
+    type: object
+    properties:
+      issueDate:
+        type: string
+        format: date-time
+        x-nullable: true
+      periodStart:
+        type: string
+        format: date-time
+        x-nullable: true
+      periodEnd:
+        type: string
+        format: date-time
+        x-nullable: true
+      generatedAt:
+        type: string
+        format: date-time
+  AccountStatementReportTotalsDto:
+    type: object
+    properties:
+      totalOC:
+        type: number
+        format: double
+      totalFacturasPendientes:
+        type: number
+        format: double
+      totalFacturasPagadas:
+        type: number
+        format: double
+      totalDescuentos:
+        type: number
+        format: double
+      totalNotasCredito:
+        type: number
+        format: double
+      saldoPendiente:
+        type: number
+        format: double
+      counts:
+        type: object
+        properties:
+          purchaseOrders:
+            type: integer
+          facturas:
+            type: integer
+          payments:
+            type: integer
+          rebates:
+            type: integer
+          notasCredito:
+            type: integer
+  AccountStatementReportCatalogsDto:
+    type: object
+    properties:
+      invoiceStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+      paymentStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+      creditNoteStatus:
+        type: array
+        items:
+          $ref: '#/definitions/AccountStatementStatusCatalogItemDto'
+  AccountStatementStatusCatalogItemDto:
+    type: object
+    properties:
+      key:
+        type: string
+      description:
+        type: string
+      color:
+        type: string
+        x-nullable: true
+      sortOrder:
+        type: integer
   FiscalPaymentDto:
     type: object
     properties:
@@ -4426,6 +4500,66 @@ definitions:
         format: date-time
       destination:
         type: string
+  CancelShippingGuidesDto:
+    type: object
+    required:
+      - shippingGuideIds
+      - reasonId
+    properties:
+      shippingGuideIds:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          format: uuid
+        description: UUIDs de las guías a cancelar (estatus 9 / ECF009)
+      reasonId:
+        type: integer
+        description: Motivo de cancelación
+      comment:
+        type: string
+        maxLength: 254
+        description: Comentario opcional de cancelación
+  CancelShippingGuidesResponse:
+    type: object
+    properties:
+      updatedCount:
+        type: integer
+        description: Cantidad de guías actualizadas
+  UpdateShippingGuideStatusDto:
+    type: object
+    required:
+      - shippingGuideId
+      - targetStatus
+      - reasonId
+      - comment
+    properties:
+      shippingGuideId:
+        type: string
+        format: uuid
+        description: UUID de la guía de embarque
+      targetStatus:
+        type: integer
+        description: 'Estatus destino (1, 3 o 4)'
+      reasonId:
+        type: integer
+        description: Motivo del cambio de estatus
+      series:
+        type: string
+        maxLength: 100
+        description: Serie de factura (obligatorio si targetStatus = 3)
+      folio:
+        type: string
+        maxLength: 100
+        description: Folio de factura (obligatorio si targetStatus = 3)
+      uuid:
+        type: string
+        maxLength: 36
+        description: UUID de factura (obligatorio si targetStatus = 3)
+      comment:
+        type: string
+        maxLength: 254
+        description: Comentario del cambio
   ThreeWayMatchItem:
     type: object
     properties:

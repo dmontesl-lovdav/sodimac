@@ -69,11 +69,12 @@ public class AddendaValidationServiceImpl implements AddendaValidationService {
             Element addendaElement = (Element) addendaNodes.item(0);
             log.debug("Nodo Addenda encontrado. Validando estructura...");
 
-            // Buscar nodo Addenda_Sodimac o Addenda_Sodimac_CartaPorte
+            // Buscar nodo de addenda Sodimac reconocido
             Element addendaSodimac = findAddendaSodimacNode(addendaElement);
             if (addendaSodimac == null) {
-                log.error("La addenda no contiene el nodo requerido (Addenda_Sodimac o Addenda_Sodimac_CartaPorte)");
+                log.error("La addenda no contiene un nodo Sodimac reconocido");
                 messageCatalog.throwException(FiscalMessageCode.BUS001);
+                return false;
             }
 
             String addendaType = addendaSodimac.getLocalName();
@@ -84,6 +85,8 @@ public class AddendaValidationServiceImpl implements AddendaValidationService {
                 validateAddendaSodimac(addendaSodimac, invoiceDto);
             } else if ("Addenda_Sodimac_CartaPorte".equals(addendaType)) {
                 validateAddendaSodimacCartaPorte(addendaSodimac, invoiceDto);
+            } else if ("Addenda_Transportistas_Sodimac_Detecno".equals(addendaType)) {
+                validateAddendaTransportistas(addendaSodimac);
             }
 
             log.info("Addenda validada exitosamente para documento Serie: {}, Folio: {}",
@@ -100,10 +103,14 @@ public class AddendaValidationServiceImpl implements AddendaValidationService {
     }
 
     /**
-     * Busca el nodo Addenda_Sodimac o Addenda_Sodimac_CartaPorte dentro del elemento Addenda.
+     * Busca el nodo de addenda Sodimac reconocido dentro del elemento Addenda.
+     * Tipos soportados:
+     *   - Addenda_Sodimac (mercancia, servicios, transporte local)
+     *   - Addenda_Sodimac_CartaPorte (transporte foraneo)
+     *   - Addenda_Transportistas_Sodimac_Detecno (transportistas Detecno)
      */
     private Element findAddendaSodimacNode(Element addendaElement) {
-        log.debug("Buscando nodo Addenda_Sodimac o Addenda_Sodimac_CartaPorte...");
+        log.debug("Buscando nodo de addenda Sodimac reconocido...");
 
         NodeList children = addendaElement.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -111,15 +118,55 @@ public class AddendaValidationServiceImpl implements AddendaValidationService {
             if (child.getNodeType() == Node.ELEMENT_NODE) {
                 Element element = (Element) child;
                 String localName = element.getLocalName();
-                if ("Addenda_Sodimac".equals(localName) || "Addenda_Sodimac_CartaPorte".equals(localName)) {
+                if ("Addenda_Sodimac".equals(localName)
+                        || "Addenda_Sodimac_CartaPorte".equals(localName)
+                        || "Addenda_Transportistas_Sodimac_Detecno".equals(localName)) {
                     log.debug("Nodo {} encontrado", localName);
                     return element;
                 }
             }
         }
 
-        log.warn("No se encontró nodo Addenda_Sodimac ni Addenda_Sodimac_CartaPorte");
+        log.warn("No se encontró nodo de addenda Sodimac reconocido");
         return null;
+    }
+
+    /**
+     * Valida la estructura de Addenda_Transportistas_Sodimac_Detecno.
+     * Campos obligatorios: IdProveedor, IdGuiaEntrega, IdViaje.
+     */
+    private void validateAddendaTransportistas(Element addenda) {
+        log.debug("Validando estructura de Addenda_Transportistas_Sodimac_Detecno...");
+
+        String idProveedor = getChildText(addenda, "IdProveedor");
+        if (idProveedor == null || idProveedor.trim().isEmpty()) {
+            log.error("Campo IdProveedor faltante en Addenda_Transportistas_Sodimac_Detecno");
+            messageCatalog.throwException(FiscalMessageCode.BUS017);
+        }
+
+        String idGuia = getChildText(addenda, "IdGuiaEntrega");
+        if (idGuia == null || idGuia.trim().isEmpty()) {
+            log.error("Campo IdGuiaEntrega faltante en Addenda_Transportistas_Sodimac_Detecno");
+            messageCatalog.throwException(FiscalMessageCode.BUS016);
+        }
+
+        String idViaje = getChildText(addenda, "IdViaje");
+        if (idViaje == null || idViaje.trim().isEmpty()) {
+            log.error("Campo IdViaje faltante en Addenda_Transportistas_Sodimac_Detecno");
+            messageCatalog.throwException(FiscalMessageCode.BUS001, "Campo IdViaje es obligatorio");
+        }
+
+        log.info("Addenda_Transportistas_Sodimac_Detecno validada — IdProveedor: {}, IdGuia: {}, IdViaje: {}",
+                idProveedor, idGuia, idViaje);
+    }
+
+    /**
+     * Obtiene el texto del primer hijo con el nombre dado.
+     */
+    private String getChildText(Element parent, String childName) {
+        NodeList nodes = parent.getElementsByTagName(childName);
+        if (nodes.getLength() == 0) return null;
+        return nodes.item(0).getTextContent();
     }
 
     /**

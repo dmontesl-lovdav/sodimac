@@ -51,8 +51,13 @@ public class CfdiXmlProcessorServiceImpl implements CfdiXmlProcessorService {
         log.debug("Procesando CFDI v4.0: {}", tipoDocumento.getDescripcion());
 
         try {
+            // Algunos CFDI (ej. facturas con complemento CartaPorte) llegan con BOM UTF-8 (U+FEFF)
+            // o caracteres antes del primer '<', lo que rompe el unmarshalling JAXB con
+            // "Content is not allowed in prolog". Se descarta todo lo previo al primer elemento.
+            String sanitizedXml = stripBeforeFirstElement(xmlContent);
+
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            InvoiceXmlDto invoice = (InvoiceXmlDto) unmarshaller.unmarshal(new StringReader(xmlContent));
+            InvoiceXmlDto invoice = (InvoiceXmlDto) unmarshaller.unmarshal(new StringReader(sanitizedXml));
 
             // Validaciones específicas por tipo
             validateCfdiByType(invoice, tipoDocumento);
@@ -70,6 +75,21 @@ public class CfdiXmlProcessorServiceImpl implements CfdiXmlProcessorService {
             messageCatalog.throwError(FiscalMessageCode.ERR012, e.getMessage(), e);
         }
         return null; // Nunca alcanza aquí
+    }
+
+    /**
+     * Descarta cualquier caracter previo al primer elemento XML (BOM UTF-8, espacios, saltos de
+     * linea). Evita el error JAXB "Content is not allowed in prolog" en XML mal formados en el prolog.
+     *
+     * @param xml contenido XML original
+     * @return XML que inicia en el primer '<', o el original si no hay nada que recortar
+     */
+    private String stripBeforeFirstElement(String xml) {
+        if (xml == null || xml.isEmpty()) {
+            return xml;
+        }
+        int firstTag = xml.indexOf('<');
+        return firstTag > 0 ? xml.substring(firstTag) : xml;
     }
 
     /**

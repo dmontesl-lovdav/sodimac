@@ -147,6 +147,16 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("Tipo de documento detectado: {} ({})",
                     tipoDocumento.getCodigo(), tipoDocumento.getDescripcion());
 
+            // Una factura (TipoDeComprobante I) con complemento CartaPorte se detecta como
+            // FACTURA_CARTA_PORTE (transporte foraneo). Para el registro es una FACTURA: se procesa
+            // igual y la addenda CartaPorte se valida por contenido del nodo (Addenda_Sodimac_CartaPorte).
+            // Un Traslado real (T) tambien cae aqui pero se rechaza despues en validateCfdiByType
+            // porque su TipoDeComprobante no es "I".
+            if (tipoDocumento == TipoDocumentoFiscal.FACTURA_CARTA_PORTE) {
+                log.info("Documento con complemento CartaPorte detectado; se procesa como FACTURA (I)");
+                tipoDocumento = TipoDocumentoFiscal.FACTURA;
+            }
+
             // Validar que sea solo I o E (no T, P, N)
             if (tipoDocumento != TipoDocumentoFiscal.FACTURA && tipoDocumento != TipoDocumentoFiscal.NOTA_CREDITO) {
                 log.error("Tipo de documento no permitido: {}", tipoDocumento.getCodigo());
@@ -494,6 +504,16 @@ public class InvoiceServiceImpl implements InvoiceService {
             if (xmlContent.isEmpty()) {
                 log.error("El archivo XML esta vacio");
                 messageCatalog.throwException(FiscalMessageCode.ERR001);
+            }
+
+            // Algunos CFDI (ej. facturas con complemento CartaPorte) traen BOM UTF-8 (U+FEFF) o
+            // caracteres antes del primer '<'. Se descartan aqui, en el origen, para que todos los
+            // consumidores (parser CFDI, validador de addenda, detector) reciban XML limpio y no
+            // fallen con "Content is not allowed in prolog".
+            int firstTag = xmlContent.indexOf('<');
+            if (firstTag > 0) {
+                log.debug("Descartando {} caracter(es) previos al primer elemento XML (BOM/prolog)", firstTag);
+                xmlContent = xmlContent.substring(firstTag);
             }
 
             log.debug("Archivo XML leido correctamente");

@@ -58,6 +58,7 @@ Deprecated:
 | Conexion BD local + UAT | [docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md) |
 | Setup local (Docker + servicios) | [docs/ENTORNO-LOCAL.md](docs/ENTORNO-LOCAL.md) |
 | Comandos git utiles | [docs/GIT-COMANDOS.md](docs/GIT-COMANDOS.md) |
+| Sincronizar mirror ↔ Sodimac (runbook) | [docs/SINCRONIZACION-MIRROR-SODIMAC.md](docs/SINCRONIZACION-MIRROR-SODIMAC.md) |
 | BFF fiscal guia tecnica | [docs/GUIA-TECNICA-BFF-FISCAL.md](docs/GUIA-TECNICA-BFF-FISCAL.md) |
 | Bugs activos por modulo | `docs/wiki/modulos/<modulo>.md` → seccion "Puntos criticos" |
 | Errores conocidos | [docs/errores/](docs/errores/) |

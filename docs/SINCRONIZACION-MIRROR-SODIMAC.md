@@ -2,7 +2,7 @@
 
 > Cómo traer cambios de los repos reales de Sodimac al workspace donde corre Claude, y viceversa.
 > Cuando el usuario diga **"hay que sincronizar con el repositorio de Sodimac"**, este es el procedimiento.
-> Última actualización: 2026-06-02.
+> Última actualización: 2026-06-03.
 
 ---
 
@@ -101,8 +101,8 @@ Cuando Claude generó cambios y hay que llevarlos al repo real.
 ### Paso 1 (PC personal) — commit + push al mirror
 ```bash
 cd c:\workspace-sodimac
-git add -A
-git commit -m "feat/fix: descripción"
+git add <archivos modificados>
+git commit -m "fix/feat: descripción convencional commits"
 git push origin dmontes
 ```
 
@@ -111,21 +111,45 @@ git push origin dmontes
 cd C:\local
 git pull origin dmontes
 
-# copiar SOLO el proyecto tocado, mirror -> real
+# copiar SOLO el proyecto tocado (mirror -> real)
 robocopy "C:\local\<proyecto>" "C:\workspace-fbc-github\<proyecto>" /MIR /XD .git node_modules dist target build .idea /XF *.log
 ```
 
-### Paso 3 (PC Sodimac) — branch + PR en el repo real
+### Paso 3a (PC Sodimac) — commit directo a develop (fixes urgentes / sin PR)
+```powershell
+cd C:\workspace-fbc-github\<proyecto>
+git checkout develop
+git pull origin develop
+# agregar solo los archivos tocados (NO git add -A, evitar arrastrar basura)
+git add src/...archivo1 src/...archivo2
+git commit -m "fix: descripción"
+git push origin develop
+```
+
+### Paso 3b (PC Sodimac) — branch + PR (features / cambios grandes)
 ```powershell
 cd C:\workspace-fbc-github\<proyecto>
 git checkout develop
 git pull origin develop
 git checkout -b feature/STM-XXXX
-git add -A
+git add src/...archivos
 git commit -m "feat: descripción"
 git push origin feature/STM-XXXX
-# luego PR: feature/STM-XXXX -> develop -> uat -> main
+# luego PR: feature/STM-XXXX -> develop
 ```
+
+### Paso 4 — Promover develop → UAT (deploy)
+```powershell
+cd C:\workspace-fbc-github\<proyecto>
+git checkout uat
+git pull origin uat
+git merge develop --no-ff -m "merge: <descripción del fix/feature>"
+git push origin uat
+# El pipeline de GitHub Actions despliega a UAT automáticamente tras el push
+```
+
+> UAT diverge a veces (hotfixes de Bonelli directo en uat). Si `git merge` truena por conflicto,
+> verificar con `git log --oneline --no-merges origin/develop..origin/uat` antes de resolver.
 
 ---
 

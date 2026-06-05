@@ -151,6 +151,9 @@ public enum FiscalMessageCode {
     BUS055("BUS055", "Solo el proveedor propietario puede actualizar este documento"),
     BUS056("BUS056", "El documento está en proceso automático y no puede ser modificado manualmente"),
 
+    // ========== ERRORES DE NEGOCIO - VALIDACIÓN REGISTRO (BUS057) ==========
+    BUS057("BUS057", "La diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2} pesos"),
+
     // ========== ADVERTENCIAS - COMPLEMENTOS (WRN001-WRN005) ==========
     WRN001("WRN001", "Version de CartaPorte no soportada: {0}. Solo se soportan versiones 3.0 y 3.1"),
 

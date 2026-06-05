@@ -9,19 +9,11 @@
 
 ## fiscal-api
 
-- [~] **F1 · Facturas: "Marca error al intentar cancelar la factura"** — DIAGNOSTICADO 2026-06-02
-  - Cancelar (FE) = `PUT /invoices` con `estatus:0` (RECHAZO_COMERCIAL) → `updateInvoice` (NO el endpoint `/status`).
-  - Reproducido local:
-    - Sin addenda → **BUS048** (`validateSupplierOwnership` exige addenda, `InvoiceServiceImpl:942`).
-    - Con addenda → **BUS051** "transición no permitida De: 2 a: 0" (`validateStatusTransition` → `InvoiceStatus.puedeTransicionarA`).
-  - RAÍZ: enum `InvoiceStatus` no incluye `0` en ninguna lista `estatusSiguientesPermitidos` → cancelar imposible por diseño. NC (E) sí tiene cancelación (CreditNoteStatus.CANCELADA, STM-335); factura no.
-  - Inconsistencia: `updateInvoice` valida con enum local; `updateInvoiceStatus` (/status) valida con tren de estatus (catálogo). Dos fuentes de verdad.
-  - Catálogo `status_train` (UAT confirmado 2026-06-02): option_id=1 (Factura) NO tiene ninguna transición a target 0. Hueco en AMBAS capas (enum + catálogo). Factura UAT==local.
-  - Patrón NC (option_id=2): cancela a estatus 10 "Cancelada" desde source 3 (Pendiente Contabilizar) y 11 (Rechazo Contable).
-  - Estatus destino para factura = **"Rechazo Comercial"(0)** (el código 10 en factura ya es "Completado", no sirve). No hay que crear estatus nuevo, solo wire transiciones →0.
-  - FIX 2 capas (al confirmar Ivan): (1) enum `InvoiceStatus` agregar 0 a `estatusSiguientesPermitidos` de estados origen elegidos; (2) `status_train` INSERT option_id=1 source→0 (local + UAT + seed repo).
-  - ESCALADO 2026-06-02: Ivan respondió con tren de estatus oficial **v1.0** (renumera todo + elimina addenda) → rebasa F1, es un remodel cross-módulo. Ver [TREN-ESTATUS-v1.0-vs-codigo.md](TREN-ESTATUS-v1.0-vs-codigo.md).
-  - ESTADO: EN ESPERA — David decidió alinear con Ivan antes de codear (no Path A ni B aún). Preguntas de alineación abajo en el doc del tren.
+- [x] **F1 · Facturas: "Marca error al intentar cancelar la factura"** — IMPLEMENTADO 2026-06-05
+  - Resuelto vía adopción completa del **Tren de Estatus v1.0** (Ivan, 2026-06-02).
+  - Cancelar = estatus **1 (Rechazo Comercial)** desde **2 (Recibido Parcial)**. Habilitado en `status_train` y en `InvoiceStatus.java`.
+  - BUS048 eliminado de `validateSupplierOwnership` — addenda ya no bloquea actualización.
+  - Ver detalle completo en [TREN-ESTATUS-v1.0-vs-codigo.md](TREN-ESTATUS-v1.0-vs-codigo.md).
 
 - [ ] **F2 · Notas de Crédito: "Publicar NC marca error al registrar el documento"**
   - Es `/invoices/register` con `TipoDeComprobante="E"`.
@@ -70,5 +62,10 @@
 ## Dudas abiertas (confirmar con QA/Ivan)
 
 1. F2 — ¿QA cargó la factura padre antes de publicar la NC? Pedir UUID usado.
-2. F1 — UUID + transición de estatus que disparó el error al cancelar.
-3. F4 — ¿el FE manda filtro `tipoProveedor` a `/invoices/search` y no filtra, o es solo display?
+2. F4 — ¿el FE manda filtro `tipoProveedor` a `/invoices/search` y no filtra, o es solo display?
+
+## Pendiente antes de deploy UAT (tren v1.0)
+
+- Avisar Ivan: tren v1.0 implementado, factura registrada queda en estatus **3 (Recibida)**.
+- Aplicar `sesiones/sql/sync-status-train-v1.0.sql` en Sodimac UAT.
+- Revisar si NC inicial status=1 sigue siendo correcto o también cambia (alineación futura con Ivan).

@@ -17,6 +17,9 @@ import com.sodimac.fiscal.api.pdf.PdfRenderService;
 import com.sodimac.fiscal.api.repository.*;
 import com.sodimac.fiscal.api.repository.InvoiceStatusHistoryRepository;
 import com.sodimac.fiscal.api.repository.specification.InvoiceSpecification;
+import com.sodimac.fiscal.api.model.dto.FinanzasReceptionResponse;
+import com.sodimac.fiscal.api.model.entity.CatParameterEntity;
+import com.sodimac.fiscal.api.model.enums.CatParameterKey;
 import com.sodimac.fiscal.api.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +90,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final StatusTrainApiService statusTrainApiService;
     private final ActivityLogService activityLogService;
     private final AuditoriaApiService auditoriaApiService;
+    private final FinanzasApiService finanzasApiService;
 
     // Repositories
     private final InvoiceRepository invoiceRepository;
@@ -97,6 +101,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final LogRepository logRepository;
     private final RelatedCfdiRepository relatedCfdiRepository;
     private final InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
+    private final CatParameterRepository catParameterRepository;
 
     // ========== CONSULTA ==========
 
@@ -112,7 +117,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
-    public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion) {
+    public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
+            String receptionId, String supplierNumber, String purchaseOrderNumber) {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
@@ -238,19 +244,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "system", false, "Documento no duplicado, UUID unico",
                     "UUID fiscal: " + fiscalUuid, null, null);
 
-            // === PASO 7: VALIDAR ADDENDA ===
-            log.info("Paso 7: Validando estructura y contenido de addenda");
-            boolean hasValidAddenda = addendaValidator.validateAddenda(xmlContent, invoiceDto);
-
-            if (hasValidAddenda) {
-                log.info("Addenda validada exitosamente (Addenda_Sodimac o Addenda_Sodimac_CartaPorte)");
-            } else {
-                log.info("Documento sin addenda. Sera marcado como PENDIENTE DE ADDENDA");
+            // === PASO 7: VALIDAR TOLERANCIA IMPORTE (solo Facturas) ===
+            log.info("Paso 7: Validando tolerancia entre subtotal factura e importe recepción");
+            if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {
+                validateImporteTolerance(invoiceDto, receptionId, idTransaccion, SERVICE_NAME);
             }
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), SERVICE_NAME,
-                    "system", false,
-                    hasValidAddenda ? "Addenda validada exitosamente" : "Documento sin addenda, pendiente de addenda",
-                    "hasValidAddenda: " + hasValidAddenda, null, null);
+                    "system", false, "Validación de tolerancia completada",
+                    "receptionId: " + receptionId, null, null);
 
             // === PASO 8: VALIDAR CON SAT (OPCIONAL - COMENTADO POR AHORA) ===
             // TODO: Implementar validación SAT mediante PAC cuando esté disponible
@@ -269,8 +270,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                     xmlContent,
                     fiscalUuid,
                     tipoDocumento,
-                    hasValidAddenda,
-                    issuer
+                    issuer,
+                    supplierNumber,
+                    purchaseOrderNumber,
+                    receptionId
             );
             log.info("Documento persistido exitosamente. Invoice UUID: {}", savedInvoice.getInvoiceUuid());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PERSISTIR_DOCUMENTO.getCode(), SERVICE_NAME,
@@ -285,7 +288,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     savedInvoice,
                     fiscalUuid,
                     tipoDocumento,
-                    hasValidAddenda,
+                    true,
                     invoiceDto
             );
 
@@ -604,6 +607,72 @@ public class InvoiceServiceImpl implements InvoiceService {
      * @param invoiceDto DTO con los datos del documento
      * @param tipoDocumento Tipo de documento para determinar el mensaje de error
      */
+    /**
+     * Valida que la diferencia entre subtotal del XML y el importe de la recepción en finanzas-api
+     * no supere la tolerancia configurada en cat_parameter (id=3, valor por defecto 40 pesos).
+     * Lanza BUS057 si la diferencia supera la tolerancia.
+     */
+    private void validateImporteTolerance(InvoiceXmlDto invoiceDto, String receptionId,
+            String idTransaccion, String serviceName) {
+
+        if (receptionId == null || receptionId.isBlank()) {
+            log.warn("receptionId no proporcionado; se omite validación de tolerancia");
+            return;
+        }
+
+        BigDecimal subtotal;
+        try {
+            subtotal = new BigDecimal(invoiceDto.getSubTotal());
+        } catch (Exception e) {
+            log.warn("SubTotal del XML no es numérico ({}); se omite validación de tolerancia", invoiceDto.getSubTotal());
+            return;
+        }
+
+        FinanzasReceptionResponse reception = finanzasApiService.getReception(receptionId);
+        if (reception == null || reception.getAmount() == null) {
+            log.warn("finanzas-api no retornó amount para receptionId {}; se omite validación", receptionId);
+            return;
+        }
+
+        BigDecimal receptionAmount;
+        try {
+            receptionAmount = new BigDecimal(reception.getAmount());
+        } catch (Exception e) {
+            log.warn("Amount de recepción no es numérico ({}); se omite validación", reception.getAmount());
+            return;
+        }
+
+        // Leer tolerancia de core_utils.cat_parameter (name='Tolerancia por importe', status=1)
+        BigDecimal tolerance = BigDecimal.valueOf(40);
+        try {
+            CatParameterEntity param = catParameterRepository
+                    .findById(CatParameterKey.TOLERANCIA_IMPORTE.getId())
+                    .orElse(null);
+            if (param != null && param.getValue() != null) {
+                tolerance = new BigDecimal(param.getValue());
+                log.debug("Tolerancia leída de BD: {}", tolerance);
+            } else {
+                log.warn("Parámetro 'Tolerancia por importe' no encontrado en BD; usando valor por defecto {}", tolerance);
+            }
+        } catch (Exception e) {
+            log.warn("Error leyendo tolerancia de BD; usando valor por defecto {}: {}", tolerance, e.getMessage());
+        }
+
+        BigDecimal diff = subtotal.subtract(receptionAmount).abs();
+        log.info("Validación tolerancia: subtotal={}, receptionAmount={}, diff={}, tolerancia={}",
+                subtotal, receptionAmount, diff, tolerance);
+
+        if (diff.compareTo(tolerance) > 0) {
+            log.error("Diferencia {} supera tolerancia {} para receptionId {}", diff, tolerance, receptionId);
+            messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS057,
+                    subtotal.toPlainString(),
+                    receptionAmount.toPlainString(),
+                    tolerance.toPlainString());
+        }
+
+        log.info("Tolerancia validada correctamente. Diferencia: {} pesos", diff);
+    }
+
     private void validateSeriesAndFolio(InvoiceXmlDto invoiceDto, TipoDocumentoFiscal tipoDocumento) {
         String serie = invoiceDto.getSerie();
         String folio = invoiceDto.getFolio();
@@ -673,8 +742,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             String xmlContent,
             UUID fiscalUuid,
             TipoDocumentoFiscal tipoDocumento,
-            boolean hasValidAddenda,
-            IssuerEntity issuer) {
+            IssuerEntity issuer,
+            String supplierNumber,
+            String purchaseOrderNumber,
+            String receptionId) {
 
         log.info("Iniciando persistencia en base de datos");
 
@@ -725,7 +796,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             invoice.setXmlContent(xmlContent);
-            invoice.setStatus(1); // Activo
+            // v1.0: Factura entra en estatus 3 (Recibida); NC mantiene 1 hasta alinear CreditNoteStatus
+            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA
+                    ? InvoiceStatus.RECIBIDA.getCodigo()
+                    : 1);
             invoice.setIssuerUuid(issuer.getIssuerUuid());
             invoice.setReceiverUuid(receiver.getReceiverUuid());
 
@@ -743,13 +817,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             invoice = invoiceRepository.save(invoice);
             log.info("Invoice guardado exitosamente. UUID: {}", invoice.getInvoiceUuid());
 
-            // 4. Guardar addenda (si existe)
-            if (hasValidAddenda) {
-                log.debug("Guardando addenda asociada al invoice");
-                saveAddenda(invoice, invoiceDto, xmlContent);
-            } else {
-                log.debug("No se guarda addenda (pendiente de addenda)");
-            }
+            // 4. Guardar addenda con datos estructurados del FE
+            log.debug("Guardando addenda con datos de proveedor/OC/recepción");
+            saveAddenda(invoice, xmlContent, supplierNumber, purchaseOrderNumber, receptionId);
 
             // 5. Guardar impuestos
             log.debug("Guardando impuestos de la factura");
@@ -773,24 +843,33 @@ public class InvoiceServiceImpl implements InvoiceService {
     /**
      * Guarda la addenda asociada a la factura/NC.
      */
-    private void saveAddenda(InvoiceEntity invoice, InvoiceXmlDto invoiceDto, String xmlContent) {
+    private void saveAddenda(InvoiceEntity invoice, String xmlContent,
+            String supplierNumber, String purchaseOrderNumber, String receptionId) {
         log.debug("Creando registro de addenda para invoice UUID: {}", invoice.getInvoiceUuid());
 
         try {
             AddendumEntity addendum = new AddendumEntity();
             addendum.setInvoiceUuid(invoice.getInvoiceUuid());
-            addendum.setAddendaType(5); // Tipo estándar para Sodimac (se puede ajustar según negocio)
-
-            // Guardar contenido de la addenda
+            addendum.setAddendaType(5);
             addendum.setAddendumContent(xmlContent);
 
+            if (supplierNumber != null) {
+                addendum.setSupplierNumber(new BigDecimal(supplierNumber));
+            }
+            if (purchaseOrderNumber != null) {
+                addendum.setPurchaseOrderNumber(purchaseOrderNumber);
+            }
+            if (receptionId != null) {
+                addendum.setReceptionNumber(receptionId);
+            }
+
             addendumRepository.save(addendum);
-            log.debug("Addenda guardada exitosamente");
+            log.debug("Addenda guardada. supplierNumber: {}, purchaseOrderNumber: {}, receptionId: {}",
+                    supplierNumber, purchaseOrderNumber, receptionId);
 
         } catch (Exception e) {
             log.error("Error guardando addenda", e);
-            // No lanzar excepción para no bloquear el registro principal
-            log.warn("El invoice fue guardado pero la addenda fallo");
+            log.warn("El invoice fue guardado pero la addenda falló");
         }
     }
 
@@ -959,21 +1038,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         AddendumEntity addendum = addendumRepository.findByInvoiceUuid(invoice.getInvoiceUuid())
                 .orElse(null);
 
-        if (addendum == null) {
-            log.error("Documento sin addenda. UUID: {}. No se puede actualizar hasta que se complete la addenda.",
+        // Sin addenda o sin supplier_number: no se puede validar propiedad → no bloquear
+        if (addendum == null || addendum.getSupplierNumber() == null) {
+            log.warn("Documento sin addenda o sin supplier_number. UUID: {}. Se omite validación de propiedad.",
                     invoice.getFiscalUuid());
-            messageCatalog.throwException(FiscalMessageCode.BUS048, "UUID: " + invoice.getFiscalUuid());
+            return;
         }
 
         log.debug("Addenda encontrada. Addendum UUID: {}, Supplier Number en addenda: {}",
                 addendum.getAddendumUuid(), addendum.getSupplierNumber());
-
-        // Validar que el proveedor coincida
-        if (addendum.getSupplierNumber() == null) {
-            log.error("La addenda no tiene supplier_number registrado. Addendum UUID: {}", addendum.getAddendumUuid());
-            messageCatalog.throwException(FiscalMessageCode.BUS048,
-                    "La addenda del documento no tiene número de proveedor registrado");
-        }
 
         // Comparar el supplierNumber de la addenda con el del request
         if (addendum.getSupplierNumber().compareTo(numeroProveedorRequest) != 0) {

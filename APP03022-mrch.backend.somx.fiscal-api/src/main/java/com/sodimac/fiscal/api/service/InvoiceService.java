@@ -48,7 +48,8 @@ public interface InvoiceService {
      * @param idTransaccion ID de transacción para trazabilidad en bitácora (STM-704)
      * @return Respuesta del registro con código de negocio (BUS1xxx o BUS2xxx)
      */
-    InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion);
+    InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
+            String receptionId, String supplierNumber, String purchaseOrderNumber);
 
     /**
      * Actualiza una factura o nota de crédito existente (STM-339).

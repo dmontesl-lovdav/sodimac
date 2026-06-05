@@ -55,14 +55,25 @@ Nota: el Excel trae otras hojas/módulos (Recepción, Carta Porte, Pagos, Descue
 - **Path A (mínimo, desbloquea QA ya)**: en numeración ACTUAL, habilitar cancel Recibido Parcial(2) → Rechazo Comercial(0) en enum + status_train; relajar BUS048. Quirúrgico.
 - **Path B (remodel completo)**: adoptar Tren v1.0 — nuevo JIRA/epic, cross-módulo, con migración de datos. Coordinar Ivan + finanzas + batch.
 
-## DECISIÓN 2026-06-02: ESPERAR — alinear con Ivan antes de codear
+## IMPLEMENTADO 2026-06-05
 
-David optó por no parchar aún. Cerrar con Ivan estos puntos:
+Todas las preguntas resueltas y código desplegado a `dmontes`.
 
-1. **Alcance**: ¿v1.0 reemplaza todo el catálogo de facturas, o solo se agrega el "cancelar"? ¿Es un JIRA/epic nuevo?
-2. **Estatus inicial de registro**: al eliminar "Pendiente Addenda", ¿a qué estatus entra una factura recién registrada? (hoy entra a 1 Pendiente Addenda).
-3. **Migración de datos**: facturas existentes tienen códigos viejos. ¿Tabla de equivalencias old→new, o v1.0 aplica solo a nuevas? Sin mapeo, el significado de cada status cambia.
-4. **Inconsistencia Excel**: Recibido Parcial(2) → siguiente "17 - Pago Manual", pero código 17 = Error envío i213 y 18 = Pago Manual. ¿Cuál es?
-5. **Responsables cross-módulo**: ¿quién alinea batch (`SincronizacionEstatus`), finanzas-api y labels del frontend a la nueva numeración? ¿Un solo JIRA paraguas?
-6. **Addenda**: confirmar que se elimina PENDIENTE_ADDENDA + BUS048 + marca "RES005 pendiente addenda" del registro.
-7. **Estatus SAP nuevos** (7,8,9,16,17): ¿los setea el batch? Confirmar responsable.
+| Punto | Resolución |
+|---|---|
+| Estatus inicial registro | **3 (Recibida)** — confirmado con David. NC mantiene 1 hasta alineación futura. |
+| Inconsistencia Excel Recibido Parcial(2) → 17/18 | Ivan corrigió Excel: es **18 (Pago Manual)** |
+| Addenda eliminada como requisito | BUS048 removido, `validateAddenda` eliminado del registro |
+| Estatus SAP (7,8,9,16,17) | Los setea el batch — no tocar en backend manual |
+| Migración data existente | Script pendiente antes de deploy UAT (`sesiones/sql/sync-status-train-v1.0.sql` solo toca `status_train`, no facturas existentes) |
+| Cross-módulo (batch, FE, finanzas) | Pendiente alinear — fiscal-api implementado, aviso a Ivan necesario |
+
+### Archivos modificados
+
+- `InvoiceStatus.java` — renumerado completo 1-18, sin Pendiente Addenda
+- `FiscalMessageCode.java` — BUS057 agregado (tolerancia importe)
+- `InvoiceController.java` — `/register` + params `receptionId`, `supplierNumber`, `purchaseOrderNumber`
+- `InvoiceServiceImpl.java` — lógica tolerancia + addenda estructurada + status inicial 3 + BUS048 eliminado
+- `ReceptionEntity.java` + `ReceptionRepository.java` — acceso directo a `tenant_finance.reception`
+- `FinanzasApiService` + `Impl` — abstracción sobre el repositorio
+- `sesiones/sql/sync-status-train-v1.0.sql` — script para actualizar catálogo en UAT

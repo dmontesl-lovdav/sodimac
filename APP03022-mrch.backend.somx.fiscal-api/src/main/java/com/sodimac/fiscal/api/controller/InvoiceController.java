@@ -136,17 +136,20 @@ public class InvoiceController {
      */
     @Operation(
             summary = "Registrar factura o nota de crédito",
-            description = "Registra una factura (I) o nota de crédito (E) validando RFC receptor, versión CFDI, addenda y SAT"
+            description = "Registra una factura (I) o NC (E). Para facturas valida RFC receptor, versión CFDI, " +
+                    "tolerancia de importe (|subtotal - reception.amount| ≤ parámetro 'Tolerancia por importe') " +
+                    "y persiste addenda con datos comerciales del FE (supplierNumber, purchaseOrderNumber, receptionId). " +
+                    "Factura registrada queda en estatus 3 (Recibida). BUS057 si diferencia supera tolerancia."
     )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Documento registrado exitosamente",
+                    description = "Documento registrado exitosamente (RES004=Factura, RES006=NC)",
                     content = @Content(schema = @Schema(implementation = InvoiceRegistrationResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Error de validación de negocio (códigos BUS2xxx)",
+                    description = "Error de validación: BUS057=tolerancia importe excedida, BUS023=tipo no permitido, otros BUS",
                     content = @Content(schema = @Schema(implementation = InvoiceRegistrationResponse.class))
             ),
             @ApiResponse(
@@ -159,10 +162,16 @@ public class InvoiceController {
     public ResponseEntity<InvoiceRegistrationResponse> registerInvoice(
             @RequestParam("file") MultipartFile file,
             @Parameter(description = "UUID de transacción para trazabilidad en auditoría (STM-704)", required = true, example = "550e8400-e29b-41d4-a716-446655440000")
-            @RequestParam(value = "idTransaccion", required = false) String idTransaccion) {
+            @RequestParam(value = "idTransaccion", required = false) String idTransaccion,
+            @Parameter(description = "UUID de la recepción en finanzas-api (obligatorio para facturas)")
+            @RequestParam(value = "receptionId", required = false) String receptionId,
+            @Parameter(description = "Número de proveedor Sodimac")
+            @RequestParam(value = "supplierNumber", required = false) String supplierNumber,
+            @Parameter(description = "Número de orden de compra")
+            @RequestParam(value = "purchaseOrderNumber", required = false) String purchaseOrderNumber) {
 
-        log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}",
-                file.getOriginalFilename(), idTransaccion);
+        log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}, receptionId: {}",
+                file.getOriginalFilename(), idTransaccion, receptionId);
 
         // Validar idTransaccion obligatorio (STM-704)
         if (idTransaccion == null || idTransaccion.isBlank()) {
@@ -186,8 +195,9 @@ public class InvoiceController {
                     ));
         }
 
-        if (!file.getOriginalFilename().toLowerCase().endsWith(".xml")) {
-            log.error("Extension de archivo invalida: {}", file.getOriginalFilename());
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".xml")) {
+            log.error("Extension de archivo invalida: {}", originalFilename);
             return ResponseEntity
                     .badRequest()
                     .body(InvoiceRegistrationResponse.error(
@@ -197,7 +207,8 @@ public class InvoiceController {
         }
 
         // Procesar registro
-        InvoiceRegistrationResponse response = invoiceService.registerInvoice(file, idTransaccion);
+        InvoiceRegistrationResponse response = invoiceService.registerInvoice(
+                file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber);
 
         // Determinar código HTTP según resultado
         if (response.isSuccess()) {

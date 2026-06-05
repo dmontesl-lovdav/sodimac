@@ -3,77 +3,85 @@ package com.sodimac.fiscal.api.model.enums;
 import lombok.Getter;
 
 /**
- * Enum de estatus de Factura (Tipo I).
+ * Enum de estatus de Factura (Tipo I) — Tren de Estatus v1.0.
  *
- * Basado en: https://confluence.falabella.tech/x/pTyzLQ
- *
- * Orden de estatus y transiciones permitidas según flujo de negocio.
- *
- * @author Sodimac Tech Team
- * @since 2025-11-10
+ * Renumeración completa según Tren_Estatus_Portal_FBC_v1.0.xlsx (Ivan, 2026-06-02).
+ * Elimina Pendiente Addenda (viejo código 1) — la addenda se registra junto con la factura.
  */
 @Getter
 public enum InvoiceStatus {
 
-    RECHAZO_COMERCIAL(0, "Rechazo Comercial",
-            "Facturas rechazadas o con error en los datos para iniciar el proceso de pago",
+    RECHAZO_COMERCIAL(1, "Rechazo Comercial",
+            "Factura rechazada o con error en los datos para iniciar el proceso de pago",
             false, new Integer[]{}),
-
-    PENDIENTE_ADDENDA(1, "Pendiente Addenda",
-            "Factura sin captura de Addenda",
-            false, new Integer[]{2, 3, 13}),
 
     RECIBIDO_PARCIAL(2, "Recibido Parcial",
             "El monto de la factura es mayor al valor de la OC",
-            false, new Integer[]{3, 13}),
+            false, new Integer[]{1, 3, 18}),
 
-    PENDIENTE_CONTABILIZAR(3, "Pendiente de Contabilizar",
-            "Factura registrada pendiente de contabilizar en SAP",
+    RECIBIDA(3, "Recibida",
+            "Factura registrada y validada, pendiente de contabilizar en SAP",
             false, new Integer[]{4}),
 
-    PROCESO_DESCARGA(4, "Proceso de descarga",
-            "Factura descargada para ser enviada a SODIMAC SAP PROD",
-            true, new Integer[]{5, 11, 14}),
+    EN_PROCESO_DESCARGA(4, "En proceso de descarga",
+            "Factura descargada para ser enviada a Sodimac SAP PROD",
+            true, new Integer[]{5}),
 
     DESGLOSE_FACTURA(5, "Desglose de factura",
             "Factura desglosada para ser enviada a SAPITO",
-            true, new Integer[]{6, 11}),
+            true, new Integer[]{7, 16}),
 
-    PENDIENTE_ENVIO_CONTABILIZAR(6, "Pendiente de envío a contabilizar",
-            "Factura pendiente de enviar de SAPITO a i213",
-            true, new Integer[]{7, 11}),
+    ERROR_DESGLOSE(6, "Error en el desglose de la factura",
+            "Error al intentar desglosar la factura descargada",
+            true, new Integer[]{}),
 
-    PENDIENTE_PAGO(7, "Pendiente de Pago",
-            "Factura contabilizada, lista para iniciar con el proceso de pago",
+    PENDIENTE_REGISTRO_SAPITO(7, "Pendiente registro en SAPITO",
+            "Factura pendiente de registrar en SAPITO",
             true, new Integer[]{8}),
 
-    PAGADO(8, "Pagado",
-            "Factura pagada al proveedor",
+    PENDIENTE_ENVIO_I213(8, "Pendiente de envío a i213",
+            "Factura pendiente de enviar de SAPITO a i213",
             true, new Integer[]{9}),
 
-    PENDIENTE_COMPLEMENTO(9, "Pendiente de complemento",
-            "Factura pendiente de relacionar un complemento de pago",
-            false, new Integer[]{10}),
+    FACTURA_ENVIADA_I213(9, "Factura enviada a i213",
+            "Factura enviada al sistema i213 en espera de resultado",
+            true, new Integer[]{10, 17}),
 
-    COMPLETADO(10, "Completado",
+    PENDIENTE_CONTABILIZAR(10, "Pendiente de contabilizar",
+            "Factura pendiente por contabilizar en SAP",
+            true, new Integer[]{11, 14}),
+
+    PENDIENTE_PAGO(11, "Pendiente de Pago",
+            "Factura contabilizada, lista para iniciar con el proceso de pago",
+            true, new Integer[]{12}),
+
+    PENDIENTE_COMPLEMENTO(12, "Pendiente de complemento",
+            "Factura pendiente de relacionar un complemento de pago",
+            false, new Integer[]{13}),
+
+    COMPLETADO(13, "Completado",
             "Factura relacionada con un complemento de pago",
             false, new Integer[]{}),
 
-    RECHAZO_CONTABLE(11, "Rechazo Contable",
-            "Factura pendiente por contabilizar, rechazado por temas contables",
-            true, new Integer[]{7}),
+    RECHAZO_CONTABLE(14, "Rechazo Contable",
+            "Factura rechazada por temas contables, regresa a proceso en i213",
+            true, new Integer[]{8}),
 
-    NO_VALIDO_FISCAL(12, "No valido fiscal",
-            "Factura invalida",
+    NO_VALIDO_FISCAL(15, "No válido fiscal",
+            "Factura con validación fiscal inválida",
             false, new Integer[]{}),
 
-    PAGO_MANUAL(13, "Pago Manual",
+    ESTRUCTURA_INVALIDA(16, "Estructura inválida",
+            "Error de estructura en el desglose, regresa a desglose",
+            true, new Integer[]{5}),
+
+    ERROR_ENVIO_I213(17, "Error envío i213",
+            "Error al enviar la factura a i213, regresa a proceso de envío",
+            true, new Integer[]{8}),
+
+    PAGO_MANUAL(18, "Pago Manual",
             "Orden de compra pagada manualmente",
-            false, new Integer[]{}),
-
-    ERROR_DESGLOSE_FACTURA(14, "Error en el desglose de la factura",
-            "Error al intentar desglosar la factura descargada (STM-719)",
-            true, new Integer[]{3});
+            false, new Integer[]{});
 
     private final Integer codigo;
     private final String nombre;
@@ -89,9 +97,6 @@ public enum InvoiceStatus {
         this.estatusSiguientesPermitidos = estatusSiguientesPermitidos;
     }
 
-    /**
-     * Obtiene el enum por código.
-     */
     public static InvoiceStatus fromCodigo(Integer codigo) {
         for (InvoiceStatus status : values()) {
             if (status.getCodigo().equals(codigo)) {
@@ -101,9 +106,6 @@ public enum InvoiceStatus {
         throw new IllegalArgumentException("Estatus de factura no válido: " + codigo);
     }
 
-    /**
-     * Valida si la transición al nuevo estatus es permitida.
-     */
     public boolean puedeTransicionarA(Integer nuevoEstatus) {
         for (Integer estatusPermitido : estatusSiguientesPermitidos) {
             if (estatusPermitido.equals(nuevoEstatus)) {

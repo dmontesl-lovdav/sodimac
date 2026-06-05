@@ -125,6 +125,49 @@ Son **dos pasos del mismo proceso de negocio**:
 
 Toda la integridad referencial del módulo se sostiene por convención de aplicación (TypeORM/JPA en el código). Implicación: cualquier ingestión que omita la app (SQL directo, batches, ETL) puede dejar la BD inconsistente sin error inmediato.
 
+## Flujo de registro de Factura (v1.0 — 2026-06-05)
+
+### Cambios respecto a versión anterior
+
+- Addenda ya **no** se valida desde el XML. Los datos de addenda vienen del FE en el mismo call.
+- Validación de tolerancia de importe integrada en `/register`.
+- Estatus inicial = **3 (Recibida)**. Eliminado "Pendiente Addenda".
+
+### Endpoints involucrados
+
+| Endpoint | Actor | Qué hace |
+|---|---|---|
+| `POST /fiscal/xml/process/file` | FE → fiscal-api | Parsea XML, retorna preview (serie, folio, subtotal). NO registra. |
+| `GET /purchase-orders/reception/{uuid}` | FE → finanzas-api | Obtiene datos de recepción (amount, OC, proveedor). NO registra. |
+| `POST /invoices/register` | FE → fiscal-api | **Registro completo** — toda la lógica vive aquí. |
+
+### Params de `POST /invoices/register`
+
+```
+file              MultipartFile  XML del CFDI
+idTransaccion     String         UUID trazabilidad bitácora
+receptionId       String         UUID de tenant_finance.reception
+supplierNumber    String         Número proveedor Sodimac
+purchaseOrderNumber String       Número OC
+```
+
+### Lógica interna del registro (pasos clave)
+
+1. Lee XML → obtiene `subtotal`
+2. Lee `tenant_finance.reception` via JPA (`ReceptionRepository`) → obtiene `amount`
+3. Valida `|subtotal - amount| ≤ tolerancia` (parámetro `"Tolerancia por importe"`, `core_utils.cat_parameter` id=3, valor=40) → **BUS057** si supera
+4. Guarda `invoice` con status **3 (Recibida)**
+5. Guarda `addendum` con `supplier_number`, `purchase_order_number`, `reception_number` poblados
+
+### Tren de Estatus v1.0 (Factura)
+
+18 estatus (1-18), sin Pendiente Addenda. Cancelar = status 1 (Rechazo Comercial) desde status 2 (Recibido Parcial).
+Ver detalle completo: [TREN-ESTATUS-v1.0-vs-codigo.md](../../analisis/TREN-ESTATUS-v1.0-vs-codigo.md).
+
+Catálogo `shared_catalogs.status_train` option_id=1 sincronizado con v1.0 (local + UAT pendiente).
+
+---
+
 ## Endpoints relevantes (fiscal-api)
 
 > Puerto 8082 local. Detalle en Swagger: http://localhost:8082/swagger-ui/index.html

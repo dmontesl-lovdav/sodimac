@@ -27,11 +27,13 @@ public class InvoiceDownloadBatchService {
     @Value("${batch.search.months-back:6}")
     private int monthsBack;
 
-    private static final int STATUS_PENDIENTE_CONTABILIZAR = 3;
+    // Tren de Estatus v1.0 (status_train option_id=1). Recalibrado: antes 14=error desglose
+    // y 1=pendiente addenda (obsoleto). En v1.0 el error de desglose es 16 (Estructura inválida,
+    // 5->16, reintenta 16->5); el estatus 6 (Error desglose) es huérfano en el tren (no usar).
+    private static final int STATUS_RECIBIDA = 3;             // entrada del batch
     private static final int STATUS_PROCESO_DESCARGA = 4;
     private static final int STATUS_DESGLOSE_FACTURA = 5;
-    private static final int STATUS_ERROR_DESGLOSE = 14;
-    private static final int STATUS_PENDIENTE_ADDENDA = 1;
+    private static final int STATUS_ESTRUCTURA_INVALIDA = 16; // error de desglose
 
     private static final String PROCESS_NAME = "Invoice Download";
     private static final String DOC_TYPE = "I";
@@ -63,15 +65,15 @@ public class InvoiceDownloadBatchService {
             LocalDate dateTo = LocalDate.now();
             LocalDate dateFrom = dateTo.minusMonths(monthsBack);
 
-            traceService.addStep(idEjecucion, "Buscar facturas estatus 3", ++secuencia,
+            traceService.addStep(idEjecucion, "Buscar facturas estatus 3 (Recibida)", ++secuencia,
                     "dateFrom=" + dateFrom + " dateTo=" + dateTo, null, 0, "IN_PROGRESS");
 
             List<InvoiceSearchResponseDto> facturas = fiscalApiClient.searchAllByStatusAndType(
-                    STATUS_PENDIENTE_CONTABILIZAR, DOC_TYPE, dateFrom, dateTo);
+                    STATUS_RECIBIDA, DOC_TYPE, dateFrom, dateTo);
 
             totalOrigen = facturas.size();
             traceService.logInfo(idEjecucion, PROCESS_NAME,
-                    "Encontradas " + totalOrigen + " facturas con estatus 3", "EXTRACT");
+                    "Encontradas " + totalOrigen + " facturas en estatus 3 (Recibida)", "EXTRACT");
 
             if (facturas.isEmpty()) {
                 log.info("No hay facturas pendientes de procesar");
@@ -127,8 +129,9 @@ public class InvoiceDownloadBatchService {
     private void procesarFactura(InvoiceSearchResponseDto factura, int idEjecucion,
                                   String uuid, BigDecimal numProveedor, int secuencia) throws Exception {
 
+        // 3 Recibida -> 4 En proceso de descarga
         StatusUpdateResponseDto statusResp = fiscalApiClient.updateStatus(
-                uuid, numProveedor, STATUS_PENDIENTE_CONTABILIZAR, STATUS_PROCESO_DESCARGA,
+                uuid, numProveedor, STATUS_RECIBIDA, STATUS_PROCESO_DESCARGA,
                 "Proceso batch: inicio de descarga");
 
         if (statusResp == null || !Boolean.TRUE.equals(statusResp.getSuccess())) {
@@ -138,33 +141,33 @@ public class InvoiceDownloadBatchService {
 
         String xmlContent = factura.getXmlContent();
         if (xmlContent == null || xmlContent.isEmpty()) {
-            fiscalApiClient.updateStatus(uuid, numProveedor,
-                    STATUS_PROCESO_DESCARGA, STATUS_ERROR_DESGLOSE, "XML no disponible");
+            // XML faltante: se deja en estatus 4 (En proceso de descarga) para reintento.
+            // El tren v1.0 no tiene transición de error desde 4; no se fabrica estatus.
+            traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
+                    secuencia, "RETRY", "XML no disponible (se reintenta)");
             throw new RuntimeException("XML no disponible para factura " + uuid);
         }
 
-        List<String> erroresAddenda = cfdiDesgloseService.validarAddenda(xmlContent, DOC_TYPE);
-        if (!erroresAddenda.isEmpty()) {
-            String errorMsg = String.join("; ", erroresAddenda);
-            log.warn("Factura {} sin addenda valida: {}", uuid, errorMsg);
-            fiscalApiClient.updateStatus(uuid, numProveedor,
-                    STATUS_PROCESO_DESCARGA, STATUS_PENDIENTE_ADDENDA,
-                    "Addenda invalida: " + errorMsg);
-            traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
-                    secuencia, "REJECTED", "Sin addenda: " + errorMsg);
-            return;
-        }
+        // v1.0: la addenda se registra junto con la factura (fiscal-api /register).
+        // fiscal-download ya NO valida ni bloquea por addenda.
 
         try {
             cfdiDesgloseService.desglosar(xmlContent,
                     factura.getInvoiceUuid() != null ? factura.getInvoiceUuid().toString() : null);
         } catch (Exception e) {
+            // Error de estructura en el desglose. El tren v1.0 sólo permite llegar a 16 desde 5:
+            // 4 -> 5 (entró a desglose) -> 16 (Estructura inválida). 16 -> 5 permite reintento.
             fiscalApiClient.updateStatus(uuid, numProveedor,
-                    STATUS_PROCESO_DESCARGA, STATUS_ERROR_DESGLOSE,
-                    "Error desglose: " + e.getMessage());
-            throw new RuntimeException("Error en desglose CFDI: " + e.getMessage(), e);
+                    STATUS_PROCESO_DESCARGA, STATUS_DESGLOSE_FACTURA, "Desglose con error de estructura");
+            fiscalApiClient.updateStatus(uuid, numProveedor,
+                    STATUS_DESGLOSE_FACTURA, STATUS_ESTRUCTURA_INVALIDA,
+                    "Estructura inválida: " + e.getMessage());
+            traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
+                    secuencia, "REJECTED", "Estructura inválida: " + e.getMessage());
+            throw new RuntimeException("Error en desglose CFDI (estructura inválida): " + e.getMessage(), e);
         }
 
+        // 4 -> 5 Desglose de factura
         fiscalApiClient.updateStatus(uuid, numProveedor,
                 STATUS_PROCESO_DESCARGA, STATUS_DESGLOSE_FACTURA,
                 "Desglose completado exitosamente");

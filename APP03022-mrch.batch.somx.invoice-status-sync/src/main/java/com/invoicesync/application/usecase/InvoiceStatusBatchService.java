@@ -14,12 +14,15 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(InvoiceStatusBatchService.class);
     private static final int MAX_EXECUTION_MINUTES = 15;
+    // id_proceso en adminCatalogo (catálogo 1, elemento 2) = "Sincronizacion de Estado de Facturas"
+    private static final int PROCESS_ID = 2;
 
     private final FbcPortalClient fbcPortalClient;
     private final SodimacSapRepository sodimacSapRepository;
@@ -57,7 +60,14 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
         ControlCifras cifrasBefore = controlRepository.captureCurrentCifras();
         BatchExecutionLog executionLog = new BatchExecutionLog(cifrasBefore);
 
+        // Trazabilidad: alta de la ejecución en ctrlProcesoCab (int id_ejecucion).
+        int idEjecucion = controlRepository.startExecution(PROCESS_ID);
+        AtomicInteger secuencia = new AtomicInteger(0);
+
         try {
+            controlRepository.saveLog(idEjecucion, "Invoice Status Sync",
+                    "Inicio del proceso de sincronización de estatus", "INFO", "INICIO");
+            controlRepository.saveCifras(idEjecucion, cifrasBefore, "BEFORE");
             log.info("Control cifras BEFORE: {}", cifrasBefore.getSummary());
 
             if (!fbcPortalClient.isServiceAvailable()) {
@@ -65,20 +75,24 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
             }
 
             // Tren v1.0: estatus que avanza este batch (SAPITO → i213 → pago).
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_REGISTRO_SAPITO);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_ENVIO_I213);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.FACTURA_ENVIADA_I213);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_CONTABILIZAR);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_PAGO);
+            int paso = 0;
+            processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_REGISTRO_SAPITO);
+            processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_ENVIO_I213);
+            processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.FACTURA_ENVIADA_I213);
+            processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_CONTABILIZAR);
+            processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_PAGO);
 
             ControlCifras cifrasAfter = controlRepository.captureCurrentCifras();
             executionLog.complete(cifrasAfter);
-
+            controlRepository.saveCifras(idEjecucion, cifrasAfter, "AFTER");
             log.info("Control cifras AFTER: {}", cifrasAfter.getSummary());
 
-            controlRepository.saveExecutionLog(executionLog);
-            controlRepository.saveControlCifras(cifrasBefore, executionLog.getExecutionId().toString(), "BEFORE");
-            controlRepository.saveControlCifras(cifrasAfter, executionLog.getExecutionId().toString(), "AFTER");
+            controlRepository.finishExecution(idEjecucion, executionLog);
+            controlRepository.saveLog(idEjecucion, "Invoice Status Sync",
+                    String.format("Proceso completado: %d procesadas, %d ok, %d errores, %d sin cambio",
+                            executionLog.getTotalInvoicesProcessed(), executionLog.getSuccessCount(),
+                            executionLog.getErrorCount(), executionLog.getSkippedCount()),
+                    "INFO", "FINALIZACION");
 
             if (executionLog.hasErrors()) {
                 alertService.sendExecutionCompletedAlert(executionLog);
@@ -95,7 +109,9 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
         } catch (Exception e) {
             log.error("Batch execution failed: {}", e.getMessage(), e);
             executionLog.markAsFailed(e.getMessage());
-            controlRepository.saveExecutionLog(executionLog);
+            controlRepository.saveLog(idEjecucion, "Invoice Status Sync",
+                    "Error fatal: " + e.getMessage(), "ERROR", "ERROR");
+            controlRepository.finishExecution(idEjecucion, executionLog);
             alertService.sendExecutionFailedAlert(executionLog, e.getMessage());
             throw new RuntimeException("Batch execution failed", e);
         } finally {
@@ -151,7 +167,8 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
         return executionInProgress.get();
     }
 
-    private void processInvoicesByStatus(BatchExecutionLog executionLog, InvoiceFlowStatus status) {
+    private void processInvoicesByStatus(BatchExecutionLog executionLog, int idEjecucion, int paso,
+                                         AtomicInteger secuencia, InvoiceFlowStatus status) {
         if (!executionLog.isWithinTimeLimit(MAX_EXECUTION_MINUTES)) {
             log.warn("Execution time limit exceeded. Stopping processing.");
             return;
@@ -161,6 +178,9 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
 
         List<FbcInvoice> invoices = fbcPortalClient.fetchInvoicesByStatus(status);
         log.info("Found {} invoices with status {}", invoices.size(), status.getCode());
+        controlRepository.saveStep(idEjecucion,
+                "Procesar estatus " + status.getCode() + " (" + status.getDescription() + ")",
+                paso, invoices.size(), "IN_PROGRESS");
 
         for (FbcInvoice invoice : invoices) {
             if (!executionLog.isWithinTimeLimit(MAX_EXECUTION_MINUTES)) {
@@ -170,15 +190,13 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
 
             StatusTransitionResult result = processInvoice(invoice);
             executionLog.addResult(result);
-            controlRepository.saveTransitionResult(result, executionLog.getExecutionId().toString());
+            controlRepository.saveTransitionResult(idEjecucion, result, secuencia.incrementAndGet());
 
             if (!result.success()) {
-                controlRepository.saveErrorLog(
-                        executionLog.getExecutionId().toString(),
-                        invoice.getIdProveedor(),
-                        invoice.getDocumentNumber(),
-                        result.message()
-                );
+                controlRepository.saveLog(idEjecucion, "Invoice " + invoice.getDocumentNumber(),
+                        "Error proveedor=" + invoice.getIdProveedor() + " doc=" + invoice.getDocumentNumber()
+                                + ": " + result.message(),
+                        "ERROR", "ERROR");
             }
         }
     }

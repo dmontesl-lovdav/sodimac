@@ -4,17 +4,32 @@ import com.invoicesync.domain.model.BatchExecutionLog;
 import com.invoicesync.domain.model.ControlCifras;
 import com.invoicesync.domain.model.StatusTransitionResult;
 
+/**
+ * Trazabilidad del batch en SODIMAC_BATCH_DEV usando el modelo estándar
+ * CtrlProcesoCab / CtrlProcesoDet / CtrlProcesoElemento / ctrlLog (STM-1309, STM-1167).
+ *
+ * El id de ejecución es el int identity de ctrlProcesoCab (se obtiene al iniciar).
+ */
 public interface ControlRepository {
 
-    void saveExecutionLog(BatchExecutionLog log);
+    /** Inserta ctrlProcesoCab (estatus IN_PROGRESS) y devuelve el id_ejecucion generado. */
+    int startExecution(int processId);
 
-    void saveControlCifras(ControlCifras cifras, String executionId, String phase);
+    /** Actualiza ctrlProcesoCab al cierre (estatus, totales, duración, error). */
+    void finishExecution(int idEjecucion, BatchExecutionLog log);
 
-    void saveTransitionResult(StatusTransitionResult result, String executionId);
+    /** Registra un paso en ctrlProcesoDet. */
+    void saveStep(int idEjecucion, String nombrePaso, int secuencia, int registrosProcesados, String estatus);
 
-    void saveErrorLog(String executionId, String idProveedor, String documentNumber, String errorDetail);
+    /** Registra una factura procesada en ctrlProcesoElemento. */
+    void saveTransitionResult(int idEjecucion, StatusTransitionResult result, int secuencia);
 
-    void registerProcess(String processName, int catalogId);
+    /** Registra una entrada en ctrlLog. */
+    void saveLog(int idEjecucion, String nombre, String mensaje, String nivel, String fase);
 
+    /** Registra las cifras control (fotografía) como entrada en ctrlLog. */
+    void saveCifras(int idEjecucion, ControlCifras cifras, String phase);
+
+    /** Fotografía de cifras antes/después (fuente real pendiente). */
     ControlCifras captureCurrentCifras();
 }

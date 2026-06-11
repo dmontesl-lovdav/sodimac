@@ -50,8 +50,8 @@ batch:
 
 fbc:
   portal:
-    url: http://localhost:8081
-    mock-enabled: true
+    # FBC = fiscal-api real (sin mock)
+    url: http://localhost:8082
 
 alert:
   notification:

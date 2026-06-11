@@ -29,7 +29,4 @@ public interface ControlRepository {
 
     /** Registra las cifras control (fotografía) como entrada en ctrlLog. */
     void saveCifras(int idEjecucion, ControlCifras cifras, String phase);
-
-    /** Fotografía de cifras antes/después (fuente real pendiente). */
-    ControlCifras captureCurrentCifras();
 }

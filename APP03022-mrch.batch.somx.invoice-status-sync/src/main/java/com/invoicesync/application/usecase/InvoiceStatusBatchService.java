@@ -11,7 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,7 +59,7 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
 
         log.info("=== Starting Invoice Status Batch Synchronization ===");
 
-        ControlCifras cifrasBefore = controlRepository.captureCurrentCifras();
+        ControlCifras cifrasBefore = captureCifras();
         BatchExecutionLog executionLog = new BatchExecutionLog(cifrasBefore);
 
         // Trazabilidad: alta de la ejecución en ctrlProcesoCab (int id_ejecucion).
@@ -82,7 +84,7 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
             processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_CONTABILIZAR);
             processInvoicesByStatus(executionLog, idEjecucion, ++paso, secuencia, InvoiceFlowStatus.PENDIENTE_PAGO);
 
-            ControlCifras cifrasAfter = controlRepository.captureCurrentCifras();
+            ControlCifras cifrasAfter = captureCifras();
             executionLog.complete(cifrasAfter);
             controlRepository.saveCifras(idEjecucion, cifrasAfter, "AFTER");
             log.info("Control cifras AFTER: {}", cifrasAfter.getSummary());
@@ -320,5 +322,37 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
             log.warn("Invalid provider ID format: {}. Using default value 0", idProveedor);
             return 0;
         }
+    }
+
+    /**
+     * Fotografía de cifras control: conteo de facturas por estatus consultando el
+     * servicio FBC (jira STM-1309: "consulta por estatus utilizando el servicio de FBC").
+     * Se toma antes y después de la ejecución.
+     */
+    private ControlCifras captureCifras() {
+        Map<Integer, Integer> byStatus = new HashMap<>();
+        for (InvoiceFlowStatus status : InvoiceFlowStatus.values()) {
+            try {
+                int count = fbcPortalClient.fetchInvoicesByStatus(status).size();
+                if (count > 0) {
+                    byStatus.put(status.getCode(), count);
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo contar estatus {} para cifras: {}", status.getCode(), e.getMessage());
+            }
+        }
+        int total = byStatus.values().stream().mapToInt(Integer::intValue).sum();
+        int pending = sumStatuses(byStatus, 7, 8, 9, 10, 11);            // en proceso (SAPITO→pago)
+        int synced = byStatus.getOrDefault(12, 0);                        // pendiente de complemento (avanzada tras pago)
+        int failed = byStatus.getOrDefault(14, 0) + byStatus.getOrDefault(17, 0); // rechazo contable + error envío i213
+        return ControlCifras.capture(total, byStatus, pending, synced, failed);
+    }
+
+    private int sumStatuses(Map<Integer, Integer> byStatus, int... codes) {
+        int sum = 0;
+        for (int code : codes) {
+            sum += byStatus.getOrDefault(code, 0);
+        }
+        return sum;
     }
 }

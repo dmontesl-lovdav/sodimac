@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.Map;
-
 /**
  * Trazabilidad sobre el modelo estándar CtrlProcesoCab/Det/Elemento/ctrlLog
  * en SODIMAC_BATCH_DEV (STM-1309). Sustituye al esquema propio CtrlEnlace* previo.
@@ -135,14 +133,6 @@ public class ControlRepositoryAdapter implements ControlRepository {
     @Override
     public void saveCifras(int idEjecucion, ControlCifras cifras, String phase) {
         saveLog(idEjecucion, "Cifras Control", cifras.getSummary(), "INFO", "CIFRAS_" + phase);
-    }
-
-    @Override
-    public ControlCifras captureCurrentCifras() {
-        // La fuente real de conteo por estatus (servicio FBC / fiscal-api) aún no está
-        // cableada en este batch. Se devuelve una fotografía vacía para no romper el flujo.
-        // Pendiente: leer cifras reales por estatus desde fiscal-api.
-        return ControlCifras.capture(0, Map.of(), 0, 0, 0);
     }
 
     private String truncate(String value, int maxLength) {

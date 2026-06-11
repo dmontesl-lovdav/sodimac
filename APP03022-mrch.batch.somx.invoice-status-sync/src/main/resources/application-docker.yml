@@ -49,8 +49,8 @@ batch:
 
 fbc:
   portal:
-    url: http://localhost:8081
-    mock-enabled: true
+    # FBC = fiscal-api real corriendo en el HOST (batch en contenedor -> host.docker.internal)
+    url: http://host.docker.internal:8082
 
 alert:
   notification:

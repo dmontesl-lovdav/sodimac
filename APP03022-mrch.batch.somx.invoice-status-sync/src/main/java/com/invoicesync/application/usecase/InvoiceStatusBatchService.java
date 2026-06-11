@@ -64,11 +64,12 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
                 throw new RuntimeException("FBC Portal service is not available");
             }
 
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDING_SAPITO_REGISTRATION);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDING_I213_SEND);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.SENT_TO_I213);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDING_SAP_ACCOUNTING);
-            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDING_PAYMENT);
+            // Tren v1.0: estatus que avanza este batch (SAPITO → i213 → pago).
+            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_REGISTRO_SAPITO);
+            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_ENVIO_I213);
+            processInvoicesByStatus(executionLog, InvoiceFlowStatus.FACTURA_ENVIADA_I213);
+            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_CONTABILIZAR);
+            processInvoicesByStatus(executionLog, InvoiceFlowStatus.PENDIENTE_PAGO);
 
             ControlCifras cifrasAfter = controlRepository.captureCurrentCifras();
             executionLog.complete(cifrasAfter);
@@ -190,26 +191,27 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
                 return StatusTransitionResult.noChange(invoice);
             }
 
-            // Si el nuevo estado debe sincronizarse con FBC, usar el endpoint PUT
-            if (shouldSyncStatusWithFbc(newStatus)) {
-                return updateInvoiceWithFbcSync(invoice, newStatus);
-            } else {
-                // Para estados internos (6, 7, 8, 16), usar el método legacy
-                boolean updated = fbcPortalClient.updateInvoiceStatus(
-                        invoice.getIdProveedor(),
-                        invoice.getDocumentNumber(),
-                        newStatus
-                );
+            // Tren v1.0: el batch empuja directamente el código del tren a fiscal-api
+            // (PUT /invoices/{uuid}/status). fiscal-api valida la transición contra
+            // status_train. Sin remapeo interno→FBC (eliminado getFbcStatusCode).
+            int numeroProveedor = parseProveedorId(invoice.getIdProveedor());
 
-                if (updated) {
-                    log.debug("Invoice {} status changed from {} to {}",
-                            invoice.getDocumentNumber(),
-                            invoice.getCurrentStatus().getCode(),
-                            newStatus.getCode());
-                    return StatusTransitionResult.success(invoice, newStatus);
-                } else {
-                    return StatusTransitionResult.failure(invoice, "Failed to update status in FBC portal");
-                }
+            log.info("Sincronizando factura {} con FBC: estatus {} → {} (Proveedor: {})",
+                    invoice.getUuid(),
+                    invoice.getCurrentStatus().getCode(), newStatus.getCode(), numeroProveedor);
+
+            Optional<String> result = fbcPortalClient.updateInvoiceStatusByUuid(
+                    invoice.getUuid(),
+                    numeroProveedor,
+                    invoice.getCurrentStatus().getCode(),
+                    newStatus.getCode());
+
+            if (result.isPresent()) {
+                log.debug("Factura {} sincronizada con FBC: {}", invoice.getUuid(), result.get());
+                return StatusTransitionResult.success(invoice, newStatus);
+            } else {
+                log.warn("No se pudo sincronizar factura {} con FBC", invoice.getUuid());
+                return StatusTransitionResult.failure(invoice, "Failed to sync status with FBC portal");
             }
 
         } catch (Exception e) {
@@ -219,80 +221,74 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
     }
 
     /**
-     * Actualiza el estado de una factura en FBC usando el endpoint PUT /invoices/{uuid}/status.
-     * Este método se usa para los estados finales que deben sincronizarse con FBC:
-     * - PENDING_SAP_ACCOUNTING (9 → 3)
-     * - PENDING_PAYMENT (10 → 7)
-     * - PAID (11 → 8)
-     * - ACCOUNTING_REJECTED (13 → 11)
+     * Determina el siguiente estatus según el escenario del tren v1.0.
      */
-    private StatusTransitionResult updateInvoiceWithFbcSync(FbcInvoice invoice, InvoiceFlowStatus newStatus) {
-        try {
-            // Obtener el mapeo de estados internos a FBC
-            int currentFbcStatus = getFbcStatusCode(invoice.getCurrentStatus());
-            int newFbcStatus = getFbcStatusCode(newStatus);
-
-            // Convertir idProveedor de String a int
-            int numeroProveedor = parseProveedorId(invoice.getIdProveedor());
-
-            log.info("Syncing invoice {} with FBC: internal status {} → {} | FBC status {} → {}",
-                    invoice.getUuid(),
-                    invoice.getCurrentStatus().getCode(), newStatus.getCode(),
-                    currentFbcStatus, newFbcStatus);
-
-            Optional<String> result = fbcPortalClient.updateInvoiceStatusByUuid(
-                    invoice.getUuid(),
-                    numeroProveedor,
-                    currentFbcStatus,
-                    newFbcStatus
-            );
-
-            if (result.isPresent()) {
-                log.info("Invoice {} synced successfully with FBC: {}",
-                        invoice.getUuid(), result.get());
-                return StatusTransitionResult.success(invoice, newStatus);
-            } else {
-                log.warn("Failed to sync invoice {} with FBC", invoice.getUuid());
-                return StatusTransitionResult.failure(invoice, "Failed to sync status with FBC portal");
-            }
-
-        } catch (Exception e) {
-            log.error("Error syncing invoice {} with FBC: {}", invoice.getUuid(), e.getMessage(), e);
-            return StatusTransitionResult.failure(invoice, "Error syncing with FBC: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Determina si un estado interno debe sincronizarse con FBC.
-     * Solo los estados finales (9, 10, 11, 13) se sincronizan.
-     * Los estados intermedios (6, 7, 8, 16) son internos de SAPITO/i213.
-     */
-    private boolean shouldSyncStatusWithFbc(InvoiceFlowStatus status) {
-        return status == InvoiceFlowStatus.PENDING_SAP_ACCOUNTING ||
-               status == InvoiceFlowStatus.PENDING_PAYMENT ||
-               status == InvoiceFlowStatus.PAID ||
-               status == InvoiceFlowStatus.ACCOUNTING_REJECTED;
-    }
-
-    /**
-     * Obtiene el código de estado FBC correspondiente a un estado interno.
-     * Según HU STM-1309:
-     * - PENDING_SAP_ACCOUNTING (9) → FBC 3 (Pendiente de Contabilizar)
-     * - PENDING_PAYMENT (10) → FBC 7 (Pendiente de Pago)
-     * - PAID (11) → FBC 8 (Pagado)
-     * - ACCOUNTING_REJECTED (13) → FBC 11 (Rechazo Contable)
-     */
-    private int getFbcStatusCode(InvoiceFlowStatus status) {
-        return switch (status) {
-            case PENDING_SAP_ACCOUNTING -> 3;
-            case PENDING_PAYMENT -> 7;
-            case PAID -> 8;
-            case ACCOUNTING_REJECTED -> 11;
-            case PENDING_SAPITO_REGISTRATION -> 3;  // Estado inicial también es "Pendiente de Contabilizar"
-            case PENDING_I213_SEND -> 3;
-            case SENT_TO_I213 -> 3;
-            case NOT_SENT_TO_I213 -> 11;  // Error de interfaz se mapea a rechazo
+    private InvoiceFlowStatus determineNewStatus(FbcInvoice invoice) {
+        return switch (invoice.getCurrentStatus()) {
+            case PENDIENTE_REGISTRO_SAPITO -> processRegistroSapito(invoice);
+            case PENDIENTE_ENVIO_I213 -> processEnvioI213(invoice);
+            case FACTURA_ENVIADA_I213 -> processEnviadaI213(invoice);
+            case PENDIENTE_CONTABILIZAR -> processContabilizar(invoice);
+            case PENDIENTE_PAGO -> processPago(invoice);
+            default -> invoice.getCurrentStatus();
         };
+    }
+
+    // Estatus 7 → 8 : registrada en SODIMAC_SAP (Envios_Ap) → pendiente envío a i213
+    private InvoiceFlowStatus processRegistroSapito(FbcInvoice invoice) {
+        boolean exists = sodimacSapRepository.existsInEnviosAp(
+                invoice.getIdProveedor(),
+                invoice.getDocumentNumber(),
+                invoice.getUuid()
+        );
+        return exists ? InvoiceFlowStatus.PENDIENTE_ENVIO_I213 : invoice.getCurrentStatus();
+    }
+
+    // Estatus 8 → 9 : pendiente de enviar de SAPITO a i213 (FLAG_ENVIADO=0)
+    private InvoiceFlowStatus processEnvioI213(FbcInvoice invoice) {
+        boolean pending = sapitoRepository.isPendingToSendToI213(
+                invoice.getIdProveedor(),
+                invoice.getDocumentNumber(),
+                invoice.getUuid()
+        );
+        return pending ? InvoiceFlowStatus.FACTURA_ENVIADA_I213 : invoice.getCurrentStatus();
+    }
+
+    // Estatus 9 → 10 (enviada) / 17 (error envío) : FLAG_ENVIADO 1=enviada, 2=no enviada
+    private InvoiceFlowStatus processEnviadaI213(FbcInvoice invoice) {
+        int flagEnviado = sapitoRepository.getFlagEnviado(
+                invoice.getIdProveedor(),
+                invoice.getUuid()
+        );
+
+        return switch (flagEnviado) {
+            case 1 -> InvoiceFlowStatus.PENDIENTE_CONTABILIZAR;
+            case 2 -> InvoiceFlowStatus.ERROR_ENVIO_I213;
+            default -> invoice.getCurrentStatus();
+        };
+    }
+
+    // Estatus 10 → 11 (pendiente pago) / 14 (rechazo contable) : SP i123_Valida_Documento_AP
+    private InvoiceFlowStatus processContabilizar(FbcInvoice invoice) {
+        int result = i213Repository.validateDocumentoAP(
+                invoice.getIdProveedor(),
+                invoice.getDocumentNumber()
+        );
+
+        return switch (result) {
+            case 1 -> InvoiceFlowStatus.PENDIENTE_PAGO;
+            case 0 -> InvoiceFlowStatus.RECHAZO_CONTABLE;
+            default -> invoice.getCurrentStatus();
+        };
+    }
+
+    // Estatus 11 → 12 (pendiente complemento) : SP i213_Valida_Documento_Pagado_AP
+    private InvoiceFlowStatus processPago(FbcInvoice invoice) {
+        int result = i213Repository.validateDocumentoPagado(
+                invoice.getIdProveedor(),
+                invoice.getDocumentNumber()
+        );
+        return result == 1 ? InvoiceFlowStatus.PENDIENTE_COMPLEMENTO : invoice.getCurrentStatus();
     }
 
     /**
@@ -306,68 +302,5 @@ public class InvoiceStatusBatchService implements InvoiceStatusBatchUseCase {
             log.warn("Invalid provider ID format: {}. Using default value 0", idProveedor);
             return 0;
         }
-    }
-
-    private InvoiceFlowStatus determineNewStatus(FbcInvoice invoice) {
-        return switch (invoice.getCurrentStatus()) {
-            case PENDING_SAPITO_REGISTRATION -> processStatus6(invoice);
-            case PENDING_I213_SEND -> processStatus7(invoice);
-            case SENT_TO_I213 -> processStatus8(invoice);
-            case PENDING_SAP_ACCOUNTING -> processStatus9(invoice);
-            case PENDING_PAYMENT -> processStatus10(invoice);
-            default -> invoice.getCurrentStatus();
-        };
-    }
-
-    private InvoiceFlowStatus processStatus6(FbcInvoice invoice) {
-        boolean exists = sodimacSapRepository.existsInEnviosAp(
-                invoice.getIdProveedor(),
-                invoice.getDocumentNumber(),
-                invoice.getUuid()
-        );
-        return exists ? InvoiceFlowStatus.PENDING_I213_SEND : invoice.getCurrentStatus();
-    }
-
-    private InvoiceFlowStatus processStatus7(FbcInvoice invoice) {
-        boolean pending = sapitoRepository.isPendingToSendToI213(
-                invoice.getIdProveedor(),
-                invoice.getDocumentNumber(),
-                invoice.getUuid()
-        );
-        return pending ? InvoiceFlowStatus.SENT_TO_I213 : invoice.getCurrentStatus();
-    }
-
-    private InvoiceFlowStatus processStatus8(FbcInvoice invoice) {
-        int flagEnviado = sapitoRepository.getFlagEnviado(
-                invoice.getIdProveedor(),
-                invoice.getUuid()
-        );
-
-        return switch (flagEnviado) {
-            case 1 -> InvoiceFlowStatus.PENDING_SAP_ACCOUNTING;
-            case 2 -> InvoiceFlowStatus.NOT_SENT_TO_I213;
-            default -> invoice.getCurrentStatus();
-        };
-    }
-
-    private InvoiceFlowStatus processStatus9(FbcInvoice invoice) {
-        int result = i213Repository.validateDocumentoAP(
-                invoice.getIdProveedor(),
-                invoice.getDocumentNumber()
-        );
-
-        return switch (result) {
-            case 1 -> InvoiceFlowStatus.PENDING_PAYMENT;
-            case 0 -> InvoiceFlowStatus.ACCOUNTING_REJECTED;
-            default -> invoice.getCurrentStatus();
-        };
-    }
-
-    private InvoiceFlowStatus processStatus10(FbcInvoice invoice) {
-        int result = i213Repository.validateDocumentoPagado(
-                invoice.getIdProveedor(),
-                invoice.getDocumentNumber()
-        );
-        return result == 1 ? InvoiceFlowStatus.PAID : invoice.getCurrentStatus();
     }
 }

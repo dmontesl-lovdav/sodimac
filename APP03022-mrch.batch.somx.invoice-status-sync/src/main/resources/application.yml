@@ -83,14 +83,9 @@ fbc:
     # Timeout para llamadas al BFF
     timeout: ${FBC_TIMEOUT:30000}
 
-    # Mapeo de estatus HU → BFF (solo estatus finales)
-    status-mapping:
-      # Solo sincronizar estatus relevantes para el portal
-      9: 3    # PENDING_SAP_ACCOUNTING → Pendiente de Contabilizar
-      10: 7   # PENDING_PAYMENT → Pendiente de Pago
-      11: 8   # PAID → Pagado
-      13: 11  # ACCOUNTING_REJECTED → Rechazo Contable
-      # Estados 6,7,8,16 NO se sincronizan (son internos de SAPITO/i213)
+    # NOTA: el mapeo interno→FBC quedó eliminado con el Tren v1.0.
+    # El batch empuja directo el código del tren a fiscal-api; fiscal-api valida
+    # la transición contra shared_catalogs.status_train. Sin status-mapping.
 
 # Alerts
 alert:

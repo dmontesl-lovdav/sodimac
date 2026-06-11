@@ -191,7 +191,7 @@ public class FbcPortalClientAdapter implements FbcPortalClient {
                 .serie(dto.serie())
                 .folio(dto.folio())
                 .uuid(dto.uuid())
-                .currentStatus(InvoiceFlowStatus.fromCode(dto.estatus()).orElse(InvoiceFlowStatus.PENDING_SAPITO_REGISTRATION))
+                .currentStatus(InvoiceFlowStatus.fromCode(dto.estatus()).orElse(InvoiceFlowStatus.PENDIENTE_REGISTRO_SAPITO))
                 .lastUpdated(dto.fechaActualizacion())
                 .build();
     }
@@ -221,7 +221,7 @@ public class FbcPortalClientAdapter implements FbcPortalClient {
 
     private List<FbcInvoice> mockFetchAllPending() {
         log.info("[MOCK] Fetching all pending invoices");
-        return mockFetchInvoicesByStatus(InvoiceFlowStatus.PENDING_SAPITO_REGISTRATION);
+        return mockFetchInvoicesByStatus(InvoiceFlowStatus.PENDIENTE_REGISTRO_SAPITO);
     }
 
     private boolean mockUpdateStatus(String idProveedor, String documentNumber, InvoiceFlowStatus newStatus) {

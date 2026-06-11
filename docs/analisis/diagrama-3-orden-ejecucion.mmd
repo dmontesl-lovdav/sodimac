@@ -1,0 +1,12 @@
+flowchart LR
+    RAS["rebate-agreements-sync<br/>cron 03:00<br/>(independiente, otro dominio:<br/>convenios desde Azure)"]:::ras
+
+    FD["fiscal-download<br/>recepcion (one-shot via .bat)<br/>deja la factura en estatus 5 (desglosada)"]:::fd
+    ISS["invoice-status-sync<br/>cron 07:30<br/>toma desde estatus 7"]:::iss
+
+    FD -->|"handoff: 5 Desglose -> 7 Pend. registro SAPITO"| ISS
+    RAS -. "sin relacion con el flujo de factura" .- FD
+
+    classDef fd fill:#e8eaf6,stroke:#3949ab,color:#1a237e
+    classDef iss fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef ras fill:#fff8e1,stroke:#f9a825,color:#e65100

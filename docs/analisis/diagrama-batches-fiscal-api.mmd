@@ -1,53 +1,48 @@
 flowchart TB
-    subgraph FAPI["fiscal-api (NO tocado - solo validador/registro)"]
-        DB[("BD tenant_fiscal<br/>invoice + status_train<br/>Tren v1.0 = fuente de verdad")]
-        VAL["Valida cada transicion<br/>contra el tren v1.0<br/>(rechaza WRN7011 si no aplica)"]
+
+    subgraph TREN["TREN DE ESTATUS v1.0 - fuente de verdad: shared_catalogs.status_train (fiscal-api valida cada salto)"]
+        direction LR
+        S3["3<br/>Recibida"]:::fd --> S4["4<br/>En proceso<br/>de descarga"]:::fd --> S5["5<br/>Desglose<br/>de factura"]:::fd
+        S5 --> S7["7<br/>Pend. registro<br/>SAPITO"]:::iss --> S8["8<br/>Pend. envio<br/>a i213"]:::iss --> S9["9<br/>Factura<br/>enviada i213"]:::iss
+        S9 --> S10["10<br/>Pend.<br/>contabilizar"]:::iss --> S11["11<br/>Pend.<br/>de Pago"]:::iss --> S12["12<br/>Pend.<br/>complemento"]:::iss --> S13["13<br/>Completado"]:::done
+        S5 -. "error estructura" .-> S16["16<br/>Estructura<br/>invalida"]:::err
+        S16 -. "reintenta" .-> S5
+        S9 -. "no enviada" .-> S17["17<br/>Error envio i213"]:::err
+        S10 -. "rechazo" .-> S14["14<br/>Rechazo<br/>Contable"]:::err
     end
 
-    subgraph FD["fiscal-download (Java 8 / SB 2.7)"]
-        FD1["1. Busca facturas estatus 3 (Recibida)<br/>POST /invoices/search"]
-        FD2["2. Descarga XML + desglosa CFDI<br/>escribe tablas SAP (Comprobante, Emisor...)"]
-        FD3["3. PUT estatus: 3-4-5<br/>error estructura: 5-16 (reintenta 16-5)"]
+    subgraph ORD["ORDEN DE EJECUCION"]
+        direction LR
+        O1["rebate-agreements-sync<br/>cron 03:00 (independiente, otro dominio)"]:::ras
+        O2["fiscal-download<br/>recepcion (one-shot .bat)"]:::fd
+        O3["invoice-status-sync<br/>cron 07:30"]:::iss
+        O2 -->|"handoff: factura desglosada (5) pasa a registro SAPITO (7)"| O3
     end
 
-    subgraph ISS["invoice-status-sync (Java 17 / hexagonal)"]
-        ISS1["1. Busca facturas estatus 7,8,9,10,11<br/>POST /invoices/search"]
-        ISS2["2. Consulta sistemas reales:<br/>SAP Envios_Ap - SAPITO Oracle - i213 SP"]
-        ISS3["3. PUT estatus: 7-8-9-10-11-12<br/>(14 rechazo, 17 error envio)"]
-    end
+    FAPI["fiscal-api  :8082  (NO tocado - solo validador/registro)<br/>BD Postgres tenant_fiscal :5434<br/>Guarda invoice + valida transicion vs tren v1.0 (WRN7011 si no aplica)"]:::api
 
-    subgraph RAS["rebate-agreements-sync (Java 17 / hexagonal)"]
-        RAS1["1. Descarga acuerdos comerciales<br/>API Azure rebate-management (paginado)"]
-        RAS2["2. TRUNCATE + INSERT<br/>tabla RebateAcuerdosTemp"]
-        RAS3["3. Trazabilidad CtrlProceso*<br/>(NO toca facturas)"]
-    end
+    FD["fiscal-download  (Java 8 / SB 2.7, sin web)<br/>DUENO estatus 3 -> 4 -> 5  (+16 error)<br/>Baja XML, desglosa CFDI, escribe tablas SAP"]:::fd
+    ISS["invoice-status-sync  :8085  (Java 17 / hexagonal)<br/>DUENO estatus 7 -> 8 -> 9 -> 10 -> 11 -> 12  (+14,+17)<br/>Pregunta a SAP / SAPITO / i213 reales"]:::iss
+    RAS["rebate-agreements-sync  :8086  (Java 17 / hexagonal)<br/>Baja convenios -> tabla RebateAcuerdosTemp<br/>NO toca facturas"]:::ras
 
-    EXT[("Sistemas externos<br/>SAP - SAPITO (Oracle) - i213")]
-    AZ[("Azure<br/>rebate-management")]
-    CTRL[("SODIMAC_BATCH_DEV<br/>CtrlProcesoCab/Det/Elemento/ctrlLog")]
+    SAP[("SAP + i213 (SQL Server)<br/>10.138.153.10:1433 (local :1434)<br/>Envios_Ap + SP i123/i213")]
+    ORA[("SAPITO (Oracle)<br/>ensenada:1541 (local :1521)<br/>Envios_Ap (FLAG_ENVIADO)")]
+    AZ[("Azure rebate-management<br/>HTTPS (paginado)")]
+    CTRL[("SODIMAC_BATCH_DEV (SQL Server)<br/>CtrlProcesoCab / Det / Elemento / ctrlLog")]
 
-    FD1 -->|"lee facturas en 3"| DB
-    FD2 -->|"escribe desglose"| EXT
-    FD3 -->|"actualiza estatus"| VAL
-    VAL --> DB
+    FD -->|"POST /invoices/search (estatus 3)<br/>PUT /invoices/uuid/status"| FAPI
+    FD -->|"escribe desglose CFDI"| SAP
+    ISS -->|"POST /invoices/search (7-11)<br/>PUT /invoices/uuid/status"| FAPI
+    ISS -->|"registrada? enviada?<br/>contabilizada? pagada?"| SAP
+    ISS --> ORA
+    RAS -->|"descarga acuerdos"| AZ
+    FD -. trazabilidad .-> CTRL
+    ISS -. trazabilidad .-> CTRL
+    RAS -. trazabilidad .-> CTRL
 
-    DB -.->|"5 Desglose a 7 Pend. registro SAPITO"| ISS1
-
-    ISS1 -->|"lee facturas 7-11"| DB
-    ISS2 -->|"registrada? enviada? contabilizada? pagada?"| EXT
-    ISS3 -->|"actualiza estatus"| VAL
-
-    RAS1 --> AZ
-    RAS2 --> CTRL
-
-    FD3 -.-> CTRL
-    ISS3 -.-> CTRL
-
-    classDef api fill:#e3f2fd,stroke:#1565c0
-    classDef batch1 fill:#e8eaf6,stroke:#3949ab
-    classDef batch2 fill:#e8f5e9,stroke:#2e7d32
-    classDef batch3 fill:#fff8e1,stroke:#f9a825
-    class FAPI,DB,VAL api
-    class FD,FD1,FD2,FD3 batch1
-    class ISS,ISS1,ISS2,ISS3 batch2
-    class RAS,RAS1,RAS2,RAS3 batch3
+    classDef api fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef fd fill:#e8eaf6,stroke:#3949ab,color:#1a237e
+    classDef iss fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef ras fill:#fff8e1,stroke:#f9a825,color:#e65100
+    classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
+    classDef err fill:#ffebee,stroke:#c62828,color:#b71c1c

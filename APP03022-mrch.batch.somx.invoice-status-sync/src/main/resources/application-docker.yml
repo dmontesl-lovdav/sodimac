@@ -1,6 +1,8 @@
-# Perfil DOCKER — batch corriendo DENTRO de la red Docker (red sodimac-net).
-# Resuelve hostnames de contenedor (sin NAT host->contenedor) => SAPITO Oracle conecta.
-# Puertos INTERNOS de contenedor (mssql 1433, oracle 1521), no los mapeados al host.
+# ⚠️ SOLO TESTING LOCAL DE SAPITO — NO es el perfil de despliegue.
+# El despliegue normal usa el perfil 'local' (jar/proceso). Este perfil solo sirve
+# para correr el batch DENTRO de la red Docker (sodimac-net) y poder validar SAPITO
+# cuando Oracle está en contenedor (el redirect de Oracle se rompe host->contenedor).
+# Usa hostnames + puertos INTERNOS de contenedor (mssql 1433, oracle 1521).
 spring:
   datasource:
     jdbc-url: jdbc:h2:mem:invoicedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE

@@ -1,5 +1,9 @@
-# invoice-status-sync — imagen para correr el batch dentro de la red Docker
-# (misma red que sodimac-oracle / sodimac-mssql) y evitar el NAT host->contenedor.
+# ⚠️ SOLO TESTING LOCAL — NO es el modelo de despliegue.
+# El batch se despliega como jar/proceso (java -jar ... --spring.profiles.active=local).
+# Esta imagen existe únicamente para PROBAR SAPITO en una PC donde Oracle corre en
+# Docker: host->contenedor rompe el redirect dedicated-server de Oracle (NAT); metiendo
+# el batch en la misma red Docker el redirect resuelve y se valida SAPITO.
+# En Sodimac real Oracle es un servidor (ensenada:1541), sin NAT -> el jar local basta.
 #
 # Build:  mvn -DskipTests package && docker build -t invoice-status-sync .
 # Run:    docker run --rm --network sodimac-net -p 8085:8085 \

@@ -12,7 +12,6 @@ import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,14 +25,17 @@ public class RebateAgreementsSyncService implements RebateAgreementsSyncUseCase 
     private final ExternalRebateClient externalRebateClient;
     private final RebateAgreementRepository rebateAgreementRepository;
     private final NotificationService notificationService;
+    private final RebateDataLoadService dataLoadService;
 
     // Contador para elementos procesados
     private int elementSequence = 0;
 
     @Override
-    @Retry(name = "rebateSync", fallbackMethod = "fallbackExecuteFullSync")
-    // REMOVIDO @Transactional - La transacción gigante bloqueaba la BD por 15-20 minutos
-    // Ahora solo la carga de datos (TRUNCATE + INSERT) está en transacción
+    @Retry(name = "rebateSync")
+    // Sin fallbackMethod: resilience4j invoca el fallback sobre el proxy CGLIB
+    // (campos null -> NPE). El catch interno ya registra FAILED + notifyFailure,
+    // así que el fallback era redundante. Tras agotar reintentos, propaga SyncException.
+    // REMOVIDO @Transactional - la carga (TRUNCATE+INSERT) vive en RebateDataLoadService.
     public SyncResult executeFullSync() {
         log.info("Starting full sync process");
         elementSequence = 0;
@@ -107,7 +109,7 @@ public class RebateAgreementsSyncService implements RebateAgreementsSyncUseCase 
             ProcessStep step4 = createProcessStep(idEjecucion, 4, "Cargar nuevos datos en base de datos");
 
             log.info("Step 3 & 4: Loading data to database (transactional)");
-            int loadedCount = loadDataToDatabase(allRebateAgreements);
+            int loadedCount = dataLoadService.loadFullSync(allRebateAgreements);
 
             syncResult.setTotalAgreementsLoaded(loadedCount);
             completeProcessStep(step3, 0);
@@ -156,8 +158,8 @@ public class RebateAgreementsSyncService implements RebateAgreementsSyncUseCase 
     }
 
     @Override
-    @Retry(name = "rebateSync", fallbackMethod = "fallbackExecuteSyncByContractId")
-    // REMOVIDO @Transactional - Las llamadas a API externa no deben estar en transacción
+    @Retry(name = "rebateSync")
+    // Sin fallbackMethod (ver nota en executeFullSync). El catch interno registra FAILED.
     public SyncResult executeSyncByContractId(String contractId) {
         log.info("Starting sync for contract ID: {}", contractId);
         elementSequence = 0;
@@ -211,7 +213,7 @@ public class RebateAgreementsSyncService implements RebateAgreementsSyncUseCase 
 
             // Step 3: Save agreements (transactional)
             ProcessStep step3 = createProcessStep(idEjecucion, 3, "Guardar agreements en base de datos");
-            int savedCount = saveDataToDatabase(rebateAgreements);
+            int savedCount = dataLoadService.saveBatch(rebateAgreements);
             syncResult.setTotalAgreementsLoaded(savedCount);
             completeProcessStep(step3, savedCount);
 
@@ -374,83 +376,10 @@ public class RebateAgreementsSyncService implements RebateAgreementsSyncUseCase 
         return rebateAgreements;
     }
 
-    // Fallback methods for Resilience4j
-    private SyncResult fallbackExecuteFullSync(Exception e) {
-        log.error("Fallback: All retry attempts exhausted for full sync", e);
-
-        SyncResult syncResult = SyncResult.builder()
-                .startTime(LocalDateTime.now())
-                .endTime(LocalDateTime.now())
-                .status(SyncStatus.FAILED)
-                .errorMessage("All retry attempts exhausted: " + e.getMessage())
-                .build();
-
-        SyncResult savedSyncResult = rebateAgreementRepository.saveSyncResult(syncResult);
-        notificationService.notifyFailure(savedSyncResult);
-
-        return savedSyncResult;
-    }
-
-    private SyncResult fallbackExecuteSyncByContractId(String contractId, Exception e) {
-        log.error("Fallback: All retry attempts exhausted for contract sync: {}", contractId, e);
-
-        SyncResult syncResult = SyncResult.builder()
-                .startTime(LocalDateTime.now())
-                .endTime(LocalDateTime.now())
-                .status(SyncStatus.FAILED)
-                .errorMessage("All retry attempts exhausted for contract " + contractId + ": " + e.getMessage())
-                .build();
-
-        SyncResult savedSyncResult = rebateAgreementRepository.saveSyncResult(syncResult);
-        notificationService.notifyFailure(savedSyncResult);
-
-        return savedSyncResult;
-    }
-
-    /**
-     * Carga datos a la base de datos en una transacción corta y rápida.
-     * TRUNCATE + INSERT en lotes - Minimiza tiempo de bloqueo de la tabla.
-     * Usado para full sync.
-     *
-     * @param rebateAgreements Lista de agreements a cargar
-     * @return Cantidad de registros cargados
-     */
-    @Transactional
-    private int loadDataToDatabase(List<RebateAgreement> rebateAgreements) {
-        log.info("Starting transactional data load - TRUNCATE + INSERT");
-
-        // TRUNCATE TABLE - Lock exclusivo pero muy rápido
-        log.debug("Executing TRUNCATE TABLE...");
-        rebateAgreementRepository.deleteAll();
-        log.info("✓ Table truncated");
-
-        // INSERT en lotes de 100 (configurado en Hibernate batch_size)
-        log.debug("Inserting {} agreements in batches...", rebateAgreements.size());
-        List<RebateAgreement> savedAgreements = rebateAgreementRepository.saveAll(rebateAgreements);
-        log.info("✓ Data loaded successfully");
-
-        return savedAgreements.size();
-    }
-
-    /**
-     * Guarda datos a la base de datos en una transacción corta.
-     * Solo INSERT en lotes - Sin TRUNCATE.
-     * Usado para sync por contrato específico.
-     *
-     * @param rebateAgreements Lista de agreements a guardar
-     * @return Cantidad de registros guardados
-     */
-    @Transactional
-    private int saveDataToDatabase(List<RebateAgreement> rebateAgreements) {
-        log.info("Starting transactional data save - INSERT only");
-
-        // INSERT en lotes de 100 (configurado en Hibernate batch_size)
-        log.debug("Inserting {} agreements in batches...", rebateAgreements.size());
-        List<RebateAgreement> savedAgreements = rebateAgreementRepository.saveAll(rebateAgreements);
-        log.info("✓ Data saved successfully");
-
-        return savedAgreements.size();
-    }
+    // NOTA: la carga transaccional (TRUNCATE+INSERT) se movió a RebateDataLoadService
+    // (bean propio con @Transactional público). Antes estaba en métodos privados
+    // @Transactional aquí: no aplicaba la transacción y forzaba proxy CGLIB que dejaba
+    // el fallback de resilience4j con campos null (NPE).
 
     // ===== Métodos auxiliares para tablas de control =====
 

@@ -102,6 +102,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final RelatedCfdiRepository relatedCfdiRepository;
     private final InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
     private final CatParameterRepository catParameterRepository;
+    private final GcsStorageService gcsStorageService;
 
     // ========== CONSULTA ==========
 
@@ -118,7 +119,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
-            String receptionId, String supplierNumber, String purchaseOrderNumber) {
+            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile) {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
@@ -276,6 +277,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                     receptionId
             );
             log.info("Documento persistido exitosamente. Invoice UUID: {}", savedInvoice.getInvoiceUuid());
+
+            // === PASO 9.5: SUBIR PDF A GCS (opcional) ===
+            if (pdfFile != null && !pdfFile.isEmpty()) {
+                try {
+                    String pdfPath = gcsStorageService.uploadPdf(pdfFile, savedInvoice.getInvoiceUuid().toString());
+                    savedInvoice.setPdfPath(pdfPath);
+                    invoiceRepository.save(savedInvoice);
+                    log.info("PDF subido a GCS. Path: {}", pdfPath);
+                } catch (Exception e) {
+                    log.warn("PDF no pudo subirse a GCS (no crítico, factura ya registrada): {}", e.getMessage());
+                }
+            }
+
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PERSISTIR_DOCUMENTO.getCode(), SERVICE_NAME,
                     "system", false, "Documento persistido exitosamente en base de datos",
                     "Invoice UUID: " + savedInvoice.getInvoiceUuid(),
@@ -2268,6 +2282,33 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         log.error("Documento no encontrado. UUID: {}", fiscalUuid);
         throw new FiscalException(FiscalMessageCode.ERR001, "Documento no encontrado con UUID: " + fiscalUuid);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getPdfByInvoiceUuid(String invoiceUuid) {
+        log.info("Buscando PDF por invoice UUID: {}", invoiceUuid);
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(invoiceUuid);
+        } catch (IllegalArgumentException e) {
+            throw new FiscalException(FiscalMessageCode.ERR001, "UUID inválido: " + invoiceUuid);
+        }
+
+        InvoiceEntity invoice = invoiceRepository.findById(uuid)
+                .orElseThrow(() -> new FiscalException(FiscalMessageCode.ERR001, "Factura no encontrada: " + invoiceUuid));
+
+        if (invoice.getPdfPath() == null || invoice.getPdfPath().isBlank()) {
+            throw new FiscalException(FiscalMessageCode.ERR001, "No hay PDF disponible para la factura: " + invoiceUuid);
+        }
+
+        try {
+            return gcsStorageService.downloadPdf(invoice.getPdfPath());
+        } catch (Exception e) {
+            log.error("Error al descargar PDF de GCS. path={} error={}", invoice.getPdfPath(), e.getMessage());
+            throw new FiscalException(FiscalMessageCode.ERR001, "Error al obtener el PDF: " + e.getMessage());
+        }
     }
 
     // ========== STM-410: BÚSQUEDA Y ACTUALIZACIÓN POR ESTATUS ==========

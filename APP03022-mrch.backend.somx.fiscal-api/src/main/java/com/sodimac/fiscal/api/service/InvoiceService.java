@@ -49,7 +49,7 @@ public interface InvoiceService {
      * @return Respuesta del registro con código de negocio (BUS1xxx o BUS2xxx)
      */
     InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
-            String receptionId, String supplierNumber, String purchaseOrderNumber);
+            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile);
 
     /**
      * Actualiza una factura o nota de crédito existente (STM-339).
@@ -154,6 +154,8 @@ public interface InvoiceService {
      * @throws IllegalArgumentException si el documento no existe
      */
     String getXmlByFiscalUuid(String fiscalUuid);
+
+    byte[] getPdfByInvoiceUuid(String invoiceUuid);
 
     // ========== STM-410: BÚSQUEDA Y ACTUALIZACIÓN POR ESTATUS ==========
 

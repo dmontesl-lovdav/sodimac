@@ -168,7 +168,9 @@ public class InvoiceController {
             @Parameter(description = "Número de proveedor Sodimac")
             @RequestParam(value = "supplierNumber", required = false) String supplierNumber,
             @Parameter(description = "Número de orden de compra")
-            @RequestParam(value = "purchaseOrderNumber", required = false) String purchaseOrderNumber) {
+            @RequestParam(value = "purchaseOrderNumber", required = false) String purchaseOrderNumber,
+            @Parameter(description = "Archivo PDF de la factura (opcional)")
+            @RequestParam(value = "pdfFile", required = false) MultipartFile pdfFile) {
 
         log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}, receptionId: {}",
                 file.getOriginalFilename(), idTransaccion, receptionId);
@@ -208,7 +210,7 @@ public class InvoiceController {
 
         // Procesar registro
         InvoiceRegistrationResponse response = invoiceService.registerInvoice(
-                file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber);
+                file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber, pdfFile);
 
         // Determinar código HTTP según resultado
         if (response.isSuccess()) {
@@ -533,6 +535,33 @@ public class InvoiceController {
         log.info("XML obtenido exitosamente. UUID: {}, Tamano: {} bytes", uuid, xmlContent.length());
 
         return new ResponseEntity<>(xmlContent, headers, HttpStatus.OK);
+    }
+
+    // ========== DESCARGA PDF INDIVIDUAL ==========
+
+    @Operation(summary = "Obtener PDF por invoice UUID", description = "Descarga el PDF previamente subido al registrar la factura")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF obtenido exitosamente", content = @Content(mediaType = "application/pdf")),
+            @ApiResponse(responseCode = "404", description = "Factura no encontrada o sin PDF")
+    })
+    @GetMapping(value = "/{uuid}/pdf", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<byte[]> getPdfByInvoiceUuid(
+            @PathVariable("uuid") String uuid,
+            @RequestParam(value = "download", defaultValue = "true") boolean download) {
+
+        log.info("Solicitud de PDF recibida. Invoice UUID: {}", uuid);
+
+        byte[] pdfBytes = invoiceService.getPdfByInvoiceUuid(uuid);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentLength(pdfBytes.length);
+        if (download) {
+            headers.setContentDispositionFormData("attachment", uuid + ".pdf");
+        }
+
+        log.info("PDF obtenido exitosamente. UUID: {}, Tamaño: {} bytes", uuid, pdfBytes.length);
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     // ========== DESCARGA MASIVA (STM-396) ==========

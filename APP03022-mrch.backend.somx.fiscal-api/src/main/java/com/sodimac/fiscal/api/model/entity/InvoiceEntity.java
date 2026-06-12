@@ -88,6 +88,9 @@ public class InvoiceEntity extends BaseEntity {
     @Column(name = "accounting_date")
     private LocalDate accountingDate;
 
+    @Column(name = "pdf_path", length = 500)
+    private String pdfPath;
+
     @Column(name = "issuer_uuid", nullable = false, columnDefinition = "uuid")
     private UUID issuerUuid;
 

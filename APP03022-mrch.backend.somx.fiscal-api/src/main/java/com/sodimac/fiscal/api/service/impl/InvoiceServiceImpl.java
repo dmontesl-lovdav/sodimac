@@ -281,10 +281,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 9.5: SUBIR PDF A GCS (opcional) ===
             if (pdfFile != null && !pdfFile.isEmpty()) {
                 try {
-                    String pdfPath = gcsStorageService.uploadPdf(pdfFile, savedInvoice.getInvoiceUuid().toString());
-                    savedInvoice.setPdfPath(pdfPath);
+                    String gcsObject = gcsStorageService.uploadPdf(pdfFile, savedInvoice.getInvoiceUuid().toString());
+                    savedInvoice.setPdfGcsObject(gcsObject);
                     invoiceRepository.save(savedInvoice);
-                    log.info("PDF subido a GCS. Path: {}", pdfPath);
+                    log.info("PDF subido a GCS. Object: {}", gcsObject);
                 } catch (Exception e) {
                     log.warn("PDF no pudo subirse a GCS (no crítico, factura ya registrada): {}", e.getMessage());
                 }
@@ -2299,14 +2299,14 @@ public class InvoiceServiceImpl implements InvoiceService {
         InvoiceEntity invoice = invoiceRepository.findById(uuid)
                 .orElseThrow(() -> new FiscalException(FiscalMessageCode.ERR001, "Factura no encontrada: " + invoiceUuid));
 
-        if (invoice.getPdfPath() == null || invoice.getPdfPath().isBlank()) {
+        if (invoice.getPdfGcsObject() == null || invoice.getPdfGcsObject().isBlank()) {
             throw new FiscalException(FiscalMessageCode.ERR001, "No hay PDF disponible para la factura: " + invoiceUuid);
         }
 
         try {
-            return gcsStorageService.downloadPdf(invoice.getPdfPath());
+            return gcsStorageService.downloadPdf(invoice.getPdfGcsObject());
         } catch (Exception e) {
-            log.error("Error al descargar PDF de GCS. path={} error={}", invoice.getPdfPath(), e.getMessage());
+            log.error("Error al descargar PDF de GCS. object={} error={}", invoice.getPdfGcsObject(), e.getMessage());
             throw new FiscalException(FiscalMessageCode.ERR001, "Error al obtener el PDF: " + e.getMessage());
         }
     }

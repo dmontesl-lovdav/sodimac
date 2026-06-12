@@ -12,9 +12,9 @@ export interface Supplier {
     supplierNumber: number;
     rfc: string;
     businessName: string;
+    emailPrincipal: string;
     emailFinancial: string;
-    emailPrincipal?: string;
-    emailCommercial?: string;
+    emailCommercial: string;
     supplierType: {
                     id: number;
                     code: string;

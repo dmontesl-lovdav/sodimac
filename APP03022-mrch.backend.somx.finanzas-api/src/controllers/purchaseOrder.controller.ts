@@ -14,7 +14,9 @@ import {
 } from "@/schemas/purchaseOrder.schema.js";
 import {
     ListReceptionQuerySchema,
-    type ListReceptionQueryDto
+    ListReceptionQuerySchemaV2,
+    type ListReceptionQueryDto,
+    type ListReceptionQueryDtoV2
 } from "@/schemas/reception.schema.js";
 
 import * as svc from "@/services/purchaseOrder.service.js";
@@ -54,7 +56,7 @@ export async function save(request: AuthenticatedRequest, response: Response, ne
     try {
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(request.body);
         await getDataSource().transaction(async (transactionalEntityManager) => {
-            const created = await svc.create(request, dto, transactionalEntityManager, null, Number(dto.origen), request.authToken ?? '', undefined);
+            const created = await svc.create(request, dto, transactionalEntityManager, null, Number(dto.origen), request.authToken ?? '', undefined, undefined);
             response.status(201).json({ ...created, trace_id: getTraceId() });
         });
     } catch (e) {
@@ -411,6 +413,33 @@ export async function listReception(request: AuthenticatedRequest, response: Res
     try {
         const q: ListReceptionQueryDto = ListReceptionQuerySchema.parse(request.body);
         const res = await svc.listReception(q, request.authToken ?? '');
+        return response.status(res.httpStatus).json({ ...res, trace_id: getTraceId() });
+
+    } catch (e) {
+        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e, request.body);
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006, request.authToken ?? '');
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        next(e);
+    }
+}
+
+// GET /listReceptionV2
+export async function listReceptionV2(request: AuthenticatedRequest, response: Response, next: NextFunction) {
+    try {
+        const q: ListReceptionQueryDtoV2 = ListReceptionQuerySchemaV2.parse(request.query);
+        const q2: ListReceptionQueryDto = {
+            receptionDateAtInitial : q.receptionDateAtInitial,
+            receptionDateAtEnd : q.receptionDateAtEnd,
+            createdAtInitial : q.createdAtInitial,
+            createdAtEnd : q.createdAtEnd,
+            supplierNumber: q.supplierNumber,
+            orderNumber: q.orderNumber,
+            status: q.status,
+            receptionId: q.receptionId,
+            pageNumber : parseInt(q.pageNumber,10),
+            pageSize : parseInt(q.pageSize,10)
+        };
+        const res = await svc.listReception(q2, request.authToken ?? '');
         return response.status(res.httpStatus).json({ ...res, trace_id: getTraceId() });
 
     } catch (e) {

@@ -5,11 +5,12 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn
+    JoinColumn, OneToOne
 } from 'typeorm';
 
 import { ShippingGuide } from './ShippingGuide.entity.js';
 import { StatusCatalog } from './StatusCatalog.entity.js';
+import { ShippingGuideFile } from './ShippingGuideFile.entity.js';
 
 @Entity('shipping_guide_document')
 export class ShippingGuideDocument {
@@ -47,4 +48,10 @@ export class ShippingGuideDocument {
     @ManyToOne(() => StatusCatalog)
     @JoinColumn({ name: 'status' })
     statusCatalog?: any;
+
+    
+    // relación inversa (no tiene la FK)
+    @OneToOne(() => ShippingGuideFile, (shippingGuideFile) => shippingGuideFile.shippingGuideDocument ,  { cascade: true })
+    shippingGuideFile?: ShippingGuideFile;
+
 }

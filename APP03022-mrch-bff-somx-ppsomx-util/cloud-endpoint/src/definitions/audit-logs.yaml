@@ -1,0 +1,172 @@
+AuditLogDto:
+  type: object
+  properties:
+    activity_logs_uuid:
+      type: string
+      format: uuid
+      example: "09159938-7d75-433c-ae9f-d86f57cbe3a4"
+    trace_front_id:
+      type: string
+      format: uuid
+      example: "9fa85f64-5717-4562-b3fc-2c963f66af6"
+      x-nullable: true
+    trace_id:
+      type: string
+      format: uuid
+      example: "cf431f87-5463-4f53-972a-c59e8f0d21b2"
+    duration_ms:
+      type: number
+      example: 0
+    is_error:
+      type: boolean
+      example: false
+    modulo:
+      type: string
+      example: "COMPLEMENT"
+    service_name:
+      type: string
+      example: "fiscal-front"
+    action:
+      type: string
+      example: "UPLOAD_XML"
+      x-nullable: true
+    paso:
+      type: string
+      example: "UPLOAD_XML"
+      x-nullable: true
+    message:
+      type: string
+      example: "Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago"
+      x-nullable: true
+    id_mensaje:
+      type: string
+      example: "ValidationError"
+      x-nullable: true
+    message_detail:
+      type: string
+      example: "Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago"
+      x-nullable: true
+    codigo_error:
+      type: string
+      example: "400"
+      x-nullable: true
+    tipo_evento:
+      type: string
+      enum:
+        - ERROR
+        - ALERTA
+        - INFO
+      example: "INFO"
+    log:
+      type: string
+      example: "stack trace..."
+      x-nullable: true
+    user_id:
+      type: string
+      example: "1"
+    timestamp:
+      type: string
+      format: date-time
+      example: "2026-03-27T03:24:923Z"
+    details:
+      type: object
+      additionalProperties: true
+
+CreateAuditLogDto:
+  type: object
+  required:
+    - idTransaccion
+    - idAplicativo
+    - idModulo
+    - paso
+    - tipoEvento
+  properties:
+    idTransaccion:
+      type: string
+      format: uuid
+      example: "cf431f87-5463-4f53-972a-c59e8f0d21b2"
+    idAplicativo:
+      type: string
+      example: "fiscal-front"
+    idModulo:
+      type: string
+      example: "COMPLEMENT"
+    paso:
+      type: string
+      example: "UPLOAD_XML"
+    detalle:
+      type: string
+      example: "Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago"
+      x-nullable: true
+    fechaHora:
+      type: string
+      format: date-time
+      example: "2026-03-27T03:24:923Z"
+      x-nullable: true
+    tipoEvento:
+      type: string
+      enum:
+        - ERROR
+        - ALERTA
+        - INFO
+      example: "INFO"
+    idUsuario:
+      type: string
+      example: "1"
+      x-nullable: true
+    idError:
+      type: string
+      example: "ERR-400"
+      x-nullable: true
+    idMensaje:
+      type: string
+      example: "ValidationError"
+      x-nullable: true
+    mensaje:
+      type: string
+      example: "Validation failed"
+      x-nullable: true
+    log:
+      type: string
+      example: "stack trace..."
+      x-nullable: true
+
+CreateAuditLogResponse:
+  type: object
+  properties:
+    activity_logs_uuid:
+      type: string
+      format: uuid
+      example: "09159938-7d75-433c-ae9f-d86f57cbe3a4"
+
+AuditLogsListResponse:
+  type: object
+  properties:
+    page:
+      type: integer
+      example: 1
+    limit:
+      type: integer
+      example: 10
+    total:
+      type: integer
+      example: 1
+    data:
+      type: array
+      items:
+        $ref: "#/AuditLogDto"
+
+AuditLogsByTransactionResponse:
+  type: object
+  properties:
+    idTransaccion:
+      type: string
+      format: uuid
+      example: "cf431f87-5463-4f53-972a-c59e8f0d21b2"
+    total:
+      type: integer
+      example: 1
+    data:
+      type: array
+      items:
+        $ref: "#/AuditLogDto"

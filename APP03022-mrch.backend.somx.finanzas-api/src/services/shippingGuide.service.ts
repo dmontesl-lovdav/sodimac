@@ -8,10 +8,10 @@ import type {
     ShippginGuideSummaryListDto
 } from "@/schemas/shippingGuide.schema.js";
 import { Response } from "express";
-import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
+import { ResponseHandlerDTO, ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
-import { Between, EntityManager, In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
+import { Between, DeepPartial, EntityManager, In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
 import * as svcAxios from "@/services/axios.service.js";
 import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { ShippingGuideDocument } from "@/entities/ShippingGuideDocument.entity.js";
@@ -23,6 +23,8 @@ import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrde
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
+import { ShippingGuideFile } from '@/entities/ShippingGuideFile.entity.js';
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
 //export class MyService {
 const HEADERS_NAME = [
@@ -293,15 +295,23 @@ export async function get(id: string, token: string) {
     return ResponseHandler.responseBuilder("", payload, 0, StatusCodes.OK, true, "");
 }
 
-export async function create(req: Request, createShippingGuideList: CreateShippingGuideDto[] = []
+export async function create(req: AuthenticatedRequest, createShippingGuideList: CreateShippingGuideDto[] = []
     , files: Express.Multer.File[] | null,  origin: number
-    , status: number, transactionalEntityManager: EntityManager, token: string, folder?: string) {
+    , status: number, transactionalEntityManager: EntityManager, token: string, folder?: string, saveFileOnDb?: string) {
 
     let enviados = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
     let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
 
     const entityCreatedList: ShippingGuide[] = [];
     for (const dto of createShippingGuideList) {
+        //Valida si existe el proveedor
+        const supplierList = await svcAxios.GetSuppliers(req.authToken ?? '');
+        const foundSupplier: Supplier | undefined = supplierList.find(
+            supplier => supplier.supplierNumber?.toString() === dto.vendorNumber?.toString()
+        );
+        if (foundSupplier == undefined){
+            throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.vendorNumber);
+        }
         //Verifica que no exista la guia de embarque en la  base
         const filter: FindOptionsWhere<ShippingGuide> = {};
         if (dto.guideNumber !== undefined) {
@@ -314,15 +324,29 @@ export async function create(req: Request, createShippingGuideList: CreateShippi
             //const CatMsgExc = svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016, token);
             const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
             if (dto.shipingGuideDocumentList != null && dto.shipingGuideDocumentList.length > 0) {
-                dto.shipingGuideDocumentList.forEach((shipdoc) => {
-                    const datarec: Partial<ShippingGuideDocument> = {
+                for (const shipdoc of dto.shipingGuideDocumentList) {
+                     let shippingGuideFile : ShippingGuideFile;
+                    let datarec: Partial<ShippingGuideDocument> = {
                         fileName: shipdoc.fileName,
                         fileType: shipdoc.fileType,
                         status: 1, //Nace con el Status 1
                     };
-
+                    if (origin == 2 && files != null && (saveFileOnDb?.toLowerCase() === "true")  ) {  //Solo se guardan los documentos de CP
+                        // const file = files.find(ite => ite.originalname == shipdoc.fileName);
+                        // if (file != null){
+                        //     let shippingGuideFileTmp: Partial<ShippingGuideFile> = {
+                        //         fileName : file?.originalname,
+                        //         mimeType : file?.mimetype,
+                        //         fileType : file?.mimetype.includes("xml") ? "xml" : "csv",
+                        //         data : file.buffer
+                        //     };
+                        //     shippingGuideFile =  await transactionalEntityManager.create(ShippingGuideFile, shippingGuideFileTmp);
+                        //     datarec.shippingGuideFile = shippingGuideFile;
+                        // }
+                        datarec = await saveFilesOnDb(files, shipdoc, transactionalEntityManager, datarec); 
+                    }
                     shippingGuideDocumentList.push(datarec);
-                });
+                };
             }
 
             const data = {
@@ -346,19 +370,18 @@ export async function create(req: Request, createShippingGuideList: CreateShippi
         
     
             const entityCreated =  await transactionalEntityManager.save(entityCreatedList);
-
-            if (origin == 2 && files != null  ) { //Solo se guardan los documentos de CP
-                const nameFiles = files.map(f => f.originalname).join(',');
-                enviados = await svcAxios.sendFilesToBucket(req, files, token, folder);
-                if (!enviados.success) {
-                    const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
-                    logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
-                    logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
-                    let err = JSON.stringify(enviados.detailError);
-                    throw new Error(CatMsgExc.description + JSON.stringify(enviados.detailError));
-                } else {
-                    logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
+            //Elimina campo data de la respuesta, que es el archivo en base  
+            for (const it of entityCreated){
+                if (it.shippingGuideDocuments) {
+                    it.shippingGuideDocuments.forEach(doc => {
+                        if (doc.shippingGuideFile && doc.shippingGuideFile.data) {
+                            delete (doc.shippingGuideFile as any).data;
+                        }
+                    });
                 }
+            }
+            if (origin == 2 && files != null && !(saveFileOnDb?.toLowerCase() === "true")  ) { //Solo se guardan los documentos de CP
+                enviados = await saveFilesOnBucket(files, enviados, req, token, folder, createShippingGuideList);
             }
             const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
             logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={} folder={}", entityCreated, folder);
@@ -368,6 +391,35 @@ export async function create(req: Request, createShippingGuideList: CreateShippi
         }
     }
     return resp;
+}
+
+async function saveFilesOnDb(files: Express.Multer.File[], shipdoc: { fileName: string; fileType: number; status: number; }, transactionalEntityManager: EntityManager, datarec: Partial<ShippingGuideDocument>) {
+    const file = files.find(ite => ite.originalname == shipdoc.fileName);
+    if (file != null) {
+        let shippingGuideFileTmp: Partial<ShippingGuideFile> = {
+            fileName: file?.originalname,
+            mimeType: file?.mimetype,
+            fileType: file?.mimetype.includes("xml") ? "xml" : "csv",
+            data: file.buffer
+        };
+        datarec.shippingGuideFile = await transactionalEntityManager.create(ShippingGuideFile, shippingGuideFileTmp);
+    }
+    return datarec;
+}
+
+async function saveFilesOnBucket(files: Express.Multer.File[], enviados: ResponseHandlerDTO, req: Request, token: string, folder: string | undefined, createShippingGuideList: { guideNumber: string; vendorNumber: number; truckPlate: string; originId: number; destinationId: number; deliveryType: number; status: number; deliveryDate: Date; shipingGuideDocumentList: { fileName: string; fileType: number; status: number; }[]; trailerPlate?: string | null | undefined; driverName?: string | null | undefined; driverLicense?: string | null | undefined; comments?: string | null | undefined; shippingDate?: Date | null | undefined; estimatedArrival?: Date | null | undefined; actualArrival?: Date | null | undefined; sentAt?: Date | null | undefined; createdBy?: number | null | undefined; }[]) {
+    const nameFiles = files.map(f => f.originalname).join(',');
+    enviados = await svcAxios.sendFilesToBucket(req, files, token, folder);
+    if (!enviados.success) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS207, token);
+        logger.info("❌ Register Carta Porte shippingGuide FAILED No se pudieron registrar los documentos en google storage → data={} folder={}", createShippingGuideList, folder);
+        logActivity(true, `GCS upload FAILED → bucket. NameFiles:  ${nameFiles}`, enviados.detailError, JSON.stringify({ trace_id: getTraceId() }));
+        let err = JSON.stringify(enviados.detailError);
+        throw new Error(CatMsgExc.description + JSON.stringify(enviados.detailError));
+    } else {
+        logActivity(false, `GCS upload SUCCESS → bucket. NameFiles:  ${nameFiles}`, null, JSON.stringify({ trace_id: getTraceId() }));
+    }
+    return enviados;
 }
 
 export async function updateOneByUuid(id: string, dto: UpdateShippingGuideDto, token: string) {

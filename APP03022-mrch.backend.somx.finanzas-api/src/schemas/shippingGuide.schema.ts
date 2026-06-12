@@ -175,6 +175,7 @@ export const UpdateShippingGuideStatusSchema = z
 
 export const IdParamSchema = z.object({ uuid: UUID });
 export const IdParamGuideSchema = z.object({ idGuide: z.string() });
+export const NameFileParamSchema = z.object({ nameFile: z.string() });
 
 export type CreateShippingGuideDto = z.infer<typeof CreateShippingGuideSchema>;
 export type UpdateShippingGuideDto = z.infer<typeof UpdateShippingGuideSchema>;

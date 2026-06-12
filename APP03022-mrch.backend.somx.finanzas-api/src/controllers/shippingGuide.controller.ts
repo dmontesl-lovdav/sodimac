@@ -19,6 +19,7 @@ import { StatusCodes } from 'http-status-codes';
 import { logger } from "@/utils/logger.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
 import * as svcAxios from "@/services/axios.service.js";
+import {downloadFile} from "@/services/storageGcp.service.js";
 import 'dotenv/config';
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
@@ -59,7 +60,7 @@ export async function list(req: AuthenticatedRequest, res: Response, next: NextF
         const response = await shippingGuideService.listPaginated(q, vendors);
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
-        logger.error("❌ ShippingGuide.csvExport. ERROR  : No fue posible listar las guias de enbarque. FAILED → data={} cause={}", req.query, e); 
+        logger.error("❌ ShippingGuide.list. ERROR  : No fue posible listar las guias de enbarque. FAILED → data={} cause={}", req.query, e); 
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC013, req.authToken ?? '');
         logActivity(true, 'ERROR  : No fue posible listar las guias de enbarque, Favor de validar', e , req.query);
         res.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
@@ -68,16 +69,6 @@ export async function list(req: AuthenticatedRequest, res: Response, next: NextF
 }
 
 
-// export async function list(req: Request, res: Response, next: NextFunction) {
-//     try {
-//         const q: ListShippingGuideQuery = ListShippingGuideQuerySchema.parse(req.body);
-//         const response = await shippingGuideService.listPaginated(q);
-//         res.status(response.httpStatus).json(response);
-//     } catch (e) {
-//         res.status(400).json(ResponseHandler.responseBuilder("ERROR: " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-//         next(e);
-//     }
-// }
 
 // GET /shipping-guides/:uuid
 export async function getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -93,21 +84,6 @@ export async function getById(req: AuthenticatedRequest, res: Response, next: Ne
     }
 }
 
-// POST /shipping-guides  //ESTE CREATE SE SUSTITUYE POR EL CONTROLADOR cartaPorte.controller.ts
-// export async function create(req: Request, res: Response, next: NextFunction) {
-//     try {
-//         const dto: CreateShippingGuideParentDto = CreateShippingGuideSchemaParent.parse(req.body);
-//         const shippingGuideSchmaString: string = dto.content;
-//         const data: CreateShippingGuideDto = CreateShippingGuideSchema.parse(JSON.parse(shippingGuideSchmaString));
-//         const files = req.files as Express.Multer.File[];
-
-//         const created = await svc.create(data, files, dto.folder);
-//         res.status(201).json(created);
-//     } catch (e) { 
-//         res.status(400).json(ResponseHandler.responseBuilder("ERROR (BUS2004) : No fue posible registrar la guía carta porte, Favor de validar " + e ,null,-1, StatusCodes.BAD_REQUEST, false, ""));
-//         next(e);
-//     }
-// }
 
 // PUT /shipping-guides/:uuid
 export async function updateByUuid(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -220,3 +196,15 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
         next(e);
     }
 }
+
+// GET //shipping-guide/downloadFile
+export async function downloadOneFile(req: Request, res: Response, next: NextFunction) {
+    try {
+        // Delegar al servicio
+        return downloadFile(req, res, next);
+
+    } catch (error) {
+        next(error);
+    }
+}
+

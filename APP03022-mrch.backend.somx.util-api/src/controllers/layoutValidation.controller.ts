@@ -20,7 +20,11 @@ export async function validate(req: Request, res: Response, next: NextFunction) 
             return res.status(400).json({ error: 'Parámetros tipoCatalogoSeleccionado y nombreCatalogo son requeridos' });
         }
 
-        const result = await layoutService.validateLayout(file.buffer, tipo, nombre);
+        const modoRaw = String(req.body.modoCarga ?? '').trim().toUpperCase();
+        const modoCarga: layoutService.LayoutValidationMode =
+            modoRaw === 'IMPORTAR_ELEMENTOS' ? 'IMPORTAR_ELEMENTOS' : 'NUEVO_CATALOGO';
+
+        const result = await layoutService.validateLayout(file.buffer, tipo, nombre, modoCarga);
         res.json(result);
     } catch (err) {
         next(err);

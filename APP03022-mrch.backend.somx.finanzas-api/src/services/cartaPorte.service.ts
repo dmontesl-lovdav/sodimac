@@ -18,14 +18,15 @@ import * as svcAxios from "@/services/axios.service.js";
 import 'dotenv/config';
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import type { Request } from "express";
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
 
 
-export async function createGuia(req: Request, dtoShipping: CreateShippingGuideDto[] = [], files: Express.Multer.File[],  origin: number, token: string, folder?: string) {
+export async function createGuia(req: AuthenticatedRequest, dtoShipping: CreateShippingGuideDto[] = [], files: Express.Multer.File[],  origin: number, token: string, folder?: string, saveFileOnDb?: string) {
   const status = 1; //Nace Guia de embarque sin OC
   let created : any;
     await getDataSource().transaction( async (transactionalEntityManager) => {
-    created = await svcShipping.create(req, dtoShipping, files, origin, status, transactionalEntityManager, token, folder);
+    created = await svcShipping.create(req, dtoShipping, files, origin, status, transactionalEntityManager, token, folder, saveFileOnDb);
     });
     return created;
 }
@@ -33,21 +34,22 @@ export async function createGuia(req: Request, dtoShipping: CreateShippingGuideD
 export async function createOc(req: Request,dtoPurchase: CreatePurchaseOrderDto, origin: number, token: string) {
   let created : any;
   await getDataSource().transaction( async (transactionalEntityManager) => {
-      created = await svcPurchaseO.create(req, dtoPurchase, transactionalEntityManager,null, origin, token, undefined);
+      created = await svcPurchaseO.create(req, dtoPurchase, transactionalEntityManager,null, origin, token, undefined, undefined);
     
   });
   return created;
 }
 
-
-export async function createAll(req: Request, dtoPurchase: CreatePurchaseOrderDto, files: Express.Multer.File[],  origin: number, token: string, folder?: string) {
+export async function createAll(req: Request, dtoPurchase: CreatePurchaseOrderDto, files: Express.Multer.File[],  origin: number, token: string, folder?: string, saveFileOnDb?: string) {
   let created : any;
   await getDataSource().transaction( async (transactionalEntityManager) => {     
-    const createdOC = await svcPurchaseO.create(req, dtoPurchase, transactionalEntityManager, files, origin, token, folder);
+    const createdOC = await svcPurchaseO.create(req, dtoPurchase, transactionalEntityManager, files, origin, token, folder, saveFileOnDb);
   });
   const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS211, token);
   return ResponseHandler.responseBuilder(CatMsgExc.description ,null,0, StatusCodes.CREATED, true, "");
 }
+
+
 
 
 

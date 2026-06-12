@@ -1,5 +1,6 @@
 FROM registrysecaas.azurecr.io/secaas/openjdk-jdk:v21.0.6
 
+USER root
 RUN addgroup -g 1000 java && adduser -u 1000 -S -G java -D java
 LABEL maintainer="DevOps Merchandise <DevOpsMerchandising@falabella.onmicrosoft.com>"
 WORKDIR /app
@@ -20,4 +21,3 @@ COPY --chown=java:java *.jar app.jar
 
 EXPOSE 8081
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Duser.timezone=America/Santiago", "-Duser.language=en", "-Duser.country=US", "-jar", "app.jar"]
-

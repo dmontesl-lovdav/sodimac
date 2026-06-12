@@ -11,7 +11,7 @@ export const UploadFilesSchema = z.object({
 });
 
 export const DownloadFileSchema = z.object({
-    folder: toString,
+    folder: toString.optional(),
     fileName: toString,
 });
 

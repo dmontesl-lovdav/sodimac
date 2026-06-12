@@ -222,10 +222,12 @@ export async function uploadMultiple(req: Request, files: Express.Multer.File[],
 
 // GET /storage-gcp/download
 export async function downloadFile(req: Request, res: Response, next: NextFunction) {
+    const query: DownloadFileDto = (res.locals.query as DownloadFileDto | undefined) ?? DownloadFileSchema.parse(req.query);
+    const prefix = resolvePrefix(req);
+    const objectName = buildObjectName(prefix, query.folder?? '', query.fileName);
     try {
-        const query: DownloadFileDto = (res.locals.query as DownloadFileDto | undefined) ?? DownloadFileSchema.parse(req.query);
-        const prefix = resolvePrefix(req);
-        const objectName = buildObjectName(prefix, query.folder, query.fileName);
+
+
         const file = bucket.file(objectName);
 
         const [exists] = await file.exists();
@@ -236,9 +238,15 @@ export async function downloadFile(req: Request, res: Response, next: NextFuncti
         }
 
         const safeFileName = path.posix.basename(query.fileName).replace(/"/g, "");
+        const [metadata] = await file.getMetadata();
         res.setHeader("Content-Disposition", `attachment; filename="${safeFileName}"`);
+        res.setHeader("Content-Type", metadata.contentType || "application/octet-stream");
+        
+        if (metadata.size) {
+            res.setHeader("Content-Length", metadata.size);
+        }
 
-        file
+        return file
             .createReadStream()
             .on("error", (err) => {
                 logger.error(`GCS download FAILED → object=${objectName} cause=${err.message}`);
@@ -252,7 +260,12 @@ export async function downloadFile(req: Request, res: Response, next: NextFuncti
             })
             .pipe(res);
     } catch (e) {
-        logger.error(`GCS download FAILED → bucket=${bucketName} cause=${(e as Error).message}`);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logger.error(`GCS download FAILED → bucket=${bucketName}, object=${objectName}, cause=${(e as Error).message}`);
+        logActivity(true, `GCS download FAILED → bucket=${bucketName} object=${objectName} cause=${(e as Error).message}` , err, JSON.stringify({ trace_id: getTraceId() }));
         next(e);
     }
 }

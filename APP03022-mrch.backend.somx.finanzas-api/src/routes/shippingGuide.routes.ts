@@ -7,7 +7,9 @@ import {
     UpdateShippingGuideSchema,
     CancelShippingGuidesSchema,
     UpdateShippingGuideStatusSchema,
+    NameFileParamSchema,
 } from "@/schemas/shippingGuide.schema.js";
+import {  DownloadFileSchema} from "@/schemas/storageGcp.schema.js";
 import { activityLogger, logBeforeMethod } from "@/middlewares/logger.js";
 
 const router = Router();
@@ -16,6 +18,7 @@ const controllerName = "ShippingGuide";
 
 router.use(activityLogger(controllerName));
 
+router.get("/downloadFile", validateQuery(DownloadFileSchema), logBeforeMethod("downloadFile"), ctrl.downloadOneFile);
 router.get("/", validateQuery(ListShippingGuideQuerySchema), logBeforeMethod("list"), ctrl.list);
 router.get("/csv", validateQuery(ListShippingGuideQuerySchema), logBeforeMethod("csvExport"), ctrl.csvExport);
 router.post("/cancel", validateBody(CancelShippingGuidesSchema), logBeforeMethod("cancel"), ctrl.cancel);

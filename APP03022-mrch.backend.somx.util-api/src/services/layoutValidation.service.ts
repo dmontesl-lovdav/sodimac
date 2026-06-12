@@ -182,11 +182,13 @@ function build(errs: LayoutValidationError[], rows: number): LayoutValidationRes
         rowsProcessed: rows
     };
 }
+export type LayoutValidationMode = 'NUEVO_CATALOGO' | 'IMPORTAR_ELEMENTOS';
 
 export async function validateLayout(
     buffer: Buffer,
     tipoSel: string,
-    nombre: string
+    nombre: string,
+    modoCarga: LayoutValidationMode = 'NUEVO_CATALOGO'
 ): Promise<LayoutValidationResponse> {
     const errs: LayoutValidationError[] = [];
     const elemFirstRow = new Map<string, number>();
@@ -231,13 +233,15 @@ export async function validateLayout(
 
         if (!validateHeaders(sheet, errs)) return build(errs, rows);
 
-        if ((await headerRepo.findByName(nombre)).length > 0) {
-            errs.push({
-                row: 0,
-                cell: 'N/A',
-                column: 'nombre',
-                message: `El catálogo '${nombre}' ya existe en el sistema. No se permite duplicar nombres de catálogos.`
-            });
+        if (modoCarga === 'NUEVO_CATALOGO') {
+            if ((await headerRepo.findByName(nombre)).length > 0) {
+                errs.push({
+                    row: 0,
+                    cell: 'N/A',
+                    column: 'nombre',
+                    message: `El catálogo '${nombre}' ya existe en el sistema. No se permite duplicar nombres de catálogos.`
+                });
+            }
         }
 
         const headerRow = sheet.getRow(1);

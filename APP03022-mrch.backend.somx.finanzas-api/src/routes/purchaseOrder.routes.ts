@@ -10,6 +10,7 @@ import {
 } from "@/schemas/purchaseOrder.schema.js";
 import {
     ListReceptionQuerySchema,
+    ListReceptionQuerySchemaV2,
 } from "@/schemas/reception.schema.js";
 
 const router = Router();
@@ -19,6 +20,7 @@ const controllerName = "PurchaseOrders";
 router.use(activityLogger(controllerName));
 
 router.get("/listReception", validateBody(ListReceptionQuerySchema), logBeforeMethod("listReception"), ctrl.listReception);
+router.get("/listReceptionV2", validateQuery(ListReceptionQuerySchemaV2), logBeforeMethod("listReceptionV2"), ctrl.listReceptionV2);
 router.patch("/updateReception", validateBody(UpdateStatusReceptionSchema), logBeforeMethod("updateReception"), ctrl.updateReception);
 router.get("/reception/:uuid", logBeforeMethod("getReceptionById"), ctrl.getReceptionById);
 router.patch("/reception/:uuid", validateBody(UpdateStatusReceptionSchemaByUuid), logBeforeMethod("updateReceptionStatusByUuid"), ctrl.updateReceptionStatusByUuid);

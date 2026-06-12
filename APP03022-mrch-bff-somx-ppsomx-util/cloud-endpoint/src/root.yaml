@@ -146,6 +146,15 @@ paths:
   /conversions/{id}/principal:
     $ref: "./paths/conversion.yaml#/conversions-principal"
 
+  /audit-logs:
+    $ref: "./paths/audit-logs.yaml#/audit-logs"
+  /audit-logs/export/csv:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-export-csv"
+  /audit-logs/transaction/{idTransaccion}:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-by-transaction"
+  /audit-logs/{id}:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-by-id"
+
   /security/profile-users:
     $ref: "./paths/security.yaml#/security-profile-users"
   /security/profile-modules:
@@ -377,6 +386,17 @@ definitions:
     $ref: "./definitions/conversion.yaml#/ConversionPrincipalDto"
   ConversionBatchDeleteDto:
     $ref: "./definitions/conversion.yaml#/ConversionBatchDeleteDto"
+
+  AuditLogDto:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogDto"
+  CreateAuditLogDto:
+    $ref: "./definitions/audit-logs.yaml#/CreateAuditLogDto"
+  CreateAuditLogResponse:
+    $ref: "./definitions/audit-logs.yaml#/CreateAuditLogResponse"
+  AuditLogsListResponse:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogsListResponse"
+  AuditLogsByTransactionResponse:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogsByTransactionResponse"
 
   SecuritySummaryRow:
     $ref: "./definitions/security.yaml#/SecuritySummaryRow"

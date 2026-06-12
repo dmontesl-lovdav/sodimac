@@ -7,7 +7,7 @@ import applicationMsgRouter from "./applicationMsg.routes.js";
 import processRouter from "./process.routes.js";
 import itemTypeRouter from "./itemType.routes.js";
 import itemRouter from "./item.routes.js";
-import activityLogsRouter from "./activityLogs.routes.js";
+import auditLogRouter from "./auditLog.routes.js";
 import securityRouter from "./security.routes.js";
 
 import catalogRouter from "./catalog.routes.js";
@@ -27,7 +27,7 @@ router.use("/application-messages", applicationMsgRouter);
 router.use("/processes", processRouter);
 router.use("/item-types", itemTypeRouter);
 router.use("/items", itemRouter);
-router.use("/activity-logs", activityLogsRouter);
+router.use("/audit-logs", auditLogRouter);
 router.use("/security", securityRouter);
 
 router.use("/catalogos", catalogosRouter);

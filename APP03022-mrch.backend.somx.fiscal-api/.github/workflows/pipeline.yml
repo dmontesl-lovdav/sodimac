@@ -9,10 +9,14 @@ on:
       - main
       - master
       - hotfix/**
-      - "v*.*.*" 
+      - "v*.*.*"
     tags:
-      - "v*.*.*"      # versión semántica: v1.0.0, v2.1.4, etc.
-  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+      - "v*.*.*" # versión semántica: v1.0.0, v2.1.4, etc.
+  workflow_dispatch: # 👈 habilita el botón "Run workflow"
+
+permissions:
+  id-token: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,14 +24,14 @@ concurrency:
 
 jobs:
   build:
-    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/build-java-maven-generic.yml@main
+    uses: falabella-stores-and-merchandise/FTI00382-merch-store-template/.github/workflows/build-java-maven-generic-gcr.yml@main
     secrets: inherit
     with:
-      container_image: "maven:3.9.9-eclipse-temurin-21"
+      container_image: "gcr.io/fal-corp-stro-ops-prd/pipeline-maven:3.9.12-jdk-21"
       command_build: "mvn --batch-mode --errors package -DskipTests"
-      command_test: "mvn --batch-mode test"
+      command_test: "mvn --batch-mode org.jacoco:jacoco-maven-plugin:prepare-agent test org.jacoco:jacoco-maven-plugin:report"
       runners: ${{ vars.RUNNER_MERCH }}
-      
+
   build_docker:
     needs: build
     permissions:
@@ -38,7 +42,7 @@ jobs:
     with:
       language: "java"
       runners: ${{ vars.RUNNER_MERCH }}
-      
+
   deploy:
     needs: build_docker
     permissions:

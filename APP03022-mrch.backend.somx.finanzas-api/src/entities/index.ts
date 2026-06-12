@@ -16,6 +16,7 @@ export { ShippingGuidePurchaseOrder } from './ShippingGuidePurchaseOrder.entity.
 export { SupplierBlock } from './SupplierBlock.entity.js';
 export { Addendum } from './tenant_fiscal.addendum.entity.js';
 export { Invoice } from './tenant_fiscal.invoice.entity.js';
+export { ShippingGuideFile } from './ShippingGuideFile.entity.js';
 
 // Entidades adicionales (fuera del modelo STM-333)
 export { FiscalPayment } from './FiscalPayment.entity.js';

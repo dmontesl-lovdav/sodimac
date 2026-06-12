@@ -40,7 +40,7 @@ export async function createGuia(req: AuthenticatedRequest, res: Response, next:
         const createShippingGuideDto: CreateShippingGuideDto[] = dataList.shippingGuideList; 
         const files = req.files as Express.Multer.File[];
 
-        const created =  await cartaPorteService.createGuia(req, createShippingGuideDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder);
+        const created =  await cartaPorteService.createGuia(req, createShippingGuideDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder, dtoParent.saveFileOnDb);
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
         let err = "";
@@ -86,7 +86,7 @@ export async function createall(req: AuthenticatedRequest, res: Response, next: 
         const createPurchaseOrderDto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(JSON.parse(shippingAndOCSchmaString));
         const files = req.files as Express.Multer.File[];
 
-        const created = await cartaPorteService.createAll(req, createPurchaseOrderDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder,);
+        const created = await cartaPorteService.createAll(req, createPurchaseOrderDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder, dtoParent.saveFileOnDb);
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
                 let err = "";
@@ -101,7 +101,8 @@ export async function createall(req: AuthenticatedRequest, res: Response, next: 
     }
 }
 
-// GET /findAllGuia
+
+// POST /findAllGuia
 export async function findAllGuia(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const dto: ListShippingGuideQuery = ListShippingGuideQuerySchema.parse(request.body);

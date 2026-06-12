@@ -142,8 +142,12 @@ export async function deleteSupplier(id: number, updatedBy: string): Promise<boo
 }
 
 export async function findAllSupplierTypes(): Promise<SupplierTypeDto[]> {
-    const types = await supplierTypeRepo.findByStatus(SupplierType.STATUS_ACTIVE);
-    return supplierMapper.toSupplierTypeDtoList(types);
+    const rows = await supplierTypeRepo.findActiveFromCatTipoProveedor();
+    return rows.map((r) => ({
+        id: r.id,
+        code: r.code,
+        description: r.description,
+    }));
 }
 
 export async function findAllPaymentConditions(): Promise<PaymentConditionDto[]> {

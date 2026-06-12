@@ -284,7 +284,7 @@ async function validarStatus(reception: Reception, newStatus: number, optionId: 
 
 
 export async function create(req: Request, dto: CreatePurchaseOrderDto, transactionalEntityManager: EntityManager
-    ,files: Express.Multer.File[] | null, origin: number, token: string, folder?: string) {
+    ,files: Express.Multer.File[] | null, origin: number, token: string, folder?: string, saveFileOnDb?: string) {
 
     var resp = ResponseHandler.responseBuilder("",null,0, StatusCodes.CREATED, true, "");
 
@@ -377,7 +377,7 @@ export async function create(req: Request, dto: CreatePurchaseOrderDto, transact
                 originId: origin,
                 amount: z.coerce.number().parse(totalOCValue),
                 purchaseOrderDate: dto.purchaseOrderDate,
-                status: 1, //Nace con el valor 1 (1 - Disponible)
+                status: 0, //Nace con el valor 0 (0 - Disponible)
                 createdBy: dto.createdBy,
                 receptions: receptionsList
             };
@@ -394,12 +394,10 @@ export async function create(req: Request, dto: CreatePurchaseOrderDto, transact
                 
             });
 
-            
             const allReceptions: DeepPartial<Reception>[] = [
             ...(recsactuales?.map(r => ({ ...r })) ?? []), // copiar a objeto simple
             ...receptionsList, // ya es DeepPartial<Reception>[]
             ];
-            
             
             const receptionEntities: Reception[] = await Promise.all(
             allReceptions.map(p =>
@@ -407,20 +405,7 @@ export async function create(req: Request, dto: CreatePurchaseOrderDto, transact
             )
             );
 
-            // let allReceptions: Reception[] = [
-            // ...(recsactuales || []),
-            // ...receptionsList,
-            // ] ;
-
             purchaseOrder.receptions = receptionEntities;
-
-            
-            // // Ahora sí, son Reception[]
-            // purchaseOrder.receptions = [
-            // ...((purchaseOrder.receptions ?? []) as Reception[]),
-            // ...receptionEntities,
-            // ];
-
 
             // Calculate the total sum of the 'value' field
             const totalOCValue: number = allReceptions.reduce((accumulator, currentItem) => {
@@ -437,7 +422,7 @@ export async function create(req: Request, dto: CreatePurchaseOrderDto, transact
             const status = 2; //Nace Guia de embarque Con OC
             let created : ResponseHandlerDTO;
             
-            created = await svcShipping.create(req, dto.shippingGuideList, files,origin, status, transactionalEntityManager, token, folder);
+            created = await svcShipping.create(req, dto.shippingGuideList, files,origin, status, transactionalEntityManager, token, folder, saveFileOnDb);
             if(!created.success){    
                 const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC015, token);
                 throw new Error(CatMsgExc.description + created.message + created.detailError);
@@ -462,7 +447,8 @@ export async function create(req: Request, dto: CreatePurchaseOrderDto, transact
 
                 const shippingGuideUpdate: Partial<ShippingGuide> = {
                     status: 2, //La Guia ya se le actualiza estatus = 2 "Pendiente de Facturar",
-                    updatedAt : new Date()
+                    updatedAt : new Date(),
+                    isStatusUpdated: true
                     
                 };
                 const entityShippingGuide = transactionalEntityManager.update(ShippingGuide, { shippingGuideId: shippingGuide.shippingGuideId }, shippingGuideUpdate);

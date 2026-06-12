@@ -12,13 +12,11 @@ on:
       - hotfix/**
     tags:
       - "v*.*.*"
-  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+  workflow_dispatch: # 👈 habilita el botón "Run workflow"
 
-  
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 
 jobs:
   build:
@@ -28,7 +26,7 @@ jobs:
       container_image: "gcr.io/fal-corp-stro-ops-prd/pipeline-node-sdk:20"
       command_build: "npm run build"
       command_dependency: "npm install"
-      command_test: "npm test"
+      command_test: "npm run test:cov"
       runners: ${{ vars.RUNNER_MERCH }}
 
   build_docker:
@@ -41,7 +39,7 @@ jobs:
     with:
       language: "node"
       runners: ${{ vars.RUNNER_MERCH }}
-      
+
   deploy:
     needs: build_docker
     permissions:

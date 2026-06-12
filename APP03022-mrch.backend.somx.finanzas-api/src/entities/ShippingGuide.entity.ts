@@ -80,7 +80,7 @@ export class ShippingGuide {
     statusCatalog?: StatusCatalog;
 
     // Relaciones
-    @OneToMany(() => ShippingGuideDocument, shippingGuideDocument => shippingGuideDocument.shippingGuide,  { cascade: true })
+    @OneToMany(() => ShippingGuideDocument, shippingGuideDocument => shippingGuideDocument.shippingGuide,  { cascade: true, eager: true })
     shippingGuideDocuments?: ShippingGuideDocument[];
 
     @OneToMany(() => ShippingGuidePurchaseOrder, shippingGuidePurchaseOrder => shippingGuidePurchaseOrder.shippingGuide, { cascade: true, eager: true })

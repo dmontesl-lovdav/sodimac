@@ -1,5 +1,6 @@
 import { datasource } from '@/config/typeorm-datasource.js';
 import { CatalogDetail } from '@/entities/CatalogDetail.entity.js';
+import { DictionaryLang } from '@/entities/DictionaryLang.entity.js';
 import type { SelectQueryBuilder } from 'typeorm';
 
 export const repo = () => datasource.getRepository(CatalogDetail);
@@ -206,7 +207,7 @@ const SORT_FIELD_MAP: Record<string, string> = {
     key: 'd.key',
     sortOrder: 'd.sortOrder',
     status: 'd.status',
-    element: 'd.key'
+    element: 'COALESCE(dict.description, d.key)'
 };
 
 function applyElementFilters(
@@ -220,10 +221,15 @@ function applyElementFilters(
         qb.andWhere('d.id = :id', { id: filter.elementId });
     }
     if (filter.element && filter.element.trim() !== '') {
-        qb.andWhere('LOWER(d.key) LIKE LOWER(:elem)', { elem: `%${filter.element}%` });
+        const term = `%${filter.element.trim().toLowerCase()}%`;
+        qb.andWhere(
+            '(LOWER(dict.description) LIKE :elem OR LOWER(d.key) LIKE :elem)',
+            { elem: term }
+        );
     }
     if (filter.value && filter.value.trim() !== '') {
-        qb.andWhere('LOWER(d.value) LIKE LOWER(:val)', { val: `%${filter.value}%` });
+        const term = `%${filter.value.trim().toLowerCase()}%`;
+        qb.andWhere('LOWER(d.value) LIKE :val', { val: term });
     }
     if (filter.parentCatalogId != null) {
         qb.andWhere('d.parentCatalogId = :parentCatalogId', { parentCatalogId: filter.parentCatalogId });
@@ -235,7 +241,8 @@ function applyElementFilters(
         qb.andWhere('d.status = :status', { status: filter.status });
     }
     if (filter.key && filter.key.trim() !== '') {
-        qb.andWhere('LOWER(d.key) LIKE LOWER(:key)', { key: `%${filter.key}%` });
+        const term = `%${filter.key.trim().toLowerCase()}%`;
+        qb.andWhere('LOWER(d.key) LIKE :key', { key: term });
     }
     return qb;
 }
@@ -244,7 +251,14 @@ export async function findElementsPaged(
     filter: ElementFilter,
     options: PageOptions
 ): Promise<PagedResult<CatalogDetail>> {
-    const qb = repo().createQueryBuilder('d').leftJoinAndSelect('d.header', 'header');
+    const qb = repo()
+        .createQueryBuilder('d')
+        .leftJoinAndSelect('d.header', 'header')
+        .leftJoin(
+            DictionaryLang,
+            'dict',
+            'dict.dictId = d.dictId AND dict.langId = 1'
+        );
     applyElementFilters(qb, filter);
 
     const sortColumn = SORT_FIELD_MAP[options.sortBy] ?? 'd.createdAt';

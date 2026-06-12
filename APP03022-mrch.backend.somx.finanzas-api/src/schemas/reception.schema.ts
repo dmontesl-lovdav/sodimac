@@ -18,6 +18,20 @@ export const ListReceptionQuerySchema = z.object({
     pageSize: z.number().int(),
 });
 
+export const ListReceptionQuerySchemaV2 = z.object({
+    receptionDateAtInitial: z.coerce.date().nonoptional({message: "Invalid field `receptionDateAtInitial`. value cannot be empty, null or blank"}),
+    receptionDateAtEnd: z.coerce.date().nonoptional({message: "Invalid field `receptionDateAtEnd`. value cannot be empty, null or blank"}),
+    createdAtInitial: z.coerce.date().optional(),
+    createdAtEnd: z.coerce.date().optional(),
+    supplierNumber: z.number().int().optional(),
+    status: z.number().int().optional(),
+    orderNumber: z.string().optional(),
+    receptionId: z.string().optional(),
+
+    pageNumber: z.string(),
+    pageSize: z.string(),
+});
+
 /** Para crear */
 export const CreateReceiptionSchema = z.object({
     receptionNumber: z.string(),
@@ -37,4 +51,5 @@ export const CreateReceiptionSchema = z.object({
 });
 
 export type ListReceptionQueryDto = z.infer<typeof ListReceptionQuerySchema>;
+export type ListReceptionQueryDtoV2 = z.infer<typeof ListReceptionQuerySchemaV2>;
 export type CreateReceiptionDto = z.infer<typeof CreateReceiptionSchema>;

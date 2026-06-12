@@ -23,6 +23,7 @@ export const BaseSchemaParent = z.object({
 export const BaseArrayFilesSchemaParent = BaseSchemaParent.extend({
     folder: z.string().optional(),
     origen: z.string(),
+    saveFileOnDb: z.string().optional(),
     files: z.array(multerFile).optional().refine((files) => {
         if(files != undefined){
             return files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.mimetype));

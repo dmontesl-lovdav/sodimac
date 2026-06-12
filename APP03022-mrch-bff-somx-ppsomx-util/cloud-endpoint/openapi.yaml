@@ -3085,6 +3085,281 @@ paths:
           description: Not found
       security:
         - bearerAuth: []
+  /audit-logs:
+    get:
+      tags:
+        - audit-logs
+      summary: List audit logs
+      operationId: listAuditLogs
+      produces:
+        - application/json
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: true
+          description: Start datetime
+          type: string
+          format: date-time
+        - name: fechaFin
+          in: query
+          required: true
+          description: End datetime
+          type: string
+          format: date-time
+        - name: idAplicativo
+          in: query
+          required: false
+          description: Service/App name
+          type: string
+        - name: modulo
+          in: query
+          required: false
+          description: Module
+          type: string
+        - name: idTransaccion
+          in: query
+          required: false
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+        - name: tipoEvento
+          in: query
+          required: false
+          description: Event type
+          type: string
+          enum:
+            - ALL
+            - ERROR
+            - ALERTA
+            - INFO
+        - name: codigoError
+          in: query
+          required: false
+          description: Error code
+          type: string
+        - name: search
+          in: query
+          required: false
+          description: Free text search
+          type: string
+        - name: page
+          in: query
+          required: false
+          description: Page number
+          type: integer
+          default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Page size
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: List of audit logs
+          schema:
+            $ref: '#/definitions/AuditLogsListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - audit-logs
+      summary: Create audit log
+      operationId: createAuditLog
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateAuditLogDto'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/CreateAuditLogResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  /audit-logs/export/csv:
+    get:
+      tags:
+        - audit-logs
+      summary: Export audit logs as CSV
+      operationId: exportAuditLogsCsv
+      produces:
+        - text/csv
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: true
+          description: Start datetime
+          type: string
+          format: date-time
+        - name: fechaFin
+          in: query
+          required: true
+          description: End datetime
+          type: string
+          format: date-time
+        - name: idAplicativo
+          in: query
+          required: false
+          description: Service/App name
+          type: string
+        - name: modulo
+          in: query
+          required: false
+          description: Module
+          type: string
+        - name: idTransaccion
+          in: query
+          required: false
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+        - name: tipoEvento
+          in: query
+          required: false
+          description: Event type
+          type: string
+          enum:
+            - ALL
+            - ERROR
+            - ALERTA
+            - INFO
+        - name: codigoError
+          in: query
+          required: false
+          description: Error code
+          type: string
+        - name: search
+          in: query
+          required: false
+          description: Free text search
+          type: string
+      responses:
+        '200':
+          description: CSV file
+          schema:
+            type: string
+            example: 'IdLog,IdTransaccion,...'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/audit-logs/transaction/{idTransaccion}':
+    get:
+      tags:
+        - audit-logs
+      summary: Get audit logs by transaction id
+      operationId: getAuditLogsByTransaction
+      produces:
+        - application/json
+      parameters:
+        - name: idTransaccion
+          in: path
+          required: true
+          description: Transaction id (trace_id)
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Audit logs grouped by transaction id
+          schema:
+            $ref: '#/definitions/AuditLogsByTransactionResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/audit-logs/{id}':
+    get:
+      tags:
+        - audit-logs
+      summary: Get audit log detail by id
+      operationId: getAuditLogDetail
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Audit log UUID
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Audit log detail
+          schema:
+            $ref: '#/definitions/AuditLogDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /security/profile-users:
     get:
       tags:
@@ -6162,6 +6437,174 @@ definitions:
         items:
           type: integer
           format: int32
+  AuditLogDto:
+    type: object
+    properties:
+      activity_logs_uuid:
+        type: string
+        format: uuid
+        example: 09159938-7d75-433c-ae9f-d86f57cbe3a4
+      trace_front_id:
+        type: string
+        format: uuid
+        example: 9fa85f64-5717-4562-b3fc-2c963f66af6
+        x-nullable: true
+      trace_id:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      duration_ms:
+        type: number
+        example: 0
+      is_error:
+        type: boolean
+        example: false
+      modulo:
+        type: string
+        example: COMPLEMENT
+      service_name:
+        type: string
+        example: fiscal-front
+      action:
+        type: string
+        example: UPLOAD_XML
+        x-nullable: true
+      paso:
+        type: string
+        example: UPLOAD_XML
+        x-nullable: true
+      message:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      id_mensaje:
+        type: string
+        example: ValidationError
+        x-nullable: true
+      message_detail:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      codigo_error:
+        type: string
+        example: '400'
+        x-nullable: true
+      tipo_evento:
+        type: string
+        enum:
+          - ERROR
+          - ALERTA
+          - INFO
+        example: INFO
+      log:
+        type: string
+        example: stack trace...
+        x-nullable: true
+      user_id:
+        type: string
+        example: '1'
+      timestamp:
+        type: string
+        format: date-time
+        example: '2026-03-27T03:24:923Z'
+      details:
+        type: object
+        additionalProperties: true
+  CreateAuditLogDto:
+    type: object
+    required:
+      - idTransaccion
+      - idAplicativo
+      - idModulo
+      - paso
+      - tipoEvento
+    properties:
+      idTransaccion:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      idAplicativo:
+        type: string
+        example: fiscal-front
+      idModulo:
+        type: string
+        example: COMPLEMENT
+      paso:
+        type: string
+        example: UPLOAD_XML
+      detalle:
+        type: string
+        example: Usuario 1 sube el archivo complemento-pago-test.xml de tipo XML en la pantalla complemento de pago
+        x-nullable: true
+      fechaHora:
+        type: string
+        format: date-time
+        example: '2026-03-27T03:24:923Z'
+        x-nullable: true
+      tipoEvento:
+        type: string
+        enum:
+          - ERROR
+          - ALERTA
+          - INFO
+        example: INFO
+      idUsuario:
+        type: string
+        example: '1'
+        x-nullable: true
+      idError:
+        type: string
+        example: ERR-400
+        x-nullable: true
+      idMensaje:
+        type: string
+        example: ValidationError
+        x-nullable: true
+      mensaje:
+        type: string
+        example: Validation failed
+        x-nullable: true
+      log:
+        type: string
+        example: stack trace...
+        x-nullable: true
+  CreateAuditLogResponse:
+    type: object
+    properties:
+      activity_logs_uuid:
+        type: string
+        format: uuid
+        example: 09159938-7d75-433c-ae9f-d86f57cbe3a4
+  AuditLogsListResponse:
+    type: object
+    properties:
+      page:
+        type: integer
+        example: 1
+      limit:
+        type: integer
+        example: 10
+      total:
+        type: integer
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/AuditLogDto'
+  AuditLogsByTransactionResponse:
+    type: object
+    properties:
+      idTransaccion:
+        type: string
+        format: uuid
+        example: cf431f87-5463-4f53-972a-c59e8f0d21b2
+      total:
+        type: integer
+        example: 1
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/AuditLogDto'
   SecuritySummaryRow:
     type: object
     properties:

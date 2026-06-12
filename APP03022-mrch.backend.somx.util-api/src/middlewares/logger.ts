@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { AsyncLocalStorage } from 'async_hooks';
 import type { Request, Response, NextFunction } from 'express';
-import * as svc from "@/services/activityLogs.service.js";
-import { type CreateActivityLogDto } from "@/schemas/activityLog.schema.js";
+import * as auditRepo from "@/repositories/auditLog.repo.js";
 
 type TaskContext = {
     trace_id: string;
@@ -45,36 +44,32 @@ export async function logActivity(
     message: string,
     messageDetail: string | null | unknown,
     details: any = {},
-    duration_ms: number = 0
+    _duration_ms: number = 0
 ): Promise<void> {
     try {
         const store = getTraceIdV2();
-        const traceId = store?.trace_id;
+        const traceId = store?.trace_id ?? randomUUID();
         const action = store?.action || '';
-        const traceFrontId = store?.trace_front_id;
-        const serviceName = store?.service_name;
-        const userId = 'system';
+        const serviceName = store?.service_name ?? '';
         const timestamp = new Date();
-        let _messageDetail = '';
-        if (typeof messageDetail === "string") {
+
+        let _messageDetail: string | null = null;
+        if (typeof messageDetail === 'string') {
             _messageDetail = messageDetail;
         }
 
-        const dto: CreateActivityLogDto = {
-            traceId: traceId ?? "",
-            traceFrontId: traceFrontId,
-            serviceName: serviceName ?? "",
-            action: action ?? "",
-            modulo: "API_UTIL",
-            userId: "USR_API_UTIL",
-            isError,
+        await auditRepo.createOne({
+            trace_id: traceId,
+            service_name: serviceName,
+            modulo: 'API_UTIL',
+            paso: action,
+            detalle: _messageDetail,
+            tipo_evento: isError ? 'ERROR' : 'INFO',
             message,
-            messageDetail: _messageDetail,
+            user_id: 'USR_API_UTIL',
+            timestamp,
             details,
-            durationms: duration_ms,
-            timestamp
-        };
-        await svc.CreateLogActivity(dto);
+        });
     } catch (error) {
         console.error('Error al guardar el log:', error);
     }

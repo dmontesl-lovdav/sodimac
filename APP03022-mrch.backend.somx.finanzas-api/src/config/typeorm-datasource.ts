@@ -54,6 +54,7 @@ import { SharedCatalogDetail } from '../entities/SharedCatalogDetail.entity.js';
 import { SharedSupplier } from '../entities/SharedSupplier.entity.js';
 import { SharedSupplierType } from '../entities/SharedSupplierType.entity.js';
 import { SharedCatalogDictionaryLang } from '../entities/SharedCatalogDictionaryLang.entity.js';
+import { ShippingGuideFile } from '../entities/ShippingGuideFile.entity.js';
 
 // Registrar entidades explícitamente
 const ENTITIES = [
@@ -94,6 +95,7 @@ const ENTITIES = [
     SharedSupplier,
     SharedSupplierType,
     SharedCatalogDictionaryLang,
+    ShippingGuideFile,
 ];
 
 const dbHost = process.env.DB_HOST;

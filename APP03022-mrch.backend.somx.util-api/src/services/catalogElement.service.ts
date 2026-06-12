@@ -48,16 +48,22 @@ export async function findElements(params: FindElementsParams): Promise<CatalogE
         sortDir: params.sortDir
     };
 
+    const normalize = (s?: string | null): string | null => {
+        if (s == null) return null;
+        const trimmed = s.trim();
+        return trimmed === '' ? null : trimmed;
+    };
+
     const result = await detailRepo.findElementsPaged(
         {
             catalogId: params.catalogId,
             elementId: params.elementId,
-            element: params.element,
-            value: params.value,
+            element: normalize(params.element),
+            value: normalize(params.value),
             parentCatalogId: params.parentCatalogId,
             parentElementId: params.parentElementId,
             status: params.status,
-            key: params.key
+            key: normalize(params.key)
         },
         pageOptions
     );

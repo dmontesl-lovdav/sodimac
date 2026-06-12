@@ -22,7 +22,7 @@
     "seed:reset": "npm run migration:revert && npm run migration:run && npm run seed",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "bash ./scripts/test-cov.sh"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.3",

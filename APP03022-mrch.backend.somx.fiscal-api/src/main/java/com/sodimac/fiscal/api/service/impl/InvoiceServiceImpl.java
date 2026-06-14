@@ -88,6 +88,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final PdfRenderService pdfRenderService;
     private final UtilsApiService utilsApiService;
     private final StatusTrainApiService statusTrainApiService;
+    private final SupplierBlockApiService supplierBlockApiService;
     private final ActivityLogService activityLogService;
     private final AuditoriaApiService auditoriaApiService;
     private final FinanzasApiService finanzasApiService;
@@ -244,6 +245,30 @@ public class InvoiceServiceImpl implements InvoiceService {
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
                     "system", false, "Documento no duplicado, UUID unico",
                     "UUID fiscal: " + fiscalUuid, null, null);
+
+            // === PASO 6.3 / 6.4: VALIDAR BLOQUEO DE PUBLICACIÓN (solo Facturas) ===
+            // Orden definido por QA: primero por tipo de proveedor (BUS2028), luego por proveedor (BUS2029).
+            if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {
+                // PASO 6.3: bloqueo por TIPO de proveedor (CatBloqueoTipoProveedor) -> BUS2028
+                log.info("Paso 6.3: Validando bloqueo de publicación por tipo de proveedor");
+                if (supplierBlockApiService.isSupplierTypeBlocked(supplierNumber)) {
+                    log.warn("Publicación bloqueada por tipo de proveedor. supplierNumber={}", supplierNumber);
+                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
+                            "system", true, "Publicación bloqueada por tipo de proveedor (BUS2028)",
+                            "supplierNumber: " + supplierNumber, null, null);
+                    messageCatalog.throwException(FiscalMessageCode.BUS2028);
+                }
+
+                // PASO 6.4: bloqueo por PROVEEDOR individual (supplier_block) -> BUS2029
+                log.info("Paso 6.4: Validando bloqueo de publicación por proveedor");
+                if (supplierBlockApiService.isSupplierBlocked(supplierNumber)) {
+                    log.warn("Publicación bloqueada por proveedor. supplierNumber={}", supplierNumber);
+                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
+                            "system", true, "Publicación bloqueada por proveedor (BUS2029)",
+                            "supplierNumber: " + supplierNumber, null, null);
+                    messageCatalog.throwException(FiscalMessageCode.BUS2029);
+                }
+            }
 
             // === PASO 7: VALIDAR TOLERANCIA IMPORTE (solo Facturas) ===
             log.info("Paso 7: Validando tolerancia entre subtotal factura e importe recepción");

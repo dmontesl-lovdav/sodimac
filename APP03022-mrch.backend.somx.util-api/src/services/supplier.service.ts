@@ -155,6 +155,42 @@ export async function findAllPaymentConditions(): Promise<PaymentConditionDto[]>
     return supplierMapper.toPaymentConditionDtoList(conditions);
 }
 
+/**
+ * Indica si el TIPO del proveedor está bloqueado para publicar facturas (BUS2028).
+ *
+ * Consulta el catálogo CatBloqueoTipoProveedor: si existe un elemento ACTIVO (status=1)
+ * que referencia (parent_element_id) al elemento de CatTipoProveedor correspondiente al
+ * tipo del proveedor, el tipo está bloqueado. Si no existe o está inactivo, permite continuar.
+ */
+export async function isSupplierTypeBlocked(supplierNumber: string): Promise<boolean> {
+    const sql = `
+        SELECT 1
+        FROM shared_catalogs.supplier s
+        JOIN shared_catalogs.supplier_type st
+            ON st.id = s.supplier_type_id
+        JOIN shared_catalogs.catalog_header ch_tp
+            ON ch_tp.code = 'CatTipoProveedor'
+        JOIN shared_catalogs.catalog_detail cd_tp
+            ON cd_tp.header_id = ch_tp.id
+            AND cd_tp.key = CASE st.code
+                WHEN 'MERCANCIA'  THEN 'TPR001'
+                WHEN 'TRANSPORTE' THEN 'TPR002'
+                WHEN 'INDIRECTOS' THEN 'TPR003'
+                WHEN 'SERVICIOS'  THEN 'TPR004'
+            END
+        JOIN shared_catalogs.catalog_header ch_blk
+            ON lower(ch_blk.code) = 'catbloqueotipoproveedor'
+        JOIN shared_catalogs.catalog_detail cd_blk
+            ON cd_blk.header_id = ch_blk.id
+            AND cd_blk.parent_element_id = cd_tp.id
+            AND cd_blk.status = 1
+        WHERE s.supplier_number = $1
+        LIMIT 1
+    `;
+    const rows = await datasource.query(sql, [supplierNumber]);
+    return (rows ?? []).length > 0;
+}
+
 export async function findByTypeAndBlockStatus(
     tipoProveedor: number,
     estatusBloqueo: number

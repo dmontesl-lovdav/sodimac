@@ -18,6 +18,7 @@
 | A4 | Migración columna PDF | Postgres UAT `tenant_fiscal.invoice` | `ADD COLUMN IF NOT EXISTS pdf_gcs_object VARCHAR(500)` (o RENAME si quedó `pdf_path`) | — |
 | A5 | Deploy fiscal-api (PDF + tren v1.0) | pipeline `uat` | merge develop→uat | A1, A4 |
 | A6 | Deploy util-api (seed v1.0 alineado) | pipeline `uat` | seed `12_status_train_data.sql` solo afecta DB nueva; UAT existente se arregla con A1 | — |
+| A7 | Deploy fiscal-api + util-api (bloqueo proveedores) | pipeline `uat` | nuevo endpoint util-api `GET /suppliers/number/{n}/type-blocked` + BUS2028/2029 en fiscal-api. Catálogo `CatBloqueoTipoProveedor` (id 82) YA existe en UAT (dump 2026-06-12). Mensajes BUS2028/2029: fiscal-api tiene fallback en enum, opcional seedearlos en `CatMsgNegocio` | — |
 
 **Responsables sugeridos:** Bonelli (env vars + deploy), Ivan (bucket GCS + decisiones tren NC).
 
@@ -35,8 +36,8 @@ Leyenda: ✅ resuelto local · 🔧 en progreso · ⬜ pendiente · 🚫 no es b
 - [ ] 🔧 Error al visualizar PDF de la factura — feature PDF recién hecho; revisar si es por falta de config GCS (A2/A3) o bug
 - [ ] ❓ PDF opcional/obligatorio por parámetro — *implementado upload opcional; falta el PARÁMETRO de catálogo que lo vuelve obligatorio.* Ver C1
 - [ ] ⬜ Validación XML no-factura → mensaje `BUS057` vía catálogo de catálogos
-- [ ] ⬜ Bloqueo publicación por **tipo proveedor** (`CatBloqueoProveedor` activo) → `BUS2028`
-- [ ] ⬜ Bloqueo publicación por **proveedor** (posterior a tipo) → `BUS2029`
+- [x] ✅ Bloqueo publicación por **tipo proveedor** (`CatBloqueoTipoProveedor` activo) → `BUS2028` — implementado + probado local (register supplier MERCANCIA bloqueado → BUS2028)
+- [x] ✅ Bloqueo publicación por **proveedor** (posterior a tipo) → `BUS2029` — implementado + probado local (supplier_block vigente → BUS2029). Orden tipo→proveedor confirmado.
 - [ ] ⬜ Validar **recepción vs factura** con tolerancia (monto primero, si no porcentaje, si ambos off=exacto). Orden: RFC → es factura → bloqueo tipo → bloqueo proveedor → tolerancia
 - [x] ✅ Estatus factura según catálogo (Ok Dev 12/06) → **A5 deploy**
 - [x] ✅ Grid usa UUID documento, no guid BD (Ok Dev 12/06) → **A5 deploy**

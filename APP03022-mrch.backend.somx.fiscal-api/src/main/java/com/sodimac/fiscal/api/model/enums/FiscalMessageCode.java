@@ -154,6 +154,10 @@ public enum FiscalMessageCode {
     // ========== ERRORES DE NEGOCIO - VALIDACIÓN REGISTRO (BUS057) ==========
     BUS057("BUS057", "La diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2} pesos"),
 
+    // ========== ERRORES DE NEGOCIO - BLOQUEO DE PUBLICACIÓN (BUS2028-BUS2029) ==========
+    BUS2028("BUS2028", "Actualmente existe un bloqueo para la publicación de facturas según el tipo de proveedor. Por favor, valida con el área de Finanzas de Sodimac para continuar."),
+    BUS2029("BUS2029", "Actualmente existe un bloqueo para la publicación de facturas. Por favor, valida con el área de Finanzas de Sodimac para continuar."),
+
     // ========== ADVERTENCIAS - COMPLEMENTOS (WRN001-WRN005) ==========
     WRN001("WRN001", "Version de CartaPorte no soportada: {0}. Solo se soportan versiones 3.0 y 3.1"),
 

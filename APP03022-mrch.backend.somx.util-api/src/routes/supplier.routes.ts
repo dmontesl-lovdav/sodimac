@@ -8,6 +8,7 @@ router.post('/', supplierController.createSupplier);
 router.get('/types', supplierController.getAllSupplierTypes);
 router.get('/payment-conditions', supplierController.getAllPaymentConditions);
 router.get('/filter', supplierController.filterSuppliers);
+router.get('/number/:supplierNumber/type-blocked', supplierController.getSupplierTypeBlocked);
 router.get('/number/:supplierNumber', supplierController.getSupplierByNumber);
 router.get('/rfc/:rfc', supplierController.getSupplierByRfc);
 router.get('/:id', supplierController.getSupplierById);

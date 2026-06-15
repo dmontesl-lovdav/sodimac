@@ -39,7 +39,7 @@ Leyenda: ✅ resuelto local · 🔧 en progreso · ⬜ pendiente · 🚫 no es b
 - [x] ✅ Validación XML no-factura → mensaje claro. Implementado + probado local (XML tipo P → mensaje "no corresponde a una factura válida"). **OJO numeración:** Ivan pidió `BUS057` pero ese id ya estaba en uso (tolerancia de importe) → se asignó **`BUS060`**. Ver nota C4.
 - [x] ✅ Bloqueo publicación por **tipo proveedor** (`CatBloqueoTipoProveedor` activo) → `BUS2028` — implementado + probado local (register supplier MERCANCIA bloqueado → BUS2028)
 - [x] ✅ Bloqueo publicación por **proveedor** (posterior a tipo) → `BUS2029` — implementado + probado local (supplier_block vigente → BUS2029). Orden tipo→proveedor confirmado.
-- [ ] ⬜ Validar **recepción vs factura** con tolerancia (monto primero, si no porcentaje, si ambos off=exacto). Orden: RFC → es factura → bloqueo tipo → bloqueo proveedor → tolerancia
+- [x] ✅ Validar **recepción vs factura** con tolerancia (BUS057). Mejorado + probado local los 3 modos: monto activo (id3)→por monto; monto off + % activo (id4)→por porcentaje (base=importe recepción); ambos off→exacto. Orden RFC→es factura→bloqueo tipo→bloqueo proveedor→tolerancia confirmado. Ver nota C5 (interpretación del valor %).
 - [x] ✅ Estatus factura según catálogo (Ok Dev 12/06) → **A5 deploy**
 - [x] ✅ Grid usa UUID documento, no guid BD (Ok Dev 12/06) → **A5 deploy**
 - [ ] 🚫 Fecha default actual en filtros inicio/fin (frontend)
@@ -106,7 +106,8 @@ Leyenda: ✅ resuelto local · 🔧 en progreso · ⬜ pendiente · 🚫 no es b
   - Aplica a Factura, NC y Complemento de pago.
   - ❓ ¿Dónde vive el parámetro? (`CatParameter` en util-api / catálogo de catálogos). Confirmar key + alcance con Ivan.
 - **C2. Tren NC v1.0** — ¿alinear `option_id=2` ahora o mantener viejo?
-- **C3. Tolerancia recepción vs factura** — confirmar fuente del valor (catálogo/parámetro) y si monto y porcentaje conviven.
+- **C3. Tolerancia recepción vs factura** — ✅ resuelto. Fuente = `core_utils.cat_parameter` id3 (monto) e id4 (porcentaje), cada uno con `status`. Monto tiene prioridad; conviven (monto gana si ambos activos).
+- **C5. ⚠️ Interpretación del valor de "Tolerancia por porcentaje" (cat_parameter id4 = 0.01).** Implementado como **fracción**: tolerancia = importe_recepción × valor (0.01 → 1% del importe → ej 270 sobre 27000). Si Ivan esperaba que 0.01 sea "0.01%" o que el valor se ingrese como "1" para 1%, ajustar. Confirmar convención del campo en la pantalla de parámetros.
 - **C4. ⚠️ AVISAR A IVAN — reasignación de código de mensaje.** QA pidió `BUS057` = "El archivo XML no corresponde a una factura válida". Pero `BUS057` ya estaba asignado a la validación de tolerancia de importe (implementado 2026-06-05). El mensaje de XML-no-factura quedó como **`BUS060`** con el texto exacto de Ivan. En el dump de Sodimac (2026-06-12) BUS057/058/059/060 estaban libres en el catálogo de mensajes, así que no hay conflicto en BD. Resumen de códigos nuevos fiscal-api: `BUS058`=forma pago NC, `BUS059`=uso CFDI NC, `BUS060`=XML no factura, `BUS2028`=bloqueo tipo, `BUS2029`=bloqueo proveedor.
 
 ---

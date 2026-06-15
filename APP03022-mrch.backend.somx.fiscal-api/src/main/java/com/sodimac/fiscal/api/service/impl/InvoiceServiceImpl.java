@@ -726,35 +726,66 @@ public class InvoiceServiceImpl implements InvoiceService {
             return;
         }
 
-        // Leer tolerancia de core_utils.cat_parameter (name='Tolerancia por importe', status=1)
-        BigDecimal tolerance = BigDecimal.valueOf(40);
-        try {
-            CatParameterEntity param = catParameterRepository
-                    .findById(CatParameterKey.TOLERANCIA_IMPORTE.getId())
-                    .orElse(null);
-            if (param != null && param.getValue() != null) {
-                tolerance = new BigDecimal(param.getValue());
-                log.debug("Tolerancia leída de BD: {}", tolerance);
-            } else {
-                log.warn("Parámetro 'Tolerancia por importe' no encontrado en BD; usando valor por defecto {}", tolerance);
-            }
-        } catch (Exception e) {
-            log.warn("Error leyendo tolerancia de BD; usando valor por defecto {}: {}", tolerance, e.getMessage());
+        // Determinar tolerancia efectiva según QA junio-2026:
+        //  1) Si "Tolerancia por importe" (id 3) está activa -> se compara por MONTO.
+        //  2) Si no, y "Tolerancia por porcentaje" (id 4) está activa -> por PORCENTAJE
+        //     (base = importe de la recepción). El valor se interpreta como fracción
+        //     (ej: 0.01 = 1%). Confirmar interpretación con Ivan (ver doc C5).
+        //  3) Si ambas están apagadas -> comparación EXACTA (tolerancia 0).
+        BigDecimal toleranceMonto = readActiveParamValue(CatParameterKey.TOLERANCIA_IMPORTE.getId());
+        BigDecimal tolerancePct = readActiveParamValue(CatParameterKey.TOLERANCIA_PORCENTAJE.getId());
+
+        BigDecimal tolerance;
+        String modo;
+        if (toleranceMonto != null) {
+            tolerance = toleranceMonto;
+            modo = "monto";
+        } else if (tolerancePct != null) {
+            tolerance = receptionAmount.multiply(tolerancePct).abs();
+            modo = "porcentaje(" + tolerancePct.toPlainString() + ")";
+        } else {
+            tolerance = BigDecimal.ZERO;
+            modo = "exacto";
         }
 
         BigDecimal diff = subtotal.subtract(receptionAmount).abs();
-        log.info("Validación tolerancia: subtotal={}, receptionAmount={}, diff={}, tolerancia={}",
-                subtotal, receptionAmount, diff, tolerance);
+        log.info("Validación tolerancia [{}]: subtotal={}, receptionAmount={}, diff={}, tolerancia={}",
+                modo, subtotal, receptionAmount, diff, tolerance);
 
         if (diff.compareTo(tolerance) > 0) {
-            log.error("Diferencia {} supera tolerancia {} para receptionId {}", diff, tolerance, receptionId);
+            log.error("Diferencia {} supera tolerancia {} ({}) para receptionId {}", diff, tolerance, modo, receptionId);
             messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS057,
                     subtotal.toPlainString(),
                     receptionAmount.toPlainString(),
                     tolerance.toPlainString());
         }
 
-        log.info("Tolerancia validada correctamente. Diferencia: {} pesos", diff);
+        log.info("Tolerancia validada correctamente [{}]. Diferencia: {} pesos", modo, diff);
+    }
+
+    /**
+     * Lee el valor numérico de un parámetro de cat_parameter solo si está ACTIVO (status=1).
+     * Devuelve null si no existe, está inactivo o el valor no es numérico.
+     */
+    private BigDecimal readActiveParamValue(int parameterId) {
+        try {
+            CatParameterEntity param = catParameterRepository.findById(parameterId).orElse(null);
+            if (param == null) {
+                log.debug("Parámetro id={} no encontrado", parameterId);
+                return null;
+            }
+            if (param.getStatus() == null || param.getStatus() != 1) {
+                log.debug("Parámetro id={} inactivo (status={})", parameterId, param.getStatus());
+                return null;
+            }
+            if (param.getValue() == null || param.getValue().isBlank()) {
+                return null;
+            }
+            return new BigDecimal(param.getValue().trim());
+        } catch (Exception e) {
+            log.warn("Error leyendo parámetro id={}: {}", parameterId, e.getMessage());
+            return null;
+        }
     }
 
     private void validateSeriesAndFolio(InvoiceXmlDto invoiceDto, TipoDocumentoFiscal tipoDocumento) {

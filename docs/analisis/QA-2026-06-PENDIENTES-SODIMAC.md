@@ -19,6 +19,7 @@
 | A5 | Deploy fiscal-api (PDF + tren v1.0) | pipeline `uat` | merge develop→uat | A1, A4 |
 | A6 | Deploy util-api (seed v1.0 alineado) | pipeline `uat` | seed `12_status_train_data.sql` solo afecta DB nueva; UAT existente se arregla con A1 | — |
 | A7 | Deploy fiscal-api + util-api (bloqueo proveedores) | pipeline `uat` | nuevo endpoint util-api `GET /suppliers/number/{n}/type-blocked` + BUS2028/2029 en fiscal-api. Catálogo `CatBloqueoTipoProveedor` (id 82) YA existe en UAT (dump 2026-06-12). Mensajes BUS2028/2029: fiscal-api tiene fallback en enum, opcional seedearlos en `CatMsgNegocio` | — |
+| A8 | Deploy fiscal-api (validaciones NC) | pipeline `uat` | BUS058/BUS059 en fiscal-api (fallback en enum). Catálogos `CatFormaPagoValidoNc` (id 89, valor 99) y `CatUsoCfdiValidoNc` (id 87, valor G02) YA existen en UAT (dump 2026-06-12). Reusa endpoint existente `GET /catalog/{code}/details` de util-api | — |
 
 **Responsables sugeridos:** Bonelli (env vars + deploy), Ivan (bucket GCS + decisiones tren NC).
 
@@ -46,8 +47,8 @@ Leyenda: ✅ resuelto local · 🔧 en progreso · ⬜ pendiente · 🚫 no es b
 
 ### B2. Notas de Crédito (backend)
 
-- [ ] ⬜ Validar **forma de pago** vs `CatFormaPagoValidoNc` al registrar; si no, rechazar
-- [ ] ⬜ Validar **uso CFDI** vs `CatUsoCfdiValidoNc` (posterior a forma de pago); si no, rechazar
+- [x] ✅ Validar **forma de pago** vs `CatFormaPagoValidoNc` al registrar → `BUS058`. Implementado + probado local (forma no válida → BUS058). Elemento XML: `Comprobante/@FormaPago`.
+- [x] ✅ Validar **uso CFDI** vs `CatUsoCfdiValidoNc` (posterior a forma de pago) → `BUS059`. Implementado + probado local. Elemento XML: `Receptor/@UsoCFDI` (QA decía Emisor; en CFDI 4.0 va en Receptor). Orden forma→uso confirmado.
 - [ ] ❓ PDF opcional/obligatorio NC por parámetro (mismo patrón factura). Ver C1
 - [ ] ⬜ Error al subir NC ("Publicar NC") — reproducir (¿mismo patrón tren/data que cancel factura?)
 - [ ] ❓ Cancelar NC — seed `option_id=2` sigue tren viejo. ¿Alinear NC ahora o esperar? (decisión Ivan)

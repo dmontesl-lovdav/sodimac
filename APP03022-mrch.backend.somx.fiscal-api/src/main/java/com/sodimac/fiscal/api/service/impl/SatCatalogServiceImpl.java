@@ -94,6 +94,35 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public java.util.Set<String> getActiveCatalogValues(String catalogCode) {
+        java.util.Set<String> values = new java.util.HashSet<>();
+        if (catalogCode == null || catalogCode.isBlank()) {
+            return values;
+        }
+        int langId = getCurrentLanguageId();
+        try {
+            String url = String.format("%s/catalog/%s/details?lang=%d", utilsApiUrl, catalogCode, langId);
+            ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                for (Map detail : response.getBody()) {
+                    Object value = detail.get("value");
+                    Object externalKey = detail.get("externalKey");
+                    if (value != null && !value.toString().isBlank()) {
+                        values.add(value.toString().trim());
+                    }
+                    if (externalKey != null && !externalKey.toString().isBlank()) {
+                        values.add(externalKey.toString().trim());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error consultando valores del catálogo {} en util-api: {}", catalogCode, e.getMessage());
+        }
+        return values;
+    }
+
+    @Override
     public void clearCache() {
         descriptionCache.clear();
         log.info("Cache de catalogos SAT limpiado");

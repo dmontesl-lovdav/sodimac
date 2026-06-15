@@ -154,6 +154,10 @@ public enum FiscalMessageCode {
     // ========== ERRORES DE NEGOCIO - VALIDACIÓN REGISTRO (BUS057) ==========
     BUS057("BUS057", "La diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2} pesos"),
 
+    // ========== ERRORES DE NEGOCIO - VALIDACIÓN NOTA DE CRÉDITO (BUS058-BUS059) ==========
+    BUS058("BUS058", "La forma de pago ({0}) de la nota de crédito no se encuentra configurada como válida para su registro. Por favor, valida con el área de Finanzas de Sodimac."),
+    BUS059("BUS059", "El uso de CFDI ({0}) de la nota de crédito no se encuentra configurado como válido para su registro. Por favor, valida con el área de Finanzas de Sodimac."),
+
     // ========== ERRORES DE NEGOCIO - BLOQUEO DE PUBLICACIÓN (BUS2028-BUS2029) ==========
     BUS2028("BUS2028", "Actualmente existe un bloqueo para la publicación de facturas según el tipo de proveedor. Por favor, valida con el área de Finanzas de Sodimac para continuar."),
     BUS2029("BUS2029", "Actualmente existe un bloqueo para la publicación de facturas. Por favor, valida con el área de Finanzas de Sodimac para continuar."),

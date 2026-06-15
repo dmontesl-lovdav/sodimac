@@ -270,6 +270,12 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
             }
 
+            // === PASO 6.5: VALIDACIONES NOTA DE CRÉDITO (forma de pago + uso CFDI) ===
+            // Orden QA: primero forma de pago (CatFormaPagoValidoNc), luego uso CFDI (CatUsoCfdiValidoNc).
+            if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
+                validateCreditNoteCatalogs(invoiceDto, idTransaccion, SERVICE_NAME);
+            }
+
             // === PASO 7: VALIDAR TOLERANCIA IMPORTE (solo Facturas) ===
             log.info("Paso 7: Validando tolerancia entre subtotal factura e importe recepción");
             if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {
@@ -646,6 +652,44 @@ public class InvoiceServiceImpl implements InvoiceService {
      * @param invoiceDto DTO con los datos del documento
      * @param tipoDocumento Tipo de documento para determinar el mensaje de error
      */
+    /**
+     * Valida los catálogos de Nota de Crédito (QA junio-2026):
+     * - Forma de pago del comprobante debe existir en CatFormaPagoValidoNc (BUS058).
+     * - Uso CFDI del receptor debe existir en CatUsoCfdiValidoNc (BUS059), posterior a forma de pago.
+     *
+     * Si el catálogo está vacío/inactivo o el valor no está configurado, se rechaza el registro.
+     */
+    private void validateCreditNoteCatalogs(InvoiceXmlDto invoiceDto, String idTransaccion, String serviceName) {
+        final String CAT_FORMA_PAGO_NC = "CatFormaPagoValidoNc";
+        final String CAT_USO_CFDI_NC = "CatUsoCfdiValidoNc";
+
+        // PASO 6.5.1: forma de pago (Comprobante/@FormaPago)
+        String formaPago = invoiceDto.getFormaPago();
+        log.info("Paso 6.5.1: Validando forma de pago NC '{}' contra {}", formaPago, CAT_FORMA_PAGO_NC);
+        java.util.Set<String> formasValidas = satCatalogService.getActiveCatalogValues(CAT_FORMA_PAGO_NC);
+        if (formaPago == null || formaPago.isBlank() || !formasValidas.contains(formaPago.trim())) {
+            log.warn("Forma de pago NC no válida. formaPago={} validas={}", formaPago, formasValidas);
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,
+                    "system", true, "Forma de pago de NC no configurada como válida (BUS058)",
+                    "formaPago: " + formaPago, null, null);
+            messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS058, formaPago);
+        }
+
+        // PASO 6.5.2: uso CFDI (Receptor/@UsoCFDI)
+        String usoCfdi = invoiceDto.getReceptorUsoCFDI();
+        log.info("Paso 6.5.2: Validando uso CFDI NC '{}' contra {}", usoCfdi, CAT_USO_CFDI_NC);
+        java.util.Set<String> usosValidos = satCatalogService.getActiveCatalogValues(CAT_USO_CFDI_NC);
+        if (usoCfdi == null || usoCfdi.isBlank() || !usosValidos.contains(usoCfdi.trim())) {
+            log.warn("Uso CFDI NC no válido. usoCfdi={} validos={}", usoCfdi, usosValidos);
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,
+                    "system", true, "Uso CFDI de NC no configurado como válido (BUS059)",
+                    "usoCFDI: " + usoCfdi, null, null);
+            messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS059, usoCfdi);
+        }
+
+        log.info("Validaciones de catálogos NC completadas correctamente");
+    }
+
     /**
      * Valida que la diferencia entre subtotal del XML y el importe de la recepción en finanzas-api
      * no supere la tolerancia configurada en cat_parameter (id=3, valor por defecto 40 pesos).

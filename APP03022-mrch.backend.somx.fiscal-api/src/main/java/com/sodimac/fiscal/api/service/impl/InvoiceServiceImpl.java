@@ -171,7 +171,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.DETECTAR_TIPO_DOCUMENTO.getCode(), SERVICE_NAME,
                         "system", true, "Tipo de documento no permitido: " + tipoDocumento.getCodigo(),
                         "Solo se permiten tipos I (Factura) y E (Nota de Credito)", null, null);
-                messageCatalog.throwException(FiscalMessageCode.BUS023);
+                // QA junio-2026: mensaje claro cuando el XML no es una factura/NC válida (BUS060, ex-BUS057 de Ivan)
+                messageCatalog.throwException(FiscalMessageCode.BUS060);
             }
             auditoriaApiService.logActivity(idTransaccion, AuditAction.DETECTAR_TIPO_DOCUMENTO.getCode(), SERVICE_NAME,
                     "system", false, "Tipo de documento detectado: " + tipoDocumento.getDescripcion(),

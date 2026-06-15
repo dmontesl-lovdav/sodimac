@@ -158,6 +158,11 @@ public enum FiscalMessageCode {
     BUS058("BUS058", "La forma de pago ({0}) de la nota de crédito no se encuentra configurada como válida para su registro. Por favor, valida con el área de Finanzas de Sodimac."),
     BUS059("BUS059", "El uso de CFDI ({0}) de la nota de crédito no se encuentra configurado como válido para su registro. Por favor, valida con el área de Finanzas de Sodimac."),
 
+    // ========== ERRORES DE NEGOCIO - TIPO DE DOCUMENTO XML (BUS060) ==========
+    // QA junio-2026 pidió este mensaje con id BUS057, pero BUS057 ya estaba asignado a
+    // la tolerancia de importe. Reasignado a BUS060 (avisar a Ivan).
+    BUS060("BUS060", "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."),
+
     // ========== ERRORES DE NEGOCIO - BLOQUEO DE PUBLICACIÓN (BUS2028-BUS2029) ==========
     BUS2028("BUS2028", "Actualmente existe un bloqueo para la publicación de facturas según el tipo de proveedor. Por favor, valida con el área de Finanzas de Sodimac para continuar."),
     BUS2029("BUS2029", "Actualmente existe un bloqueo para la publicación de facturas. Por favor, valida con el área de Finanzas de Sodimac para continuar."),

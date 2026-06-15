@@ -4,6 +4,30 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-15 | Error 500 en /register con XML addenda Detecno (PARKMEX)
+
+**Contexto**: Fer reportó `Error 500` en POST `/register` de fiscal-api con el XML `AUGL750630GE4_1089513_MontoExacto.xml`.
+Request: `idTransaccion=f25797e1-...`, `receptionId=5ef71932-...`, `supplierNumber=252523`, `purchaseOrderNumber=843754` (sin pdfFile).
+
+**Reproducción local (rama `dmontes`, último build)**: **NO reproduce** → responde `RES004` (registrada OK), incluso creando la recepción `5ef71932` con monto exacto (20045). El 500 es específico del entorno/código de Fer.
+
+**Hallazgos**:
+1. El `/register` vivo usa `InvoiceServiceImpl`, que **ya no valida estructura de addenda** (removido en tren v1.0, 2026-06-05) → por eso local registra sin importar la addenda.
+2. Existe servicio legacy `InvoiceRegistrationServiceImpl` (PASO 7 valida addenda con `addendaValidator.validateAddenda`). Si el entorno de Fer corre ese o un build previo, valida y se comporta distinto.
+3. **Pista principal**: el XML trae `<Addenda_Sodimac_Detecno>` con `OrdenCompra/IdRecepcion/IdProveedor`. El validador `AddendaValidationServiceImpl` SOLO reconoce `Addenda_Sodimac`, `Addenda_Sodimac_CartaPorte`, `Addenda_Transportistas_Sodimac_Detecno`. **`Addenda_Sodimac_Detecno` no está** → en nuestro código actual daría `BUS001` (manejado), no 500. Un 500 saldría en una versión con match laxo por "Detecno" que intente leer campos inexistentes (IdGuiaEntrega/IdViaje).
+4. Inconsistencias del XML: `SubTotal=20045.00` vs `Total=4088.00` (Total<SubTotal); addenda `IdProveedor=252202` ≠ form `supplierNumber=252523`; `OrdenCompra/IdRecepcion=846131` ≠ form (`843754`/`5ef71932`).
+
+**RESUELTO 2026-06-15** (commit en `dmontes`):
+- **Causa real** (log pod UAT): `UNHANDLED ERROR: duplicate key value violates unique constraint "uq_invoice_fiscal_uuid"`. La factura (fiscalUuid `940946EB-9F31-4C88-A56A-8D1F5FBAC069`) **ya estaba registrada en UAT**. No era la addenda.
+- **Bug**: los checks de duplicado en `registerInvoice` (PASO 6.1 serie+folio y 6.2 UUID) usan clave **compuesta con `issuerUuid`**. Si el emisor del registro existente difiere del que arma `getOrCreate`, ambos checks fallan → el documento llega a persistir → revienta el constraint único (que es solo por `fiscal_uuid`) → `ControllerAdvisor` devuelve 500 genérico (`{"message":"Internal Server Error","code":500}`).
+- **Fix**: `validateNoDuplicateByUuid` ahora valida **por `fiscal_uuid` solo** (`invoiceRepository.findByFiscalUuid`) además del check compuesto. El folio fiscal del SAT es único global. Ahora responde `WRN7014` ("previamente registrada con el mismo UUID") en vez de 500.
+- **Probado local**: simulando que 6.1 falla (folio distinto en BD) con fiscalUuid ya existente → antes 500, ahora `WRN7014`.
+- Falta deploy a UAT (rama dmontes → develop → uat).
+
+**Nota descartada**: la addenda `Addenda_Sodimac_Detecno` NO era la causa del 500 (el `/register` vivo usa `InvoiceServiceImpl`, que no valida estructura de addenda). Queda como observación menor por si en otro flujo se valida.
+
+---
+
 ## 2026-05-28 | BUS048 al cambiar estatus de factura recién subida
 
 **Contexto**: Fer subió XML Truper (`0118413484.xml`) vía POST `/ppsomx/fiscal/invoices/register` → respuesta `RES005` "Pendiente de Addenda". Luego PUT a estatus 2 → recibió `BUS048` "La addenda del documento no se encuentra registrada en el sistema".

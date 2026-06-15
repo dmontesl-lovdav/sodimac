@@ -836,8 +836,15 @@ public class InvoiceServiceImpl implements InvoiceService {
             TipoDocumentoFiscal tipoDocumento) {
         String docType = tipoDocumento.getCodigo();
 
-        if (invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentType(
-                fiscalUuid, issuerUuid, docType)) {
+        // El constraint único en BD es por fiscal_uuid SOLO (uq_invoice_fiscal_uuid):
+        // el folio fiscal del SAT (TimbreFiscalDigital UUID) es único global. Validar por
+        // fiscal_uuid evita que un duplicado con distinto emisor/tipo escape el check
+        // compuesto y reviente el constraint al persistir (500 no manejado). Bug QA jun-2026.
+        boolean duplicado = invoiceRepository.findByFiscalUuid(fiscalUuid).isPresent()
+                || invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentType(
+                        fiscalUuid, issuerUuid, docType);
+
+        if (duplicado) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
                     ? FiscalMessageCode.WRN7014
                     : FiscalMessageCode.WRN7017;

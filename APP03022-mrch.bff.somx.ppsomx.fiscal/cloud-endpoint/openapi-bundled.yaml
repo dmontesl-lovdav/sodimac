@@ -586,6 +586,54 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  '/invoices/{uuid}/pdf':
+    get:
+      tags:
+        - invoice-controller
+      summary: Obtener PDF por UUID de factura
+      description: |
+        Descarga el PDF de una factura desde Google Cloud Storage,
+        usando el invoice_uuid. Devuelve 404 si no hay PDF asociado.
+      operationId: getPdfByInvoiceUuid
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          x-example: Bearer XXXXXXXXX
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          description: invoice_uuid de la factura
+        - name: download
+          in: query
+          type: boolean
+          default: true
+          description: 'true para descargar como archivo, false para visualizar'
+      responses:
+        '200':
+          description: PDF obtenido exitosamente
+        '401':
+          description: The request requires user authentication.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '403':
+          description: Accessing the resource you were trying to reach is forbidden.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Factura o PDF no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error.
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /invoices/download/xml:
     post:
       tags:

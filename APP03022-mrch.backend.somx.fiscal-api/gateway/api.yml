@@ -403,6 +403,36 @@ paths:
         '404':
           description: Documento no encontrado
 
+  /invoices/{uuid}/pdf:
+    get:
+      tags:
+        - Invoices
+      summary: Obtener PDF por UUID de factura
+      description: |
+        Descarga el PDF de una factura desde Google Cloud Storage,
+        usando el invoice_uuid. Devuelve 404 si no hay PDF asociado.
+      operationId: getPdfByInvoiceUuid
+      produces:
+        - application/pdf
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+        - name: uuid
+          in: path
+          required: true
+          type: string
+        - name: download
+          in: query
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: PDF obtenido exitosamente
+        '404':
+          description: Factura o PDF no encontrado
+
   /invoices/download/xml:
     post:
       tags:

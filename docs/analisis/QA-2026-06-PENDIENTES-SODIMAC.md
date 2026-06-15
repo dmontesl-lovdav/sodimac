@@ -6,6 +6,24 @@
 
 ---
 
+## Estado deploy UAT — verificado 2026-06-15
+
+Código en develop + uat (fiscal-api `77df2fc`/`7f01246`, util-api `c0ad742`/`eded68f`). Verificación BD UAT:
+
+| Item | UAT |
+|---|---|
+| Columna `pdf_gcs_object` | ✅ existe |
+| `status_train` v1.0 (18 filas, 2→1 cancelar) | ✅ |
+| Constraint `chk_invoice_status` 1..18 | ✅ |
+| `CatFormaPagoValidoNc` (99) / `CatUsoCfdiValidoNc` (G02) / `CatBloqueoTipoProveedor` | ✅ **seedeados 2026-06-15** (`17_QA-2026-06_catalogos_nc_bloqueo.sql`) — UAT no los tenía |
+| `cat_parameter` id3 monto / id4 % | ⚠️ **status=0 (inactivos)** → tolerancia = EXACTA. Confirmar con Ivan/finanzas si activar id3 (40) |
+| Mensajes BUS058/059/060/2028/2029 | ⬜ no seedeados (enum tiene fallback, opcional) |
+| Env vars GCS (`GCS_BUCKET`, `GCS_PREFIX_SOMX`) | ⬜ pendiente Bonelli |
+
+> ⚠️ Sin los catálogos NC, fiscal-api rechazaba TODA NC (BUS058/059). Ya seedeados. Falta decidir tolerancia (exacta vs monto 40).
+
+---
+
 ## A. Acciones que SOLO se hacen del lado Sodimac (UAT)
 
 > No se pueden ejecutar desde PC personal (sin VPN/cert/cluster). Lista para correr el lunes.

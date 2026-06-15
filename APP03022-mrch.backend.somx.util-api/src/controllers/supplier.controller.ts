@@ -41,6 +41,16 @@ export async function getSupplierByNumber(req: Request, res: Response, next: Nex
     }
 }
 
+export async function getSupplierTypeBlocked(req: Request, res: Response, next: NextFunction) {
+    try {
+        const supplierNumber = String(req.params.supplierNumber);
+        const typeBlocked = await supplierService.isSupplierTypeBlocked(supplierNumber);
+        res.json({ supplierNumber, typeBlocked });
+    } catch (err) {
+        next(err);
+    }
+}
+
 export async function getSupplierByRfc(req: Request, res: Response, next: NextFunction) {
     try {
         const result = await supplierService.findByRfc(String(req.params.rfc));

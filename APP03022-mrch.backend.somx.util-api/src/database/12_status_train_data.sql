@@ -5,55 +5,45 @@
 -- ============================================================================
 
 -- ============================================================================
--- Facturas (option_id = 1) - Desde InvoiceStatus.java
+-- Facturas (option_id = 1) - Tren de Estatus v1.0 (Ivan, 2026-06-02)
 -- Tipo de documento: I (Factura)
+-- Fuente: Tren_Estatus_Portal_FBC_v1.0.xlsx + docs/analisis/TREN-ESTATUS-v1.0-vs-codigo.md
+-- Renumeración completa 1-18, sin Pendiente Addenda. Cancelar = Rechazo Comercial (1),
+-- permitido solo desde Recibido Parcial (2). Alineado con InvoiceStatus.java.
 -- ============================================================================
 
--- PENDIENTE_ADDENDA (1) -> RECIBIDO_PARCIAL (2), PENDIENTE_CONTABILIZAR (3), PAGO_MANUAL (13)
 INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 1, 2, 1),
-(1, 1, 3, 1),
-(1, 1, 13, 1);
-
--- RECIBIDO_PARCIAL (2) -> PENDIENTE_CONTABILIZAR (3), PAGO_MANUAL (13)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 2, 3, 1),
-(1, 2, 13, 1);
-
--- PENDIENTE_CONTABILIZAR (3) -> PROCESO_DESCARGA (4)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 3, 4, 1);
-
--- PROCESO_DESCARGA (4) -> DESGLOSE_FACTURA (5), RECHAZO_CONTABLE (11)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 4, 5, 1),
-(1, 4, 11, 1);
-
--- DESGLOSE_FACTURA (5) -> PENDIENTE_ENVIO_CONTABILIZAR (6), RECHAZO_CONTABLE (11)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 5, 6, 1),
-(1, 5, 11, 1);
-
--- PENDIENTE_ENVIO_CONTABILIZAR (6) -> PENDIENTE_PAGO (7), RECHAZO_CONTABLE (11)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 6, 7, 1),
-(1, 6, 11, 1);
-
--- PENDIENTE_PAGO (7) -> PAGADO (8)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 7, 8, 1);
-
--- PAGADO (8) -> PENDIENTE_COMPLEMENTO (9)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 8, 9, 1);
-
--- PENDIENTE_COMPLEMENTO (9) -> COMPLETADO (10)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 9, 10, 1);
-
--- RECHAZO_CONTABLE (11) -> PENDIENTE_PAGO (7)
-INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by) VALUES
-(1, 11, 7, 1);
+-- Recibido Parcial (2) -> Rechazo Comercial (1), En proceso de envío (3), Pago Manual (18)
+(1, 2,  1,  1),
+(1, 2,  3,  1),
+(1, 2,  18, 1),
+-- En proceso de envío (3) -> En proceso de descarga (4)
+(1, 3,  4,  1),
+-- En proceso de descarga (4) -> Desglose de factura (5)
+(1, 4,  5,  1),
+-- Desglose de factura (5) -> Pendiente registro SAPITO (7), Estructura inválida (16)
+(1, 5,  7,  1),
+(1, 5,  16, 1),
+-- Pendiente registro SAPITO (7) -> Pendiente envío i213 (8)
+(1, 7,  8,  1),
+-- Pendiente envío i213 (8) -> Factura enviada i213 (9)
+(1, 8,  9,  1),
+-- Factura enviada i213 (9) -> Pendiente de contabilizar (10), Error envío i213 (17)
+(1, 9,  10, 1),
+(1, 9,  17, 1),
+-- Pendiente de contabilizar (10) -> Pendiente de Pago (11), Rechazo Contable (14)
+(1, 10, 11, 1),
+(1, 10, 14, 1),
+-- Pendiente de Pago (11) -> Pendiente de complemento (12)
+(1, 11, 12, 1),
+-- Pendiente de complemento (12) -> Completado (13)
+(1, 12, 13, 1),
+-- Rechazo Contable (14) -> Pendiente envío i213 (8)
+(1, 14, 8,  1),
+-- Estructura inválida (16) -> Desglose de factura (5)
+(1, 16, 5,  1),
+-- Error envío i213 (17) -> Pendiente envío i213 (8)
+(1, 17, 8,  1);
 
 
 -- ============================================================================

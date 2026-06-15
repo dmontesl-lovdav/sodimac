@@ -22,7 +22,7 @@ Request: `idTransaccion=f25797e1-...`, `receptionId=5ef71932-...`, `supplierNumb
 - **Bug**: los checks de duplicado en `registerInvoice` (PASO 6.1 serie+folio y 6.2 UUID) usan clave **compuesta con `issuerUuid`**. Si el emisor del registro existente difiere del que arma `getOrCreate`, ambos checks fallan → el documento llega a persistir → revienta el constraint único (que es solo por `fiscal_uuid`) → `ControllerAdvisor` devuelve 500 genérico (`{"message":"Internal Server Error","code":500}`).
 - **Fix**: `validateNoDuplicateByUuid` ahora valida **por `fiscal_uuid` solo** (`invoiceRepository.findByFiscalUuid`) además del check compuesto. El folio fiscal del SAT es único global. Ahora responde `WRN7014` ("previamente registrada con el mismo UUID") en vez de 500.
 - **Probado local**: simulando que 6.1 falla (folio distinto en BD) con fiscalUuid ya existente → antes 500, ahora `WRN7014`.
-- Falta deploy a UAT (rama dmontes → develop → uat).
+- **VERIFICADO EN UAT 2026-06-15**: mismo curl de Fer → `HTTP 400 WRN7014` (ya no 500). Fix desplegado (uat `7f01246`).
 
 **Nota descartada**: la addenda `Addenda_Sodimac_Detecno` NO era la causa del 500 (el `/register` vivo usa `InvoiceServiceImpl`, que no valida estructura de addenda). Queda como observación menor por si en otro flujo se valida.
 

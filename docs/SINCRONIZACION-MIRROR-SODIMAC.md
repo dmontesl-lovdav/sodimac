@@ -2,7 +2,7 @@
 
 > Cómo traer cambios de los repos reales de Sodimac al workspace donde corre Claude, y viceversa.
 > Cuando el usuario diga **"hay que sincronizar con el repositorio de Sodimac"**, este es el procedimiento.
-> Última actualización: 2026-06-03.
+> Última actualización: 2026-06-17.
 
 ---
 
@@ -107,13 +107,32 @@ git push origin dmontes
 ```
 
 ### Paso 2 (PC Sodimac) — pull mirror + robocopy mirror → real
+
 ```powershell
 cd C:\local
 git pull origin dmontes
-
-# copiar SOLO el proyecto tocado (mirror -> real)
-robocopy "C:\local\<proyecto>" "C:\workspace-fbc-github\<proyecto>" /MIR /XD .git node_modules dist target build .idea /XF *.log
 ```
+
+**Copia listo-para-pegar** — editar `$tocados` con SOLO los proyectos que cambiaron este round:
+
+```powershell
+# Proyectos a pasar (descomentar los que aplican)
+$tocados = @(
+  "APP03022-mrch.backend.somx.fiscal-api"
+  # "APP03022-mrch.backend.somx.finanzas-api"
+  # "APP03022-mrch.backend.somx.util-api"
+  # "APP03022-mrch.bff.somx.ppsomx.fiscal"
+  # "APP03022-mrch.bff.somx.ppsomx.finanzas"
+  # "APP03022-mrch-bff-somx-ppsomx-util"      # OJO: bff util usa GUIONES
+)
+foreach ($p in $tocados) {
+  Write-Host "=== $p ===" -ForegroundColor Cyan
+  robocopy "C:\local\$p" "C:\workspace-fbc-github\$p" /MIR /XD .git node_modules dist target build .idea /XF *.log
+}
+```
+
+> `/MIR` deja el destino idéntico al origen (borra lo que sobre). `/XD .git` protege el `.git` del repo real.
+> Tras copiar, en cada repo real hacer `git status` para ver SOLO los archivos esperados antes de commitear.
 
 ### Paso 3a (PC Sodimac) — commit directo a develop (fixes urgentes / sin PR)
 ```powershell

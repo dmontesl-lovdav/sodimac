@@ -4,6 +4,23 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-18 | Búsqueda NC/facturas no filtra por fecha de recepción
+
+**Contexto**: Fer reportó que en POST `/invoices/search` (UAT), al mandar un rango exacto de fechas de recepción (`fechaInicioRecepcion=2026-05-26`, `fechaFinalRecepcion=2026-05-30`, `tipoDocumento=I`) NO salían registros, pero con un rango amplio sí aparecían 3 facturas con fecha de recepción en ese rango.
+
+**Causa raíz**: el filtro `fechaInicioRecepcion`/`fechaFinalRecepcion` se aplicaba sobre `invoice.created_at` (fecha de **registro** en el sistema) en `InvoiceSpecification`, no sobre la **fecha real de recepción** (`tenant_finance.reception.reception_date`). Ambas difieren hasta semanas. Datos reales (dump UAT): factura `A/7957` registrada 2026-06-15 pero recepción 2026-05-04 (**42 días** de diferencia); `FVS/202500870-871` registradas 06-15/06-18, recepción 06-04. Por eso un rango amplio las pescaba por casualidad y el rango exacto fallaba.
+
+**Fix 2026-06-18** (rama `dmontes`):
+- `ReceptionEntity`: se mapeó la columna `reception_date`.
+- `ReceptionRepository.findReceptionIdsByDateRange` + `AddendumRepository.findInvoiceUuidsByReceptionNumbers`: resuelven los invoice_uuid cuya recepción cae en el rango (vínculo `addendum.reception_number = reception.reception_id`).
+- `InvoiceServiceImpl.resolveReceptionInvoiceUuids`: precomputa esa lista y la pasa a la Specification (evita join cross-tipo varchar=uuid que rompía en Postgres con `operator does not exist: character varying = uuid`).
+- `InvoiceSpecification`: nuevo overload 3-arg; filtra por `invoice_uuid IN (lista)`. Lista vacía = 0 resultados; null = sin filtro.
+- **Probado local sobre dump UAT**: rango por recepción 06-01..06-10 → FVS x2; 05-01..05-10 → A/7957; **06-04 exacto → FVS x2** (el caso que fallaba). Todas con created_at fuera del rango → el código viejo las habría perdido.
+
+**Pendiente**: el display de "fecha de recepción" en el front no viene de fiscal-api (el response no expone `fechaRecepcion`); si se quiere mostrar/ordenar por ella, agregar el campo al response (additive). Confirmar con Fer/Ivan si hace falta.
+
+---
+
 ## 2026-06-15 | Error 500 en /register con XML addenda Detecno (PARKMEX)
 
 **Contexto**: Fer reportó `Error 500` en POST `/register` de fiscal-api con el XML `AUGL750630GE4_1089513_MontoExacto.xml`.

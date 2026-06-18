@@ -19,6 +19,8 @@ _Consultas mas recientes primero_
 
 **Display fecha recepción (resuelto 2026-06-18)**: se agregó el campo `fechaRecepcion` (LocalDate) al response de `/invoices/search`, poblado desde `tenant_finance.reception.reception_date` vía `addendum.reception_number`. Cambio additive. Probado local: FVS/870-871 → 2026-06-04, A/7957 → 2026-05-04 (coincide con el filtro).
 
+**VERIFICADO EN UAT 2026-06-18**: deploy vivo (response trae `fechaRecepcion`). Búsqueda por recepción `2026-06-04` exacto → 4 facturas FVS (`totalElements:4`). Rango `26-30 may` vacío = correcto (no hay recepciones reales ahí; lo que Fer veía era createdAt). Mensaje formal enviado a Fer explicando filtro real vs registro + cómo validar.
+
 ---
 
 ## 2026-06-15 | Error 500 en /register con XML addenda Detecno (PARKMEX)

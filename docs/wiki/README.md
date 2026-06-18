@@ -32,9 +32,9 @@
 | 03 | [Facturación CFDI](procesos/04-facturacion-cfdi.md) | ✅ |
 | 04 | [Three Way Match (conciliación)](procesos/05-three-way-match.md) | ✅ |
 | 05 | [Addenda Sodimac](procesos/09-addenda-sodimac.md) | ✅ |
+| 06 | [Recepción y fechas de la factura](procesos/11-recepcion-y-fechas.md) | ✅ |
 | — | Alta proveedor | 📝 pendiente |
 | — | Orden de compra | 📝 pendiente |
-| — | Recepción | 📝 pendiente |
 | — | Complemento de pago (REP) | 📝 pendiente |
 | — | Nota de crédito | 📝 pendiente |
 | — | Estado de cuenta | 📝 pendiente |

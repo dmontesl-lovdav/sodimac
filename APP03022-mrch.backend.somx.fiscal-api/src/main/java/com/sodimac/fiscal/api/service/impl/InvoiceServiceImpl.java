@@ -370,6 +370,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         } catch (FiscalException e) {
             long duration = System.currentTimeMillis() - startTime;
+            // El registro atrapa la excepción y retorna un response de error; sin esto, Spring
+            // commitearía la transacción dejando datos parciales (ej. NC persistida con relación inválida).
+            markRollbackOnly();
             log.error("Error de validacion de negocio: [{}] {}", e.getCode(), e.getMessage());
             log.error("========================================");
             log.error("REGISTRO FALLIDO - ERROR DE NEGOCIO");
@@ -385,6 +388,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
+            markRollbackOnly();
             log.error("Error inesperado durante el registro", e);
             log.error("========================================");
             log.error("REGISTRO FALLIDO - ERROR TECNICO");
@@ -983,11 +987,29 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             return invoice;
 
+        } catch (FiscalException e) {
+            // Los errores de negocio (BUS0xx: relación NC, monto NC, etc.) deben propagarse
+            // con su código original, no enmascararse como ERR003 técnico.
+            throw e;
         } catch (Exception e) {
             log.error("Error guardando en base de datos", e);
             messageCatalog.throwException(FiscalMessageCode.ERR003, e.getMessage(), e);
         }
         return null; // Nunca alcanza aquí
+    }
+
+    /**
+     * Marca la transacción actual como rollback-only. Necesario porque registerInvoice atrapa
+     * las excepciones y retorna un response de error (la transacción no se revierte sola al no
+     * propagarse la excepción fuera del método @Transactional).
+     */
+    private void markRollbackOnly() {
+        try {
+            org.springframework.transaction.interceptor.TransactionAspectSupport
+                    .currentTransactionStatus().setRollbackOnly();
+        } catch (Exception ex) {
+            log.warn("No se pudo marcar rollback-only (sin transacción activa?): {}", ex.getMessage());
+        }
     }
 
     /**
@@ -1088,6 +1110,15 @@ public class InvoiceServiceImpl implements InvoiceService {
                         facturaRelacionada.getDocumentType());
                 messageCatalog.throwException(FiscalMessageCode.BUS044,
                         "UUID: " + uuidRelacionado + ", Tipo: " + facturaRelacionada.getDocumentType());
+            }
+
+            // 2.3.1 Validar que el monto de la NC no sea mayor al de la factura relacionada (QA junio-2026, BUS061)
+            BigDecimal ncTotal = ncInvoice.getTotal();
+            BigDecimal facturaTotal = facturaRelacionada.getTotal();
+            if (ncTotal != null && facturaTotal != null && ncTotal.compareTo(facturaTotal) > 0) {
+                log.error("Monto NC {} mayor a factura relacionada {} (UUID {})", ncTotal, facturaTotal, uuidRelacionado);
+                messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS061,
+                        ncTotal.toPlainString(), facturaTotal.toPlainString());
             }
 
             // 2.4 Crear y guardar la relación

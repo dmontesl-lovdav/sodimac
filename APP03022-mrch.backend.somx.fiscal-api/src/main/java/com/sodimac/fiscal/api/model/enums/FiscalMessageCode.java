@@ -163,6 +163,9 @@ public enum FiscalMessageCode {
     // la tolerancia de importe. Reasignado a BUS060 (avisar a Ivan).
     BUS060("BUS060", "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."),
 
+    // ========== ERRORES DE NEGOCIO - MONTO NOTA DE CRÉDITO (BUS061) - QA junio-2026 ==========
+    BUS061("BUS061", "El monto de la nota de crédito ({0}) no puede ser mayor al monto de la factura relacionada ({1}). Por favor, valida el documento antes de continuar."),
+
     // ========== ERRORES DE NEGOCIO - BLOQUEO DE PUBLICACIÓN (BUS2028-BUS2029) ==========
     BUS2028("BUS2028", "Actualmente existe un bloqueo para la publicación de facturas según el tipo de proveedor. Por favor, valida con el área de Finanzas de Sodimac para continuar."),
     BUS2029("BUS2029", "Actualmente existe un bloqueo para la publicación de facturas. Por favor, valida con el área de Finanzas de Sodimac para continuar."),

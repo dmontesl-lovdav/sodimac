@@ -28,15 +28,21 @@
 | 3 | **RFC factura vs Recepción** | "¿Valida RFC de la factura vs Recepción?" | Valida RFC receptor (catálogo), **no compara** RFC/proveedor factura vs recepción | Confirmar regla + implementar |
 | 4 | ~~**Fuera de tolerancia → "2 Recibido Parcial"**~~ | Registrar en parcial + pedir NC | ✅ **RESUELTO** 2026-06-17 — registra status 2, ya no lanza `BUS057`; alerta vía `warnings[WRN7030]`. Probado E2E local | — |
 | 5 | **Recepción → "1 Consumida" automático** | Al registrar factura con addenda OK | fiscal-api **no toca** recepción (solo lee). Manual (finanzas) la deja en 2 | Definir: batch o implementar en registro |
-| 6 | **NC mayor a la factura** | "¿La NC es mayor al monto factura? → Rechazo NC" | Valida relación NC↔factura pero **no compara montos** | Implementar NC ≤ factura |
+| 6 | ~~**NC mayor a la factura**~~ | "¿La NC es mayor al monto factura? → Rechazo NC" | ✅ **RESUELTO** 2026-06-17 — `saveRelatedCfdis` compara total NC vs total factura relacionada; `BUS061` si NC > factura. Probado E2E local | — |
 | 7 | **Perfil / proveedor asignado** | "¿Perfil de Proveedor? / proveedor asignado al perfil" | Filtro de seguridad (headers x-user) — vive en util-api/BFF, no en fiscal register | Verificar que esa capa lo cubra |
 
 ## ➕ En código pero NO en diagrama (QA junio-2026, posterior al diagrama)
 
 - Bloqueo tipo/proveedor (`BUS2028/BUS2029`) — PASO 6.3/6.4
 - NC forma de pago / uso CFDI (`BUS058/BUS059`) — PASO 6.5
+- Monto NC ≤ factura (`BUS061`) — en `saveRelatedCfdis`
 
 → Agregar estos nodos al diagrama para que quede al día.
+
+## 🐛 Fixes colaterales (2026-06-17)
+
+- **Errores de negocio NC enmascarados como `ERR003`:** `saveInvoiceToDatabase` atrapaba toda excepción y la reenvolvía como `ERR003` técnico. Los códigos `BUS042/043/044/061` se perdían. Fix: el catch deja pasar `FiscalException` con su código original.
+- **Partial-persist en errores post-save:** `registerInvoice` atrapa la excepción y retorna un response de error, por lo que Spring **commiteaba** la transacción dejando la NC persistida con relación inválida. Fix: helper `markRollbackOnly()` marca la transacción rollback-only en ambos catch. Verificado: NC fuera de regla ya no queda en BD.
 
 ## Prioridad sugerida (a confirmar con Ivan)
 

@@ -56,6 +56,7 @@ Deprecated:
 | Endpoints UAT + hosts | [docs/ENTORNO-UAT.md](docs/ENTORNO-UAT.md) |
 | Curls validados UAT | [docs/CURLS-VALIDADOS-UAT.md](docs/CURLS-VALIDADOS-UAT.md) |
 | Conexion BD local + UAT | [docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md) |
+| Dump BD UAT → PC personal (runbook) | [docs/RUNBOOK-DUMP-UAT-LOCAL.md](docs/RUNBOOK-DUMP-UAT-LOCAL.md) |
 | Setup local (Docker + servicios) | [docs/ENTORNO-LOCAL.md](docs/ENTORNO-LOCAL.md) |
 | Comandos git utiles | [docs/GIT-COMANDOS.md](docs/GIT-COMANDOS.md) |
 | Sincronizar mirror ↔ Sodimac (runbook) | [docs/SINCRONIZACION-MIRROR-SODIMAC.md](docs/SINCRONIZACION-MIRROR-SODIMAC.md) |

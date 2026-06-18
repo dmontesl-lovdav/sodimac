@@ -1483,6 +1483,26 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceUuids;
     }
 
+    /**
+     * Obtiene la reception_date real a partir del reception_number de la addenda
+     * (que guarda el reception_id en texto). Devuelve null si no hay número, no es un
+     * UUID válido o la recepción no existe. Ver fix Fer 2026-06-18.
+     */
+    private LocalDate resolveReceptionDate(String receptionNumber) {
+        if (receptionNumber == null || receptionNumber.isBlank()) {
+            return null;
+        }
+        try {
+            UUID receptionId = UUID.fromString(receptionNumber.trim());
+            return receptionRepository.findById(receptionId)
+                    .map(ReceptionEntity::getReceptionDate)
+                    .orElse(null);
+        } catch (IllegalArgumentException e) {
+            // reception_number no es un UUID (ej. número legacy) -> sin fecha de recepción
+            return null;
+        }
+    }
+
     @Override
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors) {
         log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={}", allowedVendors);
@@ -1594,6 +1614,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         AddendumEntity addendum = addendumRepository.findByInvoiceUuid(invoice.getInvoiceUuid())
                 .orElse(null);
 
+        // Fecha de recepción real (tenant_finance.reception.reception_date) vía addendum.reception_number
+        LocalDate fechaRecepcion = resolveReceptionDate(addendum != null ? addendum.getReceptionNumber() : null);
+
         // STM-1168: Buscar NC relacionadas (solo para Facturas tipo I)
         List<NotaCreditoRelacionadaDto> notasCreditoRelacionadas = null;
         if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())) {
@@ -1663,6 +1686,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 // ========== DATOS DE NEGOCIO ADDENDA (STM-1169) ==========
                 .noOrdenCompra(addendum != null ? addendum.getPurchaseOrderNumber() : null)
                 .noRecepcion(addendum != null ? addendum.getReceptionNumber() : null)
+                .fechaRecepcion(fechaRecepcion)
                 .numeroProveedor(addendum != null ? addendum.getSupplierNumber() : null)
                 .tipoProveedor(addendum != null ? addendum.getSupplierType() : null)
                 .guiaEntrega(addendum != null ? addendum.getShippingGuideNumber() : null)

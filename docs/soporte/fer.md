@@ -17,7 +17,7 @@ _Consultas mas recientes primero_
 - `InvoiceSpecification`: nuevo overload 3-arg; filtra por `invoice_uuid IN (lista)`. Lista vacía = 0 resultados; null = sin filtro.
 - **Probado local sobre dump UAT**: rango por recepción 06-01..06-10 → FVS x2; 05-01..05-10 → A/7957; **06-04 exacto → FVS x2** (el caso que fallaba). Todas con created_at fuera del rango → el código viejo las habría perdido.
 
-**Pendiente**: el display de "fecha de recepción" en el front no viene de fiscal-api (el response no expone `fechaRecepcion`); si se quiere mostrar/ordenar por ella, agregar el campo al response (additive). Confirmar con Fer/Ivan si hace falta.
+**Display fecha recepción (resuelto 2026-06-18)**: se agregó el campo `fechaRecepcion` (LocalDate) al response de `/invoices/search`, poblado desde `tenant_finance.reception.reception_date` vía `addendum.reception_number`. Cambio additive. Probado local: FVS/870-871 → 2026-06-04, A/7957 → 2026-05-04 (coincide con el filtro).
 
 ---
 

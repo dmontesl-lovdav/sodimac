@@ -37,13 +37,15 @@ Al registrar una **factura por XML** intervienen **2 trenes**: **Factura (1)** y
 ## Decisiones de Ivan (2026-06-16)
 
 - **(a) Estatus 3 = "Recibida".** El diagrama decía "Proceso de envío"; se corrige el diagrama. Código + Tren v1.0 ya están en "Recibida". **Sin cambio de código.**
-- **(b) Fuera de tolerancia → "2 - Recibido Parcial".** El flujo indica que la factura se registre en parcial, NO que se rechace.
-  - **Cambio de código pendiente:** hoy `validateImporteTolerance` lanza `BUS057` (rechaza) cuando `diff > tolerancia`. Debe cambiar a **registrar la factura con `status = 2` (Recibido Parcial)** y continuar (pedir NC).
+- **(b) Fuera de tolerancia → "2 - Recibido Parcial".** El flujo indica que la factura se registre en parcial, NO que se rechace. Confirmado por Ivan 2026-06-17 (aplica a ambas direcciones).
+  - ✅ **IMPLEMENTADO 2026-06-17:** `validateImporteTolerance` ya no lanza `BUS057`; retorna el mensaje de advertencia (o `null`). `saveInvoiceToDatabase` usa el flag para registrar `status = 2` (Recibido Parcial). Dentro de tolerancia → `status = 3` (Recibida). `BUS057` queda sin uso en el flujo.
+  - **Alerta al usuario:** la factura se registra (`success:true`, RES004) pero el aviso viaja en `response.warnings[]` con nuevo código **`WRN7030`** (incluye subtotal, importe recepción y tolerancia). El front lo muestra como alerta sin bloquear el registro.
+  - **Probado E2E local 2026-06-17:** fuera de tolerancia → status 2 + WRN7030; dentro → status 3 + warnings vacío.
 - **Redacción:** unificar "Recibida Parcial" → **"Recibido Parcial"** (estatus 2).
 
 ## Pendientes / dudas abiertas a Ivan
 
-1. **(b) caso factura < recepción:** el diagrama muestra "mensaje de alerta, monto menor a la recepción". ¿También queda en parcial (2), o se rechaza/alerta sin registrar? (factura > recepción ya quedó claro: parcial + NC).
+1. ~~**(b) caso factura < recepción**~~ → Ivan 2026-06-17: fuera de tolerancia = **2 Recibido Parcial** en ambas direcciones. Implementado así. (La "alerta monto menor" del diagrama queda como mejora UX futura, no bloquea registro.)
 2. **Recepción → 1 (Consumida) automático:** ¿lo hace un batch o se implementa en el registro? Hoy es gap.
 
 ## Flujo (diagrama) resumido

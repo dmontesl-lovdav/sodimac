@@ -26,7 +26,7 @@
 | 1 | **Validación fiscal / PAC** | Todo `DiagramaFlujoFiscal`: estructura fiscal PAC, estatus timbrado, "¿Validación de timbre?", catalogar errores PAC | PASO 8 **COMENTADO** (`// validateWithSat`) | Definir si se integra PAC o el diagrama excede alcance actual |
 | 2 | **Impuestos** | "Valida impuestos permitidos Sodimac" + "Valida monto impuestos registrados vs calculados" | Solo **guarda** impuestos (línea ~946); `BUS040/BUS041` en enum pero **no se llaman** | Implementar validación impuestos |
 | 3 | **RFC factura vs Recepción** | "¿Valida RFC de la factura vs Recepción?" | Valida RFC receptor (catálogo), **no compara** RFC/proveedor factura vs recepción | Confirmar regla + implementar |
-| 4 | **Fuera de tolerancia → "2 Recibido Parcial"** | Registrar en parcial + pedir NC | **Rechaza con `BUS057`** | Cambiar `validateImporteTolerance` (decisión b Ivan) |
+| 4 | ~~**Fuera de tolerancia → "2 Recibido Parcial"**~~ | Registrar en parcial + pedir NC | ✅ **RESUELTO** 2026-06-17 — registra status 2, ya no lanza `BUS057`; alerta vía `warnings[WRN7030]`. Probado E2E local | — |
 | 5 | **Recepción → "1 Consumida" automático** | Al registrar factura con addenda OK | fiscal-api **no toca** recepción (solo lee). Manual (finanzas) la deja en 2 | Definir: batch o implementar en registro |
 | 6 | **NC mayor a la factura** | "¿La NC es mayor al monto factura? → Rechazo NC" | Valida relación NC↔factura pero **no compara montos** | Implementar NC ≤ factura |
 | 7 | **Perfil / proveedor asignado** | "¿Perfil de Proveedor? / proveedor asignado al perfil" | Filtro de seguridad (headers x-user) — vive en util-api/BFF, no en fiscal register | Verificar que esa capa lo cubra |

@@ -278,10 +278,13 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             // === PASO 7: VALIDAR TOLERANCIA IMPORTE (solo Facturas) ===
+            // Fuera de tolerancia NO rechaza: registra como Recibido Parcial (status 2) y pide NC (decisión Ivan).
             log.info("Paso 7: Validando tolerancia entre subtotal factura e importe recepción");
+            String toleranceWarning = null;
             if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {
-                validateImporteTolerance(invoiceDto, receptionId, idTransaccion, SERVICE_NAME);
+                toleranceWarning = validateImporteTolerance(invoiceDto, receptionId, idTransaccion, SERVICE_NAME);
             }
+            boolean recibidoParcial = toleranceWarning != null;
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), SERVICE_NAME,
                     "system", false, "Validación de tolerancia completada",
                     "receptionId: " + receptionId, null, null);
@@ -306,7 +309,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                     issuer,
                     supplierNumber,
                     purchaseOrderNumber,
-                    receptionId
+                    receptionId,
+                    recibidoParcial
             );
             log.info("Documento persistido exitosamente. Invoice UUID: {}", savedInvoice.getInvoiceUuid());
 
@@ -337,6 +341,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                     true,
                     invoiceDto
             );
+
+            // Recibido Parcial: registro exitoso, pero se adjunta advertencia de fuera de tolerancia (WRN7030).
+            if (toleranceWarning != null) {
+                response.getWarnings().add(toleranceWarning);
+            }
 
             long duration = System.currentTimeMillis() - startTime;
             log.info("========================================");
@@ -696,12 +705,23 @@ public class InvoiceServiceImpl implements InvoiceService {
      * no supere la tolerancia configurada en cat_parameter (id=3, valor por defecto 40 pesos).
      * Lanza BUS057 si la diferencia supera la tolerancia.
      */
-    private void validateImporteTolerance(InvoiceXmlDto invoiceDto, String receptionId,
+    /**
+     * Evalúa la tolerancia entre el subtotal de la factura y el importe de la recepción.
+     *
+     * Decisión Ivan (2026-06-16/17): cuando la diferencia supera la tolerancia, la factura
+     * NO se rechaza; se registra en estatus 2 (Recibido Parcial) y queda pendiente de NC.
+     * Aplica a ambas direcciones (factura > recepción y factura < recepción).
+     *
+     * @return mensaje de advertencia (WRN7030, con montos) si la factura quedó fuera de
+     *         tolerancia y debe registrarse como Recibido Parcial; {@code null} si está dentro
+     *         de tolerancia (Recibida) o no se pudo evaluar (datos faltantes -> se asume Recibida).
+     */
+    private String validateImporteTolerance(InvoiceXmlDto invoiceDto, String receptionId,
             String idTransaccion, String serviceName) {
 
         if (receptionId == null || receptionId.isBlank()) {
             log.warn("receptionId no proporcionado; se omite validación de tolerancia");
-            return;
+            return null;
         }
 
         BigDecimal subtotal;
@@ -709,13 +729,13 @@ public class InvoiceServiceImpl implements InvoiceService {
             subtotal = new BigDecimal(invoiceDto.getSubTotal());
         } catch (Exception e) {
             log.warn("SubTotal del XML no es numérico ({}); se omite validación de tolerancia", invoiceDto.getSubTotal());
-            return;
+            return null;
         }
 
         FinanzasReceptionResponse reception = finanzasApiService.getReception(receptionId);
         if (reception == null || reception.getAmount() == null) {
             log.warn("finanzas-api no retornó amount para receptionId {}; se omite validación", receptionId);
-            return;
+            return null;
         }
 
         BigDecimal receptionAmount;
@@ -723,7 +743,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             receptionAmount = new BigDecimal(reception.getAmount());
         } catch (Exception e) {
             log.warn("Amount de recepción no es numérico ({}); se omite validación", reception.getAmount());
-            return;
+            return null;
         }
 
         // Determinar tolerancia efectiva según QA junio-2026:
@@ -753,14 +773,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                 modo, subtotal, receptionAmount, diff, tolerance);
 
         if (diff.compareTo(tolerance) > 0) {
-            log.error("Diferencia {} supera tolerancia {} ({}) para receptionId {}", diff, tolerance, modo, receptionId);
-            messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS057,
-                    subtotal.toPlainString(),
-                    receptionAmount.toPlainString(),
-                    tolerance.toPlainString());
+            // Decisión Ivan: fuera de tolerancia NO rechaza; registra como Recibido Parcial (status 2) y pide NC.
+            log.warn("Diferencia {} supera tolerancia {} ({}) para receptionId {}. Se registrará como Recibido Parcial.",
+                    diff, tolerance, modo, receptionId);
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                    "system", false, "Fuera de tolerancia -> Recibido Parcial (pendiente NC)",
+                    "subtotal=" + subtotal.toPlainString() + ", recepcion=" + receptionAmount.toPlainString()
+                            + ", tolerancia=" + tolerance.toPlainString() + " (" + modo + ")", null, null);
+            return messageCatalog.getMessage(FiscalMessageCode.WRN7030,
+                    subtotal.toPlainString(), receptionAmount.toPlainString(), tolerance.toPlainString());
         }
 
         log.info("Tolerancia validada correctamente [{}]. Diferencia: {} pesos", modo, diff);
+        return null;
     }
 
     /**
@@ -867,7 +892,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             IssuerEntity issuer,
             String supplierNumber,
             String purchaseOrderNumber,
-            String receptionId) {
+            String receptionId,
+            boolean recibidoParcial) {
 
         log.info("Iniciando persistencia en base de datos");
 
@@ -918,10 +944,12 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             invoice.setXmlContent(xmlContent);
-            // v1.0: Factura entra en estatus 3 (Recibida); NC mantiene 1 hasta alinear CreditNoteStatus
-            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA
-                    ? InvoiceStatus.RECIBIDA.getCodigo()
-                    : 1);
+            // v1.0: Factura entra en estatus 3 (Recibida), o 2 (Recibido Parcial) si quedó fuera de
+            // tolerancia (decisión Ivan). NC mantiene 1 hasta alinear CreditNoteStatus.
+            int statusFactura = recibidoParcial
+                    ? InvoiceStatus.RECIBIDO_PARCIAL.getCodigo()
+                    : InvoiceStatus.RECIBIDA.getCodigo();
+            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA ? statusFactura : 1);
             invoice.setIssuerUuid(issuer.getIssuerUuid());
             invoice.setReceiverUuid(receiver.getReceiverUuid());
 

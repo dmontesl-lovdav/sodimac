@@ -66,6 +66,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest,
                 (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
                 (Join<PaymentsEntity, ReceiverEntity>) receiverFetch);
+        addTipoProveedorPredicate(cb, query, root, searchRequest.getTipoProveedor(), predicates);
 
         // Aplicar predicados
         if (!predicates.isEmpty()) {
@@ -163,6 +164,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
 
         // Construir los mismos predicados
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
+        addTipoProveedorPredicate(cb, countQuery, root, searchRequest.getTipoProveedor(), predicates);
 
         countQuery.select(cb.count(root));
 
@@ -190,6 +192,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest,
                 (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
                 (Join<PaymentsEntity, ReceiverEntity>) receiverFetch);
+        addTipoProveedorPredicate(cb, query, root, searchRequest.getTipoProveedor(), predicates);
 
         // Filtro de seguridad por vendor (addendum.supplier_number)
         addVendorPredicate(cb, query, root, allowedVendors, predicates);
@@ -210,6 +213,25 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         long total = countPaymentsWithVendors(searchRequest, allowedVendors);
 
         return new PageImpl<>(results, PageRequest.of(searchRequest.getPage(), searchRequest.getSize()), total);
+    }
+
+    /**
+     * Filtro por tipo de proveedor (issue Fer #5): subquery sobre addendum.supplier_type
+     * (id 1-4 de CatTipoProveedor), vinculado por payments_uuid.
+     */
+    private void addTipoProveedorPredicate(CriteriaBuilder cb, CriteriaQuery<?> query,
+                                           Root<PaymentsEntity> root,
+                                           String tipoProveedor,
+                                           List<Predicate> predicates) {
+        if (tipoProveedor == null || tipoProveedor.isBlank()) return;
+        Subquery<UUID> sub = query.subquery(UUID.class);
+        Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
+        sub.select(addRoot.get("paymentsUuid"))
+           .where(cb.and(
+               cb.isNotNull(addRoot.get("paymentsUuid")),
+               cb.equal(addRoot.get("supplierType"), tipoProveedor)
+           ));
+        predicates.add(root.get("paymentsUuid").in(sub));
     }
 
     private void addVendorPredicate(CriteriaBuilder cb, CriteriaQuery<?> query,
@@ -239,6 +261,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.LEFT);
 
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
+        addTipoProveedorPredicate(cb, countQuery, root, searchRequest.getTipoProveedor(), predicates);
         addVendorPredicate(cb, countQuery, root, allowedVendors, predicates);
 
         countQuery.select(cb.count(root));

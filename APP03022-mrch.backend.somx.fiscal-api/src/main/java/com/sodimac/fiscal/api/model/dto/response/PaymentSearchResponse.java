@@ -94,6 +94,13 @@ public class PaymentSearchResponse {
     private Integer relatedDocumentsCount;
 
     /**
+     * Tipo de proveedor: id (1-4 de CatTipoProveedor) y descripción en campos separados;
+     * el front decide cuál mostrar. Issue Fer #5.
+     */
+    private String tipoProveedor;
+    private String tipoProveedorDescripcion;
+
+    /**
      * Fecha de creación del registro.
      */
     private LocalDateTime createdAt;

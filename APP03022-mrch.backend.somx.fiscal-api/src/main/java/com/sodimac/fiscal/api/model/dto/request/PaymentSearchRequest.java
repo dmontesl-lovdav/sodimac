@@ -55,6 +55,11 @@ public class PaymentSearchRequest {
     private Long numeroProveedor;
 
     /**
+     * Tipo de proveedor (id numérico 1-4 de CatTipoProveedor) para filtrar. Issue Fer #5.
+     */
+    private String tipoProveedor;
+
+    /**
      * Fecha de pago inicial (rango de búsqueda).
      */
     private LocalDate fechaPagoInicio;

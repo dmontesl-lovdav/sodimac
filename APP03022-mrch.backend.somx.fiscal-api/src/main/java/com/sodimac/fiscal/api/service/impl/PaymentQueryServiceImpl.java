@@ -31,6 +31,7 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
 
     private final PaymentsRepository paymentsRepository;
     private final PaymentRepository paymentRepository;
+    private final com.sodimac.fiscal.api.repository.AddendumRepository addendumRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,6 +71,12 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
         // Contar documentos relacionados
         Integer relatedDocsCount = paymentRepository.countRelatedDocumentsByPaymentsUuid(entity.getPaymentsUuid());
 
+        // Tipo de proveedor (id + descripción) desde la addenda del complemento - Fer #5
+        String tipoProveedorId = addendumRepository.findSupplierTypeByPaymentsUuid(entity.getPaymentsUuid());
+        String tipoProveedorDescripcion = (tipoProveedorId != null && !tipoProveedorId.isBlank())
+                ? addendumRepository.findTipoProveedorDescripcion(tipoProveedorId)
+                : null;
+
         return PaymentSearchResponse.builder()
                 .paymentsUuid(entity.getPaymentsUuid())
                 .fiscalUuid(entity.getFiscalUuid())
@@ -88,6 +95,8 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
                 .receiverName(entity.getReceiver() != null ? entity.getReceiver().getName() : null)
                 .totalAmount(totalAmount)
                 .relatedDocumentsCount(relatedDocsCount)
+                .tipoProveedor(tipoProveedorId)
+                .tipoProveedorDescripcion(tipoProveedorDescripcion)
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
                 .build();

@@ -47,4 +47,12 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = 1 " +
             "WHERE ch.code = 'CatTipoProveedor' AND cd.value = :tipoId LIMIT 1", nativeQuery = true)
     String findTipoProveedorDescripcion(@Param("tipoId") String tipoId);
+
+    /**
+     * supplier_type (id del tipo de proveedor) de la addenda de un complemento de pago,
+     * por payments_uuid. Para devolver tipo en la búsqueda de complementos (Fer #5).
+     */
+    @Query(value = "SELECT supplier_type FROM tenant_fiscal.addendum " +
+            "WHERE payments_uuid = :paymentsUuid AND supplier_type IS NOT NULL LIMIT 1", nativeQuery = true)
+    String findSupplierTypeByPaymentsUuid(@Param("paymentsUuid") UUID paymentsUuid);
 }

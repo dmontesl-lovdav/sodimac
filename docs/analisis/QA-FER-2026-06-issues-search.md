@@ -15,8 +15,8 @@
 | 1 | `noRecepcion` muestra GUID en vez del número; `tipoProveedor` null | search | ✅ resuelto 2026-06-19 (`5f5f4b8` noRecepcion + `961513d` tipoProveedor) |
 | 2 | Filtro fecha "no opera" (26-30 may vacío) | search | ✅ cerrado (era pre-reunión Ivan) |
 | 3 | `tipoProveedor` null también en NC | search | ✅ resuelto con #1 (`961513d`) |
-| 4 | Agregar filtro por `tipoProveedor` (id numérico) | search | 🔧 por hacer |
-| 5 | Agregar filtro por `tipoProveedor` | complementos-pago/buscar | 🔧 por hacer |
+| 4 | Agregar filtro por `tipoProveedor` (id numérico) | search | ✅ resuelto 2026-06-19 (`5fe715b`) — filtro + id/descripción en response |
+| 5 | Agregar filtro por `tipoProveedor` | complementos-pago/buscar | ✅ resuelto 2026-06-19 — filtro + id/descripción en response |
 | 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | 🟡 feature grande (catálogo CatTipoNotaCredito ya creado) |
 
 **Decisiones tomadas:**

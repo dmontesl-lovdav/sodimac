@@ -49,15 +49,17 @@ Ver también: [Addenda Sodimac](09-addenda-sodimac.md) · [Three Way Match](05-t
 
 Pueden diferir bastante (caso real UAT: factura registrada 15-jun, recepción 04-may → 42 días). El usuario que busca facturas piensa en la **fecha de recepción**, no en la de registro.
 
-## Búsqueda de facturas/NC por fecha de recepción
+## Búsqueda de facturas/NC por fecha (endpoint search)
 
 Endpoint: `POST /invoices/search`, campos `fechaInicioRecepcion` / `fechaFinalRecepcion`.
 
-- El filtro trabaja sobre la **`reception_date` real** (vía `addendum.reception_number → reception`), **no** sobre `created_at`.
-- El response incluye el campo **`fechaRecepcion`** por registro (para mostrar/ordenar).
-- Si una factura no tiene recepción ligada (o el `reception_number` no es un UUID válido), no entra en el filtro por fecha de recepción y su `fechaRecepcion` viene en `null`.
+- **El filtro trabaja sobre `invoice.created_at` (fecha de REGISTRO de la factura en el portal).** En este endpoint la `reception_date` de finanzas (orden de compra) **NO juega**.
+- Los campos del request se llaman `fechaInicio/FinalRecepcion`, pero refieren a la fecha de **recepción/registro de la factura en el sistema**, no a la recepción de mercancía de SAP.
+- El response **no** expone `fechaRecepcion`.
 
-> **Bug histórico (resuelto 2026-06-18):** el filtro comparaba contra `created_at` (registro) en lugar de `reception_date`. Un rango exacto de fechas de recepción devolvía vacío. Detalle en [docs/soporte/fer.md](../../soporte/fer.md).
+> **Historial de decisión:**
+> - 2026-06-18: se cambió el filtro a `reception_date` (a pedido de Fer, que veía vacío el rango exacto).
+> - **2026-06-19 (vigente):** negocio aclaró que la búsqueda debe ir por la **fecha de registro de la factura** (`created_at`). Se revirtió: el filtro vuelve a `created_at` y se quitó el campo `fechaRecepcion` del response. Detalle en [docs/soporte/fer.md](../../soporte/fer.md).
 
 ## Estatus de recepción al relacionar la factura
 

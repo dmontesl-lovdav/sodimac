@@ -21,6 +21,18 @@ _Consultas mas recientes primero_
 
 **VERIFICADO EN UAT 2026-06-18**: deploy vivo (response trae `fechaRecepcion`). Búsqueda por recepción `2026-06-04` exacto → 4 facturas FVS (`totalElements:4`). Rango `26-30 may` vacío = correcto (no hay recepciones reales ahí; lo que Fer veía era createdAt). Mensaje formal enviado a Fer explicando filtro real vs registro + cómo validar.
 
+### REVERTIDO 2026-06-19 — la búsqueda va por fecha de REGISTRO, no por recepción
+
+Negocio aclaró: en `/invoices/search` las fechas deben comparar contra la **fecha de registro de la factura** (`invoice.created_at`). El campo de fecha de recepción de finanzas (orden de compra) **NO juega** en este endpoint.
+
+Se revirtió el cambio del 2026-06-18:
+- `InvoiceSpecification`: filtro vuelve a `created_at` (atStartOfDay / atTime 23:59:59).
+- Se eliminó el plumbing de recepción: `resolveReceptionInvoiceUuids`, `resolveReceptionDate`, overload 3-arg de `buildSpecification`, métodos `ReceptionRepository.findReceptionIdsByDateRange` y `AddendumRepository.findInvoiceUuidsByReceptionNumbers`, campo `ReceptionEntity.receptionDate`, inyección `receptionRepository` en el service.
+- Se quitó el campo `fechaRecepcion` del response `InvoiceSearchResponse`.
+- Probado local: `created_at` 2026-06-15 → 2 facturas; `2026-06-04` (reception_date) → 0; response sin `fechaRecepcion`.
+
+Nota: los campos del request siguen llamándose `fechaInicio/FinalRecepcion` pero refieren a la fecha de registro de la factura.
+
 ---
 
 ## 2026-06-15 | Error 500 en /register con XML addenda Detecno (PARKMEX)

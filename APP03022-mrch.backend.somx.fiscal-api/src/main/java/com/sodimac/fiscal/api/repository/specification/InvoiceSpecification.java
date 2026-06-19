@@ -5,13 +5,11 @@ import com.sodimac.fiscal.api.model.entity.AddendumEntity;
 import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
 import com.sodimac.fiscal.api.model.entity.IssuerEntity;
 import com.sodimac.fiscal.api.model.entity.ReceiverEntity;
-import com.sodimac.fiscal.api.model.entity.ReceptionEntity;
 import com.sodimac.fiscal.api.model.entity.RelatedCfdiEntity;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,21 +34,10 @@ public class InvoiceSpecification {
      * @return Specification para ejecutar la query
      */
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest) {
-        return buildSpecification(searchRequest, null, null);
+        return buildSpecification(searchRequest, null);
     }
 
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors) {
-        return buildSpecification(searchRequest, allowedVendors, null);
-    }
-
-    /**
-     * @param receptionInvoiceUuids invoice_uuid que cumplen el filtro de fecha de recepción
-     *        (precomputado en el servicio vía addendum→reception). {@code null} = no se pidió
-     *        filtro de fecha; lista vacía = se pidió pero ninguna recepción cae en el rango
-     *        (resultado vacío). Ver fix Fer 2026-06-18.
-     */
-    public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest,
-            List<String> allowedVendors, List<UUID> receptionInvoiceUuids) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -72,18 +59,18 @@ public class InvoiceSpecification {
                 );
             }
 
-            // 2 + 3. Fecha de Recepción (Obligatorio)
-            // FIX (Fer 2026-06-18): antes se filtraba por invoice.createdAt (fecha de REGISTRO),
-            // que difiere hasta semanas de la fecha real de recepción. Ahora el servicio precomputa
-            // los invoice_uuid cuya reception_date (tenant_finance.reception) cae en el rango,
-            // vinculados vía addendum.reception_number = reception.reception_id, y se filtran aquí.
-            // receptionInvoiceUuids: null = sin filtro; vacío = pedido pero ninguna recepción en rango.
-            if (receptionInvoiceUuids != null) {
-                if (receptionInvoiceUuids.isEmpty()) {
-                    predicates.add(criteriaBuilder.disjunction()); // ninguna coincidencia -> 0 resultados
-                } else {
-                    predicates.add(root.get("invoiceUuid").in(receptionInvoiceUuids));
-                }
+            // 2 + 3. Fecha de registro de la factura (Obligatorio)
+            // La búsqueda filtra por la fecha en que la factura se registró en el portal
+            // (invoice.created_at), NO por la reception_date de finanzas (decisión negocio 2026-06-19;
+            // revierte el cambio del 2026-06-18). Los campos del request se llaman fechaInicio/FinalRecepcion
+            // pero refieren a la fecha de registro/recepción de la factura en el sistema.
+            if (searchRequest.getFechaInicioRecepcion() != null) {
+                LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startOfDay));
+            }
+            if (searchRequest.getFechaFinalRecepcion() != null) {
+                LocalDateTime endOfDay = searchRequest.getFechaFinalRecepcion().atTime(23, 59, 59);
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endOfDay));
             }
 
             // 4. Tipo de Documento (Obligatorio)

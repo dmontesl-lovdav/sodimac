@@ -97,7 +97,6 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentsRepository paymentsRepository;
     private final AddendumRepository addendumRepository;
-    private final ReceptionRepository receptionRepository;
     private final AuthorizedReceiverCatalogRepository receiverCatalogRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final LogRepository logRepository;
@@ -1478,59 +1477,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     // ========== BÚSQUEDA (STM-338) ==========
 
-    /**
-     * Resuelve los invoice_uuid cuyas recepciones (reception_date) caen en el rango dado.
-     * Fix Fer 2026-06-18: la búsqueda debe filtrar por la fecha REAL de recepción
-     * (tenant_finance.reception.reception_date), no por invoice.created_at (registro).
-     *
-     * @return {@code null} si no se pidió filtro de fechas (no aplica); lista (posiblemente
-     *         vacía) de invoice_uuid que cumplen el rango en caso contrario.
-     */
-    private List<UUID> resolveReceptionInvoiceUuids(LocalDate fechaInicio, LocalDate fechaFinal) {
-        if (fechaInicio == null && fechaFinal == null) {
-            return null; // sin filtro de fecha de recepción
-        }
-        LocalDate inicio = (fechaInicio != null) ? fechaInicio : LocalDate.of(1900, 1, 1);
-        LocalDate fin = (fechaFinal != null) ? fechaFinal : LocalDate.of(2999, 12, 31);
-
-        List<UUID> receptionIds = receptionRepository.findReceptionIdsByDateRange(inicio, fin);
-        if (receptionIds.isEmpty()) {
-            log.info("Filtro fecha recepción [{} - {}]: 0 recepciones en rango", inicio, fin);
-            return List.of();
-        }
-        List<String> receptionIdStrings = receptionIds.stream().map(UUID::toString).toList();
-        List<UUID> invoiceUuids = addendumRepository.findInvoiceUuidsByReceptionNumbers(receptionIdStrings);
-        log.info("Filtro fecha recepción [{} - {}]: {} recepciones -> {} facturas/NC",
-                inicio, fin, receptionIds.size(), invoiceUuids.size());
-        return invoiceUuids;
-    }
-
-    /**
-     * Obtiene la reception_date real a partir del reception_number de la addenda
-     * (que guarda el reception_id en texto). Devuelve null si no hay número, no es un
-     * UUID válido o la recepción no existe. Ver fix Fer 2026-06-18.
-     */
-    private LocalDate resolveReceptionDate(String receptionNumber) {
-        if (receptionNumber == null || receptionNumber.isBlank()) {
-            return null;
-        }
-        try {
-            UUID receptionId = UUID.fromString(receptionNumber.trim());
-            return receptionRepository.findById(receptionId)
-                    .map(ReceptionEntity::getReceptionDate)
-                    .orElse(null);
-        } catch (IllegalArgumentException e) {
-            // reception_number no es un UUID (ej. número legacy) -> sin fecha de recepción
-            return null;
-        }
-    }
-
     @Override
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors) {
         log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={}", allowedVendors);
-        List<UUID> receptionInvoiceUuids = resolveReceptionInvoiceUuids(
-                searchRequest.getFechaInicioRecepcion(), searchRequest.getFechaFinalRecepcion());
-        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors, receptionInvoiceUuids);
+        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors);
         Sort sort = Sort.by(
                 "DESC".equalsIgnoreCase(searchRequest.getSortDirection()) ? Sort.Direction.DESC : Sort.Direction.ASC,
                 searchRequest.getSortBy() != null ? searchRequest.getSortBy() : "createdAt"
@@ -1573,9 +1523,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         // === PASO 1: CONSTRUIR SPECIFICATION CON FILTROS (JPA CRITERIA) ===
         log.info("Paso 1: Construyendo Specification con filtros usando JPA Criteria");
-        List<UUID> receptionInvoiceUuids = resolveReceptionInvoiceUuids(
-                searchRequest.getFechaInicioRecepcion(), searchRequest.getFechaFinalRecepcion());
-        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, null, receptionInvoiceUuids);
+        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest);
         log.debug("Specification construida exitosamente");
 
         // === PASO 2: CONFIGURAR PAGINACION Y ORDENAMIENTO ===
@@ -1635,9 +1583,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         // Buscar addenda asociada (consulta adicional necesaria)
         AddendumEntity addendum = addendumRepository.findByInvoiceUuid(invoice.getInvoiceUuid())
                 .orElse(null);
-
-        // Fecha de recepción real (tenant_finance.reception.reception_date) vía addendum.reception_number
-        LocalDate fechaRecepcion = resolveReceptionDate(addendum != null ? addendum.getReceptionNumber() : null);
 
         // STM-1168: Buscar NC relacionadas (solo para Facturas tipo I)
         List<NotaCreditoRelacionadaDto> notasCreditoRelacionadas = null;
@@ -1708,7 +1653,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                 // ========== DATOS DE NEGOCIO ADDENDA (STM-1169) ==========
                 .noOrdenCompra(addendum != null ? addendum.getPurchaseOrderNumber() : null)
                 .noRecepcion(addendum != null ? addendum.getReceptionNumber() : null)
-                .fechaRecepcion(fechaRecepcion)
                 .numeroProveedor(addendum != null ? addendum.getSupplierNumber() : null)
                 .tipoProveedor(addendum != null ? addendum.getSupplierType() : null)
                 .guiaEntrega(addendum != null ? addendum.getShippingGuideNumber() : null)

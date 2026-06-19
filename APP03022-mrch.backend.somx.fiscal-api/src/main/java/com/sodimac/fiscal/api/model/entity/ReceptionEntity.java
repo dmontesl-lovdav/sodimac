@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -18,7 +17,4 @@ public class ReceptionEntity {
 
     @Column(name = "amount")
     private BigDecimal amount;
-
-    @Column(name = "reception_date")
-    private LocalDate receptionDate;
 }

@@ -145,9 +145,6 @@ public class InvoiceSearchResponse {
     @Schema(description = "Número de Recepción asociada a la factura")
     private String noRecepcion;
 
-    @Schema(description = "Fecha de recepción real (tenant_finance.reception.reception_date)")
-    private LocalDate fechaRecepcion;
-
     @Schema(description = "Número de proveedor")
     private BigDecimal numeroProveedor;
 

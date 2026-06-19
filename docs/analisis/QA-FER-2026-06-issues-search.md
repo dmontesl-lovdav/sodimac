@@ -74,6 +74,34 @@ En descuentos comerciales se puede publicar una NC. Ajustes al back:
 **Tipo de NC ≠ tren/estatus.** Es clasificación de origen. Catálogo nuevo **`CatTipoNotaCredito`**
 ya creado (seed 18 util-api, commit `9b6e305`): 1 Ajuste Recepción, 2 Descuento Comercial.
 
+### Validación de código (2026-06-19) — qué ya existe vs qué falta
+
+**Ya cubierto en código (sin acción):**
+- `register` **sí guarda NC**, no solo facturas: `InvoiceServiceImpl` línea 170 permite
+  `NOTA_CREDITO`, bloque NC línea 277, `saveRelatedCfdis` 1006-1008.
+- **Tipo de documento sale del XML**: `detectDocumentType` lee `TipoDeComprobante`
+  (`XmlDocumentTypeDetectorServiceImpl` línea 65): `I`=Factura, `E`=NC.
+- **PDF en NC**: el upload a GCS es genérico (no limitado a factura). Solo falta que el front
+  lo mande.
+- **Relación NC↔factura**: `saveRelatedCfdis` ya guarda en `related_cfdi` el UUID de la factura
+  + `relation_type` (`TipoRelacion` SAT).
+
+**Bloqueante — el Tipo NC (1/2) NO viene en el CFDI:**
+El XML solo trae `TipoDeComprobante` (I/E) y `TipoRelacion` (SAT `c_TipoRelacion` 01-07, "01 =
+Nota de crédito de docs relacionados"). Ninguno distingue **Ajuste Recepción vs Descuento
+Comercial** — es clasificación de negocio. Confirmado: `InvoiceServiceImpl` línea 1444
+`tipoNotaCredito - No existe campo equivalente en AddendumEntity`. Existe DTO
+`AddendaUpdateDto.tipoNotaCredito` (línea 40) pero **se recibe y se descarta**.
+
+**Por qué va en `addendum`:** es donde viven los campos de negocio fuera del CFDI por documento
+(`supplier_number`=Id Proveedor, `reception_number`, `supplier_type`, `addenda_type`). Fer pidió
+Tipo NC junto a Id Proveedor + Número documento, que ya son campos de addendum → un solo payload.
+
+**2 preguntas pendientes a Ivan (enviadas 2026-06-19):**
+1. ¿De dónde sale el Tipo NC (1/2)? No está en CFDI. ¿Front lo manda como parámetro en la
+   addenda, o se infiere del módulo de descuentos?
+2. Confirmar **columna nueva en `addendum`** (`tipo_nota_credito`). ¿OK agregar el campo?
+
 ---
 
 ## Orden de ataque

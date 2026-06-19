@@ -1706,6 +1706,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                 // ========== DATOS ADICIONALES PROVEEDOR (STM-396) ==========
                 .supplierName(issuer != null ? issuer.getName() : null)
                 .accountingSentDate(invoice.getUpdatedAt()) // TODO: Cambiar por invoice.getAccountingSentDate() cuando se implemente el flujo de envío a contabilizar
+                // Fecha de registro de la factura en el portal. Es la MISMA columna por la que
+                // filtra el search (created_at). El front debe listar esta fecha para que coincida
+                // con el rango buscado (no accountingSentDate, que es updated_at). Issue Fer 2026-06-19.
+                .createdAt(invoice.getCreatedAt())
                 .build();
     }
 

@@ -1067,6 +1067,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             if (supplierNumber != null) {
                 addendum.setSupplierNumber(new BigDecimal(supplierNumber));
+                // Issue Fer #3: poblar el tipo de proveedor (id 1-4 de CatTipoProveedor) leyendo
+                // directo de shared_catalogs (sin ir a util-api).
+                String tipoProveedorId = addendumRepository.findTipoProveedorId(supplierNumber);
+                if (tipoProveedorId != null) {
+                    addendum.setSupplierType(tipoProveedorId);
+                }
             }
             if (purchaseOrderNumber != null) {
                 addendum.setPurchaseOrderNumber(purchaseOrderNumber);

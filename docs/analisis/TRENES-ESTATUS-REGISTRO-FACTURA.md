@@ -37,10 +37,13 @@ Al registrar una **factura por XML** intervienen **2 trenes**: **Factura (1)** y
 ## Decisiones de Ivan (2026-06-16)
 
 - **(a) Estatus 3 = "Recibida".** El diagrama decía "Proceso de envío"; se corrige el diagrama. Código + Tren v1.0 ya están en "Recibida". **Sin cambio de código.**
-- **(b) Fuera de tolerancia → "2 - Recibido Parcial".** El flujo indica que la factura se registre en parcial, NO que se rechace. Confirmado por Ivan 2026-06-17 (aplica a ambas direcciones).
-  - ✅ **IMPLEMENTADO 2026-06-17:** `validateImporteTolerance` ya no lanza `BUS057`; retorna el mensaje de advertencia (o `null`). `saveInvoiceToDatabase` usa el flag para registrar `status = 2` (Recibido Parcial). Dentro de tolerancia → `status = 3` (Recibida). `BUS057` queda sin uso en el flujo.
-  - **Alerta al usuario:** la factura se registra (`success:true`, RES004) pero el aviso viaja en `response.warnings[]` con nuevo código **`WRN7030`** (incluye subtotal, importe recepción y tolerancia). El front lo muestra como alerta sin bloquear el registro.
-  - **Probado E2E local 2026-06-17:** fuera de tolerancia → status 2 + WRN7030; dentro → status 3 + warnings vacío.
+- **(b) Fuera de tolerancia → registra (no rechaza), el estatus depende de la dirección.** Diagrama actualizado de Ivan (2026-06-18) distingue:
+  - factura **>** recepción → **2 Recibido Parcial** (requiere NC) + `WRN7030`.
+  - factura **<** recepción → **1 Rechazo Comercial** + `WRN7031` (REVISA la decisión previa que dejaba ambas en parcial).
+  - dentro de tolerancia → **3 Recibida**.
+  - ✅ **IMPLEMENTADO 2026-06-18:** `validateImporteTolerance` retorna `ToleranceResult{statusFactura, warning}`. `saveInvoiceToDatabase` aplica ese estatus. `BUS057` sin uso.
+  - **Alerta al usuario:** la factura se registra (`success:true`, RES004); el aviso viaja en `response.warnings[]` (`WRN7030` parcial / `WRN7031` rechazo comercial). No bloquea el registro.
+  - **Probado E2E local sobre dump UAT 2026-06-18:** 20045<30000 → status 1 + WRN7031; 20045>2950 → status 2 + WRN7030; 20045=20045 → status 3 sin warning.
 - **Redacción:** unificar "Recibida Parcial" → **"Recibido Parcial"** (estatus 2).
 
 ## Pendientes / dudas abiertas a Ivan

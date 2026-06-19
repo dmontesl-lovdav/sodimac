@@ -36,4 +36,15 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "  WHEN 'SERVICIOS'  THEN 'TPR004' END " +
             "WHERE s.supplier_number = :supplierNumber LIMIT 1", nativeQuery = true)
     String findTipoProveedorId(@Param("supplierNumber") String supplierNumber);
+
+    /**
+     * Descripción (ES, lang_id=1) del tipo de proveedor a partir de su id (value 1-4 de
+     * CatTipoProveedor). Para devolver id + descripción en búsquedas. Issue Fer #4 (2026-06-19).
+     */
+    @Query(value = "SELECT dl.description " +
+            "FROM shared_catalogs.catalog_header ch " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = 1 " +
+            "WHERE ch.code = 'CatTipoProveedor' AND cd.value = :tipoId LIMIT 1", nativeQuery = true)
+    String findTipoProveedorDescripcion(@Param("tipoId") String tipoId);
 }

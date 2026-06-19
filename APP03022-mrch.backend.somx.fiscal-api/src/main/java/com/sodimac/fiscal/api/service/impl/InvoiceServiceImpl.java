@@ -1611,6 +1611,12 @@ public class InvoiceServiceImpl implements InvoiceService {
         AddendumEntity addendum = addendumRepository.findByInvoiceUuid(invoice.getInvoiceUuid())
                 .orElse(null);
 
+        // Issue Fer #4: devolver id + descripción del tipo de proveedor en campos separados.
+        String tipoProveedorId = addendum != null ? addendum.getSupplierType() : null;
+        String tipoProveedorDescripcion = (tipoProveedorId != null && !tipoProveedorId.isBlank())
+                ? addendumRepository.findTipoProveedorDescripcion(tipoProveedorId)
+                : null;
+
         // STM-1168: Buscar NC relacionadas (solo para Facturas tipo I)
         List<NotaCreditoRelacionadaDto> notasCreditoRelacionadas = null;
         if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())) {
@@ -1681,7 +1687,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .noOrdenCompra(addendum != null ? addendum.getPurchaseOrderNumber() : null)
                 .noRecepcion(addendum != null ? addendum.getReceptionNumber() : null)
                 .numeroProveedor(addendum != null ? addendum.getSupplierNumber() : null)
-                .tipoProveedor(addendum != null ? addendum.getSupplierType() : null)
+                .tipoProveedor(tipoProveedorId)
+                .tipoProveedorDescripcion(tipoProveedorDescripcion)
                 .guiaEntrega(addendum != null ? addendum.getShippingGuideNumber() : null)
                 // ========== XML CONTENT (STM-771) ==========
                 .xmlContent(invoice.getXmlContent())

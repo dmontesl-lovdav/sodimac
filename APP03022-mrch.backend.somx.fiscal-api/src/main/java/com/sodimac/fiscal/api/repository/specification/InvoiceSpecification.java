@@ -171,6 +171,18 @@ public class InvoiceSpecification {
                 predicates.add(root.get("invoiceUuid").in(addendumSubquery));
             }
 
+            // 12.1 Tipo de Proveedor (Opcional) - filtra por addendum.supplier_type (id 1-4). Issue Fer #4.
+            if (searchRequest.getTipoProveedor() != null && !searchRequest.getTipoProveedor().isBlank()) {
+                Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
+                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                        .where(criteriaBuilder.equal(
+                                addendumRoot.get("supplierType"),
+                                searchRequest.getTipoProveedor()
+                        ));
+                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+            }
+
             // 13. NCs relacionadas a una factura específica (Opcional) - STM-335
             if (searchRequest.getRelatedInvoiceUuid() != null) {
                 Subquery<UUID> relatedCfdiSubquery = query.subquery(UUID.class);

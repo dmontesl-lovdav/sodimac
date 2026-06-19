@@ -121,6 +121,13 @@ public class InvoiceSearchRequest {
     )
     private String noRecepcion;
 
+    @Schema(
+            description = "Tipo de proveedor (id numerico 1-4 de CatTipoProveedor) para filtrar documentos",
+            required = false,
+            example = "2"
+    )
+    private String tipoProveedor;
+
     // ========== FILTRO NC POR FACTURA (STM-335) ==========
 
     @Schema(

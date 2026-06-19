@@ -148,8 +148,11 @@ public class InvoiceSearchResponse {
     @Schema(description = "Número de proveedor")
     private BigDecimal numeroProveedor;
 
-    @Schema(description = "Tipo de proveedor")
+    @Schema(description = "Tipo de proveedor (id 1-4 de CatTipoProveedor)")
     private String tipoProveedor;
+
+    @Schema(description = "Descripción del tipo de proveedor (texto). El front decide si muestra id o descripción")
+    private String tipoProveedorDescripcion;
 
     @Schema(description = "Número de guía de entrega")
     private String guiaEntrega;

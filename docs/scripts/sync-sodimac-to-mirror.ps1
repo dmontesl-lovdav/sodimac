@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Dirección A (BAJAR): repos reales Sodimac -> mirror -> repo compartido.
+  Direccion A (BAJAR): repos reales Sodimac -> mirror -> repo compartido.
 
   Actualiza los repos reales a develop, los copia al mirror (robocopy /MIR) y
   sube el resultado al mirror (rama dmontes). Pensado para correr en la PC Sodimac.
@@ -9,15 +9,15 @@
   Pasos:
     1. Por cada proyecto: git fetch + checkout develop + pull.
     2. Mirror a rama dmontes + pull, y robocopy real -> mirror de cada proyecto.
-    3. git add -A en el mirror, muestra el status, pide confirmación y hace commit + push.
+    3. git add -A en el mirror, muestra el status, pide confirmacion y hace commit + push.
 
-  Detalle del flujo: docs/SINCRONIZACION-MIRROR-SODIMAC.md (Dirección A).
+  Detalle del flujo: docs/SINCRONIZACION-MIRROR-SODIMAC.md (Direccion A).
 
 .PARAMETER Projects
-  Lista de carpetas de proyecto a sincronizar. Default: fiscal-api + util-api.
+  Lista de carpetas de proyecto a sincronizar. Default: los 6 (3 backends + 3 bff).
 
 .PARAMETER Yes
-  Omite la confirmación antes del commit/push (modo desatendido).
+  Omite la confirmacion antes del commit/push (modo desatendido).
 
 .EXAMPLE
   .\sync-sodimac-to-mirror.ps1
@@ -36,8 +36,8 @@ param(
     "APP03022-mrch.bff.somx.ppsomx.finanzas",
     "APP03022-mrch-bff-somx-ppsomx-util"   # OJO: bff util usa GUIONES, no puntos
   ),
-  [string] $RealRoot   = "C:\workspace-fbc-github",
-  [string] $Mirror     = "C:\local",
+  [string] $RealRoot     = "C:\workspace-fbc-github",
+  [string] $Mirror       = "C:\local",
   [string] $MirrorBranch = "dmontes",
   [switch] $Yes
 )
@@ -46,37 +46,41 @@ $ErrorActionPreference = "Stop"
 
 function Write-Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "  OK  $msg" -ForegroundColor Green }
-function Write-Warn2($msg){ Write-Host "  !!  $msg" -ForegroundColor Yellow }
+function Write-Note($msg) { Write-Host "  !!  $msg" -ForegroundColor Yellow }
 
-# robocopy: exit codes 0-7 = éxito; >=8 = error real
+# robocopy: exit codes 0-7 = exito; >=8 = error real
 function Invoke-Robocopy($src, $dst) {
   robocopy $src $dst /MIR /XD .git node_modules dist target build .idea /XF *.log | Out-Null
-  if ($LASTEXITCODE -ge 8) { throw "robocopy falló ($src -> $dst), exit=$LASTEXITCODE" }
+  if ($LASTEXITCODE -ge 8) { throw "robocopy fallo ($src -> $dst), exit=$LASTEXITCODE" }
 }
 
 Write-Host "Proyectos a sincronizar:" -ForegroundColor White
 $Projects | ForEach-Object { Write-Host "  - $_" }
 
-# ---------- PASO 1: repos reales -> develop ----------
-Write-Step "PASO 1 — actualizar repos reales a develop"
+# ---------- PASO 1: repos reales -> uat y develop (queda en develop) ----------
+Write-Step "PASO 1 - actualizar repos reales (uat + develop, termina en develop)"
 foreach ($p in $Projects) {
   $path = Join-Path $RealRoot $p
   if (-not (Test-Path (Join-Path $path ".git"))) {
-    Write-Warn2 "$p no es repo git en $RealRoot — se omite"
+    Write-Note "$p no es repo git en $RealRoot - se omite"
     continue
   }
   Write-Host ">>> $p" -ForegroundColor Cyan
   Push-Location $path
   try {
     git fetch origin
+    # Actualiza uat
+    git checkout uat
+    git pull origin uat
+    # Termina en develop (es lo que se copia al mirror)
     git checkout develop
     git pull origin develop
-    Write-Ok "$p en develop al día"
+    Write-Ok "${p}: uat y develop al dia (en develop)"
   } finally { Pop-Location }
 }
 
 # ---------- PASO 2: mirror + robocopy ----------
-Write-Step "PASO 2 — mirror a $MirrorBranch + robocopy real -> mirror"
+Write-Step "PASO 2 - mirror a $MirrorBranch + robocopy real -> mirror"
 Push-Location $Mirror
 try {
   git checkout $MirrorBranch
@@ -86,31 +90,31 @@ try {
 foreach ($p in $Projects) {
   $src = Join-Path $RealRoot $p
   $dst = Join-Path $Mirror $p
-  if (-not (Test-Path $src)) { Write-Warn2 "origen no existe: $src — se omite"; continue }
+  if (-not (Test-Path $src)) { Write-Note "origen no existe: $src - se omite"; continue }
   Write-Host ">>> robocopy $p" -ForegroundColor Cyan
   Invoke-Robocopy $src $dst
   Write-Ok "$p copiado al mirror"
 }
 
 # ---------- PASO 3: commit + push al mirror ----------
-Write-Step "PASO 3 — commit + push al mirror ($MirrorBranch)"
+Write-Step "PASO 3 - commit + push al mirror ($MirrorBranch)"
 Push-Location $Mirror
 try {
   git add -A
   $status = git status --porcelain
   if ([string]::IsNullOrWhiteSpace($status)) {
-    Write-Ok "Sin cambios — el mirror ya estaba al día. Nada que subir."
+    Write-Ok "Sin cambios - el mirror ya estaba al dia. Nada que subir."
     return
   }
 
   Write-Host "`nCambios staged:" -ForegroundColor White
   git status --short
 
-  Write-Warn2 "Revisa que NO aparezcan revertidos cambios propios aún no subidos a Sodimac."
+  Write-Note "Revisa que NO aparezcan revertidos cambios propios aun no subidos a Sodimac."
 
   if (-not $Yes) {
-    $resp = Read-Host "`n¿Commit + push al mirror? (s/N)"
-    if ($resp -notin @("s","S","y","Y")) { Write-Warn2 "Cancelado por el usuario. Cambios quedan staged."; return }
+    $resp = Read-Host "`n.Commit + push al mirror? (s/N)"
+    if ($resp -notin @("s","S","y","Y")) { Write-Note "Cancelado por el usuario. Cambios quedan staged."; return }
   }
 
   $fecha = (Get-Date).ToString("yyyy-MM-dd")

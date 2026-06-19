@@ -4,17 +4,24 @@ import type { Request, Response, NextFunction } from "express";
 // Configurar multer para usar memoria en lugar de disco
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-//const _upload = upload.array('files', 2);
-//const upload = multer({ dest: os.tmpdir() });
 
 // Promesa que envuelve la carga de Multer 
 const multerPromise = (req: Request, res: Response) => { 
     const _upload = upload.array('files', res.locals.numberFiles);
     return new Promise<void>((resolve, reject) => { 
         _upload(req, res, (err: any) => { 
-            
-            if(!err) resolve(); 
-            reject(err); 
+            if (!err) {
+                resolve();
+                return;
+            }
+
+            // ✅ Garantizar que sea Error
+            if (err instanceof Error) {
+                reject(err);
+            } else {
+                reject(new Error(String(err)));
+            }
+
         }); 
     }); 
 };

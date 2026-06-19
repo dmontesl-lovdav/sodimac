@@ -53,85 +53,128 @@ function safeStringify(v: unknown) {
     }
 }
 
-/* ───────────────── middleware ───────────────── */
-export function errorHandler(
-    err: unknown,
-    req: Request,
-    res: Response,
-    _next: NextFunction
-) {
-    
-    if (res.headersSent) {
-    return _next(err);
-    }
 
-    void _next;
+type ErrorResult = {
+    status: number;
+    message: string;
+    details?: unknown;
+};
 
-    console.error('💥 Error capturado:', err);
-
-    let status = 500;
-    let message = 'Internal server error';
-    let details: unknown;
-
-    // 1) HttpError propio (throw { status, message })
+function handleHttpError(err: unknown, base: ErrorResult): ErrorResult | null {
     if (hasStatus(err)) {
-        status = err.status;
-        message = err.message ?? message;
-    }
-    // 2) Zod (usa `issues`)
-    else if (err instanceof ZodError) {
-        status = 400;
-        message = 'Validation failed';
-        details = err.issues.map(i => ({
-            path: i.path.map(String).join('.'),
-            code: i.code,
-            message: i.message,
-        }));
-    }
-    // 3) SQL / TypeORM
-    else if (err instanceof QueryFailedError) {
-        status = 400;
-        message = 'Database query failed';
-        details = {
-            code: pickCode(err),
-            driver: pickDriverDetail(err) ?? err.message,
+        return {
+            status: err.status,
+            message: err.message ?? base.message,
         };
     }
-    // 4) JSON malformado (body-parser)
-    else if (isJsonParseError(err)) {
-        status = 400;
-        message = 'Invalid JSON in request body';
-    }
-    // 5) Red/conexión
-    else if (pickCode(err) === 'ECONNREFUSED' || pickCode(err) === 'ETIMEDOUT') {
-        status = 503;
-        message = 'Service temporarily unavailable';
-    }
-    // 6) Fallback
-    else if (typeof err === 'object' && err !== null && 'message' in err) {
-        const r = err as Record<string, unknown>;
-        if (typeof r.message === 'string') message = r.message;
-    }
+    return null;
+}
 
-    if (process.env.NODE_ENV === 'development') {
-        if (
-            !details &&
-            typeof err === 'object' &&
-            err !== null &&
-            'stack' in err
-        ) {
-            const r = err as Record<string, unknown>;
-            details = typeof r.stack === 'string' ? r.stack : details;
+function handleZodError(err: unknown): ErrorResult | null {
+    if (err instanceof ZodError) {
+        return {
+            status: 400,
+            message: 'Validation failed',
+            details: err.issues.map(i => ({
+                path: i.path.map(String).join('.'),
+                code: i.code,
+                message: i.message,
+            })),
+        };
+    }
+    return null;
+}
+
+function handleDbError(err: unknown): ErrorResult | null {
+    if (err instanceof QueryFailedError) {
+        return {
+            status: 400,
+            message: 'Database query failed',
+            details: {
+                code: pickCode(err),
+                driver: pickDriverDetail(err) ?? err.message,
+            },
+        };
+    }
+    return null;
+}
+
+function handleJsonError(err: unknown): ErrorResult | null {
+    if (isJsonParseError(err)) {
+        return {
+            status: 400,
+            message: 'Invalid JSON in request body',
+        };
+    }
+    return null;
+}
+
+function handleNetworkError(err: unknown): ErrorResult | null {
+    const code = pickCode(err);
+    if (code === 'ECONNREFUSED' || code === 'ETIMEDOUT') {
+        return {
+            status: 503,
+            message: 'Service temporarily unavailable',
+        };
+    }
+    return null;
+}
+
+function handleFallback(err: unknown, base: ErrorResult): ErrorResult {
+    if (typeof err === 'object' && err !== null && 'message' in err) {
+        const msg = (err as any).message;
+        if (typeof msg === 'string') {
+            return { ...base, message: msg };
         }
     }
+    return base;
+}
 
-    // ✅ AUDITORÍA (STM-1208)
-    // - tipoEvento ERROR
-    // - codigoError: status (y si viene code)
-    // - idMensaje: por tipo (Validation/DB/etc.)
-    // - log: stack si existe
-    // - mensaje: message
-    // - detalle: details serializado
+function resolveError(err: unknown): ErrorResult {
+    const base: ErrorResult = {
+        status: 500,
+        message: 'Internal server error',
+    };
+
+    return (
+        handleHttpError(err, base) ??
+        handleZodError(err) ??
+        handleDbError(err) ??
+        handleJsonError(err) ??
+        handleNetworkError(err) ??
+        handleFallback(err, base)
+    );
+}
+
+function attachStackIfDev(err: unknown, details: unknown): unknown {
+    if (process.env.NODE_ENV !== 'development') return details;
+
+    if (
+        !details &&
+        typeof err === 'object' &&
+        err !== null &&
+        'stack' in err
+    ) {
+        return typeof (err as any).stack === 'string'
+            ? (err as any).stack
+            : details;
+    }
+
+    return details;
+}
+
+/* ───────────────── middleware ───────────────── */
+export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction) {
+
+    if (res.headersSent) {
+        return next(err);
+    }
+    console.error('💥 Error capturado:', err);
+
+    const { status, message, details } = resolveError(err);
+    const finalDetails = attachStackIfDev(err, details);
+
+    
     void logActivity(
         true,
         'ERROR_HANDLER',
@@ -144,7 +187,7 @@ export function errorHandler(
             body: req.body,
             response_status: status,
             error: safeStringify(err),
-            details,
+            details: finalDetails,
         },
         0,
         {
@@ -153,11 +196,7 @@ export function errorHandler(
             idMensaje:
                 err instanceof ZodError
                     ? 'ValidationError'
-                    : err instanceof QueryFailedError
-                        ? 'DatabaseQueryFailed'
-                        : isJsonParseError(err)
-                            ? 'InvalidJson'
-                            : pickCode(err) || 'UnhandledError',
+                    : validateQueryFailedError(err),
             paso: `${req.method} ${req.originalUrl}`,
             log:
                 typeof err === 'object' && err !== null && 'stack' in err
@@ -166,10 +205,25 @@ export function errorHandler(
         }
     );
 
+
     res.status(status).json({
         success: false,
         status,
         message,
-        details,
+        details: finalDetails,
     });
+
+}
+
+
+function validateQueryFailedError(err: unknown): string | null {
+    return err instanceof QueryFailedError
+        ? 'DatabaseQueryFailed'
+        : validateJsonParser(err);
+}
+
+function validateJsonParser(err: unknown): string | null {
+    return isJsonParseError(err)
+        ? 'InvalidJson'
+        : pickCode(err) ?? 'UnhandledError';
 }

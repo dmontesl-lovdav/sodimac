@@ -3,6 +3,7 @@ import { logger } from "@/utils/logger.js";
 export interface MigoCsvRow {
     Nro_OC: string;
     Nro_Recepcion: string;
+    Numero_Proveedor: string;
     Sucursal: string;
     Nro_Guia: string;
     Origen: string;
@@ -31,9 +32,10 @@ export interface ValidationResult {
     totalInvalid: number;
 }
 
-const REQUIRED_HEADERS = [
+export const REQUIRED_HEADERS = [
     'Nro_OC',
     'Nro_Recepcion',
+    'Numero_Proveedor',
     'Sucursal',
     'Nro_Guia',
     'Origen',
@@ -80,10 +82,48 @@ function toNum(val: string): number {
     return Number(val.replace(',', '.'));
 }
 
+export function parseLayoutDate(val: string): Date | null {
+    if (!val) return null;
+    const s = val.trim();
+    if (s === '') return null;
+
+    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (isoMatch) {
+        const y = Number(isoMatch[1]);
+        const m = Number(isoMatch[2]) - 1;
+        const d = Number(isoMatch[3]);
+        const hasTime = s.includes('T') || /\d{2}:\d{2}/.test(s);
+        if (hasTime) {
+            const parsed = new Date(s);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        const local = new Date(y, m, d);
+        return isValidYmd(local, y, m, d) ? local : null;
+    }
+
+    const dmyMatch = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s);
+    if (dmyMatch) {
+        const day = Number(dmyMatch[1]);
+        const month = Number(dmyMatch[2]) - 1;
+        const year = Number(dmyMatch[3]);
+        const local = new Date(year, month, day);
+        return isValidYmd(local, year, month, day) ? local : null;
+    }
+
+    return null;
+}
+
+function isValidYmd(d: Date, y: number, m: number, day: number): boolean {
+    return (
+        !Number.isNaN(d.getTime()) &&
+        d.getFullYear() === y &&
+        d.getMonth() === m &&
+        d.getDate() === day
+    );
+}
+
 function isValidDate(val: string): boolean {
-    if (!val || val.trim() === '') return false;
-    const d = new Date(val);
-    return !isNaN(d.getTime());
+    return parseLayoutDate(val) !== null;
 }
 
 export function validateLayout(content: string): ValidationResult {
@@ -101,7 +141,6 @@ export function validateLayout(content: string): ValidationResult {
         };
     }
 
-    // WRN7020: cabecera incorrecta (las 12 obligatorias deben estar en orden)
     const allHeaders = [...REQUIRED_HEADERS, ...OPTIONAL_HEADERS];
     const requiredMatch = REQUIRED_HEADERS.every((h, i) => headers[i] === h);
     const hasOnlyKnownHeaders = headers.every(h => allHeaders.includes(h));
@@ -165,6 +204,7 @@ export function validateLayout(content: string): ValidationResult {
         parsedRows.push({
             Nro_OC: row['Nro_OC']?.trim() ?? '',
             Nro_Recepcion: row['Nro_Recepcion']?.trim() ?? '',
+            Numero_Proveedor: row['Numero_Proveedor']?.trim() ?? '',
             Sucursal: row['Sucursal']?.trim() ?? '',
             Nro_Guia: row['Nro_Guia']?.trim() ?? '',
             Origen: row['Origen']?.trim() ?? '',

@@ -7,10 +7,7 @@ import {
     JoinColumn,
     OneToOne
 } from 'typeorm';
-import { OriginCatalog } from './OriginCatalog.entity.js';
-import { StatusCatalog } from './StatusCatalog.entity.js';
 import { Reception } from './Reception.entity.js';
-import { ShippingGuidePurchaseOrder } from './ShippingGuidePurchaseOrder.entity.js';
 
 
 /**

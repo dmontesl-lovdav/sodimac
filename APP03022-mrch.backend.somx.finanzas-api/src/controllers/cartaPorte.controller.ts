@@ -19,9 +19,9 @@ import {
     type BaseDtoParent
 } from "@/schemas/base.shema.js";
 import * as cartaPorteService from "@/services/cartaPorte.service.js";
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Response } from "express";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { logger } from "@/utils/logger.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
 import * as svc from "@/services/shippingGuide.service.js";
@@ -40,7 +40,7 @@ export async function createGuia(req: AuthenticatedRequest, res: Response, next:
         const createShippingGuideDto: CreateShippingGuideDto[] = dataList.shippingGuideList; 
         const files = req.files as Express.Multer.File[];
 
-        const created =  await cartaPorteService.createGuia(req, createShippingGuideDto, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder, dtoParent.saveFileOnDb);
+        const created =  await cartaPorteService.createGuia(req, files, Number(dtoParent.origen), req.authToken ?? '', dtoParent.folder, dtoParent.saveFileOnDb, createShippingGuideDto);
         res.status(201).json({...created, trace_id: getTraceId()});
     } catch (e) { 
         let err = "";
@@ -108,10 +108,14 @@ export async function findAllGuia(request: AuthenticatedRequest, response: Respo
         const dto: ListShippingGuideQuery = ListShippingGuideQuerySchema.parse(request.body);
         const finded = await svc.findAll(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
-    } catch (e) { 
+    } catch (e) {
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC010, request.authToken ?? '');
-        logActivity(true,'ERROR: No fue posible encontrar las guias', e, request.params );
-        response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        logActivity(true,'ERROR: No fue posible encontrar las guias', err, request.params );
+        response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, err),trace_id: getTraceId()});
         next(e); 
     }
 }
@@ -123,9 +127,13 @@ export async function updateAllStatusGuia(request: AuthenticatedRequest, respons
         const finded = await svc.updateAllStatusGuia(dto);
         return response.status(finded.httpStatus).json({...finded, trace_id: getTraceId()});
     } catch (e) { 
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC011, request.authToken ?? '');
-        logActivity(true,'ERROR: AL ACTULIAZAR LOS ESTATUS DE LAS GUIAS', e, request.params );
-        response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, e),trace_id: getTraceId()});
+        logActivity(true,'ERROR: AL ACTULIAZAR LOS ESTATUS DE LAS GUIAS', err, request.params );
+        response.status(400).json({...ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description ,null,-1, StatusCodes.BAD_REQUEST, false, err),trace_id: getTraceId()});
         next(e); 
     }
 }

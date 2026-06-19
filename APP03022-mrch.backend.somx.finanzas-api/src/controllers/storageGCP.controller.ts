@@ -1,9 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import {Storage} from '@google-cloud/storage'
 import 'dotenv/config';
-import path from "path";
 import { logger } from "@/utils/logger.js";
 
 
@@ -18,7 +17,6 @@ import { logger } from "@/utils/logger.js";
 
 // Configura el cliente de GCS
 const storage = new Storage();
-//const bucketName = 'mi-bucket';
 const bucketName = process.env.GCS_BUCKET ?? "";
 const bucket = storage.bucket(bucketName);
 let gcsPrefixTmp = (process.env.GCS_PREFIX ?? "");
@@ -78,7 +76,6 @@ export async function downloadFile(req: Request, res: Response, next: NextFuncti
         // Configura headers para la descarga
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         res.setHeader('Content-Type', 'application/octet-stream');
-        //res.send(contents);
 
 
         // Crear stream y enviar al cliente
@@ -109,20 +106,9 @@ export async function uploadMultipleV2(req: Request, res: Response, next: NextFu
         return res.status(400).send('No se enviaron archivos.');
         }
 
-        files.forEach(async (file, index) => {
-                console.log(`Archivo ${index + 1}:`);
-                console.log('Nombre:', file.originalname);
-                console.log('Tipo:', file.mimetype);
-                console.log('Tamaño:', file.size);
-                // Ejemplo: convertir a string si es texto
-                const contenido = file.buffer.toString('utf-8');
-                //console.log('Contenido:', contenido);             
-        });
-
         const uploadPromises = files.map((file) => {
             return new Promise((resolve, reject) => {
-                //const blob = bucket.file(`${gcsPrefix}/${folder}/${file.originalname}`);
-                  const blob = bucket.file(`${gcsPrefix}/${folder}/${file.originalname}`);
+                const blob = bucket.file(`${gcsPrefix}/${folder}/${file.originalname}`);
                 const blobStream = blob.createWriteStream({
                 resumable: false,
                 contentType: file.mimetype,
@@ -155,7 +141,6 @@ export async function uploadMultipleV2(req: Request, res: Response, next: NextFu
 // POST /storage-gcp
 export async function uploadMultiple(req: Request, res: Response, next: NextFunction) {
     try {
-        //await ensureBucketExists();
         const folder = req.body.folder; // Carpeta dinámica desde la URL
 
 
@@ -166,8 +151,6 @@ export async function uploadMultiple(req: Request, res: Response, next: NextFunc
 
         const uploadPromises = files.map((file) => {
             const blob = bucket.file(`${gcsPrefix}/${folder}/${file.originalname}`);
-            //const blob = bucket.file(`${folder}/${file.originalname}`);
-
             const blobStream = blob.createWriteStream({
             resumable: false,
             contentType: file.mimetype,
@@ -180,7 +163,6 @@ export async function uploadMultiple(req: Request, res: Response, next: NextFunc
                     res.status(500).json(ResponseHandler.responseBuilder("ERROR: " + err.message ,null,-1, StatusCodes.BAD_REQUEST, false, err));
                 });
                 blobStream.on('finish', async () => {
-                    //await blob.makePublic(); // Opcional
                     const publicUrl = `http://localhost:4443/${bucketName}/${blob.name}`;
                     resolve(publicUrl);              
                 });

@@ -42,9 +42,9 @@ async function validateCatalogOrigin(codigoModulo: string, pantallaOrigen: strin
         throw new HttpError(400, "Unable to validate module and screen against catalogs API");
     }
 
-    // if (response.status && response.status >= 400) {
-    //     throw new HttpError(400, "Unable to validate module and screen against catalogs API");
-    // }
+    if (response.status && response.status >= 400) {
+        throw new HttpError(400, "Unable to validate module and screen against catalogs API");
+    }
 
     const payload = response;
 

@@ -1,9 +1,7 @@
 import {
     Entity,
     PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
+    Column
 } from 'typeorm';
 
 @Entity({ schema: 'shared_catalogs', name: 'dictionary_lang' })

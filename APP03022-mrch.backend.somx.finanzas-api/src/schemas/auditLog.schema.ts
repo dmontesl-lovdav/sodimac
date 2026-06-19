@@ -40,9 +40,14 @@ export const ListAuditLogsQuerySchema = z
         search: z.string().min(1).optional(),
 
         ids: z
-            .union([UUID, z.array(UUID)])
-            .optional()
-            .transform((v) => (v ? (Array.isArray(v) ? v : [v]) : undefined)),
+        .union([UUID, z.array(UUID)])
+        .optional()
+        .transform((v) => {
+            if (!v) return undefined;
+            return Array.isArray(v) ? v : [v];
+        }),
+
+
 
         fechaInicio: z.coerce.date(),
         fechaFin: z.coerce.date(),

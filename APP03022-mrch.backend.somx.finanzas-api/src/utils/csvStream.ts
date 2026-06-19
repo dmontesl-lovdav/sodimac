@@ -6,7 +6,7 @@ import type { Rebate } from '@/entities/Rebate.entity.js';
  * This is more memory-efficient than loading all data at once
  */
 export class RebateCsvStream extends Readable {
-    private rebates: Rebate[];
+    readonly rebates: Rebate[];
     private currentIndex: number;
     private headerSent: boolean;
 

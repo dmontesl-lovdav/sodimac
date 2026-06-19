@@ -201,7 +201,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 export async function downloadOneFile(req: Request, res: Response, next: NextFunction) {
     try {
         // Delegar al servicio
-        return downloadFile(req, res, next);
+        return await downloadFile(req, res, next);
 
     } catch (error) {
         next(error);

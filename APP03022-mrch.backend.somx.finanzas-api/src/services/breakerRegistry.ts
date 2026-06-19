@@ -31,34 +31,19 @@ function getFallbackByType(type: string) {
   return (url: string) => {
 
     console.warn(`⚠️ fallback ejecutado → ${type}`);
-
+    const typesWithErrorFallback = new Set(["catalog", "supplier", "status"]);
     const cached = getCache(url);
 
-    switch (type) {
-
-      case "catalog":
-        if (cached) {
-          console.warn("✅ usando cache");
-          return cached;
-        }
-        return buildDefaultCatalog("error", url);
-      case "supplier":
-        if (cached) {
-          console.warn("✅ usando cache");
-          return cached;
-        }
-        return buildDefaultCatalog("error", url);
-
-      case "status":
-        if (cached) {
-          console.warn("✅ usando cache");
-          return cached;
-        }
-        return buildDefaultCatalog("error", url);
-
-      default:
-        return buildDefaultCatalog("empty", url);
+    if (typesWithErrorFallback.has(type)) {
+      if (cached) {
+        console.warn("✅ usando cache");
+        return cached;
+      }
+      return buildDefaultCatalog("error", url);
     }
+
+    return buildDefaultCatalog("empty", url);
+
   };
 }
 

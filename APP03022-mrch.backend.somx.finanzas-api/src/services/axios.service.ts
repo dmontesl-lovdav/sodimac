@@ -78,10 +78,24 @@ axiosClient.interceptors.response.use(
     console.log("✅ Response:", response.status, response.config.url);
     return response;
   },
-  (error) => {
-    console.error("❌ Axios error:", error?.response?.data || error.message);
-    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + error.config.url, error, JSON.stringify({ trace_id: getTraceId() }));
-    return Promise.reject(error);
+  (error: unknown) => {
+    console.error("❌ Axios error:", (error as any)?.response?.data || (error as any)?.message);
+
+    const url = (error as any)?.config?.url;
+
+    logActivity(
+      true,
+      'ERROR: EN AXIOS GET. URL:' + url,
+      error,
+      JSON.stringify({ trace_id: getTraceId() })
+    );
+
+    // ✅ FIX Sonar: garantizar Error
+    if (error instanceof Error) {
+      return Promise.reject(error);
+    }
+
+    return Promise.reject(new Error('Unknown Axios error'));
   }
 );
 
@@ -161,8 +175,8 @@ export async function sendFilesToBucket(req: Request,files: Express.Multer.File[
     try {
 
 
-        let apiResponse = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
-        apiResponse = await uploadMultiple(req, files, folder);
+
+        const apiResponse = await uploadMultiple(req, files, folder);
 
         return apiResponse;
 
@@ -219,40 +233,8 @@ export async function axiosGet<T>(
     if (cachedFallback) return cachedFallback;
 
     return buildDefaultCatalog("error", url) as T;
-
-    //return null;
   }
 }
-
-
-
-/*export async function axiosGet(url: string, token: string, params?: any) {
-  try {
-        await logActivity(false, 'URL: ' + url, null, JSON.stringify({ trace_id: getTraceId() }));
-        if (params == undefined) {
-            params = {};
-        }
-        if (token == undefined) {
-            token = '';
-        }
-        const response = await axios.get(url, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        },
-        params: params
-        });
-
-    return response;
-  } catch (error: any) {
-    console.error("❌ axiosGet error:", error?.response?.data || error.message);
-    logActivity(true, 'ERROR: EN AXIOS GET. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
-    return undefined; // o throw error;
-  }
-}
-*/
-
-
-
 
 
 const axiosPostRaw = async (
@@ -325,34 +307,6 @@ export async function axiosPost<T>(
 }
 
 
-export async function axiosPostBack(url: string, data: any, token: string) {
-
-    //const response2 = await axios.get(url);
-    if (token == undefined) {
-        token = '';
-    }
-    let response: any;
-    const res = await axios.post(url, data, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            })
-        .then(function (_response) {
-            // manejar respuesta exitosa
-            response = _response;
-            console.log(_response);
-        })
-        .catch(function (error) {
-            // manejar error
-            console.log(error);
-            logActivity(true, 'ERROR: EN AXIOS POST. URL:' + url, error, JSON.stringify({ trace_id: getTraceId() }));
-        })
-        .finally(function () {
-            // siempre sera executado
-        });
-    return response;
-}
-
 export async function GetSuppliers(token: string) {
     const allSuppliers: any = await axiosGet((process.env.CATALOGS_API_URL_BFF) +  constants.CatalogSupplierUrls.CATALOGS_API_GET_ALL_SUPPLIERS, token);
     const supplierList: Supplier[] = allSuppliers as Supplier[];
@@ -408,7 +362,7 @@ function buildDefaultCatalog(type: "error" | "empty", url?: string): GenericCata
 
 
 export async function GetCatalogDetailList(url: string, token: string) {
-    const CatCatalog: any = await axiosGet(url,token, undefined);
+    const CatCatalog: any = await axiosGet(url,token);
     const msgObj: GenericCatalogDetails[] = CatCatalog as GenericCatalogDetails[];
     return msgObj;
 }

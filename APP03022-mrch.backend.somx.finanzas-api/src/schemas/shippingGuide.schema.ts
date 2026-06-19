@@ -157,22 +157,6 @@ export const UpdateShippingGuideStatusSchema = z
         }
     });
 
-// export const ListShippingGuideQuerySchema = z.object({
-//     id: z.coerce.string().optional(),
-//     guideNumber: z.coerce.string().optional(),
-//     status: z.coerce.number().int().optional(),
-//     vendorNumber: z.coerce.number().int().optional(),
-//     originId: z.coerce.number().int().optional(),
-//     destinationId: z.coerce.number().int().optional(),
-//     deliveryType: z.coerce.number().optional(),
-//     from: z.coerce.date(),
-//     to: z.coerce.date(),
-//     pageNumber: z.number().int(),
-//     pageSize: z.number().int().optional(),
-// });
-
-
-
 export const IdParamSchema = z.object({ uuid: UUID });
 export const IdParamGuideSchema = z.object({ idGuide: z.string() });
 export const NameFileParamSchema = z.object({ nameFile: z.string() });

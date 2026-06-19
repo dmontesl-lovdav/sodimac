@@ -68,7 +68,7 @@ const remoteResolver = proxy(remoteUrl, {
 
 localService.use(localContext, remoteResolver);
 
-// INCREASING MAX PAYLOAD SIZE (registrado DESPUES del proxy para no consumir el body)
+// INCREASING MAX PAYLOAD SIZE
 const maximumPayloadSize = '66mb';
 localService.use(bodyParser.json({ limit: maximumPayloadSize }));
 localService.use(bodyParser.raw({ limit: maximumPayloadSize }));

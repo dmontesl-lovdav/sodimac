@@ -4,7 +4,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { DataSource } from 'typeorm';
 import type { DataSourceOptions } from 'typeorm';
-import * as svcAxios from "@/services/axios.service.js";
 
 // Load local .env with priority over system variables
 const __filename = fileURLToPath(import.meta.url);

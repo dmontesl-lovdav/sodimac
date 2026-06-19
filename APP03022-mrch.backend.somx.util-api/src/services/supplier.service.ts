@@ -179,7 +179,7 @@ export async function isSupplierTypeBlocked(supplierNumber: string): Promise<boo
                 WHEN 'SERVICIOS'  THEN 'TPR004'
             END
         JOIN shared_catalogs.catalog_header ch_blk
-            ON ch_blk.code = 'CatBloqueoTipoProveedor'
+            ON lower(ch_blk.code) = 'catbloqueotipoproveedor'
         JOIN shared_catalogs.catalog_detail cd_blk
             ON cd_blk.header_id = ch_blk.id
             AND cd_blk.parent_element_id = cd_tp.id

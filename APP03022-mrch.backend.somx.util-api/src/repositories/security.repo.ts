@@ -947,6 +947,7 @@ export async function findProfileModuleProcessAssignment(
     langIdParam?: number,
 ): Promise<{ available: AssignableItemRow[]; assigned: AssignableItemRow[] }> {
     const langId = resolveLangId(langIdParam);
+
     const assigned = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
@@ -961,9 +962,13 @@ export async function findProfileModuleProcessAssignment(
             { profileId },
         )
         .where('mp.status = 1')
-        .select('mp.module_process_id', 'id')
+        .select('MIN(mp.module_process_id)', 'id')
         .addSelect(`CONCAT(${dictionaryLabelExpr('cm', langId)}, ' | ', ${dictionaryLabelExpr('cp', langId)})`, 'title')
         .addSelect(`CONCAT('M', cm.id, ' Â· E', cp.id)`, 'subtitle')
+        .groupBy('cm.id')
+        .addGroupBy('cp.id')
+        .addGroupBy(dictionaryLabelExpr('cm', langId))
+        .addGroupBy(dictionaryLabelExpr('cp', langId))
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
@@ -984,9 +989,13 @@ export async function findProfileModuleProcessAssignment(
             )`,
             { profileId },
         )
-        .select('mp.module_process_id', 'id')
+        .select('MIN(mp.module_process_id)', 'id')
         .addSelect(`CONCAT(${dictionaryLabelExpr('cm', langId)}, ' | ', ${dictionaryLabelExpr('cp', langId)})`, 'title')
         .addSelect(`CONCAT('M', cm.id, ' Â· E', cp.id)`, 'subtitle')
+        .groupBy('cm.id')
+        .addGroupBy('cp.id')
+        .addGroupBy(dictionaryLabelExpr('cm', langId))
+        .addGroupBy(dictionaryLabelExpr('cp', langId))
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
@@ -1081,7 +1090,8 @@ export async function findModuleProcessAssignment(
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
-        .where(
+        .where('(proc.parent_element_id = :moduleId OR proc.parent_element_id IS NULL)', { moduleId })
+        .andWhere(
             `NOT EXISTS (
                 SELECT 1 FROM core_security.module_process mp
                 WHERE mp.catalog_detail_module_id = :moduleId AND mp.catalog_detail_process_id = proc.id AND mp.status = 1
@@ -1814,6 +1824,7 @@ export async function listModuleProcessesWithUserAssignment(
     langIdParam?: number,
 ): Promise<UserModuleProcessEventRow[]> {
     const langId = resolveLangId(langIdParam);
+
     const rows = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
@@ -1822,21 +1833,28 @@ export async function listModuleProcessesWithUserAssignment(
         .where('mp.catalog_detail_module_id = :moduleId', { moduleId: moduleCatalogId })
         .andWhere('mp.status = 1')
         .andWhere('cp.status = 1')
-        .select('mp.module_process_id', 'moduleProcessId')
+        .select('MIN(mp.module_process_id)', 'moduleProcessId')
         .addSelect('cp.id', 'processId')
         .addSelect(catalogRefLabelExpr('cp', langId), 'name')
         .addSelect(`COALESCE(NULLIF(TRIM(cp.value), ''), cp.key)`, 'description')
         .addSelect(
             `EXISTS (
                 SELECT 1 FROM core_security.profile_module_process pmp
+                INNER JOIN core_security.module_process mp2
+                    ON mp2.module_process_id = pmp.module_process_id AND mp2.status = 1
                 INNER JOIN core_security.profile_user pu ON pu.catalog_detail_profile_id = pmp.catalog_detail_profile_id
                     AND pu.user_data_id = :userId AND pu.status = 1
                 INNER JOIN core_security.profile_module pm ON pm.catalog_detail_profile_id = pmp.catalog_detail_profile_id
-                    AND pm.catalog_detail_module_id = mp.catalog_detail_module_id AND pm.status = 1
-                WHERE pmp.module_process_id = mp.module_process_id AND pmp.status = 1
+                    AND pm.catalog_detail_module_id = :moduleId AND pm.status = 1
+                WHERE mp2.catalog_detail_module_id = :moduleId
+                    AND mp2.catalog_detail_process_id = cp.id
+                    AND pmp.status = 1
             )`,
             'assigned',
         )
+        .groupBy('cp.id')
+        .addGroupBy(catalogRefLabelExpr('cp', langId))
+        .addGroupBy(`COALESCE(NULLIF(TRIM(cp.value), ''), cp.key)`)
         .setParameter('userId', userId)
         .orderBy(catalogRefLabelExpr('cp', langId), 'ASC')
         .getRawMany<Record<string, unknown>>();

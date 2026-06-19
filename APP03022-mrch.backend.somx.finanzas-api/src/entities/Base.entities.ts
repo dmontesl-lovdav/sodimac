@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, BeforeInsert } from 'typeorm';
+import {Column } from 'typeorm';
 
 
 export class BaseEntity {

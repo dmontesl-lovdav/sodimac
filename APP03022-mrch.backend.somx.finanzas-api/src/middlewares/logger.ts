@@ -80,26 +80,6 @@ export async function logActivity(
     const userId = "system";
     const timestamp = new Date();
 
-    /////CODIGO PARA MIGRAR MAS ADELANTE PARA HACERLO POR SERVICIOS
-    // const data = {
-    //   traceId: traceId,
-    //   traceFrontId: traceFrontId,
-    //   durationms: duration_ms,
-    //   isError: isError,
-    //   modulo: 'API_FINANZAS',
-    //   serviceName: serviceName,
-    //   action: action,
-    //   message: message,
-    //   messageDetail: messageDetail,
-    //   userId: userId,
-    //   timestamp: timestamp,
-    //   details: { ...details, trace_id: traceId }
-    // }
-
-    // const CatMsgWrn = await svcAxios.axiosPost((process.env.AUDITORIA_API_URL_BBF?? "") +  process.env.AUDITORIA_API_URI_ACTIVITY_LOGS, data);
-
-
-
     const tipoEvento = inferTipoEvento(isError, meta);
 
     const query = `

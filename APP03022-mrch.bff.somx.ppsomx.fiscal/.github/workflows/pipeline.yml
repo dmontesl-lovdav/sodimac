@@ -12,13 +12,11 @@ on:
       - hotfix/**
     tags:
       - "v*.*.*"
-  workflow_dispatch:  # 👈 habilita el botón "Run workflow"
+  workflow_dispatch: # 👈 habilita el botón "Run workflow"
 
-  
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 
 jobs:
   build:
@@ -41,7 +39,7 @@ jobs:
     with:
       language: "node"
       runners: ${{ vars.RUNNER_MERCH }}
-      
+
   deploy:
     needs: build_docker
     permissions:

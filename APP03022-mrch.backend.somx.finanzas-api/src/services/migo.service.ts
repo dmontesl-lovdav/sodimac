@@ -5,12 +5,12 @@ import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { MigoStatus } from "@/entities/MigoDocument.entity.js";
-import { validateLayout, type ParsedRow } from "@/services/migoLayoutValidation.service.js";
+import { validateLayout, parseLayoutDate, type ParsedRow } from "@/services/migoLayoutValidation.service.js";
 import { logger } from "@/utils/logger.js";
 import { datasource } from "@/config/typeorm-datasource.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { MigoDocumentReception } from "@/entities/MigoDocumentReception.entity.js";
-import { In } from "typeorm";
+import { In } from "typeorm"; 
 import type { Supplier } from "@/response/GenericCatalogDetails.dto.js";
 import type {
     ListMigoDocumentsQueryDto,
@@ -35,11 +35,6 @@ function toNum(val: string): number {
 }
 
 export async function listDocuments(q: ListMigoDocumentsQueryDto) {
-    if (q.publishedAtEnd) {
-        const end = new Date(q.publishedAtEnd);
-        end.setDate(end.getDate() + 1);
-        q.publishedAtEnd = end;
-    }
 
     const { result, total } = await migoRepo.findDocumentsPaginated(q);
     const totalPages = Math.ceil(total / q.pageSize);
@@ -155,8 +150,9 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
         const rec: Record<string, any> = {
             nroOc: toNum(row.Nro_OC),
             nroRecepcion: toNum(row.Nro_Recepcion),
+            numeroProveedor: row.Numero_Proveedor || null,
             sucursal: toNum(row.Sucursal),
-            fechaRecepcion: new Date(row.Fecha_Recepcion),
+            fechaRecepcion: parseLayoutDate(row.Fecha_Recepcion) ?? new Date(row.Fecha_Recepcion),
             importeSinImpuesto: toNum(row.Importe_sin_impuesto),
             cantidad: toNum(row.Cantidad),
             importeUnitario: toNum(row.Importe_Unitario),
@@ -168,7 +164,11 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
         if (row.Origen) rec.origen = row.Origen;
         if (row.SKU) rec.sku = row.SKU;
         if (row.Descripcion_Sku) rec.descripcionSku = row.Descripcion_Sku;
-        if (row.MontoOC) rec.montoOc = toNum(row.MontoOC);
+        if (row.MontoOC) {
+            rec.montoOc = toNum(row.MontoOC);
+        } else if (row.Importe_sin_impuesto) {
+            rec.montoOc = toNum(row.Importe_sin_impuesto);
+        }
         return rec;
     });
 
@@ -177,7 +177,10 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
     const ocMontoMap = new Map<string, number>();
     for (const r of validRows) {
         if (!ocMontoMap.has(r.Nro_OC)) {
-            ocMontoMap.set(r.Nro_OC, r.MontoOC ? toNum(r.MontoOC) : 0);
+            const monto = r.MontoOC
+                ? toNum(r.MontoOC)
+                : (r.Importe_sin_impuesto ? toNum(r.Importe_sin_impuesto) : 0);
+            ocMontoMap.set(r.Nro_OC, monto);
         }
     }
     const totalMontoOc = Array.from(ocMontoMap.values()).reduce((s, v) => s + v, 0);
@@ -260,7 +263,11 @@ function extractDriverDetails(err: unknown): DriverError {
 
 function resolveSchema(manager: import('typeorm').EntityManager): string {
     const opts = manager.connection.options as { schema?: string };
-    return opts.schema ?? process.env.DB_SCHEMA ?? 'tenant_finance';
+    const candidates = [opts.schema, process.env.DB_SCHEMA];
+    for (const c of candidates) {
+        if (typeof c === 'string' && c.trim().length > 0) return c.trim();
+    }
+    return 'tenant_finance';
 }
 
 async function rawInsertReception(
@@ -396,6 +403,9 @@ async function promoteMigoReceptionsToNormalReceptions(
     await datasource.transaction(async (manager) => {
         const purchaseOrderRepo = manager.getRepository(PurchaseOrder);
 
+        const dbSchema = resolveSchema(manager);
+        logger.info(`[MIGO] Promoviendo recepciones doc=${migoDocumentId} usando schema="${dbSchema}"`);
+
         for (const [, rows] of groups) {
             const first = rows[0]!;
             const receptionNumber = String(first.nroRecepcion);
@@ -410,10 +420,44 @@ async function promoteMigoReceptionsToNormalReceptions(
                 continue;
             }
 
+            const totalAmount = rows.reduce(
+                (acc, r) => acc + (Number(r.importeSinImpuestoDet) || 0),
+                0,
+            );
+            const roundedTotalAmount = Math.round(totalAmount * 100) / 100;
+
             let purchaseOrderId: string | undefined;
             try {
                 const orderNumber = String(first.nroOc);
-                const po = await purchaseOrderRepo.findOne({ where: { orderNumber } });
+                let po = await purchaseOrderRepo.findOne({ where: { orderNumber } });
+
+                if (!po && first.numeroProveedor) {
+                    const vendorRaw = String(first.numeroProveedor).trim();
+                    const vendorNumber = Number(vendorRaw);
+                    if (Number.isFinite(vendorNumber) && vendorNumber > 0) {
+                        const draft = new PurchaseOrder();
+                        draft.orderNumber = orderNumber;
+                        draft.supplierNumber = vendorNumber;
+                        draft.purchaseOrderDate = first.fechaRecepcion ?? new Date();
+                        const sucursalNum = Number(first.sucursal);
+                        draft.originId = Number.isFinite(sucursalNum) ? sucursalNum : 0;
+                        draft.amount = roundedTotalAmount;
+                        draft.status = 1;
+                        if (updatedBy != null) {
+                            draft.createdBy = updatedBy;
+                        }
+                        const created = await purchaseOrderRepo.save(draft);
+                        po = created;
+                        logger.info(
+                            `[MIGO] OC ${orderNumber} no existía. Creada automáticamente con vendor=${vendorNumber} (origen MIGO doc=${folio}).`,
+                        );
+                    } else {
+                        logger.warn(
+                            `[MIGO] numero_proveedor inválido para OC=${orderNumber}: '${vendorRaw}'. La recepción quedará sin OC.`,
+                        );
+                    }
+                }
+
                 if (po) purchaseOrderId = po.purchaseOrderId;
             } catch (err) {
                 logger.warn(
@@ -421,15 +465,10 @@ async function promoteMigoReceptionsToNormalReceptions(
                 );
             }
 
-            const totalAmount = rows.reduce(
-                (acc, r) => acc + (Number(r.importeSinImpuestoDet) || 0),
-                0,
-            );
-
             const receptionInsert: Parameters<typeof rawInsertReception>[1] = {
                 receptionNumber,
-                amount: Math.round(totalAmount * 100) / 100,
-                status: 1,
+                amount: roundedTotalAmount,
+                status: 0,
                 comment: `MIGO ${folio}`,
                 receptionDate: first.fechaRecepcion,
             };
@@ -449,7 +488,7 @@ async function promoteMigoReceptionsToNormalReceptions(
                     quantity: Number(row.cantidad) || 0,
                     unitCost: Number(row.importeUnitario) || 0,
                     totalCost: Number(row.importeSinImpuestoDet) || 0,
-                    status: 1,
+                    status: 0,
                 };
                 if (updatedBy != null) skuInsert.createdBy = updatedBy;
 
@@ -561,11 +600,20 @@ export async function exportReceptionsCsv(migoDocumentId: string): Promise<strin
     const lines = [HEADERS.join(',')];
 
     for (const r of recs) {
-        const fechaStr: string = r.fechaRecepcion
-            ? (r.fechaRecepcion instanceof Date ? r.fechaRecepcion : new Date(String(r.fechaRecepcion))).toISOString().split('T')[0] ?? ''
-            : '';
+        let fechaStr: string = '';
+
+        if (r.fechaRecepcion) {
+        const fecha =
+            r.fechaRecepcion instanceof Date
+            ? r.fechaRecepcion
+            : new Date(String(r.fechaRecepcion));
+
+        fechaStr = fecha.toISOString().split('T')[0] || '';
+        }
         const cells: string[] = [
-            String(r.nroOc), String(r.nroRecepcion), String(r.sucursal),
+            String(r.nroOc), String(r.nroRecepcion),
+            r.numeroProveedor || '',
+            String(r.sucursal),
             r.nroGuia || '', r.origen || '',
             fechaStr,
             String(r.importeSinImpuesto), r.sku || '',
@@ -580,7 +628,7 @@ export async function exportReceptionsCsv(migoDocumentId: string): Promise<strin
 }
 
 const EXPECTED_CSV_HEADERS = [
-    'Nro_OC', 'Nro_Recepcion', 'Sucursal', 'Nro_Guia', 'Origen',
+    'Nro_OC', 'Nro_Recepcion', 'Numero_Proveedor', 'Sucursal', 'Nro_Guia', 'Origen',
     'Fecha_Recepcion', 'Importe_sin_impuesto', 'SKU', 'Descripcion_Sku',
     'Cantidad', 'Importe_Unitario', 'Importe_SinImpuesto',
 ];

@@ -1,0 +1,571 @@
+
+import * as purchaseOrderRepo from "@/repositories/purchaseOrder.repo.js";
+import * as rececetionRepo from "@/repositories/reception.repo.js";
+import { ResponseHandler } from '@/response/ResponseHandler.js';
+import { StatusCodes } from 'http-status-codes';
+import { z } from "zod/v4";
+import type {
+CreatePurchaseOrderDto,
+
+} from "@/schemas/purchaseOrder.schema.js";
+import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
+import { Reception } from '@/entities/Reception.entity.js';
+import { ReceptionSku } from '@/entities/ReceptionSku.entity.js';
+import { ShippingGuidePurchaseOrder } from '@/entities/ShippingGuidePurchaseOrder.entity.js';
+import {
+    FindOptionsWhere,
+    EntityManager,
+} from "typeorm";
+import { logger } from "@/utils/logger.js";
+import * as svcShipping from "@/services/shippingGuide.service.js";
+import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
+import * as svcAxios from "@/services/axios.service.js";
+import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
+import 'dotenv/config';
+import { DeepPartial } from 'typeorm';
+import * as constants from "@/constants/catalogConstantsCodes.js";
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+import { ResponseHandlerDTO } from "@/response/ResponseHandler.dto.js";
+
+export async function getCatalogs(dto: CreatePurchaseOrderDto
+    , token: string) {
+    const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+    const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details", token);
+    return { supplier, tipoReceptionSodimacList };
+}
+
+export function fillReceptionList(dto: CreatePurchaseOrderDto
+    , supplier: Supplier | undefined, receptionsSkuList: Partial<ReceptionSku>[], tipoReceptionSodimacList: GenericCatalogDetails[], receptionsList: DeepPartial<Reception>[]) {
+    dto.receptionList.forEach(function (reception) {
+        if (supplier != undefined && supplier != null && supplier.supplierType.id == 2 && reception.guideNumber != undefined) {
+            throw new Error('El tipo de proveedor que desea ingresar en la recepción no acepta este tipo de guías, favor de validar.');
+        }
+        reception.receiptSkuList.forEach(function (receptionSku) {
+            const datarecSku: Partial<ReceptionSku> = {
+                sku: receptionSku.sku,
+                description: receptionSku.description,
+                quantity: receptionSku.quantity,
+                unitCost: z.coerce.number().parse(receptionSku.unitCost),
+                totalCost: z.coerce.number().parse(receptionSku.totalCost),
+                status: 0, //Nace con el status 0
+                createdBy: receptionSku.createdBy,
+            };
+
+            receptionsSkuList.push(datarecSku);
+
+        });
+
+        // Calculate the total sum of the 'value' field
+        const totalAmountSku: number = receptionsSkuList.reduce((accumulator, currentItem) => {
+            return accumulator + z.coerce.number().parse(currentItem.totalCost);
+        }, 0); // The '0' is the initial value of the accumulator
+        if (totalAmountSku != z.coerce.number().parse(reception.amount)) {
+            throw new Error('No coinicide la suma total del costo total de los articulos con su recepcion. ReceptionNumber: ' + reception.receptionNumber);
+        }
+
+        //Se obtiene el origenId cuando viene el campo Origin en String
+        reception.originId = (reception.originId == undefined || reception.originId == null) ? 1 : reception.originId;
+        if (reception.origin != undefined && reception.origin != null && reception.origin != "" && reception.originId == 0) {
+            //Busca el originid en catalogos
+            const foundCatalog: GenericCatalogDetails | undefined = tipoReceptionSodimacList.find(Cat => Cat.externalKey == reception.origin);
+            reception.originId = (foundCatalog == undefined) ? 1 : foundCatalog.internalStatus;
+        };
+
+        const guide = dto.guideNumber?.[0]?.guide; //guia de carta porte
+
+        const datarec: Partial<Reception> = {
+            originId: reception.originId,
+            destinationId: reception.destinationId,
+            amount: z.coerce.number().parse(reception.amount),
+            status: reception.status ?? 0, //Nace con el Status 0
+            comment: reception.comments,
+            createdBy: reception.createdBy,
+            receptionDate: reception.receptionDate,
+            receptionSkus: receptionsSkuList,
+            receptionNumber: reception.receptionNumber,
+            guideNumber: reception.guideNumber ?? guide ?? "",
+        };
+
+        receptionsList.push(datarec);
+    });
+}
+
+export async function getPO(dto: CreatePurchaseOrderDto) {
+    const filter: FindOptionsWhere<PurchaseOrder> = {};
+    if (dto.supplierNumber !== undefined) filter.supplierNumber = dto.supplierNumber;
+    if (dto.orderNumber !== undefined) filter.orderNumber = dto.orderNumber;
+    let purchaseOrder = await purchaseOrderRepo.findByOrderNumber(filter);
+    return purchaseOrder;
+}
+
+export function fillPO(receptionsList: DeepPartial<Reception>[], dto: CreatePurchaseOrderDto, origin: number) {
+    const totalOCValue: number = receptionsList.reduce((acc, currentItem) => {
+        // Usa coerce con safeParse o maneja undefined → 0
+        const parsed = z.coerce.number().safeParse(currentItem.amount);
+        return acc + (parsed.success && Number.isFinite(parsed.data) ? parsed.data : 0);
+    }, 0);
+
+    let dataP: DeepPartial<PurchaseOrder> | PurchaseOrder;
+    dataP = {
+        orderNumber: dto.orderNumber,
+        supplierNumber: dto.supplierNumber,
+        originId: origin,
+        amount: z.coerce.number().parse(totalOCValue),
+        purchaseOrderDate: dto.purchaseOrderDate,
+        status: 0, //Nace con el valor 0 (0 - Disponible)
+        createdBy: dto.createdBy,
+        receptions: receptionsList
+    };
+    return dataP;
+}
+
+export async function fillReceptionOnPO(purchaseOrder: PurchaseOrder, receptionsList: DeepPartial<Reception>[]) {
+    let dataP: DeepPartial<PurchaseOrder> | PurchaseOrder;
+    let recsactuales = await rececetionRepo.findAll(purchaseOrder.purchaseOrderId);
+
+    //Verifica que no se de alta alguna recepcion que ya esta en la base
+    receptionsList.forEach(function (reception) {
+        const foundReception: Reception | undefined = recsactuales.find(rec => rec.receptionNumber == reception.receptionNumber);
+        if (foundReception != undefined || foundReception != null) {
+            throw new Error('Ya existe una recepción dada de alta que se encuentra en la Peticion. ReceptionNumber: ' + reception.receptionNumber);
+        }
+
+    });
+
+    const allReceptions: DeepPartial<Reception>[] = [
+        ...(recsactuales?.map(r => ({ ...r })) ?? []), // copiar a objeto simple
+        ...receptionsList, // ya es DeepPartial<Reception>[]
+    ];
+
+    const receptionEntities: Reception[] = await Promise.all(
+        allReceptions.map(p => rececetionRepo.createOne(p, purchaseOrder) // Promise<Reception>
+        )
+    );
+
+    purchaseOrder.receptions = receptionEntities;
+
+    // Calculate the total sum of the 'value' field
+    const totalOCValue: number = allReceptions.reduce((accumulator, currentItem) => {
+        return accumulator + z.coerce.number().parse(currentItem.amount == undefined ? 0 : z.coerce.number().parse(currentItem.amount));
+    }, 0); // The '0' is the initial value of the accumulator
+
+    purchaseOrder.amount = totalOCValue;
+    dataP = purchaseOrder;
+    return dataP;
+}
+
+export async function createOrUpdatePO(transactionalEntityManager: EntityManager, dataP: DeepPartial<PurchaseOrder>) {
+    let entityCreatedOrder: PurchaseOrder | (Partial<PurchaseOrder> & PurchaseOrder);
+    const po = transactionalEntityManager.create(PurchaseOrder, dataP);
+    entityCreatedOrder = await transactionalEntityManager.save(PurchaseOrder, po);
+    return entityCreatedOrder;
+}
+
+export async function createShippingGuide(req: AuthenticatedRequest, files: Express.Multer.File[] | null, origin: number, transactionalEntityManager: EntityManager, saveFileOnDb: string | undefined, dto: { supplierNumber: number; orderNumber: string; amount: string; purchaseOrderDate: Date; status: number; createdBy: number; receptionList: { receptionNumber: string; destinationId: number; amount: string; comments: string; receptionDate: Date; status: number; createdBy: number; receiptSkuList: { sku: string; description: string; quantity: number; unitCost: string; totalCost: string; status: number; createdBy: number; }[]; originId?: number | undefined; origin?: string | null | undefined; guideNumber?: string | undefined; }[]; origen: string; guideNumber?: { guide: string; }[] | undefined; shippingGuideList?: { guideNumber: string; vendorNumber: number; truckPlate: string; originId: number; destinationId: number; deliveryType: number; status: number; deliveryDate: Date; shipingGuideDocumentList: { fileName: string; fileType: number; status: number; }[]; trailerPlate?: string | null | undefined; driverName?: string | null | undefined; driverLicense?: string | null | undefined; comments?: string | null | undefined; shippingDate?: Date | null | undefined; estimatedArrival?: Date | null | undefined; actualArrival?: Date | null | undefined; sentAt?: Date | null | undefined; createdBy?: number | null | undefined; }[] | undefined; }, token: string) {
+    const status = 2; //Nace Guia de embarque Con OC
+    let created: ResponseHandlerDTO;
+
+    created = await svcShipping.create(req, files, origin, status, transactionalEntityManager, saveFileOnDb, dto.shippingGuideList);
+    if (!created.success) {
+        const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC015, token);
+        throw new Error(CatMsgExc.description + created.message + created.detailError);
+    }
+    logger.info("✅ ShippingGuide Created → data={}", created);
+}
+
+export async function createRelations(dto: CreatePurchaseOrderDto
+    , transactionalEntityManager: EntityManager, token: string, entityCreatedOrder: PurchaseOrder | (Partial<PurchaseOrder> & PurchaseOrder)) {
+    let shippingGuidePurchaseOrderList: ShippingGuidePurchaseOrder[] = [];
+    if (!dto.guideNumber) throw new Error("dto.guideNumber is undefined");
+    for (let i: number = 0; i < dto.guideNumber.length; i++) {
+        const filter: FindOptionsWhere<ShippingGuide> = {};
+        if (dto.guideNumber[i]?.guide !== undefined) {
+            let guia = dto.guideNumber[i]?.guide ?? '';
+            filter.guideNumber = guia;
+        }
+
+        const shippingGuide = await transactionalEntityManager.findOneBy(ShippingGuide, filter);
+        if (!shippingGuide) {
+            const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016, token);
+            throw new Error(CatMsgExc.description + dto.guideNumber[i]?.guide + ' Con la OC: ' + dto.orderNumber);
+        }
+
+        const shippingGuideUpdate: Partial<ShippingGuide> = {
+            status: 2, //La Guia ya se le actualiza estatus = 2 "Pendiente de Facturar",
+            updatedAt: new Date(),
+            isStatusUpdated: true
+        };
+        transactionalEntityManager.update(ShippingGuide, { shippingGuideId: shippingGuide.shippingGuideId }, shippingGuideUpdate);
+        const shippingPurchase: Partial<ShippingGuidePurchaseOrder> = {
+            purchaseOrderId: entityCreatedOrder.purchaseOrderId,
+            shippingGuideId: shippingGuide.shippingGuideId,
+            createdBy: dto.createdBy,
+            createdAt: new Date()
+        };
+        const entity = transactionalEntityManager.create(ShippingGuidePurchaseOrder, shippingPurchase);
+        shippingGuidePurchaseOrderList.push(entity);
+    }
+    const entityCreatedShippingOrder = await transactionalEntityManager.save(shippingGuidePurchaseOrderList);
+    logger.info("✅ entityCreatedShippingOrder Created → data={}", entityCreatedShippingOrder);
+}
+
+//-------------------------------- FUNCIONES AUXILIZRES DE CREATE-----------------------------//
+export async function getSupplier(dto: { supplierNumber: number; orderNumber: string; amount: string; purchaseOrderDate: Date; status: number; createdBy: number; receptionList: { receptionNumber: string; destinationId: number; amount: string; comments: string; receptionDate: Date; status: number; createdBy: number; receiptSkuList: { sku: string; description: string; quantity: number; unitCost: string; totalCost: string; status: number; createdBy: number; }[]; originId?: number | undefined; origin?: string | null | undefined; guideNumber?: string | undefined; }[]; origen: string; guideNumber?: { guide: string; }[] | undefined; shippingGuideList?: { guideNumber: string; vendorNumber: number; truckPlate: string; originId: number; destinationId: number; deliveryType: number; status: number; deliveryDate: Date; shipingGuideDocumentList: { fileName: string; fileType: number; status: number; }[]; trailerPlate?: string | null | undefined; driverName?: string | null | undefined; driverLicense?: string | null | undefined; comments?: string | null | undefined; shippingDate?: Date | null | undefined; estimatedArrival?: Date | null | undefined; actualArrival?: Date | null | undefined; sentAt?: Date | null | undefined; createdBy?: number | null | undefined; }[] | undefined; }, token: string) {
+    return svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+}
+
+export async function getCatalog(token: string) {
+    return svcAxios.GetCatalogDetailList(
+        (process.env.CATALOGS_API_URL_BFF ?? "") +
+        constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC +
+        "/details",
+        token
+    );
+}
+
+export function buildReceptions(dto: CreatePurchaseOrderDto, supplier?: Supplier, catalog?: GenericCatalogDetails[] ) {
+    const receptionsList: DeepPartial<Reception>[] = [];
+
+    dto.receptionList.forEach((reception) => {
+        validateReception(supplier, reception.guideNumber);
+
+        const skus = buildSkus(reception);
+
+        validateAmounts(reception.receptionNumber, reception.amount, skus);
+
+        const originId = resolveOrigin(catalog, reception.originId, reception.origin??'' );
+
+        const guide = dto.guideNumber?.[0]?.guide;
+
+        receptionsList.push({
+            originId,
+            destinationId: reception.destinationId,
+            amount: z.coerce.number().parse(reception.amount),
+            status: reception.status ?? 0,
+            comment: reception.comments,
+            createdBy: reception.createdBy,
+            receptionDate: reception.receptionDate,
+            receptionSkus: skus,
+            receptionNumber: reception.receptionNumber,
+            guideNumber: reception.guideNumber ?? guide ?? "",
+        });
+    });
+
+    return { receptionsList };
+}
+
+export async function upsertPurchaseOrder(dto: CreatePurchaseOrderDto, receptionsList: DeepPartial<Reception>[], origin: number, manager: EntityManager, ) {
+    const filter: FindOptionsWhere<PurchaseOrder> = {
+        supplierNumber: dto.supplierNumber,
+        orderNumber: dto.orderNumber,
+    };
+
+    let purchaseOrder = await purchaseOrderRepo.findByOrderNumber(filter);
+
+    if (!purchaseOrder) {
+        return createNewPO(dto, receptionsList, origin, manager);
+    }
+
+    return updateExistingPO(purchaseOrder, receptionsList, manager);
+}
+
+
+export async function processGuideNumber(
+    dto: CreatePurchaseOrderDto,
+    purchaseOrder: PurchaseOrder,
+    manager: EntityManager,
+    token: string
+) {
+    if (!dto.guideNumber?.length) return;
+
+    const relations: ShippingGuidePurchaseOrder[] = [];
+
+    for (const item of dto.guideNumber) {
+        const guide = item?.guide ?? "";
+
+        const shippingGuide = await manager.findOneBy(ShippingGuide, {
+            guideNumber: guide
+        });
+
+        if (!shippingGuide) {
+            const cat = await svcAxios.GetCatalogDetail(
+                (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogException.CATALOGS_API_EXCEPTION +
+                constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC016,
+                token
+            );
+
+            throw new Error(
+                `${cat.description}${guide} Con la OC: ${dto.orderNumber}`
+            );
+        }
+
+        await manager.update(
+            ShippingGuide,
+            { shippingGuideId: shippingGuide.shippingGuideId },
+            {
+                status: 2,
+                updatedAt: new Date(),
+                isStatusUpdated: true
+            }
+        );
+
+        const relation = manager.create(ShippingGuidePurchaseOrder, {
+            purchaseOrderId: purchaseOrder.purchaseOrderId,
+            shippingGuideId: shippingGuide.shippingGuideId,
+            createdBy: dto.createdBy,
+            createdAt: new Date()
+        });
+
+        relations.push(relation);
+    }
+
+    await manager.save(relations);
+}
+
+export async function buildResponse(
+    purchaseOrder: PurchaseOrder,
+    token: string
+) {
+    const catMsg = await svcAxios.GetCatalogDetail(
+        (process.env.CATALOGS_API_URL_BFF ?? "") +
+        constants.CatalogNegocio.CATALOGS_API_NEGOCIO +
+        constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS212,
+        token
+    );
+
+    logger.info("✅ purchaseOrder Created → data={}", purchaseOrder);
+
+    return ResponseHandler.responseBuilder(
+        catMsg.description,
+        purchaseOrder,
+        0,
+        StatusCodes.CREATED,
+        true,
+        ""
+    );
+}
+
+export async function validarStatus(reception: Reception, newStatus: number, optionId: number, token?: string){
+    const statusActual = reception.status;
+    const isValid = await svcAxios.ValidStatus((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogStatusTrain.CATALOGS_API_STATUS_TRAIN + constants.CatalogStatusTrain.CATALOGS_API_VALID_TRAIN, optionId, (statusActual?? 0) ,newStatus, token ?? ''  );
+    return isValid;
+
+    // let response = false;
+    // //statusActual == 0, Recepción disponilbe, 1=Consumida, 2=Consumida manual, 7=cancelada, 8=Borrado logico
+    // if(statusActual == 0 && (newStatus == 1 || newStatus == 2 || newStatus == 7 || newStatus == 8)){
+    //     response = true;
+    // }
+    // //1=Consumida, 3=En proceso Contable, 4=Rechazo Contable
+    // if(statusActual == 1 && (newStatus == 3 || newStatus == 4)){ 
+    //     response = true; 
+    // }
+    // //2=Consumida manual
+    // if(statusActual == 2 && newStatus == 3 || newStatus == 4){ 
+    //     response = true; 
+    // }
+    // //5=En proceso de Pago
+    // if(statusActual == 3 && newStatus == 5){ 
+    //     response = true; 
+    // }
+    // if(statusActual == 4 && newStatus == 5){ 
+    //     response = true; 
+    // }
+    // //6=Pagada
+    // if(statusActual == 5 && newStatus == 6){ 
+    //     response = true; 
+    // }
+    // //6=Pagada, 7=Cancelada, 8=Borrado logico
+    // if(statusActual == 6 || statusActual == 7 || statusActual == 8 ){ 
+    //     response = false; 
+    // }
+
+    // return response;
+}
+
+export function applyOriginCatalogLabels(receptions: Reception[], lookup: Map<number, string>): void {
+    for (const rec of receptions) {
+        const raw =
+            rec.originId === undefined || rec.originId === null
+                ? NaN
+                : Number(rec.originId);
+        const nm = Number.isFinite(raw) ? lookup.get(raw) ?? "" : "";
+        (rec as Reception & { originName?: string }).originName = nm;
+    }
+}
+
+export function buildCatalogWarningMessage(
+    catalogMsg: GenericCatalogDetails,
+    ...params: Array<string | number | undefined | null>
+): string {
+    const description = formatCatalogMessage(catalogMsg.description ?? "", ...params);
+    return `WARNING: ${catalogMsg.key}. ${description}`;
+}
+
+function formatCatalogMessage(
+    template: string,
+    ...params: Array<string | number | undefined | null>
+): string {
+    let message = template;
+    params.forEach((value, index) => {
+        const replacement =
+            value == null || String(value).trim() === "" ? "N/D" : String(value);
+        message = message.replace(new RegExp(`\\{${index}\\}`, "g"), replacement);
+    });
+    return message;
+}
+
+function validateReception(supplier?: Supplier, guideNumber?: string) {
+    if (
+        supplier &&
+        supplier.supplierType.id === 2 &&
+        guideNumber
+    ) {
+        throw new Error("Proveedor no acepta este tipo de guías");
+    }
+}
+
+
+function validateAmounts(receptionNumber: any,  amount: any
+    , skus: Partial<ReceptionSku>[]) {
+    const total = skus.reduce((acc, s) => acc + Number(s.totalCost), 0);
+
+    if (total !== Number(amount)) {
+        throw new Error(
+            `Mismatch en montos ReceptionNumber: ${receptionNumber}`
+        );
+    }
+}
+
+function buildSkus(reception: { receptionNumber?: string; destinationId?: number; amount?: string; comments?: string; receptionDate?: Date; status?: number; createdBy?: number; receiptSkuList: any; originId?: number | undefined; origin?: string | null | undefined; guideNumber?: string | undefined; }): Partial<ReceptionSku>[] {
+    return reception.receiptSkuList.map((sku: { sku: any; description: any; quantity: any; unitCost: unknown; totalCost: unknown; createdBy: any; }) => ({
+        sku: sku.sku,
+        description: sku.description,
+        quantity: sku.quantity,
+        unitCost: z.coerce.number().parse(sku.unitCost),
+        totalCost: z.coerce.number().parse(sku.totalCost),
+        status: 0,
+        createdBy: sku.createdBy,
+    }));
+}
+
+function resolveOrigin(catalog?: GenericCatalogDetails[], originId?: number, origin?: string) {
+    originId = originId ?? 1;
+
+    if (origin && originId === 0) {
+        const found = catalog?.find(c => c.externalKey === origin);
+        return found?.internalStatus ?? 1;
+    }
+
+    return originId;
+}
+
+async function createNewPO(
+    dto: CreatePurchaseOrderDto,
+    receptionsList: DeepPartial<Reception>[],
+    origin: number,
+    manager: EntityManager
+): Promise<PurchaseOrder> {
+
+    const totalOCValue = receptionsList.reduce((acc, r) => {
+        const parsed = z.coerce.number().safeParse(r.amount);
+        return acc + (parsed.success ? parsed.data : 0);
+    }, 0);
+
+    const data: DeepPartial<PurchaseOrder> = {
+        orderNumber: dto.orderNumber,
+        supplierNumber: dto.supplierNumber,
+        originId: origin,
+        amount: totalOCValue,
+        purchaseOrderDate: dto.purchaseOrderDate,
+        status: 0,
+        createdBy: dto.createdBy,
+        receptions: receptionsList
+    };
+
+    const entity = manager.create(PurchaseOrder, data);
+    return manager.save(PurchaseOrder, entity);
+}
+
+async function updateExistingPO(
+    purchaseOrder: PurchaseOrder,
+    receptionsList: DeepPartial<Reception>[],
+    manager: EntityManager
+): Promise<PurchaseOrder> {
+
+    const recsActuales = await rececetionRepo.findAll(purchaseOrder.purchaseOrderId);
+
+    validateDuplicateReceptions(receptionsList, recsActuales);
+
+    const allReceptions: DeepPartial<Reception>[] = [
+        ...(recsActuales?.map(r => ({ ...r })) ?? []),
+        ...receptionsList,
+    ];
+
+    const receptionEntities = await Promise.all(
+        allReceptions.map(r => rececetionRepo.createOne(r, purchaseOrder))
+    );
+
+    purchaseOrder.receptions = receptionEntities;
+    purchaseOrder.amount = calculateTotalAmount(allReceptions);
+
+    return purchaseOrder;
+}
+
+function validateDuplicateReceptions(newRecs: DeepPartial<Reception>[], existingRecs: Reception[]) {
+    newRecs.forEach(r => {
+        const exists = existingRecs.find(e => e.receptionNumber === r.receptionNumber);
+        if (exists) {
+            throw new Error(
+                `Ya existe una recepción: ${r.receptionNumber}`
+            );
+        }
+    });
+}
+
+function calculateTotalAmount(receptions: DeepPartial<Reception>[]): number {
+    return receptions.reduce((acc, r) => {
+        const value = r.amount ?? 0;
+        return acc + z.coerce.number().parse(value);
+    }, 0);
+}
+
+
+/** Listado GET `/purchase-orders/listReception`. */
+export async function enrichReceptionsListOriginCatalog(
+    receptions: Reception[],
+    token: string,
+): Promise<void> {
+    if (!receptions?.length) {
+        return;
+    }
+    const lookup = await fetchReceptionOriginIdToLabel(token);
+    applyOriginCatalogLabels(receptions, lookup);
+}
+
+export async function fetchReceptionOriginIdToLabel(token: string): Promise<Map<number, string>> {
+    const map = new Map<number, string>();
+    try {
+        const base =
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC +
+            "/details";
+        const rows = await svcAxios.GetCatalogDetailList(base, token);
+        for (const c of rows ?? []) {
+            const id = Number(c.internalStatus);
+            if (!Number.isFinite(id)) {
+                continue;
+            }
+            const label =
+                [c.description, c.value, c.externalKey, c.key].find(
+                    (s): s is string => typeof s === "string" && String(s).trim().length > 0,
+                )?.trim() ?? "";
+            if (label) {
+                map.set(id, label);
+            }
+        }
+    } catch (e) {
+        logger.warn("fetchReceptionOriginIdToLabel: catálogo de orígenes no disponible: {}", e);
+    }
+    return map;
+}

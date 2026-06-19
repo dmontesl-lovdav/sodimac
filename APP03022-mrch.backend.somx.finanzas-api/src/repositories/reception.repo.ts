@@ -33,6 +33,38 @@ export async function findById(receptionId: string) {
     return repo().findOneBy({ receptionId });
 }
 
+export async function findByGuideNumber(guideNumber: string) {
+    return repo().find({ where: { guideNumber: guideNumber.trim() } });
+}
+
+export async function updateManyByGuideNumber(
+    guideNumber: string,
+    patch: Partial<Reception>
+): Promise<number> {
+    const normalized = guideNumber?.trim();
+    if (!normalized) return 0;
+    const result = await repo().update({ guideNumber: normalized }, patch);
+    return result.affected ?? 0;
+}
+
+export async function updateManyByPurchaseOrderIds(
+    purchaseOrderIds: string[],
+    patch: Partial<Reception>,
+    guideNumber?: string
+): Promise<number> {
+    if (!purchaseOrderIds.length) return 0;
+
+    const where: FindOptionsWhere<Reception> = {
+        purchaseOrderId: In(purchaseOrderIds),
+    };
+    if (guideNumber?.trim()) {
+        where.guideNumber = guideNumber.trim();
+    }
+
+    const result = await repo().update(where, patch);
+    return result.affected ?? 0;
+}
+
 export async function findByVendorAndDateRange(vendorNumber: number, start: Date, end: Date): Promise<Reception[]> {
     return datasource.manager
         .createQueryBuilder(Reception, 'r')
@@ -88,7 +120,7 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         if(filter.status !== undefined && filter.status != 8){  // status=8 Borrado logico
             whereClause.status = filter.status;
         } else {
-            //whereClause.status != z.coerce.number().parse(8);   //No se le permite ver al front las de estatus= 8 Borrado logico
+            whereClause.status != z.coerce.number().parse(8);   //No se le permite ver al front las de estatus= 8 Borrado logico
         }
         if(filter.receptionId !== undefined){
             whereClause.receptionId = filter.receptionId;

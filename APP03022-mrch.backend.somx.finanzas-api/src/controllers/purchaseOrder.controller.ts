@@ -2,8 +2,8 @@ import { getDataSource, datasource } from "@/config/typeorm-datasource.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { Reception } from "@/entities/Reception.entity.js";
 import { HttpError } from "@/utils/HttpError.js";
-import type { NextFunction, Request, Response } from "express";
-import { Between, Equal, FindOperator, FindOptionsWhere, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
+import type { NextFunction, Response } from "express";
+import { Between, Equal, FindOperator, FindOptionsWhere, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import {
     CreatePurchaseOrderSchema,
     UpdateStatusReceptionSchema,
@@ -22,24 +22,19 @@ import {
 import * as svc from "@/services/purchaseOrder.service.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
-//REVISAR PARA PASARLO A SERVICIOS
-import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
-import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
 import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js";
 import { ResponsePageableDTO } from "@/response/ResponseHandler.dto.js";
-import { activityLogger, logActivity, getTraceId, logBeforeMethod } from '@/middlewares/logger.js';
+import { logActivity, getTraceId } from '@/middlewares/logger.js';
 import * as svcAxios from "@/services/axios.service.js";
 import { Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
-import 'dotenv/config';
-import { IsNull } from "typeorm";
 
 
 
 // CONFIG
-const DATE_TIME_FORMAT: RegExp = /[0-9]{4}-[0-9]{2}-[0-9]{2}/;
+const DATE_TIME_FORMAT: RegExp = /\d{4}-\d{2}-\d{2}/;
 const getPurchaseOrdersRepo = () => getDataSource().getRepository(PurchaseOrder);
 const getReceiptsRepo = () => getDataSource().getRepository(Reception);
 
@@ -56,13 +51,17 @@ export async function save(request: AuthenticatedRequest, response: Response, ne
     try {
         const dto: CreatePurchaseOrderDto = CreatePurchaseOrderSchema.parse(request.body);
         await getDataSource().transaction(async (transactionalEntityManager) => {
-            const created = await svc.create(request, dto, transactionalEntityManager, null, Number(dto.origen), request.authToken ?? '', undefined, undefined);
+            const created = await svc.create(request, dto, transactionalEntityManager, null, Number(dto.origen));
             response.status(201).json({ ...created, trace_id: getTraceId() });
         });
     } catch (e) {
-        logActivity(true, 'ERROR: ', e, request.body);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR: ', err, request.body);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
 
     }
@@ -225,8 +224,11 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
         console.error("[purchaseOrder.list] ERROR query:", JSON.stringify(request.query, null, 2));
         console.error("[purchaseOrder.list] ERROR body:", JSON.stringify(request.body, null, 2));
         console.error("[purchaseOrder.list] ERROR CATALOGS_API_URL_BFF:", process.env.CATALOGS_API_URL_BFF);
-
-        logActivity(true, 'ERROR: ', e, request.body);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR: ', err, request.body);
 
         const CatMsgExc = await svcAxios.GetCatalogDetail(
             (process.env.CATALOGS_API_URL_BFF ?? "") +
@@ -244,7 +246,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
                 -1,
                 StatusCodes.BAD_REQUEST,
                 false,
-                e
+                err
             )
         );
 
@@ -256,14 +258,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
 export async function getById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
         const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
-        // const rows = await getPurchaseOrdersRepo()
-        //                     .createQueryBuilder("r")
-        //                     .where("r.purchase_order_uuid = :id", {
-        //         id: request.params.uuid?.trim()
-        //     }).getMany();
-
         if (!rows || rows.length === 0) response.json({});
-
         for (const row of rows) {
             const purchaseOrderId = row.purchaseOrderId;
             if (!purchaseOrderId) {
@@ -286,9 +281,13 @@ export async function getById(request: AuthenticatedRequest, response: Response,
         return response.json({ ...rows[0], trace_id: getTraceId() });
 
     } catch (e) {
-        logActivity(true, 'ERROR', e, request.params);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR', err, request.params);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC002, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -343,9 +342,13 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
         return response.json({ ...ResponseHandler.responseBuilder("", data, 0, StatusCodes.OK, true, ""), trace_id: getTraceId() });
 
     } catch (e) {
-        logActivity(true, 'ERROR', e, request.params);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR', err, request.params);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC003, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -366,15 +369,19 @@ export async function updateReceptionStatusByUuid(request: AuthenticatedRequest,
         const persistence: Reception = row[0];
         if (reference.status) {
             persistence.status = reference.status;
-            persistence.comment = reference.comment || "";
+            persistence.comment = reference.comment ?? "";
         }
 
         await getReceiptsRepo().save({ ...persistence, trace_id: getTraceId() });
         response.json(persistence);
     } catch (e) {
-        logActivity(true, 'ERROR', e, request.params);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR', err, request.params);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -387,7 +394,11 @@ export async function updateById(request: AuthenticatedRequest, response: Respon
             throw new HttpError(400, "Missing update body");
         }
 
-        const row = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
+        const row = await getPurchaseOrdersRepo().findBy(
+            {
+                purchaseOrderId: Equal(request.params.uuid || "")
+        });
+
         if (!row || row.length === 0 || !row[0]) {
             throw new HttpError(400, "Invalid uuid");
         }
@@ -401,9 +412,13 @@ export async function updateById(request: AuthenticatedRequest, response: Respon
         await getPurchaseOrdersRepo().save(persistence);
         response.json({ ...persistence, trace_id: getTraceId() });
     } catch (e) {
-        logActivity(true, 'ERROR', e, request.params);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR', err, request.params);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC005, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -416,9 +431,13 @@ export async function listReception(request: AuthenticatedRequest, response: Res
         return response.status(res.httpStatus).json({ ...res, trace_id: getTraceId() });
 
     } catch (e) {
-        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e, request.body);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', err, request.body);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -443,9 +462,13 @@ export async function listReceptionV2(request: AuthenticatedRequest, response: R
         return response.status(res.httpStatus).json({ ...res, trace_id: getTraceId() });
 
     } catch (e) {
-        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', e, request.body);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR: NO FUE POSIBLE LISTAR LAS RECEPCIONES', err, request.body);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC006, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -457,9 +480,13 @@ export async function updateReception(request: AuthenticatedRequest, response: R
         const updated = await svc.updateReception(dto, request.authToken ?? '');
         return response.status(updated.httpStatus).json({ ...updated, trace_id: getTraceId() });
     } catch (e) {
-        logActivity(true, 'ERROR', e, request.params);
+        let err = "";
+        if (e instanceof Error) {
+            err= e.message + e.cause + e.stack;
+        }
+        logActivity(true, 'ERROR', err, request.params);
         const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogException.CATALOGS_API_EXCEPTION + constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC004, request.authToken ?? '');
-        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, e));
+        response.status(400).json(ResponseHandler.responseBuilder("ERROR: " + CatMsgExc.key + ". " + CatMsgExc.description, null, -1, StatusCodes.BAD_REQUEST, false, err));
         next(e);
     }
 }
@@ -471,11 +498,6 @@ function buildCriteria(criteria: PurchaseOrderCriteria): FindOptionsWhere<Purcha
         return [];
     }
     const where: FindOptionsWhere<PurchaseOrder>[] = [];
-    if (criteria.criteria) {
-        //where.push({ receipts: { receiptNumber: Like(`%${criteria.criteria.trim()}%`) } });
-
-    }
-
     if (criteria.status) {
         where.push({ status: criteria.status });
     }
@@ -485,11 +507,11 @@ function buildCriteria(criteria: PurchaseOrderCriteria): FindOptionsWhere<Purcha
 
     let from: Date | undefined;
     let to: Date | undefined;
-    if (criteria.dateFrom && criteria.dateFrom.match(DATE_TIME_FORMAT)) {
+    if (criteria.dateFrom?.match(DATE_TIME_FORMAT)){
         from = new Date(criteria.dateFrom);
         createdAt.createdAt = MoreThanOrEqual(from);
     }
-    if (criteria.dateTo && criteria.dateTo.match(DATE_TIME_FORMAT)) {
+    if (criteria.dateTo?.match(DATE_TIME_FORMAT)) {
         to = new Date(criteria.dateTo);
         createdAt.createdAt = from ? Between(from, to) : LessThanOrEqual(to);
     }

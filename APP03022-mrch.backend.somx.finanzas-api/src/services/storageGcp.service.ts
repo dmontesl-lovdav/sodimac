@@ -141,10 +141,20 @@ async function uploadFileBack(prefix: string, folder: string, file: Express.Mult
             ? blob.createWriteStream({ resumable: false, contentType: file.mimetype })
             : blob.createWriteStream({ resumable: false });
 
-        blobStream.on("error", (err) => {
-            logger.error(`GCS upload failed: ${err.message}`);         
-            reject(err);
+
+        blobStream.on("error", (err: unknown) => {
+            let errorObj: Error;
+
+            if (err instanceof Error) {
+                errorObj = err;
+            } else {
+                errorObj = new Error("Unknown GCS upload error");
+            }
+
+            logger.error(`GCS upload failed: ${errorObj.message}`);
+            reject(errorObj);
         });
+
 
         blobStream.on("finish", async () => {
             if (shouldMakePublic) {
@@ -172,10 +182,6 @@ async function uploadFile(prefix: string, file: Express.Multer.File, folder?: st
         : blob.createWriteStream({ resumable: false });
 
         blobStream.on("error", reject);
-    //   blobStream.on("error", (err) => {
-    //     logger.error(`GCS upload error: ${err.message}`);
-    //     reject(err);
-    //   });
 
       blobStream.on("finish", async () => {
         try {

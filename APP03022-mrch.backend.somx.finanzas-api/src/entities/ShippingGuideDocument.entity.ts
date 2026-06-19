@@ -49,9 +49,7 @@ export class ShippingGuideDocument {
     @JoinColumn({ name: 'status' })
     statusCatalog?: any;
 
-    
     // relación inversa (no tiene la FK)
     @OneToOne(() => ShippingGuideFile, (shippingGuideFile) => shippingGuideFile.shippingGuideDocument ,  { cascade: true })
     shippingGuideFile?: ShippingGuideFile;
-
 }

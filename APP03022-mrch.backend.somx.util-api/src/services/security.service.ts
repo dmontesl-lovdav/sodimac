@@ -379,6 +379,8 @@ export async function saveProfileModuleProcessAssignment(idProfile: number, payl
     }
 
     await securityRepo.syncProfileModuleProcesses(idProfile, selectedIds, payload.actorId);
+
+    await invalidateUserDetailsCache(undefined, idProfile);
 }
 
 export async function searchApplicationEvents(filters: SecurityFilters) {

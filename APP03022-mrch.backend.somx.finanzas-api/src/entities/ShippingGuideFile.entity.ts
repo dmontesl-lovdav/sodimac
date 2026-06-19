@@ -21,12 +21,12 @@ export class ShippingGuideFile {
     fileType!: string;
 
     @Column({name: 'data', type: "bytea" }) // importante para postgres
-    data!: Buffer;
+    data?: Buffer | undefined;
 
     
   // lado dueño de la relación (tiene la FK)
     @OneToOne(() => ShippingGuideDocument, (shippingGuideDocument) => shippingGuideDocument.shippingGuideFile)
     @JoinColumn({ name: "shipping_guide_document_uuid" }) // 👈 FK en esta tabla
-    shippingGuideDocument?: ShippingGuideDocument;
+    shippingGuideDocument?: ShippingGuideDocument | undefined;
 
 }

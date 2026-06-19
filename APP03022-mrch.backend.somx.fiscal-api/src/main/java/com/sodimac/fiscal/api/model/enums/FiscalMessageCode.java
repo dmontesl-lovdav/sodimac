@@ -190,12 +190,9 @@ public enum FiscalMessageCode {
     // ========== ADVERTENCIAS - CANCELACIÓN NC (WRN7023) - STM-335 ==========
     WRN7023("WRN7023", "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable."),
 
-    // ========== ADVERTENCIAS - TOLERANCIA IMPORTE (WRN7030-WRN7031) - QA junio-2026 ==========
-    // Fuera de tolerancia la factura se registra (no se rechaza); estas advertencias informan al usuario.
-    // Factura MAYOR a recepción -> 2 Recibido Parcial (requiere NC).
-    WRN7030("WRN7030", "La factura se registró como Recibido Parcial: la diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2}. Se requiere una nota de crédito para conciliar el monto."),
-    // Factura MENOR a recepción -> 1 Rechazo Comercial (decisión Ivan, diagrama 2026-06-18).
-    WRN7031("WRN7031", "La factura se registró como Rechazo Comercial: el subtotal de la factura ({0}) es menor al importe de la recepción ({1}) y la diferencia supera la tolerancia permitida de {2}.");
+    // ========== ADVERTENCIAS - TOLERANCIA IMPORTE (WRN7030) - QA junio-2026 ==========
+    // La factura se registra (Recibido Parcial), no se rechaza; esta advertencia informa al usuario.
+    WRN7030("WRN7030", "La factura se registró como Recibido Parcial: la diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2}. Se requiere una nota de crédito para conciliar el monto.");
 
     private final String code;
     private final String message;

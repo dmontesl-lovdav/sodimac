@@ -13,7 +13,6 @@ export async function createOne(data: Partial<ShippingGuideFile>) {
 }
 
 export async function createWithFile(file: Express.Multer.File, _shippingGuideDocumentId: string ) {
-     //const savedFiles = [];
     const fileEntity = repo().create({
         //shippingGuideDocumentId: _shippingGuideDocumentId,
         fileName: file.originalname,
@@ -23,7 +22,5 @@ export async function createWithFile(file: Express.Multer.File, _shippingGuideDo
     });
 
     const saved = await repo().save(fileEntity);
-    //savedFiles.push(saved);
-
     return saved;
 }

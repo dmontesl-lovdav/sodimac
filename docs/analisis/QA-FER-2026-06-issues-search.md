@@ -19,6 +19,10 @@
 | 5 | Agregar filtro por `tipoProveedor` | complementos-pago/buscar | ✅ resuelto 2026-06-19 — filtro + id/descripción en response |
 | 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | 🟡 feature grande (catálogo CatTipoNotaCredito ya creado) |
 
+**Backfill datos viejos (UAT, 2026-06-19):** el fix #1/#3 puebla al registrar, así que las addendas previas quedaban con `supplier_type` null y `reception_number` = UUID. Se corrió un script de backfill **manual en UAT** (no versionado) que rellena `addendum.supplier_type` (id 1-4 por proveedor) y reemplaza `reception_number` UUID → número de finanzas. Idempotente. Validado: PARKMEX (252523) → `noRecepcion` 846919, `tipoProveedor` 1, "Mercancía". Excepción: addendas sin `supplier_number` quedan en null (no hay con qué resolver).
+
+**VALIDADO EN UAT 2026-06-19:** deploy vivo, campos presentes y poblados en datos reales tras backfill. #1/#3/#4/#5 OK.
+
 **Decisiones tomadas:**
 - #1 `noRecepcion` = `tenant_finance.reception.reception_number` (numérico) resuelto por receptionId (UUID).
 - #3 `tipoProveedor` = id de CatTipoProveedor (1-4), leído **directo de shared_catalogs** (sin util-api), guardado en `addendum.supplier_type` al registrar.

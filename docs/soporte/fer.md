@@ -4,6 +4,22 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-19 | Lista de 6 issues (search + complementos + NC descuento comercial)
+
+Fer reportó 6 puntos sobre `/invoices/search`, `complementos-pago/buscar` y NC. Detalle y análisis en [docs/analisis/QA-FER-2026-06-issues-search.md](../analisis/QA-FER-2026-06-issues-search.md).
+
+Estado (todos desplegados en UAT salvo #6):
+1. **`noRecepcion` mostraba GUID + `tipoProveedor` null** → ✅ noRecepcion ahora = `reception_number` de finanzas (numérico); `tipoProveedor` (id 1-4) se puebla al registrar leyendo directo de `shared_catalogs.supplier`. Commits `5f5f4b8`, `961513d`.
+2. **Filtro por fecha** → cerrado: filtra por fecha de **registro** (`created_at`), decisión Ivan. Su reporte fue pre-reunión.
+3. **`tipoProveedor` null en NC** → ✅ mismo fix que #1.
+4. **Filtro por `tipoProveedor` en search** → ✅ `5fe715b`. Además se devuelve `tipoProveedor` (id) + `tipoProveedorDescripcion` (texto) en campos separados.
+5. **Filtro por `tipoProveedor` en complementos-pago/buscar** → ✅ mismo patrón + id/desc en response.
+6. **NC de descuento comercial** (PDF en NC, UUID factura relacionada, tipo NC en addenda) → 🟡 pendiente, feature grande. Catálogo `CatTipoNotaCredito` (1 Ajuste Recepción, 2 Descuento Comercial) ya creado (seed 18 util-api).
+
+**Backfill UAT:** se rellenaron las addendas viejas (supplier_type + reception_number numérico) con script manual. Validado: PARKMEX 252523 → noRecepcion 846919, tipoProveedor 1 "Mercancía". Addendas sin numeroProveedor quedan en null.
+
+---
+
 ## 2026-06-18 | Búsqueda NC/facturas no filtra por fecha de recepción
 
 **Contexto**: Fer reportó que en POST `/invoices/search` (UAT), al mandar un rango exacto de fechas de recepción (`fechaInicioRecepcion=2026-05-26`, `fechaFinalRecepcion=2026-05-30`, `tipoDocumento=I`) NO salían registros, pero con un rango amplio sí aparecían 3 facturas con fecha de recepción en ese rango.

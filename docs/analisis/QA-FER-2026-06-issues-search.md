@@ -12,12 +12,16 @@
 
 | # | Issue | Endpoint | Estado |
 |---|---|---|---|
-| 1 | `noRecepcion` muestra GUID en vez del número; `tipoProveedor` null | search | 🔧 por hacer |
-| 2 | Filtro fecha "no opera" (26-30 may vacío) | search | ✅ cerrado (ver abajo) |
-| 3 | `tipoProveedor` null también en NC | search | 🔧 por hacer (= #1) |
+| 1 | `noRecepcion` muestra GUID en vez del número; `tipoProveedor` null | search | ✅ resuelto 2026-06-19 (`5f5f4b8` noRecepcion + `961513d` tipoProveedor) |
+| 2 | Filtro fecha "no opera" (26-30 may vacío) | search | ✅ cerrado (era pre-reunión Ivan) |
+| 3 | `tipoProveedor` null también en NC | search | ✅ resuelto con #1 (`961513d`) |
 | 4 | Agregar filtro por `tipoProveedor` (id numérico) | search | 🔧 por hacer |
 | 5 | Agregar filtro por `tipoProveedor` | complementos-pago/buscar | 🔧 por hacer |
-| 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | 🟡 feature grande |
+| 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | 🟡 feature grande (catálogo CatTipoNotaCredito ya creado) |
+
+**Decisiones tomadas:**
+- #1 `noRecepcion` = `tenant_finance.reception.reception_number` (numérico) resuelto por receptionId (UUID).
+- #3 `tipoProveedor` = id de CatTipoProveedor (1-4), leído **directo de shared_catalogs** (sin util-api), guardado en `addendum.supplier_type` al registrar.
 
 ---
 

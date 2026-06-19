@@ -97,6 +97,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentsRepository paymentsRepository;
     private final AddendumRepository addendumRepository;
+    private final ReceptionRepository receptionRepository;
     private final AuthorizedReceiverCatalogRepository receiverCatalogRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final LogRepository logRepository;
@@ -1035,6 +1036,23 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
+     * Resuelve el número de recepción numérico (tenant_finance.reception.reception_number)
+     * a partir del receptionId (UUID). Si no es un UUID válido o la recepción no existe,
+     * devuelve el valor original como fallback. Issue Fer #1 (2026-06-19).
+     */
+    private String resolveReceptionNumber(String receptionId) {
+        try {
+            UUID uuid = UUID.fromString(receptionId.trim());
+            String numero = receptionRepository.findById(uuid)
+                    .map(ReceptionEntity::getReceptionNumber)
+                    .orElse(null);
+            return (numero != null && !numero.isBlank()) ? numero : receptionId;
+        } catch (IllegalArgumentException e) {
+            return receptionId; // no es UUID -> ya viene como número
+        }
+    }
+
+    /**
      * Guarda la addenda asociada a la factura/NC.
      */
     private void saveAddenda(InvoiceEntity invoice, String xmlContent,
@@ -1054,7 +1072,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                 addendum.setPurchaseOrderNumber(purchaseOrderNumber);
             }
             if (receptionId != null) {
-                addendum.setReceptionNumber(receptionId);
+                // Issue Fer #1: guardar el NÚMERO de recepción (numérico, de finanzas), no el UUID.
+                // receptionId llega como UUID; se resuelve reception.reception_number. Si no se puede
+                // (no es UUID o no existe), se guarda el valor recibido tal cual como fallback.
+                addendum.setReceptionNumber(resolveReceptionNumber(receptionId));
             }
 
             addendumRepository.save(addendum);

@@ -17,4 +17,7 @@ public class ReceptionEntity {
 
     @Column(name = "amount")
     private BigDecimal amount;
+
+    @Column(name = "reception_number")
+    private String receptionNumber;
 }

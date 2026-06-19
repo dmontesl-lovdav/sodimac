@@ -39,6 +39,8 @@ Solución: un **repo espejo (mirror)** en GitHub personal que actúa de puente.
 
 Es la dirección más común: "tengo cambios nuevos en Sodimac, quiero que Claude los vea".
 
+> **Atajo:** script [`docs/scripts/sync-sodimac-to-mirror.ps1`](scripts/sync-sodimac-to-mirror.ps1) hace los pasos 1-3 (update develop → robocopy → commit+push mirror). Correr en la PC Sodimac: `.\sync-sodimac-to-mirror.ps1` (pide confirmación antes de commitear) o `-Yes` desatendido. Editar `$Projects` para elegir módulos.
+
 ### Paso 1 (PC Sodimac) — actualizar repos reales a `develop`
 
 ```powershell

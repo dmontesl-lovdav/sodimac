@@ -27,12 +27,14 @@
 
 param(
   [string[]] $Projects = @(
+    # Backends
     "APP03022-mrch.backend.somx.fiscal-api",
-    "APP03022-mrch.backend.somx.util-api"
-    # "APP03022-mrch.backend.somx.finanzas-api",
-    # "APP03022-mrch.bff.somx.ppsomx.fiscal",
-    # "APP03022-mrch.bff.somx.ppsomx.finanzas",
-    # "APP03022-mrch-bff-somx-ppsomx-util"   # OJO: bff util usa GUIONES
+    "APP03022-mrch.backend.somx.finanzas-api",
+    "APP03022-mrch.backend.somx.util-api",
+    # BFFs
+    "APP03022-mrch.bff.somx.ppsomx.fiscal",
+    "APP03022-mrch.bff.somx.ppsomx.finanzas",
+    "APP03022-mrch-bff-somx-ppsomx-util"   # OJO: bff util usa GUIONES, no puntos
   ),
   [string] $RealRoot   = "C:\workspace-fbc-github",
   [string] $Mirror     = "C:\local",

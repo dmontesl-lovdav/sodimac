@@ -17,7 +17,7 @@
 | 3 | `tipoProveedor` null también en NC | search | ✅ resuelto con #1 (`961513d`) |
 | 4 | Agregar filtro por `tipoProveedor` (id numérico) | search | ✅ resuelto 2026-06-19 (`5fe715b`) — filtro + id/descripción en response |
 | 5 | Agregar filtro por `tipoProveedor` | complementos-pago/buscar | ✅ resuelto 2026-06-19 — filtro + id/descripción en response |
-| 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | 🟡 feature grande (catálogo CatTipoNotaCredito ya creado) |
+| 6 | NC de descuento comercial (PDF, tipo NC, addenda) | register NC | ✅ resuelto 2026-06-22 (`23898c0`+`65e8562`) — tipo NC en addenda, validado UAT. Ver [CHECKLIST-RECEPCION-NC-2026-06.md](CHECKLIST-RECEPCION-NC-2026-06.md) |
 
 **Backfill datos viejos (UAT, 2026-06-19):** el fix #1/#3 puebla al registrar, así que las addendas previas quedaban con `supplier_type` null y `reception_number` = UUID. Se corrió un script de backfill **manual en UAT** (no versionado) que rellena `addendum.supplier_type` (id 1-4 por proveedor) y reemplaza `reception_number` UUID → número de finanzas. Idempotente. Validado: PARKMEX (252523) → `noRecepcion` 846919, `tipoProveedor` 1, "Mercancía". Excepción: addendas sin `supplier_number` quedan en null (no hay con qué resolver).
 

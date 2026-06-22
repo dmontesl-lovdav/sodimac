@@ -27,20 +27,28 @@ si factura < recepción fuera de tolerancia.
 
 | # | Punto | Fila xlsx | Estado |
 |---|---|---|---|
-| A1 | Recepción → Consumida cuando factura dentro tolerancia / 100% | 54, 55 | ✅ Implementado + probado local (0→1) |
-| A2 | Recepción → Consumida cuando factura mayor (fuera tol) | 56 | ✅ Implementado + probado local (0→1) |
-| A3 | Recepción NO se toca cuando factura menor (fuera tol) | 57 | ✅ Implementado + probado local (queda 0) |
-| B | Rechazo Comercial (factura < recepción): NO subir PDF al bucket (XML sí en BD) | (32/48 contexto) | ✅ Implementado (skip GCS por status 1) |
-| C | WRN7030: agregar "para dar inicio al proceso de pago" en la alerta de parcial | — | ✅ Implementado + probado local |
-| D | #6 Tipo NC (1 Ajuste Recepción / 2 Descuento Comercial) en addenda | 16, 43 | ✅ Implementado + probado local (param→columna) |
-| OK | Fecha del sistema en "Fecha Recepción" (= createdAt) | 48, 32 | ✅ Hecho (fix createdAt), en validación QA |
+| A1 | Recepción → Consumida cuando factura dentro tolerancia / 100% | 54, 55 | ✅ VALIDADO UAT (0→1) |
+| A2 | Recepción → Consumida cuando factura mayor (fuera tol) | 56 | ✅ VALIDADO UAT (0→1) |
+| A3 | Recepción NO se toca cuando factura menor (fuera tol) | 57 | ✅ VALIDADO UAT (queda 0) |
+| B | Rechazo Comercial (factura < recepción): NO subir PDF al bucket **ni guardar XML** | 57 | ✅ VALIDADO UAT (xml_content y addendum_content NULL) |
+| C | WRN7030: agregar "para dar inicio al proceso de pago" en la alerta de parcial | 56 | ✅ VALIDADO UAT |
+| D | #6 Tipo NC (1 Ajuste Recepción / 2 Descuento Comercial) en addenda; 0 en facturas | 16, 43 | ✅ VALIDADO UAT (NC=2, factura=0) |
+| OK | Fecha del sistema en "Fecha Recepción" (= createdAt) | 48, 32 | ✅ VALIDADO UAT |
 
-> **Implementado 2026-06-22 (local).** Columna `tenant_fiscal.addendum.tipo_nota_credito` aplicada
-> en BD local; migración versionada en `migration/QA-2026-06_addendum_tipo_nota_credito.sql`
-> (correr en UAT). `ReceptionEntity` ahora mapea `status`. Decisiones Ivan: XML sí se guarda en BD
-> (solo se omite el bucket en rechazo comercial); columna nueva en addendum se crea (no contestó la
-> pregunta, se procede). Pendiente: deploy UAT + correr migración + validar QA filas 16,42,43,54-57.
-> Nota: la fila 42 (condición de pago NC) sigue pendiente — falta catálogo `CatCondicionPagoValidoNc`.
+> **VALIDADO EN UAT 2026-06-22.** Pruebas con CFDIs reales (sesiones/test): factura_exacto
+> (recepción 0→1), factura_mayor (WRN7030 + 0→1), factura_menor (Rechazo Comercial: recepción
+> queda 0, xml_content y addendum_content NULL, tipo 0), NC DMC (tipoNotaCredito=2 persistido).
+> Commits: `23898c0` (features) + `65e8562` (retro: XML no se persiste en rechazo + default 0).
+> Migración `migration/QA-2026-06_addendum_tipo_nota_credito.sql` corrida en UAT (columna + DEFAULT
+> '0' + backfill facturas).
+>
+> **Decisiones Ivan (daily 2026-06-22):**
+> - Rechazo Comercial: el XML **no** se guarda (ni en BD ni bucket); el desglose en tablas basta.
+> - `tipo_nota_credito`: la addenda aplica a facturas y NC → en facturas queda **0** (no null).
+> - Columna nueva en addendum: se crea (no contestó la pregunta, se procedió).
+>
+> **Único pendiente:** fila **42** (filtrar condición de pago para alta de NC) — falta catálogo
+> `CatCondicionPagoValidoNc` (definición Ivan).
 
 ## Bloqueantes / dudas a Ivan
 

@@ -157,6 +157,9 @@ public class InvoiceSearchResponse {
     @Schema(description = "Número de guía de entrega")
     private String guiaEntrega;
 
+    @Schema(description = "Tipo de nota de crédito (solo NC): 1=Ajuste por Recepción, 2=Descuento Comercial")
+    private String tipoNotaCredito;
+
     // ========== XML CONTENT (STM-771) ==========
 
     @Schema(description = "Contenido XML completo del documento fiscal (CFDI)")

@@ -193,7 +193,7 @@ public enum FiscalMessageCode {
     // ========== ADVERTENCIAS - TOLERANCIA IMPORTE (WRN7030-WRN7031) - QA junio-2026 ==========
     // Fuera de tolerancia la factura se registra (no se rechaza); estas advertencias informan al usuario.
     // Factura MAYOR a recepción -> 2 Recibido Parcial (requiere NC).
-    WRN7030("WRN7030", "La factura se registró como Recibido Parcial: la diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2}. Se requiere una nota de crédito para conciliar el monto."),
+    WRN7030("WRN7030", "La factura se registró como Recibido Parcial: la diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2}. Se requiere una nota de crédito para conciliar el monto y dar inicio al proceso de pago de la factura."),
     // Factura MENOR a recepción -> 1 Rechazo Comercial (decisión Ivan, diagrama 2026-06-18).
     WRN7031("WRN7031", "La factura se registró como Rechazo Comercial: el subtotal de la factura ({0}) es menor al importe de la recepción ({1}) y la diferencia supera la tolerancia permitida de {2}.");
 

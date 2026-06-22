@@ -121,7 +121,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
-            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile) {
+            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile,
+            String tipoNotaCredito) {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
@@ -310,12 +311,16 @@ public class InvoiceServiceImpl implements InvoiceService {
                     supplierNumber,
                     purchaseOrderNumber,
                     receptionId,
-                    toleranceResult.statusFactura
+                    toleranceResult.statusFactura,
+                    tipoNotaCredito
             );
             log.info("Documento persistido exitosamente. Invoice UUID: {}", savedInvoice.getInvoiceUuid());
 
             // === PASO 9.5: SUBIR PDF A GCS (opcional) ===
-            if (pdfFile != null && !pdfFile.isEmpty()) {
+            // Rechazo Comercial (factura menor a la recepción fuera de tolerancia): NO se sube el
+            // PDF al bucket (decisión Ivan 2026-06-22). El XML sí queda persistido en BD (xml_content).
+            boolean esRechazoComercial = toleranceResult.statusFactura == InvoiceStatus.RECHAZO_COMERCIAL.getCodigo();
+            if (pdfFile != null && !pdfFile.isEmpty() && !esRechazoComercial) {
                 try {
                     String gcsObject = gcsStorageService.uploadPdf(pdfFile, savedInvoice.getInvoiceUuid().toString());
                     savedInvoice.setPdfGcsObject(gcsObject);
@@ -324,6 +329,16 @@ public class InvoiceServiceImpl implements InvoiceService {
                 } catch (Exception e) {
                     log.warn("PDF no pudo subirse a GCS (no crítico, factura ya registrada): {}", e.getMessage());
                 }
+            } else if (esRechazoComercial) {
+                log.info("Factura en Rechazo Comercial: se omite la subida del PDF al bucket (XML persiste en BD)");
+            }
+
+            // === PASO 9.6: ACTUALIZAR ESTATUS DE LA RECEPCIÓN A CONSUMIDA (solo Facturas) ===
+            // Cuando la factura cuadra con la recepción (dentro de tolerancia -> Recibida, o mayor
+            // -> Recibido Parcial) la recepción pasa a Consumida (1). Si es Rechazo Comercial
+            // (factura menor) NO se toca. QA filas 54-57 / catálogo CatEstatusRecepcion.
+            if (tipoDocumento == TipoDocumentoFiscal.FACTURA && !esRechazoComercial) {
+                marcarRecepcionConsumida(receptionId, idTransaccion, SERVICE_NAME);
             }
 
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PERSISTIR_DOCUMENTO.getCode(), SERVICE_NAME,
@@ -923,7 +938,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             String supplierNumber,
             String purchaseOrderNumber,
             String receptionId,
-            int statusFactura) {
+            int statusFactura,
+            String tipoNotaCredito) {
 
         log.info("Iniciando persistencia en base de datos");
 
@@ -996,7 +1012,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // 4. Guardar addenda con datos estructurados del FE
             log.debug("Guardando addenda con datos de proveedor/OC/recepción");
-            saveAddenda(invoice, xmlContent, supplierNumber, purchaseOrderNumber, receptionId);
+            saveAddenda(invoice, xmlContent, supplierNumber, purchaseOrderNumber, receptionId, tipoNotaCredito);
 
             // 5. Guardar impuestos
             log.debug("Guardando impuestos de la factura");
@@ -1053,10 +1069,36 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
+     * Marca la recepción asociada como Consumida (CatEstatusRecepcion = 1). Se invoca al publicar
+     * una factura que cuadra con la recepción (dentro de tolerancia o mayor). No falla el registro
+     * si la recepción no existe o el id no es válido (solo log). QA filas 54-57 (2026-06-22).
+     */
+    private void marcarRecepcionConsumida(String receptionId, String idTransaccion, String serviceName) {
+        final java.math.BigDecimal CONSUMIDA = java.math.BigDecimal.valueOf(1);
+        if (receptionId == null || receptionId.isBlank()) {
+            log.debug("Sin receptionId: no se actualiza estatus de recepción");
+            return;
+        }
+        try {
+            UUID uuid = UUID.fromString(receptionId.trim());
+            receptionRepository.findById(uuid).ifPresentOrElse(reception -> {
+                reception.setStatus(CONSUMIDA);
+                receptionRepository.save(reception);
+                log.info("Recepción {} marcada como Consumida (status=1)", uuid);
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                        "system", false, "Recepción marcada como Consumida",
+                        "receptionId: " + uuid, null, null);
+            }, () -> log.warn("Recepción {} no encontrada: no se actualiza estatus", uuid));
+        } catch (IllegalArgumentException e) {
+            log.warn("receptionId '{}' no es UUID válido: no se actualiza estatus de recepción", receptionId);
+        }
+    }
+
+    /**
      * Guarda la addenda asociada a la factura/NC.
      */
     private void saveAddenda(InvoiceEntity invoice, String xmlContent,
-            String supplierNumber, String purchaseOrderNumber, String receptionId) {
+            String supplierNumber, String purchaseOrderNumber, String receptionId, String tipoNotaCredito) {
         log.debug("Creando registro de addenda para invoice UUID: {}", invoice.getInvoiceUuid());
 
         try {
@@ -1064,6 +1106,12 @@ public class InvoiceServiceImpl implements InvoiceService {
             addendum.setInvoiceUuid(invoice.getInvoiceUuid());
             addendum.setAddendaType(5);
             addendum.setAddendumContent(xmlContent);
+
+            // Tipo de NC (1 Ajuste por Recepción / 2 Descuento Comercial). Lo manda el front; solo
+            // aplica a notas de crédito. QA filas 16/43.
+            if (tipoNotaCredito != null && !tipoNotaCredito.isBlank()) {
+                addendum.setTipoNotaCredito(tipoNotaCredito.trim());
+            }
 
             if (supplierNumber != null) {
                 addendum.setSupplierNumber(new BigDecimal(supplierNumber));
@@ -1441,8 +1489,12 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             // === CAMPOS ESPECÍFICOS NC (E) ===
-            // tipoNotaCredito - No existe campo equivalente en AddendumEntity
-            // Se puede agregar en el addendumContent como JSON si es necesario
+            // tipoNotaCredito -> tipo_nota_credito (1 Ajuste Recepción / 2 Descuento Comercial). QA 16/43.
+            if (addendaDto.getTipoNotaCredito() != null && !addendaDto.getTipoNotaCredito().isBlank()) {
+                log.debug("Actualizando tipoNotaCredito: {} -> {}", addendum.getTipoNotaCredito(), addendaDto.getTipoNotaCredito());
+                addendum.setTipoNotaCredito(addendaDto.getTipoNotaCredito().trim());
+                hasChanges = true;
+            }
 
             if (hasChanges) {
                 // Actualizar fecha y usuario de modificación
@@ -1690,6 +1742,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .tipoProveedor(tipoProveedorId)
                 .tipoProveedorDescripcion(tipoProveedorDescripcion)
                 .guiaEntrega(addendum != null ? addendum.getShippingGuideNumber() : null)
+                .tipoNotaCredito(addendum != null ? addendum.getTipoNotaCredito() : null)
                 // ========== XML CONTENT (STM-771) ==========
                 .xmlContent(invoice.getXmlContent())
                 // ========== NOTAS DE CRÉDITO RELACIONADAS (STM-1168) ==========

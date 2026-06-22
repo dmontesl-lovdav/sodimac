@@ -47,6 +47,14 @@ public class AddendumEntity extends BaseEntity {
     @Column(name = "supplier_type", length = 10)
     private String supplierType;
 
+    /**
+     * Tipo de nota de crédito (catálogo CatTipoNotaCredito): 1=Ajuste por Recepción,
+     * 2=Descuento Comercial. Lo manda el front como parámetro al publicar la NC. Solo aplica a NC.
+     * QA filas 16/43 (2026-06-22).
+     */
+    @Column(name = "tipo_nota_credito", length = 10)
+    private String tipoNotaCredito;
+
     @Column(name = "addenda_type")
     private Integer addendaType;
 

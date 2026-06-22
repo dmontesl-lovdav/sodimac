@@ -49,7 +49,8 @@ public interface InvoiceService {
      * @return Respuesta del registro con código de negocio (BUS1xxx o BUS2xxx)
      */
     InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
-            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile);
+            String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile,
+            String tipoNotaCredito);
 
     /**
      * Actualiza una factura o nota de crédito existente (STM-339).

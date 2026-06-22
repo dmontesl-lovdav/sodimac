@@ -170,7 +170,9 @@ public class InvoiceController {
             @Parameter(description = "Número de orden de compra")
             @RequestParam(value = "purchaseOrderNumber", required = false) String purchaseOrderNumber,
             @Parameter(description = "Archivo PDF de la factura (opcional)")
-            @RequestParam(value = "pdfFile", required = false) MultipartFile pdfFile) {
+            @RequestParam(value = "pdfFile", required = false) MultipartFile pdfFile,
+            @Parameter(description = "Tipo de nota de crédito (solo NC): 1=Ajuste por Recepción, 2=Descuento Comercial")
+            @RequestParam(value = "tipoNotaCredito", required = false) String tipoNotaCredito) {
 
         log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}, receptionId: {}",
                 file.getOriginalFilename(), idTransaccion, receptionId);
@@ -210,7 +212,7 @@ public class InvoiceController {
 
         // Procesar registro
         InvoiceRegistrationResponse response = invoiceService.registerInvoice(
-                file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber, pdfFile);
+                file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber, pdfFile, tipoNotaCredito);
 
         // Determinar código HTTP según resultado
         if (response.isSuccess()) {

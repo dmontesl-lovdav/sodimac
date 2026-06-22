@@ -1073,6 +1073,34 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
+     * Resuelve el NOMBRE del estatus leyéndolo de la BD (catálogo CatEstatusFactura / CatEstatusNotaCredito
+     * en shared_catalogs), NO de un enum hardcodeado. Los enums solo sirven para los códigos; las
+     * descripciones deben venir de la BD para no divergir del catálogo (retro Ivan 2026-06-22; el enum
+     * decía "Recibida" pero el catálogo dice "En proceso de envió" para el código 3). Fallback al enum
+     * solo si el catálogo no devuelve descripción.
+     */
+    private String resolveStatusName(String documentType, Integer statusCode) {
+        if (statusCode == null) {
+            return null;
+        }
+        String catalogCode = null;
+        if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(documentType)) {
+            catalogCode = "CatEstatusFactura";
+        } else if (TipoDocumentoFiscal.NOTA_CREDITO.getCodigo().equals(documentType)) {
+            catalogCode = "CatEstatusNotaCredito";
+        }
+        if (catalogCode != null) {
+            // lang_id 1 = ES (mismo criterio que findTipoProveedorDescripcion)
+            String desc = addendumRepository.findCatalogDescription(catalogCode, statusCode.toString(), 1);
+            if (desc != null && !desc.isBlank()) {
+                return desc;
+            }
+        }
+        // Fallback defensivo al enum si el catálogo no tiene el valor.
+        return InvoiceSearchResponse.getStatusName(documentType, statusCode);
+    }
+
+    /**
      * Marca la recepción asociada como Consumida (CatEstatusRecepcion = 1). Se invoca al publicar
      * una factura que cuadra con la recepción (dentro de tolerancia o mayor). No falla el registro
      * si la recepción no existe o el id no es válido (solo log). QA filas 54-57 (2026-06-22).
@@ -1671,7 +1699,18 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElse(null);
 
         // Issue Fer #4: devolver id + descripción del tipo de proveedor en campos separados.
-        String tipoProveedorId = addendum != null ? addendum.getSupplierType() : null;
+        // Retro Ivan 2026-06-22: el tipo se resuelve EN VIVO desde el supplier_number (no del valor
+        // guardado en la addenda al registrar), para reflejar cambios posteriores en CatTipoProveedor.
+        // Fallback al valor guardado si el proveedor ya no está en el catálogo.
+        String tipoProveedorId = null;
+        if (addendum != null) {
+            if (addendum.getSupplierNumber() != null) {
+                tipoProveedorId = addendumRepository.findTipoProveedorId(addendum.getSupplierNumber().toPlainString());
+            }
+            if (tipoProveedorId == null) {
+                tipoProveedorId = addendum.getSupplierType();
+            }
+        }
         String tipoProveedorDescripcion = (tipoProveedorId != null && !tipoProveedorId.isBlank())
                 ? addendumRepository.findTipoProveedorDescripcion(tipoProveedorId)
                 : null;
@@ -1728,7 +1767,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .currency(invoice.getCurrency())
                 .paymentMethod(invoice.getPaymentMethod())
                 .status(invoice.getStatus())
-                .statusName(InvoiceSearchResponse.getStatusName(invoice.getDocumentType(), invoice.getStatus()))
+                .statusName(resolveStatusName(invoice.getDocumentType(), invoice.getStatus()))
                 // ========== EMISOR ==========
                 .emisorRfc(issuer != null ? issuer.getRfc() : null)
                 .emisorName(issuer != null ? issuer.getName() : null)
@@ -1811,7 +1850,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                         .tipoRelacion(relacion.getRelationType())
                         .tipoRelacionNombre(satCatalogService.getTipoRelacionDescription(relacion.getRelationType()))
                         .status(nc.getStatus())
-                        .statusNombre(InvoiceSearchResponse.getStatusName(TipoDocumentoFiscal.NOTA_CREDITO.getCodigo(), nc.getStatus()))
+                        .statusNombre(resolveStatusName(TipoDocumentoFiscal.NOTA_CREDITO.getCodigo(), nc.getStatus()))
                         .fechaEmision(nc.getIssueDate())
                         .fechaRecepcion(nc.getCreatedAt())
                         .accountingSentDate(nc.getUpdatedAt()) // TODO: Cambiar por nc.getAccountingSentDate() cuando se implemente el flujo
@@ -2804,17 +2843,11 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * Obtiene el nombre del estatus según tipo de documento.
+     * Obtiene el nombre del estatus según tipo de documento. Lee de la BD (catálogo) vía
+     * resolveStatusName; ya no del enum. Retro Ivan 2026-06-22.
      */
     private String getStatusName(String documentType, Integer statusCode) {
-        try {
-            if ("E".equals(documentType)) {
-                return CreditNoteStatus.fromCodigo(statusCode).getNombre();
-            } else {
-                return InvoiceStatus.fromCodigo(statusCode).getNombre();
-            }
-        } catch (IllegalArgumentException e) {
-            return "Estatus " + statusCode;
-        }
+        String nombre = resolveStatusName(documentType, statusCode);
+        return nombre != null ? nombre : "Estatus " + statusCode;
     }
 }

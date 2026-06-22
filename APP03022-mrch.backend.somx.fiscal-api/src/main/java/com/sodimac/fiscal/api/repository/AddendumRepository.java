@@ -55,4 +55,34 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
     @Query(value = "SELECT supplier_type FROM tenant_fiscal.addendum " +
             "WHERE payments_uuid = :paymentsUuid AND supplier_type IS NOT NULL LIMIT 1", nativeQuery = true)
     String findSupplierTypeByPaymentsUuid(@Param("paymentsUuid") UUID paymentsUuid);
+
+    /**
+     * Tipo de proveedor (id 1-4 de CatTipoProveedor) resuelto EN VIVO desde el supplier_number
+     * de la addenda de un complemento de pago (no del valor guardado). Refleja cambios en el
+     * catálogo. Retro Ivan 2026-06-22.
+     */
+    @Query(value = "SELECT cd.value FROM tenant_fiscal.addendum a " +
+            "JOIN shared_catalogs.supplier s ON s.supplier_number = a.supplier_number::text " +
+            "JOIN shared_catalogs.supplier_type st ON st.id = s.supplier_type_id " +
+            "JOIN shared_catalogs.catalog_header ch ON ch.code = 'CatTipoProveedor' " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id AND cd.key = CASE st.code " +
+            "  WHEN 'MERCANCIA'  THEN 'TPR001' " +
+            "  WHEN 'TRANSPORTE' THEN 'TPR002' " +
+            "  WHEN 'INDIRECTOS' THEN 'TPR003' " +
+            "  WHEN 'SERVICIOS'  THEN 'TPR004' END " +
+            "WHERE a.payments_uuid = :paymentsUuid LIMIT 1", nativeQuery = true)
+    String findTipoProveedorIdByPaymentsUuid(@Param("paymentsUuid") UUID paymentsUuid);
+
+    /**
+     * Descripción de CUALQUIER catálogo de shared_catalogs por su value (directo a la tabla, sin
+     * util-api). El value es la clave numérica (ej. estatus de factura). Las descripciones NO deben
+     * salir de enums hardcodeados sino de la BD. Retro Ivan 2026-06-22.
+     */
+    @Query(value = "SELECT dl.description " +
+            "FROM shared_catalogs.catalog_header ch " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = :langId " +
+            "WHERE ch.code = :catalogCode AND cd.value = :value LIMIT 1", nativeQuery = true)
+    String findCatalogDescription(@Param("catalogCode") String catalogCode,
+            @Param("value") String value, @Param("langId") int langId);
 }

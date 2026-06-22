@@ -71,8 +71,13 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
         // Contar documentos relacionados
         Integer relatedDocsCount = paymentRepository.countRelatedDocumentsByPaymentsUuid(entity.getPaymentsUuid());
 
-        // Tipo de proveedor (id + descripción) desde la addenda del complemento - Fer #5
-        String tipoProveedorId = addendumRepository.findSupplierTypeByPaymentsUuid(entity.getPaymentsUuid());
+        // Tipo de proveedor (id + descripción) desde la addenda del complemento - Fer #5.
+        // Retro Ivan 2026-06-22: se resuelve EN VIVO desde el supplier_number (refleja cambios en
+        // CatTipoProveedor); fallback al valor guardado si el proveedor ya no está en el catálogo.
+        String tipoProveedorId = addendumRepository.findTipoProveedorIdByPaymentsUuid(entity.getPaymentsUuid());
+        if (tipoProveedorId == null) {
+            tipoProveedorId = addendumRepository.findSupplierTypeByPaymentsUuid(entity.getPaymentsUuid());
+        }
         String tipoProveedorDescripcion = (tipoProveedorId != null && !tipoProveedorId.isBlank())
                 ? addendumRepository.findTipoProveedorDescripcion(tipoProveedorId)
                 : null;

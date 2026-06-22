@@ -989,7 +989,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                 invoice.setCertificationDate(certificationDate);
             }
 
-            invoice.setXmlContent(xmlContent);
+            // Rechazo Comercial (factura menor a la recepción fuera de tolerancia): NO se persiste el
+            // XML; el desglose en tablas (invoice + impuestos) es suficiente. Decisión Ivan 2026-06-22.
+            boolean esRechazoComercial = tipoDocumento == TipoDocumentoFiscal.FACTURA
+                    && statusFactura == InvoiceStatus.RECHAZO_COMERCIAL.getCodigo();
+            invoice.setXmlContent(esRechazoComercial ? null : xmlContent);
             // v1.0: el estatus de la factura lo determina la evaluación de tolerancia
             // (3 Recibida / 2 Recibido Parcial / 1 Rechazo Comercial). NC mantiene 1 hasta alinear CreditNoteStatus.
             invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA ? statusFactura : 1);
@@ -1012,7 +1016,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // 4. Guardar addenda con datos estructurados del FE
             log.debug("Guardando addenda con datos de proveedor/OC/recepción");
-            saveAddenda(invoice, xmlContent, supplierNumber, purchaseOrderNumber, receptionId, tipoNotaCredito);
+            saveAddenda(invoice, xmlContent, supplierNumber, purchaseOrderNumber, receptionId, tipoNotaCredito, esRechazoComercial);
 
             // 5. Guardar impuestos
             log.debug("Guardando impuestos de la factura");
@@ -1098,20 +1102,23 @@ public class InvoiceServiceImpl implements InvoiceService {
      * Guarda la addenda asociada a la factura/NC.
      */
     private void saveAddenda(InvoiceEntity invoice, String xmlContent,
-            String supplierNumber, String purchaseOrderNumber, String receptionId, String tipoNotaCredito) {
+            String supplierNumber, String purchaseOrderNumber, String receptionId, String tipoNotaCredito,
+            boolean esRechazoComercial) {
         log.debug("Creando registro de addenda para invoice UUID: {}", invoice.getInvoiceUuid());
 
         try {
             AddendumEntity addendum = new AddendumEntity();
             addendum.setInvoiceUuid(invoice.getInvoiceUuid());
             addendum.setAddendaType(5);
-            addendum.setAddendumContent(xmlContent);
+            // Rechazo Comercial: no se persiste el XML (ni en addendum_content); el desglose en tablas
+            // basta. Decisión Ivan 2026-06-22.
+            addendum.setAddendumContent(esRechazoComercial ? null : xmlContent);
 
-            // Tipo de NC (1 Ajuste por Recepción / 2 Descuento Comercial). Lo manda el front; solo
-            // aplica a notas de crédito. QA filas 16/43.
-            if (tipoNotaCredito != null && !tipoNotaCredito.isBlank()) {
-                addendum.setTipoNotaCredito(tipoNotaCredito.trim());
-            }
+            // Tipo de NC (catálogo CatTipoNotaCredito): 1=Ajuste por Recepción, 2=Descuento Comercial.
+            // Lo manda el front al publicar la NC. En facturas (sin parámetro) queda 0 por defecto
+            // (decisión Ivan 2026-06-22). QA filas 16/43.
+            addendum.setTipoNotaCredito(
+                    (tipoNotaCredito != null && !tipoNotaCredito.isBlank()) ? tipoNotaCredito.trim() : "0");
 
             if (supplierNumber != null) {
                 addendum.setSupplierNumber(new BigDecimal(supplierNumber));

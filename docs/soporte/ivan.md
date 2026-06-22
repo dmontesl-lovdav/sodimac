@@ -4,6 +4,24 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-22 | Retro: tipoProveedor en /search + nombre de estatus + bloqueo Transporte
+
+**Contexto**: Ivan dio retro de 3 puntos tras validar UAT.
+1. `/search`: tipoProveedor no reflejaba cambios en `CatTipoProveedor` (PARMEX Mercancía→Transporte seguía dando Mercancía).
+2. `/register`: estatus salía "Recibida", esperaba "En proceso de envío" (notó que las descripciones no deben venir de código fijo).
+3. Proveedor 308550 bloqueado por tipo Transporte (no sabía si era bug).
+
+**Veredicto**: P1 y P2a válidos, P2b no es bug.
+- **P1**: tipoProveedor se congelaba al registrar. Fix: resolver en vivo desde `supplier_number` (display en /search y /complementos-pago). Filtro sigue en valor guardado (pendiente).
+- **P2a**: el nombre del estatus salía del enum `InvoiceStatus` hardcodeado. El catálogo `CatEstatusFactura` dice 3 = "En proceso de envió". Fix: leer descripción de la BD, no del enum.
+- **P2b**: `CatBloqueoTipoProveedor` tiene Transporte con `status=1` = bloqueado. El bloqueo funciona bien; si no quieren que bloquee, ajustar catálogo.
+
+**Commit**: `81deffa` (rama `dmontes`)
+**Detalle**: [docs/analisis/RETRO-IVAN-2026-06-22-tipoproveedor-estatus.md](../analisis/RETRO-IVAN-2026-06-22-tipoproveedor-estatus.md)
+**Estado**: Implementado, probado local, pendiente deploy UAT.
+
+---
+
 ## 2026-05-05 | Reproceso puntos CES por tickets puntuales
 
 **Contexto**: Ivan compartio 126 tickets de tipo asignacion (`TRANSACTIONTYPE='sale'`) que requieren replicarse manualmente al modelo fiscal (`AdminPuntosCes` + `VentaCab` + `VentaDetImpuesto`) sin depender del rango de fechas del job.

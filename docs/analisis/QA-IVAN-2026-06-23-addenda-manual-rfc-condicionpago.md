@@ -42,19 +42,32 @@ fiscal). Por eso la FK `addendum_manual.invoice_uuid → tenant_fiscal.invoice` 
 (En proceso envío), 6 (Error desglose), 16 (Estructura inválida). Mayormente front; el back debe
 permitir la transición de cancelación desde esos estatus.
 
-## Dudas a confirmar con Ivan (antes de codear)
-1. **CatRfcReceptor**: ¿catálogo nuevo que reemplaza la validación actual de receptor (BUS008/tabla
-   `receiver`), o es la que ya existe? Si es nuevo, Ivan lo crea + puebla.
-2. ~~Check UUID duplicado~~ **RESUELTO (Josue 2026-06-23):** `addendum_manual.invoice_uuid` = el
-   **folio fiscal** de la factura manual. En `/register` se compara el `fiscalUuid` del XML contra
-   `addendum_manual.invoice_uuid`. Falta confirmar el **comportamiento esperado** si ya existe
-   (¿rechazo? ¿con qué código?).
-3. **CatCondicionPagoValidoNc vs CatFormaPagoValidoNc**: ambos validan el `FormaPago` del XML.
-   ¿`CatCondicionPagoValidoNc` es **adicional** o **reemplaza** a `CatFormaPagoValidoNc` (BUS058, fila 65)?
-   Y poblar el catálogo (sigue vacío).
+## Resoluciones Ivan (2026-06-23) — todas confirmadas
 
-## Resuelto / no es nuestra chamba
-- **Quitar FK (punto 4): HECHO por Josue (2026-06-23)** — él dropeó la FK
-  `fk_addendum_manual_invoice` del lado finanzas (es dueño de `tenant_finance.addendum_manual`).
-  No es tarea nuestra. (Verificar que el cambio llegue al dump local si se re-restaura.)
-- **Punto 2 (Consumida manual): HECHO por Josue** en finanzas-api.
+**1. CatRfcReceptor — SÍ cambiar.** Migrar la validación de receptor de la tabla
+`tenant_fiscal.authorized_receiver_catalog` al catálogo `CatRfcReceptor` (shared_catalogs). Razón:
+la tabla no tiene pantalla de mantenimiento; el catálogo sí. Además **borrar** la tabla
+`authorized_receiver_catalog`. Hoy tiene 3 RFCs (CGE990101GHI, CSD161207R2A, LAN7008173R5) → migrar
+a `CatRfcReceptor`. Validación sigue rechazando si el RFC no está (mismo mensaje BUS008).
+
+**2. CatCondicionPagoValidoNc — NO usar.** Ivan confirma que el catálogo correcto es
+`CatFormaPagoValidoNc` (ya implementado, BUS058). `CATCONDICIONPAGOVALIDONC` queda **sin uso**
+(vacío). → **Fila 42 = ya cubierta** por la validación BUS058 (= fila 65). Sin cambio de código.
+
+**3. Addenda manual (fila 47) — RESUELTO.** `addendum_manual.invoice_uuid` = folio fiscal (Josue).
+Al cargar el XML, comparar el `fiscalUuid` contra `addendum_manual.invoice_uuid`; si existe →
+**WRN7032**: *"La factura se encuentra previamente registrada manualmente, Por favor, validar con el
+área de finanzas."* (dar de alta el mensaje).
+
+## Hecho por otros / no es nuestra chamba
+- **Quitar FK (punto 4): HECHO por Josue** — dropeó `fk_addendum_manual_invoice` en UAT (es dueño de
+  `tenant_finance.addendum_manual`). En **local lo dropeamos nosotros** 2026-06-23 para igualar.
+- **Consumida manual (punto 2): HECHO por Josue** en finanzas-api.
+
+## Plan de implementación (fiscal-api)
+1. **Fila 47** — `WRN7032` nuevo + en `/register` validar el `fiscalUuid` contra
+   `tenant_finance.addendum_manual.invoice_uuid`; si existe → WRN7032. (El duplicado contra
+   `addendum`/`invoice` ya lo cubren WRN7013/7014.)
+2. **CatRfcReceptor** — seed del catálogo (header + 3 RFCs actuales), cambiar la validación de
+   receptor para leer `CatRfcReceptor` en vez de `authorized_receiver_catalog`, y drop de la tabla.
+3. **Fila 42** — cerrar, ya cubierta por BUS058 (sin cambio).

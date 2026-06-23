@@ -195,7 +195,10 @@ public enum FiscalMessageCode {
     // Factura MAYOR a recepción -> 2 Recibido Parcial (requiere NC).
     WRN7030("WRN7030", "La factura se registró como Recibido Parcial: la diferencia entre el subtotal de la factura ({0}) y el importe de la recepción ({1}) supera la tolerancia permitida de {2}. Se requiere una nota de crédito para conciliar el monto y dar inicio al proceso de pago de la factura."),
     // Factura MENOR a recepción -> 1 Rechazo Comercial (decisión Ivan, diagrama 2026-06-18).
-    WRN7031("WRN7031", "La factura se registró como Rechazo Comercial: el subtotal de la factura ({0}) es menor al importe de la recepción ({1}) y la diferencia supera la tolerancia permitida de {2}.");
+    WRN7031("WRN7031", "La factura se registró como Rechazo Comercial: el subtotal de la factura ({0}) es menor al importe de la recepción ({1}) y la diferencia supera la tolerancia permitida de {2}."),
+
+    // Factura ya cargada manualmente (existe el folio fiscal en tenant_finance.addendum_manual) - QA 2026-06-23
+    WRN7032("WRN7032", "La factura se encuentra previamente registrada manualmente, Por favor, validar con el área de finanzas.");
 
     private final String code;
     private final String message;

@@ -249,6 +249,18 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "system", false, "Documento no duplicado, UUID unico",
                     "UUID fiscal: " + fiscalUuid, null, null);
 
+            // === PASO 6.2.1: VALIDAR QUE EL FOLIO FISCAL NO ESTÉ YA CARGADO COMO ADDENDA MANUAL ===
+            // finanzas (Josue) carga manualmente la addenda con el folio fiscal antes del registro.
+            // Si ya existe, no se permite cargar el XML -> WRN7032. Fila 47 QA (2026-06-23).
+            log.info("Paso 6.2.1: Validando que el folio fiscal no exista en addenda manual");
+            if (addendumRepository.existsAddendaManualByFolioFiscal(fiscalUuid)) {
+                log.warn("Folio fiscal {} ya registrado manualmente en addenda manual", fiscalUuid);
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
+                        "system", true, "Factura ya registrada manualmente (addenda manual)",
+                        "UUID fiscal: " + fiscalUuid, null, null);
+                messageCatalog.throwException(FiscalMessageCode.WRN7032);
+            }
+
             // === PASO 6.3 / 6.4: VALIDAR BLOQUEO DE PUBLICACIÓN (solo Facturas) ===
             // Orden definido por QA: primero por tipo de proveedor (BUS2028), luego por proveedor (BUS2029).
             if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {

@@ -85,4 +85,13 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "WHERE ch.code = :catalogCode AND cd.value = :value LIMIT 1", nativeQuery = true)
     String findCatalogDescription(@Param("catalogCode") String catalogCode,
             @Param("value") String value, @Param("langId") int langId);
+
+    /**
+     * ¿El folio fiscal ya está cargado como addenda manual? `tenant_finance.addendum_manual.invoice_uuid`
+     * guarda el folio fiscal (lo captura finanzas/Josue en pantalla, antes del registro). Al cargar el
+     * XML se valida que no exista ya (si existe → WRN7032). Fila 47 QA (2026-06-23).
+     */
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM tenant_finance.addendum_manual WHERE invoice_uuid = :fiscalUuid)",
+            nativeQuery = true)
+    boolean existsAddendaManualByFolioFiscal(@Param("fiscalUuid") UUID fiscalUuid);
 }

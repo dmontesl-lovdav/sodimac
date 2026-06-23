@@ -64,6 +64,14 @@ Al cargar el XML, comparar el `fiscalUuid` contra `addendum_manual.invoice_uuid`
   `tenant_finance.addendum_manual`). En **local lo dropeamos nosotros** 2026-06-23 para igualar.
 - **Consumida manual (punto 2): HECHO por Josue** en finanzas-api.
 
+## VALIDADO EN UAT 2026-06-23
+- **Fila 47 / WRN7032:** registro con folio fiscal en `addendum_manual` → `WRN7032` (HTTP 400). OK.
+- **Receptor CATRFCRECEPTOR:** receptor autorizado (CSD161207R2A) pasa la validación; ya no aparece
+  el error de `authorized_receiver_catalog` (tabla dropeada + código nuevo vivo). Negativo (BUS008)
+  validado en local.
+- **Mensajes WRN7030/7031/7032** registrados en `CatMsgAdvertencia` (inserts directos en UAT, no versionados).
+- **Fila 42:** cerrada (cubierta por BUS058 / `CatFormaPagoValidoNc`).
+
 ## Plan de implementación (fiscal-api)
 1. ✅ **Fila 47 — HECHO** (`65e4632`). `WRN7032` nuevo + `/register` valida el `fiscalUuid` contra
    `addendum_manual.invoice_uuid`; si existe → WRN7032. Probado local (folio en manual → WRN7032,

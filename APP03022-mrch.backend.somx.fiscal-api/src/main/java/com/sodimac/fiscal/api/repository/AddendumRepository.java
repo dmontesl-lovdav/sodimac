@@ -94,4 +94,15 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
     @Query(value = "SELECT EXISTS(SELECT 1 FROM tenant_finance.addendum_manual WHERE invoice_uuid = :fiscalUuid)",
             nativeQuery = true)
     boolean existsAddendaManualByFolioFiscal(@Param("fiscalUuid") UUID fiscalUuid);
+
+    /**
+     * ¿El RFC del receptor está autorizado y activo en el catálogo `CatRfcReceptor`?
+     * Reemplaza la tabla `authorized_receiver_catalog` (sin pantalla de mantenimiento). El RFC se
+     * guarda en `catalog_detail.value`, status=1 = activo. Decisión Ivan 2026-06-23.
+     */
+    @Query(value = "SELECT EXISTS(" +
+            "SELECT 1 FROM shared_catalogs.catalog_header ch " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "WHERE ch.code = 'CatRfcReceptor' AND cd.value = :rfc AND cd.status = 1)", nativeQuery = true)
+    boolean existsRfcReceptorAutorizado(@Param("rfc") String rfc);
 }

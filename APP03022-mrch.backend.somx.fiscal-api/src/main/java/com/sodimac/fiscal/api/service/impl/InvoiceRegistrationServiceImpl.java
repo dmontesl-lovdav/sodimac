@@ -62,7 +62,6 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
     // Repositories
     private final InvoiceRepository invoiceRepository;
     private final AddendumRepository addendumRepository;
-    private final AuthorizedReceiverCatalogRepository receiverCatalogRepository;
     private final VersionCatalogRepository versionCatalogRepository;
 
     @Override
@@ -251,17 +250,14 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
     private void validateAuthorizedReceiver(String rfcReceptor) {
         log.debug("Validando RFC receptor autorizado: {}", rfcReceptor);
 
-        // Buscar RFC en catálogo de receptores autorizados
-        AuthorizedReceiverCatalogEntity receiver = receiverCatalogRepository
-                .findByRfcAndStatus(rfcReceptor, 1)
-                .orElse(null);
-
-        if (receiver == null) {
+        // Catálogo CatRfcReceptor (shared_catalogs). Reemplaza la tabla authorized_receiver_catalog
+        // (decisión Ivan 2026-06-23). Si el RFC no está autorizado/activo -> BUS008.
+        if (!addendumRepository.existsRfcReceptorAutorizado(rfcReceptor)) {
             log.error("RFC receptor {} no autorizado o inactivo", rfcReceptor);
             messageCatalog.throwException(FiscalMessageCode.BUS008, "RFC: " + rfcReceptor);
         }
 
-        log.debug("RFC receptor encontrado en catalogo de autorizados. ID: {}", receiver.getAuthorizedReceiverId());
+        log.debug("RFC receptor encontrado en catalogo de autorizados (CatRfcReceptor)");
     }
 
     /**

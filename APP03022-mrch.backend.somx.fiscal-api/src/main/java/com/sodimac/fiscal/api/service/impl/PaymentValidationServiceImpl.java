@@ -1,11 +1,10 @@
 package com.sodimac.fiscal.api.service.impl;
 
 import com.sodimac.fiscal.api.model.dto.ParsedPaymentXmlDto;
-import com.sodimac.fiscal.api.model.entity.AuthorizedReceiverCatalogEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.model.entity.VersionCatalogEntity;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
-import com.sodimac.fiscal.api.repository.AuthorizedReceiverCatalogRepository;
+import com.sodimac.fiscal.api.repository.AddendumRepository;
 import com.sodimac.fiscal.api.repository.PaymentsRepository;
 import com.sodimac.fiscal.api.repository.VersionCatalogRepository;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
@@ -31,7 +30,7 @@ import java.util.UUID;
 public class PaymentValidationServiceImpl implements PaymentValidationService {
 
     private final MessageCatalogService messageCatalog;
-    private final AuthorizedReceiverCatalogRepository authorizedReceiverRepository;
+    private final AddendumRepository addendumRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final PaymentsRepository paymentsRepository;
 
@@ -39,10 +38,9 @@ public class PaymentValidationServiceImpl implements PaymentValidationService {
     public void validateAuthorizedReceiver(String rfcReceptor) {
         log.debug("Validando receptor autorizado: {}", rfcReceptor);
 
-        Optional<AuthorizedReceiverCatalogEntity> authorized =
-                authorizedReceiverRepository.findByRfcAndStatus(rfcReceptor, 1);
-
-        if (authorized.isEmpty()) {
+        // Catálogo CatRfcReceptor (shared_catalogs). Reemplaza la tabla authorized_receiver_catalog
+        // (decisión Ivan 2026-06-23).
+        if (!addendumRepository.existsRfcReceptorAutorizado(rfcReceptor)) {
             log.error("RFC Receptor '{}' no está autorizado en el sistema", rfcReceptor);
             messageCatalog.throwError(FiscalMessageCode.ERR029,
                 String.format("RFC: %s", rfcReceptor));

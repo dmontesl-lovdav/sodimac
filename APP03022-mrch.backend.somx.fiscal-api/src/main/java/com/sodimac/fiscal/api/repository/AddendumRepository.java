@@ -103,6 +103,7 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
     @Query(value = "SELECT EXISTS(" +
             "SELECT 1 FROM shared_catalogs.catalog_header ch " +
             "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
-            "WHERE ch.code = 'CatRfcReceptor' AND cd.value = :rfc AND cd.status = 1)", nativeQuery = true)
+            "WHERE ch.code = 'CATRFCRECEPTOR' AND ch.status = 1 AND cd.value = :rfc AND cd.status = 1)",
+            nativeQuery = true)
     boolean existsRfcReceptorAutorizado(@Param("rfc") String rfc);
 }

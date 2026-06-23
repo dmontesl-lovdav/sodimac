@@ -240,17 +240,21 @@ function extractKeyNumberFromError(err: unknown, prefix: string): number | null 
 }
 
 async function createDictionaryEntry(elementName: string): Promise<number> {
-    const dictRepoInstance = datasource.getRepository(DictionaryLang);
+    return await datasource.transaction(async (manager) => {
+        const dictRepoInstance = manager.getRepository(DictionaryLang);
 
-    const entry = dictRepoInstance.create({
-        dictId: 0,
-        langId: DEFAULT_LANG_ID,
-        description: elementName
+        const tempDictId = -(Math.floor(Math.random() * 2_000_000_000) + 1);
+
+        const entry = dictRepoInstance.create({
+            dictId: tempDictId,
+            langId: DEFAULT_LANG_ID,
+            description: elementName,
+        });
+        let saved = await dictRepoInstance.save(entry);
+        saved.dictId = saved.id;
+        saved = await dictRepoInstance.save(saved);
+        return saved.id;
     });
-    let saved = await dictRepoInstance.save(entry);
-    saved.dictId = saved.id;
-    saved = await dictRepoInstance.save(saved);
-    return saved.id;
 }
 
 async function updateDictionaryEntry(dictId: number | null | undefined, newName: string): Promise<void> {

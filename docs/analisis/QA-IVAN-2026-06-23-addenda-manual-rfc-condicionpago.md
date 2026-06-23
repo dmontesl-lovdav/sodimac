@@ -65,9 +65,20 @@ Al cargar el XML, comparar el `fiscalUuid` contra `addendum_manual.invoice_uuid`
 - **Consumida manual (punto 2): HECHO por Josue** en finanzas-api.
 
 ## Plan de implementación (fiscal-api)
-1. **Fila 47** — `WRN7032` nuevo + en `/register` validar el `fiscalUuid` contra
-   `tenant_finance.addendum_manual.invoice_uuid`; si existe → WRN7032. (El duplicado contra
-   `addendum`/`invoice` ya lo cubren WRN7013/7014.)
-2. **CatRfcReceptor** — seed del catálogo (header + 3 RFCs actuales), cambiar la validación de
-   receptor para leer `CatRfcReceptor` en vez de `authorized_receiver_catalog`, y drop de la tabla.
-3. **Fila 42** — cerrar, ya cubierta por BUS058 (sin cambio).
+1. ✅ **Fila 47 — HECHO** (`65e4632`). `WRN7032` nuevo + `/register` valida el `fiscalUuid` contra
+   `addendum_manual.invoice_uuid`; si existe → WRN7032. Probado local (folio en manual → WRN7032,
+   folio nuevo → RES004).
+2. ✅ **CatRfcReceptor — HECHO** (`9d1a975`). Validación de receptor migrada a `CatRfcReceptor`
+   (shared_catalogs) en los **3 flujos** (factura InvoiceServiceImpl + InvoiceRegistrationServiceImpl,
+   complemento PaymentValidationServiceImpl). Seed util-api 19. Tabla `authorized_receiver_catalog`
+   dropeada en local (ddl-auto=none, boot OK). Probado: autorizado → RES004, ausente → BUS008.
+3. ✅ **Fila 42 — cerrada** (ya cubierta por BUS058, sin cambio).
+
+## Pendiente para deploy UAT
+- **Seed CatRfcReceptor en UAT con los receptores REALES** de UAT (el seed local trae 3 del dump;
+  UAT puede tener más). Regenerar desde `authorized_receiver_catalog` de UAT antes de correr.
+- **DROP** `tenant_fiscal.authorized_receiver_catalog` en UAT.
+- Deploy del jar fiscal-api.
+- **Cleanup pendiente (code):** el CRUD `AuthorizedReceiverCatalog*` (entity/repo/service/controller/
+  mapper/dto) queda huérfano tras dropear la tabla. Su endpoint GET fallaría si se llama. Quitar en
+  un commit aparte.

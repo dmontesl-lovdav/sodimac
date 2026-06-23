@@ -17,10 +17,12 @@
 Hoy `validateSeriesAndFolio` ([InvoiceServiceImpl] línea ~873) rechaza si falta serie **O** folio
 (exige ambos): `(serie blank) || (folio blank)` → WRN7012 (factura) / WRN7015 (NC) "requiere serie
 y folio". El CFDI CNO no trae Serie (válido en SAT) → rechazado.
-**Regla esperada (fila 98, redacción ambigua — CONFIRMAR con Ivan):** rechazar solo si faltan
-**ambos** (sin serie y sin folio); si trae al menos folio, permitir.
-**Fix previsto:** condición `||` → `&&` (rechazar solo si serie Y folio vacíos) + ajustar texto del
-mensaje. **Pendiente:** confirmación de Ivan (mensaje enviado 2026-06-23).
+**Regla definida (David, confirmada con el equipo):** el **FOLIO es requerido** (identifica el
+documento, dedup serie+folio); la **SERIE es OPCIONAL** (en CFDI 4.0 SAT ambos son opcionales).
+**HECHO** (`2e36ddd`): `validateSeriesAndFolio` rechaza solo si falta el folio; mensajes WRN7012/
+WRN7015 ajustados a "requiere un folio" (enum + texto en BD `CatMsgAdvertencia`). Probado local:
+factura con folio sin serie → RES004; sin folio → WRN7012. Deploy UAT: jar + UPDATE de los 2
+mensajes en el catálogo. Mensaje a Ivan enviado (antes/después).
 
 ### F97 — Servicio de consulta de documento debe regresar el uuid relacionado — BACK (David)
 `POST /fiscal/xml/process/file` devuelve `FiscalXmlResponse`, que **no** expone el UUID de la

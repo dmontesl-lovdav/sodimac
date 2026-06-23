@@ -45,13 +45,16 @@ permitir la transición de cancelación desde esos estatus.
 ## Dudas a confirmar con Ivan (antes de codear)
 1. **CatRfcReceptor**: ¿catálogo nuevo que reemplaza la validación actual de receptor (BUS008/tabla
    `receiver`), o es la que ya existe? Si es nuevo, Ivan lo crea + puebla.
-2. **Check UUID duplicado (fila 47)**: ¿qué es exactamente `dto.uuid` que finanzas guarda en
-   `addendum_manual.invoice_uuid` — el **folio fiscal/timbre** (lo que comparamos contra el fiscalUuid
-   del XML) o el invoice_uuid interno? Por cómo se captura (pantalla, antes del registro) apunta al
-   folio fiscal. Confirmar para matchear bien.
+2. ~~Check UUID duplicado~~ **RESUELTO (Josue 2026-06-23):** `addendum_manual.invoice_uuid` = el
+   **folio fiscal** de la factura manual. En `/register` se compara el `fiscalUuid` del XML contra
+   `addendum_manual.invoice_uuid`. Falta confirmar el **comportamiento esperado** si ya existe
+   (¿rechazo? ¿con qué código?).
 3. **CatCondicionPagoValidoNc vs CatFormaPagoValidoNc**: ambos validan el `FormaPago` del XML.
    ¿`CatCondicionPagoValidoNc` es **adicional** o **reemplaza** a `CatFormaPagoValidoNc` (BUS058, fila 65)?
    Y poblar el catálogo (sigue vacío).
 
-## Listo para codear (no dependen de dudas)
-- **Quitar FK** `fk_addendum_manual_invoice` (punto 4) — migración.
+## Resuelto / no es nuestra chamba
+- **Quitar FK (punto 4): HECHO por Josue (2026-06-23)** — él dropeó la FK
+  `fk_addendum_manual_invoice` del lado finanzas (es dueño de `tenant_finance.addendum_manual`).
+  No es tarea nuestra. (Verificar que el cambio llegue al dump local si se re-restaura.)
+- **Punto 2 (Consumida manual): HECHO por Josue** en finanzas-api.

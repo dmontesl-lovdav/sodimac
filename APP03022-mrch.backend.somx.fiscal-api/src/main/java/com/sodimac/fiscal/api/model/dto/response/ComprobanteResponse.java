@@ -47,8 +47,9 @@ public class ComprobanteResponse {
     private String meses;
     private String año;
 
-    // Relaciones CFDI (si aplica)
+    // Relaciones CFDI (si aplica). Para NC: tipo de relación SAT + UUID de la factura relacionada.
     private String tipoRelacion;
+    private String uuidRelacionado;
 
     // Observaciones adicionales
     private String observaciones;

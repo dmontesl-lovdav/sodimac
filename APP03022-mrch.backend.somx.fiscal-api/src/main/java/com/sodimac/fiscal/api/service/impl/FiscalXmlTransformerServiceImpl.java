@@ -77,7 +77,21 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
             return null;
         }
 
+        // CfdiRelacionados (NC): tipo de relación SAT + UUID de la factura relacionada. F97 QA.
+        String tipoRelacion = null;
+        String uuidRelacionado = null;
+        Element cfdiRelacionados = getFirstElementByTagName(document, "cfdi:CfdiRelacionados", "CfdiRelacionados");
+        if (cfdiRelacionados != null) {
+            tipoRelacion = getAttribute(cfdiRelacionados, "TipoRelacion");
+            Element cfdiRelacionado = getFirstElementByTagName(cfdiRelacionados, "cfdi:CfdiRelacionado", "CfdiRelacionado");
+            if (cfdiRelacionado != null) {
+                uuidRelacionado = getAttribute(cfdiRelacionado, "UUID");
+            }
+        }
+
         return ComprobanteResponse.builder()
+                .tipoRelacion(tipoRelacion)
+                .uuidRelacionado(uuidRelacionado)
                 .version(getAttribute(comprobante, "Version"))
                 .serie(getAttribute(comprobante, "Serie"))
                 .folio(getAttribute(comprobante, "Folio"))

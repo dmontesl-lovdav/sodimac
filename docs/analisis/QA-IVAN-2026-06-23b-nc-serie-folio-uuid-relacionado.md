@@ -24,12 +24,13 @@ WRN7015 ajustados a "requiere un folio" (enum + texto en BD `CatMsgAdvertencia`)
 factura con folio sin serie → RES004; sin folio → WRN7012. Deploy UAT: jar + UPDATE de los 2
 mensajes en el catálogo. Mensaje a Ivan enviado (antes/después).
 
-### F97 — Servicio de consulta de documento debe regresar el uuid relacionado — BACK (David)
-`POST /fiscal/xml/process/file` devuelve `FiscalXmlResponse`, que **no** expone el UUID de la
-factura relacionada (CfdiRelacionados). Para NC hay que **agregar el campo + poblarlo** del XML
-(ej. NC AIR → A9651E62...). Alimenta la pantalla de NC (F96, front).
-**F95 (Fernando, mismo DTO):** agregar también **`FormaPago`** en el response (la pantalla NC lo
-necesita al publicar).
+### F97 — Servicio de consulta de documento debe regresar el uuid relacionado — BACK (David) ✅ HECHO
+`POST /fiscal/xml/process/file` devolvía `FiscalXmlResponse` sin el UUID de la factura relacionada.
+**HECHO** (`edd6ee2`): se agregó `ComprobanteResponse.uuidRelacionado` y se puebla (+ `tipoRelacion`)
+desde el nodo CfdiRelacionados. Probado con NC real → `uuidRelacionado=A9651E62...`, `tipoRelacion=01`.
+Alimenta la pantalla de NC (F96, front).
+**F95 (FormaPago): YA EXISTÍA** — `ComprobanteResponse.formaPago` ya se exponía y poblaba (=99 en la
+prueba). Sin cambio de back; el front solo debe leerlo.
 
 ### F94 — Factura monto > recepción: sale "éxito" sin alerta de NC — probable FRONT
 El back **sí** devuelve `WRN7030` en `response.warnings[]` (validado en fila 56). Si sale "éxito"

@@ -870,11 +870,14 @@ public class InvoiceServiceImpl implements InvoiceService {
         String serie = invoiceDto.getSerie();
         String folio = invoiceDto.getFolio();
 
-        if ((serie == null || serie.isBlank()) || (folio == null || folio.isBlank())) {
+        // Regla 2026-06-23: el FOLIO es requerido (identifica el documento, dedup serie+folio); la
+        // SERIE es OPCIONAL (en CFDI 4.0 SAT ambos son opcionales, pero el portal exige folio). Antes
+        // se exigían ambos. Fila 98 QA.
+        if (folio == null || folio.isBlank()) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
                     ? FiscalMessageCode.WRN7012
                     : FiscalMessageCode.WRN7015;
-            log.error("Documento sin serie o folio. Tipo: {}, Serie: {}, Folio: {}",
+            log.error("Documento sin folio. Tipo: {}, Serie: {}, Folio: {}",
                     tipoDocumento.getCodigo(), serie, folio);
             messageCatalog.throwException(code);
         }

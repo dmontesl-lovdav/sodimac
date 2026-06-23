@@ -178,12 +178,12 @@ public enum FiscalMessageCode {
     WRN7005("WRN7005", "La fecha de inicio no puede ser mayor a la fecha fin"),
 
     // ========== ADVERTENCIAS - VALIDACIÓN FACTURA (WRN7012-WRN7014) - STM-395 ==========
-    WRN7012("WRN7012", "La factura requiere una serie y folio para publicar el documento. Por favor, valide la información antes de continuar."),
+    WRN7012("WRN7012", "La factura requiere un folio para publicar el documento. Por favor, valide la información antes de continuar."),
     WRN7013("WRN7013", "La factura se encuentra previamente registrada con la misma serie y folio. Por favor, valide la información antes de continuar."),
     WRN7014("WRN7014", "La factura se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar."),
 
     // ========== ADVERTENCIAS - VALIDACIÓN NOTA DE CRÉDITO (WRN7015-WRN7017) - STM-397 ==========
-    WRN7015("WRN7015", "La nota de crédito requiere una serie y folio para publicar el documento. Por favor, valide la información antes de continuar."),
+    WRN7015("WRN7015", "La nota de crédito requiere un folio para publicar el documento. Por favor, valide la información antes de continuar."),
     WRN7016("WRN7016", "La nota de crédito se encuentra previamente registrada con la misma serie y folio. Por favor, valide la información antes de continuar."),
     WRN7017("WRN7017", "La nota de crédito se encuentra previamente registrada con el mismo UUID. Por favor, valide la información antes de continuar."),
 

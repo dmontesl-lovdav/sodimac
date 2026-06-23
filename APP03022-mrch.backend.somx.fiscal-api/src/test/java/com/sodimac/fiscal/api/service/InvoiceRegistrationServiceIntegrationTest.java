@@ -56,9 +56,6 @@ public class InvoiceRegistrationServiceIntegrationTest {
     private ReceiverRepository receiverRepository;
 
     @Autowired
-    private AuthorizedReceiverCatalogRepository receiverCatalogRepository;
-
-    @Autowired
     private VersionCatalogRepository versionCatalogRepository;
 
     @Autowired
@@ -91,18 +88,8 @@ public class InvoiceRegistrationServiceIntegrationTest {
      * Configura datos de catálogos necesarios para las pruebas
      */
     private void setupTestData() {
-        // 1. Crear RFC receptor autorizado (CSD161207R2A - usado en ambos XMLs)
-        if (receiverCatalogRepository.findByRfc("CSD161207R2A").isEmpty()) {
-            AuthorizedReceiverCatalogEntity receiver = new AuthorizedReceiverCatalogEntity();
-            receiver.setReceiverUuid(UUID.randomUUID());
-            receiver.setRfc("CSD161207R2A");
-            receiver.setName("COMERCIALIZADORA SDMHC");
-            receiver.setTaxRegime("601");
-            receiver.setStatus(1);
-            receiver.setValidFrom(LocalDateTime.now().minusYears(1));
-            receiver.setValidTo(LocalDateTime.now().plusYears(1));
-            receiverCatalogRepository.save(receiver);
-        }
+        // 1. RFC receptor autorizado: ya no se usa la tabla authorized_receiver_catalog; la
+        // validación lee el catálogo CATRFCRECEPTOR (shared_catalogs). Test @Disabled.
 
         // 2. Crear versión CFDI vigente para facturas
         if (versionCatalogRepository.findByVersionAndDocumentTypeAndStatus(
@@ -167,9 +154,8 @@ public class InvoiceRegistrationServiceIntegrationTest {
     @Test
     @DisplayName("Debe rechazar factura con RFC receptor no autorizado y retornar BUS2002")
     void testRechazarFacturaRfcNoAutorizado() throws IOException {
-        // Given: Modificar RFC receptor a uno no autorizado (esto requeriría modificar el XML)
-        // Por ahora, eliminar el RFC autorizado del catálogo
-        receiverCatalogRepository.deleteAll();
+        // Given: RFC receptor no autorizado. La validación usa el catálogo CATRFCRECEPTOR.
+        // (Test @Disabled; se valida por Postman.)
 
         byte[] xmlContent = Files.readAllBytes(
                 Paths.get("src/main/resources/invoice/FacturaIngreso.xml")
@@ -409,8 +395,7 @@ public class InvoiceRegistrationServiceIntegrationTest {
     @Test
     @DisplayName("NC: Debe rechazar nota de crédito con RFC receptor no autorizado y retornar BUS2002")
     void testRechazarNotaCreditoRfcNoAutorizado() throws IOException {
-        // Given: Eliminar RFC autorizado del catálogo
-        receiverCatalogRepository.deleteAll();
+        // Given: RFC receptor no autorizado (catálogo CATRFCRECEPTOR). Test @Disabled.
 
         byte[] xmlContent = Files.readAllBytes(
                 Paths.get("src/main/resources/invoice/NotaCredito.xml")

@@ -8,7 +8,6 @@ import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.model.enums.FiscalSuccessCode;
 import com.sodimac.fiscal.api.model.enums.TipoDocumentoFiscal;
 import com.sodimac.fiscal.api.repository.AddendumRepository;
-import com.sodimac.fiscal.api.repository.AuthorizedReceiverCatalogRepository;
 import com.sodimac.fiscal.api.repository.InvoiceRepository;
 import com.sodimac.fiscal.api.repository.VersionCatalogRepository;
 import com.sodimac.fiscal.api.service.*;

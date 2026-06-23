@@ -62,9 +62,6 @@ public class InvoiceControllerIntegrationTest {
     private ReceiverRepository receiverRepository;
 
     @Autowired
-    private AuthorizedReceiverCatalogRepository receiverCatalogRepository;
-
-    @Autowired
     private VersionCatalogRepository versionCatalogRepository;
 
     @Autowired
@@ -130,8 +127,7 @@ public class InvoiceControllerIntegrationTest {
     @Test
     @DisplayName("Controller: Debe rechazar factura con RFC receptor no autorizado y retornar HTTP 400 con BUS2002")
     void testRechazarFacturaRfcNoAutorizado() throws Exception {
-        // Given: Eliminar RFC autorizado del catálogo
-        receiverCatalogRepository.deleteAll();
+        // Given: RFC receptor no autorizado (catálogo CATRFCRECEPTOR). Test @Disabled.
 
         byte[] xmlContent = Files.readAllBytes(
                 Paths.get("src/main/resources/invoice/FacturaIngreso.xml")
@@ -415,8 +411,7 @@ public class InvoiceControllerIntegrationTest {
     @Test
     @DisplayName("Controller NC: Debe rechazar nota de crédito con RFC receptor no autorizado y retornar HTTP 400 con BUS2002")
     void testRechazarNotaCreditoRfcNoAutorizado() throws Exception {
-        // Given: Eliminar RFC autorizado del catálogo
-        receiverCatalogRepository.deleteAll();
+        // Given: RFC receptor no autorizado (catálogo CATRFCRECEPTOR). Test @Disabled.
 
         byte[] xmlContent = Files.readAllBytes(
                 Paths.get("src/main/resources/invoice/NotaCredito.xml")

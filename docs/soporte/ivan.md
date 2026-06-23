@@ -4,6 +4,29 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-23 | Nuevos puntos: addenda manual, CatRfcReceptor, condición de pago NC
+
+**Contexto**: Ivan pasó comentarios para `/register` (carga XML): validar receptor contra
+`CatRfcReceptor`; al cargar XML validar que no se haya cargado ya la addenda manual (UUID no exista
+en `addendum_manual` ni `addendum`); quitar la FK de `tenant_finance.addendum_manual`; validar
+condición de pago de la NC (= `FormaPago` del XML, ej. 99) contra `CATCONDICIONPAGOVALIDONC`.
+
+**Hallazgos**: el flujo "Consumida manual" lo dispara **finanzas (Josue)** —
+`purchaseOrder.service.ts` crea `addendum_manual` + pone `reception.status=2`; NO escribe en
+`tenant_fiscal.invoice` (por eso la FK estorba). `CatRfcReceptor` no existe; `CATCONDICIONPAGOVALIDONC`
+existe vacío y valida el mismo `FormaPago` que `CatFormaPagoValidoNc` (posible redundancia).
+
+**Dudas pendientes**: (1) ¿`CatRfcReceptor` nuevo o es BUS008 ya existente? (2) ¿qué es `dto.uuid`
+guardado en `addendum_manual.invoice_uuid` (folio fiscal vs invoice_uuid interno)? (3)
+¿`CatCondicionPagoValidoNc` reemplaza o se suma a `CatFormaPagoValidoNc`? + poblar catálogo.
+
+**Listo para codear sin dudas**: quitar FK `fk_addendum_manual_invoice`.
+
+**Detalle**: [docs/analisis/QA-IVAN-2026-06-23-addenda-manual-rfc-condicionpago.md](../analisis/QA-IVAN-2026-06-23-addenda-manual-rfc-condicionpago.md)
+**Estado**: Sin codear, pendiente confirmar dudas con Ivan/Josue.
+
+---
+
 ## 2026-06-22 | Retro: tipoProveedor en /search + nombre de estatus + bloqueo Transporte
 
 **Contexto**: Ivan dio retro de 3 puntos tras validar UAT.

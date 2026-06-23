@@ -74,11 +74,20 @@ Al cargar el XML, comparar el `fiscalUuid` contra `addendum_manual.invoice_uuid`
    dropeada en local (ddl-auto=none, boot OK). Probado: autorizado → RES004, ausente → BUS008.
 3. ✅ **Fila 42 — cerrada** (ya cubierta por BUS058, sin cambio).
 
+## CATRFCRECEPTOR — estructura real (Ivan ya lo pobló en UAT)
+El catálogo lo creó y pobló **Ivan** (UAT id 100, code `CATRFCRECEPTOR` en MAYÚSCULAS). Modelo:
+- `catalog_detail.value` = id secuencial (1, 2...), **NO el RFC**.
+- `catalog_detail.key` = `CRR000x`. `catalog_detail.status` = 1 activo / 0 inactivo.
+- **El RFC vive en `dictionary_lang.description`** (lang_id 1).
+
+La validación (`existsRfcReceptorAutorizado`) matchea `dl.description = :rfc` con `cd.status=1` y
+`ch.status=1`. **No corremos seed** (Ivan administra el catálogo desde pantalla). El seed 19 se
+eliminó. Probado local (datos sincronizados de UAT): CSD161207R2A (status 1) → autorizado;
+COZI841029TE2 (status 0) → rechazado; ausente → rechazado.
+
 ## Pendiente para deploy UAT
-- **Seed CatRfcReceptor en UAT con los receptores REALES** de UAT (el seed local trae 3 del dump;
-  UAT puede tener más). Regenerar desde `authorized_receiver_catalog` de UAT antes de correr.
-- **DROP** `tenant_fiscal.authorized_receiver_catalog` en UAT.
-- Deploy del jar fiscal-api.
+- **Deploy del jar fiscal-api** (la validación nueva). El catálogo ya está poblado en UAT.
+- **DROP** `tenant_fiscal.authorized_receiver_catalog` en UAT (ya no se usa).
 - **Cleanup pendiente (code):** el CRUD `AuthorizedReceiverCatalog*` (entity/repo/service/controller/
   mapper/dto) queda huérfano tras dropear la tabla. Su endpoint GET fallaría si se llama. Quitar en
   un commit aparte.

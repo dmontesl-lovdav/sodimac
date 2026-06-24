@@ -6,6 +6,16 @@ export interface ExportColumn {
   label: string;
 }
 
+const normalizeFilename = (filename: string): string => {
+  return filename
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+};
+
 export const exportToCSV = (
   data: Record<string, unknown>[],
   columns: ExportColumn[],
@@ -28,7 +38,7 @@ export const exportToCSV = (
 
   const csvContent = [headers, ...rows].join('\n');
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  saveAs(blob, `${filename}.csv`);
+  saveAs(blob, `${normalizeFilename(filename)}.csv`);
 };
 
 export const exportToExcel = (
@@ -54,7 +64,7 @@ export const exportToExcel = (
   const blob = new Blob([excelBuffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  saveAs(blob, `${filename}.xlsx`);
+  saveAs(blob, `${normalizeFilename(filename)}.xlsx`);
 };
 
 

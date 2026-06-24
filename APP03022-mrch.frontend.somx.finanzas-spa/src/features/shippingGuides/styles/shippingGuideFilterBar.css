@@ -1,56 +1,55 @@
-/* Estructura Principal */
-.sg-header {
+/* Barra de filtros guías (layout base: financeFiltersLayout.css) */
+.sg-filter-bar.sg-filter-bar-horizontal {
+    padding-bottom: 4px;
+}
+
+.sg-field {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 16px;
-    width: 100%;
-    position: relative;
+    flex-direction: column;
+    align-items: stretch;
 }
 
-.sg-title {
-    font-weight: 700;
-}
-
-.sg-divider {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e5e7eb;
-}
-
-/* Barra de Filtros */
-.sg-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    /* Cambiado a center para mejor alineación con botones */
-    gap: 16px;
-    width: 100%;
+.sg-field-status {
+    flex: 1 1 70px;
+    min-width: 70px;
 }
 
 .sg-field-dates {
-    flex: 1 1 250px;
+    flex: 1 1 220px;
+    min-width: 200px;
     display: flex;
     align-items: center;
-    gap: 16px;
 }
 
-.sg-field-dates> :first-child {
-    flex: 0 0 auto;
-}
-
-.sg-actions-container {
-    display: flex;
+.sg-filter-actions {
     gap: 8px;
-    margin-left: auto;
-    flex: 0 0 auto;
+}
+
+.sg-filter-input {
+    min-width: 0;
+}
+
+.sg-oc-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 220px;
+}
+
+.sg-oc-number {
+    font-weight: 600;
+}
+
+.sg-oc-status {
+    font-size: 12px;
+    color: #4b5563;
+    line-height: 1.35;
 }
 
 .sg-full-width {
     width: 100%;
 }
 
-/* Botones y Elementos */
 .sg-button {
     height: 44px;
 }
@@ -84,7 +83,6 @@
     color: #374151;
 }
 
-/* Modales */
 .sg-modal-backdrop {
     position: fixed;
     inset: 0;
@@ -105,4 +103,14 @@
 .sg-cancel-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .sg-filter-bar.sg-filter-bar-horizontal.finz-filter-row,
+    .sg-filter-bar.sg-filter-bar-horizontal.finz-filter-row .sg-field {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
 }

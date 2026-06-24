@@ -54,3 +54,9 @@
     display: flex;
     gap: 10px;
 }
+
+.twm-toolbar-cluster {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}

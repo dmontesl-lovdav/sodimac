@@ -1,10 +1,17 @@
 import { ReactElement, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Breadcrumb, GenericModal, GenericButton } from '@shared/components/ui';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { useFinanceAlertModal } from '@/shared/hooks/useFinanceAlertModal';
+import {
+    FINANCE_LIST_KEYS,
+    useFinanceListReturnFromDetail,
+} from '@/shared/hooks';
 import GenericTable from '@/shared/components/ui/table/GenericTable';
 import type { Column } from '@/shared/components/ui/table/GenericTable';
-import { Divider } from '@/shared/components/ui/misc';
+import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
 
+import { formatDate } from '@/utils/utils';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoReception } from './interfaces';
 
@@ -15,14 +22,16 @@ function formatCurrency(val: number | undefined | null): string {
     return Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2 });
 }
 
-function formatDate(d?: string): string {
-    if (!d) return '-';
-    return new Date(d).toLocaleDateString('es-MX');
-}
-
 export default function MigoArticles(): ReactElement {
     const { id, nroOc, nroRecepcion } = useParams<{ id: string; nroOc: string; nroRecepcion: string }>();
     const navigate = useNavigate();
+
+    const financeAlert = useFinanceAlertModal();
+
+    useFinanceListReturnFromDetail(
+        FINANCE_LIST_KEYS.migo.moduleKey,
+        FINANCE_LIST_KEYS.migo.listPath
+    );
 
     const [doc, setDoc] = useState<MigoDocument | null>(null);
     const [allReceptions, setAllReceptions] = useState<MigoReception[]>([]);
@@ -36,29 +45,48 @@ export default function MigoArticles(): ReactElement {
             const res: any = await migoService.getById(id);
             setDoc(res?.data ?? res);
         } catch (err) {
-            console.error('[MIGO] getById error', err);
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'No fue posible obtener el documento MIGO.',
+            );
         }
     }, [id]);
 
     const loadReceptions = useCallback(async () => {
-        if (!id) return;
+        if (!id || nroOc == null || nroRecepcion == null) return;
         setLoading(true);
         try {
             const res: any = await migoService.getReceptions(id, 1, 5000);
             const pageData = res?.data ?? res;
-            setAllReceptions(pageData?.content ?? []);
+            const list = pageData?.content ?? [];
+            setAllReceptions(list);
+            const filtered = list.filter(
+                (r: MigoReception) =>
+                    String(r.nroOc) === nroOc && String(r.nroRecepcion) === nroRecepcion,
+            );
+            if (filtered.length === 0) {
+                financeAlert.showWarning(
+                    'Sin registros',
+                    'No se encontraron artículos para la orden de compra y recepción indicadas.',
+                );
+            }
         } catch (err) {
-            console.error('[MIGO] getReceptions error', err);
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'No fue posible cargar los artículos de la recepción.',
+            );
             setAllReceptions([]);
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, nroOc, nroRecepcion]);
 
     useEffect(() => {
         loadDocument();
         loadReceptions();
-    }, [id]);
+    }, [loadDocument, loadReceptions]);
 
     const articles = useMemo(() => {
         return allReceptions.filter(
@@ -108,17 +136,32 @@ export default function MigoArticles(): ReactElement {
     return (
         <div className="migo-layout">
             <Breadcrumb
-                items={[
-                    { label: 'Finanzas', to: '/' },
-                    { label: 'Publicación de recepción MIGO', to: '/finanzas/migo' },
+                items={withFinanceBreadcrumb([
+                    {
+                        label: 'Publicación de recepción MIGO',
+                        onClick: () =>
+                            navigate('/finanzas/migo', { state: { resetFilters: true } }),
+                    },
                     { label: doc?.folio ?? 'Documento', to: `/finanzas/migo/${id}/recepciones` },
                     { label: `OC ${nroOc} - Recepción ${nroRecepcion}` },
-                ]}
+                ])}
             />
 
             <div className="migo-box">
+                <div className="migo-header">
+                    <div>
+                        <h3 className="migo-title">Artículos Relacionados</h3>
+                        <p className="migo-description">Detalle de artículos de la recepción seleccionada.</p>
+                    </div>
+                    <div className="migo-toolbar finz-toolbar-actions">
+                        <GenericButton variant="primary" onClick={handleExportCsv} disabled={articles.length === 0}>
+                            Exportar CSV
+                        </GenericButton>
+                    </div>
+                </div>
+
                 {headerData && (
-                    <div className="migo-summary-card">
+                    <div className="migo-summary-card" style={{ marginTop: 16 }}>
                         <div>
                             <div className="migo-summary-label">Nro. Orden de Compra</div>
                             <div className="migo-summary-value">{headerData.nroOc}</div>
@@ -149,27 +192,16 @@ export default function MigoArticles(): ReactElement {
                         </div>
                         <div>
                             <div className="migo-summary-label">Monto OC</div>
-                            <div className="migo-summary-value">{formatCurrency(headerData.montoOc)}</div>
+                            <div className="migo-summary-value">
+                                {formatCurrency(
+                                    headerData.montoOc && headerData.montoOc > 0
+                                        ? headerData.montoOc
+                                        : headerData.importeSinImpuesto,
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
-
-                <div className="migo-header">
-                    <div>
-                        <h3 className="migo-title">Artículos Relacionados</h3>
-                        <p className="migo-description">Detalle de artículos de la recepción seleccionada.</p>
-                    </div>
-                    <div className="migo-toolbar">
-                        <GenericButton variant="outline" onClick={() => navigate(`/finanzas/migo/${id}/recepciones`)}>
-                            Regresar
-                        </GenericButton>
-                        <GenericButton variant="primary" onClick={handleExportCsv} disabled={articles.length === 0}>
-                            Descargar CSV
-                        </GenericButton>
-                    </div>
-                </div>
-
-                <Divider />
 
                 <div className="migo-grid-section">
                     <GenericTable<MigoReception>
@@ -185,7 +217,23 @@ export default function MigoArticles(): ReactElement {
                     />
                 </div>
 
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                    <BackLinkButton onClick={() => navigate(`/finanzas/migo/${id}/recepciones`)}>
+                        Volver
+                    </BackLinkButton>
+                </div>
+
                 {loading && <GenericModal visible variant="loading" message="Cargando artículos..." />}
+
+                <GenericModal
+                    visible={financeAlert.alertVisible}
+                    variant="alert"
+                    severity={financeAlert.alertSeverity}
+                    title={financeAlert.alertTitle}
+                    message={financeAlert.alertMessage}
+                    buttonText="Aceptar"
+                    onClose={financeAlert.closeAlert}
+                />
             </div>
         </div>
     );

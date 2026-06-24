@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { catalogService, catalogElementService } from '@features/catalogos/services/catalogosApi';
 import type { CatalogSimple, CatalogElement, CatalogElementCreateDto, CatalogElementUpdateDto } from '@features/catalogos/services/catalogosApi';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { useModalNotification } from '@shared/components/ui/modal';
 
 interface FormData {
   elementName: string;
@@ -109,7 +112,7 @@ export default function ElementForm() {
   const [showDeleteRelationModal, setShowDeleteRelationModal] = useState(false);
   const [pendingSaveAction, setPendingSaveAction] = useState<(() => void) | null>(null);
 
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { showSuccess, showError, ModalNode } = useModalNotification();
 
   const isStep1Complete = formData.elementName.trim() !== '' && formData.startDate !== '';
   const isPrimaryCatalog = catalogType === 'PRIMARIO' || catalogType === 'HIERARCHICAL';
@@ -124,10 +127,16 @@ export default function ElementForm() {
       formData.parentElementId !== originalData.parentElementId;
   };
 
-  const showToast = useCallback((type: 'success' | 'error', text: string) => {
-    setToastMessage({ type, text });
-    setTimeout(() => setToastMessage(null), 5000);
-  }, []);
+  const showToast = useCallback(
+    (type: 'success' | 'error', text: string, onAccept?: () => void) => {
+      if (type === 'success') {
+        showSuccess(text, 'Operación exitosa', onAccept);
+      } else {
+        showError(text, 'Error', onAccept);
+      }
+    },
+    [showSuccess, showError],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -283,7 +292,9 @@ export default function ElementForm() {
         else if (externalKeyModified) msg = `El elemento '${formData.elementName}' y su valor de conversión se han actualizado exitosamente.`;
         else if (externalKeyRemoved) msg = `El elemento '${formData.elementName}' se ha actualizado. El valor de conversión ha sido eliminado.`;
         else msg = `El elemento '${formData.elementName}' se ha actualizado exitosamente.`;
-        showToast('success', msg);
+        showToast('success', msg, () =>
+          navigate(`/util/catalogos/catalogs/${id}/elementos`),
+        );
       } else {
         const createData: CatalogElementCreateDto = {
           element: formData.elementName,
@@ -302,10 +313,10 @@ export default function ElementForm() {
         if (hasExternalKey) msg = `El elemento '${formData.elementName}' se ha creado exitosamente con su valor de conversión.`;
         else if (hasRelation) msg = `El elemento '${formData.elementName}' se ha creado y relacionado exitosamente.`;
         else msg = `El elemento '${formData.elementName}' se ha creado exitosamente.`;
-        showToast('success', msg);
+        showToast('success', msg, () =>
+          navigate(`/util/catalogos/catalogs/${id}/elementos`),
+        );
       }
-
-      setTimeout(() => navigate(`/util/catalogos/catalogs/${id}/elementos`), 1500);
     } catch (error: any) {
       const backendMsg = error?.response?.data?.message || error?.response?.data?.error || 'Ocurrió un error al guardar. Intente nuevamente.';
       showToast('error', backendMsg);
@@ -382,12 +393,14 @@ export default function ElementForm() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.breadcrumb}>
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/')}>Inicio</span>{' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/util/catalogos/catalogs')}>Gestión de Catálogos</span>{' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos`)}>Elementos</span>{' / '}
-        <span>{isEditMode ? 'Editar Elemento' : 'Nuevo Elemento'}</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: 'Elementos', to: `/util/catalogos/catalogs/${id}/elementos` },
+          { label: isEditMode ? 'Editar Elemento' : 'Nuevo Elemento' },
+        ])}
+      />
 
       <div style={styles.card}>
         <h1 style={styles.title}>{isEditMode ? 'Editar Elemento' : 'Nuevo Elemento'}</h1>
@@ -591,12 +604,9 @@ export default function ElementForm() {
         </div>
       )}
 
-      {toastMessage && (
-        <div style={{ ...styles.toast, backgroundColor: toastMessage.type === 'success' ? '#e6f7ef' : '#fdecea', color: toastMessage.type === 'success' ? '#2e7d32' : '#d32f2f' }}>
-          {toastMessage.text}
-          <button type="button" onClick={() => setToastMessage(null)} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>✕</button>
-        </div>
-      )}
+      {/* STM-15xx: el toast inferior derecha fue reemplazado por el modal
+          compartido (mismo estilo del resto del módulo). */}
+      {ModalNode}
     </div>
   );
 }

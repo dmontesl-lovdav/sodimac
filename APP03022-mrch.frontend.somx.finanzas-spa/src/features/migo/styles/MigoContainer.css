@@ -30,10 +30,45 @@
 
 .migo-filters-section {
     margin-top: 24px;
+    width: 100%;
+}
+
+.migo-filters-row {
     display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
     flex-wrap: wrap;
-    gap: 12px;
-    align-items: flex-end;
+}
+
+.migo-date-filter {
+    flex: 0 0 auto;
+}
+
+.migo-date-filter .dr-wrapper {
+    width: 260px;
+    min-width: 260px;
+}
+
+.migo-filter-field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.migo-filename-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-left: 0;
+    flex: 0 1 auto;
+}
+
+.migo-filename-actions .migo-filter-input {
+    width: 360px;
+    min-width: 260px;
 }
 
 .migo-filter-input {
@@ -41,9 +76,9 @@
     border: 1px solid #d1d5db;
     border-radius: 6px;
     font-size: 14px;
-    min-width: 240px;
     height: 40px;
     box-sizing: border-box;
+    width: 100%;
 }
 
 .migo-filters-section .dr-wrapper,
@@ -59,6 +94,7 @@
 .migo-toolbar {
     display: flex;
     gap: 10px;
+    justify-content: flex-end;
 }
 
 .migo-summary-card {
@@ -105,6 +141,7 @@
     display: flex;
     gap: 12px;
     margin-top: 16px;
+    justify-content: flex-end;
 }
 
 .migo-errors-list {
@@ -201,4 +238,25 @@
     border-radius: 6px;
     font-size: 13px;
     resize: vertical;
+}
+
+@media (max-width: 900px) {
+    .migo-filters-row {
+        align-items: stretch;
+    }
+
+    .migo-date-filter,
+    .migo-filename-actions {
+        width: 100%;
+    }
+
+    .migo-date-filter .dr-wrapper,
+    .migo-filename-actions .migo-filter-input {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .migo-filename-actions {
+        flex-wrap: wrap;
+    }
 }

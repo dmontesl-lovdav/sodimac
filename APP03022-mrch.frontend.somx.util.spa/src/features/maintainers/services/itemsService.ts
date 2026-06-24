@@ -1,4 +1,4 @@
-import { createApiClient } from '@/shared/api/apiClient';
+import { createApiClient } from '@/services/apiClient';
 
 const api = createApiClient();
 

@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { exportToCSV, exportToExcel } from '@features/catalogos/utils/export';
 import { catalogService, catalogElementService, CatalogResponse, CatalogElementSearchParams, CatalogSimple } from '@features/catalogos/services/catalogosApi';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { Pagination } from '@shared/components/ui/pagination';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 interface CatalogData {
   id: string;
@@ -257,28 +262,28 @@ const styles = {
   table: {
     width: '100%',
     borderCollapse: 'collapse' as const,
-    fontSize: '0.7rem',
-    tableLayout: 'fixed' as const,
+    fontSize: '0.75rem',
   },
   th: {
-    padding: '0.4rem 0.3rem',
+    padding: '0.6rem 0.5rem',
     textAlign: 'left' as const,
-    fontWeight: 500,
+    fontWeight: 600,
     color: '#002d4c',
     backgroundColor: '#eaf5fc',
     borderBottom: '1px solid #e5e7eb',
-    whiteSpace: 'nowrap' as const,
-    fontSize: '0.65rem',
+    whiteSpace: 'normal' as const,
+    lineHeight: 1.25,
+    fontSize: '0.7rem',
+    verticalAlign: 'middle' as const,
   },
   td: {
-    padding: '0.4rem 0.3rem',
+    padding: '0.5rem 0.5rem',
     borderBottom: '1px solid #e5e7eb',
     color: '#1e293b',
-    fontSize: '0.7rem',
-    maxWidth: '90px',
-    overflow: 'hidden' as const,
-    textOverflow: 'ellipsis' as const,
-    whiteSpace: 'nowrap' as const,
+    fontSize: '0.75rem',
+    verticalAlign: 'middle' as const,
+    whiteSpace: 'normal' as const,
+    wordBreak: 'break-word' as const,
   },
   actionBtn: {
     padding: '0.25rem 0.5rem',
@@ -422,6 +427,7 @@ const ElementsIcon = () => (
 
 export default function CatalogElementsContainer() {
   const navigate = useNavigate();
+  const { showError, ModalNode } = useModalNotification();
   const { id } = useParams<{ id: string }>();
 
   const [catalog, setCatalog] = useState<CatalogData | null>(null);
@@ -526,14 +532,15 @@ export default function CatalogElementsContainer() {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const performSearch = useCallback(async (page: number = 1) => {
+  const performSearch = useCallback(async (page: number = 1, overridePageSize?: number) => {
     if (!id) return;
-    
+
     setIsSearching(true);
     try {
+      const effectivePageSize = overridePageSize ?? itemsPerPage;
       const searchParams: CatalogElementSearchParams = {
         page: page,
-        pageSize: itemsPerPage,
+        pageSize: effectivePageSize,
       };
 
       if (filters.idElement) searchParams.idElemento = parseInt(filters.idElement);
@@ -622,7 +629,12 @@ export default function CatalogElementsContainer() {
       );
     } catch (error) {
       console.error('Error changing status:', error);
-      alert('Ocurrió un error al cambiar el estatus. Intente nuevamente.');
+      showError(
+        extractApiErrorMessage(error, {
+          fallback: 'No fue posible cambiar el estatus del elemento. Inténtalo nuevamente.',
+        }),
+        'No se pudo cambiar el estatus',
+      );
     } finally {
       setTogglingId(null);
     }
@@ -765,21 +777,13 @@ export default function CatalogElementsContainer() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.breadcrumb}>
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/')}>
-          Inicio
-        </span>
-        {' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/util/catalogos/catalogs')}>
-          Gestión de Catálogos
-        </span>
-        {' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/util/catalogos/catalogs')}>
-          Catálogos
-        </span>
-        {' / '}
-        <span>Elementos</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: 'Elementos' },
+        ])}
+      />
 
       <div style={styles.card}>
         <div style={styles.header}>
@@ -1009,29 +1013,29 @@ export default function CatalogElementsContainer() {
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th style={{ ...styles.th, width: '25px', padding: '0.4rem 0.15rem' }}>
+                    <th style={{ ...styles.th, width: '32px', padding: '0.6rem 0.25rem' }}>
                       <input
                         type="checkbox"
                         checked={isAllOnPageSelected}
                         onChange={handleSelectAll}
                       />
                     </th>
-                    <th style={{ ...styles.th, width: '35px' }}>ID</th>
-                    <th style={{ ...styles.th, width: '60px' }}>Clave</th>
-                    <th style={{ ...styles.th, width: '80px' }}>Elemento</th>
-                    <th style={{ ...styles.th, width: '60px' }}>Valor</th>
-                    <th style={{ ...styles.th, width: '70px' }}>F. Inicio</th>
-                    <th style={{ ...styles.th, width: '70px' }}>F. Fin</th>
-                    <th style={{ ...styles.th, width: '50px' }}>Estatus</th>
-                    <th style={{ ...styles.th, width: '90px' }}>Cat. Padre Relacionado</th>
-                    <th style={{ ...styles.th, width: '90px' }}>Elem. Padre Relacionado</th>
-                    <th style={{ ...styles.th, width: '60px' }}>Usr. Reg.</th>
-                    <th style={{ ...styles.th, width: '65px' }}>F. Reg.</th>
-                    <th style={{ ...styles.th, width: '60px' }}>Usr. Act.</th>
-                    <th style={{ ...styles.th, width: '65px' }}>F. Act.</th>
-                    <th style={{ ...styles.th, width: '55px' }}>Conversión</th>
-                    <th style={{ ...styles.th, width: '40px' }}>Editar</th>
-                    <th style={{ ...styles.th, width: '55px' }}>Act./Desact.</th>
+                    <th style={styles.th}>ID</th>
+                    <th style={styles.th}>Clave</th>
+                    <th style={styles.th}>Elemento</th>
+                    <th style={styles.th}>Valor</th>
+                    <th style={styles.th}>F. Inicio</th>
+                    <th style={styles.th}>F. Fin</th>
+                    <th style={styles.th}>Estatus</th>
+                    <th style={styles.th}>Cat. Padre Relacionado</th>
+                    <th style={styles.th}>Elem. Padre Relacionado</th>
+                    <th style={styles.th}>Usr. Reg.</th>
+                    <th style={styles.th}>F. Reg.</th>
+                    <th style={styles.th}>Usr. Act.</th>
+                    <th style={styles.th}>F. Act.</th>
+                    <th style={styles.th}>Conversión</th>
+                    <th style={styles.th}>Editar</th>
+                    <th style={styles.th}>Act./Desact.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1132,89 +1136,19 @@ export default function CatalogElementsContainer() {
               </table>
             </div>
 
-            <div style={styles.pagination}>
-              <span style={styles.paginationInfo}>
-                Items por página:{' '}
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    const newSize = Number(e.target.value);
-                    setItemsPerPage(newSize);
-                    if (showResults) {
-                      performSearch(1);
-                    }
-                  }}
-                  style={{ padding: '0.25rem', borderRadius: '0.25rem' }}
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </span>
-              <span style={styles.paginationInfo}>
-                Ir a:{' '}
-                <input
-                  type="number"
-                  min={1}
-                  max={totalPages || 1}
-                  value={currentPage}
-                  onChange={(e) => {
-                    const page = Number(e.target.value);
-                    handlePageChange(page);
-                  }}
-                  style={{ width: '50px', padding: '0.25rem', borderRadius: '0.25rem' }}
-                />
-              </span>
-              <span style={styles.paginationInfo}>
-                {totalElements > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
-                {Math.min(currentPage * itemsPerPage, totalElements)} de{' '}
-                {totalElements}
-              </span>
-              <button
-                style={{
-                  ...styles.paginationBtn,
-                  ...(currentPage === 1 ? styles.paginationBtnDisabled : {}),
-                }}
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                ‹
-              </button>
-              {Array.from({ length: Math.min(5, totalPages || 1) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalElements}
+              pageSize={itemsPerPage}
+              onPageChange={handlePageChange}
+              onPageSizeChange={(newSize) => {
+                setItemsPerPage(newSize);
+                if (showResults) {
+                  performSearch(1, newSize);
                 }
-                return (
-                  <button
-                    key={pageNum}
-                    style={{
-                      ...styles.paginationBtn,
-                      ...(currentPage === pageNum ? styles.paginationBtnActive : {}),
-                    }}
-                    onClick={() => handlePageChange(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              <button
-                style={{
-                  ...styles.paginationBtn,
-                  ...(currentPage === totalPages || totalPages === 0 ? styles.paginationBtnDisabled : {}),
-                }}
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                ›
-              </button>
-            </div>
+              }}
+            />
           </>
         )}
 
@@ -1251,6 +1185,7 @@ export default function CatalogElementsContainer() {
           )}
         </div>
       </div>
+      {ModalNode}
     </div>
   );
 }

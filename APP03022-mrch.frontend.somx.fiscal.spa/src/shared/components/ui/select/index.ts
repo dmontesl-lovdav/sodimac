@@ -2,6 +2,7 @@ export { default as GenericSelect } from './GenericSelect';
 export { default as GenericSelectFilled } from './GenericSelectFilled';
 export { default as GenericSelectUnderline } from './GenericSelectUnderline';
 export { default as GenericSelectFloating } from './GenericSelectFloating';
+export { default as GenericSelectSearchable } from './GenericSelectSearchable';
 export type { GenericSelectProps, GenericSelectOption } from './GenericSelect';
 export type { GenericSelectFilledProps, GenericSelectFilledOption } from './GenericSelectFilled';
 export type { GenericSelectUnderlineProps, SelectOption } from './GenericSelectUnderline';

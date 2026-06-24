@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { GenericTable } from "@/shared/components/ui";
+import { GenericButton, GenericTable } from "@/shared/components/ui";
 import type { ReactNode, ReactElement } from "react";
 import downloadIcon from "@assets/download.svg";
 import { Reception, ReceptionSKU } from "../../interfaces";
-import { formatDate, formatAmount, exportToCSV } from "@/utils/utils";
+import { formatDate, formatAmount, exportToCSV, formatFilenameTimestamp } from "@/utils/utils";
 import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import "./ReceptionSkusTable.css";
 
 interface ReceptionSkuProps {
@@ -21,35 +22,66 @@ type Column<T> = {
   render: (row: T) => ReactNode;
 };
 
+function safeFileSegment(value: string): string {
+  return value.replace(/[^\w\-]+/g, "_").slice(0, 80) || "recepcion";
+}
+
 const columns: Column<ReceptionSKU>[] = [
   { header: "SKU", render: (item) => item.sku },
   { header: "Descripción", render: (item) => item.description },
-  { header: "Cantidad", render: (item) => parseInt(item.quantity) },
+  { header: "Cantidad", render: (item) => parseInt(item.quantity, 10) },
   { header: "Precio Unitario", render: (item) => formatAmount(parseFloat(item.unitCost)) },
   { header: "Importe", render: (item) => formatAmount(parseFloat(item.totalCost)) },
 ];
 
 const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
-
   const [open] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  const total = skus.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * perPage;
+  const pageRows = skus.slice(start, start + perPage);
 
   const handleDownloadCSV = () => {
     if (!skus || skus.length === 0) return;
 
     setIsExporting(true);
 
-    const headers = ['SKU', 'Descripción', 'Cantidad', 'Precio Unitario', 'Importe'];
+    const headers = [
+      "Orden Compra",
+      "Recepción",
+      "Importe",
+      "Fecha Recepción",
+      "Número Proveedor",
+      "SKU",
+      "Descripción",
+      "Cantidad",
+      "Precio Unitario",
+      "Importe",
+    ];
 
-    const rows = skus.map(item => [
+    const rows = skus.map((item) => [
+      receipt.order?.orderNumber ?? receipt.orderNumber ?? "",
+      receipt.receptionNumber || receipt.receptionId || "",
+      String(receipt.amount ?? ""),
+      receipt.receptionDate ? formatDate(String(receipt.receptionDate)) : "",
+      String(receipt.order?.supplierNumber ?? receipt.supplierNumber ?? ""),
       item.sku,
       item.description,
-      parseInt(item.quantity).toString(),
+      parseInt(item.quantity, 10).toString(),
       parseFloat(item.unitCost).toFixed(2),
-      parseFloat(item.totalCost).toFixed(2)
+      parseFloat(item.totalCost).toFixed(2),
     ]);
 
-    exportToCSV(headers, rows, "recepcion_" + receipt.receptionId);
+    const baseName = `recepcion_detalle_${safeFileSegment(
+      String(receipt.receptionNumber || receipt.receptionId || "rec")
+    )}_${formatFilenameTimestamp()}`;
+
+    exportToCSV(headers, rows, baseName);
 
     setIsExporting(false);
   };
@@ -63,7 +95,7 @@ const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
             <p className="rc-meta-value">{formatDate(receipt.receptionDate)}</p>
           </div>
           <div>
-            <p className="rc-meta-label">Cantidad</p>
+            <p className="rc-meta-label">Importe</p>
             <p className="rc-meta-value">{formatAmount(receipt.amount)}</p>
           </div>
         </div>
@@ -71,35 +103,26 @@ const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
 
       {open && (
         <div className="rc-accordion-content">
-
-          {receipt.comment && (
-            <div className="rc-comment">
-              {receipt.comment}
-            </div>
-          )}
+          {receipt.comment && <div className="rc-comment">{receipt.comment}</div>}
 
           <div className="rc-table-wrap">
             <GenericTable
-              rows={skus}
+              rows={pageRows}
               columns={columns}
               emptyLabel="Sin artículos"
-              perPage={10}
-              page={1}
-              totalPages={1}
+              perPage={perPage}
+              page={safePage}
+              totalPages={totalPages}
+              totalItems={total}
+              onChangePage={setPage}
+              onChangePerPage={(n) => {
+                setPerPage(n);
+                setPage(1);
+              }}
             />
           </div>
 
-          <div className="rc-download-row">
-            <button
-              onClick={handleDownloadCSV}
-              className="rc-download-btn"
-              disabled={isExporting}
-            >
-              <img src={downloadIcon} alt="Descargar" width={20} />
-              Exportar CSV
-            </button>
-          </div>
-
+          
         </div>
       )}
     </div>
@@ -107,7 +130,6 @@ const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
 };
 
 export default function ReceptionSkusTable({ reception }: ReceptionSkuProps): ReactElement {
-
   const skus = reception?.receptionSkus || [];
 
   if (skus.length === 0) {
@@ -122,34 +144,30 @@ export default function ReceptionSkusTable({ reception }: ReceptionSkuProps): Re
 
   return (
     <>
-      <div className="rc-section-title">
-        Resumen Artículos
-      </div>
+      <div className="rc-section-title rc-section-title-compact">Resumen Artículos</div>
 
       <div className="rc-skus-panel">
-        <div className="rc-stats-grid">
-          <div className="rc-stat-row">
-            <strong>Solicitados:</strong>
-            <div>{sumSkus}</div>
-          </div>
-          <div className="rc-stat-row">
-            <strong>Recibidos:</strong>
-            <div>{sumSkus}</div>
-          </div>
-          <div className="rc-stat-row">
-            <strong>SKUs Solicitados:</strong>
-            <div>{sumSkus}</div>
-          </div>
-          <div className="rc-stat-row">
-            <strong>SKUs Recibidos:</strong>
-            <div>{sumSkus}</div>
-          </div>
+        <div className="rc-stats-inline">
+          <span>
+            <strong>Solicitados:</strong> {sumSkus}
+          </span>
+          <span className="rc-stat-sep">|</span>
+          <span>
+            <strong>Recibidos:</strong> {sumSkus}
+          </span>
+          <span className="rc-stat-sep">|</span>
+          <span>
+            <strong>SKUs solicitados:</strong> {sumSkus}
+          </span>
+          <span className="rc-stat-sep">|</span>
+          <span>
+            <strong>SKUs recibidos:</strong> {sumSkus}
+          </span>
         </div>
 
-        <div className="rc-spacer" />
+        <div className="rc-spacer-sm" />
 
         <ReceptionAccordion receipt={reception} skus={skus} />
-
       </div>
     </>
   );

@@ -1,22 +1,36 @@
+import type { AxiosRequestConfig } from "axios";
 import { createApiClient, type ApiClient } from "@/services/ApiClient";
+import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
+import type { CreditNoteFilters } from "../interfaces";
+
+const blobResponse: AxiosRequestConfig = { responseType: "blob" };
 
 export const createCreditsClient = <T = unknown>(api?: ApiClient) => {
   const client = api ?? createApiClient();
 
   return {
+    getUser: () => getUserIdFromStore(),
+
     cancelCreditNote: (uuid: string, numeroProveedor: string) =>
-      client.execute("invoices", "put", {
+      client.request("invoices", "put", {
         uuid,
         numeroProveedor,
         estatus: 0,
-        idUsuarioActualizacion: client.getUserId(),
+        idUsuarioActualizacion: getUserIdFromStore() ?? "1",
       }),
-    
-    getCreditNotes: (filters: unknown) => client.execute<T>("invoices/search", "post", filters),
 
-    getXmlDocument: (uuid: string) => client.fetchDocument(`invoices/${uuid}/xml`),
+    getCreditNotes: (filters: CreditNoteFilters & { tipoDocumento?: string }) =>
+      client.request<T>("invoices/search", "post", filters),
+
+    getXmlDocument: (xmlContent: string | null | undefined): Promise<{ data: string }> => {
+      const data = typeof xmlContent === "string" ? xmlContent.trim() : "";
+      if (!data) {
+        return Promise.reject(new Error("XML no disponible en el registro"));
+      }
+      return Promise.resolve({ data });
+    },
 
     getPdfDocument: (uuid: string) =>
-      client.fetchDocument(`pdf/from-uuid/${uuid}?inline=true`),
+      client.request<Blob>(`pdf/from-uuid/${uuid}?inline=true`, "get", undefined, blobResponse),
   };
 };

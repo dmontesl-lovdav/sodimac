@@ -155,14 +155,14 @@ export const ToolbarFilters: FC<ToolbarFiltersProps> = ({
         </label>
       </div>
 
-      <div className="param-toolbar__actions">
-        <GenericButton variant="outline" onClick={onClear} disabled={isLoading}>
-          Limpiar
-        </GenericButton>
-        <GenericButton variant="outline" type="submit" disabled={isLoading}>
-          {isLoading ? 'Buscando...' : 'Buscar'}
-        </GenericButton>
-      </div>
+            <div className="param-toolbar__actions">
+                <GenericButton variant="outlineFill" type="submit" disabled={isLoading}>
+                    {isLoading ? 'Buscando...' : 'Buscar'}
+                </GenericButton>
+                <GenericButton variant="outlineFill" onClick={onClear} disabled={isLoading}>
+                    Limpiar
+                </GenericButton>
+            </div>
     </form>
   );
 };

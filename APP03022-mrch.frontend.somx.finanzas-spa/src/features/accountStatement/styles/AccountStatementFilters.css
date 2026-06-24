@@ -2,25 +2,12 @@
     width: 100%;
 }
 
-.al-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-}
-
 .as-field {
-    flex: 0 0 auto;
-}
-
-.as-field>* {
-    min-width: 180px;
-}
-
-/* acciones (botones) */
-.as-action {
-    flex: 0 0 auto;
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.as-action.finz-filter-actions {
     align-items: center;
 }

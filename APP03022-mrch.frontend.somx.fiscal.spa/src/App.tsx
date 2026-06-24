@@ -12,6 +12,7 @@ import CreditsContainer from './features/creditNote/CreditsContainer';
 import ComplementRelatedInvoices from './features/complement/ComplementRelatedInvoices';
 import { Layout } from './shared/components/container/Layout';
 import './App.css';
+import './shared/styles/financeFiltersLayout.css';
 import PublishCreditNote from './features/creditNote/PublishCreditNote';
 
 import { localHomeStore } from './store/localStore';

@@ -1,0 +1,96 @@
+/* Layout estándar filtros Finanzas: fila flexible con wrap; columna 100% en móvil. */
+
+.finz-filter-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 10px 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+/* Celdas de filtro: crecen y bajan de fila si no caben */
+.finz-filter-row > :not(.finz-filter-actions) {
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.finz-filter-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px 10px;
+    margin-left: auto;
+    box-sizing: border-box;
+}
+
+/* Controles ocupan el ancho de su celda */
+.finz-filter-row :is(
+        .generic-select-searchable,
+        .generic-select-container,
+        .generic-input,
+        .generic-input-search,
+        .generic-textfield-wrapper,
+        .generic-textfield-input,
+        .dr-wrapper,
+        .dr-container,
+        .dr-input,
+        input.generic-input,
+        select.generic-select,
+        .migo-filter-input
+    ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+}
+
+/* Campos que suelen necesitar más espacio */
+.finz-filter-row > .sg-field-status,
+.finz-filter-row > .rc-filter-status-wrap {
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.finz-filter-row > .sg-field-dates,
+.finz-filter-row > .pay-field-dates,
+.finz-filter-row > .rc-field-dates,
+.finz-filter-row > .dc-field-dates {
+    flex: 1 1 220px;
+    min-width: 200px;
+}
+
+/* Móvil: lista vertical al 100% */
+@media (max-width: 900px) {
+    .finz-filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .finz-filter-row > :not(.finz-filter-actions) {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .finz-filter-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    .finz-filter-row .finz-filter-actions {
+        padding-inline: 0;
+    }
+}

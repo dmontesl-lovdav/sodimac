@@ -1,6 +1,6 @@
+import { ReactElement } from 'react';
 
-import { ReactElement } from "react";
-
+import './StatusPill.css';
 
 export interface StatusPillParams {
   type?: string;

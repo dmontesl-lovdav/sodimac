@@ -1,8 +1,8 @@
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useLocation } from "react-router-dom";
-import DataGrid, { DataGridColumn, RowAction } from "@/shared/components/ui/datagrid/DataGrid";
-import { formatDate, formatAmount, fetchProvidersAsCatalog, fetchCatalogMessage, fetchCatalog } from "@/utils/utils";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -11,7 +11,6 @@ import { createInvoicesClient } from "./api/InvoiceClient";
 import deleteIcon from "@/assets/delete.svg";
 import viewIcon from "@/assets/eye-show.svg";
 import reprocessIcon from "@/assets/reprocess.svg";
-import type { SelectableOption } from "@/utils/utils";
 import {
   InvoiceFilters,
   EMPTY_INVOICE,
@@ -20,11 +19,15 @@ import {
   INVOICE_RECIBIDO_PARCIAL,
   type Invoice,
 } from "./interfaces";
-import { Divider, Title } from "@/shared/components/ui/misc";
-import { ModalMsg } from "@/shared/components/ui/modal/ModalMsg";
+import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
+import {
+  FISCAL_LIST_KEYS,
+  saveFiscalListFilters,
+  useFiscalListRefetchOnReturn,
+  useFiscalListScreenSession,
+} from "@/shared/session/fiscalListSession";
 
 const breadcrumb: BreadcrumbItem[] = [
-  { label: "Home", to: "/" },
   { label: "Fiscal", to: "/" },
   { label: "Facturas" },
 ];
@@ -34,20 +37,34 @@ const columns: DataGridColumn<Invoice>[] = [
   { header: "Folio", accessor: r => r.folio ?? "--", exportAccessor: r => r.folio },
   { header: "Subtotal", accessor: r => r.subtotal != null ? formatAmount(r.subtotal) : "--", exportAccessor: r => r.subtotal },
   { header: "Total", accessor: r => r.total != null ? formatAmount(r.total) : "--", exportAccessor: r => r.total },
-  { header: "UUID Factura", accessor: r => r.invoiceUuid, exportAccessor: r => r.invoiceUuid },
+  { header: "UUID", accessor: r => r.fiscalUuid ?? "--", exportAccessor: r => r.fiscalUuid },
+  { header: "Orden Compra", accessor: r => r.noOrdenCompra ?? "--", exportAccessor: r => r.noOrdenCompra },
+  { header: "Recepcion", accessor: r => r.noRecepcion ?? "--", exportAccessor: r => r.noRecepcion },
+  {
+    header: "NC Relacionadas",
+    accessor: r =>
+      r.notasCreditoRelacionadas.length === 0
+        ? "0"
+        : String(r.notasCreditoRelacionadas.length),
+    exportAccessor: r =>
+      r.notasCreditoRelacionadas.length === 0
+        ? "0"
+        : String(r.notasCreditoRelacionadas.length),
+  },
+  { header: "Tipo Proveedor", accessor: r => r.tipoProveedorDescripcion ?? "--", exportAccessor: r => r.tipoProveedorDescripcion },
+  { header: "Número Proveedor", accessor: r => r.numeroProveedor ?? "--", exportAccessor: r => r.numeroProveedor },
   { header: "Nombre Proveedor", accessor: r => r.supplierName ?? "--", exportAccessor: r => r.supplierName },
-  { header: "Tipo Proveedor", accessor: r => r.tipoProveedor ?? "--", exportAccessor: r => r.tipoProveedor },
   { header: "Fecha Emisión", accessor: r => r.issueDate ? formatDate(r.issueDate) : "N/D", exportAccessor: r => r.issueDate },
-  { header: "Fecha Recepción", accessor: r => r.certificationDate ? formatDate(r.certificationDate) : "N/D", exportAccessor: r => r.certificationDate },
+  { header: "Fecha Recepción", accessor: r => r.createdAt ? formatDate(r.createdAt) : "N/D", exportAccessor: r => r.certificationDate },
   { header: "Estado", accessor: r => r.statusName ?? "--", exportAccessor: r => r.statusName },
-  { header: "NC relacionadas", accessor: r => r.notasCreditoRelacionadas.length === 0 ? "0" : r.notasCreditoRelacionadas.length, exportAccessor: r => r.notasCreditoRelacionadas.length === 0 ? "0" : r.notasCreditoRelacionadas.length },
-  
 ];
 
 const MSG_REPROCESO_DEFAULT = "¿Desea volver a procesar esta factura para intentar contabilizarla nuevamente? Esta acción reemplazará el intento anterior.";
 
 export default function InvoicesGrid() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const returningFromDetail = useFiscalListScreenSession(FISCAL_LIST_KEYS.invoices);
 
   const customFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -68,8 +85,11 @@ export default function InvoicesGrid() {
 
   const [filters, setFilters] = useState<InvoiceFilters>(EMPTY_INVOICE);
   const [filtersReady, setFiltersReady] = useState(false);
-  const [providers, setProviders] = useState<SelectableOption[]>([]);
-  const [statusInvoices, setStatusInvoices] = useState<SelectableOption[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [statusInvoices, setStatusInvoices] = useState<{ label: string; value: string }[]>([]);
+  const [providerTypeOptions, setProviderTypeOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
   const [reprocessConfirmOpen, setReprocessConfirmOpen] = useState(false);
   const [reprocessConfirmRow, setReprocessConfirmRow] = useState<Invoice | null>(null);
   const [reprocessConfirmMessage, setReprocessConfirmMessage] = useState(MSG_REPROCESO_DEFAULT);
@@ -85,28 +105,36 @@ export default function InvoicesGrid() {
     totalPages: number;
     page: number;
   }>();
+  const gridRef = useRef<DataGridHandle>(null);
+  const deepLinkSearchedRef = useRef<string | null>(null);
+  const [canExportCsv, setCanExportCsv] = useState(false);
   const isAdmin = true;
 
   useEffect(() => {
-    const fetchProviders = async () => {
-      const response = await fetchProvidersAsCatalog();
-      if (response) {
-        setProviders(response);
+    const loadCatalogs = async () => {
+      const [statusCatalog, tipoProveedorCatalog ] = await Promise.all([
+        fetchCatalogDetails("CatEstatusFactura"),
+        fetchCatalogDetails("CatTipoProveedor")
+      ]);
+      
+      if (statusCatalog) {
+        setStatusInvoices(
+          fetchCatalogAsSelectableOptions(statusCatalog, "Todos los estados")
+        );
+      }
+
+      if (tipoProveedorCatalog) {
+        setProviderTypeOptions(
+          fetchCatalogAsSelectableOptions(tipoProveedorCatalog, "Todos los tipos")
+        );
       }
     };
-    const fetchStatus = async () => {
-      const options = await fetchCatalog("CatEstatusFactura");
-      if(options){
-        const mappedOptions = options.details.map((opt: any) => ({ label: opt.description, value: opt.internalStatus }));
-        setStatusInvoices(mappedOptions);
-      }
-    }
-    fetchProviders();
-    fetchStatus();
+
+    loadCatalogs();
   }, []);
 
   const handleGetXmlContent = useCallback(async (row: Invoice) => {
-    const { data } = await client.getXmlDocument(row.invoiceUuid);
+    const { data } = await client.getXmlDocument(row.xmlContent);
     return data;
   }, [client]);
 
@@ -116,8 +144,23 @@ export default function InvoicesGrid() {
   }, [client]);
 
   const handleSearch = (newFilters: InvoiceFilters) => {
+    saveFiscalListFilters(FISCAL_LIST_KEYS.invoices.filters, newFilters);
     setFilters(newFilters);
+    setHasSearched(true);
   };
+
+  const handleFiltersChange = (newFilters: InvoiceFilters) => {
+    setFilters(newFilters);
+    setHasSearched(false);
+  };
+
+  const handleFiltersClear = useCallback((cleared: InvoiceFilters) => {
+    deepLinkSearchedRef.current = null;
+    saveFiscalListFilters(FISCAL_LIST_KEYS.invoices.filters, cleared);
+    if (location.search) {
+      navigate({ pathname: location.pathname, search: "" }, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
 
   /** Con uuid en la URL se busca por UUID (no vacío). Sin uuid, vacío = faltan fechas de recepción. */
   const areFiltersEmpty = (f: InvoiceFilters) => (!f?.fechaInicioRecepcion?.trim() || !f?.fechaFinalRecepcion?.trim());
@@ -128,6 +171,12 @@ export default function InvoicesGrid() {
         ? { content: [] as Invoice[], totalElements: 0, totalPages: 0, page: 0 }
         : handleFetch(f),
     [handleFetch, areFiltersEmpty]
+  );
+
+  useFiscalListRefetchOnReturn<InvoiceFilters>(
+    FISCAL_LIST_KEYS.invoices,
+    returningFromDetail,
+    handleSearch
   );
 
   const openReprocessConfirm = async (row: Invoice) => {
@@ -152,16 +201,14 @@ export default function InvoicesGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      //TODO: ajustar cuando el API soporte el id del proveedor
-      const result = await client.cancelInvoice(row.invoiceUuid || "", row.numeroProveedor ?? "1001") as { data?: unknown };
-      if (result?.data) {
-        // respuesta con data
+      if(row.numeroProveedor=="" || row.numeroProveedor==null) {
+        setErrorMsg("No se puede cancelar la factura sin número de proveedor");
+        return;
       }
+      await client.cancelInvoice(row.fiscalUuid || "", row.numeroProveedor ?? "");
       setRefreshKey((k: number) => k + 1);
-    } catch (error: any) {
-      const customMsg = (error.response.data.code+": "+error.response.data.message)|| error.message;
-      console.error("Error al cancelar la factura:", customMsg || error.message);
-      setErrorMsg(customMsg  || "Error al cancelar la factura");
+    } catch (error: unknown) {
+      setErrorMsg(getErrorMessage(error, "Error al cancelar la factura"));
     } finally {
       setProcessLoading(false);
       
@@ -176,13 +223,14 @@ export default function InvoicesGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      //TODO: ajustar cuando el API soporte el id del proveedor
-      await client.reprocessInvoice(row.invoiceUuid || "", row.numeroProveedor ?? "1001");
+      if(row.numeroProveedor=="" || row.numeroProveedor==null) {
+        setErrorMsg("No se puede reprocesar la factura sin número de proveedor");
+        return;
+      }
+      await client.reprocessInvoice(row.invoiceUuid || "", row.numeroProveedor ?? "");
       setRefreshKey((k: number) => k + 1);
-    } catch (error: any) {
-      const customMsg = (error.response.data.code+": "+error.response.data.message)|| error.message;
-      console.error("Error al reprocesar la factura:", customMsg || error.message);
-      setErrorMsg(customMsg  || "Error al reprocesar la factura");
+    } catch (error: unknown) {
+      setErrorMsg(getErrorMessage(error, "Error al reprocesar la factura"));
     } finally {
       setProcessLoading(false);
       
@@ -194,78 +242,100 @@ export default function InvoicesGrid() {
       {
           title: "Ver notas de crédito relacionadas",
           icon: viewIcon,
-          onClick: (_row, _nav) => _nav(`/fiscal/notas-credito?uuid=${_row.notasCreditoRelacionadas[0]?.fiscalUuid}&start=${filters.fechaInicioRecepcion}&end=${filters.fechaFinalRecepcion}`),
+          onClick: (_row, _nav) => {
+            const ncUuid = _row.notasCreditoRelacionadas[0]?.fiscalUuid;
+            if (!ncUuid) return;
+            const qs = new URLSearchParams({
+              uuid: ncUuid,
+              start: filters.fechaInicioRecepcion,
+              end: filters.fechaFinalRecepcion,
+            });
+            _nav(`/fiscal/notas-credito?${qs.toString()}`);
+          },
           isDisabled: (row) => row.notasCreditoRelacionadas.length === 0,
         },
         {
           title: "Reproceso contable",
           icon: reprocessIcon,
-          onClick: (_row, _nav) => openReprocessConfirm(_row),
+          onClick: (_row) => { openReprocessConfirm(_row); },
           isDisabled: (row) => row.status !== INVOICE_STATUS_RECHAZO_CONTABLE,
         },
         
         {
           title: "Cancelar factura",
           icon: deleteIcon,
-          onClick: (_row, _nav) => openCancelConfirm(_row),
+          onClick: (_row) => { openCancelConfirm(_row); },
           isDisabled: (row) => row.status !== INVOICE_PENDIENTE_ADDENDA && row.status !== INVOICE_RECIBIDO_PARCIAL,
         },
         
       ]
     : [];
 
-  const filterFields: FilterField[] = [
-    {
-      key: "fechaRecepcion",
-      label: "Fecha de Recepción",
-      type: "dateRange",
-      required: true,
-    },
-    {
-      key: "rfcEmisor",
-      label: "Proveedor",
-      type: "select",
-      options: providers,
-    },
-    {
-      key: "serie",
-      label: "Serie",
-      type: "text",
-      placeholder: "XXXX000XXX",
-    },
-    {
-      key: "folio",
-      label: "Folio",
-      type: "text",
-      placeholder: "000000",
-    },
-    {
-      key: "uuid",
-      label: "UUID",
-      type: "text",
-      placeholder: "000000-0000-0000",
-    },
-    {
-      key: "estatus",
-      label: "Estatus",
-      type: "select",
-      options: statusInvoices,
-      placeholder: "Estado",
-    },
-  ];
+  const filterFields: FilterField[] = useMemo(
+    () => [
+      {
+        key: "idProveedor",
+        label: "Nombre Proveedor",
+        type: "providerSelect",
+      },
+      {
+        key: "serie",
+        label: "Serie",
+        type: "text",
+      },
+      {
+        key: "folio",
+        label: "Folio",
+        type: "text",
+      },
+      {
+        key: "uuid",
+        label: "UUID",
+        type: "text",
+      },
+      {
+        key: "tipoProveedor",
+        label: "Tipo Proveedor",
+        type: "selectFloating",
+        options: providerTypeOptions,
+      },
+      {
+        key: "estatus",
+        label: "Estado",
+        type: "selectFloating",
+        options: statusInvoices,
+      },
+      {
+        key: "fechaRecepcion",
+        label: "Fecha búsqueda",
+        type: "dateRange",
+        required: true,
+      },
+    ],
+    [providerTypeOptions, statusInvoices]
+  );
 
   return decorate(
     breadcrumb,
     "/",
     <div>
-      <Title title="Listado de Facturas" description="Consulta el historial de facturas emitidas y su estatus de validación." />
+      <Title
+        title="Listado de Facturas"
+        description="Consulte el historial de facturas recibidas y el estatus de validación de cada una."
+        actions={
+          <ExportCsvButton
+            disabled={!canExportCsv}
+            onClick={() => gridRef.current?.exportCsv()}
+          />
+        }
+      />
       <GenericModal
         visible={reprocessConfirmOpen}
         variant="confirm"
         message={reprocessConfirmMessage}
         confirmText="Aceptar"
         cancelText="Cancelar"
-        onConfirm={handleReprocessConfirm}
+        onConfirm={() => { handleReprocessConfirm(); }}
         onCancel={() => {
           setReprocessConfirmOpen(false);
           setReprocessConfirmRow(null);
@@ -278,7 +348,7 @@ export default function InvoicesGrid() {
         message={cancelConfirmMessage}
         confirmText="Aceptar"
         cancelText="Cancelar"
-        onConfirm={handleCancelConfirm}
+        onConfirm={() => { handleCancelConfirm(); }}
         onCancel={() => {
           setCancelConfirmOpen(false);
           setCancelConfirmRow(null);
@@ -293,18 +363,57 @@ export default function InvoicesGrid() {
         />
       )}
       
-      <ModalMsg severity="error" visible={!!errorMsg} msg={errorMsg || ""} onClose={() => setErrorMsg(null)} />
+      <GenericModal
+        visible={!!errorMsg}
+        variant="alert"
+        severity="error"
+        title="Error"
+        message={errorMsg || ""}
+        buttonText="Aceptar"
+        onClose={() => setErrorMsg(null)}
+        onConfirm={() => setErrorMsg(null)}
+      />
       
       <ReusableFiltersBar<InvoiceFilters>
         key={customFilters.uuid ? `invoice-${customFilters.uuid}` : "invoice-default"}
         fields={filterFields}
         initialFilters={initialFilters}
+        resetFiltersOnClear={EMPTY_INVOICE}
         onSearch={handleSearch}
+        onFiltersChange={handleFiltersChange}
+        onClear={handleFiltersClear}
         onHydrated={(f) => {
-          setFilters(f);
           setFiltersReady(true);
+
+          if (returningFromDetail) {
+            setFilters(f);
+            return;
+          }
+
+          const urlKey = [
+            customFilters.uuid?.trim(),
+            customFilters.fechaInicioRecepcion?.trim(),
+            customFilters.fechaFinalRecepcion?.trim(),
+          ]
+            .filter(Boolean)
+            .join("|");
+
+          const canAutoSearch =
+            urlKey &&
+            f.fechaInicioRecepcion?.trim() &&
+            f.fechaFinalRecepcion?.trim() &&
+            deepLinkSearchedRef.current !== urlKey;
+
+          if (canAutoSearch) {
+            deepLinkSearchedRef.current = urlKey;
+            handleSearch(f);
+            return;
+          }
+
+          setFilters(f);
         }}
-        storageKey={customFilters.uuid ? undefined : "invoiceFilters"}
+        sessionFiltersKey={FISCAL_LIST_KEYS.invoices.filters}
+        restoreSavedFilters={returningFromDetail}
         validateFilters={(f) => {
           if (!f.fechaInicioRecepcion || !f.fechaFinalRecepcion) {
             return "Las fechas de recepción son obligatorias";
@@ -316,20 +425,25 @@ export default function InvoicesGrid() {
       {filtersReady && (
         <div key={refreshKey}>
           <DataGrid<Invoice, InvoiceFilters>
+            ref={gridRef}
             columns={columns}
             rowActions={rowActions}
             getRowId={r => r.invoiceUuid}
             fetchFn={fetchFnOrEmpty}
             filters={filters}
+            fetchEnabled={hasSearched}
             initialPage={0}
             initialSize={10}
             selectable
             enableCsv
+            hideCsvToolbar
+            onExportAvailabilityChange={setCanExportCsv}
             csvFilename={`Facturas ${formatDate(new Date().toString(), true)}`}
             enableXml
             enablePdf
             getXmlContent={handleGetXmlContent}
-            filtersEmpty={areFiltersEmpty(filters)}
+            getFilename={getXmlFileNameFromRow}
+            filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
           />
         </div>
       )}

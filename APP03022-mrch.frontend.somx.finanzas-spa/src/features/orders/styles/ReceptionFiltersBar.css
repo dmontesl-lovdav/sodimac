@@ -15,19 +15,19 @@
 }
 
 /* Que no se “encojan” raro y queden alineados */
-.rc-row .somx-input-wrapper,
-.rc-row .somx-select-wrapper {
+.rc-row .generic-textfield-wrapper,
+.rc-row .generic-select-container {
     width: auto !important;
     min-width: 180px;
     flex: 0 0 auto;
 }
 
 /* Select un poco más ancho */
-.rc-row .somx-select-wrapper {
+.rc-row .generic-select-container {
     min-width: 220px;
 }
 
 /* Inputs internos */
-.rc-row .somx-input {
+.rc-row .generic-textfield-input {
     width: 180px;
 }

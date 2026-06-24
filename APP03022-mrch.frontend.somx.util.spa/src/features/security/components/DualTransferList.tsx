@@ -103,7 +103,9 @@ export function DualTransferList({
     <div className="dual-layout">
       <div className="dual-header">
         <h2>{title}</h2>
-        <GenericButton variant="link" onClick={onBack}>Volver</GenericButton>
+        <GenericButton variant="primary" onClick={submit} disabled={loading}>
+          {loading ? 'Guardando...' : 'Guardar'}
+        </GenericButton>
       </div>
 
       <div className="dual-grid">
@@ -161,8 +163,9 @@ export function DualTransferList({
         </section>
 
         <section className="dual-controls">
-          <GenericButton variant="outline" onClick={() => moveRight(Array.from(leftSelected))}>→</GenericButton>
-          <GenericButton variant="outline" onClick={() => moveLeft(Array.from(rightSelected))}>←</GenericButton>
+          <GenericButton variant="outlineFill" onClick={() => moveRight(Array.from(leftSelected))}>&gt;&gt;</GenericButton>
+     
+          <GenericButton variant="outlineFill" onClick={() => moveLeft(Array.from(rightSelected))}>&lt;&lt;</GenericButton>
         </section>
 
         <section
@@ -203,9 +206,9 @@ export function DualTransferList({
         </section>
       </div>
 
-      <div className="security-footer">
-        <GenericButton variant="primary" onClick={submit} disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar cambios '}
+      <div className="dual-back">
+        <GenericButton variant="back" onClick={onBack}>
+          Volver
         </GenericButton>
       </div>
     </div>

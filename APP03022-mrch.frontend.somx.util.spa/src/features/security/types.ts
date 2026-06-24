@@ -88,3 +88,95 @@ export interface CreateUserAttributePayload {
   attributeValueId: number;
 }
 
+export interface UserCatalogSearchFilters {
+  startDate: string;
+  endDate: string;
+  email: string;
+  name: string;
+  status: StatusValue;
+}
+
+export interface UserCatalogRow {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string | null;
+  status: number;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+export interface UserCatalogSearchResult {
+  items: UserCatalogRow[];
+  total: number;
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortDir: string;
+  warningCode?: string;
+  warningMessage?: string;
+}
+
+export interface CatalogDetailGridRow {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface UserApplicationEventRow {
+  moduleProcessId: number;
+  processId: number;
+  name: string;
+  description: string;
+  assigned: boolean;
+}
+
+/** Aplicación en catálogo con eventos anidados (solo lectura) */
+export type UserCatalogApplicationRow = CatalogDetailGridRow & {
+  events: UserApplicationEventRow[];
+};
+
+export interface PagedSection<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface PermissionEventMatrixRow {
+  permissionId: number;
+  permissionName: string;
+  permissionKey: string;
+  roleId: number;
+  roleName: string;
+  moduleId: number;
+  moduleName: string;
+  processId: number;
+  processName: string;
+  processKey: string;
+  effective: boolean;
+}
+
+export type UserCatalogDetailResponse = {
+  header: UserCatalogRow;
+  profile: CatalogDetailGridRow | null;
+  multipleProfilesDetected: boolean;
+  roles: PagedSection<CatalogDetailGridRow>;
+  applications: PagedSection<UserCatalogApplicationRow>;
+  permissionEventMatrix: PagedSection<PermissionEventMatrixRow>;
+  attributes: PagedSection<CatalogDetailGridRow>;
+  userLookupKey: string;
+};
+
+export type UserCatalogDetailQuery = {
+  rolesPage?: number;
+  applicationsPage?: number;
+  attributesPage?: number;
+  matrixPage?: number;
+  matrixPageSize?: number;
+};
+
+export type UserApplicationEventsResponse = {
+  application: CatalogDetailGridRow;
+  events: UserApplicationEventRow[];
+};

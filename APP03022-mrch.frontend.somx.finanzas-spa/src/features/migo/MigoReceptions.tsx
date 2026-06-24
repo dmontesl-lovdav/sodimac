@@ -1,13 +1,20 @@
 import { ReactElement, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Breadcrumb, GenericModal, GenericButton } from '@shared/components/ui';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { useFinanceAlertModal } from '@/shared/hooks/useFinanceAlertModal';
+import {
+    FINANCE_LIST_KEYS,
+    useFinanceListReturnFromDetail,
+} from '@/shared/hooks';
 import GenericTable from '@/shared/components/ui/table/GenericTable';
 import type { Column, RowAction } from '@/shared/components/ui/table/GenericTable';
 import { StatusPill } from '@/shared/components/ui/statusPill/StatusPill';
-import { Divider } from '@/shared/components/ui/misc';
+import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
 
 import eyeIcon from '@assets/eye-show.svg';
 
+import { formatDate } from '@/utils/utils';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoReception } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
@@ -24,6 +31,8 @@ interface GroupedReception {
     fechaRecepcion: string;
     importeSinImpuesto: number;
     montoOc: number;
+    vendorName: string;
+    emailFinancial: string;
 }
 
 function statusPillType(status: number): string {
@@ -37,14 +46,15 @@ function formatCurrency(val: number | undefined | null): string {
     return Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2 });
 }
 
-function formatDate(d?: string): string {
-    if (!d) return '-';
-    return new Date(d).toLocaleDateString('es-MX');
-}
-
 export default function MigoReceptions(): ReactElement {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const financeAlert = useFinanceAlertModal();
+
+    useFinanceListReturnFromDetail(
+        FINANCE_LIST_KEYS.migo.moduleKey,
+        FINANCE_LIST_KEYS.migo.listPath
+    );
 
     const [doc, setDoc] = useState<MigoDocument | null>(null);
     const [allReceptions, setAllReceptions] = useState<MigoReception[]>([]);
@@ -52,15 +62,17 @@ export default function MigoReceptions(): ReactElement {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
 
-    const [alertModal, setAlertModal] = useState({ visible: false, message: '' });
-
     const loadDocument = useCallback(async () => {
         if (!id) return;
         try {
             const res: any = await migoService.getById(id);
             setDoc(res?.data ?? res);
         } catch (err) {
-            console.error('[MIGO] getById error', err);
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'No fue posible obtener el documento MIGO.',
+            );
         }
     }, [id]);
 
@@ -70,9 +82,20 @@ export default function MigoReceptions(): ReactElement {
         try {
             const res: any = await migoService.getReceptions(id, 1, 5000);
             const pageData = res?.data ?? res;
-            setAllReceptions(pageData?.content ?? []);
+            const list = pageData?.content ?? [];
+            setAllReceptions(list);
+            if (list.length === 0) {
+                financeAlert.showWarning(
+                    'Sin registros',
+                    'Este documento no tiene recepciones agrupadas para mostrar.',
+                );
+            }
         } catch (err) {
-            console.error('[MIGO] getReceptions error', err);
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'No fue posible cargar las recepciones del documento.',
+            );
             setAllReceptions([]);
         } finally {
             setLoading(false);
@@ -82,7 +105,7 @@ export default function MigoReceptions(): ReactElement {
     useEffect(() => {
         loadDocument();
         loadAllReceptions();
-    }, [id]);
+    }, [loadDocument, loadAllReceptions]);
 
     const groupedReceptions: GroupedReception[] = useMemo(() => {
         const groups = new Map<string, GroupedReception>();
@@ -99,6 +122,8 @@ export default function MigoReceptions(): ReactElement {
                     fechaRecepcion: r.fechaRecepcion,
                     importeSinImpuesto: r.importeSinImpuesto,
                     montoOc: r.montoOc ?? 0,
+                    vendorName: (r.vendorName ?? '').trim(),
+                    emailFinancial: (r.emailFinancial ?? '').trim(),
                 });
             }
         }
@@ -115,8 +140,11 @@ export default function MigoReceptions(): ReactElement {
         try {
             await migoService.exportCsv(id);
         } catch (err) {
-            console.error('[MIGO] export error', err);
-            setAlertModal({ visible: true, message: 'Error al exportar las recepciones.' });
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'Error al exportar las recepciones.',
+            );
         }
     };
 
@@ -126,6 +154,8 @@ export default function MigoReceptions(): ReactElement {
         { header: 'Nro. Orden de Compra', render: (r) => r.nroOc },
         { header: 'Nro. Recepción', render: (r) => r.nroRecepcion },
         { header: 'Sucursal', align: 'center', render: (r) => r.sucursal },
+        { header: 'Proveedor', render: (r) => r.vendorName || '--' },
+        { header: 'Correo electrónico', render: (r) => r.emailFinancial || '--' },
         { header: 'Nro. Guía', render: (r) => r.nroGuia },
         { header: 'Origen', render: (r) => r.origen },
         { header: 'Fecha Recepción', render: (r) => formatDate(r.fechaRecepcion) },
@@ -144,16 +174,31 @@ export default function MigoReceptions(): ReactElement {
     return (
         <div className="migo-layout">
             <Breadcrumb
-                items={[
-                    { label: 'Finanzas', to: '/' },
-                    { label: 'Publicación de recepción MIGO', to: '/finanzas/migo' },
+                items={withFinanceBreadcrumb([
+                    {
+                        label: 'Publicación de recepción MIGO',
+                        onClick: () =>
+                            navigate('/finanzas/migo', { state: { resetFilters: true } }),
+                    },
                     { label: doc?.folio ?? 'Recepciones' },
-                ]}
+                ])}
             />
 
             <div className="migo-box">
+                <div className="migo-header">
+                    <div>
+                        <h3 className="migo-title">Órdenes de Compra y Recepciones</h3>
+                        <p className="migo-description">Listado de OC y recepciones publicadas en el documento.</p>
+                    </div>
+                    <div className="migo-toolbar finz-toolbar-actions">
+                        <GenericButton variant="primary" onClick={handleExportCsv}>
+                            Exportar CSV
+                        </GenericButton>
+                    </div>
+                </div>
+
                 {doc && (
-                    <div className="migo-summary-card">
+                    <div className="migo-summary-card" style={{ marginTop: 16 }}>
                         <div>
                             <div className="migo-summary-label">Folio</div>
                             <div className="migo-summary-value">{doc.folio}</div>
@@ -179,23 +224,6 @@ export default function MigoReceptions(): ReactElement {
                     </div>
                 )}
 
-                <div className="migo-header">
-                    <div>
-                        <h3 className="migo-title">Órdenes de Compra y Recepciones</h3>
-                        <p className="migo-description">Listado de OC y recepciones publicadas en el documento.</p>
-                    </div>
-                    <div className="migo-toolbar">
-                        <GenericButton variant="outline" onClick={() => navigate('/finanzas/migo')}>
-                            Regresar
-                        </GenericButton>
-                        <GenericButton variant="primary" onClick={handleExportCsv}>
-                            Exportar CSV
-                        </GenericButton>
-                    </div>
-                </div>
-
-                <Divider />
-
                 <div className="migo-grid-section">
                     <GenericTable<GroupedReception>
                         rows={pageItems}
@@ -211,16 +239,22 @@ export default function MigoReceptions(): ReactElement {
                     />
                 </div>
 
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                    <BackLinkButton onClick={() => navigate('/finanzas/migo')}>
+                        Volver
+                    </BackLinkButton>
+                </div>
+
                 {loading && <GenericModal visible variant="loading" message="Cargando recepciones..." />}
 
                 <GenericModal
-                    visible={alertModal.visible}
+                    visible={financeAlert.alertVisible}
                     variant="alert"
-                    severity="error"
-                    title="Error"
-                    message={alertModal.message}
+                    severity={financeAlert.alertSeverity}
+                    title={financeAlert.alertTitle}
+                    message={financeAlert.alertMessage}
                     buttonText="Aceptar"
-                    onClose={() => setAlertModal({ visible: false, message: '' })}
+                    onClose={financeAlert.closeAlert}
                 />
             </div>
         </div>

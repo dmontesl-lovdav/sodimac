@@ -51,6 +51,8 @@ export interface UsePaginatedDataOptions<T, F> {
   initialPage?: number;
   initialSize?: number;
   onError?: (err: unknown) => void;
+  /** Si es false, no consulta hasta que el usuario dispare búsqueda (p. ej. clic en Buscar). */
+  fetchEnabled?: boolean;
 }
 
 export function usePaginatedData<T, F = Record<string, unknown>>({
@@ -59,6 +61,7 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
   initialPage = 0,
   initialSize = 10,
   onError,
+  fetchEnabled = false,
 }: UsePaginatedDataOptions<T, F>) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<ApiErrorPayload | null>(null);
@@ -68,105 +71,135 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
   const [size, setSize] = useState<number>(initialSize);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalItems, setTotalItems] = useState<number>(0);
-  
+
   const getFiltersWithoutPagination = (f: F): string => {
     const snapshot: FiltersSnapshot = { ...(f as FiltersSnapshot) };
     delete snapshot.page;
     delete snapshot.size;
     return JSON.stringify(snapshot);
   };
-  
+
   const previousFiltersRef = useRef<string>(getFiltersWithoutPagination(initialFilters));
+  const prevFetchEnabledRef = useRef(false);
 
-  const fetchData = useCallback(async (currentFilters: F, currentPage: number, currentSize: number) => {
-    try {
-      setError(null);
-      setLoading(true);
-      const result = await fetchFn({
-        ...currentFilters,
-        page: currentPage,
-        size: currentSize,
-      });
-      const raw = result as FetchResultShape<T>;
-      const data = raw?.data ?? raw;
-      const content = raw?.content ?? data?.content ?? [];
-      const totalElements = raw?.totalElements ?? data?.totalElements ?? (Array.isArray(content) ? content.length : 0);
-      const totalPages = raw?.totalPages ?? data?.totalPages ?? Math.ceil(totalElements / currentSize);
-      const pageResult = raw?.page ?? data?.page ?? currentPage;
+  const fetchData = useCallback(
+    async (currentFilters: F, currentPage: number, currentSize: number) => {
+      try {
+        setError(null);
+        setLoading(true);
+        const result = await fetchFn({
+          ...currentFilters,
+          page: currentPage,
+          size: currentSize,
+        });
+        const raw = result as FetchResultShape<T>;
+        const data = raw?.data ?? raw;
+        const content = raw?.content ?? data?.content ?? [];
+        const totalElements =
+          raw?.totalElements ?? data?.totalElements ?? (Array.isArray(content) ? content.length : 0);
+        const totalPages = raw?.totalPages ?? data?.totalPages ?? Math.ceil(totalElements / currentSize);
+        const pageResult = raw?.page ?? data?.page ?? currentPage;
 
-      setRows(Array.isArray(content) ? content : []);
-      setTotalPages(totalPages);
-      setTotalItems(totalElements);
-      setPage(pageResult);
-    } catch (err) {
-      onError?.(err);
-      console.error("Error al obtener datos:", err);
-      const payload = parseFetchError(err) ?? { message: "Error al obtener los datos" };
-      setError(payload);
-      setRows([]);
-      setTotalPages(0);
-      setTotalItems(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchFn, onError]);
+        setRows(Array.isArray(content) ? content : []);
+        setTotalPages(totalPages);
+        setTotalItems(totalElements);
+        setPage(pageResult);
+      } catch (err) {
+        onError?.(err);
+        console.error("Error al obtener datos:", err);
+        const payload = parseFetchError(err) ?? { message: "Error al obtener los datos" };
+        setError(payload);
+        setRows([]);
+        setTotalPages(0);
+        setTotalItems(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchFn, onError]
+  );
 
-  const search = useCallback((newFilters: F) => {
-    setFilters(newFilters);
-    fetchData(newFilters, 0, size);
-  }, [fetchData, size]);
+  const search = useCallback(
+    (newFilters: F) => {
+      setFilters(newFilters);
+      fetchData(newFilters, 0, size);
+    },
+    [fetchData, size]
+  );
 
-  const changePage = useCallback((newPage: number) => {
-    const pageIndex = newPage - 1; // Convertir de 1-indexed a 0-indexed
-    setPage(pageIndex);
-    fetchData(filters, pageIndex, size);
-  }, [filters, size, fetchData]);
+  const changePage = useCallback(
+    (newPage: number) => {
+      if (!fetchEnabled) return;
+      const pageIndex = newPage - 1;
+      setPage(pageIndex);
+      fetchData(filters, pageIndex, size);
+    },
+    [filters, size, fetchData, fetchEnabled]
+  );
 
-  const changePerPage = useCallback((newSize: number) => {
-    setSize(newSize);
-    setPage(0);
-    fetchData(filters, 0, newSize);
-  }, [filters, fetchData]);
-
-  // Cargar datos iniciales
-  useEffect(() => {
-    fetchData(initialFilters, initialPage, initialSize);
-    setFilters(initialFilters);
-    setPage(initialPage);
-    setSize(initialSize);
-    previousFiltersRef.current = getFiltersWithoutPagination(initialFilters);
-  }, []); // Solo al montar
+  const changePerPage = useCallback(
+    (newSize: number) => {
+      if (!fetchEnabled) return;
+      setSize(newSize);
+      setPage(0);
+      fetchData(filters, 0, newSize);
+    },
+    [filters, fetchData, fetchEnabled]
+  );
 
   const fetchDataRef = useRef(fetchData);
   fetchDataRef.current = fetchData;
 
-  // Sincronizar filtros externos cuando cambian (detectar cambios en initialFilters)
+  // Sin búsqueda activa: sincronizar filtros y vaciar resultados previos
   useEffect(() => {
+    if (fetchEnabled) return;
+    setFilters(initialFilters);
+    previousFiltersRef.current = getFiltersWithoutPagination(initialFilters);
+    setRows([]);
+    setTotalPages(0);
+    setTotalItems(0);
+    setError(null);
+    setLoading(false);
+  }, [initialFilters, fetchEnabled]);
+
+  // Consultar solo cuando fetchEnabled (Buscar) o al cambiar filtros tras una búsqueda
+  useEffect(() => {
+    if (!fetchEnabled) {
+      prevFetchEnabledRef.current = false;
+      return;
+    }
+
+    const enabledJustNow = !prevFetchEnabledRef.current;
+    prevFetchEnabledRef.current = true;
+
     const currentFiltersStr = getFiltersWithoutPagination(initialFilters);
-    
-    // Solo actualizar si los filtros realmente cambiaron (ignorando page y size)
-    if (currentFiltersStr !== previousFiltersRef.current) {
+    const filtersChanged = currentFiltersStr !== previousFiltersRef.current;
+
+    if (enabledJustNow || filtersChanged) {
       previousFiltersRef.current = currentFiltersStr;
-      const newSize = initialSize !== undefined ? initialSize : size;
       setFilters(initialFilters);
       setPage(initialPage);
+      const newSize = initialSize ?? size;
       setSize(newSize);
       fetchDataRef.current(initialFilters, initialPage, newSize);
     }
-  }, [initialFilters, initialPage, initialSize, size]);
+  }, [initialFilters, initialPage, initialSize, fetchEnabled, size]);
 
   return {
     loading,
     error,
     rows,
     filters,
-    page: page + 1, // Convertir a 1-indexed para la UI
+    page: page + 1,
     size,
     totalPages,
     totalItems,
     search,
     changePage,
     changePerPage,
-    refresh: () => fetchData(filters, page, size),
+    refresh: () => {
+      if (!fetchEnabled) return Promise.resolve();
+      return fetchData(filters, page, size);
+    },
   };
 }

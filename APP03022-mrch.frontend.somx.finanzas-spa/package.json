@@ -6,12 +6,16 @@
     "start": "cross-env NODE_ENV=development webpack serve --mode development --config config/webpack.config.js",
     "dev": "cross-env NODE_ENV=development webpack serve --mode development --config config/webpack.config.js",
     "build": "cross-env NODE_ENV=production webpack --mode production --config config/webpack.config.js",
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "jest --passWithNoTests",
+    "test:cov": "bash ./scripts/test-cov.sh"
   },
   "engines": {
     "node": ">=20.18.1"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.11",
     "@reduxjs/toolkit": "^1.8.5",
     "axios": "^1.7.2",
     "cross-env": "^7.0.3",
@@ -52,6 +56,9 @@
     "typescript": "^4.7.3",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2"
+    "webpack-dev-server": "^5.2.2",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
   }
 }

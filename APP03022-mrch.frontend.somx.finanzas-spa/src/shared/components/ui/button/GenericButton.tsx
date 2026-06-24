@@ -7,7 +7,8 @@ type Variant =
   | 'link'
   | 'outlineFill'
   | 'text'
-  | 'cancel';
+  | 'cancel'
+  | 'back';
 
 interface GenericButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -20,6 +21,7 @@ export default function GenericButton({
   className = '',
   style,
   disabled = false,
+  type = 'button',
   ...props
 }: GenericButtonProps) {
 
@@ -30,11 +32,13 @@ export default function GenericButton({
     outlineFill: 'btn-outlineFill',
     text: 'btn-text',
     cancel: 'btn-cancel',
+    back: 'btn-back',
   };
 
   return (
     <button
       {...props}
+      type={type}
       disabled={disabled}
       style={style}
       className={[

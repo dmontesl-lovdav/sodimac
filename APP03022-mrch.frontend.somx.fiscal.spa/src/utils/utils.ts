@@ -57,6 +57,47 @@ export function formatAmount(amount: number){
 
 }
 
+/** Inicio/fin del día en hora local (filtros alineados al calendario del usuario). */
+export function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+export function endOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+
+/** `YYYY-MM-DD` en hora local (evita desfase de `toISOString()`). */
+export function formatLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function parseLocalDateStr(value: unknown): Date | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parsed = new Date(`${trimmed}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** Rango [inicio, fin] del día actual (hora local). */
+export function fiscalFilterTodayDateRange(): [Date, Date] {
+  const t = new Date();
+  return [startOfLocalDay(t), endOfLocalDay(t)];
+}
+
+export function isDateRangeOverSixMonths(start: Date, end: Date): boolean {
+  const diffMonths =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+  return diffMonths > 6;
+}
+
 const escapeCSVValues = (values: string[] | number[]) => {
     const escaped = values.map(item=>{
         const str = String(item).replace(/"/g, '""'); 
@@ -182,11 +223,73 @@ export async function fetchCatalog(catalog: keyof typeof Catalogs): Promise<Cata
   }*/
 }
 
+/** Catálogo remoto (p. ej. CatTipoProveedor) vía API de catálogos. */
+export async function fetchCatalogDetails(
+  catalogName: string
+): Promise<unknown | null> {
+  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  if (base) {
+    const path = catalogName.replace(/^\/+/, "");
+    try {
+      const response = await fetch(`${base}/catalog/${path}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error("fetchCatalogDetails:", error);
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(Catalogs, catalogName)) {
+    return fetchCatalog(catalogName as keyof typeof Catalogs);
+  }
+
+  return null;
+}
+
+/** Opciones para listbox de filtros a partir de filas de catálogo. */
+export function mapCatalogResponseToFilterOptions(
+  data: unknown
+): SelectableOption<string>[] | null {
+  const raw = data as Record<string, unknown> | null | undefined;
+  const rows: unknown[] = Array.isArray(data)
+    ? data
+    : Array.isArray(raw?.details)
+      ? (raw.details as unknown[])
+      : Array.isArray(raw?.content)
+        ? (raw.content as unknown[])
+        : Array.isArray(raw?.items)
+          ? (raw.items as unknown[])
+          : [];
+
+  if (!rows.length) return null;
+
+  const mapped = rows
+    .map((rowUnknown) => {
+      const row = rowUnknown as Record<string, unknown>;
+      const value = String(
+        row.internalStatus ??
+          row.internalKey ??
+          row.id ??
+          row.value ??
+          row.key ??
+          ""
+      );
+      const label = String(
+        row.description ?? row.label ?? row.name ?? row.value ?? value
+      );
+      return { label, value };
+    })
+    .filter((x) => x.value !== "" && x.label !== "");
+
+  if (!mapped.length) return null;
+
+  return [{ label: "Todos los tipos", value: " " }, ...mapped];
+}
+
 
 export async function fetchProvidersAsCatalog(valueField = "rfc", fullList: boolean = false): Promise<SelectableOption[] | null> {
-  //const catalogs_api = String(process.env.API_CATALOGS_URL || "") + String(process.env.API_PROVIDERS || "");
-  //HARDCODE para pruebas
-  const catalogs_api = "https://mocki.io/v1/a04657b3-b640-4ca7-b45b-8dfd865a9830";
+  const catalogs_api = String(process.env.CATALOGS_API_URL || "") + String(process.env.API_PROVIDERS || "");
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
@@ -219,6 +322,25 @@ export async function fetchProvidersAsCatalog(valueField = "rfc", fullList: bool
   }
 }
 
+export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "Todos"): SelectableOption<string>[] {
+  const raw = data as Record<string, unknown> | null | undefined;
+  const rows: CatalogDetail[] = Array.isArray(data)
+    ? data
+    : Array.isArray(raw?.details)
+      ? (raw.details as unknown[])
+      : [];
+  const mapped = rows
+    .map((row) => ({
+      label: row.description,
+      value: String(row.value ?? ""),
+    })).filter(r => !r.label.toLowerCase().includes("borra") && r.value !== "")
+    .sort((a, b) => Number(a.value) - Number(b.value));
+  return [
+    { label: labelSet, value: " " },
+    ...mapped
+  ];
+}
+
 export const getStandardFilename = (r: any) => {
   const serie = r?.series || "";
   const folio = r?.folio || "";
@@ -230,6 +352,19 @@ export const getStandardFilename = (r: any) => {
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const timestamp = `${year}${month}${day}.${hours}${minutes}`;
   return `${serie}-${folio}-${timestamp}`;
+};
+
+/** Nombre de archivo XML a partir del UUID del registro del grid (p. ej. `2635eeba-....xml`). */
+export function getXmlFileNameFromRow(row: {
+  invoiceUuid?: string | null;
+  fiscalUuid?: string | null;
+  paymentsUuid?: string | null;
+}): string {
+  const uuid =
+    row.fiscalUuid?.trim()
+    row.invoiceUuid?.trim() ||
+    "";
+  return uuid ? `${uuid}.xml` : "documento.xml";
 }
 
 /**

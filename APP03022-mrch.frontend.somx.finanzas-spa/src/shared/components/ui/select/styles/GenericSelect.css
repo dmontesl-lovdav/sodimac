@@ -13,6 +13,24 @@
     /* tamaño similar a UAT */
 }
 
+.gs-width-sm {
+    width: 118px;
+}
+
+/* Entre compacto y default (p. ej. proveedor en recepciones) */
+.gs-width-md {
+    width: 174px;
+}
+
+/** Filtro «Nombre Proveedor»: +20px respecto al ancho md habitual. */
+.gs-width-provider {
+    width: 194px;
+}
+
+.gs-width-lg {
+    width: 300px;
+}
+
 /* SELECT BASE */
 .generic-select {
     height: 40px;

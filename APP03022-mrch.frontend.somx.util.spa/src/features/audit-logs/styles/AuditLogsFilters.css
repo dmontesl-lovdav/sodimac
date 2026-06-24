@@ -1,0 +1,40 @@
+.al-filters {
+    width: 100%;
+}
+
+.al-filters .al-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.al-filters .al-row > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.al-filters .al-row .al-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 1024px) {
+    .al-filters .al-row {
+        flex-wrap: wrap;
+    }
+
+    .al-filters .al-row > * {
+        flex: 1 1 220px;
+    }
+
+    .al-filters .al-row .al-actions {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+    }
+}

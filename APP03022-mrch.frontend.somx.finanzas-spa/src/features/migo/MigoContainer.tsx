@@ -1,6 +1,7 @@
-import { ReactElement, useState, useCallback, useMemo } from 'react';
+import { ReactElement, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Breadcrumb, GenericModal, GenericButton } from '@shared/components/ui';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 import GenericDateRangePicker from '@/shared/components/ui/date/GenericDateRangePicker';
 import GenericTable from '@/shared/components/ui/table/GenericTable';
 import type { Column, RowAction } from '@/shared/components/ui/table/GenericTable';
@@ -16,6 +17,19 @@ import type { MigoDocument, MigoSearchFilters } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
 
 import './styles/MigoContainer.css';
+import { useFinanceAlertModal } from '@/shared/hooks/useFinanceAlertModal';
+import {
+    useFinanceListScreenSession,
+    useFinanceListRefetchOnReturn,
+    FINANCE_LIST_KEYS,
+    readFinanceListFilters,
+    saveFinanceListFilters,
+    financeListTodayDateRange,
+    formatFinanceListLocalDate,
+    parseFinanceListDateRange,
+    useFinanceListDefaultsOnUrlReset,
+} from '@/shared/hooks';
+import { formatDate } from '@/utils/utils';
 
 type DateRange = [Date | null, Date | null];
 
@@ -34,26 +48,6 @@ function statusPillType(status: number): string {
     return 'info';
 }
 
-function formatDate(d?: string): string {
-    if (!d) return '-';
-
-    const directMatch = d.match(/^(\d{1,2})([/-])(\d{1,2})\2(\d{4})$/);
-    if (directMatch) {
-        const day = directMatch[1].padStart(2, '0');
-        const separator = directMatch[2];
-        const month = directMatch[3].padStart(2, '0');
-        const year = directMatch[4];
-        return `${day}${separator}${month}${separator}${year}`;
-    }
-
-    const parsed = new Date(d);
-    if (Number.isNaN(parsed.getTime())) return d;
-
-    return parsed.toLocaleDateString('es-MX', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-    });
-}
-
 function formatCurrency(val: number | undefined | null): string {
     if (val == null || Number.isNaN(Number(val))) return '-';
     return Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2 });
@@ -62,6 +56,8 @@ function formatCurrency(val: number | undefined | null): string {
 export default function MigoContainer(): ReactElement {
     const navigate = useNavigate();
     const location = useLocation();
+    const financeAlert = useFinanceAlertModal();
+    const notifyIfEmptySearch = useRef(false);
     const [searchParams] = useSearchParams();
 
     const locationState = (location.state as any) || {};
@@ -117,7 +113,37 @@ export default function MigoContainer(): ReactElement {
     const [totalItems, setTotalItems] = useState(0);
     const [searchApplied, setSearchApplied] = useState(false);
 
-    const [dateRange, setDateRange] = useState<DateRange>([null, null]);
+    const returningFromDetail = useFinanceListScreenSession(FINANCE_LIST_KEYS.migo);
+
+    const applyFilterDefaults = useCallback(() => {
+        setDateRange(financeListTodayDateRange());
+        setFileNameFilter('');
+        setRows([]);
+        setSearchApplied(false);
+        setTotalItems(0);
+        setTotalPages(1);
+        setPage(1);
+    }, []);
+
+    useFinanceListDefaultsOnUrlReset(
+        FINANCE_LIST_KEYS.migo.moduleKey,
+        applyFilterDefaults
+    );
+
+    const [dateRange, setDateRange] = useState<DateRange>(() => {
+        const saved = readFinanceListFilters<{
+            publishedAtStart?: string;
+            publishedAtEnd?: string;
+        }>(FINANCE_LIST_KEYS.migo.filters);
+        if (saved?.publishedAtStart && saved?.publishedAtEnd) {
+            const [start, end] = parseFinanceListDateRange(
+                saved.publishedAtStart,
+                saved.publishedAtEnd
+            );
+            if (start && end) return [start, end];
+        }
+        return financeListTodayDateRange();
+    });
     const [fileNameFilter, setFileNameFilter] = useState('');
 
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -125,11 +151,17 @@ export default function MigoContainer(): ReactElement {
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
-    const [alertModal, setAlertModal] = useState({ visible: false, message: '' });
+    const [authorizeTarget, setAuthorizeTarget] = useState<MigoDocument | null>(null);
+    const [authorizeModalOpen, setAuthorizeModalOpen] = useState(false);
+
+    const toIsoStartOfDay = (d: Date): string =>
+        new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
+    const toIsoEndOfDay = (d: Date): string =>
+        new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
 
     const buildFilters = useCallback((p: number, ps: number): MigoSearchFilters => ({
-        publishedAtStart: dateRange[0]?.toISOString().split('T')[0] ?? '',
-        publishedAtEnd: dateRange[1]?.toISOString().split('T')[0] ?? '',
+        publishedAtStart: dateRange[0] ? toIsoStartOfDay(dateRange[0]) : '',
+        publishedAtEnd: dateRange[1] ? toIsoEndOfDay(dateRange[1]) : '',
         fileName: fileNameFilter || undefined,
         pageNumber: p,
         pageSize: ps,
@@ -140,13 +172,25 @@ export default function MigoContainer(): ReactElement {
         try {
             const res: any = await migoService.search(buildFilters(p, ps));
             const pageData = res?.data ?? res;
-            setRows(pageData?.content ?? []);
+            const content = pageData?.content ?? [];
+            setRows(content);
             setTotalItems(pageData?.totalElements ?? 0);
             setTotalPages(pageData?.totalPages ?? 1);
+            if (notifyIfEmptySearch.current && content.length === 0) {
+                financeAlert.showWarning(
+                    'Sin registros',
+                    'No se encontraron documentos MIGO con los criterios indicados.',
+                );
+                notifyIfEmptySearch.current = false;
+            }
         } catch (err) {
-            console.error('[MIGO] search error', err);
+            notifyIfEmptySearch.current = false;
             setRows([]);
-            setAlertModal({ visible: true, message: 'Ocurrió un error al conectar con el servidor para obtener los documentos MIGO.' });
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'Ocurrió un error al conectar con el servidor para obtener los documentos MIGO.',
+            );
         } finally {
             setLoading(false);
         }
@@ -154,16 +198,68 @@ export default function MigoContainer(): ReactElement {
 
     const handleSearch = () => {
         if (!dateRange[0] || !dateRange[1]) {
-            setAlertModal({ visible: true, message: 'Los filtros de fecha inicio y fecha final de publicación son obligatorios.' });
+            financeAlert.showWarning(
+                'Fechas requeridas',
+                'Los filtros de fecha inicio y fecha final de publicación son obligatorios.',
+            );
             return;
         }
+        notifyIfEmptySearch.current = true;
         setPage(1);
         setSearchApplied(true);
+        saveFinanceListFilters(FINANCE_LIST_KEYS.migo.filters, buildFilters(1, perPage));
         fetchData(1, perPage);
     };
 
+    useEffect(() => {
+        if (!locationState?.autoSearchAfterUpload) return;
+        if (!dateRange[0] || !dateRange[1]) return;
+        notifyIfEmptySearch.current = false;
+        setPage(1);
+        setSearchApplied(true);
+        saveFinanceListFilters(FINANCE_LIST_KEYS.migo.filters, buildFilters(1, perPage));
+        fetchData(1, perPage);
+        navigate(location.pathname, { replace: true, state: null });
+    }, [locationState?.autoSearchAfterUpload]);
+
+    useFinanceListRefetchOnReturn<MigoSearchFilters>(
+        FINANCE_LIST_KEYS.migo,
+        returningFromDetail,
+        async (saved) => {
+            const p = Math.max(1, Number(saved.pageNumber ?? 1));
+            const ps = Math.max(1, Number(saved.pageSize ?? perPage));
+            notifyIfEmptySearch.current = false;
+            setPage(p);
+            setPerPage(ps);
+            setSearchApplied(true);
+            setLoading(true);
+            try {
+                const res: any = await migoService.search({
+                    ...saved,
+                    pageNumber: p,
+                    pageSize: ps,
+                });
+                const pageData = res?.data ?? res;
+                const content = pageData?.content ?? [];
+                setRows(content);
+                setTotalItems(pageData?.totalElements ?? 0);
+                setTotalPages(pageData?.totalPages ?? 1);
+            } catch (err) {
+                setRows([]);
+                financeAlert.showErrorFrom(
+                    'Error',
+                    err,
+                    'Ocurrió un error al conectar con el servidor para obtener los documentos MIGO.',
+                );
+            } finally {
+                setLoading(false);
+            }
+        }
+    );
+
     const handleClear = () => {
-        setDateRange([null, null]);
+        notifyIfEmptySearch.current = false;
+        setDateRange(financeListTodayDateRange());
         setFileNameFilter('');
         setRows([]);
         setSearchApplied(false);
@@ -173,27 +269,44 @@ export default function MigoContainer(): ReactElement {
     };
 
     const handlePageChange = (newPage: number) => {
+        if (!searchApplied) return;
         setPage(newPage);
         fetchData(newPage, perPage);
     };
 
     const handlePerPageChange = (newPerPage: number) => {
+        if (!searchApplied) return;
         setPerPage(newPerPage);
         setPage(1);
         fetchData(1, newPerPage);
     };
 
-    const handleAuthorize = async (doc: MigoDocument) => {
+    const openAuthorizeConfirm = (doc: MigoDocument) => {
+        setAuthorizeTarget(doc);
+        setAuthorizeModalOpen(true);
+    };
+
+    const handleAuthorizeConfirm = async () => {
+        if (!authorizeTarget) return;
+        const doc = authorizeTarget;
+        setAuthorizeModalOpen(false);
         setActionLoading(true);
         try {
             await migoService.authorize(doc.migoDocumentId);
-            setAlertModal({ visible: true, message: `El documento ${doc.folio} fue autorizado exitosamente. Estatus: 9 → 0.` });
+            financeAlert.showSuccess(
+                'Operación exitosa',
+                `Las recepciones del documento ${doc.folio} fueron publicadas correctamente. Los proveedores ya pueden relacionar sus facturas.`,
+            );
             fetchData(page, perPage);
         } catch (err) {
-            console.error('[MIGO] authorize error', err);
-            setAlertModal({ visible: true, message: 'Error al autorizar el documento.' });
+            financeAlert.showErrorFrom(
+                'Error al autorizar',
+                err,
+                'Error al autorizar el documento.',
+            );
         } finally {
             setActionLoading(false);
+            setAuthorizeTarget(null);
         }
     };
 
@@ -209,11 +322,17 @@ export default function MigoContainer(): ReactElement {
         try {
             await migoService.reject(rejectTargetId, rejectReason.trim());
             setRejectModalOpen(false);
-            setAlertModal({ visible: true, message: 'Documento rechazado exitosamente. Estatus: 9 → 8.' });
+            financeAlert.showSuccess(
+                'Operación exitosa',
+                'Documento rechazado exitosamente. Estatus: 9 → 8.',
+            );
             fetchData(page, perPage);
         } catch (err) {
-            console.error('[MIGO] reject error', err);
-            setAlertModal({ visible: true, message: 'Error al rechazar el documento.' });
+            financeAlert.showErrorFrom(
+                'Error al rechazar',
+                err,
+                'Error al rechazar el documento.',
+            );
         } finally {
             setActionLoading(false);
         }
@@ -223,8 +342,11 @@ export default function MigoContainer(): ReactElement {
         try {
             await migoService.exportCsv(doc.migoDocumentId);
         } catch (err) {
-            console.error('[MIGO] export error', err);
-            setAlertModal({ visible: true, message: 'Error al exportar las recepciones.' });
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'Error al exportar las recepciones.',
+            );
         }
     };
 
@@ -273,7 +395,7 @@ export default function MigoContainer(): ReactElement {
         {
             title: 'Autorizar',
             icon: editIcon,
-            onClick: (row) => handleAuthorize(row),
+            onClick: (row) => openAuthorizeConfirm(row),
             isDisabled: (row) => row.status !== 9 || actionLoading,
         },
         {
@@ -292,10 +414,7 @@ export default function MigoContainer(): ReactElement {
     return (
         <div className="migo-layout">
             <Breadcrumb
-                items={[
-                    { label: 'Finanzas', to: '/' },
-                    { label: 'Publicación de recepción MIGO' },
-                ]}
+                items={withFinanceBreadcrumb([{ label: 'Publicación de recepción MIGO' }])}
             />
 
             <div className="migo-box">
@@ -346,25 +465,32 @@ export default function MigoContainer(): ReactElement {
                 )}
 
                 <div className="migo-filters-section">
-                    <GenericDateRangePicker
-                        value={dateRange}
-                        onChange={setDateRange}
-                        placeholder="Fecha inicio – Fecha final *"
-                        size="sm"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Nombre de archivo"
-                        value={fileNameFilter}
-                        onChange={(e) => setFileNameFilter(e.target.value)}
-                        className="migo-filter-input"
-                    />
-                    <GenericButton variant="primary" onClick={handleSearch} disabled={loading}>
-                        Buscar
-                    </GenericButton>
-                    <GenericButton variant="outline" onClick={handleClear}>
-                        Limpiar
-                    </GenericButton>
+                    <div className="migo-filters-row">
+                        <div className="migo-date-filter">
+                            <GenericDateRangePicker
+                                value={dateRange}
+                                onChange={setDateRange}
+                                size="sm"
+                            />
+                        </div>
+
+                        <div className="migo-filename-actions">
+                            <input
+                                value={fileNameFilter}
+                                onChange={(e) => setFileNameFilter(e.target.value)}
+                                placeholder="Nombre de archivo"
+                                className="migo-filter-input"
+                            />
+
+                            <GenericButton variant="outline" onClick={handleSearch}>
+                                Buscar
+                            </GenericButton>
+
+                            <GenericButton variant="outline" onClick={handleClear}>
+                                Limpiar
+                            </GenericButton>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="migo-grid-section">
@@ -385,6 +511,27 @@ export default function MigoContainer(): ReactElement {
                 </div>
 
                 {loading && <GenericModal visible variant="loading" message="Cargando documentos MIGO..." />}
+
+                <GenericModal
+                    visible={authorizeModalOpen}
+                    variant="confirm"
+                    severity="info"
+                    title="Publicar recepciones MIGO"
+                    message={
+                        authorizeTarget
+                            ? `¿Desea publicar las recepciones del documento "${authorizeTarget.folio}" para que los proveedores puedan relacionar sus facturas?`
+                            : '¿Desea publicar las recepciones para que los proveedores puedan relacionar sus facturas?'
+                    }
+                    confirmText={actionLoading ? 'Procesando...' : 'Publicar'}
+                    cancelText="Cancelar"
+                    onConfirm={handleAuthorizeConfirm}
+                    onCancel={() => {
+                        if (!actionLoading) {
+                            setAuthorizeModalOpen(false);
+                            setAuthorizeTarget(null);
+                        }
+                    }}
+                />
 
                 {rejectModalOpen && (
                     <div className="gm-overlay">
@@ -431,13 +578,13 @@ export default function MigoContainer(): ReactElement {
                 )}
 
                 <GenericModal
-                    visible={alertModal.visible}
+                    visible={financeAlert.alertVisible}
                     variant="alert"
-                    severity="info"
-                    title="Información"
-                    message={alertModal.message}
+                    severity={financeAlert.alertSeverity}
+                    title={financeAlert.alertTitle}
+                    message={financeAlert.alertMessage}
                     buttonText="Aceptar"
-                    onClose={() => setAlertModal({ visible: false, message: '' })}
+                    onClose={financeAlert.closeAlert}
                 />
             </div>
         </div>

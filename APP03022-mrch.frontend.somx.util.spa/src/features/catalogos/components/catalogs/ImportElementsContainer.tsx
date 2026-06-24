@@ -4,6 +4,9 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { catalogService, catalogElementService } from '@features/catalogos/services/catalogosApi';
 import type { CatalogElementCreateDto } from '@features/catalogos/services/catalogosApi';
+import { useModalNotification } from '@shared/components/ui/modal';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 interface CatalogData {
   id: string;
@@ -338,6 +341,7 @@ const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
 
 export default function ImportElementsContainer() {
   const navigate = useNavigate();
+  const { showSuccess, showError, showErrorList, ModalNode } = useModalNotification();
   const { id } = useParams<{ id: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -408,7 +412,7 @@ export default function ImportElementsContainer() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading template:', error);
-      alert('Ocurrió un problema al descargar la plantilla. Intente nuevamente.');
+      showError('Ocurrió un problema al descargar la plantilla. Intente nuevamente.');
     } finally {
       setIsDownloading(false);
     }
@@ -562,26 +566,53 @@ export default function ImportElementsContainer() {
     setShowValidationErrors(false);
 
     try {
-      const payload = new FormData();
-      payload.append('file', uploadedFile.file);
-      payload.append('tipoCatalogoSeleccionado', catalog.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO');
-      payload.append('nombreCatalogo', catalog.name);
-
-      const response = await fetch('http://localhost:8083/catalogos/validate-layout', {
-        method: 'POST',
-        body: payload,
-      });
-      const result = await response.json();
+      const result = await catalogService.validateLayout(
+        uploadedFile.file,
+        catalog.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO',
+        catalog.name,
+        'IMPORTAR_ELEMENTOS',
+      );
 
       if (!result.isValid || (result.errors && result.errors.length > 0)) {
-        setValidationErrors((result.errors || []).map((e: any) => ({ cell: e.cell || '', message: e.message || 'Error desconocido' })));
-        setShowValidationErrors(true);
+        const rawErrors = (result.errors || []) as Array<{ cell?: string; message?: string }>;
+        const mapped = rawErrors.map((e) => ({
+          cell: e.cell || '',
+          message: e.message || 'Error desconocido',
+        }));
+        setValidationErrors(mapped);
+        setShowValidationErrors(mapped.length > 20);
+        showErrorList({
+          title: 'Errores en la plantilla',
+          items: mapped.map((e) => e.message),
+        });
         setIsValidating(false);
         return;
       }
-    } catch (error) {
-      setValidationErrors([{ cell: 'N/A', message: 'Ocurrió un problema al validar el archivo.' }]);
-      setShowValidationErrors(true);
+    } catch (error: any) {
+      const apiErrors = error?.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        const mapped = apiErrors.map((e: any) => ({
+          cell: e.cell || '',
+          message: e.message || 'Error desconocido',
+        }));
+        setValidationErrors(mapped);
+        setShowValidationErrors(mapped.length > 20);
+        showErrorList({
+          title: 'Errores en la plantilla',
+          items: mapped.map((e: { message: string }) => e.message),
+        });
+        setIsValidating(false);
+        return;
+      }
+
+      console.error('Error validating import file:', error);
+      setValidationErrors([]);
+      setShowValidationErrors(false);
+      const backendMsg =
+        error?.response?.data?.error ??
+        error?.response?.data?.message ??
+        'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
+      showError(backendMsg, 'Error al validar');
       setIsValidating(false);
       return;
     }
@@ -610,15 +641,22 @@ export default function ImportElementsContainer() {
       }
 
       if (conversionCount > 0) {
-        alert(`Se importaron ${createdCount} elementos exitosamente, incluyendo ${conversionCount} con valor de conversión.`);
+        showSuccess(
+          `Se importaron ${createdCount} elementos exitosamente, incluyendo ${conversionCount} con valor de conversión.`,
+          'Importación completada',
+          () => navigate(`/util/catalogos/catalogs/${id}/elementos`),
+        );
       } else {
-        alert(`Se importaron ${createdCount} elementos exitosamente.`);
+        showSuccess(
+          `Se importaron ${createdCount} elementos exitosamente.`,
+          'Importación completada',
+          () => navigate(`/util/catalogos/catalogs/${id}/elementos`),
+        );
       }
-      navigate(`/util/catalogos/catalogs/${id}/elementos`);
     } catch (error: any) {
       console.error('Error importing elements:', error);
       const msg = error?.response?.data?.message || 'Ocurrió un problema al importar los elementos.';
-      alert(msg);
+      showError(msg);
     } finally {
       setIsImporting(false);
     }
@@ -655,28 +693,14 @@ export default function ImportElementsContainer() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.breadcrumb}>
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/')}>
-          Inicio
-        </span>
-        {' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/util/catalogos/catalogs')}>
-          Gestión de Catálogos
-        </span>
-        {' / '}
-        <span style={styles.breadcrumbLink} onClick={() => navigate('/util/catalogos/catalogs')}>
-          Catálogos
-        </span>
-        {' / '}
-        <span
-          style={styles.breadcrumbLink}
-          onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos`)}
-        >
-          Elementos
-        </span>
-        {' / '}
-        <span>Importar Elementos</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: 'Elementos', to: `/util/catalogos/catalogs/${id}/elementos` },
+          { label: 'Importar Elementos' },
+        ])}
+      />
 
       <div style={styles.card}>
         <h1 style={styles.title}>Importar Elementos</h1>
@@ -812,54 +836,44 @@ export default function ImportElementsContainer() {
           </div>
         </div>
 
-        {showValidationErrors && validationErrors.length > 0 && (
+        {showValidationErrors && validationErrors.length > 20 && (
           <div style={{
             marginTop: '1rem',
             padding: '1rem',
             backgroundColor: '#FEF2F2',
             border: '1px solid #FECACA',
             borderRadius: '0.5rem',
-            maxHeight: '300px',
-            overflowY: 'auto',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h4 style={{ color: '#991B1B', margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>
-                Se encontraron {validationErrors.length} error{validationErrors.length > 1 ? 'es' : ''} en el archivo
-              </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ color: '#991B1B', fontSize: '0.875rem' }}>
+                Se encontraron {validationErrors.length} errores en el archivo. Puedes descargar el reporte completo para revisarlos.
+              </span>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                {validationErrors.length > 20 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const content = '=== REPORTE DE ERRORES ===\nTotal: ' + validationErrors.length + '\n\n' +
-                        validationErrors.map((e, i) => `${i + 1}. ${e.message}`).join('\n');
-                      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'reporte_errores_importacion.txt';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    }}
-                    style={{ background: '#991B1B', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
-                  >Descargar reporte .txt</button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const content = '=== REPORTE DE ERRORES ===\nTotal: ' + validationErrors.length + '\n\n' +
+                      validationErrors.map((e, i) => `${i + 1}. ${e.message}`).join('\n');
+                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'reporte_errores_importacion.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{ background: '#991B1B', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                >Descargar reporte .txt</button>
                 <button
                   type="button"
                   onClick={() => setShowValidationErrors(false)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991B1B', fontSize: '1.25rem', padding: 0 }}
+                  aria-label="Cerrar"
                 >✕</button>
               </div>
             </div>
-            <ul style={{ margin: 0, paddingLeft: '1.25rem', listStyleType: 'disc' }}>
-              {validationErrors.map((err, idx) => (
-                <li key={idx} style={{ color: '#DC2626', fontSize: '0.8125rem', marginBottom: '0.25rem', lineHeight: 1.4 }}>
-                  {err.message}
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -912,6 +926,7 @@ export default function ImportElementsContainer() {
           </div>
         </div>
       )}
+      {ModalNode}
     </div>
   );
 }

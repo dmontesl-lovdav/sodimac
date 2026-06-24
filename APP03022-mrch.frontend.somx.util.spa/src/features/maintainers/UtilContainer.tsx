@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { syncUserToCatalogs } from '@/services/utilityUserSync';
 import { Link } from 'react-router-dom';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { breadcrumbFinanceHomePage } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 import iconSetting from '@assets/icons/setting.png';
 import iconSupport from '@assets/icons/support.png';
@@ -8,6 +10,8 @@ import iconAudit from '@assets/icons/warning.png';
 
 import GenericModal from '@shared/components/ui/modal/GenericModal';
 import { itemsService } from './services/itemsService';
+
+import { APP_KEYS, useSecurityContext } from '@shared/security';
 
 import './styles/UtilContainer.css';
 
@@ -18,9 +22,15 @@ interface UtilCard {
     icon?: string;
     disabled?: boolean;
     action?: 'healthCheck';
+    requiredApp?: string;
+    requiredAnyApp?: string[];
 }
 
 export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
+    useEffect(() => {
+        syncUserToCatalogs();
+    }, []);
+
     const [modalVisible, setModalVisible] = useState(false);
     const [modalVariant, setModalVariant] = useState<'loading' | 'alert' | 'confirm'>('alert');
     const [modalTitle, setModalTitle] = useState('');
@@ -33,25 +43,32 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
             description: 'Consulta y gestiona la configuración de parámetros del sistema.',
             link: '/util/parametros',
             icon: iconSetting,
+            requiredApp: APP_KEYS.PARAMETERS,
         },
         {
             title: 'Catálogos',
             description: 'Consulta y administra los catálogos disponibles del sistema.',
             link: '/util/catalogos',
             icon: iconSupport,
+            requiredAnyApp: [APP_KEYS.SUPPLIERS_CATALOG, APP_KEYS.CATALOGS_CATALOG],
         },
         {
             title: 'Auditoría',
             description: 'Consulta la bitácora de actividades, eventos y errores del sistema.',
-            link: '/util/auditoria',
+            link: '/util/auditoria/bitacora-actividades',
             icon: iconAudit,
-            disabled: true,
+            requiredApp: APP_KEYS.AUDIT_LOG,
         },
         {
             title: 'Seguridad',
             description: 'Consulta y gestiona la seguridad del sistema.',
             link: '/seguridad',
-            icon: iconSetting
+            icon: iconSetting,
+            requiredAnyApp: [
+                APP_KEYS.PROFILE_ADMIN,
+                APP_KEYS.ROLES_ADMIN,
+                APP_KEYS.PERMISSIONS_ADMIN,
+            ],
         },
         {
             title: 'Estado de conexión',
@@ -61,7 +78,15 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
         },
     ];
 
-    const finalCards = cards ?? DEFAULT_CARDS;
+    const sec = useSecurityContext();
+    const rawCards = cards ?? DEFAULT_CARDS;
+    const finalCards = sec.isLoading
+        ? rawCards.filter((c) => !c.requiredApp && !c.requiredAnyApp)
+        : rawCards.filter((c) => {
+              if (c.requiredApp && !sec.hasApp(c.requiredApp)) return false;
+              if (c.requiredAnyApp && !sec.hasAnyApp(c.requiredAnyApp)) return false;
+              return true;
+          });
 
     const handleCloseModal = () => {
         setModalVisible(false);
@@ -105,15 +130,12 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
     return (
         <div className="util-root">
             <Breadcrumb
-                items={[
-                    { label: 'Inicio', to: '/' },
-                    { label: 'Herramientas y Utilerías' },
-                ]}
+                items={breadcrumbFinanceHomePage}
             />
 
             <main className="util-main">
                 <section className="util-box">
-                    <h1 className="maintainers-title">Operaciones</h1>
+                    <h1 className="maintainers-title">Auditoría y trazabilidad de eventos del módulo financiero y fiscal</h1>
 
                     <section className="cards-grid">
                         {finalCards.map((it, idx) => {

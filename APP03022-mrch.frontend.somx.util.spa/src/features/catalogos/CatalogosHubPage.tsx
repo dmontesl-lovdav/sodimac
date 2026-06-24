@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { APP_KEYS, PermissionGate } from '@shared/security';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 const styles = {
   container: {
@@ -30,76 +33,64 @@ const styles = {
     padding: '1.5rem 2rem 3rem 2rem',
   },
   section: {
-    border: '1px solid #d1d5db',
-    borderRadius: '0.375rem',
-    padding: '1.5rem',
-    backgroundColor: 'transparent',
+    borderTop: '1px solid #e5e7eb',
+    padding: '1.5rem 0 0 0',
   },
   title: {
-    fontSize: '1.5rem',
+    fontSize: '1.75rem',
+    lineHeight: '2rem',
     fontWeight: 500,
-    marginBottom: '1rem',
-    color: '#374151',
+    color: '#262626',
+    margin: 0,
+    marginBottom: '1.25rem',
   },
   grid: {
     display: 'grid',
     gap: '1.5rem',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
   },
   card: {
-    position: 'relative' as const,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    justifyContent: 'space-between',
-    borderRadius: '1rem',
-    border: '1px solid #CFE1F5',
-    backgroundColor: '#EAF3FB',
-    padding: '2rem',
-    boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    display: 'block',
+    width: '100%',
+    borderRadius: '0.75rem',
+    padding: '1.25rem',
+    textDecoration: 'none',
+    border: '1px solid #E6E8EB',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    color: 'inherit',
     transition: 'box-shadow 0.2s ease',
-    minHeight: '180px',
   },
-  cardDark: {
-    backgroundColor: '#E4EFF7',
+  cardContent: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '1rem',
+  },
+  cardIcon: {
+    width: '48px',
+    height: '48px',
+    flexShrink: 0,
+    color: '#003865',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardRight: {
+    flex: 1,
+    minWidth: 0,
   },
   cardTitle: {
+    fontSize: '1rem',
+    lineHeight: 1.5,
     fontWeight: 500,
-    fontSize: '1.25rem',
-    color: '#333333',
+    color: '#1F2937',
     margin: 0,
   },
-  cardDescription: {
+  cardDesc: {
+    marginTop: '0.25rem',
     fontSize: '0.875rem',
-    color: '#374151',
-    marginTop: '0.75rem',
-    maxWidth: '28rem',
+    color: '#4B5563',
     lineHeight: 1.5,
-  },
-  cardButton: {
-    marginTop: '2rem',
-    alignSelf: 'flex-start',
-    padding: '0.625rem 1.5rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #002d4c',
-    color: '#002d4c',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    backgroundColor: 'transparent',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s ease',
-    textDecoration: 'none',
-  },
-  iconWrapper: {
-    position: 'absolute' as const,
-    right: '1.5rem',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    height: '6rem',
-    width: '6rem',
-    pointerEvents: 'none' as const,
-    userSelect: 'none' as const,
-    opacity: 0.15,
-    color: '#002d4c',
   },
 };
 
@@ -133,49 +124,32 @@ interface CardItemProps {
   title: string;
   description: string;
   to: string;
-  buttonText: string;
   Icon: React.FC;
-  dark?: boolean;
 }
 
-function CardItem({ title, description, to, buttonText, Icon, dark = false }: CardItemProps) {
+function CardItem({ title, description, to, Icon }: CardItemProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   return (
-    <div
+    <Link
+      to={to}
       style={{
         ...styles.card,
-        ...(dark ? styles.cardDark : {}),
-        boxShadow: isHovered
-          ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-          : '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        boxShadow: isHovered ? '0px 2px 4px rgba(0,0,0,0.08)' : 'none',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div style={{ paddingRight: '7rem' }}>
-        <h4 style={styles.cardTitle}>{title}</h4>
-        <p style={styles.cardDescription}>{description}</p>
+      <div style={styles.cardContent}>
+        <div style={styles.cardIcon}>
+          <Icon />
+        </div>
+        <div style={styles.cardRight}>
+          <h3 style={styles.cardTitle}>{title}</h3>
+          <p style={styles.cardDesc}>{description}</p>
+        </div>
       </div>
-
-      <Link to={to} style={{ marginTop: '2rem', alignSelf: 'flex-start', textDecoration: 'none' }}>
-        <button
-          style={{
-            ...styles.cardButton,
-            backgroundColor: isButtonHovered ? '#e6f1ff' : 'transparent',
-          }}
-          onMouseEnter={() => setIsButtonHovered(true)}
-          onMouseLeave={() => setIsButtonHovered(false)}
-        >
-          {buttonText}
-        </button>
-      </Link>
-
-      <div style={styles.iconWrapper}>
-        <Icon />
-      </div>
-    </div>
+    </Link>
   );
 }
 
@@ -183,40 +157,42 @@ export default function CatalogosHubPage() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <div style={styles.breadcrumb}>
-          <a href="/" style={styles.breadcrumbLink}>Inicio</a>
-          <span>/</span>
-          <span>Catálogos</span>
-        </div>
+        <Breadcrumb
+          items={withFinanceBreadcrumb([
+            { label: 'Gestión de Catálogos' },
+          ])}
+        />
       </div>
 
       <main style={styles.main}>
         <section style={styles.section}>
-          <h3 style={styles.title}>Cuéntanos, ¿Qué necesitas?</h3>
+          <h1 style={styles.title}>Gestión de Catálogos</h1>
 
           <div style={styles.grid}>
-            <CardItem
-              title="Administración de Proveedores"
-              description="Gestiona el catálogo de proveedores: crear, editar, eliminar y consultar información."
-              to="/util/catalogos/proveedores"
-              buttonText="Ver Proveedores"
-              Icon={ProveedoresIcon}
-            />
-            <CardItem
-              title="Bloqueo de Proveedores"
-              description="Administra los bloqueos de pago a proveedores por rangos de fecha."
-              to="/util/catalogos/bloqueos"
-              buttonText="Ver Bloqueos"
-              Icon={BloqueoIcon}
-              dark
-            />
-            <CardItem
-              title="Gestión de Catálogos"
-              description="Busca, gestiona y consulta catálogos junto con sus elementos y cambios realizados."
-              to="/util/catalogos/catalogs"
-              buttonText="Ver Catálogos"
-              Icon={CatalogsIcon}
-            />
+            <PermissionGate app={APP_KEYS.SUPPLIERS_CATALOG}>
+              <CardItem
+                title="Administración de Proveedores"
+                description="Gestiona el catálogo de proveedores: crear, editar, eliminar y consultar información."
+                to="/util/catalogos/proveedores"
+                Icon={ProveedoresIcon}
+              />
+            </PermissionGate>
+            <PermissionGate app={APP_KEYS.SUPPLIERS_CATALOG}>
+              <CardItem
+                title="Bloqueo de Proveedores"
+                description="Administra los bloqueos de pago a proveedores por rangos de fecha."
+                to="/util/catalogos/bloqueos"
+                Icon={BloqueoIcon}
+              />
+            </PermissionGate>
+            <PermissionGate app={APP_KEYS.CATALOGS_CATALOG}>
+              <CardItem
+                title="Catálogo de Catálogos"
+                description="Busca, gestiona y consulta catálogos junto con sus elementos y cambios realizados."
+                to="/util/catalogos/catalogs"
+                Icon={CatalogsIcon}
+              />
+            </PermissionGate>
           </div>
         </section>
       </main>

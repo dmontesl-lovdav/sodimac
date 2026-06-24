@@ -1,6 +1,24 @@
 import { Breadcrumb, GenericModal } from "@shared/components/ui";
+import { withFinanceBreadcrumb } from "@shared/components/ui/navigation/financeBreadcrumb";
+import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
+import {
+  FINANCE_LIST_KEYS,
+  saveFinanceListFilters,
+  useFinanceListScreenSession,
+  useFinanceListRefetchOnReturn,
+} from "@/shared/hooks";
+import { getErrorMessage } from "@/utils/errorMessage";
+import {
+  exportToCSV,
+  exportToExcelSpreadsheet,
+  formatDate,
+  formatFilenameTimestamp,
+  parseDisplayDate,
+  startOfLocalDay,
+  endOfLocalDay,
+} from "@/utils/utils";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { shippingGuideService } from "./api/ShippingGuideClient";
@@ -10,171 +28,21 @@ import ShippingGuideFilterBar from "./components/ShippingGuideFilterBar";
 import { ShippingGuideGrid } from "./components/ShippingGuideGrid";
 import ShippingGuideToolbar from "./components/ShippingGuideToolbar";
 
-import "./styles/shippingGuideContainer.css";
+import {
+  SHIPPING_GUIDE_STATUS_BORRADO,
+  resolveShippingGuideStatusDescription,
+} from "./shippingGuideStatusCatalog";
+import {
+  mapShippingGuideToGridExportRow,
+  SHIPPING_GUIDE_GRID_EXPORT_HEADERS,
+} from "./shippingGuideGridExport";
+import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
 
-type ExportFormat = "csv" | "xml";
+type RowExportFormat = "csv" | "xml";
 
-// --- util: CRC32 para ZIP sin dependencias ---
-const makeCrc32Table = () => {
-  let c;
-  const table = [];
-  for (let n = 0; n < 256; n++) {
-    c = n;
-    for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    table[n] = c >>> 0;
-  }
-  return table;
-};
-const CRC32_TABLE = makeCrc32Table();
-const crc32 = (str: string): number => {
-  let crc = 0 ^ -1;
-  for (let i = 0; i < str.length; i++) {
-    crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ str.charCodeAt(i)) & 0xff];
-  }
-  return (crc ^ -1) >>> 0;
-};
-
-// --- util: generar ZIP en cliente (método STORE, sin compresión) ---
-type ZipEntry = { name: string; content: string };
-const buildZip = (entries: ZipEntry[]): Blob => {
-  const encoder = new TextEncoder();
-  const localFiles: Uint8Array[] = [];
-  const centralDir: Uint8Array[] = [];
-  let offset = 0;
-
-  const pushLocalFile = (name: string, content: string) => {
-    const data = encoder.encode(content);
-    const nameBytes = encoder.encode(name);
-    const crc = crc32(content);
-    const localHeader = new DataView(new ArrayBuffer(30));
-    let p = 0;
-    localHeader.setUint32(p, 0x04034b50, true);
-    p += 4;
-    localHeader.setUint16(p, 20, true);
-    p += 2;
-    localHeader.setUint16(p, 0, true);
-    p += 2;
-    localHeader.setUint16(p, 0, true);
-    p += 2;
-    localHeader.setUint16(p, 0, true);
-    p += 2;
-    localHeader.setUint16(p, 0, true);
-    p += 2;
-    localHeader.setUint32(p, crc, true);
-    p += 4;
-    localHeader.setUint32(p, data.length, true);
-    p += 4;
-    localHeader.setUint32(p, data.length, true);
-    p += 4;
-    localHeader.setUint16(p, nameBytes.length, true);
-    p += 2;
-    localHeader.setUint16(p, 0, true);
-    p += 2;
-
-    const lf = new Uint8Array(localHeader.byteLength + nameBytes.length + data.length);
-    lf.set(new Uint8Array(localHeader.buffer), 0);
-    lf.set(nameBytes, localHeader.byteLength);
-    lf.set(data, localHeader.byteLength + nameBytes.length);
-    localFiles.push(lf);
-
-    const cdh = new DataView(new ArrayBuffer(46));
-    p = 0;
-    cdh.setUint32(p, 0x02014b50, true);
-    p += 4;
-    cdh.setUint16(p, 20, true);
-    p += 2;
-    cdh.setUint16(p, 20, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint32(p, crc, true);
-    p += 4;
-    cdh.setUint32(p, data.length, true);
-    p += 4;
-    cdh.setUint32(p, data.length, true);
-    p += 4;
-    cdh.setUint16(p, nameBytes.length, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint16(p, 0, true);
-    p += 2;
-    cdh.setUint32(p, 0, true);
-    p += 4;
-    cdh.setUint32(p, offset, true);
-    p += 4;
-
-    const cdf = new Uint8Array(cdh.byteLength + nameBytes.length);
-    cdf.set(new Uint8Array(cdh.buffer), 0);
-    cdf.set(nameBytes, cdh.byteLength);
-    centralDir.push(cdf);
-
-    offset += lf.byteLength;
-  };
-
-  entries.forEach((e) => pushLocalFile(e.name, e.content));
-
-  const centralSize = centralDir.reduce((sum, b) => sum + b.byteLength, 0);
-  const centralOffset = offset;
-  const eocd = new DataView(new ArrayBuffer(22));
-  let p = 0;
-  eocd.setUint32(p, 0x06054b50, true);
-  p += 4;
-  eocd.setUint16(p, 0, true);
-  p += 2;
-  eocd.setUint16(p, 0, true);
-  p += 2;
-  eocd.setUint16(p, entries.length, true);
-  p += 2;
-  eocd.setUint16(p, entries.length, true);
-  p += 2;
-  eocd.setUint32(p, centralSize, true);
-  p += 4;
-  eocd.setUint32(p, centralOffset, true);
-  p += 4;
-  eocd.setUint16(p, 0, true);
-
-  const size =
-    localFiles.reduce((sum, b) => sum + b.byteLength, 0) +
-    centralDir.reduce((sum, b) => sum + b.byteLength, 0) +
-    eocd.byteLength;
-
-  const out = new Uint8Array(size);
-  let cursor = 0;
-  localFiles.forEach((b) => {
-    out.set(b, cursor);
-    cursor += b.byteLength;
-  });
-  centralDir.forEach((b) => {
-    out.set(b, cursor);
-    cursor += b.byteLength;
-  });
-  out.set(new Uint8Array(eocd.buffer), cursor);
-
-  return new Blob([out], { type: "application/zip" });
-};
-
-const formatZipName = (format: ExportFormat) => {
-  const now = new Date();
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const yyyy = now.getFullYear();
-  const MM = pad(now.getMonth() + 1);
-  const dd = pad(now.getDate());
-  const HH = pad(now.getHours());
-  const mi = pad(now.getMinutes());
-  return `Carta_Porte_${format.toUpperCase()}_${yyyy}${MM}${dd}_${HH}${mi}.zip`;
+const safeGuideFileTag = (g: ShippingGuide) => {
+  const raw = g.guideNumber || g.shippingGuideId || "guia";
+  return String(raw).replace(/[^\w\-]+/g, "_").slice(0, 80);
 };
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
@@ -182,18 +50,45 @@ const getCatalogDisplay = (item?: { description?: string; value?: string; key?: 
   return item.description || item.value || item.key || (item.internalStatus != null ? String(item.internalStatus) : "N/D");
 };
 
-const getStatusCode = (guide: ShippingGuide) => Number(guide.status?.internalStatus ?? 0);
+function parseFilterDateBound(value?: string, asEndOfDay = false): number | null {
+  if (!value?.trim()) return null;
+  const trimmed = value.trim();
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+  let date: Date | null = null;
+  if (ymd) {
+    date = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+  } else {
+    date = parseDisplayDate(trimmed);
+  }
+  if (!date || Number.isNaN(date.getTime())) return null;
+  return (asEndOfDay ? endOfLocalDay(date) : startOfLocalDay(date)).getTime();
+}
+
+/** Fecha de registro (`createdAt`) dentro del rango del filtro, sin incluir el día siguiente. */
+function isRegistrationDateInFilterRange(
+  createdAt: string | undefined | null,
+  from?: string,
+  to?: string
+): boolean {
+  if (!createdAt?.trim()) return false;
+  const created = parseDisplayDate(createdAt);
+  if (!created) return false;
+
+  const createdTs = created.getTime();
+  const fromTs = parseFilterDateBound(from, false);
+  const toTs = parseFilterDateBound(to, true);
+
+  if (fromTs != null && createdTs < fromTs) return false;
+  if (toTs != null && createdTs > toTs) return false;
+  return true;
+}
 
 export default function ShippingGuideContainer(): ReactElement {
+  const financeAlert = useFinanceAlertModal();
+
   const [loading, setLoading] = useState<boolean>(false);
-  const [filters, setFilters] = useState<ShippingGuideFilter>();
   const [rows, setRows] = useState<ShippingGuide[]>([]);
   const [selectedGuides, setSelectedGuides] = useState<ShippingGuide[]>([]);
-
-  const [errorModal, setErrorModal] = useState({
-    visible: false,
-    message: "",
-  });
 
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [cancelTargets, setCancelTargets] = useState<ShippingGuide[]>([]);
@@ -204,6 +99,10 @@ export default function ShippingGuideContainer(): ReactElement {
   const nav = useNavigate();
   const hasData = rows.length > 0;
 
+  const returningFromDetail = useFinanceListScreenSession(
+    FINANCE_LIST_KEYS.shippingGuides
+  );
+
   const fetchData = async (f: ShippingGuideFilter) => {
     setLoading(true);
     try {
@@ -211,10 +110,10 @@ export default function ShippingGuideContainer(): ReactElement {
 
       if (response && response.success === false) {
         setRows([]);
-        setErrorModal({
-          visible: true,
-          message: response.message || "Ocurrió un error en el backend al obtener las guías.",
-        });
+        financeAlert.showError(
+          "Error",
+          response.message || "Ocurrió un error en el backend al obtener las guías."
+        );
         return;
       }
 
@@ -227,120 +126,100 @@ export default function ShippingGuideContainer(): ReactElement {
         content = response.content;
       }
 
+      if (f.orderNumber?.trim()) {
+        const q = f.orderNumber.trim().toLowerCase();
+        content = content.filter((g) =>
+          (g.orderNumber || "").toLowerCase().includes(q)
+        );
+      }
+
+      content = content.filter((g) => getShippingGuideStatusCode(g) !== SHIPPING_GUIDE_STATUS_BORRADO);
+
+      if (f.from || f.to) {
+        content = content.filter((g) =>
+          isRegistrationDateInFilterRange(g.createdAt, f.from, f.to)
+        );
+      }
+
+      content = content.sort(
+        (a, b) =>
+          new Date(b.shippingDate).getTime() - new Date(a.shippingDate).getTime()
+      );
+
       setRows(content);
       setSelectedGuides([]);
-    } catch (error: any) {
-      console.error("Error obteniendo guías:", error);
+      if (content.length === 0) {
+        financeAlert.showWarning(
+          "Sin registros",
+          "No se encontraron guías de embarque con los filtros aplicados."
+        );
+      }
+    } catch (error: unknown) {
       setRows([]);
-      setErrorModal({
-        visible: true,
-        message: "Ocurrió un problema al conectar con el servidor para obtener las guías.",
-      });
+      financeAlert.showErrorFrom(
+        "Error",
+        error,
+        "Ocurrió un problema al conectar con el servidor para obtener las guías."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const buildCsv = (g: ShippingGuide) => {
-    const headers = [
-      "Número de proveedor",
-      "Nombre de proveedor",
-      "Guía de embarque",
-      "Placa",
-      "Placa remolque",
-      "Origen",
-      "Tipo de entrega",
-      "Fecha de entrega",
-      "Fecha de envío",
-      "Fecha de registro",
-      "Estatus",
-    ];
-    const separator = ";";
-    const toDateString = (value?: string | null) =>
-      value ? new Date(value).toLocaleDateString("es-MX") : "";
+  useFinanceListRefetchOnReturn(
+    FINANCE_LIST_KEYS.shippingGuides,
+    returningFromDetail,
+    (f) => {
+      saveFinanceListFilters(FINANCE_LIST_KEYS.shippingGuides.filters, f);
+      fetchData(f as ShippingGuideFilter);
+    }
+  );
 
-    const row = [
-      g.vendorNumber ?? g.supplier?.supplierNumber ?? "",
-      g.supplier?.businessName ?? "N/D",
-      g.guideNumber ?? g.shippingGuideId,
-      g.truckPlate ?? "",
-      g.trailerPlate ?? "",
-      getCatalogDisplay(g.OrigenCartaPorte),
-      getCatalogDisplay(g.deliveryType),
-      toDateString(g.deliveryDate),
-      toDateString(g.shippingDate),
-      toDateString(g.createdAt),
-      getCatalogDisplay(g.status),
-    ];
 
-    return (
-      headers.join(separator) +
-      "\r\n" +
-      row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(separator)
-    );
-  };
-
-  const buildXml = (g: ShippingGuide) => {
-    const toDateString = (value?: string | null) =>
-      value ? new Date(value).toISOString() : "";
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<CartaPorte>
-  <Proveedor>${g.vendorNumber ?? ""}</Proveedor>
-  <NombreProveedor>${g.supplier?.businessName ?? "N/D"}</NombreProveedor>
-  <Guia>${g.guideNumber ?? g.shippingGuideId}</Guia>
-  <Placa>${g.truckPlate ?? ""}</Placa>
-  <PlacaRemolque>${g.trailerPlate ?? ""}</PlacaRemolque>
-  <Origen>${getCatalogDisplay(g.OrigenCartaPorte)}</Origen>
-  <TipoEntrega>${getCatalogDisplay(g.deliveryType)}</TipoEntrega>
-  <FechaEntrega>${toDateString(g.deliveryDate)}</FechaEntrega>
-  <FechaEnvio>${toDateString(g.shippingDate)}</FechaEnvio>
-  <FechaRegistro>${toDateString(g.createdAt)}</FechaRegistro>
-  <Estatus>${getCatalogDisplay(g.status)}</Estatus>
-</CartaPorte>`;
-  };
-
-  const exportSelected = (format: ExportFormat) => {
-    if (selectedGuides.length === 0) {
-      setErrorModal({ visible: true, message: "Selecciona al menos una guía para exportar." });
+  /** Reporte del grid: selección o todas las filas visibles. */
+  const exportGridReport = (format: "csv" | "xlsx") => {
+    const targets = selectedGuides.length > 0 ? selectedGuides : rows;
+    if (!targets.length) {
+      financeAlert.showWarning(
+        "Atención",
+        "No hay guías para exportar. Ejecuta una búsqueda con resultados."
+      );
       return;
     }
 
-    const entries: ZipEntry[] = selectedGuides.map((g) => ({
-      name:
-        format === "csv"
-          ? `carta_porte_${g.shippingGuideId}.csv`
-          : `carta_porte_${g.shippingGuideId}.xml`,
-      content: format === "csv" ? buildCsv(g) : buildXml(g),
-    }));
+    const headers = [...SHIPPING_GUIDE_GRID_EXPORT_HEADERS];
+    const body = targets.map(mapShippingGuideToGridExportRow);
+    const baseName = `guias_embarque_${formatFilenameTimestamp()}`;
 
-    const zipBlob = buildZip(entries);
-    const url = window.URL.createObjectURL(zipBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", formatZipName(format));
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    if (format === "csv") {
+      exportToCSV(headers, body, baseName);
+    } else {
+      exportToExcelSpreadsheet(headers, body, baseName);
+    }
+  };
+  const downloadSingleGuide = (g: ShippingGuide, format: number) => {
+    const doc = g.shippingGuideDocuments.find((d) => d.fileType == format);
+    const baseUrl = process.env.API_BASE_URL+"/shipping-guide/downloadFile?fileName="+doc?.fileName;
+
+    fetch(baseUrl).then((response) => {
+      if (response.status === 404) {
+        financeAlert.showError("Error", "No se encontró el archivo solicitado.");
+        return;
+      }
+      window.open(baseUrl, "_blank");
+    }).catch(() => {
+      window.open(baseUrl, "_blank");
+    });
   };
 
-  useEffect(() => {
-    if (filters) fetchData(filters);
-  }, [filters]);
+  const handleSearch = (f: ShippingGuideFilter) => {
+    saveFinanceListFilters(FINANCE_LIST_KEYS.shippingGuides.filters, f);
+    fetchData(f);
+  };
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem("shippingGuides:lastFilters");
-    if (saved) {
-      try {
-        setFilters(JSON.parse(saved) as ShippingGuideFilter);
-      } catch { }
-    }
-  }, []);
-
-  const handleSetFilters = (f: ShippingGuideFilter) => {
-    setFilters(f);
-    sessionStorage.setItem("shippingGuides:lastFilters", JSON.stringify(f));
+  const handleClearFilters = () => {
+    setRows([]);
+    setSelectedGuides([]);
   };
 
   const allowedCancelStatuses = useMemo(() => [1, 2], []);
@@ -355,23 +234,24 @@ export default function ShippingGuideContainer(): ReactElement {
   );
 
   const openCancelModal = (targets: ShippingGuide[]) => {
-    const allowed = (targets || []).filter((g) =>
-      allowedCancelStatuses.includes(getStatusCode(g))
-    );
-    const disallowed = (targets || []).length - allowed.length;
-
-    if (disallowed > 0) {
-      setErrorModal({
-        visible: true,
-        message: "Solo puedes cancelar guías en estatus 1 o 2.",
-      });
+    const list = targets || [];
+    if (list.length === 0) {
+      financeAlert.showWarning(
+        "Atención",
+        "Selecciona al menos una guía para cancelar."
+      );
+      return;
     }
 
-    if (!allowed || allowed.length === 0) {
-      setErrorModal({
-        visible: true,
-        message: "No existe información seleccionada para actualizar, favor de validar",
-      });
+    const allowed = list.filter((g) =>
+      allowedCancelStatuses.includes(getShippingGuideStatusCode(g))
+    );
+
+    if (allowed.length === 0) {
+      financeAlert.showWarning(
+        "Atención",
+        "Solo puedes cancelar guías en estatus pendiente."
+      );
       return;
     }
 
@@ -383,17 +263,23 @@ export default function ShippingGuideContainer(): ReactElement {
 
   const handleCancelSubmit = async () => {
     if (!cancelReason) {
-      setErrorModal({ visible: true, message: "Selecciona un motivo de cancelación." });
+      financeAlert.showWarning("Atención", "Selecciona un motivo de cancelación.");
       return;
     }
     if (cancelComment.length > 254) {
-      setErrorModal({ visible: true, message: "El comentario no puede exceder 254 caracteres." });
+      financeAlert.showWarning(
+        "Atención",
+        "El comentario no puede exceder 254 caracteres."
+      );
       return;
     }
 
     const targetIds = cancelTargets.map((g) => g.shippingGuideId);
     if (targetIds.length === 0) {
-      setErrorModal({ visible: true, message: "No existe información seleccionada para actualizar." });
+      financeAlert.showWarning(
+        "Atención",
+        "No existe información seleccionada para actualizar."
+      );
       setCancelModalOpen(false);
       return;
     }
@@ -414,16 +300,18 @@ export default function ShippingGuideContainer(): ReactElement {
               ...g,
               status: {
                 ...(g.status || {
-                  key: "",
-                  value: "",
+                  key: "ECF009",
+                  value: 9,
                   color: "",
-                  externalKey: "",
-                  internalStatus: 0,
+                  externalKey: "ECF009",
+                  internalStatus: 9,
                   description: "",
-                }),
+                } as any),
                 internalStatus: 9,
-                description: "Cancelada",
-                value: "Cancelada",
+                description:
+                  "Guía de embarque cancelada en el portal de proveedores FBC",
+                value: "Guía de embarque cancelada en el portal de proveedores FBC",
+                key: "ECF009",
               },
               updatedAt: now,
               comments: cancelComment,
@@ -431,23 +319,25 @@ export default function ShippingGuideContainer(): ReactElement {
             : g
         )
       );
+      const guidenumbers = cancelTargets.map((g) => g.guideNumber);
 
-      setErrorModal({
-        visible: true,
-        message:
-          targetIds.length === 1
-            ? `La guía de embarque [${targetIds[0]}] ha sido cancelada con éxito.`
-            : `Se han cancelado ${targetIds.length} guías de embarque con éxito.`,
-      });
+      financeAlert.showSuccess(
+        "Operación exitosa",
+        targetIds.length === 1
+          ? `La guía de embarque ${guidenumbers[0]} ha sido cancelada con éxito.`
+          : `Se han cancelado ${guidenumbers.length} guías de embarque con éxito.`,
+      );
 
+      setSelectedGuides([]);
       setCancelModalOpen(false);
-    } catch (error: any) {
-      const code = error?.response?.status ?? "N/D";
-      const reason = error?.response?.data?.message ?? "Motivo no disponible";
-      setErrorModal({
-        visible: true,
-        message: `Error al intentar cancelar las guías seleccionadas, código de error [${code}] - Motivo [${reason}]`,
-      });
+    } catch (error: unknown) {
+      financeAlert.showError(
+        "Error al cancelar",
+        getErrorMessage(
+          error,
+          "No fue posible cancelar las guías seleccionadas."
+        )
+      );
     } finally {
       setSubmittingCancel(false);
     }
@@ -456,52 +346,57 @@ export default function ShippingGuideContainer(): ReactElement {
   const cancelDisabled = useMemo(() => {
     if (!hasData) return true;
     if (selectedGuides.length === 0) return true;
-    return !selectedGuides.some((g) => allowedCancelStatuses.includes(getStatusCode(g)));
+    return !selectedGuides.some((g) => allowedCancelStatuses.includes(getShippingGuideStatusCode(g)));
   }, [hasData, selectedGuides, allowedCancelStatuses]);
+
+  const exportToolbarDisabled = !hasData;
 
   return (
     <div className="twm-layout">
       <Breadcrumb
-        items={[
-          { label: "Finanzas", to: "/" },
-          { label: "Guías de Embarque" },
-        ]}
+        items={withFinanceBreadcrumb([{ label: "Guías de Embarque" }])}
       />
 
       <div className="twm-box">
         <div className="twm-header">
           <div>
             <h3 className="twm-title">Guías de Embarque</h3>
-            <p className="twm-description">Consulta y validación de documentos financieros.</p>
+            <p className="twm-description">
+              Listado de viajes asociados a la carta porte para su validación y consulta de detalle
+            </p>
           </div>
 
           <div className="twm-toolbar">
             <ShippingGuideToolbar
-              onExportCsv={() => exportSelected("csv")}
-              onExportXlsx={() => exportSelected("xml")}
-              disabled={cancelDisabled}
+              onExportCsv={() => exportGridReport("csv")}
+              onExportXlsx={() => exportGridReport("xlsx")}
+              onCancelSelection={() => openCancelModal(selectedGuides)}
+              cancelDisabled={cancelDisabled}
+              disabled={exportToolbarDisabled}
             />
           </div>
         </div>
 
         <div className="twm-filters-section">
           <ShippingGuideFilterBar
-            filters={filters}
-            disabled={!hasData}
-            setFilters={handleSetFilters}
-            onCancel={() => openCancelModal(selectedGuides)}
+            onSearch={handleSearch}
+            onClear={handleClearFilters}
           />
         </div>
 
-        <div className="twm-grid-section">
+        <div className="twm-grid-section sg-grid-compact-font">
           <ShippingGuideGrid
             rows={rows}
             loading={loading}
             onSelectionChange={setSelectedGuides}
             onRequestCancel={openCancelModal}
             onRequestStatusUpdate={(guide) =>
-              nav(`/guias/${guide.shippingGuideId}/estatus`, { state: { guide } })
+              nav(`/finanzas/guias/${guide.shippingGuideId}/estatus`, {
+                state: { guide },
+              })
             }
+            onDownloadCsvRow={(g) => downloadSingleGuide(g, 2)}
+            onDownloadXmlRow={(g) => downloadSingleGuide(g, 1)}
           />
         </div>
 
@@ -548,7 +443,7 @@ export default function ShippingGuideContainer(): ReactElement {
                   />
                 </div>
               </div>
-            ) as any
+            ) 
           }
           confirmText={submittingCancel ? "Cancelando..." : "Confirmar cancelación"}
           cancelText="Cerrar"
@@ -559,13 +454,13 @@ export default function ShippingGuideContainer(): ReactElement {
         />
 
         <GenericModal
-          visible={errorModal.visible}
+          visible={financeAlert.alertVisible}
           variant="alert"
-          severity="error"
-          title="Error"
-          message={errorModal.message}
+          severity={financeAlert.alertSeverity}
+          title={financeAlert.alertTitle}
+          message={financeAlert.alertMessage}
           buttonText="Aceptar"
-          onClose={() => setErrorModal({ visible: false, message: "" })}
+          onClose={financeAlert.closeAlert}
         />
       </div>
     </div>

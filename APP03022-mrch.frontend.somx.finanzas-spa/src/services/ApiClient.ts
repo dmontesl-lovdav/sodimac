@@ -91,6 +91,23 @@ export function createApiClient(options?: {
         return res.data as T;
     }
 
+    function parseFilenameFromContentDisposition(header: string | undefined | null): string | null {
+        if (!header) return null;
+        const utf8Match = header.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
+        if (utf8Match && utf8Match[1]) {
+            try {
+                return decodeURIComponent(utf8Match[1].replace(/['"]/g, '').trim());
+            } catch {
+                // fall through to the ascii match
+            }
+        }
+        const asciiMatch = header.match(/filename\s*=\s*"?([^";]+)"?/i);
+        if (asciiMatch && asciiMatch[1]) {
+            return asciiMatch[1].trim();
+        }
+        return null;
+    }
+
     async function requestBinary(
         path: string,
         method: HttpMethod,
@@ -112,9 +129,14 @@ export function createApiClient(options?: {
 
         const blob = new Blob([res.data]);
 
+        const dispositionHeader =
+            (res.headers as Record<string, string> | undefined)?.["content-disposition"] ??
+            (res.headers as Record<string, string> | undefined)?.["Content-Disposition"];
+        const serverFilename = parseFilenameFromContentDisposition(dispositionHeader);
+
         const anchor = document.createElement("a");
         anchor.href = window.URL.createObjectURL(blob);
-        anchor.download = filename || "file.bin";
+        anchor.download = serverFilename || filename || "file.bin";
 
         document.body.appendChild(anchor);
         anchor.click();

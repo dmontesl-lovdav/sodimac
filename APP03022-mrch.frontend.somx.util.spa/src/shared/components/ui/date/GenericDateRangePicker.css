@@ -1,48 +1,147 @@
-.gdrp-wrapper {
-    position: relative;
+/* INPUT */
+
+.dr-wrapper {
+    display: inline-block;
     width: 100%;
 }
 
-.gdrp-size-sm {
+.dr-container {
+    position: relative;
+    min-width: 240px;
+    width: 100%;
+}
+
+.dr-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0 60px 0 12px;
+    font-size: 14px;
+    background: #fff;
+    transition: 0.15s ease;
+    outline: none;
+}
+
+.dr-sm {
     height: 40px;
     font-size: 0.875rem;
 }
 
-.gdrp-size-md {
+.dr-md {
     height: 44px;
     font-size: 0.875rem;
 }
 
-.gdrp-size-lg {
+.dr-lg {
     height: 48px;
     font-size: 1rem;
 }
 
-.gdrp-input {
-    width: 100%;
-    background: white;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding-left: 16px;
-    padding-right: 40px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.dr-input:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
 }
 
-.gdrp-input:focus {
-    border-color: #0284c7;
-    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
-}
+/* CALENDAR BUTTON */
 
-.gdrp-caret {
+.dr-btn {
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: #002d4c;
-    pointer-events: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #5f6368;
 }
 
-.gdrp-full {
-    width: 100%;
+.dr-btn:hover {
+    color: #1976d2;
+}
+
+/* POPPER */
+
+.dr-popper {
+    z-index: 9999;
+}
+
+.dr-popper .react-datepicker {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* HEADER */
+
+.dr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #fff;
+}
+
+.dr-header-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dr-month {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.dr-year-select {
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+}
+
+/* NAV BUTTONS */
+
+.dr-nav-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    color: #5f6368;
+}
+
+.dr-nav-btn:hover {
+    color: #1976d2;
+}
+
+/* DAYS */
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-range {
+    background: #1976d2;
+    color: #fff;
+    border-radius: 6px;
+}
+
+.react-datepicker__day:hover {
+    background: #e3f2fd;
+    border-radius: 6px;
+}
+
+.dr-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #5f6368;
+    line-height: 1;
+}
+
+.dr-clear-btn:hover {
+    color: #1976d2;
 }

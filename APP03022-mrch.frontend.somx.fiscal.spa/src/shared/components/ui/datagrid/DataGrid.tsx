@@ -1,16 +1,14 @@
 
-import React, { ReactElement, useMemo, useState, useCallback, useEffect } from "react";
+import React, { ReactElement, useMemo, useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import GenericTable, {
   Column as TableColumn,
   RowAction as GenericRowAction,
 } from "@/shared/components/ui/table/DataTable";
 import { GenericButton, GenericModal } from "@/shared/components/ui";
-import SimpleLobby from "../lobby/Lobby";
 import xmlIconUrl from "@assets/xml.svg";
 import pdfIconUrl from "@assets/pdf.svg";
 import { exportToCSV, getStandardFilename } from "@/utils/utils";
 import { usePaginatedData, type UsePaginatedDataOptions, parseFetchError } from "@/shared/components/ui/datagrid/hooks/usePaginatedData";
-import { ModalMsg } from "@/shared/components/ui/modal/ModalMsg";
 
 /** Reexporta los tipos de GenericTable (no tienen 'accessor') */
 export type Column<T> = TableColumn<T>;
@@ -64,6 +62,10 @@ type DataGridProps<T, F = any> = {
   enablePdf?: boolean;                 // default: false
   getPdfUrl?: (row: T) => string | null | undefined; // URL del PDF
   csvFilename?: string;                // default: "Export"
+  /** Oculta el botón CSV sobre la tabla (usar ExportCsvButton en el encabezado). */
+  hideCsvToolbar?: boolean;
+  /** Indica si hay datos exportables (p. ej. para habilitar botón en header). */
+  onExportAvailabilityChange?: (canExport: boolean) => void;
   enableXml?: boolean;                 // default: false
   getXmlContent?: (row: T) => string | null | undefined | Promise<string | null | undefined>;
   getFilename?: (row: T) => string; // default: `{folio|invoiceUuid|getRowId}`
@@ -73,6 +75,8 @@ type DataGridProps<T, F = any> = {
   /** Si es true y no hay filas, se muestra SimpleLobby con este mensaje (ej. "Realiza una búsqueda en los filtros"). */
   filtersEmpty?: boolean;
   emptyFiltersMessage?: string;
+  /** Si es false, no consulta hasta que el usuario pulse Buscar. Por defecto false. */
+  fetchEnabled?: boolean;
 };
 
 /** ------------------------------------------------------------
@@ -140,44 +144,75 @@ function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null
   if (typeof col.render === "function") return col.render(row) as any;
   return "";
 }
-/* ts-ignore */
-export default function DataGrid<T, F = any>({
-  rows: externalRows,
-  loading: externalLoading,
-  columns,
-  getRowId,
-  page: externalPage,
-  perPage: externalPerPage,
-  totalPages: externalTotalPages,
-  totalItems: externalTotalItems,
-  emptyLabel,
-  selectable = true,
-  onChangePage: externalOnChangePage,
-  onChangePerPage: externalOnChangePerPage,
 
-  /** Paginación automática */
-  fetchFn,
-  filters,
-  initialPage = 0,
-  initialSize = 10,
+export type DataGridHandle = {
+  exportCsv: () => void;
+};
 
-  /** acciones internas */
-  enableCsv = true,
-  csvFilename = "Export",
-  enableXml = false,
-  enablePdf = false,
-  getPdfUrl,
-  getXmlContent,
-  rowActions: customRowActions,
-  filtersEmpty = false,
-  emptyFiltersMessage="Realiza una búsqueda en los filtros para mostrar resultados.",
-}: DataGridProps<T, F>): ReactElement {
+export function exportDataGridToCsv<T>(
+  columns: DataGridColumn<T>[],
+  data: T[],
+  csvFilename: string
+): void {
+  const headers = columns.map((col) =>
+    col.exportHeader ?? headerToString(col.header, "")
+  );
+
+  const rowsForCsv = data.map((row) =>
+    columns.map((col) => {
+      const v = getCellValue(col, row);
+      return v ?? "";
+    })
+  );
+
+  exportToCSV(headers, rowsForCsv, csvFilename);
+}
+
+function DataGridInner<T, F = any>(
+  {
+    rows: externalRows,
+    loading: externalLoading,
+    columns,
+    getRowId,
+    page: externalPage,
+    perPage: externalPerPage,
+    totalPages: externalTotalPages,
+    totalItems: externalTotalItems,
+    emptyLabel,
+    selectable = true,
+    onChangePage: externalOnChangePage,
+    onChangePerPage: externalOnChangePerPage,
+
+    /** Paginación automática */
+    fetchFn,
+    filters,
+    initialPage = 0,
+    initialSize = 10,
+
+    /** acciones internas */
+    enableCsv = true,
+    csvFilename = "Export",
+    hideCsvToolbar = false,
+    onExportAvailabilityChange,
+    enableXml = false,
+    enablePdf = false,
+    getPdfUrl,
+    getXmlContent,
+    getFilename,
+    rowActions: customRowActions,
+    filtersEmpty = false,
+    emptyFiltersMessage = "Realiza una búsqueda en los filtros para mostrar resultados.",
+    fetchEnabled = false,
+  }: DataGridProps<T, F>,
+  ref: React.ForwardedRef<DataGridHandle>
+): ReactElement {
   // Si se pasa fetchFn, usar paginación automática
   const paginatedData = fetchFn && filters ? usePaginatedData<T, F>({
     fetchFn,
     initialFilters: filters,
     initialPage,
     initialSize,
+    fetchEnabled,
   } as UsePaginatedDataOptions<T, F>) : null;
 
   const rows = paginatedData ? paginatedData.rows : (externalRows || []);
@@ -193,6 +228,19 @@ export default function DataGrid<T, F = any>({
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [processing, setProcessing] = useState<boolean>(false);
   const [xmlErrorMsg, setXmlErrorMsg] = useState<string | undefined>(undefined);
+  const [emptySearchAlertOpen, setEmptySearchAlertOpen] = useState(false);
+  const prevLoadingRef = useRef(false);
+
+  useEffect(() => {
+    const emptyOutcome = rows.length === 0 && !filtersEmpty;
+    if (prevLoadingRef.current === true && !loading && emptyOutcome) {
+      setEmptySearchAlertOpen(true);
+    }
+    if (rows.length > 0 || filtersEmpty || loading) {
+      setEmptySearchAlertOpen(false);
+    }
+    prevLoadingRef.current = loading;
+  }, [loading, filtersEmpty, rows.length]);
 
   /** -------- selección -------- */
   useEffect(() => setSelectedIds(new Set()), [rows]);
@@ -223,6 +271,29 @@ export default function DataGrid<T, F = any>({
     () => rows.filter(r => selectedIds.has(getRowId(r))),
     [rows, selectedIds, getRowId]
   );
+
+  const runCsvExport = useCallback(() => {
+    if (!enableCsv || rows.length === 0) return;
+    const data = selectedRows.length ? selectedRows : rows;
+    exportDataGridToCsv(columns, data, csvFilename);
+  }, [enableCsv, rows, selectedRows, columns, csvFilename]);
+
+  useImperativeHandle(ref, () => ({
+    exportCsv: runCsvExport,
+  }), [runCsvExport]);
+
+  useEffect(() => {
+    if (!onExportAvailabilityChange) return;
+    onExportAvailabilityChange(
+      Boolean(enableCsv && rows.length > 0 && !loading && !filtersEmpty)
+    );
+  }, [
+    onExportAvailabilityChange,
+    enableCsv,
+    rows.length,
+    loading,
+    filtersEmpty,
+  ]);
 
   /** -------- columna de selección (TableColumn<T>) -------- */
   const selectionColumn: TableColumn<T> | null = selectable
@@ -277,7 +348,8 @@ export default function DataGrid<T, F = any>({
         getXmlContent ??
         ((row: any) => row?.xmlContent); // auto-detección por convención
 
-      const nameGetter: (row: T) => string = (row: T) => getStandardFilename(row)+".xml";
+      const nameGetter: (row: T) => string =
+        getFilename ?? ((row: T) => `${getStandardFilename(row)}.xml`);
 
       actions.push({
         title: "Exportar XML",
@@ -307,7 +379,7 @@ export default function DataGrid<T, F = any>({
           const baseUrl = process.env.API_BASE_URL || "";
           const fiscalUuid = row?.fiscalUuid;
           if (!fiscalUuid) return null;
-          return `${baseUrl}pdf/from-uuid/${fiscalUuid}?inline=true`;
+          return `${baseUrl}/invoices/${fiscalUuid}/pdf`;
         });
 
       const pdfNameGetter: (row: T) => string = (row: T) => getStandardFilename(row)+".pdf";
@@ -324,7 +396,7 @@ export default function DataGrid<T, F = any>({
     }
 
     return actions;
-  }, [enableXml, enablePdf, getXmlContent, getStandardFilename, getPdfUrl, getRowId]);
+  }, [enableXml, enablePdf, getXmlContent, getFilename, getPdfUrl, getRowId]);
 
   const allRowActions = useMemo(
     () => [...(customRowActions ?? []), ...internalRowActions],
@@ -333,31 +405,19 @@ export default function DataGrid<T, F = any>({
 
   /** -------- acción masiva interna (CSV) -------- */
   const internalBulkActions: BulkAction<T>[] = useMemo(() => {
-    if (!enableCsv) return [];
+    if (!enableCsv || hideCsvToolbar) return [];
 
     const csvAction: BulkAction<T> = {
       label: "Exportar a CSV",
       value: "csv",
       run: (selected, all) => {
         const data = selected.length ? selected : all;
-
-        const headers = columns.map(col =>
-          col.exportHeader ?? headerToString(col.header, "")
-        );
-
-        const rowsForCsv = data.map(row =>
-          columns.map(col => {
-            const v = getCellValue<T>(col, row);
-            return v ?? "";
-          })
-        );
-
-        exportToCSV(headers, rowsForCsv, csvFilename);
+        exportDataGridToCsv(columns, data, csvFilename);
       },
     };
 
     return [csvAction];
-  }, [enableCsv, columns, csvFilename]);
+  }, [enableCsv, hideCsvToolbar, columns, csvFilename]);
 
   /** -------- botones de acción masiva -------- */
   const onBulkClick = async (action: BulkAction<T>) => {
@@ -370,11 +430,15 @@ export default function DataGrid<T, F = any>({
   };
 
   const xmlErrorModal = (
-    <ModalMsg
-      severity="error"
+    <GenericModal
       visible={!!xmlErrorMsg}
-      msg={xmlErrorMsg || ""}
+      variant="alert"
+      severity="error"
+      title="Error"
+      message={xmlErrorMsg || ""}
+      buttonText="Aceptar"
       onClose={() => setXmlErrorMsg(undefined)}
+      onConfirm={() => setXmlErrorMsg(undefined)}
     />
   );
 
@@ -386,31 +450,42 @@ export default function DataGrid<T, F = any>({
     />
   );
 
-  /** -------- lobby vacío o error de búsqueda -------- */
-  if (rows.length === 0) {
-    const message =
-      filtersEmpty && emptyFiltersMessage
-        ? emptyFiltersMessage
-        : loading
-          ? "Cargando..."
-          : fetchError
-            ? [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") || "Error al obtener los datos"
-            : "Sin resultados";
-    return (
-      <>
-        <SimpleLobby message={message} error={!!fetchError && !filtersEmpty} />
-        {xmlErrorModal}
-      </>
-    );
-  }
+  const tableEmptyLabel = loading
+    ? "Cargando..."
+    : fetchError
+      ? [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") ||
+        "Error al obtener los datos"
+      : effectiveEmptyLabel;
 
-  /** -------- render tabla -------- */
+  const showOutcomeAlert = emptySearchAlertOpen && !filtersEmpty && !loading && rows.length === 0;
+  const outcomeTitle = fetchError ? "Error" : "Sin resultados obtenidos";
+  const outcomeSeverity = fetchError ? ("error" as const) : ("warning" as const);
+  const outcomeMessage = fetchError
+    ? tableEmptyLabel
+    : "No se encontraron registros para los criterios de búsqueda indicados.";
+
+  const emptySearchModal = (
+    <GenericModal
+      visible={showOutcomeAlert}
+      variant="alert"
+      severity={outcomeSeverity}
+      title={outcomeTitle}
+      message={outcomeMessage}
+      buttonText="Aceptar"
+      onClose={() => setEmptySearchAlertOpen(false)}
+      onConfirm={() => setEmptySearchAlertOpen(false)}
+    />
+  );
+
+  const displayPage = page === 0 ? 1 : page;
+
+  /** -------- render tabla (incluye vacío con encabezados, estilo Carta Porte) -------- */
   return (
     <>
       <div className="results-container">
-         {internalBulkActions.length > 0 && (
+        {internalBulkActions.length > 0 && (
           <div className="fiscal-flex fiscal-gap-2 fiscal-flex-wrap fiscal-justify-end fiscal-mt-4">
-            {internalBulkActions.map(action => (
+            {internalBulkActions.map((action) => (
               <GenericButton
                 key={action.value}
                 variant="primary"
@@ -426,21 +501,27 @@ export default function DataGrid<T, F = any>({
           rows={rows}
           columns={tableColumns}
           actions={allRowActions}
-          emptyLabel={emptyLabel}
+          emptyLabel={tableEmptyLabel}
           perPage={perPage}
-          page={page}
-          totalPages={totalPages}
+          page={displayPage}
+          totalPages={Math.max(1, totalPages)}
           totalItems={totalItems}
           onChangePage={onChangePage}
           onChangePerPage={onChangePerPage}
         />
-       
       </div>
       {processingModal}
       {xmlErrorModal}
+      {emptySearchModal}
     </>
   );
 }
+
+const DataGrid = forwardRef(DataGridInner) as <T, F = any>(
+  props: DataGridProps<T, F> & { ref?: React.Ref<DataGridHandle> }
+) => ReactElement;
+
+export default DataGrid;
 
 /* ============================================================
  * Opcional: helper reusado 'dentro de Grid' para crear onFilter

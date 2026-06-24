@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect, useCallback, ty
 import { GenericTrace } from "@/shared/components/ui/misc";
 import { AuditLogPayload, createTraceabilityClient, TraceFolio, TraceFolioPayload } from "@/services/TraceabilityClient";
 import GenericButton from "@/shared/components/ui/button/GenericButton";
+import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 
 export interface TraceFolioContextValue {
   traceId: string | null;
@@ -42,7 +43,24 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
     return current;
   }, []);
 
-  const extractErrorInfo = useCallback((value: unknown): { idError: string; mensaje: string } => {
+  const pickFirstString = useCallback((candidates: unknown[]): string => {
+    for (const item of candidates) {
+      if (typeof item === "string" && item.trim()) return item.trim();
+    }
+    return "";
+  }, []);
+
+  const pickFirstStringOrNumber = useCallback((candidates: unknown[]): string => {
+    for (const item of candidates) {
+      if (typeof item === "string" || typeof item === "number") {
+        const value = String(item).trim();
+        if (value) return value;
+      }
+    }
+    return "";
+  }, []);
+
+  const extractErrorInfo = useCallback((value: unknown): { idError: string; mensaje: string; idMensaje?: string } => {
     const fallback = { idError: "1", mensaje: "Timeout error" };
     const responseData = getNestedValue(value, ["response", "data"]);
     const source = responseData ?? value;
@@ -50,19 +68,16 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
     if (!source || typeof source !== "object") return fallback;
 
     const record = source as Record<string, unknown>;
-    const idErrorCandidate = [record.idError, record.errorCode, record.code, record.codigo]
-      .find((item) => typeof item === "string" || typeof item === "number");
-    const mensajeCandidate = [record.mensaje, record.message, record.detail, record.details]
-      .find((item) => typeof item === "string");
-
-    const idError = idErrorCandidate != null ? String(idErrorCandidate).trim() : "";
-    const mensaje = typeof mensajeCandidate === "string" ? mensajeCandidate.trim() : "";
+    const idError = pickFirstStringOrNumber([record.idError, record.errorCode, record.code, record.codigo]);
+    const mensaje = pickFirstString([record.mensaje, record.message, record.detail, record.details]);
+    const idMensaje = pickFirstStringOrNumber([record.idMensaje, record.error, record.title, record.name]);
 
     return {
       idError: idError || fallback.idError,
       mensaje: mensaje || fallback.mensaje,
+      ...(idMensaje ? { idMensaje } : {}),
     };
-  }, [getNestedValue]);
+  }, [getNestedValue, pickFirstString, pickFirstStringOrNumber]);
 
   const toLogString = useCallback((value: unknown): string => {
     if (typeof value === "string") return value;
@@ -117,13 +132,20 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
         idModulo: module,
         paso: step,
         detalle: details,
+        fechaHora: new Date().toISOString(),
         log: toLogString(log),
         tipoEvento: severity,
-        idUsuario: "1",
-        ...(errorInfo ? errorInfo : {}),
+        idUsuario: getUserIdFromStore() ?? "1",
+        ...(errorInfo
+          ? {
+              idError: errorInfo.idError,
+              mensaje: errorInfo.mensaje,
+              ...(errorInfo.idMensaje ? { idMensaje: errorInfo.idMensaje } : {}),
+            }
+          : {}),
       };
 
-      void traceClient.createAuditLog(payload);
+      traceClient.createAuditLog(payload);
     },
     [traceFolio?.data?.folioVisible, traceFolio?.trace_id, traceClient, toLogString, extractErrorInfo]
   );
@@ -145,18 +167,26 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
     </p>
   ) : null;
 
-  const traceFooter: ReactNode = traceId ? (
-    <div className="fiscal-mt-4">
-      <GenericTrace traceId={folio} uuid={traceId} />
-    </div>
-  ) : traceLoading ? (<p> Expere a que finalice la obtención del folio</p>) : (
-     <div>
-      <p style={{ color: "red" }}>No se pudo obtener el folio de trazabilidad</p>
-          <GenericButton onClick={() => window.location.reload()}>
-            Intentar nuevamente
-          </GenericButton>
-     </div>
-  );
+  const traceFooter: ReactNode = (() => {
+    if (traceId) {
+      return (
+        <div className="fiscal-mt-4">
+          <GenericTrace traceId={folio} uuid={traceId} />
+        </div>
+      );
+    }
+    if (traceLoading) {
+      return <p> Expere a que finalice la obtención del folio</p>;
+    }
+    return (
+      <div>
+        <p style={{ color: "red" }}>No se pudo obtener el folio de trazabilidad</p>
+        <GenericButton onClick={() => window.location.reload()}>
+          Intentar nuevamente
+        </GenericButton>
+      </div>
+    );
+  })();
 
   const value: TraceFolioContextValue = {
     traceId,

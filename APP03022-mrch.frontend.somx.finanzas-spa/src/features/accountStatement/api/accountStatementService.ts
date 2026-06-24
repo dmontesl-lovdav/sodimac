@@ -2,9 +2,28 @@ import { createApiClient } from "@/services/ApiClient";
 import type {
     AccountStatementFilters,
     PagedAccountStatementResult,
+    AccountStatementRecord,
 } from '../interfaces';
+import type { AccountStatementReportPayload } from '../interfaces/accountStatementReport';
 
 const api = createApiClient();
+
+function normalizeRecord(raw: Record<string, unknown>): AccountStatementRecord {
+    return {
+        accountStatementUuid: String(raw.accountStatementUuid ?? ""),
+        vendorNumber: String(raw.vendorNumber ?? ""),
+        vendorName: String(raw.vendorName ?? ""),
+        year: Number(raw.year ?? 0),
+        month: Number(raw.month ?? 0),
+        status:
+            raw.status != null && raw.status !== ""
+                ? Number(raw.status)
+                : undefined,
+        statusLabel: (raw.statusLabel as AccountStatementRecord["statusLabel"]) ?? "Generado",
+        processedAt: String(raw.processedAt ?? ""),
+        reviewedAt: String(raw.reviewedAt ?? ""),
+    };
+}
 
 export const AccountStatementService = {
     async search(filters: AccountStatementFilters, page: number, pageSize: number): Promise<PagedAccountStatementResult> {
@@ -17,15 +36,29 @@ export const AccountStatementService = {
         if (filters.month === 'all') params.month = 'all';
         else if (typeof filters.month === 'number') params.month = filters.month;
 
-        return api.request<PagedAccountStatementResult>("account-statement", "get", undefined, { params });
-    },
-
-    async getPdf(statementId: string): Promise<Blob> {
-        return api.request<Blob>(
-            `account-statement/${statementId}/pdf`,
+        const result = await api.request<PagedAccountStatementResult & { total?: number }>(
+            "account-statement",
             "get",
             undefined,
-            { responseType: "blob" }
+            { params }
+        );
+
+        const items = (result?.items ?? []).map((row) =>
+            normalizeRecord(row as Record<string, unknown>)
+        );
+
+        return {
+            items,
+            totalItems: Number(result?.totalItems ?? result?.total ?? items.length),
+            totalPages: Number(result?.totalPages ?? 1),
+            currentPage: Number(result?.currentPage ?? page),
+        };
+    },
+
+    async getReportData(statementId: string): Promise<AccountStatementReportPayload> {
+        return api.request<AccountStatementReportPayload>(
+            `account-statement/${statementId}/report-data`,
+            "get"
         );
     },
 

@@ -9,3 +9,4 @@ export * from './attachmentUploader/index';
 export * from './input/index';
 export * from './verticalStepper/index';
 export * from './progress/index';
+export * from './pagination/index';

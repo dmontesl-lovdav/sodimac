@@ -1,3 +1,9 @@
 .rc-reception-invoice {
     width: 100%;
 }
+
+.rc-header-actions-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}

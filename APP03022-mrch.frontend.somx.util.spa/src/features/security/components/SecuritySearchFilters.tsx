@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { GenericDateRangePicker } from '@shared/components/ui/date';
 import type { SecurityFilters } from '../types';
 
 interface Props {
@@ -13,6 +14,15 @@ const toInputDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const fromInputDate = (date: string) => {
+  if (!date) {
+    return null;
+  }
+
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export function SecuritySearchFilters({ filters, onChange }: Props) {
   const { defaultStartDate, defaultEndDate } = useMemo(() => {
     const today = new Date();
@@ -25,32 +35,30 @@ export function SecuritySearchFilters({ filters, onChange }: Props) {
     };
   }, []);
 
+  /** Solo la primera vez con ambas fechas vacías (montaje): sugerir rango. No repetir si el usuario borra con la X. */
+  const dateDefaultsSeededRef = useRef(false);
+
+  /** Solo al montar: si aún no hay fechas, sugerir rango. Evita depender de `filters` en el array (cambios en otros campos). */
+  const filtersRefForSeed = useRef(filters);
+  filtersRefForSeed.current = filters;
+
   useEffect(() => {
-    if (filters.startDate && filters.endDate) {
+    if (dateDefaultsSeededRef.current) return;
+    const f = filtersRefForSeed.current;
+    if (f.startDate || f.endDate) {
+      dateDefaultsSeededRef.current = true;
       return;
     }
-
+    dateDefaultsSeededRef.current = true;
     onChange({
-      ...filters,
-      startDate: filters.startDate || defaultStartDate,
-      endDate: filters.endDate || defaultEndDate,
+      ...f,
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
     });
-  }, [defaultEndDate, defaultStartDate, filters, onChange]);
+  }, [defaultEndDate, defaultStartDate, onChange]);
 
   return (
     <div className="security-filters">
-      <input
-        className="security-input"
-        type="date"
-        value={filters.startDate || defaultStartDate}
-        onChange={(event) => onChange({ ...filters, startDate: event.target.value })}
-      />
-      <input
-        className="security-input"
-        type="date"
-        value={filters.endDate || defaultEndDate}
-        onChange={(event) => onChange({ ...filters, endDate: event.target.value })}
-      />
       <input
         className="security-input"
         placeholder="Id"
@@ -72,6 +80,22 @@ export function SecuritySearchFilters({ filters, onChange }: Props) {
         <option value="1">Activo</option>
         <option value="0">Inactivo</option>
       </select>
+      <GenericDateRangePicker
+        value={[
+          filters.startDate ? fromInputDate(filters.startDate) : null,
+          filters.endDate ? fromInputDate(filters.endDate) : null,
+        ]}
+        onChange={([startDate, endDate]: [Date | null, Date | null]) =>
+          onChange({
+            ...filters,
+            startDate: startDate ? toInputDate(startDate) : '',
+            endDate: endDate ? toInputDate(endDate) : '',
+          })
+        }
+        placeholder="Fecha desde - hasta"
+        className="security-date-range"
+        size="sm"
+      />
     </div>
   );
 }

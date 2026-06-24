@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import GenericButton from '@shared/components/ui/button/GenericButton';
+import { GenericTable } from '@shared/components/ui/table';
 import type { SecurityRow } from '../types';
-import { SecurityTablePagination } from './SecurityTablePagination';
 
 interface Props {
   items: SecurityRow[];
@@ -9,6 +9,7 @@ interface Props {
   actionLabel?: string;
   actionIcon?: ReactNode;
   onAction: (row: SecurityRow) => void;
+  onSelectionChange?: (selectedIds: number[]) => void;
 }
 
 const defaultActionIcon = (
@@ -24,24 +25,14 @@ const defaultActionIcon = (
   </svg>
 );
 
-function buildCsvFilename(title?: string): string {
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yyyy = String(now.getFullYear());
-  const hh = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const safeTitle = (title ?? 'security-grid')
-    .trim()
-    .replace(/[\\/:*?"<>|]/g, '')
-    .replace(/\s+/g, '_');
-  return `${safeTitle}-${dd}-${mm}-${yyyy}-${hh}-${min}.csv`;
-}
-
-export function SecurityGrid({ items, title, actionLabel = 'Ver detalle', actionIcon = defaultActionIcon, onAction }: Props) {
+export function SecurityGrid({ items, title: _title, actionLabel = 'Ver detalle', actionIcon = defaultActionIcon, onAction, onSelectionChange }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    onSelectionChange?.(Array.from(selectedRowIds));
+  }, [selectedRowIds, onSelectionChange]);
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const pageItems = useMemo(() => {
@@ -67,35 +58,50 @@ export function SecurityGrid({ items, title, actionLabel = 'Ver detalle', action
 
   const areAllRowsSelected = items.length > 0 && items.every((item) => selectedRowIds.has(item.id));
 
-  const handleExportCsv = () => {
-    const headers = ['id', 'clave', 'nombre', 'estatus', 'totalAsignados'];
-    const sourceRows = selectedRowIds.size
-      ? items.filter((item) => selectedRowIds.has(item.id))
-      : items;
-    const rows = sourceRows.map((item) => [
-      item.id,
-      item.catalogKey,
-      item.name,
-      item.status === 1 ? 'Activo' : 'Inactivo',
-      item.totalAssigned,
-    ]);
-    const csv = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row
-          .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
-          .join(','),
-      ),
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = buildCsvFilename(title);
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const columns = useMemo(
+    () => [
+      {
+        header: 'ID',
+        render: (item: SecurityRow) => item.id,
+      },
+      {
+        header: 'Clave',
+        render: (item: SecurityRow) => item.catalogKey,
+      },
+      {
+        header: 'Nombre',
+        render: (item: SecurityRow) => item.name,
+      },
+      {
+        header: 'Estatus',
+        render: (item: SecurityRow) => (
+          <span className={`security-status ${item.status === 1 ? 'active' : 'inactive'}`}>
+            {item.status === 1 ? 'Activo' : 'Inactivo'}
+          </span>
+        ),
+      },
+      {
+        header: 'Total asignados',
+        render: (item: SecurityRow) => item.totalAssigned,
+      },
+      {
+        header: 'Acción',
+        align: 'center' as const,
+        render: (item: SecurityRow) => (
+          <GenericButton
+            variant="outlineFill"
+            className="security-action-btn"
+            title={actionLabel}
+            aria-label={actionLabel}
+            onClick={() => onAction(item)}
+          >
+            <span className="security-action-icon">{actionIcon}</span>
+          </GenericButton>
+        ),
+      },
+    ],
+    [actionIcon, actionLabel, onAction],
+  );
 
   const toggleRowSelection = (id: number) => {
     setSelectedRowIds((prev) => {
@@ -118,73 +124,33 @@ export function SecurityGrid({ items, title, actionLabel = 'Ver detalle', action
   return (
     <>
       <div className="security-grid-toolbar">
-        <div>{selectedRowIds.size > 0 ? `${selectedRowIds.size} seleccionados` : 'Sin selección'}</div>
-        <GenericButton variant="primary" onClick={handleExportCsv}>
-          Exportar CSV
-        </GenericButton>
+        <div>
+          {selectedRowIds.size > 0
+            ? `${selectedRowIds.size} seleccionado(s) de ${items.length} registros encontrados`
+            : `${items.length} registros encontrados`}
+        </div>
       </div>
-      <table className="security-table">
-        <thead>
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                checked={areAllRowsSelected}
-                onChange={toggleSelectAll}
-                aria-label="Seleccionar todos los registros"
-              />
-            </th>
-            <th>ID</th>
-            <th>Clave</th>
-            <th>Nombre</th>
-            <th>Estatus</th>
-            <th>Total asignados</th>
-            <th>Accion</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pageItems.map((item) => (
-            <tr key={item.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selectedRowIds.has(item.id)}
-                  onChange={() => toggleRowSelection(item.id)}
-                  aria-label={`Seleccionar registro ${item.id}`}
-                />
-              </td>
-              <td>{item.id}</td>
-              <td>{item.catalogKey}</td>
-              <td>{item.name}</td>
-              <td>
-                <span className={`security-status ${item.status === 1 ? 'active' : 'inactive'}`}>
-                  {item.status === 1 ? 'Activo' : 'Inactivo'}
-                </span>
-              </td>
-              <td>{item.totalAssigned}</td>
-              <td className="security-action-cell">
-                <GenericButton
-                  variant="outline"
-                  className="security-action-btn"
-                  title={actionLabel}
-                  aria-label={actionLabel}
-                  onClick={() => onAction(item)}
-                >
-                  <span className="security-action-icon">{actionIcon}</span>
-                </GenericButton>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <SecurityTablePagination
-        currentPage={currentPage}
+      <GenericTable
+        rows={pageItems}
+        columns={columns}
+        emptyLabel="Sin resultados"
+        perPage={pageSize}
+        page={currentPage}
         totalPages={totalPages}
         totalItems={items.length}
-        pageSize={pageSize}
-        onPrev={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-        onNext={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-        onPageSizeChange={setPageSize}
+        onChangePage={setCurrentPage}
+        onChangePerPage={setPageSize}
+        enableSelection
+        selectedIds={Array.from(selectedRowIds)}
+        onSelectRow={(id) => toggleRowSelection(Number(id))}
+        selectionHeader={
+          <input
+            type="checkbox"
+            checked={areAllRowsSelected}
+            onChange={toggleSelectAll}
+            aria-label="Seleccionar todos los registros"
+          />
+        }
       />
     </>
   );

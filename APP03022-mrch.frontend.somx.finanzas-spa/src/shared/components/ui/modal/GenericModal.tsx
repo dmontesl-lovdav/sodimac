@@ -13,7 +13,8 @@ interface GenericModalProps {
 
   // alert / confirm
   title?: string;
-  messageConfirm?: string;
+  /** En `variant="confirm"`, contenido principal (texto o JSX). Prioridad sobre `message`. */
+  messageConfirm?: React.ReactNode;
   severity?: Severity;
   buttonText?: string;
   confirmText?: string;
@@ -27,10 +28,10 @@ export default function GenericModal({
   visible = false,
   variant = 'loading',
 
-  message = 'Procesando…',
+  message = '',
 
   title = '',
-  messageConfirm = '',
+  messageConfirm,
   severity = 'info',
   buttonText = 'Aceptar',
   confirmText = 'Aceptar',
@@ -65,7 +66,7 @@ export default function GenericModal({
             <circle className="gm-spinner-track" cx="12" cy="12" r="10" />
             <path className="gm-spinner-head" d="M22 12a10 10 0 0 1-10 10" />
           </svg>
-          <p className="gm-msg">{message}</p>
+          <p className="gm-msg">{message || 'Procesando…'}</p>
         </div>
       ) : variant === 'confirm' ? (
         <div className="gm-box gm-content">
@@ -77,9 +78,13 @@ export default function GenericModal({
 
           {title && <h3 className="gm-title">{title}</h3>}
 
-          <p className="gm-text">
-            {message || messageConfirm}
-          </p>
+          {/* div (no p) para permitir forms o bloques en confirmaciones */}
+          <div className="gm-text">
+            {messageConfirm != null &&
+            (typeof messageConfirm !== 'string' || messageConfirm.length > 0)
+              ? messageConfirm
+              : message}
+          </div>
 
           <div className="gm-actions">
             <button onClick={onCancel} className="gm-btn gm-btn-cancel">

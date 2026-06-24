@@ -11,6 +11,8 @@ export interface AccountStatementRecord {
     vendorName: string;
     year: number;
     month: number;
+    /** Código numérico de estatus (1–5) devuelto por el API. */
+    status?: number;
     statusLabel: AccountStatementStatus;
     processedAt: string;
     reviewedAt: string;

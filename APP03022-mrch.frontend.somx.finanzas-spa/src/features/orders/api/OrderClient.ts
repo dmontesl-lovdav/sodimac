@@ -16,6 +16,19 @@ export const OrderClient = {
         params.set("pageNumber", String(criteria.pageNumber));
         params.set("pageSize", String(criteria.pageSize));
 
+        if (criteria.supplierNumber != null && !Number.isNaN(Number(criteria.supplierNumber))) {
+            params.set("supplierNumber", String(criteria.supplierNumber));
+        }
+        if (criteria.orderNumber != null && String(criteria.orderNumber).trim() !== "") {
+            params.set("orderNumber", String(criteria.orderNumber).trim());
+        }
+        if (criteria.status != null && !Number.isNaN(Number(criteria.status))) {
+            params.set("status", String(criteria.status));
+        }
+        if (criteria.originId != null && String(criteria.originId).trim() !== "") {
+            params.set("originId", String(criteria.originId).trim());
+        }
+
         const qs = params.toString();
 
         return api.request<ReceptionAxios>(
@@ -35,6 +48,21 @@ export const OrderClient = {
         return api.request<ReceptionAxiosSingle>(
             `${DEFAULT_ROUTE}/reception/${uuid}`,
             "get"
+        );
+    },
+
+    async updateReceptionManual(payload: {
+        supplierNumber: number;
+        orderNumber: string;
+        receptionNumber: string;
+        status: number;
+        comments: string;
+        uuid?: string;
+    }): Promise<Reception> {
+        return api.request<Reception>(
+            `${DEFAULT_ROUTE}/updateReception`,
+            "patch",
+            payload
         );
     },
 

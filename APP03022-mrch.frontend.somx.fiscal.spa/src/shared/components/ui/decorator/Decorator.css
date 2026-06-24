@@ -11,8 +11,22 @@
   padding-top: 1.25rem;
 }
 
-.fiscal-decorator-actions-end {
-  justify-self: end;
+.fiscal-decorator-footer-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+}
+
+.fiscal-decorator-footer-actions--end {
+  justify-content: flex-end;
+}
+
+.fiscal-decorator-back-link {
+  text-decoration: none;
 }
 
 @media (max-width: 768px) {

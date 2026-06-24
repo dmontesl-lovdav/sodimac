@@ -4,7 +4,42 @@
 
 .rc-section-title {
     font-weight: 700;
-    padding: 24px 0;
+    padding: 10px 0 6px;
+}
+
+.rc-section-title-compact {
+    font-size: 0.95rem;
+    padding-top: 4px;
+}
+
+.rc-stats-inline {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+    gap: 6px 10px;
+    margin-bottom: 6px;
+}
+
+.rc-stat-sep {
+    color: #d1d5db;
+    user-select: none;
+}
+
+.rc-spacer-sm {
+    height: 4px;
+}
+
+.rc-meta-label {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.rc-meta-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin: 0;
 }
 
 .rc-skus-panel {
@@ -29,8 +64,8 @@
 
 .rc-accordion {
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    margin: 20px;
+    border-radius: 8px;
+    margin: 8px 0 12px;
 }
 
 .rc-accordion-header {
@@ -39,19 +74,8 @@
 
 .rc-accordion-summary {
     display: grid;
-    gap: 16px;
+    gap: 12px;
     grid-template-columns: 1fr 1fr;
-}
-
-.rc-meta-label {
-    color: #6b7280;
-    font-size: 14px;
-    margin: 0;
-}
-
-.rc-meta-value {
-    font-weight: 600;
-    margin: 0;
 }
 
 .rc-accordion-content {
@@ -66,7 +90,14 @@
 }
 
 .rc-table-wrap {
+    font-size: 0.8125rem;
     overflow-x: auto;
+}
+
+.rc-table-wrap .table th,
+.rc-table-wrap .table td {
+    font-size: 0.8125rem;
+    padding: 6px 8px;
 }
 
 .rc-download-row {

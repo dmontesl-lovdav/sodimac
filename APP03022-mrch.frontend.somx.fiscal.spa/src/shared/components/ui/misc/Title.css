@@ -15,9 +15,12 @@
 }
 
     .fiscal-header-actions {
+        display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
 @media (min-width: 1024px) {
     .fiscal-header-title {

@@ -3,10 +3,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { GenericButton, GenericTable, GenericModal } from '@shared/components/ui';
 import { GenericMarqueeBar } from '@/shared/components/ui/progress';
+import { FINANCE_HOME_PATH } from '@/shared/components/ui/navigation/financeBreadcrumb';
+import { getErrorMessage } from '@/utils/errorMessage';
+import { formatDate } from '@/utils/utils';
+import { buildFiscalDocumentViewUrl } from '@/utils/fiscalSpaUrl';
+import { resolvePaymentStatusDisplay } from '../paymentStatusDisplay';
+import { StatusPill } from '@/shared/components/ui/statusPill/StatusPill';
 import { paymentsService } from '../api/paymentsService';
 import { PaymentRecord, PaymentDocument } from '../interfaces';
 import eyeIcon from '@assets/eye-show.svg';
 import downloadIconUrl from "@assets/download.svg";
+
+import {
+    FINANCE_LIST_KEYS,
+    useFinanceListReturnFromDetail,
+} from '@/shared/hooks';
 
 import '../styles/PaymentDetail.css';
 
@@ -16,6 +27,11 @@ export default function PaymentDetail() {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams] = useSearchParams();
+
+    useFinanceListReturnFromDetail(
+        FINANCE_LIST_KEYS.payments.moduleKey,
+        FINANCE_LIST_KEYS.payments.listPath
+    );
 
     const statePayment = (location.state as any)?.payment as PaymentRecord | undefined;
     const stateFilters = (location.state as any)?.filters;
@@ -52,7 +68,7 @@ export default function PaymentDetail() {
         `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const handleBack = () => {
-        navigate('/finanzas/pagos', { state: { filters: stateFilters } });
+        navigate('/finanzas/pagos');
     };
 
     const handleExportCsv = () => {
@@ -77,13 +93,15 @@ export default function PaymentDetail() {
     };
 
     const handleViewDocument = (doc: PaymentDocument) => {
-        const fiscalUrl = process.env.FISCAL_SPA_URL || 'http://localhost:3703';
         const providerNum = payment?.providerNumber || provider;
-        const params = new URLSearchParams({
-            folio: doc.documentNumber,
-            idProveedor: providerNum,
+        window.location.href = buildFiscalDocumentViewUrl({
+            documentType: doc.documentType,
+            providerNumber: providerNum,
+            uuid: doc.uuid,
+            serie: doc.serie,
+            folio: doc.folio,
+            documentNumber: doc.documentNumber,
         });
-        window.location.href = `${fiscalUrl}/fiscal#/fiscal/facturas?${params.toString()}`;
     };
 
     const getDocButtonLabel = (docType: string): string => {
@@ -100,15 +118,18 @@ export default function PaymentDetail() {
             documentNumber: d.documentNumber || '',
             documentType: d.documentType || '',
             reference: d.documentReference || '',
-            documentDate: d.createdAt ? new Date(d.createdAt).toLocaleDateString('es-MX') : '',
+            documentDate: d.createdAt ? formatDate(d.createdAt) : '',
             dueDate: '',
             currency: d.currency || 'MXN',
             amount: Number(d.amount) || 0,
+            serie: d.serie || d.series || '',
+            folio: d.folio || '',
+            uuid: d.uuid || d.invoiceUuid || d.fiscalUuid || '',
             sapDocument: d.sapDocument || '',
-            paymentDate: d.paymentDate ? new Date(d.paymentDate).toLocaleDateString('es-MX') : '',
+            paymentDate: d.paymentDate ? formatDate(d.paymentDate) : '',
             status: typeof d.status === 'number' ? String(d.status) : (d.status || ''),
-            createdAt: d.createdAt ? new Date(d.createdAt).toLocaleDateString('es-MX') : '',
-            updatedAt: d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('es-MX') : '',
+            createdAt: d.createdAt ? formatDate(d.createdAt) : '',
+            updatedAt: d.updatedAt ? formatDate(d.updatedAt) : '',
         }));
     };
 
@@ -196,15 +217,11 @@ export default function PaymentDetail() {
             setDocPage(pageNumber);
             setDocPerPage(pageSize);
         } catch (err: any) {
-            console.error('Error loading payment detail:', err);
-
-            const detail = err?.response
-                ? `Status ${err.response.status}: ${JSON.stringify(err.response.data ?? err.message)}`
-                : err?.message || 'Error desconocido';
-
             setModalSeverity('error');
             setModalTitle('Error');
-            setError(`Error al cargar el detalle del pago: ${detail}`);
+            setError(
+                getErrorMessage(err, 'Error al cargar el detalle del pago.'),
+            );
 
             setDocuments([]);
             setDocTotalItems(0);
@@ -259,7 +276,9 @@ export default function PaymentDetail() {
         return (
             <div className="payment-detail__layout">
                 <div className="payment-detail__breadcrumb">
-                    <Link to="/finanzas" className="payment-detail__breadcrumb-link">Finanzas</Link>
+                    <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Inicio</Link>
+                    <span className="payment-detail__breadcrumb-sep">&gt;</span>
+                    <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Finanzas</Link>
                     <span className="payment-detail__breadcrumb-sep">&gt;</span>
                     <Link to="/finanzas/pagos" className="payment-detail__breadcrumb-link">Pagos</Link>
                     <span className="payment-detail__breadcrumb-sep">&gt;</span>
@@ -282,7 +301,9 @@ export default function PaymentDetail() {
     return (
         <div className="payment-detail__layout">
             <div className="payment-detail__breadcrumb">
-                <Link to="/finanzas" className="payment-detail__breadcrumb-link">Finanzas</Link>
+                <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Inicio</Link>
+                <span className="payment-detail__breadcrumb-sep">&gt;</span>
+                <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Finanzas</Link>
                 <span className="payment-detail__breadcrumb-sep">&gt;</span>
 
                 <button
@@ -317,55 +338,104 @@ export default function PaymentDetail() {
                         </div>
                     </div>
 
-                    <div className="payment-detail__header-actions">
-                        <button
-                            onClick={handleBack}
-                            className="payment-detail__back-btn"
-                            type="button"
+                    <div className="payment-detail__header-actions finz-toolbar-actions">
+                        <GenericButton
+                            onClick={handleExportCsv}
+                            disabled={loading || documents.length === 0}
                         >
-                            Regresar
-                        </button>
+                            <span
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                }}
+                            >
+                                <span
+                                    className="pay-download-ico"
+                                    aria-hidden="true"
+                                    style={{
+                                        WebkitMaskImage: `url(${downloadIconUrl})`,
+                                        maskImage: `url(${downloadIconUrl})`,
+                                    }}
+                                />
+                                Exportar CSV
+                            </span>
+                        </GenericButton>
                     </div>
                 </div>
 
                 {payment && (
-                    <div className="payment-detail__info-card">
-                        <h3 className="payment-detail__info-title">Datos del pago</h3>
-
-                        <div className="payment-detail__info-grid">
-                            <div>
-                                <p className="payment-detail__info-label">Id Proveedor</p>
-                                <p className="payment-detail__info-value">{payment.providerNumber}</p>
+                    <div
+                        className="payment-detail__info-card"
+                        role="region"
+                        aria-label="Cabecera del pago"
+                    >
+                        <div className="payment-detail__info-rows">
+                            <div className="payment-detail__info-row payment-detail__info-row--band">
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Referencia de pago
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.documentReference ?? "—"}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">Año Pago</p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.paymentYear ?? "—"}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">Moneda</p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.currency ?? "—"}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">Monto</p>
+                                    <p className="payment-detail__info-value payment-detail__info-value--large">
+                                        {formatAmount(payment.amount)}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="payment-detail__info-label">Nombre Proveedor</p>
-                                <p className="payment-detail__info-value">{payment.providerName}</p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Referencia de pago</p>
-                                <p className="payment-detail__info-value">{payment.documentReference}</p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Año Pagos</p>
-                                <p className="payment-detail__info-value">{payment.paymentYear}</p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Moneda</p>
-                                <p className="payment-detail__info-value">{payment.currency}</p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Monto</p>
-                                <p className="payment-detail__info-value payment-detail__info-value--large">
-                                    {formatAmount(payment.amount)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Estatus</p>
-                                <p className="payment-detail__info-value">{payment.status}</p>
-                            </div>
-                            <div>
-                                <p className="payment-detail__info-label">Fecha de registro</p>
-                                <p className="payment-detail__info-value">{payment.createdAt}</p>
+                            <div className="payment-detail__info-row payment-detail__info-row--band payment-detail__info-row--second">
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Número Proveedor
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.providerNumber ?? "—"}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Nombre Proveedor
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.providerName ?? "—"}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">Estatus</p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.statusId != null ? (
+                                            <StatusPill type={resolvePaymentStatusDisplay(payment.statusId).type}>
+                                                {resolvePaymentStatusDisplay(payment.statusId).label}
+                                            </StatusPill>
+                                        ) : (
+                                            payment.status ?? "—"
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Fecha Registro
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.createdAt ?? "—"}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -377,31 +447,6 @@ export default function PaymentDetail() {
                             Relación del pago
                             {useLocalPagination ? ' (sin cabecera)' : ''}
                         </h3>
-
-                        <div className="payment-detail__table-actions">
-                            <GenericButton
-                                onClick={handleExportCsv}
-                                disabled={loading || documents.length === 0}
-                            >
-                                <span
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                    }}
-                                >
-                                    <span
-                                        className="pay-download-ico"
-                                        aria-hidden="true"
-                                        style={{
-                                            WebkitMaskImage: `url(${downloadIconUrl})`,
-                                            maskImage: `url(${downloadIconUrl})`,
-                                        }}
-                                    />
-                                    Descargar CSV
-                                </span>
-                            </GenericButton>
-                        </div>
                     </div>
 
                     <div className="payment-detail__table-wrap">
@@ -418,6 +463,12 @@ export default function PaymentDetail() {
                             onChangePage={handleDocPageChange}
                         />
                     </div>
+                </div>
+
+                <div className="payment-detail__footer-actions finz-page-actions">
+                    <GenericButton variant="back" type="button" onClick={handleBack}>
+                        Volver
+                    </GenericButton>
                 </div>
             </div>
 

@@ -15,6 +15,8 @@ import Parcel from 'single-spa-react/parcel';
 // ────────────────────────────────────────────────────────────
 import { Layout } from './shared/components/container/Layout';
 import './App.css';
+import './shared/styles/financeFiltersLayout.css';
+import './shared/styles/financePageActions.css';
 
 // ────────────────────────────────────────────────────────────
 // Store local (microfrontend finanzas)
@@ -59,6 +61,7 @@ import ShippingGuideStatusUpdate from './features/shippingGuides/components/Ship
 
 // Descuentos / Rebates
 import DiscountsContainer from './features/discounts/DiscountsContainer';
+import RebateDetailView from './features/discounts/components/RebateDetailView';
 import Rebates from './features/rebates/components/DiscountsContainer';
 
 // Estado de cuenta
@@ -66,10 +69,6 @@ import AccountStatementContainer from './features/accountStatement/AccountStatem
 
 // Three Way Match
 import ThreeWayMatchContainer from './features/three-way-match/ThreeWayMatchContainer';
-
-// Auditoría (Bitácora)
-import AuditLogsContainer from './features/audit-logs/AuditLogsContainer';
-import AuditLogsTrainContainer from './features/audit-logs/AuditLogsTrainContainer';
 
 // MIGO
 import MigoContainer from './features/migo/MigoContainer';
@@ -133,6 +132,10 @@ function AppRoutes() {
                     path="/finanzas/descuentos-comerciales"
                     element={<DiscountsContainer />}
                 />
+                <Route
+                    path="/finanzas/descuentos-comerciales/detalle"
+                    element={<RebateDetailView />}
+                />
                 <Route path="/finanzas/rebates" element={<Rebates />} />
 
                 <Route
@@ -153,14 +156,6 @@ function AppRoutes() {
                     element={<MigoArticles />}
                 />
 
-                <Route
-                    path="/auditoria/bitacora-actividades"
-                    element={<AuditLogsContainer />}
-                />
-                <Route
-                    path="/auditoria/bitacora-actividades/tren/:traceId"
-                    element={<AuditLogsTrainContainer />}
-                />
             </Routes>
         </Layout>
     );

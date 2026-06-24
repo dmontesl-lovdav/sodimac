@@ -25,7 +25,6 @@ export interface TraceFolio {
   success: boolean;
   details: string;
   trace_id: string;
-
 }
 
 export interface AuditLogResponse {
@@ -33,12 +32,19 @@ export interface AuditLogResponse {
 }
 
 export interface TraceFolioPayload {
-  codigoModulo: string;
-  pantallaOrigen: string;
-  caso: string;
-  metadatos: any;
+  /** Opcional hasta que el backend asigne trace; suele omitirse al crear el folio. */
+  idTransaccion?: string;
+  idAplicativo: string;
+  idModulo: string;
+  paso: string;
+  detalle: string;
+  fechaHora: string;
+  tipoEvento: string;
   idUsuario: string;
-  origen: string;
+  idError?: string;
+  idMensaje?: string;
+  mensaje?: string;
+  log?: string;
 }
 
 export interface AuditLogPayload {
@@ -47,10 +53,12 @@ export interface AuditLogPayload {
   idModulo: string;
   paso: string;
   detalle: string;
+  fechaHora: string;
   log: string;
   tipoEvento: string;
   idUsuario: string;
   idError?: string;
+  idMensaje?: string;
   mensaje?: string;
 }
 
@@ -90,53 +98,73 @@ const MOCK_FOLIO: TraceFolio = {
   statusCode: 0,
   success: true,
   details: "",
-  trace_id: ""
+  trace_id: "",
 };
 
-function createMockFolio(): TraceFolio {
+function createMockAuditLogResponse(): AuditLogResponse {
+  return {
+    activity_logs_uuid: crypto.randomUUID(),
+  };
+}
+
+function createMockFolio(payload?: TraceFolioPayload): TraceFolio {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
   return {
     ...MOCK_FOLIO,
+    trace_id: id,
     data: {
       ...MOCK_FOLIO.data,
-      folioVisible: crypto.randomUUID(),
+      folioVisible: id,
+      transaction_id_uuid: id,
+      uuidInterno: id,
+      fechaHora: payload?.fechaHora ?? now,
+      codigoModulo: payload?.idModulo ?? "",
+      pantallaOrigen: payload?.idAplicativo ?? "",
+      caso: payload?.paso ?? "",
+      idUsuario: payload?.idUsuario ?? "",
+      origen: "mock",
+      estatus: "mock",
+      metadatos: { rfc: "", proveedorId: 0 },
     },
+    details: "[mock] finanzas no configurado o error de red — folio sintético",
   };
 }
 
 export function createTraceabilityClient(api?: ApiClient) {
-  const baseUrl = process.env.API_FINANZAS_URL || ""; 
+  const baseUrl = process.env.FINANZAS_API_URL || "";
   const client = api ?? createApiClient({ baseUrl });
 
   return {
     createAuditLog(payload: AuditLogPayload): Promise<AuditLogResponse> {
-       return client.execute<AuditLogResponse>("audit-logs", "post", payload);
+      if (!baseUrl.trim()) {
+        return Promise.resolve(createMockAuditLogResponse());
+      }
+      return client
+        .request<AuditLogResponse>("audit-logs", "post", payload)
+        .catch(() => createMockAuditLogResponse());
     },
 
     createFolio(payload: TraceFolioPayload): Promise<TraceFolio> {
-      // TODO: cuando el servicio esté online, reemplazar por:
-       return client.execute<TraceFolio>("transaction-ids", "post", payload);
       if (!baseUrl.trim()) {
-        return Promise.resolve(createMockFolio());
+        return Promise.resolve(createMockFolio(payload));
       }
-      return client.execute<TraceFolio>("folio", "post", {}).catch(() => createMockFolio());
+      return client
+        .request<TraceFolio>("transaction-ids", "post", payload)
+        .catch(() => createMockFolio(payload));
     },
 
     getTraceability(id: string): Promise<TraceabilityResponse> {
-      // TODO: cuando el servicio esté online, reemplazar por:
-      return client.execute<TraceabilityResponse>(`traceability/${id}`, "get");
-      /*return Promise.resolve({
-        id,
-        date: MOCK_FOLIO.date,
-        created_at: MOCK_FOLIO.created_at,
-        last_update: MOCK_FOLIO.last_update,
-        logs: [],
-      });*/
+      return client.request<TraceabilityResponse>(`traceability/${id}`, "get");
     },
 
     addLog(id: string, message: string): Promise<void> {
-      // TODO: cuando el servicio esté online:
-      // return client.execute(`traceability/${id}/log`, "post", { message });
-      return Promise.resolve();
+      if (!baseUrl.trim()) {
+        return Promise.resolve();
+      }
+      return client
+        .request<unknown>(`traceability/${id}/log`, "post", { message })
+        .then(() => undefined);
     },
   };
 }

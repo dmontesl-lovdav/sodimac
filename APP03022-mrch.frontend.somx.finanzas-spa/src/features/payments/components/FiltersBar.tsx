@@ -1,11 +1,25 @@
 import {
     GenericDateRangePicker,
     GenericInputSearch,
+    GenericSelectSearchable,
     GenericButton,
     GenericModal,
 } from "@shared/components/ui";
 import type { ChangeEvent, ReactElement } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import type { ProvidersOptions } from "@/features/orders/interfaces";
+import { fetchProvidersAsCatalog } from "@/utils/utils";
+import {
+  FINANCE_LIST_KEYS,
+  financeListTodayDateRange,
+  readFinanceListFilters,
+  parseFinanceListDateRange,
+  saveFinanceListFilters,
+  useFinanceListDefaultsOnUrlReset,
+} from "@/shared/hooks";
+
+const FILTERS_KEY = FINANCE_LIST_KEYS.payments.filters;
 
 import "../styles/PaymentsFiltersBar.css";
 
@@ -35,15 +49,21 @@ export default function FiltersBar({
     initialValues = null,
 }: FiltersBarProps): ReactElement {
     const [providerId, setProviderId] = useState<string>("");
+    const [providers, setProviders] = useState<ProvidersOptions[]>([]);
     const [paymentReference, setPaymentReference] = useState<string>("");
     const [paymentYear, setPaymentYear] = useState<string>("");
 
     const [dateRange, setDateRange] = useState<DateRange>([null, null]);
 
-    const [error, setError] = useState<string>("");
-    const [rangeErrorModal, setRangeErrorModal] = useState<boolean>(false);
+    const [alertModal, setAlertModal] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        severity: "warning" | "error" | "info";
+    }>({ visible: false, title: "", message: "", severity: "warning" });
 
     const hasLoadedRef = useRef(false);
+    const defaultsAppliedRef = useRef(false);
 
     const today = useMemo(() => {
         const t = new Date();
@@ -51,24 +71,52 @@ export default function FiltersBar({
         return t;
     }, []);
 
-    useEffect(() => {
-        if (!initialValues || hasLoadedRef.current) return;
-
-        const start = initialValues.startDate
-            ? new Date(initialValues.startDate + "T00:00:00")
-            : null;
-
-        const end = initialValues.endDate
-            ? new Date(initialValues.endDate + "T00:00:00")
-            : null;
-
+    const applyFilterDefaults = useCallback(() => {
+        const [start, end] = financeListTodayDateRange();
         setDateRange([start, end]);
-        setProviderId(initialValues.providerId || "");
-        setPaymentReference(initialValues.paymentReference || "");
-        setPaymentYear(initialValues.paymentYear || "");
+        setProviderId("");
+        setPaymentReference("");
+        setPaymentYear("");
+    }, []);
 
-        hasLoadedRef.current = true;
-    }, [initialValues]);
+    useFinanceListDefaultsOnUrlReset(
+        FINANCE_LIST_KEYS.payments.moduleKey,
+        applyFilterDefaults
+    );
+
+    useEffect(() => {
+        if (!hasLoadedRef.current) {
+            hasLoadedRef.current = true;
+            const saved =
+                initialValues ??
+                readFinanceListFilters<PaymentFiltersValues>(FILTERS_KEY);
+
+            if (saved) {
+                setDateRange(
+                    parseFinanceListDateRange(saved.startDate, saved.endDate)
+                );
+                setProviderId(saved.providerId || "");
+                setPaymentReference(saved.paymentReference || "");
+                setPaymentYear(saved.paymentYear || "");
+                return;
+            }
+
+            if (!defaultsAppliedRef.current) {
+                defaultsAppliedRef.current = true;
+                const d = new Date(today);
+                setDateRange([new Date(d.getTime()), new Date(d.getTime())]);
+            }
+        }
+    }, [initialValues, today]);
+
+    useEffect(() => {
+        if (!isAdmin) return;
+
+        (async () => {
+            const list = await fetchProvidersAsCatalog();
+            if (list) setProviders(list);
+        })();
+    }, [isAdmin]);
 
     const formatDateStr = (d: Date): string => {
         const y = d.getFullYear();
@@ -84,18 +132,28 @@ export default function FiltersBar({
         return diffMonths > 6;
     };
 
-    const handleSearch = (): void => {
-        setError("");
+    const closeAlertModal = () =>
+        setAlertModal((prev) => ({ ...prev, visible: false }));
 
+    const showValidationAlert = (message: string, title = "Validación") => {
+        setAlertModal({
+            visible: true,
+            title,
+            message,
+            severity: "warning",
+        });
+    };
+
+    const handleSearch = (): void => {
         const [d1, d2] = dateRange;
 
         if (!d1) {
-            setError(messages["ERR003"] || "Fecha inicio es obligatoria.");
+            showValidationAlert(messages["ERR003"] || "Fecha inicio es obligatoria.");
             return;
         }
 
         if (!d2) {
-            setError(messages["ERR004"] || "Fecha fin es obligatoria.");
+            showValidationAlert(messages["ERR004"] || "Fecha fin es obligatoria.");
             return;
         }
 
@@ -106,17 +164,28 @@ export default function FiltersBar({
         end.setHours(0, 0, 0, 0);
 
         if (end > today) {
-            setError("La fecha fin no puede ser posterior a la fecha actual.");
+            showValidationAlert(
+                "La fecha fin no puede ser posterior a la fecha actual.",
+                "Validación de fechas",
+            );
             return;
         }
 
         if (start > end) {
-            setError("La fecha de inicio no puede ser mayor a la fecha fin.");
+            showValidationAlert(
+                "La fecha de inicio no puede ser mayor a la fecha fin.",
+                "Validación de fechas",
+            );
             return;
         }
 
         if (isRangeOverSixMonths(start, end)) {
-            setRangeErrorModal(true);
+            setAlertModal({
+                visible: true,
+                title: "Rango inválido",
+                message: messages["ERR002"] || "El rango máximo permitido es 6 meses.",
+                severity: "warning",
+            });
             return;
         }
 
@@ -128,6 +197,7 @@ export default function FiltersBar({
             endDate: formatDateStr(end),
         };
 
+        saveFinanceListFilters(FILTERS_KEY, payload);
         onSearch(payload);
     };
 
@@ -136,35 +206,24 @@ export default function FiltersBar({
         setPaymentReference("");
         setPaymentYear("");
         setDateRange([null, null]);
-        setError("");
+        closeAlertModal();
         onClear?.();
     };
 
     return (
         <>
             <div className="pay-filters">
-                <div className="pay-filter-bar">
-                    <div className="pay-field pay-field-dates">
-                        <GenericDateRangePicker
-                            value={dateRange}
-                            onChange={(dates) => {
-                                setDateRange(dates);
-                                setError("");
-                            }}
-                            placeholder="Rango de fecha pago"
-                            size="md"
-                        />
-                    </div>
-
+                <div className="pay-filter-bar finz-filter-row">
                     {isAdmin && (
                         <div className="pay-field">
-                            <GenericInputSearch
+                            <GenericSelectSearchable
                                 value={providerId}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                onChange={(e: { target: { value: string } }) =>
                                     setProviderId(e.target.value)
                                 }
-                                placeholder="Número de proveedor"
-                                className="pay-input-md"
+                                options={providers}
+                                placeholder="Nombre Proveedor"
+                                widthClass="gs-width-provider"
                             />
                         </div>
                     )}
@@ -175,7 +234,7 @@ export default function FiltersBar({
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 setPaymentReference(e.target.value)
                             }
-                            placeholder="Referencia de pago"
+                            placeholder="Referencia Pago"
                             className="pay-input-md"
                         />
                     </div>
@@ -187,34 +246,43 @@ export default function FiltersBar({
                                 const val = e.target.value.replace(/\D/g, "").slice(0, 4);
                                 setPaymentYear(val);
                             }}
-                            placeholder="Año de pago"
+                            placeholder="Año Pago"
                             className="pay-input-sm"
                             inputMode="numeric"
                         />
                     </div>
 
-                    <div className="pay-actions-container">
+                    <div className="pay-field pay-field-dates">
+                        <GenericDateRangePicker
+                            value={dateRange}
+                            onChange={(dates) => {
+                                setDateRange(dates);
+                                closeAlertModal();
+                            }}
+                            placeholder="Fecha Pago"
+                            size="md"
+                        />
+                    </div>
+
+                    <div className="pay-actions-container finz-filter-actions">
+                        <GenericButton variant="outlineFill" onClick={handleSearch}>
+                            Buscar
+                        </GenericButton>
                         <GenericButton variant="outlineFill" onClick={handleClear}>
                             Limpiar
                         </GenericButton>
-
-                        <GenericButton variant="primary" onClick={handleSearch}>
-                            Buscar
-                        </GenericButton>
                     </div>
                 </div>
-
-                {error && <div className="pay-inline-error">{error}</div>}
             </div>
 
             <GenericModal
-                visible={rangeErrorModal}
+                visible={alertModal.visible}
                 variant="alert"
-                severity="warning"
-                title="Rango inválido"
-                message={messages["ERR002"] || "El rango máximo permitido es 6 meses."}
+                severity={alertModal.severity}
+                title={alertModal.title}
+                message={alertModal.message}
                 buttonText="Aceptar"
-                onClose={() => setRangeErrorModal(false)}
+                onClose={closeAlertModal}
             />
         </>
     );

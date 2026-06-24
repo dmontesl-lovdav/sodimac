@@ -4,11 +4,11 @@ import { InvoiceIcon, DocIcon, SearchIcon, AddIcon } from './FiscalIcons';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
 import { versionCatalogService } from '../../services/versionCatalogService';
 
-type ModalVariant = 'loading' | 'message' | 'confirm';
+type ModalVariant = 'loading' | 'alert' | 'confirm';
 
 export default function FiscalCardsList(): React.ReactElement {
     const [modalVisible, setModalVisible] = useState(false);
-    const [modalVariant, setModalVariant] = useState<ModalVariant>('message');
+    const [modalVariant, setModalVariant] = useState<ModalVariant>('alert');
     const [modalTitle, setModalTitle] = useState('');
     const [modalMessage, setModalMessage] = useState('');
 
@@ -20,7 +20,7 @@ export default function FiscalCardsList(): React.ReactElement {
 
         const result = await versionCatalogService.checkConnection();
 
-        setModalVariant('message');
+        setModalVariant('alert');
         setModalMessage(result.message);
     };
 
@@ -52,7 +52,7 @@ export default function FiscalCardsList(): React.ReactElement {
                     title="Version Catalog"
                     description="Valida la conexión al catálogo de versiones CFDI del backend fiscal."
                     Icon={AddIcon}
-                    onClick={handleVersionCatalogClick}
+                    onClick={() => { handleVersionCatalogClick(); }}
                 />
             </div>
 

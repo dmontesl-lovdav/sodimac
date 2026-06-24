@@ -1,9 +1,11 @@
 import React from 'react';
+import ReactDOMClient from 'react-dom/client';
+import singleSpaReact from 'single-spa-react';
+import { navigateToUrl } from 'single-spa';
 
 interface CardProps {
     onClick?: () => void;
     title?: string;
-    description?: string;
 }
 
 const UtilIcon: React.FC = () => (
@@ -15,7 +17,10 @@ const UtilIcon: React.FC = () => (
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ width: '100%', height: '100%' }}
+        style={{
+            width: '54px',
+            height: '54px',
+        }}
     >
         <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
         <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 1 1-2.97 2.97l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6l-.03.03a2.1 2.1 0 1 1-2.97-2.97l.03-.03A1.8 1.8 0 0 0 11.6 15a1.8 1.8 0 0 0-1.6-1h-.1a2.1 2.1 0 1 1 0-4.2h.1a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.36-1.98l-.05-.05a2.1 2.1 0 1 1 2.97-2.97l.05.05A1.8 1.8 0 0 0 15 4.6a1.8 1.8 0 0 0 1-.6l.03-.03A2.1 2.1 0 1 1 19 6.94l-.03.03A1.8 1.8 0 0 0 18.4 9c.2.6.75 1 1.4 1h.1a2.1 2.1 0 1 1 0 4.2h-.1a1.8 1.8 0 0 0-1.4.8Z" />
@@ -24,109 +29,108 @@ const UtilIcon: React.FC = () => (
 
 const Card: React.FC<CardProps> = ({
     onClick,
-    title = 'Módulo Utilerías',
-    description = 'Gestión de catálogos, configuraciones y herramientas de soporte.',
+    title = 'Utilerías',
 }) => {
     const handleClick = () => {
         if (onClick) {
             onClick();
+            return;
         }
+
+        navigateToUrl('/util');
     };
 
     return (
         <div
             onClick={handleClick}
             style={{
-                position: 'relative',
+                width: '255px',
+                height: '246px',
+                minWidth: '255px',
+                minHeight: '246px',
+                border: '1px solid rgba(0, 0, 0, 0.12)',
+                backgroundColor: '#FFFFFF',
                 display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                borderRadius: '16px',
-                border: '1px solid #D4E8D4',
-                backgroundColor: '#E8F5E9',
-                padding: '32px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'box-shadow 0.2s ease',
-                cursor: onClick ? 'pointer' : 'default',
-                minHeight: '180px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
             }}
             onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.12)';
+                e.currentTarget.style.borderColor = '#D0D0D0';
+                e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.12)';
+                e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
-            <div style={{ paddingRight: '100px' }}>
-                <h4
+            <div
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                }}
+            >
+                <div
                     style={{
-                        fontWeight: 500,
-                        fontSize: '20px',
-                        color: '#333333',
+                        width: '110px',
+                        height: '110px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <div
+                        style={{
+                            width: '78px',
+                            height: '78px',
+                            borderRadius: '50%',
+                            backgroundColor: '#FAFAFC',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#003865',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <UtilIcon />
+                    </div>
+                </div>
+
+                <h2
+                    style={{
                         margin: 0,
+                        fontSize: '18px',
+                        fontWeight: 500,
+                        color: '#000000',
+                        lineHeight: '27px',
+                        fontFamily: 'inherit',
                     }}
                 >
                     {title}
-                </h4>
-
-                <p
-                    style={{
-                        fontSize: '14px',
-                        color: '#555555',
-                        marginTop: '12px',
-                        maxWidth: '300px',
-                        lineHeight: '1.5',
-                    }}
-                >
-                    {description}
-                </p>
-            </div>
-
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleClick();
-                }}
-                style={{
-                    marginTop: '24px',
-                    alignSelf: 'flex-start',
-                    padding: '8px 20px',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    border: '1px solid #2E7D32',
-                    color: '#2E7D32',
-                    backgroundColor: 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#e8f5e9';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-            >
-                Ir al módulo
-            </button>
-
-            <div
-                style={{
-                    position: 'absolute',
-                    right: '24px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    height: '80px',
-                    width: '80px',
-                    opacity: 0.7,
-                    color: '#2E7D32',
-                    pointerEvents: 'none',
-                }}
-            >
-                <UtilIcon />
+                </h2>
             </div>
         </div>
     );
 };
 
+const lifecycles = singleSpaReact({
+    React,
+    ReactDOMClient,
+    rootComponent: Card,
+    errorBoundary() {
+        return <div>Error al cargar el módulo de utilerías</div>;
+    },
+});
+
+export const { bootstrap, mount, unmount } = lifecycles;
 export default Card;

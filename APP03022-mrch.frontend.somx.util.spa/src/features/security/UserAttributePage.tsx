@@ -1,6 +1,8 @@
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import GenericButton from '@shared/components/ui/button/GenericButton';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
+import { getErrorMessage, useAlertModal } from '@shared/hooks/useAlertModal';
 import { GenericSelect } from '@shared/components/ui/select';
 import { SecurityBreadcrumb } from './components/SecurityBreadcrumb';
 import { DualTransferList } from './components/DualTransferList';
@@ -15,6 +17,7 @@ import {
 } from './hooks/useSecurity';
 import { securityService } from './services/securityService';
 import type { AssignableItem, AttributeValueOption, SecurityFilters, SecurityRow } from './types';
+import { exportSecurityRowsAsCsv } from './utils/csvExport';
 import './styles/SecurityCommon.css';
 
 const USER_ATTRIBUTES_PAGE_SIZE = 1000;
@@ -27,16 +30,45 @@ const initialFilters: SecurityFilters = {
   status: '',
 };
 
+type UserAttributeListRestore = {
+  restoreUserAttributeList: {
+    draftFilters: SecurityFilters;
+    appliedFilters: SecurityFilters | null;
+  };
+};
+
 export function UserAttributePage() {
-  const [filters, setFilters] = useState<SecurityFilters>(initialFilters);
-  const [hasSearched, setHasSearched] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [draftFilters, setDraftFilters] = useState<SecurityFilters>(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState<SecurityFilters | null>(null);
   const [selectedUser, setSelectedUser] = useState<SecurityRow | null>(null);
-  const [detailWarning, setDetailWarning] = useState('');
   const [valueOptionsByType, setValueOptionsByType] = useState<Record<number, AttributeValueOption[]>>({});
   const [selectedValueByType, setSelectedValueByType] = useState<Record<number, string>>({});
   const [valuesLoading, setValuesLoading] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
+  const { showAlert, alertModal } = useAlertModal();
 
-  const searchQuery = useUserAttributeSearch(filters, hasSearched && Boolean(filters.startDate && filters.endDate));
+  const handleSelectionChange = useCallback((ids: number[]) => {
+    setSelectedRowIds(ids);
+  }, []);
+
+  useEffect(() => {
+    const st = location.state as UserAttributeListRestore | null | undefined;
+    const payload = st?.restoreUserAttributeList;
+    if (!payload) return;
+
+    setSelectedUser(null);
+    setDraftFilters(payload.draftFilters);
+    setAppliedFilters(payload.appliedFilters);
+    setSelectedValueByType({});
+    setValueOptionsByType({});
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, location.pathname, navigate]);
+
+  const isAppliedValid = Boolean(appliedFilters?.startDate && appliedFilters?.endDate);
+
+  const searchQuery = useUserAttributeSearch(appliedFilters ?? initialFilters, appliedFilters !== null && isAppliedValid);
   const attributeTypesQuery = useAttributeTypes();
   const attributesQuery = useUserAttributes(
     selectedUser?.id ?? 0,
@@ -47,12 +79,37 @@ export function UserAttributePage() {
   const createAttributeMutation = useCreateUserAttribute();
   const deleteAttributeMutation = useDeleteUserAttribute();
 
-  const rows = searchQuery.data?.items ?? [];
-  const warning = !filters.startDate || !filters.endDate
-    ? (hasSearched ? 'Fecha inicio y fecha fin son obligatorias.' : '')
-    : searchQuery.data?.warningMessage ?? '';
-  const attributeTypes = attributeTypesQuery.data ?? [];
-  const attributes = attributesQuery.data?.items ?? [];
+  const rows = useMemo(
+    () => searchQuery.data?.items ?? [],
+    [searchQuery.data?.items],
+  );
+  const warning = useMemo(() => searchQuery.data?.warningMessage ?? '', [searchQuery.data?.warningMessage]);
+  useEffect(() => {
+    if (!warning || !searchQuery.isSuccess) return;
+    showAlert({ title: 'Aviso', message: warning, severity: 'warning' });
+  }, [warning, searchQuery.isSuccess, showAlert]);
+
+  useEffect(() => {
+    if (!searchQuery.isSuccess || !appliedFilters || !isAppliedValid) return;
+    if (rows.length > 0) return;
+    showAlert({
+      title: 'Sin resultados',
+      message: 'No hay usuarios para los filtros indicados.',
+      severity: 'info',
+    });
+  }, [searchQuery.isSuccess, appliedFilters, isAppliedValid, rows.length, showAlert]);
+
+  useEffect(() => {
+    if (!searchQuery.isError) return;
+    showAlert({
+      title: 'Error',
+      message: getErrorMessage(searchQuery.error, 'No fue posible consultar usuarios.'),
+      severity: 'error',
+    });
+  }, [searchQuery.isError, searchQuery.error, showAlert]);
+
+  const attributeTypes = useMemo(() => attributeTypesQuery.data ?? [], [attributeTypesQuery.data]);
+  const attributes = useMemo(() => attributesQuery.data?.items ?? [], [attributesQuery.data?.items]);
   const loading =
     searchQuery.isFetching
     || attributeTypesQuery.isFetching
@@ -61,13 +118,20 @@ export function UserAttributePage() {
     || createAttributeMutation.isPending
     || deleteAttributeMutation.isPending;
 
-  const search = async () => {
-    setHasSearched(true);
+  const search = () => {
+    if (!draftFilters.startDate || !draftFilters.endDate) {
+      showAlert({
+        title: 'Atención',
+        message: 'Fecha inicio y fecha fin son obligatorias.',
+        severity: 'warning',
+      });
+      return;
+    }
+    setAppliedFilters({ ...draftFilters });
   };
 
   const openUser = (row: SecurityRow) => {
     setSelectedUser(row);
-    setDetailWarning('');
     setValueOptionsByType({});
     setSelectedValueByType({});
   };
@@ -88,7 +152,8 @@ export function UserAttributePage() {
     return { available, assigned };
   }, [attributeTypes, attributes]);
   useEffect(() => {
-    if (!selectedUser || attributeTypes.length === 0) {
+    if (!selectedUser) return;
+    if (attributeTypes.length === 0) {
       setValueOptionsByType({});
       return;
     }
@@ -128,7 +193,11 @@ export function UserAttributePage() {
         });
       } catch {
         if (!cancelled) {
-          setDetailWarning('No fue posible cargar los catálogos configurados para los atributos seleccionados.');
+          showAlert({
+            title: 'Catálogos',
+            message: 'No fue posible cargar los catálogos configurados para los atributos seleccionados.',
+            severity: 'error',
+          });
         }
       } finally {
         if (!cancelled) {
@@ -154,7 +223,6 @@ export function UserAttributePage() {
   const saveAssignments = async (selectedIds: number[]) => {
     if (!selectedUser) return false;
 
-    setDetailWarning('');
     const toDelete = attributes.filter((item) => !selectedIds.includes(item.attributeTypeId));
 
     try {
@@ -191,7 +259,7 @@ export function UserAttributePage() {
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'No se pudieron guardar los atributos del usuario.';
-      setDetailWarning(message);
+      showAlert({ title: 'Error al guardar', message, severity: 'error' });
       return false;
     }
   };
@@ -226,10 +294,21 @@ export function UserAttributePage() {
 
   const renderAvailableItemExtra = (item: AssignableItem) => renderAssignedItemExtra(item);
 
+  const userAttributeListRestoreState: Record<string, unknown> | undefined = selectedUser
+    ? {
+        'Usuario Atributo': {
+          restoreUserAttributeList: { draftFilters, appliedFilters },
+        },
+      }
+    : undefined;
+
   if (selectedUser) {
     return (
       <div className="security-layout">
-        <SecurityBreadcrumb items={['Inicio', 'Herramientas y Utilerias', 'Control de Acceso', 'Usuario Atributo', selectedUser.name]} />
+        <SecurityBreadcrumb
+          items={['Inicio', 'Herramientas y Utilerias', 'Control de Acceso', 'Usuario Atributo', selectedUser.name]}
+          linkStateByLabel={userAttributeListRestoreState}
+        />
         <div className="security-box">
           <DualTransferList
             title={`Usuario Atributo: ${selectedUser.name}`}
@@ -242,43 +321,66 @@ export function UserAttributePage() {
             renderAssignedItemExtra={renderAssignedItemExtra}
             onBack={() => {
               setSelectedUser(null);
-              setDetailWarning('');
               setSelectedValueByType({});
               setValueOptionsByType({});
             }}
           />
-          {detailWarning && <div className="security-warning">{detailWarning}</div>}
         </div>
         {loading && <GenericModal visible variant="loading" message="Procesando informacion..." />}
+        {alertModal}
       </div>
     );
   }
+
+  const handleExport = () => {
+    const sourceRows = selectedRowIds.length
+      ? rows.filter((row) => selectedRowIds.includes(row.id))
+      : rows;
+    if (sourceRows.length === 0) return;
+    exportSecurityRowsAsCsv(sourceRows, 'Usuario Atributo');
+  };
 
   return (
     <div className="security-layout">
       <SecurityBreadcrumb items={['Inicio', 'Herramientas y Utilerias', 'Control de Acceso', 'Usuario Atributo']} />
       <div className="security-box">
-        <h1 className="security-title">Usuario Atributo</h1>
-        <p className="security-subtitle">Consulta usuarios activos y administra sus atributos de acceso.</p>
-        <SecuritySearchFilters filters={filters} onChange={setFilters} />
-        <div className="security-actions">
+        <div className="security-page-header">
           <div>
-            <GenericButton type="button" variant="primary" onClick={search}>Buscar</GenericButton>
-            <GenericButton type="button" variant="link" onClick={() => { setFilters(initialFilters); setHasSearched(false); }}>Limpiar</GenericButton>
+            <h1 className="security-title">Usuario Atributo</h1>
+            <p className="security-subtitle">Consulta usuarios activos y administra sus atributos de acceso.</p>
+          </div>
+          <GenericButton variant="primary" type="button" onClick={handleExport} disabled={rows.length === 0}>
+            Exportar a CSV
+          </GenericButton>
+        </div>
+        <div className="security-toolbar">
+          <SecuritySearchFilters filters={draftFilters} onChange={setDraftFilters} />
+          <div className="security-actions">
+            <GenericButton variant="outlineFill" type="button" onClick={search}>
+              Buscar
+            </GenericButton>
+            <GenericButton
+              variant="outlineFill"
+              type="button"
+              onClick={() => {
+                setDraftFilters(initialFilters);
+                setAppliedFilters(null);
+              }}
+            >
+              Limpiar
+            </GenericButton>
           </div>
         </div>
-        {warning && <div className="security-warning">{warning}</div>}
-        {!hasSearched && <div className="security-empty">Ejecuta una busqueda para consultar informacion.</div>}
-        {hasSearched && rows.length > 0 && (
-          <SecurityGrid
-            title="Usuario Atributo"
-            items={rows}
-            actionLabel="Administrar atributos"
-            onAction={openUser}
-          />
-        )}
+        <SecurityGrid
+          title="Usuario Atributo"
+          items={rows}
+          actionLabel="Administrar atributos"
+          onAction={openUser}
+          onSelectionChange={handleSelectionChange}
+        />
       </div>
       {loading && <GenericModal visible variant="loading" message="Procesando informacion..." />}
+      {alertModal}
     </div>
   );
 }

@@ -51,6 +51,16 @@
     flex-direction: row;
     gap: 15px;
  }
+
+.fiscal-filter-row {
+    width: 100%;
+    align-items: flex-end;
+    gap: 12px 16px;
+}
+
+.fiscal-filter-actions {
+    flex-shrink: 0;
+}
 .fiscal-flex-row { flex-direction: row; }
 .fiscal-flex-col { flex-direction: column; }
 .fiscal-flex-wrap { flex-wrap: wrap; }
@@ -71,6 +81,45 @@
 .fiscal-w-auto { width: auto; }
 .fiscal-w-450 { width: 450px; }
 .fiscal-w-650 { width: 650px; }
+.fiscal-w-provider {
+    width: 250px;
+    max-width: 250px;
+    min-width: 0;
+    flex: 0 0 250px;
+}
+
+.fiscal-w-provider .fiscal-select-floating-root {
+    width: 100%;
+    max-width: 250px;
+}
+
+.fiscal-w-provider .fiscal-select-floating-button > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fiscal-w-listbox {
+    width: 120px;
+    max-width: 120px;
+    min-width: 0;
+    flex: 0 0 120px;
+}
+
+.fiscal-w-listbox .fiscal-select-floating-root,
+.fiscal-w-listbox .fiscal-select-default-root {
+    width: 100%;
+    max-width: 120px;
+    --fiscal-select-width: 120px;
+}
+
+.fiscal-w-listbox .fiscal-select-floating-button > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 .fiscal-app {
   min-height: 100vh;
@@ -102,6 +151,7 @@
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
+  padding: 1rem;
 }
 
 .fiscal-container-breadcrumb {
@@ -208,8 +258,17 @@ input[type="checkbox"] {
 /* Responsive: filtros al 100%, grid apilado, layout reducido */
 @media (max-width: 768px) {
   .fiscal-w-450,
-  .fiscal-w-650 {
+  .fiscal-w-650,
+  .fiscal-w-listbox,
+  .fiscal-w-provider {
     width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .fiscal-w-listbox .fiscal-select-floating-root,
+  .fiscal-w-listbox .fiscal-select-default-root,
+  .fiscal-w-provider .fiscal-select-floating-root {
     max-width: 100%;
   }
 

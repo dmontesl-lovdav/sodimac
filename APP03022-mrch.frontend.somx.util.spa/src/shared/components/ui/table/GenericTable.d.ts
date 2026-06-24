@@ -37,6 +37,9 @@ interface GenericTableProps<T = any> {
     enableSelection?: boolean;
     selectedIds?: any[];
     onSelectRow?: (id: any, selected: boolean) => void;
+    selectionHeader?: ReactNode;
+    showPagination?: boolean;
+    showPageSizeSelector?: boolean;
 }
 
 declare function GenericTable<T = any>(props: GenericTableProps<T>): JSX.Element;

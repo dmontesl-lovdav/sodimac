@@ -8,9 +8,22 @@ import { es } from 'date-fns/locale';
 
 registerLocale('es', es);
 import { CatalogItem } from '../services/parameterService';
-import { useUpdateParameter, useCreateParameterVersion } from '../hooks';
+import { useUpdateParameter, useCreateParameterVersion, useUpdateParameterStatus } from '../hooks';
 import type { Parameter } from '../types';
 import '../styles/AddEditParameterForm.css';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
+
+const toNumericStatus = (raw: number | string): number => {
+    const n = typeof raw === 'number' ? raw : Number.parseInt(raw, 10);
+    return n === 1 ? 1 : 0;
+};
+
+const toIsoStartOfDay = (date: Date): string => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+};
 
 // Zod Schema for edit form validation
 const editParameterSchema = z.object({
@@ -85,8 +98,7 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
     onCancel,
     catalogs,
 }) => {
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const { showSuccess, showError, ModalNode } = useModalNotification();
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<EditParameterFormData | null>(null);
 
@@ -113,131 +125,114 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
 
     const updateMutation = useUpdateParameter();
     const createVersionMutation = useCreateParameterVersion();
+    const updateStatusMutation = useUpdateParameterStatus();
 
     const currentValue = watch('value');
     const valueChanged = currentValue !== originalValue;
 
     const onSubmit = (data: EditParameterFormData) => {
-        setSuccessMessage(null);
-        setErrorMessage(null);
-
         if (valueChanged) {
-            // Si el valor cambió, mostrar diálogo de confirmación
             setPendingFormData(data);
             setShowConfirmDialog(true);
         } else {
-            // Si solo cambiaron otros campos, hacer update simple
             performSimpleUpdate(data);
         }
     };
 
-    const performSimpleUpdate = (data: EditParameterFormData) => {
-        updateMutation.mutate(
-            {
+    const performSimpleUpdate = async (data: EditParameterFormData) => {
+        const newStatus = toNumericStatus(data.status);
+        const statusChanged = newStatus !== parameter.status;
+
+        try {
+            await updateMutation.mutateAsync({
                 id: parameter.idParameter,
                 data: {
                     description: data.description,
-                    startDate: data.startDate.toISOString().split('T')[0],
-                    endDate: data.endDate?.toISOString().split('T')[0],
+                    startDate: toIsoStartOfDay(data.startDate),
+                    endDate: data.endDate ? toIsoStartOfDay(data.endDate) : undefined,
                 },
-            },
-            {
-                onSuccess: () => {
-                    setSuccessMessage('El parámetro ha sido modificado correctamente.');
-                    setTimeout(() => {
-                        onSuccess();
-                    }, 1500);
-                },
-                onError: (error: unknown) => {
-                    let errorMsg = 'Error desconocido';
-                    if (error instanceof Error) {
-                        errorMsg = error.message;
-                    } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                        errorMsg = String((error as { message: unknown }).message);
-                    }
-                    console.error('Error al modificar parámetro:', error);
-                    setErrorMessage(`Error al modificar el parámetro: ${errorMsg}`);
-                },
+            });
+
+            if (statusChanged) {
+                await updateStatusMutation.mutateAsync({
+                    id: parameter.idParameter,
+                    status: newStatus,
+                });
             }
-        );
+
+            showSuccess(
+                'El parámetro fue modificado correctamente.',
+                'Operación exitosa',
+                () => onSuccess(),
+            );
+        } catch (error: unknown) {
+            console.error('Error al modificar parámetro:', error);
+            showError(
+                extractApiErrorMessage(error, {
+                    fallback:
+                        'No fue posible modificar el parámetro. Verifica la información e inténtalo nuevamente.',
+                }),
+                'No se pudo modificar el parámetro',
+            );
+        }
     };
 
     const performVersionCreate = async () => {
         if (!pendingFormData) return;
 
-        // Detectar si la descripción cambió para actualizarla en la NUEVA versión
         const descriptionChanged = pendingFormData.description !== (parameter.description || '');
+        const requestedStatus = toNumericStatus(pendingFormData.status);
+        // Las versiones nuevas nacen con status=1 (Activo) en backend, así que
+        // sólo necesitamos un updateStatus extra si el usuario pidió Inactivo.
+        const needsStatusUpdate = requestedStatus !== 1;
 
-        // Crear la nueva versión primero
-        createVersionMutation.mutate(
-            {
+        try {
+            const newParameter = await createVersionMutation.mutateAsync({
                 id: parameter.idParameter,
                 data: {
                     value: pendingFormData.value,
-                    startDate: pendingFormData.startDate.toISOString().split('T')[0],
-                    endDate: pendingFormData.endDate?.toISOString().split('T')[0],
+                    startDate: toIsoStartOfDay(pendingFormData.startDate),
+                    endDate: pendingFormData.endDate ? toIsoStartOfDay(pendingFormData.endDate) : undefined,
                     changeReason: 'Actualización de valor',
                 },
-            },
-            {
-                onSuccess: (newParameter) => {
-                    // Si la descripción cambió, actualizar la NUEVA versión (no la anterior)
-                    if (descriptionChanged && newParameter?.idParameter) {
-                        updateMutation.mutate(
-                            {
-                                id: newParameter.idParameter,
-                                data: {
-                                    description: pendingFormData.description,
-                                },
-                            },
-                            {
-                                onSuccess: () => {
-                                    setShowConfirmDialog(false);
-                                    setSuccessMessage('Se ha generado una nueva versión del parámetro correctamente.');
-                                    setTimeout(() => {
-                                        onSuccess();
-                                    }, 1500);
-                                },
-                                onError: (error: unknown) => {
-                                    // La versión se creó pero falló la actualización de descripción
-                                    setShowConfirmDialog(false);
-                                    let errorMsg = 'Error desconocido';
-                                    if (error instanceof Error) {
-                                        errorMsg = error.message;
-                                    } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                                        errorMsg = String((error as { message: unknown }).message);
-                                    }
-                                    console.error('Error al actualizar descripción de nueva versión:', error);
-                                    setErrorMessage(`Nueva versión creada, pero error al actualizar descripción: ${errorMsg}`);
-                                },
-                            }
-                        );
-                    } else {
-                        // No cambió la descripción, solo mostrar éxito
-                        setShowConfirmDialog(false);
-                        setSuccessMessage('Se ha generado una nueva versión del parámetro correctamente.');
-                        setTimeout(() => {
-                            onSuccess();
-                        }, 1500);
-                    }
-                },
-                onError: (error: unknown) => {
-                    setShowConfirmDialog(false);
-                    let errorMsg = 'Error desconocido';
-                    if (error instanceof Error) {
-                        errorMsg = error.message;
-                    } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                        errorMsg = String((error as { message: unknown }).message);
-                    }
-                    console.error('Error al crear nueva versión:', error);
-                    setErrorMessage(`Error al crear nueva versión: ${errorMsg}`);
-                },
+            });
+
+            if (descriptionChanged && newParameter?.idParameter) {
+                await updateMutation.mutateAsync({
+                    id: newParameter.idParameter,
+                    data: {
+                        description: pendingFormData.description,
+                    },
+                });
             }
-        );
+
+            if (needsStatusUpdate && newParameter?.idParameter) {
+                await updateStatusMutation.mutateAsync({
+                    id: newParameter.idParameter,
+                    status: requestedStatus,
+                });
+            }
+
+            setShowConfirmDialog(false);
+            showSuccess(
+                'Se generó una nueva versión del parámetro correctamente.',
+                'Operación exitosa',
+                () => onSuccess(),
+            );
+        } catch (error: unknown) {
+            setShowConfirmDialog(false);
+            console.error('Error al crear nueva versión:', error);
+            showError(
+                extractApiErrorMessage(error, {
+                    fallback:
+                        'No fue posible completar la actualización del parámetro. Inténtalo nuevamente.',
+                }),
+                'No se pudo actualizar el parámetro',
+            );
+        }
     };
 
     const handleClear = () => {
-        // Resetea los campos editables a sus valores originales
         reset({
             description: parameter.description || '',
             value: parameter.value,
@@ -245,8 +240,6 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
             endDate: parameter.endDate ? new Date(parameter.endDate + 'T00:00:00') : null,
             status: parameter.status,
         });
-        setSuccessMessage(null);
-        setErrorMessage(null);
     };
 
     const descriptionValue = watch('description') || '';
@@ -270,7 +263,10 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
         return type?.label || parameter.parameterType;
     };
 
-    const isPending = updateMutation.isPending || createVersionMutation.isPending;
+    const isPending =
+        updateMutation.isPending ||
+        createVersionMutation.isPending ||
+        updateStatusMutation.isPending;
 
     return (
         <div className="parameter-create">
@@ -573,39 +569,6 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
                             </select>
                         </div>
 
-                        {successMessage && (
-                            <div style={{
-                                backgroundColor: '#d4edda',
-                                color: '#155724',
-                                padding: '12px 16px',
-                                borderRadius: '6px',
-                                marginBottom: '16px',
-                                fontWeight: 500,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                {successMessage}
-                            </div>
-                        )}
-
-                        {errorMessage && (
-                            <div style={{
-                                backgroundColor: '#f8d7da',
-                                color: '#721c24',
-                                padding: '12px 16px',
-                                borderRadius: '6px',
-                                marginBottom: '16px',
-                                fontWeight: 500
-                            }}>
-                                {errorMessage}
-                            </div>
-                        )}
-
                         <div className="parameter-create__footer">
                             <div className="parameter-create__footer-left">
                                 <button type="button" className="parameter-create__btn-clear" onClick={handleClear}>
@@ -626,6 +589,7 @@ export const ParameterEditForm: FC<ParameterEditFormProps> = ({
                     </form>
                 </div>
             </div>
+            {ModalNode}
         </div>
     );
 };

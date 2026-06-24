@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { breadcrumbFinanceHomePage } from '@shared/components/ui/navigation/financeBreadcrumb';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
 
 import iconDocument from '@assets/icons/document.svg';
@@ -9,9 +10,8 @@ import iconSetting from '@assets/icons/setting.png';
 import iconReport from '@assets/icons/report.png';
 import iconDoneCheck from '@assets/icons/done-check.png';
 import iconWarning from '@assets/icons/warning.png';
-import iconAudit from '@assets/icons/warning.png';
-
 import { getHealthcheck } from './api';
+import { APP_KEYS, useSecurityContext } from '@shared/security';
 
 import './styles/FinanzasContainer.css';
 
@@ -22,6 +22,9 @@ interface FinanzasCard {
     icon?: any;
     disabled?: boolean;
     onClick?: () => void;
+    hidden?: boolean;
+    requiredApp?: string;
+    requiredAnyApp?: string[];
 }
 
 export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] }) {
@@ -66,48 +69,54 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
             description: 'Visualiza las guías de embarque registradas en el sistema.',
             link: '/finanzas/guias',
             icon: iconSupport,
+            requiredApp: APP_KEYS.CARTA_PORTE,
         },
         {
             title: 'Lista de Recepciones',
             description: 'Consulta las recepciones de las órdenes de servicio y su estatus.',
             link: '/finanzas/recepciones',
             icon: iconDocument,
+            requiredApp: APP_KEYS.RECEPTIONS,
         },
         {
             title: 'Descuentos comerciales',
             description: 'Consulta y gestiona los descuentos comerciales de la aplicación.',
             link: '/finanzas/descuentos-comerciales',
             icon: iconSetting,
+            requiredApp: APP_KEYS.DISCOUNTS,
         },
         {
             title: 'Pagos',
             description: 'Consulta y gestiona los pagos de proveedores.',
             link: '/finanzas/pagos',
             icon: iconDoneCheck,
+            requiredAnyApp: [
+                APP_KEYS.INVOICES,
+                APP_KEYS.CREDIT_NOTES,
+                APP_KEYS.PAYMENT_COMPLEMENTS,
+            ],
         },
         {
             title: 'Estado de cuenta',
             description: 'Consulta los estados de cuenta de proveedores y genera el documento en PDF.',
             link: '/finanzas/estado-cuenta',
             icon: iconReport,
+            requiredApp: APP_KEYS.ACCOUNT_STATEMENT,
         },
         {
             title: 'Three Way Match',
             description: 'Consulta y validación de orden de compra, recepción y factura pendientes de pago o pagadas.',
             link: '/finanzas/three-way-match',
             icon: iconWarning,
+            requiredApp: APP_KEYS.THREE_WAY_MATCH,
         },
-        {
-            title: 'Auditoría',
-            description: 'Consulta la bitácora de actividades, eventos y errores del sistema.',
-            link: '/auditoria/bitacora-actividades',
-            icon: iconAudit,
-        },
+        // Auditoría migrada a util.spa — ver /util/auditoria/bitacora-actividades
         {
             title: 'Publicación de recepción MIGO',
             description: 'Consultar, publicar, autorizar o rechazar recepciones MIGO',
             link: '/finanzas/migo',
             icon: iconDocument,
+            requiredApp: APP_KEYS.MIGO,
         },
         {
             title: 'Healthcheck',
@@ -117,20 +126,26 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
         },
     ];
 
-    const finalCards = cards ?? DEFAULT_CARDS;
+    const sec = useSecurityContext();
+    /*const finalCards = (cards ?? DEFAULT_CARDS)
+        .filter((card) => !card.hidden)
+        .filter((card) => {
+            if (!card.requiredApp && !card.requiredAnyApp) return true;
+            if (sec.isLoading) return false;
+            if (card.requiredApp && !sec.hasApp(card.requiredApp)) return false;
+            if (card.requiredAnyApp && !sec.hasAnyApp(card.requiredAnyApp)) return false;
+            return true;
+        });*/
+    /* TODO: Implement the permission gate */
+    const finalCards = DEFAULT_CARDS;
 
     return (
         <div className="finanzas-root">
-            <Breadcrumb
-                items={[
-                    { label: 'Inicio', to: '/' },
-                    { label: 'Finanzas' },
-                ]}
-            />
+            <Breadcrumb items={breadcrumbFinanceHomePage} />
 
             <main className="finanzas-main">
                 <section className="finanzas-box">
-                    <h1 className="maintainers-title">Operaciones</h1>
+                    <h1 className="maintainers-title">Gestión de recepciones, pagos y descuentos</h1>
 
                     <section className="cards-grid">
                         {finalCards.map((it, idx) => {
@@ -182,7 +197,7 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                             return (
                                 <Link
                                     key={idx}
-                                    to={it.link ?? '#'}
+                                    to={(it.link ?? '') + '?reset=true'}
                                     className={cardClasses}
                                 >
                                     {inner}

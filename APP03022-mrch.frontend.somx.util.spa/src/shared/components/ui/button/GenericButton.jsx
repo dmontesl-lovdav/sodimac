@@ -15,6 +15,8 @@ export default function GenericButton({
         link: 'btn-link',
         outlineFill: 'btn-outlineFill',
         text: 'btn-text',
+        cancel: 'btn-cancel',
+        back: 'btn-back',
     }[variant];
 
     return (

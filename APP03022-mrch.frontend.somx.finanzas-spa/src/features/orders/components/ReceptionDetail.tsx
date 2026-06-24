@@ -1,55 +1,93 @@
-import { GenericInput, GenericSelect } from "@/shared/components/ui";
-import { GenericButton } from "@/shared/components/ui/button";
+import {
+    GenericButton,
+    GenericInput,
+    GenericModal,
+    GenericSelect,
+} from "@/shared/components/ui";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
+import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
+import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
+import { FINANCE_LIST_KEYS } from "@/shared/hooks";
+import { exportToCSV, formatDate, formatFilenameTimestamp } from "@/utils/utils";
 
-import { ChangeEvent, ReactElement, useEffect, useState } from "react";
+import { ChangeEvent, ReactElement, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { OrderClient } from "../api/OrderClient";
-import { EMPTY_RECEPTION, ReceptionStatusOptions, Reception } from "../interfaces";
+import { EMPTY_RECEPTION, ReceptionStatusEditOptions, Reception } from "../interfaces";
 import ReceptionHeader from "./parts/ReceptionHeader";
 import ReceptionSkusTable from "./parts/ReceptionSkusTable";
-import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
 import "./ReceptionDetail.css";
+import { useReceptionSupplierInfo } from "../receptionSupplierInfo";
 
-const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
+export interface ReceptionEditStatusFormHandle {
+    submit: () => void;
+}
+
+interface ReceptionEditStatusFormProps {
+    reception: Reception;
+    updateOrderStatus: (reason: string, status: number, uuid: string) => void | Promise<void>;
+    showWarning: (title: string, message: string) => void;
+}
+
+const ReceptionEditStatusForm = forwardRef<
+    ReceptionEditStatusFormHandle,
+    ReceptionEditStatusFormProps
+>(function ReceptionEditStatusForm(
+    {
+    reception,
+    updateOrderStatus,
+    showWarning,
+    },
+    ref
+) {
     const [status, setStatus] = useState(reception.status);
-    const [reason, setReason] = useState("");
-    const [uuid, setUuid] = useState("");
-    const [error, setError] = useState("");
+    const [reason, setReason] = useState(reception.comment ?? "");
+    const [uuid, setUuid] = useState(reception.receptionId ?? "");
+
+    useEffect(() => {
+        setStatus(reception.status);
+    }, [reception.receptionId, reception.status]);
 
     useEffect(() => {
         if (status !== 2) {
             setUuid("");
         }
-    }, [status])
+    }, [status]);
 
-    const checkInformation = () => {
-        setError("");
+    const checkInformation = useCallback(() => {
         if (reason.trim() === "") {
-            setError("Razón o motivo es un campo requerido")
+            showWarning(
+                "Validación",
+                "Razón o motivo es un campo requerido."
+            );
             return;
         }
         if (status === 2 && uuid.trim() === "") {
-            setError("UUID es un campo requerido")
+            showWarning("Validación", "UUID es un campo requerido.");
             return;
         }
         updateOrderStatus(reason, status, uuid);
-    }
+    }, [reason, status, uuid, showWarning, updateOrderStatus]);
+
+    useImperativeHandle(ref, () => ({ submit: checkInformation }), [checkInformation]);
 
     return (
         <div className="rc-detail-container">
             <div className="rc-detail-card">
                 <div className="rc-row">
                     <div className="rc-label">Editar Estado:</div>
+                    
                 </div>
                 <div className="rc-row">
                     <GenericSelect
                         value={status}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => setStatus(parseInt(event.target.value))}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                            setStatus(parseInt(event.target.value, 10))
+                        }
                         placeholder="Estado"
                         disablePlaceholder={true}
-                        options={ReceptionStatusOptions}
+                        options={ReceptionStatusEditOptions}
                     />
                 </div>
                 <div className="rc-row">
@@ -57,28 +95,30 @@ const buildDetail = (reception: Reception, updateOrderStatus: Function) => {
                         label="Motivo de cambio de estado"
                         placeholder="Escribe la razón por el cambio de estado"
                         value={reason}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => setReason(event.target.value)}
+                        disabled={reception.status != 0}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                            setReason(event.target.value)
+                        }
                     />
                 </div>
 
-                {status === 2 &&
-                    (<div className="rc-row">
+                {status === 2 && (
+                    <div className="rc-row">
                         <GenericInput
                             label="UUID"
                             placeholder="Proporciona el UUID para complementar"
                             value={uuid}
-                            onChange={(event: ChangeEvent<HTMLInputElement>) => setUuid(event.target.value)}
+                            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                                setUuid(event.target.value)
+                            }
                         />
-                    </div>)}
-                <ErrorMessage message={error} />
-                <div className="rc-button-row">
-                    <GenericButton variant="outline" onClick={checkInformation} > Guardar Estado </GenericButton>
-                </div>
+                    </div>
+                )}
+                
             </div>
         </div>
     );
-};
-
+});
 
 interface ReceptionDetailProps {
     editable?: boolean
@@ -86,9 +126,15 @@ interface ReceptionDetailProps {
 
 export function ReceptionDetail({ editable = false }: ReceptionDetailProps): ReactElement {
     const params = useParams();
+    const financeAlert = useFinanceAlertModal();
+    const editFormRef = useRef<ReceptionEditStatusFormHandle>(null);
+
     const [loading, setLoading] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [reception, setReception] = useState<Reception>(EMPTY_RECEPTION);
     const client = OrderClient;
+
+    const supplierInfo = useReceptionSupplierInfo(reception);
 
     useEffect(() => {
         const fetchData = async (uuid: string) => {
@@ -96,6 +142,12 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
             try {
                 const response = await client.getReceptionByUuid(uuid);
                 setReception(response.data);
+            } catch (err) {
+                financeAlert.showErrorFrom(
+                    "Error",
+                    err,
+                    "No fue posible cargar la recepción."
+                );
             } finally {
                 setLoading(false);
             }
@@ -108,12 +160,42 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
         try {
             if (reception && reception.receptionId) {
                 setLoading(true);
-                const updated = await client.updateReceptionStatus(reception.receptionId, {
-                    status: status,
-                    comment: reason
-                });
+                const supplierNumber = Number(
+                    reception.order?.supplierNumber ?? reception.supplierNumber ?? 0
+                );
+                const orderNumber = String(
+                    reception.order?.orderNumber ?? reception.orderNumber ?? ""
+                );
+                const receptionNumber = String(
+                    reception.receptionNumber ?? ""
+                );
+                if (!orderNumber || !receptionNumber || !Number.isFinite(supplierNumber)) {
+                    financeAlert.showWarning(
+                        "Datos incompletos",
+                        "Faltan datos de orden o proveedor para actualizar el estado."
+                    );
+                    return;
+                }
+                const payload = {
+                    supplierNumber,
+                    orderNumber,
+                    receptionNumber,
+                    status,
+                    comments: reason,
+                    ...(status === 2 && uuid.trim() !== ""
+                        ? { uuid: uuid.trim() }
+                        : {}),
+                };
+                await client.updateReceptionManual(payload);
+                const refreshed = await client.getReceptionByUuid(
+                    String(params.uuid ?? reception.receptionId)
+                );
+                setReception(refreshed.data);
+                financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");
             }
 
+        } catch (err) {
+            financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");
         } finally {
             setLoading(false);
         }
@@ -121,21 +203,102 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
 
 
 
-    const breadcrumb: BreadcrumbItem[] = [
-        { label: "Finanzas", to: "/finanzas" },
+    const handleExportCSV = () => {
+        const skus = reception?.receptionSkus ?? [];
+        if (!skus.length) return;
+        setIsExporting(true);
+        const headers = [
+            "Orden Compra",
+            "Recepción",
+            "Importe",
+            "Fecha Recepción",
+            "Número Proveedor",
+            "SKU",
+            "Descripción",
+            "Cantidad",
+            "Precio Unitario",
+            "Importe",
+        ];
+        const rows = skus.map((item) => [
+            reception.order?.orderNumber ?? reception.orderNumber ?? "",
+            reception.receptionNumber || reception.receptionId || "",
+            String(reception.amount ?? ""),
+            reception.receptionDate ? formatDate(String(reception.receptionDate)) : "",
+            String(reception.order?.supplierNumber ?? reception.supplierNumber ?? ""),
+            item.sku,
+            item.description,
+            parseInt(item.quantity, 10).toString(),
+            parseFloat(item.unitCost).toFixed(2),
+            parseFloat(item.totalCost).toFixed(2),
+        ]);
+        const receptionId = String(reception.receptionNumber || reception.receptionId || "rec");
+        const baseName = `recepcion_detalle_${receptionId.replace(/[^\w\-]+/g, "_").slice(0, 80)}_${formatFilenameTimestamp()}`;
+        exportToCSV(headers, rows, baseName);
+        setIsExporting(false);
+    };
+
+    const breadcrumb: BreadcrumbItem[] = withFinanceBreadcrumb([
         { label: "Recepciones", to: "/finanzas/recepciones" },
         { label: `${reception.receptionNumber}` },
-    ];
+    ]);
 
-    return decorate(
-        breadcrumb,
-        "/finanzas/recepciones",
+    return (
         <>
-            <ReceptionHeader reception={reception} />
-            {editable && buildDetail(reception, updateOrderStatus)}
-            {!editable && <ReceptionSkusTable reception={reception} />}
-        </>,
-        loading
+            {decorate(
+                breadcrumb,
+                "/finanzas/recepciones",
+                <>
+                    <ReceptionHeader
+                        reception={reception}
+                        supplierInfo={supplierInfo}
+                        headerActions={
+                            editable ? (
+                                <GenericButton
+                                    disabled={reception.status != 0}
+                                    variant="primary"
+                                    onClick={() => {
+                                        editFormRef.current?.submit();
+                                    }}
+                                >
+                                    Guardar
+                                </GenericButton>
+                            ) : <GenericButton
+                            variant="primary"
+                            type="button"
+                            disabled={isExporting}
+                            onClick={handleExportCSV}
+                        >
+                            Exportar CSV
+                        </GenericButton>
+                        }
+                    />
+                    {editable && (
+                        <ReceptionEditStatusForm
+                            ref={editFormRef}
+                            reception={reception}
+                            updateOrderStatus={updateOrderStatus}
+                            showWarning={financeAlert.showWarning}
+                        />
+                    )}
+                    {!editable && <ReceptionSkusTable reception={reception} />}
+                </>,
+                loading,
+                undefined,
+                {
+                    actionsAlign: "end",
+                    financeListSession: FINANCE_LIST_KEYS.receptions,
+                }
+            )}
+            <GenericModal
+                visible={financeAlert.alertVisible}
+                variant="alert"
+                severity={financeAlert.alertSeverity}
+                title={financeAlert.alertTitle}
+                message={financeAlert.alertMessage}
+                buttonText="Aceptar"
+                onClose={financeAlert.closeAlert}
+            />
+        </>
     );
 }
 

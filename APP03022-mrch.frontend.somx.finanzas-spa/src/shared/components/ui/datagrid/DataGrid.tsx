@@ -160,7 +160,7 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
 
   /** acciones internas */
   enableCsv = true,
-  csvFilename = "Export",
+  csvFilename = "Listado",
   enableXml = false,
   enablePdf = false,
   getPdfUrl,
@@ -335,7 +335,7 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
 
     return [
       {
-        label: "Exportar a CSV",
+        label: "Exportar CSV",
         value: "csv",
         run: (selected, all) => {
           const data = selected.length ? selected : all;

@@ -1,32 +1,48 @@
-/* ========================= */
-/* THREE WAY MATCH FILTERS   */
-/* ========================= */
+/* THREE WAY MATCH FILTERS (layout: financeFiltersLayout.css) */
 
 .twm-filters {
     margin-bottom: 24px;
+    width: 100%;
 }
 
-/* Fila horizontal REAL */
 .twm-row {
+    width: 100%;
+}
+
+.twm-filters .finz-filter-row > .twm-field-provider {
+    flex: 0 1 194px;
+    min-width: 150px;
+    max-width: 220px;
+}
+
+.twm-filters .finz-filter-row > .twm-field-dates {
+    flex: 2 1 280px;
+    min-width: 260px;
+    max-width: 100%;
     display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: nowrap;
+    align-items: center;
 }
 
-.twm-row .somx-input-wrapper,
-.twm-row .somx-select-wrapper {
-    width: auto !important;
-    min-width: 180px;
-    flex: 0 0 auto;
+.twm-filters .twm-field-dates .dr-wrapper,
+.twm-filters .twm-field-dates .dr-container {
+    width: 100%;
+    min-width: 240px;
 }
 
-/* Select un poco más ancho */
-.twm-row .somx-select-wrapper {
-    min-width: 220px;
+.twm-row .twm-filter-input {
+    min-width: 0;
 }
 
-/* Inputs internos */
-.twm-row .somx-input {
-    width: 180px;
+@media (max-width: 900px) {
+    .twm-filters .finz-filter-row > .twm-field-provider,
+    .twm-filters .finz-filter-row > .twm-field-dates {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .twm-filters .twm-field-dates .dr-container {
+        min-width: 0;
+    }
 }

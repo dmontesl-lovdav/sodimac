@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ChangeEvent, ReactElement } from 'react';
 import { GenericInput, GenericSelect, GenericButton } from '@shared/components/ui';
 import { GenericDateRangePicker } from '@shared/components/ui/date';
+import './FiltersBar.css';
 
 export type DateRange = [Date | null, Date | null];
 
@@ -17,32 +18,10 @@ export interface FiltersValues {
 
 interface FiltersBarProps {
     onSearch: (values: FiltersValues) => void;
+    onClear?: () => void;
 }
 
-const styles = {
-    container: {
-        display: 'flex',
-        flexWrap: 'wrap' as const,
-        gap: '1rem',
-        alignItems: 'flex-end',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.375rem',
-        padding: '1rem',
-        backgroundColor: '#f9fafb',
-    },
-    dateField: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        width: '15rem',
-    },
-    dateLabel: {
-        fontSize: '0.875rem',
-        color: '#4b5563',
-        marginBottom: '0.25rem',
-    },
-};
-
-export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement {
+export default function FiltersBar({ onSearch, onClear }: FiltersBarProps): ReactElement {
     const [vendor, setVendor] = useState<string>('');
     const [sapDocument, setSapDocument] = useState<string>('');
     const [documentNumber, setDocumentNumber] = useState<string>('');
@@ -74,66 +53,94 @@ export default function FiltersBar({ onSearch }: FiltersBarProps): ReactElement 
         onSearch(payload);
     };
 
+    const handleClear = () => {
+        setVendor('');
+        setSapDocument('');
+        setDocumentNumber('');
+        setDateRange([null, null]);
+        setRebateType('');
+        setStatus('');
+        onClear?.();
+    };
+
     return (
-        <div style={styles.container}>
-            <GenericInput
-                label="Proveedor"
-                placeholder="Número de proveedor"
-                value={vendor}
-                onChange={onChangeInput(setVendor)}
-                widthClass="w-60"
-            />
+        <div className="rb-filters">
+            <div className="finz-filter-row">
+                <div className="rb-field">
+                    <GenericInput
+                        label="Proveedor"
+                        placeholder="Número de proveedor"
+                        value={vendor}
+                        onChange={onChangeInput(setVendor)}
+                    />
+                </div>
 
-            <GenericInput
-                label="Documento"
-                placeholder="Número de documento"
-                value={documentNumber}
-                onChange={onChangeInput(setDocumentNumber)}
-                widthClass="w-48"
-            />
+                <div className="rb-field">
+                    <GenericInput
+                        label="Documento"
+                        placeholder="Documento"
+                        value={documentNumber}
+                        onChange={onChangeInput(setDocumentNumber)}
+                    />
+                </div>
 
-            <GenericInput
-                label="Documento SAP"
-                placeholder="SAP Doc"
-                value={sapDocument}
-                onChange={onChangeInput(setSapDocument)}
-                widthClass="w-44"
-            />
+                <div className="rb-field">
+                    <GenericInput
+                        label="Documento SAP"
+                        placeholder="SAP Doc"
+                        value={sapDocument}
+                        onChange={onChangeInput(setSapDocument)}
+                    />
+                </div>
 
-            <div style={styles.dateField}>
-                <label style={styles.dateLabel}>Rango de fechas</label>
-                <GenericDateRangePicker value={dateRange} onChange={setDateRange} />
+                <div className="rb-field">
+                    <GenericDateRangePicker
+                        value={dateRange}
+                        onChange={setDateRange}
+                        placeholder="Rango de fechas"
+                        size="md"
+                    />
+                </div>
+
+                <div className="rb-field">
+                    <GenericSelect
+                        label="Tipo Rebate"
+                        value={rebateType}
+                        onChange={onChangeSelect(setRebateType)}
+                        options={[
+                            { value: '', label: 'Todos' },
+                            { value: '1', label: 'Merma' },
+                            { value: '2', label: 'Cross' },
+                            { value: '3', label: 'Coop' },
+                        ]}
+                        widthClass="gs-width-default"
+                    />
+                </div>
+
+                <div className="rb-field">
+                    <GenericSelect
+                        label="Estatus"
+                        value={status}
+                        onChange={onChangeSelect(setStatus)}
+                        options={[
+                            { value: '', label: 'Todos' },
+                            { value: '1', label: 'Pendiente' },
+                            { value: '2', label: 'Aprobado' },
+                            { value: '3', label: 'Rechazado' },
+                        ]}
+                        widthClass="gs-width-default"
+                    />
+                </div>
+
+                <div className="finz-filter-actions">
+                    <GenericButton variant="outlineFill" onClick={handleSubmit}>
+                        Buscar
+                    </GenericButton>
+                    <GenericButton variant="outlineFill" onClick={handleClear}>
+                        Limpiar
+                    </GenericButton>
+                </div>
             </div>
-
-            <GenericSelect
-                label="Tipo Rebate"
-                value={rebateType}
-                onChange={onChangeSelect(setRebateType)}
-                options={[
-                    { value: '', label: 'Todos' },
-                    { value: '1', label: 'Merma' },
-                    { value: '2', label: 'Cross' },
-                    { value: '3', label: 'Coop' },
-                ]}
-                widthClass="w-44"
-            />
-
-            <GenericSelect
-                label="Estatus"
-                value={status}
-                onChange={onChangeSelect(setStatus)}
-                options={[
-                    { value: '', label: 'Todos' },
-                    { value: '1', label: 'Pendiente' },
-                    { value: '2', label: 'Aprobado' },
-                    { value: '3', label: 'Rechazado' },
-                ]}
-                widthClass="w-40"
-            />
-
-            <GenericButton onClick={handleSubmit} style={{ height: '44px' }}>
-                Buscar
-            </GenericButton>
         </div>
     );
 }

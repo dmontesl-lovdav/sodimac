@@ -1,14 +1,53 @@
 import { ShippingGuide } from "../shippingGuides/interfaces";
+import { RECEPTION_STATUS_DICTIONARY, receptionStatusDefinedIds } from "./receptionStatusDictionary";
 
-export type ReceptionStatus = 0 | 1 | 2 | 3 | 4;
+export type ReceptionStatus = number;
 
-export const ReceptionStatusOptions = [
-    { value: 0, type: "done", label: "Disponible" },
-    { value: 1, type: "done", label: "Consumida" },
-    { value: 2, type: "done", label: "Manual" },
-    { value: 3, type: "error", label: "Cancelada" },
-    { value: 4, type: "error", label: "Borrado" },
-];
+export type ReceptionStatusOption = {
+    value: number;
+    type: string;
+    label: string;
+    description: string;
+};
+
+/** Opciones de filtro / formulario derivadas del diccionario estático de estatus. */
+export const ReceptionStatusOptions: ReceptionStatusOption[] =
+    receptionStatusDefinedIds().map((value) => {
+        const e = RECEPTION_STATUS_DICTIONARY[value];
+        return {
+            value,
+            type: e.pillType,
+            label: e.shortLabel,
+            description: e.description,
+        };
+    });
+
+/** Estatus visibles en filtros (sin borrado lógico). */
+export const ReceptionStatusFilterOptions = receptionStatusDefinedIds()
+    .filter((value) => value !== 8)
+    .map((value) => {
+        const e = RECEPTION_STATUS_DICTIONARY[value];
+        return {
+            value: String(value),
+            label: e.description,
+            type: e.pillType,
+            description: e.description,
+        };
+    });
+
+/** Estatus permitidos al editar recepción manualmente. */
+export const RECEPTION_STATUS_EDIT_IDS = [2, 7, 8] as const;
+
+export const ReceptionStatusEditOptions: ReceptionStatusOption[] =
+    RECEPTION_STATUS_EDIT_IDS.map((value) => {
+        const e = RECEPTION_STATUS_DICTIONARY[value];
+        return {
+            value,
+            type: e.pillType,
+            label: e.shortLabel,
+            description: e.description,
+        };
+    });
 
 //TODO: catálogo de proveedores dinámicos
 export const ProviderOptions = [
@@ -19,6 +58,7 @@ export const ProviderOptions = [
 export type TableItem = Item & { id: string | number };
 
 export const EMPTY_ORDER: Order = {
+    shippingGuideNumber: "",
     purchaseOrderId: "",
     orderNumber: "",
     supplierNumber: "",
@@ -117,6 +157,7 @@ interface Supplier {
     rfc: string;
     businessName: string;
     supplierType: SupplierType;
+    emailFinancial?: string;
 }
 
 
@@ -129,6 +170,8 @@ export interface Reception {
     order: Order,
     shippingGuidePurchaseOrders: ShippingGuide[],
     originId: string;
+    /** Nombre amigable (catálogo BFF CatTipoOrigenRecepcionSodimac), junto con originId. */
+    originName?: string;
     purchaseOrderDate: string;
     supplierNumber: string;
     vendorName: string;
@@ -147,6 +190,7 @@ export interface Reception {
 }
 
 export interface Order {
+    shippingGuideNumber: string,
     supplier?: Supplier,
     purchaseOrderId: string,
     orderNumber: string,
@@ -169,8 +213,11 @@ export interface OrdersFilters {
   purchaseOrderDateAtEnd: string;
   pageNumber: number,
   pageSize: number,
+  providerType?: string | number | undefined;
   purchaseOrderId?: string | undefined;
   orderNumber?: string | undefined;
+  /** Filtro presentacional: recorte en cliente tras aplanar recepciones (si el API no filtra por recepción). */
+  receptionNumber?: string | undefined;
   originId?: string | undefined;
   supplierNumber?: number | undefined;
   status?: number | undefined;
@@ -191,6 +238,8 @@ export interface Addendum {
 
 export interface Invoice {
   invoice_uuid?: string;
+  /** Alias camelCase usado en algunas respuestas/adendas. */
+  invoiceUuid?: string;
   fiscal_uuid?: string;
   place_of_issue?: string;
   payment_method?: string;
@@ -215,6 +264,7 @@ export interface Invoice {
   created_by?: number;
   created_at?: string;
   updated_by?: number;
+  certificationDate?: string;
   updated_at?: string;
 }
 

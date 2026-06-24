@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './styles/GenericSelectSearchable.css';
+import './styles/GenericSelect.css';
+
 
 type Option = {
     value: string;

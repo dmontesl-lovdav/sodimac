@@ -1,3 +1,15 @@
+/* Tabla listado recepciones: tipografía compacta para más columnas visibles */
+.rc-list-grid-wrap .table th,
+.rc-list-grid-wrap .table td {
+    font-size: 0.75rem;
+    line-height: 1.25;
+    padding: 6px 8px;
+}
+
+.rc-list-grid-wrap .pagination {
+    font-size: 0.8125rem;
+}
+
 .rc-actions {
     align-items: center;
     display: inline-flex;

@@ -6,19 +6,31 @@
 
 .rc-detail-card {
     border: 1px solid #e5e7eb;
-    padding: 20px;
+    padding: 24px;
 }
 
-.rc-row {
+/* Filas del formulario "Editar estado" */
+.rc-detail-card > .rc-row {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+/* Solo inputs: ancho cómodo para el label, sin ocupar toda la tarjeta */
+.rc-detail-card .generic-textfield-wrapper {
+    display: block;
+    width: min(100%, 460px);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.rc-detail-card > .finz-page-actions.rc-button-row {
+    margin-top: 6px;
+    margin-bottom: 0;
 }
 
 .rc-label {
     font-weight: 700;
 }
 
-.rc-button-row {
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 8px;
-}

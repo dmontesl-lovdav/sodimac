@@ -1,41 +1,47 @@
 import { Breadcrumb } from "@/shared/components/ui/navigation";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { ReactElement } from "react";
+import { Link } from "react-router-dom";
 import { GenericButton } from "@/shared/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { GenericMarqueeBar } from "../progress";
 import "./Decorator.css";
 
 export interface DecorateOptions {
   className?: string;
-}
-
-function GoBackButton(): ReactElement {
-  const navigate = useNavigate();
-  return (
-    <GenericButton variant="link" className="fiscal-decorator-actions-end" onClick={() => navigate(-1)}>
-      Volver
-    </GenericButton>
-  );
+  hideBackLink?: boolean;
+  actionsAlign?: "start" | "end";
 }
 
 export function decorate(
   breadcrumItems: BreadcrumbItem[],
-  _returnPath: string,
+  returnPath: string,
   content: ReactElement,
+  loading?: boolean,
   actions?: ReactElement,
   options?: DecorateOptions
 ): ReactElement {
+  if (loading) {
+    return <GenericMarqueeBar />;
+  }
+
   const containerClass = `fiscal-decorator-container ${options?.className ?? ""}`.trim();
+  const actionsClass =  "fiscal-decorator-footer-actions fiscal-decorator-footer-actions--end";
+
   return (
     <div className={containerClass}>
       <Breadcrumb items={breadcrumItems} />
-      <div className="fiscal-decorator-actions">
-        {actions}
-      </div>
       <div className="fiscal-decorator-card">
         {content}
-
+        {!options?.hideBackLink && returnPath !== "/" ? (
+          <div className={actionsClass}>
+            <Link to={returnPath} className="fiscal-decorator-back-link">
+              <GenericButton variant="link" type="button">
+                Volver
+              </GenericButton>
+            </Link>
+            {actions}
+          </div>
+        ) : null}
       </div>
     </div>
   );

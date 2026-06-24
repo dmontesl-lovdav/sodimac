@@ -10,37 +10,47 @@ import deleteIcon from "@assets/delete.svg";
 import editIcon from "@assets/edit.svg";
 import { ReactElement, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  fetchCatalog,
+  formatDate,
+  parseCatalogDetailsResponse,
+  resolveCatalogDetailLabel,
+  type CatalogDetailRow,
+} from "@/utils/utils";
 import { ShippingGuide } from "../interfaces";
+import {
+  getRegisteredShippingGuideStatusLabels,
+  resolveShippingGuideStatusDescription,
+} from "../shippingGuideStatusCatalog";
+import { resolvePurchaseOrderStatusDescription } from "../purchaseOrderStatusLabels";
+import { getShippingGuideStatusCode } from "../utils/shippingGuideStatus";
 import "../styles/shippingGuides.css";
 
-const statusCatalog: Record<number, { label: string; badgeClass: string }> = {
-  1: { label: "Pendiente de OC", badgeClass: "sg-status-yellow" },
-  2: { label: "Pendiente de Facturar", badgeClass: "sg-status-yellow" },
-  3: { label: "Pendiente de Pago", badgeClass: "sg-status-yellow" },
-  4: { label: "En proceso de contabilización", badgeClass: "sg-status-yellow" },
-  5: { label: "Contabilizada", badgeClass: "sg-status-yellow" },
-  6: { label: "Rechazo contable", badgeClass: "sg-status-red" },
-  7: { label: "Pagada", badgeClass: "sg-status-green" },
-  8: { label: "Rechazo de guía", badgeClass: "sg-status-red" },
-  9: { label: "Cancelada", badgeClass: "sg-status-red" },
+const statusBadgeByCode: Record<number, string> = {
+  1: "sg-status-yellow",
+  2: "sg-status-yellow",
+  3: "sg-status-yellow",
+  4: "sg-status-yellow",
+  5: "sg-status-yellow",
+  6: "sg-status-red",
+  7: "sg-status-green",
+  8: "sg-status-red",
+  9: "sg-status-red",
 };
 
-const getStatusCode = (guide: ShippingGuide) => Number(guide.status?.internalStatus ?? 0);
-
 const getStatusLabel = (guide: ShippingGuide) => {
-  const code = getStatusCode(guide);
-  return (
-    guide.status?.description ||
-    guide.status?.value ||
-    statusCatalog[code]?.label ||
-    guide.status?.key ||
-    "N/D"
+  const code = getShippingGuideStatusCode(guide);
+  return resolveShippingGuideStatusDescription(
+    code,
+    // @ts-ignore
+    guide.status,
+    getRegisteredShippingGuideStatusLabels() ?? undefined
   );
 };
 
 const getStatusBadgeClass = (guide: ShippingGuide) => {
-  const code = getStatusCode(guide);
-  return statusCatalog[code]?.badgeClass || "sg-status-muted";
+  const code = getShippingGuideStatusCode(guide);
+  return statusBadgeByCode[code] || "sg-status-muted";
 };
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
@@ -62,6 +72,8 @@ interface ShippingGuideGridProps {
   onSelectionChange?: (selected: ShippingGuide[]) => void;
   onRequestCancel?: (guides: ShippingGuide[]) => void;
   onRequestStatusUpdate?: (guide: ShippingGuide) => void;
+  onDownloadCsvRow?: (guide: ShippingGuide) => void;
+  onDownloadXmlRow?: (guide: ShippingGuide) => void;
 }
 
 export function ShippingGuideGrid({
@@ -70,9 +82,14 @@ export function ShippingGuideGrid({
   onSelectionChange,
   onRequestCancel,
   onRequestStatusUpdate,
+  onDownloadCsvRow,
+  onDownloadXmlRow,
 }: ShippingGuideGridProps): ReactElement {
   const nav = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
 
   const toggleRow = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -88,12 +105,16 @@ export function ShippingGuideGrid({
   }
 
   const sortedRows = [...rows]
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .sort((a, b) => new Date(b.shippingDate).getTime() - new Date(a.shippingDate).getTime())
     .map(row => ({ ...row, id: row.shippingGuideId }));
 
   useEffect(() => {
     setSelectedIds([]);
+    setPage(1);
   }, [rows]);
+
+  const totalItems = sortedRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
 
   useEffect(() => {
     if (!onSelectionChange || !rows) return;
@@ -106,15 +127,7 @@ export function ShippingGuideGrid({
 
   const columns: Column<ShippingGuide>[] = [
     {
-      header: "Número de proveedor",
-      render: (guide) => <>{guide.vendorNumber}</>,
-    },
-    {
-      header: "Nombre de proveedor",
-      render: (guide) => <>{guide.supplier?.businessName || "N/D"}</>,
-    },
-    {
-      header: "Guia de embarque",
+      header: "Guía Embarque",
       render: (guide) => <>{guide.guideNumber}</>,
     },
     {
@@ -122,15 +135,17 @@ export function ShippingGuideGrid({
       render: (guide) => <>{guide.truckPlate || "N/D"}</>,
     },
     {
-      header: "Placa remolque",
+      header: "Placa Remolque",
       render: (guide) => <>{guide.trailerPlate || "N/D"}</>,
     },
     {
       header: "Origen",
-      render: (guide) => <>{getCatalogDisplay(guide.OrigenCartaPorte)}</>,
+      render: (guide) => (
+        <>{guide.originId}</>
+      ),
     },
     {
-      header: "Tipo de entrega",
+      header: "Tipo Entrega",
       render: (guide) => (
         <span title={guide.deliveryType?.key || ""}>
           {getCatalogDisplay(guide.deliveryType)}
@@ -138,38 +153,54 @@ export function ShippingGuideGrid({
       ),
     },
     {
-      header: "Fecha de entrega",
+      header: "Orden Compra",
+      render: (guide) => {
+        const order = guide.orderNumber || "N/D";
+        if (guide.purchaseOrderStatus == null) return <>{order}</>;
+        return (
+          <span className="sg-oc-cell">
+            <span className="sg-oc-number">{order}</span>
+          </span>
+        );
+      },
+    },
+    {
+      header: "Número Proveedor",
+      render: (guide) => <>{guide.vendorNumber}</>,
+    },
+    {
+      header: "Nombre Proveedor",
+      render: (guide) => <>{guide.supplier?.businessName || "N/D"}</>,
+    },
+    {
+      header: "Fecha Entrega",
       render: (guide) => (
         <>
           {guide.deliveryDate
-            ? new Date(guide.deliveryDate).toLocaleDateString()
+            ? formatDate(guide.deliveryDate)
             : "N/D"}
         </>
       ),
     },
     {
-      header: "Fecha de envió",
+      header: "Fecha Envió",
       render: (guide) => (
         <>
           {guide.shippingDate
-            ? new Date(guide.shippingDate).toLocaleDateString()
+            ? formatDate(guide.shippingDate)
             : "N/D"}
         </>
       ),
     },
     {
-      header: "Fecha de registro",
+      header: "Fecha Registro",
       render: (guide) => (
         <>
           {guide.createdAt
-            ? new Date(guide.createdAt).toLocaleDateString()
+            ? formatDate(guide.createdAt)
             : "N/D"}
         </>
       ),
-    },
-    {
-      header: "Número de orden compra",
-      render: (guide) => <>{guide.orderNumber || "N/D"}</>,
     },
     {
       header: "Estatus",
@@ -181,24 +212,25 @@ export function ShippingGuideGrid({
     {
       title: "Ver",
       icon: eyeIcon,
-      onClick: (guide) => nav(`/guias/${guide.shippingGuideId}`),
-      isDisabled: (guide) => getStatusCode(guide) !== 9,
+      onClick: (guide) => nav(`/finanzas/guias/${guide.shippingGuideId}`),
     },
     {
-      title: "Descargar CSV",
+      title: "Exportar CSV",
       icon: csvIcon,
-      onClick: (guide) => console.log(guide.shippingGuideId),
+      onClick: (guide) => onDownloadCsvRow?.(guide),
+      isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
     },
     {
-      title: "Dercargar XML",
+      title: "Exportar XML",
       icon: xmlIcon,
-      onClick: (guide) => console.log(guide.shippingGuideId),
+      onClick: (guide) => onDownloadXmlRow?.(guide),
+      isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
     },
     {
       title: "Cancelar",
       icon: deleteIcon,
       onClick: (guide) => onRequestCancel?.([guide]),
-      isDisabled: (guide) => ![1, 2].includes(getStatusCode(guide)),
+      isDisabled: (guide) => ![1, 2].includes(getShippingGuideStatusCode(guide)),
     },
     {
       title: "Actualizar estatus",
@@ -206,8 +238,10 @@ export function ShippingGuideGrid({
       onClick: (guide) =>
         onRequestStatusUpdate
           ? onRequestStatusUpdate(guide)
-          : nav(`/guias/${guide.shippingGuideId}/estatus`, { state: { guide } }),
-      isDisabled: (guide) => ![1, 4].includes(getStatusCode(guide)),
+          : nav(`/finanzas/guias/${guide.shippingGuideId}/estatus`, {
+              state: { guide },
+            }),
+      isDisabled: (guide) => ![1, 4].includes(getShippingGuideStatusCode(guide)),
     },
   ];
 
@@ -217,9 +251,15 @@ export function ShippingGuideGrid({
       actions={actions}
       columns={columns}
       emptyLabel={loading ? "Cargando..." : "Sin resultados"}
-      perPage={10}
-      page={1}
-      totalPages={1}
+      perPage={perPage}
+      page={page}
+      totalPages={totalPages}
+      totalItems={totalItems}
+      onChangePage={setPage}
+      onChangePerPage={(size) => {
+        setPerPage(size);
+        setPage(1);
+      }}
       enableSelection={true}
       selectedIds={selectedIds}
       onSelectRow={toggleRow}

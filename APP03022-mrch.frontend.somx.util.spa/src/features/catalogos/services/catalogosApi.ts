@@ -1,4 +1,4 @@
-import apiClient from '@/shared/api/apiClient';
+import apiClient from '@/services/apiClient';
 
 export interface SupplierType {
   id: number;
@@ -20,6 +20,9 @@ export interface Supplier {
   supplierType: SupplierType | null;
   logo: string | null;
   paymentCondition: PaymentCondition | null;
+  emailPrincipal?: string | null;
+  emailFinancial?: string | null;
+  emailCommercial?: string | null;
   status: number;
 }
 
@@ -44,6 +47,9 @@ export interface SupplierCreateDto {
   supplierTypeId?: number;
   logo?: string;
   paymentConditionId?: number;
+  emailPrincipal: string;
+  emailFinancial: string;
+  emailCommercial?: string;
 }
 
 export interface SupplierUpdateDto {
@@ -52,6 +58,9 @@ export interface SupplierUpdateDto {
   supplierTypeId?: number;
   logo?: string;
   paymentConditionId?: number;
+  emailPrincipal?: string;
+  emailFinancial?: string;
+  emailCommercial?: string;
   status?: number;
 }
 
@@ -260,6 +269,22 @@ export interface CatalogSimple {
   catalogType?: string;
 }
 
+export interface LayoutValidationError {
+  row: number;
+  cell: string;
+  column: string;
+  message: string;
+}
+
+export interface LayoutValidationResponse {
+  isValid: boolean;
+  errorCount: number;
+  errors: LayoutValidationError[];
+  reportAvailable: boolean;
+  reportId?: string | null;
+  rowsProcessed: number;
+}
+
 export const catalogService = {
   search: async (params: CatalogSearchParams = {}): Promise<CatalogPageResponse> => {
     return apiClient.request<CatalogPageResponse>('/catalogos', 'get', undefined, { params });
@@ -279,6 +304,23 @@ export const catalogService = {
 
   getPrimaryCatalogs: async (): Promise<CatalogSimple[]> => {
     return apiClient.request<CatalogSimple[]>('/catalogos/primarios', 'get');
+  },
+  validateLayout: async (
+    file: File,
+    tipoCatalogoSeleccionado: 'PRIMARIO' | 'SECUNDARIO',
+    nombreCatalogo: string,
+    modoCarga: 'NUEVO_CATALOGO' | 'IMPORTAR_ELEMENTOS' = 'NUEVO_CATALOGO',
+  ): Promise<LayoutValidationResponse> => {
+    const payload = new FormData();
+    payload.append('file', file);
+    payload.append('tipoCatalogoSeleccionado', tipoCatalogoSeleccionado);
+    payload.append('nombreCatalogo', nombreCatalogo);
+    payload.append('modoCarga', modoCarga);
+    return apiClient.request<LayoutValidationResponse>(
+      '/catalogos/validate-layout',
+      'post',
+      payload,
+    );
   },
 };
 

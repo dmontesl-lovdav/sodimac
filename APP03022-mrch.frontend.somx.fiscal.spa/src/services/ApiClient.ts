@@ -34,45 +34,24 @@ export function createApiClient(options?: {
 
     const timeoutMs = options?.timeoutMs ?? 15000;
 
-    console.log("[ApiClient] APP_DEV:", APP_DEV);
-    console.log("[ApiClient] baseUrl resolved:", baseUrl);
-    console.log("[ApiClient] timeoutMs:", timeoutMs);
-
     const instance: AxiosInstance = axios.create({
         baseURL: baseUrl.replace(/\/+$/, ""),
         timeout: timeoutMs,
     });
 
     function resolveToken(): string | null {
-        console.log("[ApiClient][resolveToken] start");
-
         if (APP_DEV) {
-            console.log("[ApiClient][resolveToken] APP_DEV=true, skipping token resolution");
             return null;
         }
 
-        console.log("[ApiClient][resolveToken] local store full:", localHomeStore.getState());
-        console.log(
-            "[ApiClient][resolveToken] local authentication:",
-            (localHomeStore.getState() as any)?.authentication
-        );
-
         if (typeof options?.tokenProvider === "function") {
             const providedToken = options.tokenProvider();
-
-            console.log(
-                "[ApiClient][resolveToken] tokenProvider(function) returned token?:",
-                Boolean(providedToken?.trim())
-            );
-
             if (providedToken?.trim()) {
-                console.log("[ApiClient][resolveToken] using token from tokenProvider(function)");
                 return providedToken;
             }
         }
 
         if (typeof options?.tokenProvider === "string" && options.tokenProvider.trim()) {
-            console.log("[ApiClient][resolveToken] using token from tokenProvider(string)");
             return options.tokenProvider;
         }
 
@@ -80,17 +59,7 @@ export function createApiClient(options?: {
             (localHomeStore.getState() as any)?.authentication?.token ||
             (localHomeStore.getState() as any)?.authentication?.idToken;
 
-        console.log(
-            "[ApiClient][resolveToken] storeToken exists?:",
-            Boolean(storeToken?.trim())
-        );
-        console.log(
-            "[ApiClient][resolveToken] storeToken preview:",
-            storeToken ? `${storeToken.slice(0, 20)}...` : null
-        );
-
         if (storeToken?.trim()) {
-            console.log("[ApiClient][resolveToken] using token from localHomeStore");
             return storeToken;
         }
 
@@ -98,17 +67,10 @@ export function createApiClient(options?: {
             process.env.REACT_APP_AUTH_DEFAULT_TOKEN ||
             process.env.AUTH_DEFAULT_TOKEN;
 
-        console.log(
-            "[ApiClient][resolveToken] envToken exists?:",
-            Boolean(envToken?.trim())
-        );
-
         if (envToken?.trim()) {
-            console.log("[ApiClient][resolveToken] using fallback env token");
             return envToken;
         }
 
-        console.warn("[ApiClient][resolveToken] no token found");
         return null;
     }
 
@@ -118,22 +80,9 @@ export function createApiClient(options?: {
         data?: any,
         extra?: AxiosRequestConfig
     ): Promise<T> {
-        console.log("[ApiClient][request] start");
-        console.log("[ApiClient][request] path:", path);
-        console.log("[ApiClient][request] method:", method);
-        console.log("[ApiClient][request] data:", data);
-        console.log("[ApiClient][request] extra:", extra);
-
         const token = resolveToken();
 
-        console.log("[ApiClient][request] token exists?:", Boolean(token));
-
         if (!APP_DEV && !token) {
-            console.error("[ApiClient][request] No token - aborting request");
-            console.error(
-                "[ApiClient][request] local store at abort:",
-                localHomeStore.getState()
-            );
             throw new Error("No token");
         }
 
@@ -152,10 +101,6 @@ export function createApiClient(options?: {
             headers["Content-Type"] = "application/json";
         }
 
-        console.log("[ApiClient][request] final url:", `/${path.replace(/^\/+/, "")}`);
-        console.log("[ApiClient][request] headers:", headers);
-        console.log("[ApiClient][request] isFormData:", isFormData);
-
         const res: AxiosResponse<T> = await instance.request({
             url: `/${path.replace(/^\/+/, "")}`,
             method,
@@ -164,9 +109,6 @@ export function createApiClient(options?: {
             responseType: extra?.responseType,
             ...extra,
         });
-
-        console.log("[ApiClient][request] success status:", res.status);
-        console.log("[ApiClient][request] success data:", res.data);
 
         return res.data as T;
     }
@@ -177,21 +119,9 @@ export function createApiClient(options?: {
         data?: any,
         filename?: string
     ): Promise<void> {
-        console.log("[ApiClient][requestBinary] start");
-        console.log("[ApiClient][requestBinary] path:", path);
-        console.log("[ApiClient][requestBinary] method:", method);
-        console.log("[ApiClient][requestBinary] filename:", filename);
-
         const token = resolveToken();
 
-        console.log("[ApiClient][requestBinary] token exists?:", Boolean(token));
-
         if (!APP_DEV && !token) {
-            console.error("[ApiClient][requestBinary] No token - aborting request");
-            console.error(
-                "[ApiClient][requestBinary] local store at abort:",
-                localHomeStore.getState()
-            );
             throw new Error("No token");
         }
 
@@ -201,9 +131,6 @@ export function createApiClient(options?: {
             headers.Authorization = `Bearer ${token}`;
         }
 
-        console.log("[ApiClient][requestBinary] final url:", `/${path.replace(/^\/+/, "")}`);
-        console.log("[ApiClient][requestBinary] headers:", headers);
-
         const res: AxiosResponse = await instance.request({
             url: `/${path.replace(/^\/+/, "")}`,
             method,
@@ -211,8 +138,6 @@ export function createApiClient(options?: {
             responseType: "blob",
             headers,
         });
-
-        console.log("[ApiClient][requestBinary] success status:", res.status);
 
         const blob = new Blob([res.data]);
 

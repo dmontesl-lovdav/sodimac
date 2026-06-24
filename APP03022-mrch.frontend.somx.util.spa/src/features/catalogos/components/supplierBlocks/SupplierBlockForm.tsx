@@ -3,16 +3,143 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   supplierBlockService,
   supplierService,
-  SupplierBlock,
   Supplier,
   SupplierBlockCreateDto,
   SupplierBlockUpdateDto,
 } from '@features/catalogos/services/catalogosApi';
+import { useModalNotification } from '@shared/components/ui/modal';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+
+const styles = {
+  container: {
+    padding: '1.5rem 2rem',
+    backgroundColor: '#ffffff',
+    minHeight: '100vh',
+    fontFamily: 'inherit',
+    color: '#1f2937',
+  } as const,
+  breadcrumb: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '0.875rem',
+    color: '#6b7280',
+    marginBottom: '1rem',
+  } as const,
+  breadcrumbLink: {
+    color: '#003865',
+    textDecoration: 'none',
+    cursor: 'pointer',
+  } as const,
+  pageHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.25rem',
+    flexWrap: 'wrap' as const,
+    gap: '1rem',
+  },
+  pageTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 600,
+    color: '#1f2937',
+    margin: 0,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    padding: '1.5rem',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: '1rem',
+  } as const,
+  formGroup: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '0.4rem',
+  },
+  formLabel: {
+    fontSize: '0.8125rem',
+    fontWeight: 500,
+    color: '#374151',
+  },
+  formInput: {
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    color: '#1f2937',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    fontFamily: 'inherit',
+  },
+  actions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '0.75rem',
+    marginTop: '1.5rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid #e5e7eb',
+  },
+  btnPrimary: {
+    padding: '0.55rem 1.5rem',
+    backgroundColor: '#002d4c',
+    color: '#ffffff',
+    border: '1px solid #002d4c',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  btnSecondary: {
+    padding: '0.55rem 1.5rem',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  error: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+    border: '1px solid #fecaca',
+    borderRadius: '0.375rem',
+    padding: '0.75rem 1rem',
+    marginBottom: '1rem',
+    fontSize: '0.875rem',
+  },
+  loading: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '3rem 1rem',
+  },
+  spinner: {
+    width: '2.25rem',
+    height: '2.25rem',
+    border: '3px solid #e5e7eb',
+    borderTopColor: '#002d4c',
+    borderRadius: '50%',
+    animation: 'somx-spin 0.8s linear infinite',
+  },
+  helperText: {
+    fontSize: '0.75rem',
+    color: '#6b7280',
+  },
+};
 
 const SupplierBlockForm = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
+  const { showSuccess, showError, ModalNode } = useModalNotification();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,7 +198,7 @@ const SupplierBlockForm = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -97,6 +224,9 @@ const SupplierBlockForm = () => {
           status: parseInt(formData.status),
         };
         await supplierBlockService.update(parseInt(id), updateData);
+        showSuccess('Bloqueo actualizado correctamente.', 'Actualización exitosa', () =>
+          navigate('/util/catalogos/bloqueos'),
+        );
       } else {
         const createData: SupplierBlockCreateDto = {
           supplierNumber: formData.supplierNumber,
@@ -105,10 +235,14 @@ const SupplierBlockForm = () => {
           blockReason: formData.blockReason || undefined,
         };
         await supplierBlockService.create(createData);
+        showSuccess('Bloqueo registrado correctamente.', 'Creación exitosa', () =>
+          navigate('/util/catalogos/bloqueos'),
+        );
       }
-      navigate('/util/catalogos/bloqueos');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al guardar el bloqueo');
+      const msg = err.response?.data?.message || 'Error al guardar el bloqueo';
+      setError(msg);
+      showError(msg);
       console.error(err);
     } finally {
       setSaving(false);
@@ -117,41 +251,41 @@ const SupplierBlockForm = () => {
 
   if (loading) {
     return (
-      <div className="somx-container">
-        <div className="somx-loading">
-          <div className="somx-loading-spinner"></div>
+      <div style={styles.container}>
+        <div style={styles.loading}>
+          <div style={styles.spinner}></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="somx-container">
-      <div className="somx-breadcrumb">
-        <a href="#/catalogos">Catálogos</a>
-        <span>/</span>
-        <a href="#/catalogos/bloqueos">Bloqueos</a>
-        <span>/</span>
-        <span>{isEditing ? 'Editar' : 'Crear'}</span>
-      </div>
+    <div style={styles.container}>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Bloqueos', to: '/util/catalogos/bloqueos' },
+          { label: isEditing ? 'Editar' : 'Crear' },
+        ])}
+      />
 
-      <div className="somx-page-header">
-        <h1 className="somx-page-title">
+      <div style={styles.pageHeader}>
+        <h1 style={styles.pageTitle}>
           {isEditing ? 'Editar Bloqueo' : 'Nuevo Bloqueo de Proveedor'}
         </h1>
       </div>
 
-      {error && <div className="somx-error">{error}</div>}
+      {error && <div style={styles.error}>{error}</div>}
 
-      <div className="somx-card">
+      <div style={styles.card}>
         <form onSubmit={handleSubmit}>
-          <div className="somx-grid somx-grid-cols-2 somx-gap-md">
-            <div className="somx-form-group">
-              <label className="somx-form-label">Número de Proveedor *</label>
+          <div style={styles.grid}>
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Número de Proveedor *</label>
               <input
                 type="text"
                 name="supplierNumber"
-                className="somx-form-input"
+                style={styles.formInput}
                 value={formData.supplierNumber}
                 onChange={handleChange}
                 onBlur={handleSupplierBlur}
@@ -159,41 +293,34 @@ const SupplierBlockForm = () => {
                 disabled={isEditing}
                 placeholder="Ej: PROV001"
               />
-              {supplierSearching && (
-                <span className="somx-text-sm somx-text-gray">Buscando...</span>
-              )}
+              {supplierSearching && <span style={styles.helperText}>Buscando...</span>}
             </div>
 
-            <div className="somx-form-group">
-              <label className="somx-form-label">Proveedor</label>
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Proveedor</label>
               <input
                 type="text"
-                className="somx-form-input"
-                value={supplierInfo ? supplierInfo.businessName : 'No encontrado'}
-                disabled
                 style={{
+                  ...styles.formInput,
                   background: supplierInfo ? '#dcfce7' : '#fee2e2',
                   color: supplierInfo ? '#166534' : '#991b1b',
                 }}
+                value={supplierInfo ? supplierInfo.businessName : 'No encontrado'}
+                disabled
               />
             </div>
 
             {supplierInfo && (
               <>
-                <div className="somx-form-group">
-                  <label className="somx-form-label">RFC</label>
-                  <input
-                    type="text"
-                    className="somx-form-input"
-                    value={supplierInfo.rfc}
-                    disabled
-                  />
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>RFC</label>
+                  <input type="text" style={styles.formInput} value={supplierInfo.rfc} disabled />
                 </div>
-                <div className="somx-form-group">
-                  <label className="somx-form-label">Tipo de Proveedor</label>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Tipo de Proveedor</label>
                   <input
                     type="text"
-                    className="somx-form-input"
+                    style={styles.formInput}
                     value={supplierInfo.supplierType?.description || '-'}
                     disabled
                   />
@@ -201,49 +328,48 @@ const SupplierBlockForm = () => {
               </>
             )}
 
-            <div className="somx-form-group">
-              <label className="somx-form-label">Fecha Inicio Vigencia *</label>
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Fecha Inicio Vigencia *</label>
               <input
                 type="date"
                 name="validFrom"
-                className="somx-form-input"
+                style={styles.formInput}
                 value={formData.validFrom}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            <div className="somx-form-group">
-              <label className="somx-form-label">Fecha Fin Vigencia *</label>
+            <div style={styles.formGroup}>
+              <label style={styles.formLabel}>Fecha Fin Vigencia *</label>
               <input
                 type="date"
                 name="validTo"
-                className="somx-form-input"
+                style={styles.formInput}
                 value={formData.validTo}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            <div className="somx-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="somx-form-label">Razón del Bloqueo</label>
+            <div style={{ ...styles.formGroup, gridColumn: 'span 2' }}>
+              <label style={styles.formLabel}>Razón del Bloqueo</label>
               <textarea
                 name="blockReason"
-                className="somx-form-input"
+                style={{ ...styles.formInput, resize: 'vertical' }}
                 value={formData.blockReason}
                 onChange={handleChange}
                 rows={3}
                 placeholder="Describa el motivo del bloqueo..."
-                style={{ resize: 'vertical' }}
               />
             </div>
 
             {isEditing && (
-              <div className="somx-form-group">
-                <label className="somx-form-label">Estatus</label>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Estatus</label>
                 <select
                   name="status"
-                  className="somx-form-select"
+                  style={styles.formInput}
                   value={formData.status}
                   onChange={handleChange}
                 >
@@ -254,17 +380,21 @@ const SupplierBlockForm = () => {
             )}
           </div>
 
-          <div className="somx-flex somx-gap-md somx-mt-md">
+          <div style={styles.actions}>
             <button
               type="button"
-              className="somx-btn somx-btn-secondary"
+              style={styles.btnSecondary}
               onClick={() => navigate('/util/catalogos/bloqueos')}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="somx-btn somx-btn-primary"
+              style={{
+                ...styles.btnPrimary,
+                opacity: saving || !supplierInfo ? 0.65 : 1,
+                cursor: saving || !supplierInfo ? 'not-allowed' : 'pointer',
+              }}
               disabled={saving || !supplierInfo}
             >
               {saving ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Bloqueo'}
@@ -272,16 +402,9 @@ const SupplierBlockForm = () => {
           </div>
         </form>
       </div>
+      {ModalNode}
     </div>
   );
 };
 
 export default SupplierBlockForm;
-
-
-
-
-
-
-
-

@@ -1,83 +1,99 @@
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
+import { GenericModal } from "@/shared/components/ui";
+import GenericTable, {
+    Column,
+    RowAction,
+} from "@/shared/components/ui/table/GenericTable";
+import viewIcon from "@assets/eye-show.svg";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
-import { GenericButton } from "@shared/components/ui/button";
-import { ReactElement, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
+import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
+import { FINANCE_LIST_KEYS } from "@/shared/hooks";
+import { formatAmount, formatDate, formatDateTime } from "@/utils/utils";
+import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { shippingGuideService } from "../api/ShippingGuideClient";
-import { ShippingGuideDetail } from "../interfaces";
+import { resolvePurchaseOrderStatusDescription } from "../purchaseOrderStatusLabels";
+import {
+    getDeliveryTypeLabel,
+    getNumericGuideStatus,
+    type ShippingGuideDetail,
+    type ShippingGuidePurchaseOrderLink,
+} from "../interfaces";
+import {
+    getRegisteredShippingGuideStatusLabels,
+    resolveShippingGuideStatusDescription,
+} from "../shippingGuideStatusCatalog";
 
-const styles = {
-    container: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        gap: '1.5rem',
-    },
-    header: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        gap: '0.5rem',
-    },
-    title: {
-        fontSize: '1.25rem',
-        fontWeight: 700,
-    },
-    subtitle: {
-        fontSize: '0.875rem',
-        color: '#4b5563',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '1.5rem',
-        backgroundColor: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem',
-        padding: '1rem',
-    },
-    label: {
-        color: '#6b7280',
-        fontSize: '0.75rem',
-        textTransform: 'uppercase' as const,
-    },
-    value: {
-        fontSize: '0.875rem',
-        fontWeight: 600,
-    },
-    footer: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-    },
-};
+import "../styles/shippingGuides.css";
 
-const formatDateTime = (value?: string) => {
-    if (!value) return "N/D";
-    return new Date(value).toLocaleString("es-MX", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-    });
-};
-
-const DEFAULT_DETAIL: ShippingGuideDetail = {
+const EMPTY_DETAIL: ShippingGuideDetail = {
     shippingGuideId: "",
-    originType: "",
-    reasonId: 0,
-    reasonDescription: "",
-    relationDate: "",
-    comment: "",
-    userId: "",
-    userName: "",
+    guideNumber: "",
+    vendorNumber: 0,
+    truckPlate: "",
+    trailerPlate: null,
+    originId: 0,
+    deliveryType: 0,
+    status: 0,
+    comments: null,
+    deliveryDate: null,
+    shippingDate: null,
+    createdBy: "",
+    createdAt: "",
+    updatedBy: null,
+    updatedAt: null,
+    isStatusUpdated: false,
+    shippingGuidePurchaseOrders: [],
 };
+
+const fmt = (v: unknown): string => {
+    if (v === null || v === undefined || v === "") return "N/D";
+    return String(v);
+};
+
+function guideStatusLabel(detail: ShippingGuideDetail): string {
+    const code = getNumericGuideStatus(detail.status);
+    if (code == null) return "N/D";
+    const statusObj =
+        typeof detail.status === "object" && detail.status !== null
+            ? (detail.status as {
+                  description?: string;
+                  value?: string;
+                  key?: string;
+                  internalStatus?: number;
+              })
+            : null;
+    return resolveShippingGuideStatusDescription(
+        code,
+        statusObj,
+        getRegisteredShippingGuideStatusLabels() ?? undefined
+    );
+}
+
+function DetailCell({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="sg-detail-cell">
+            <div className="sg-detail-label">{label}</div>
+            <div className="sg-detail-value">{children}</div>
+        </div>
+    );
+}
+
+type PurchaseOrderLinkRow = ShippingGuidePurchaseOrderLink & { id: string };
 
 export default function ShippingGuideDetailView(): ReactElement {
     const { guideId } = useParams<{ guideId: string }>();
-    const nav = useNavigate();
 
-    const [detail, setDetail] = useState<ShippingGuideDetail>(DEFAULT_DETAIL);
+    const financeAlert = useFinanceAlertModal();
+
+    const [detail, setDetail] = useState<ShippingGuideDetail>(EMPTY_DETAIL);
     const [loading, setLoading] = useState<boolean>(false);
 
     const fetchDetail = async (id: string) => {
@@ -86,8 +102,16 @@ export default function ShippingGuideDetailView(): ReactElement {
             const response = await shippingGuideService.getDetail(id);
             setDetail(response);
         } catch (error) {
-            console.error("Error al obtener detalle de guía", error);
-            setDetail((prev) => ({ ...prev, shippingGuideId: id }));
+            financeAlert.showErrorFrom(
+                "Error",
+                error,
+                "No fue posible obtener el detalle de la guía."
+            );
+            setDetail({
+                ...EMPTY_DETAIL,
+                shippingGuideId: id,
+                guideNumber: "",
+            });
         } finally {
             setLoading(false);
         }
@@ -97,91 +121,212 @@ export default function ShippingGuideDetailView(): ReactElement {
         if (guideId) fetchDetail(guideId);
     }, [guideId]);
 
-    const breadcrumb: BreadcrumbItem[] = [
-        { label: "Finanzas", to: "/" },
-        { label: "Guías de Embarque", to: "/guias" },
-        { label: "Detalle" },
-    ];
+    const guideTitleNumber =
+        detail.guideNumber?.trim() || "—";
 
-    return decorate(
-        breadcrumb,
-        "/guias",
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <div style={styles.title}>Detalle de guía</div>
-                <div style={styles.subtitle}>
-                    Información relacionada con la guía cancelada.
-                </div>
-            </div>
+    const breadcrumb: BreadcrumbItem[] = useMemo(
+        () =>
+            withFinanceBreadcrumb([
+                { label: "Guías de Embarque", to: "/finanzas/guias" },
+                {
+                    label: detail.guideNumber?.trim()
+                        ? `Guía ${detail.guideNumber}`
+                        : "Detalle",
+                },
+            ]),
+        [detail.guideNumber]
+    );
 
-            <div style={styles.grid}>
-                <div>
-                    <div style={styles.label}>Id Guía</div>
-                    <div style={styles.value}>
-                        {detail.shippingGuideId || guideId}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Tipo Origen</div>
-                    <div style={styles.value}>
-                        {detail.originType || "N/D"}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Motivo (ID)</div>
-                    <div style={styles.value}>
-                        {detail.reasonId ? detail.reasonId : "N/D"}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Descripción motivo</div>
-                    <div style={styles.value}>
-                        {detail.reasonDescription || "N/D"}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Fecha relación</div>
-                    <div style={styles.value}>
-                        {formatDateTime(detail.relationDate)}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Comentario</div>
-                    <div style={styles.value}>
-                        {detail.comment || "N/D"}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Id Usuario</div>
-                    <div style={styles.value}>
-                        {detail.userId || "N/D"}
-                    </div>
-                </div>
-                <div>
-                    <div style={styles.label}>Usuario</div>
-                    <div style={styles.value}>
-                        {detail.userName || "N/D"}
-                    </div>
-                </div>
-            </div>
+    const poLinks: ShippingGuidePurchaseOrderLink[] =
+        detail.shippingGuidePurchaseOrders ?? [];
 
-            <div style={styles.footer}>
-                <GenericButton
-                    variant="outlineFill"
-                    style={{ height: '44px' }}
-                    disabled={loading}
-                    onClick={() => {
-                        if (window.history.length > 1) {
-                            nav(-1);
-                        } else {
-                            nav("/guias");
-                        }
-                    }}
-                >
-                    Regresar
-                </GenericButton>
-            </div>
-        </div>,
-        loading
+    const poTableRows = useMemo<PurchaseOrderLinkRow[]>(
+        () =>
+            poLinks.map((link) => ({
+                ...link,
+                id: link.shippingGuidePurchaseOrderId,
+            })),
+        [poLinks]
+    );
+
+    const poSectionTitle =
+        poLinks.length === 1
+            ? `Orden de compra vinculada (${poLinks.length})`
+            : `Órdenes de compra vinculadas (${poLinks.length})`;
+
+    const poColumns = useMemo<Column<PurchaseOrderLinkRow>[]>(
+        () => [
+            {
+                header: "Orden Compra",
+                render: (link) => link.purchaseOrder?.orderNumber ?? "N/D",
+            },
+            {
+                header: "Monto",
+                align: "right",
+                render: (link) => {
+                    const amount = link.purchaseOrder?.amount;
+                    return amount != null
+                        ? formatAmount(Number(amount))
+                        : "N/D";
+                },
+            },
+            {
+                header: "Número Proveedor",
+                render: (link) => {
+                    const sn = link.purchaseOrder?.supplierNumber;
+                    return sn != null ? String(sn) : "N/D";
+                },
+            },
+            {
+                header: "Nombre Proveedor",
+                render: (link) => {
+                    const name =
+                        link.purchaseOrder?.supplierBusinessName?.trim() ||
+                        (detail.supplier?.businessName &&
+                        link.purchaseOrder?.supplierNumber != null &&
+                        String(link.purchaseOrder.supplierNumber) ===
+                            String(detail.vendorNumber)
+                            ? detail.supplier.businessName
+                            : "");
+                    return name ? String(name) : "N/D";
+                },
+            },
+            {
+                header: "Fecha Recepción",
+                render: (link) => {
+                    const date = link.purchaseOrder?.purchaseOrderDate;
+                    return date ? formatDate(String(date)) : "N/D";
+                },
+            },
+            {
+                header: "Fecha Vinculación",
+                render: (link) =>
+                    link.createdAt
+                        ? formatDateTime(link.createdAt, { seconds: true })
+                        : "N/D",
+            },
+            {
+                header: "Estatus",
+                render: (link) =>
+                    resolvePurchaseOrderStatusDescription(link.purchaseOrder?.status),
+            },
+        ],
+        [detail.supplier?.businessName, detail.vendorNumber]
+    );
+
+    const poActions = useMemo<RowAction<PurchaseOrderLinkRow>[]>(
+        () => [
+            {
+                title: "Ver OC",
+                icon: viewIcon,
+                onClick: (link, nav) => {
+                    const orderNumber = link.purchaseOrder?.orderNumber?.trim();
+                    if (orderNumber) {
+                        nav(
+                            `/finanzas/recepciones?orderNumber=${encodeURIComponent(orderNumber)}`
+                        );
+                    }
+                },
+                isDisabled: (link) =>
+                    !link.purchaseOrder?.orderNumber?.trim(),
+            },
+        ],
+        []
+    );
+
+    return (
+        <>
+            {decorate(
+                breadcrumb,
+                "/finanzas/guias",
+                <div className="sg-detail-stack">
+                    <div className="sg-detail-header">
+                        <div className="sg-detail-title">
+                            Detalle Guía {guideTitleNumber}
+                        </div>
+                        <div className="sg-detail-subtitle">
+                            Información relacionada con la guía de embarque
+                        </div>
+                    </div>
+
+                    <div className="sg-detail-fields">
+                        <DetailCell label="Número Guía">
+                            {fmt(detail.guideNumber)}
+                        </DetailCell>
+                        <DetailCell label="Número proveedor">
+                            {fmt(detail.vendorNumber)}
+                        </DetailCell>
+                        <DetailCell label="Estatus">
+                            {guideStatusLabel(detail)}
+                        </DetailCell>
+
+                        <DetailCell label="Placa Tractocamión">
+                            {fmt(detail.truckPlate)}
+                        </DetailCell>
+                        <DetailCell label="Placa Remolque">
+                            {fmt(detail.trailerPlate)}
+                        </DetailCell>
+                        <DetailCell label="Origen (ID)">
+                            {fmt(detail.originId)}
+                        </DetailCell>
+
+                        <DetailCell label="Comentarios">{fmt(detail.comments)}</DetailCell>
+                        <DetailCell label="Fecha Entrega">
+                            {detail.deliveryDate
+                                ? formatDate(String(detail.deliveryDate))
+                                : "N/D"}
+                        </DetailCell>
+                        <DetailCell label="Fecha Envío">
+                            {formatDateTime(detail.shippingDate, { seconds: true })}
+                        </DetailCell>
+
+                        <DetailCell label="Fecha Registro">
+                            {formatDateTime(detail.createdAt, { seconds: true })}
+                        </DetailCell>
+                        <DetailCell label="Última Actualización">
+                            {formatDateTime(detail.updatedAt, { seconds: true })}
+                        </DetailCell>
+                        <DetailCell label="Estatus Actualizado">
+                            {detail.isStatusUpdated ? "Sí" : "No"}
+                        </DetailCell>
+
+                        <DetailCell label="Usuario Registro">
+                            {fmt(detail.createdBy)}
+                        </DetailCell>
+                        <DetailCell label="Usuario Actualización">
+                            {fmt(detail.updatedBy)}
+                        </DetailCell>
+                        <DetailCell label="Tipo Entrega">
+                            {getDeliveryTypeLabel(detail.deliveryType)}
+                        </DetailCell>
+                    </div>
+
+                    <div className="sg-detail-section-title">{poSectionTitle}</div>
+                    <div className="sg-detail-po-grid">
+                        <GenericTable<PurchaseOrderLinkRow>
+                            rows={poTableRows}
+                            columns={poColumns}
+                            actions={poActions}
+                            emptyLabel="Sin órdenes de compra asociadas"
+                            perPage={10}
+                            page={1}
+                            totalPages={1}
+                        />
+                    </div>
+                </div>,
+                loading,
+                undefined,
+                { financeListSession: FINANCE_LIST_KEYS.shippingGuides }
+            )}
+            <GenericModal
+                visible={financeAlert.alertVisible}
+                variant="alert"
+                severity={financeAlert.alertSeverity}
+                title={financeAlert.alertTitle}
+                message={financeAlert.alertMessage}
+                buttonText="Aceptar"
+                onClose={financeAlert.closeAlert}
+            />
+        </>
     );
 }

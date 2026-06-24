@@ -1,216 +1,267 @@
-// ✅ FILE: src/features/shipping-guides/components/ShippingGuideFilterBar.tsx
 import {
-    GenericButton,
-    GenericInputSearch,
-    GenericSelectSearchable,
-    GenericModal
+  GenericButton,
+  GenericInputSearch,
+  GenericSelectSearchable,
+  GenericModal,
 } from "@shared/components/ui";
 import { GenericDateRangePicker } from "@shared/components/ui/date";
 import type { ChangeEvent, ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { ReceiptTypeOptions, ShippingGuideFilter } from "../interfaces";
+import { useCallback, useEffect, useState } from "react";
+import { ShippingGuideFilter } from "../interfaces";
+import {
+  fetchProvidersAsCatalog,
+  endOfLocalDay,
+  startOfLocalDay,
+} from "@/utils/utils";
+import {
+  loadShippingGuideStatusFilterOptions,
+  registerShippingGuideStatusLabels,
+} from "../shippingGuideStatusCatalog";
+import {
+  FINANCE_LIST_KEYS,
+  readFinanceListFilters,
+  removeFinanceListFilters,
+  saveFinanceListFilters,
+  parseFinanceListDateRange,
+  useFinanceListDefaultsOnUrlReset,
+} from "@/shared/hooks";
 import "../styles/shippingGuideFilterBar.css";
 
 type ShippingGuideFilterBarProps = {
-    filters?: ShippingGuideFilter;
-    setFilters: (filters: ShippingGuideFilter) => void;
-    disabled: boolean;
-    isAdmin?: boolean;
-    onCancel?: () => void;
+  onSearch: (filters: ShippingGuideFilter) => void;
+  onClear?: () => void;
+  isAdmin?: boolean;
 };
 
-const searchOptions = [
-    { value: "guideNumber", label: "Guía de embarque" },
-    { value: "truckPlate", label: "Placa" },
-    { value: "trailerPlate", label: "Placa remolque" },
-    { value: "sourceId", label: "Origen" },
-    { value: "deliveryType", label: "Tipo entrega" },
-];
+const FILTERS_KEY = FINANCE_LIST_KEYS.shippingGuides.filters;
+
+function todayRange(): [Date, Date] {
+  const t = new Date();
+  return [startOfLocalDay(t), endOfLocalDay(t)];
+}
+
+function buildDefaultPayload(): ShippingGuideFilter {
+  const [start, end] = todayRange();
+  const ymd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return {
+    from: ymd(start),
+    to: ymd(end),
+  };
+}
+
+function applySavedFilters(saved: ShippingGuideFilter): {
+  guideNumber: string;
+  orderNumber: string;
+  vendorNumber: string;
+  status: string;
+  range: [Date | null, Date | null];
+} {
+  return {
+    guideNumber: saved.guideNumber || "",
+    orderNumber: saved.orderNumber || "",
+    vendorNumber: saved.vendorNumber || "",
+    status: saved.status != null ? String(saved.status) : "",
+    range:
+      saved.from && saved.to
+        ? parseFinanceListDateRange(saved.from, saved.to)
+        : todayRange(),
+  };
+}
 
 export default function ShippingGuideFilterBar({
-    filters,
-    setFilters,
-    isAdmin = true,
-    disabled,
-    onCancel,
+  onSearch,
+  onClear,
+  isAdmin = true,
 }: ShippingGuideFilterBarProps): ReactElement {
-    const [selectedField, setSelectedField] = useState<string>("guideNumber");
-    const [searchValue, setSearchValue] = useState<string>("");
-    const [vendorNumber, setVendorNumber] = useState<string>(filters?.vendorNumber || "");
-    const [alertModal, setAlertModal] = useState({ visible: false, message: "" });
+  const [providers, setProviders] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [statusOptions, setStatusOptions] = useState<
+    { label: string; value: string }[]
+  >([{ label: "Todos los estatus", value: "" }]);
 
-    const [range, setRange] = useState<[Date | null, Date | null]>(
-        filters?.from && filters?.to
-            ? [new Date(filters.from), new Date(filters.to)]
-            : [null, null]
-    );
+  const [guideNumber, setGuideNumber] = useState<string>("");
+  const [orderNumber, setOrderNumber] = useState<string>("");
+  const [vendorNumber, setVendorNumber] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [alertModal, setAlertModal] = useState({ visible: false, message: "" });
 
-    useEffect(() => {
-        if (!filters) return;
-        setVendorNumber(filters.vendorNumber || "");
-        setRange(
-            filters.from && filters.to
-                ? [new Date(filters.from), new Date(filters.to)]
-                : [null, null]
-        );
+  const [range, setRange] = useState<[Date | null, Date | null]>(() =>
+    todayRange()
+  );
 
-        const fieldEntry =
-            (filters.guideNumber && { field: "guideNumber", value: filters.guideNumber }) ||
-            (filters.truckPlate && { field: "truckPlate", value: filters.truckPlate }) ||
-            (filters.trailerPlate && { field: "trailerPlate", value: filters.trailerPlate }) ||
-            (filters.sourceId && { field: "sourceId", value: filters.sourceId }) ||
-            (filters.deliveryType && { field: "deliveryType", value: String(filters.deliveryType) });
+  const applyFilterDefaults = useCallback(() => {
+    setGuideNumber("");
+    setOrderNumber("");
+    setVendorNumber("");
+    setStatus("");
+    setRange(todayRange());
+  }, []);
 
-        if (fieldEntry) {
-            setSelectedField(fieldEntry.field);
-            setSearchValue(fieldEntry.value);
-        } else {
-            setSelectedField("guideNumber");
-            setSearchValue("");
-        }
-    }, [filters]);
+  useFinanceListDefaultsOnUrlReset(
+    FINANCE_LIST_KEYS.shippingGuides.moduleKey,
+    applyFilterDefaults
+  );
 
-    const isDeliveryType = selectedField === "deliveryType";
+  useEffect(() => {
+    (async () => {
+      const list = await fetchProvidersAsCatalog("supplierNumber");
+      if (list) setProviders(list);
+    })();
+    (async () => {
+      const opts = await loadShippingGuideStatusFilterOptions();
+      setStatusOptions(opts);
+      registerShippingGuideStatusLabels(opts);
+    })();
+  }, []);
 
-    const handleClear = () => {
-        setSelectedField("guideNumber");
-        setSearchValue("");
-        setVendorNumber("");
-        setRange([null, null]);
-        setFilters({});
+  useEffect(() => {
+    const saved = readFinanceListFilters<ShippingGuideFilter>(FILTERS_KEY);
+    if (!saved) {
+      applyFilterDefaults();
+      return;
+    }
+    const applied = applySavedFilters(saved);
+    setGuideNumber(applied.guideNumber);
+    setOrderNumber(applied.orderNumber);
+    setVendorNumber(applied.vendorNumber);
+    setStatus(applied.status);
+    setRange(applied.range);
+  }, [applyFilterDefaults]);
+
+  const buildSearchPayload = (): ShippingGuideFilter | null => {
+    if (!range?.[0] || !range?.[1]) {
+      setAlertModal({
+        visible: true,
+        message: "Selecciona las fechas de inicio y final (obligatorias).",
+      });
+      return null;
+    }
+    if (range[0] > range[1]) {
+      setAlertModal({
+        visible: true,
+        message: "La fecha de inicio no puede ser mayor a la final.",
+      });
+      return null;
+    }
+
+    const from = startOfLocalDay(range[0]!);
+    const to = endOfLocalDay(range[1]!);
+    const ymdLocal = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    const payload: ShippingGuideFilter = {
+      vendorNumber: vendorNumber.trim() || undefined,
+      from: ymdLocal(from),
+      to: ymdLocal(to),
     };
 
-    const onSearch = () => {
-        const value = searchValue.trim();
-        if (!range?.[0] || !range?.[1]) {
-            setAlertModal({ visible: true, message: "Selecciona las fechas de inicio y final (obligatorias)." });
-            return;
-        }
-        if (range[0] > range[1]) {
-            setAlertModal({ visible: true, message: "La fecha de inicio no puede ser mayor a la final." });
-            return;
-        }
+    const g = guideNumber.trim();
+    if (g) payload.guideNumber = g;
 
-        const payload: ShippingGuideFilter = {
-            vendorNumber: vendorNumber || undefined,
-            from: range[0] ? range[0].toISOString().slice(0, 10) : undefined,
-            to: range[1] ? range[1].toISOString().slice(0, 10) : undefined,
-        };
+    const oc = orderNumber.trim();
+    if (oc) payload.orderNumber = oc;
 
-        if (value) {
-            (payload as any)[selectedField] = isDeliveryType ? Number(value) : value;
-        }
-        setFilters(payload);
-    };
+    if (status.trim() !== "") {
+      const parsed = Number(status);
+      if (Number.isFinite(parsed)) payload.status = parsed;
+    }
 
-    const valueInput = useMemo(() => {
-        if (isDeliveryType) {
-            const safeReceiptOptions = ReceiptTypeOptions.map(opt => ({
-                label: opt.label,
-                value: String(opt.value)
-            }));
+    return payload;
+  };
 
-            return (
-                <GenericSelectSearchable
-                    value={searchValue}
-                    onChange={(event: { target: { value: string } }) => setSearchValue(event.target.value)}
-                    placeholder="Tipo de entrega"
-                    options={safeReceiptOptions}
-                    widthClass="w-full"
-                />
-            );
-        }
+  const handleClear = () => {
+    applyFilterDefaults();
+    removeFinanceListFilters(FILTERS_KEY);
+    onClear?.();
+  };
 
-        return (
-            <div className="sg-full-width">
-                <GenericInputSearch
-                    value={searchValue}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchValue(event.target.value)}
-                    placeholder="Ingresa el valor"
-                    className="w-full"
-                />
-            </div>
-        );
-    }, [isDeliveryType, searchValue]);
+  const handleSearchClick = () => {
+    const payload = buildSearchPayload();
+    if (!payload) return;
+    saveFinanceListFilters(FILTERS_KEY, payload);
+    onSearch(payload);
+  };
 
-    return (
-        <>
-            <div className="sg-filter-bar">
-                {/* 1. Selector de campo */}
-                <div className="sg-field">
-                    <GenericSelectSearchable
-                        value={selectedField}
-                        onChange={(event: { target: { value: string } }) => {
-                            setSelectedField(event.target.value);
-                            setSearchValue("");
-                        }}
-                        placeholder="Buscar por..."
-                        options={searchOptions}
-                        widthClass="w-full"
-                    />
-                </div>
-
-                {/* 2. Input del valor */}
-                <div className="sg-field">
-                    {valueInput}
-                </div>
-
-                {/* 3. Proveedor (Admin) */}
-                {isAdmin && (
-                    <div className="sg-field">
-                        <div className="sg-full-width">
-                            <GenericInputSearch
-                                value={vendorNumber}
-                                onChange={(event: ChangeEvent<HTMLInputElement>) => setVendorNumber(event.target.value)}
-                                placeholder="Núm. proveedor (Admin)"
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* 4. Fechas */}
-                <div className="sg-field-dates">
-                    <GenericDateRangePicker
-                        value={range}
-                        onChange={(dates: [Date | null, Date | null]) => setRange(dates)}
-                        placeholder="Fechas (obligatorio)"
-                        className="w-full"
-                    />
-                    <div className="sg-field">
-                        <GenericButton variant="outlineFill" onClick={handleClear}>
-                            Limpiar
-                        </GenericButton>
-                    </div>
-                    <div className="sg-field">
-                        <GenericButton variant="primary" onClick={onSearch}>
-                            Buscar
-                        </GenericButton>
-                    </div>
-                </div>
-
-
-                {/* 5. Botones de acción */}
-                <div className="sg-actions-container">
-                    <GenericButton
-                        variant="cancel"
-                        onClick={onCancel}
-                        disabled={disabled}
-                    >
-                        Cancelar
-                    </GenericButton>
-                </div>
-            </div>
-
-            <GenericModal
-                visible={alertModal.visible}
-                variant="alert"
-                severity="warning"
-                title="Fechas requeridas"
-                message={alertModal.message}
-                buttonText="Aceptar"
-                onClose={() => setAlertModal({ visible: false, message: "" })}
+  return (
+    <>
+      <div className="sg-filter-bar sg-filter-bar-horizontal finz-filter-row">
+        {isAdmin && (
+          <div className="sg-field">
+            <GenericSelectSearchable
+              value={vendorNumber}
+              onChange={(e: { target: { value: string } }) =>
+                setVendorNumber(e.target.value)
+              }
+              options={providers}
+              placeholder="Nombre Proveedor"
+              widthClass="gs-width-provider"
             />
-        </>
-    );
+          </div>
+        )}
+
+        <div className="sg-field">
+          <GenericInputSearch
+            value={guideNumber}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setGuideNumber(event.target.value)
+            }
+            placeholder="Guía Embarque"
+            className="generic-input sg-filter-input"
+          />
+        </div>
+
+        <div className="sg-field">
+          <GenericInputSearch
+            value={orderNumber}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setOrderNumber(event.target.value)
+            }
+            placeholder="Orden Compra"
+            className="generic-input sg-filter-input"
+          />
+        </div>
+
+        <div className="sg-field ">
+          <GenericSelectSearchable
+            value={status}
+            onChange={(e: { target: { value: string } }) =>
+              setStatus(e.target.value)
+            }
+            options={statusOptions}
+            placeholder="Estatus"
+          />
+        </div>
+
+        <div className="sg-field sg-field-dates">
+          <GenericDateRangePicker
+            value={range}
+            onChange={(dates: [Date | null, Date | null]) => setRange(dates)}
+            placeholder="Fecha de Consulta"
+            size="md"
+          />
+        </div>
+
+        <div className="finz-filter-actions sg-filter-actions">
+          <GenericButton variant="outlineFill" onClick={handleSearchClick}>
+            Buscar
+          </GenericButton>
+          <GenericButton variant="outlineFill" onClick={handleClear}>
+            Limpiar
+          </GenericButton>
+        </div>
+      </div>
+
+      <GenericModal
+        visible={alertModal.visible}
+        variant="alert"
+        severity="warning"
+        title="Fechas requeridas"
+        message={alertModal.message}
+        buttonText="Aceptar"
+        onClose={() => setAlertModal({ visible: false, message: "" })}
+      />
+    </>
+  );
 }

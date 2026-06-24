@@ -6,6 +6,7 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onPageSizeChange: (value: number) => void;
+  showPageSizeSelector?: boolean;
 }
 
 export function SecurityTablePagination({
@@ -16,23 +17,28 @@ export function SecurityTablePagination({
   onPrev,
   onNext,
   onPageSizeChange,
+  showPageSizeSelector = true,
 }: Props) {
   return (
     <div className="security-pagination" role="navigation" aria-label="Paginación">
       <div className="security-pagination__info">
-        <label htmlFor="security-page-size">Filas por página</label>
-        <select
-          id="security-page-size"
-          className="security-pagination__select"
-          value={pageSize}
-          onChange={(event) => onPageSizeChange(Number(event.target.value))}
-        >
-          {[5, 10, 20, 50].map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        {showPageSizeSelector ? (
+          <>
+            <label htmlFor="security-page-size">Filas por página</label>
+            <select
+              id="security-page-size"
+              className="security-pagination__select"
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
+              {[5, 10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
         <span>Total: {totalItems}</span>
       </div>
       <div className="security-pagination__controls">

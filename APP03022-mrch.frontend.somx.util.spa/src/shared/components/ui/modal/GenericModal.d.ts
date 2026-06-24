@@ -13,6 +13,7 @@ interface GenericModalProps {
     buttonText?: string;
     confirmText?: string;
     cancelText?: string;
+    items?: string[];
     onClose?: () => void;
     onConfirm?: () => void;
     onCancel?: () => void;

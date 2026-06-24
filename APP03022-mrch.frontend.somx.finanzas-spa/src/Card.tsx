@@ -1,9 +1,19 @@
 import React from 'react';
+import ReactDOMClient from 'react-dom/client';
+import singleSpaReact from 'single-spa-react';
+import { navigateToUrl } from 'single-spa';
+import {
+    Box,
+    CardActionArea,
+    CardContent,
+    Paper,
+    Typography,
+} from '@mui/material';
+import { styles } from './cardStyle';
 
 interface CardProps {
     onClick?: () => void;
     title?: string;
-    description?: string;
 }
 
 const FinanzasIcon: React.FC = () => (
@@ -15,7 +25,10 @@ const FinanzasIcon: React.FC = () => (
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ width: '100%', height: '100%' }}
+        style={{
+            width: '54px',
+            height: '54px',
+        }}
     >
         <rect x="2" y="4" width="20" height="16" rx="2" />
         <path d="M12 8v8" />
@@ -30,103 +43,61 @@ const FinanzasIcon: React.FC = () => (
 
 const Card: React.FC<CardProps> = ({
     onClick,
-    title = 'Módulo Finanzas',
-    description = 'Gestión de pagos, descuentos comerciales y recepciones.',
+    title = 'Finanzas',
 }) => {
-    const handleClick = () => {
+    const handleNavigate = (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+
         if (onClick) {
             onClick();
+            return;
         }
+
+        navigateToUrl('/finanzas');
     };
 
     return (
-        <div
-            onClick={handleClick}
-            style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                borderRadius: '16px',
-                border: '1px solid #D4E8D4',
-                backgroundColor: '#E8F5E9',
-                padding: '32px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'box-shadow 0.2s ease',
-                cursor: onClick ? 'pointer' : 'default',
-                minHeight: '180px',
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-            }}
+        <Paper
+            data-testid="paper-card"
+            elevation={0}
+            square
+            sx={styles.paper}
+            variant="outlined"
         >
-            <div style={{ paddingRight: '100px' }}>
-                <h4 style={{
-                    fontWeight: 500,
-                    fontSize: '20px',
-                    color: '#333333',
-                    margin: 0,
-                }}>
-                    {title}
-                </h4>
-                <p style={{
-                    fontSize: '14px',
-                    color: '#555555',
-                    marginTop: '12px',
-                    maxWidth: '300px',
-                    lineHeight: '1.5',
-                }}>
-                    {description}
-                </p>
-            </div>
-
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleClick();
-                }}
-                style={{
-                    marginTop: '24px',
-                    alignSelf: 'flex-start',
-                    padding: '8px 20px',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    border: '1px solid #2E7D32',
-                    color: '#2E7D32',
-                    backgroundColor: 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#e8f5e9';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                }}
+            <CardActionArea
+                data-testid="card-action-area"
+                href="/finanzas"
+                onClick={handleNavigate}
+                sx={styles.cardActionArea}
             >
-                Ir al módulo
-            </button>
+                <Box sx={styles.iconWrapper}>
+                    <Box sx={styles.iconCircle}>
+                        <FinanzasIcon />
+                    </Box>
+                </Box>
 
-            <div style={{
-                position: 'absolute',
-                right: '24px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                height: '80px',
-                width: '80px',
-                opacity: 0.7,
-                color: '#2E7D32',
-                pointerEvents: 'none',
-            }}>
-                <FinanzasIcon />
-            </div>
-        </div>
+                <CardContent sx={styles.cardContent}>
+                    <Typography
+                        component="h2"
+                        data-testid="card-title"
+                        sx={styles.cardText}
+                    >
+                        {title}
+                    </Typography>
+                </CardContent>
+            </CardActionArea>
+        </Paper>
     );
 };
 
-export default Card;
+const lifecycles = singleSpaReact({
+    React,
+    ReactDOMClient,
+    rootComponent: Card,
+    errorBoundary() {
+        return <Box>Error al cargar el módulo de finanzas</Box>;
+    },
+});
 
+export const { bootstrap, mount, unmount } = lifecycles;
+export default Card;

@@ -1,4 +1,3 @@
-import lobbyIcon from "@assets/lobby.svg";
 import { ReactElement } from "react";
 import "./Lobby.css";
 
@@ -13,9 +12,6 @@ export default function SimpleLobby({ message, className = "", error = false }: 
   const messageClass = `fiscal-lobby-message ${error ? "fiscal-lobby-message-error" : ""}`.trim();
   return (
     <div className={rootClass}>
-      <div className="fiscal-lobby-icon-wrapper">
-        <img src={lobbyIcon} alt="" />
-      </div>
       <div className="fiscal-lobby-message-wrapper">
         <div className={messageClass}>{message}</div>
       </div>

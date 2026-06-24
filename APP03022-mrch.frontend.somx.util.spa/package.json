@@ -1,5 +1,5 @@
 {
-  "name": "Configuración de Parámetros",
+  "name": "utilerias",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
@@ -7,7 +7,8 @@
     "dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-http-header-size=1048576 webpack serve --mode development --config config/webpack.config.js",
     "start": "npm run dev",
     "lint": "eslint src",
-    "test": "jest"
+    "test": "jest --passWithNoTests",
+    "test:cov": "bash ./scripts/test-cov.sh"
   },
   "engines": {
     "node": ">=20.18.1"
@@ -62,8 +63,11 @@
     "@eslint/js": "^8.17.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^8.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/single-spa-react": "^3.0.1",
     "babel-jest": "^29.7.0",
     "copy-webpack-plugin": "^13.0.1",
     "eslint": "^8.17.0",

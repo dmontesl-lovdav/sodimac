@@ -2,6 +2,10 @@
 import type { ReactElement } from "react";
 import { GenericTable } from "@shared/components/ui";
 import type { AccountStatementRecord } from "../interfaces";
+import {
+    canConfirmAccountStatement,
+    canRejectAccountStatement,
+} from "../accountStatementActions";
 
 import eyeShowIcon from "@assets/eye-show.svg";
 import requestConfirmIcon from "@assets/RequestConfirmIcon.svg";
@@ -30,6 +34,10 @@ function monthLabel(mes: number): string {
     return found ? found.label : String(mes);
 }
 
+function actionBtnClass(disabled: boolean): string {
+    return disabled ? "as-action-btn as-action-btn--disabled" : "as-action-btn";
+}
+
 export default function AccountStatementGrid({
     rows = [],
     loading = false,
@@ -45,8 +53,14 @@ export default function AccountStatementGrid({
 }: AccountStatementGridProps): ReactElement {
     const columns = [
         {
-            header: "Id Estado Cuenta",
-            render: (r: AccountStatementRecord) => r.accountStatementUuid || "--",
+            header: "Mes",
+            align: "center" as const,
+            render: (r: AccountStatementRecord) => monthLabel(r.month),
+        },
+        {
+            header: "Año",
+            align: "center" as const,
+            render: (r: AccountStatementRecord) => r.year ?? "--",
         },
         {
             header: "Número Proveedor",
@@ -55,20 +69,6 @@ export default function AccountStatementGrid({
         {
             header: "Nombre Proveedor",
             render: (r: AccountStatementRecord) => r.vendorName || "--",
-        },
-        {
-            header: "Año",
-            align: "center" as const,
-            render: (r: AccountStatementRecord) => r.year ?? "--",
-        },
-        {
-            header: "Mes",
-            align: "center" as const,
-            render: (r: AccountStatementRecord) => monthLabel(r.month),
-        },
-        {
-            header: "Estatus",
-            render: (r: AccountStatementRecord) => r.statusLabel || "--",
         },
         {
             header: "Fecha Proceso",
@@ -81,42 +81,62 @@ export default function AccountStatementGrid({
                 r.reviewedAt ? formatDate(r.reviewedAt, true) : "-",
         },
         {
+            header: "Estatus",
+            render: (r: AccountStatementRecord) =>
+                r.status ? r.statusLabel : "--",
+        },
+        {
             header: "Acción",
             align: "center" as const,
-            render: (r: AccountStatementRecord) => (
-                <div className="as-actions">
-                    <button
-                        title="Ver"
-                        onClick={() => onView(r)}
-                        className="as-action-btn"
-                        type="button"
-                    >
-                        <img src={eyeShowIcon} alt="Ver" className="as-action-icon" />
-                    </button>
+            render: (r: AccountStatementRecord) => {
+                const canConfirm = canConfirmAccountStatement(r);
+                const canReject = canRejectAccountStatement(r);
 
-                    <button
-                        title="Revisión"
-                        onClick={() => onReview(r)}
-                        className="as-action-btn"
-                        type="button"
-                    >
-                        <img
-                            src={requestConfirmIcon}
-                            alt="Revisión"
-                            className="as-action-icon"
-                        />
-                    </button>
+                return (
+                    <div className="as-actions">
+                        <button
+                            title="Ver"
+                            onClick={() => onView(r)}
+                            className="as-action-btn"
+                            type="button"
+                        >
+                            <img src={eyeShowIcon} alt="Ver" className="as-action-icon" />
+                        </button>
 
-                    <button
-                        title="Rechazar"
-                        onClick={() => onReject(r)}
-                        className="as-action-btn"
-                        type="button"
-                    >
-                        <img src={deleteIcon} alt="Rechazar" className="as-action-icon" />
-                    </button>
-                </div>
-            ),
+                        <button
+                            title={
+                                canConfirm
+                                    ? "Confirmar revisión"
+                                    : "No disponible para este estatus"
+                            }
+                            onClick={() => canConfirm && onReview(r)}
+                            className={actionBtnClass(!canConfirm)}
+                            type="button"
+                            disabled={!canConfirm}
+                        >
+                            <img
+                                src={requestConfirmIcon}
+                                alt="Confirmar revisión"
+                                className="as-action-icon"
+                            />
+                        </button>
+
+                        <button
+                            title={
+                                canReject
+                                    ? "Rechazar"
+                                    : "No disponible para este estatus"
+                            }
+                            onClick={() => canReject && onReject(r)}
+                            className={actionBtnClass(!canReject)}
+                            type="button"
+                            disabled={!canReject}
+                        >
+                            <img src={deleteIcon} alt="Rechazar" className="as-action-icon" />
+                        </button>
+                    </div>
+                );
+            },
         },
     ];
 

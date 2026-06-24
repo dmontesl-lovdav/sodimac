@@ -1,4 +1,4 @@
-import apiClient from '@/shared/api/apiClient';
+import apiClient from '@/services/apiClient';
 import type {
     ApiResponse,
     PaginatedResponse,

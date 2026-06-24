@@ -5,6 +5,11 @@ import { catalogService, CatalogResponse } from '@features/catalogos/services/ca
 import eyeIcon from '@features/catalogos/assets/eye-show.svg';
 import editIcon from '@features/catalogos/assets/edit.svg';
 import lobbyIcon from '@features/catalogos/assets/lobby.svg';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { Pagination } from '@shared/components/ui/pagination';
+import { APP_EVENT, PermissionGate } from '@shared/security';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 interface Catalog {
   id: string;
@@ -115,6 +120,26 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: 500,
     cursor: 'pointer',
+  },
+  secondaryBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.625rem 1rem',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    flexWrap: 'wrap' as const,
+    justifyContent: 'flex-end',
   },
   filtersRow: {
     display: 'flex',
@@ -259,8 +284,11 @@ const styles = {
   },
   pagination: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
+    flexWrap: 'wrap' as const,
+    rowGap: '0.5rem',
+    columnGap: '1rem',
     marginTop: '1rem',
     paddingTop: '1rem',
     borderTop: '1px solid #e5e7eb',
@@ -271,6 +299,7 @@ const styles = {
     gap: '1rem',
     fontSize: '0.8125rem',
     color: '#6b7280',
+    flexWrap: 'wrap' as const,
   },
   paginationRight: {
     display: 'flex',
@@ -296,13 +325,6 @@ const styles = {
     alignItems: 'center',
     marginTop: '1rem',
   },
-  exportSelect: {
-    padding: '0.5rem 0.75rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '0.25rem',
-    fontSize: '0.875rem',
-    backgroundColor: '#ffffff',
-  },
   noResults: {
     padding: '3rem',
     textAlign: 'center' as const,
@@ -317,14 +339,23 @@ const CatalogIcon = () => (
   </svg>
 );
 
+const ExportFileIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="12" y1="18" x2="12" y2="12" />
+    <polyline points="9 15 12 18 15 15" />
+  </svg>
+);
+
 export default function CatalogsContainer() {
   const navigate = useNavigate();
+  const { showError, ModalNode } = useModalNotification();
   const [hasSearched, setHasSearched] = useState(false);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [exportFormat, setExportFormat] = useState('xlsx');
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -341,13 +372,18 @@ export default function CatalogsContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  const handleSearch = async (page: number = 1, resetSelection: boolean = false) => {
+  
+  const handleSearch = async (
+    page: number = 1,
+    resetSelection: boolean = false,
+    overridePageSize?: number,
+  ) => {
     setIsLoading(true);
     try {
+      const effectivePageSize = overridePageSize ?? pageSize;
       const params: any = {
         page: page,
-        pageSize: pageSize,
+        pageSize: effectivePageSize,
         sortBy: 'createdAt',
         sortDir: 'desc',
       };
@@ -390,7 +426,7 @@ export default function CatalogsContainer() {
       const message = error?.response?.status === 500 
         ? 'Ocurrió un problema al consultar catálogos. Intente nuevamente.'
         : 'No fue posible realizar la búsqueda. Verifique los criterios e intente nuevamente.';
-      alert(message);
+      showError(message);
     } finally {
       setIsLoading(false);
     }
@@ -433,7 +469,7 @@ export default function CatalogsContainer() {
     return paginatedCatalogs.every((c) => selectedIds.includes(c.id));
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'csv' | 'xlsx') => {
     if (catalogs.length === 0 || isExporting) return;
 
     setIsExporting(true);
@@ -455,34 +491,41 @@ export default function CatalogsContainer() {
         { key: 'updatedAt', label: 'Fecha Actualización' },
       ];
 
-      let dataToExport: Catalog[];
+      const allParams: any = {
+        page: 1,
+        pageSize: totalResults || 5000,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      };
+      if (filters.id) allParams.id = parseInt(filters.id);
+      if (filters.name) allParams.nombre = filters.name;
+      if (filters.description) allParams.descripcion = filters.description;
+      if (filters.type) allParams.tipo = filters.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO';
+      if (filters.status) allParams.estatus = filters.status === 'Activo' ? 1 : 0;
+      if (filters.code) allParams.code = filters.code;
+      if (filters.prefix) allParams.prefix = filters.prefix;
 
-      if (selectedIds.length > 0) {
-        dataToExport = catalogs.filter((c) => selectedIds.includes(c.id));
-      } else {
-        const allParams: any = {
-          page: 1,
-          pageSize: totalResults || 1000,
-          sortBy: 'createdAt',
-          sortDir: 'desc',
-        };
-        if (filters.id) allParams.id = parseInt(filters.id);
-        if (filters.name) allParams.nombre = filters.name;
-        if (filters.description) allParams.descripcion = filters.description;
-        if (filters.type) allParams.tipo = filters.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO';
-        if (filters.status) allParams.estatus = filters.status === 'Activo' ? 1 : 0;
-        if (filters.code) allParams.code = filters.code;
-        if (filters.prefix) allParams.prefix = filters.prefix;
+      const response = await catalogService.search(allParams);
+      const fullDataset = response.items.map(apiToCatalog);
 
-        const response = await catalogService.search(allParams);
-        dataToExport = response.items.map(apiToCatalog);
+      const dataToExport: Catalog[] = selectedIds.length > 0
+        ? fullDataset.filter((c) => selectedIds.includes(c.id))
+        : fullDataset;
+
+      if (dataToExport.length === 0) {
+        setExportError(
+          selectedIds.length > 0
+            ? 'No se encontraron los catálogos seleccionados en el conjunto filtrado.'
+            : 'No hay catálogos para exportar.'
+        );
+        return;
       }
 
       const now = new Date();
       const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
       const filename = `catalogos_${timestamp}`;
 
-      if (exportFormat === 'csv') {
+      if (format === 'csv') {
         exportToCSV(dataToExport as unknown as Record<string, unknown>[], columns, filename);
       } else {
         exportToExcel(dataToExport as unknown as Record<string, unknown>[], columns, filename);
@@ -506,13 +549,12 @@ export default function CatalogsContainer() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <div style={styles.breadcrumb}>
-          <a href="/" style={styles.breadcrumbLink}>Inicio</a>
-          <span>/</span>
-          <a href="#/catalogos" style={styles.breadcrumbLink}>Gestión de Catálogos</a>
-          <span>/</span>
-          <span>Catálogos</span>
-        </div>
+        <Breadcrumb
+          items={withFinanceBreadcrumb([
+            { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+            { label: 'Catálogos' },
+          ])}
+        />
       </div>
 
       <div style={styles.main}>
@@ -530,13 +572,42 @@ export default function CatalogsContainer() {
                 información detallada sobre los cambios realizados en cada uno de ellos.
               </p>
             </div>
-            <button
-              style={styles.primaryBtn}
-              onClick={() => navigate('/util/catalogos/catalogs/crear')}
-            >
-              <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
-              Nuevo Catálogo
-            </button>
+            <div style={styles.headerActions}>
+              <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DOWNLOAD_CSV}>
+                {(() => {
+                  const exportDisabled = isExporting || !hasSearched || catalogs.length === 0;
+                  return (
+                    <>
+                      <button
+                        style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
+                        onClick={() => handleExport('csv')}
+                        disabled={exportDisabled}
+                        title="Exportar a CSV"
+                      >
+                        <ExportFileIcon />
+                        Exportar CSV
+                      </button>
+                      <button
+                        style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
+                        onClick={() => handleExport('xlsx')}
+                        disabled={exportDisabled}
+                        title="Exportar a Excel"
+                      >
+                        <ExportFileIcon />
+                        Exportar Excel
+                      </button>
+                    </>
+                  );
+                })()}
+              </PermissionGate>
+              <button
+                style={styles.primaryBtn}
+                onClick={() => navigate('/util/catalogos/catalogs/crear')}
+              >
+                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
+                Nuevo Catálogo
+              </button>
+            </div>
           </div>
 
           <div style={styles.filtersRow}>
@@ -614,12 +685,16 @@ export default function CatalogsContainer() {
                 <option value="Inactivo">Inactivo</option>
               </select>
             </div>
-            <button style={styles.ghostBtn} onClick={handleClear}>
-              Limpiar
-            </button>
-            <button style={styles.outlineBtn} onClick={() => handleSearch(1, true)}>
-              Buscar
-            </button>
+            <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.SEARCH}>
+              <button style={styles.outlineBtn} onClick={() => handleSearch(1, true)}>
+                Buscar
+              </button>
+            </PermissionGate>
+            <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.CLEAR_FILTERS}>
+              <button style={styles.outlineBtn} onClick={handleClear}>
+                Limpiar
+              </button>
+            </PermissionGate>
           </div>
 
           {!hasSearched ? (
@@ -732,78 +807,19 @@ export default function CatalogsContainer() {
                 </table>
               </div>
 
-              <div style={styles.pagination}>
-                <div style={styles.paginationLeft}>
-                  <span>
-                    Items por página:{' '}
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        const newSize = Number(e.target.value);
-                        setPageSize(newSize);
-                        setCurrentPage(1);
-                        handleSearch(1);
-                      }}
-                      style={{ border: '1px solid #d1d5db', borderRadius: '0.25rem', padding: '0.25rem' }}
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </span>
-                  <span>
-                    Ir a:{' '}
-                    <input
-                      type="number"
-                      min={1}
-                      max={totalPages}
-                      value={currentPage}
-                      onChange={(e) => {
-                        const page = Number(e.target.value);
-                        if (page >= 1 && page <= totalPages) {
-                          handlePageChange(page);
-                        }
-                      }}
-                      style={{ width: '50px', border: '1px solid #d1d5db', borderRadius: '0.25rem', padding: '0.25rem', textAlign: 'center' }}
-                    />
-                  </span>
-                  <span>
-                    {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, catalogs.length)} de {catalogs.length}
-                  </span>
-                </div>
-                <div style={styles.paginationRight}>
-                  <button
-                    style={styles.pageBtn}
-                    disabled={currentPage === 1 || isLoading}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                  >
-                    ‹
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const page = i + 1;
-                    return (
-                      <button
-                        key={page}
-                        style={{
-                          ...styles.pageBtn,
-                          ...(currentPage === page ? styles.pageBtnActive : {}),
-                        }}
-                        onClick={() => handlePageChange(page)}
-                        disabled={isLoading}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  <button
-                    style={styles.pageBtn}
-                    disabled={currentPage === totalPages || isLoading}
-                    onClick={() => handlePageChange(currentPage + 1)}
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalResults}
+                pageSize={pageSize}
+                disabled={isLoading}
+                onPageChange={handlePageChange}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                  handleSearch(1, false, newSize);
+                }}
+              />
 
               <div style={styles.footer}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -817,27 +833,6 @@ export default function CatalogsContainer() {
                       {exportError}
                     </span>
                   )}
-                  <select
-                    style={{
-                      ...styles.exportSelect,
-                      opacity: isExporting ? 0.6 : 1,
-                      cursor: isExporting ? 'not-allowed' : 'pointer',
-                    }}
-                    value=""
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setExportFormat(e.target.value);
-                        setTimeout(() => {
-                          handleExport();
-                        }, 100);
-                      }
-                    }}
-                    disabled={isExporting}
-                  >
-                    <option value="">{isExporting ? '⏳ Exportando...' : '📋 Exportar como'}</option>
-                    <option value="xlsx">Hoja de cálculo (XLSX)</option>
-                    <option value="csv">CSV</option>
-                  </select>
                 </div>
                 <button style={styles.ghostBtn} onClick={() => navigate('/util/catalogos')}>
                   Volver
@@ -847,7 +842,7 @@ export default function CatalogsContainer() {
           )}
 
           {!hasSearched && (
-            <div style={styles.footer}>
+            <div style={{ ...styles.footer, justifyContent: 'flex-end' }}>
               <button style={styles.ghostBtn} onClick={() => navigate('/util/catalogos')}>
                 Volver
               </button>
@@ -855,6 +850,7 @@ export default function CatalogsContainer() {
           )}
         </div>
       </div>
+      {ModalNode}
     </div>
   );
 }

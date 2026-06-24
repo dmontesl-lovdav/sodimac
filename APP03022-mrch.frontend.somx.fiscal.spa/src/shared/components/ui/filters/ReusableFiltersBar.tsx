@@ -1,9 +1,23 @@
 import { ReactElement, useState, useEffect, useCallback, useRef } from "react";
-import { GenericButton, GenericInput, GenericSelect, GenericSelectFloating } from "@shared/components/ui";
+import {
+  GenericButton,
+  GenericInputSearch,
+  GenericSelectSearchable,
+} from "@shared/components/ui";
 import { GenericDateRangePicker } from "@shared/components/ui/date";
+import type { DateRange } from "@shared/components/ui/date";
 import type { ChangeEvent } from "react";
-import { ErrorMessage } from "@shared/components/ui";
-import { getFiltersFromLocalStorage, saveFiltersToLocalStorage } from "@/utils/utils";
+import GenericModal from "@shared/components/ui/modal/GenericModal";
+import "./ReusableFiltersBar.css";
+import { readFiscalListFilters } from "@/shared/session/fiscalListSession";
+import {
+  fetchProvidersAsCatalog,
+  fiscalFilterTodayDateRange,
+  formatLocalDateStr,
+  isDateRangeOverSixMonths,
+  parseLocalDateStr,
+  startOfLocalDay,
+} from "@/utils/utils";
 
 type SelectableOption<T> = {
   label: string;
@@ -13,85 +27,244 @@ type SelectableOption<T> = {
 export interface FilterField {
   key: string;
   label: string;
-  type: "text" | "select" | "dateRange" | "selectFloating";
+  type: "text" | "select" | "dateRange" | "selectFloating" | "providerSelect";
   placeholder?: string;
   options?: SelectableOption<string | number>[];
   required?: boolean;
-  width?: string;
+  widthClass?: string;
+  containerClassName?: string;
+}
+
+function normalizeProviderFilterValue(value: unknown): string {
+  const raw = value == null ? "" : String(value).trim();
+  return raw === "" || raw === " " ? "" : raw;
+}
+
+function normalizeListboxFilterValue(value: unknown): string {
+  return normalizeProviderFilterValue(value);
+}
+
+function normalizeFiltersForSubmit<F extends Record<string, any>>(
+  filters: F,
+  fields: FilterField[]
+): F {
+  const next = { ...filters } as F;
+  for (const field of fields) {
+    if (field.type === "providerSelect") {
+      (next as Record<string, unknown>)[field.key] = normalizeProviderFilterValue(
+        next[field.key]
+      );
+      continue;
+    }
+    if (field.type !== "selectFloating") continue;
+
+    const normalized = normalizeListboxFilterValue(next[field.key]);
+    if (field.key === "estatus") {
+      (next as Record<string, unknown>)[field.key] =
+        normalized === "" ? undefined : Number(normalized);
+      continue;
+    }
+    (next as Record<string, unknown>)[field.key] = normalized;
+  }
+  return next;
+}
+
+function selectFilterValue(value: unknown): string {
+  return normalizeProviderFilterValue(value);
+}
+
+function mapSelectOptions(
+  options: SelectableOption<string | number>[] = []
+): { value: string; label: string }[] {
+  return options.map((opt) => ({
+    value: String(opt.value),
+    label: String(opt.label),
+  }));
+}
+
+function resolveFieldWrapperClass(field: FilterField): string {
+  if (field.type === "dateRange") return "rc-field-dates";
+  if (field.containerClassName) return field.containerClassName;
+  if (
+    field.type === "selectFloating" &&
+    (field.key === "estatus" || field.key === "status")
+  ) {
+    return "rc-filter-status-wrap";
+  }
+  if (
+    field.type === "select" &&
+    (field.key === "estatus" || field.key === "status")
+  ) {
+    return "rc-filter-status-wrap";
+  }
+  return "";
+}
+
+function resolveSelectPlaceholder(field: FilterField): string {
+  if (field.type === "providerSelect") {
+    return field.placeholder || "Nombre Proveedor";
+  }
+  return field.placeholder || field.label;
+}
+
+function resolveTextPlaceholder(field: FilterField): string {
+  return field.placeholder || field.label;
+}
+
+function resolveDatePlaceholder(field: FilterField): string {
+  if (field.placeholder) return field.placeholder;
+  if (field.key === "fechaRecepcion") return "Fecha de recepción";
+  if (field.key === "fechaPago") return "Fecha de pago";
+  if (field.key === "fechaEmision") return "Fecha de emisión";
+  return field.label || "Fecha desde – hasta";
+}
+
+function resolveDateFilterKeys(fieldKey: string): {
+  startKey: string;
+  endKey: string;
+} {
+  if (fieldKey === "fecha") {
+    return { startKey: "fechaInicio", endKey: "fechaFinal" };
+  }
+  if (fieldKey === "fechaRecepcion") {
+    return { startKey: "fechaInicioRecepcion", endKey: "fechaFinalRecepcion" };
+  }
+  if (fieldKey === "fechaPago") {
+    return { startKey: "fechaPagoInicio", endKey: "fechaPagoFin" };
+  }
+  if (fieldKey === "fechaEmision") {
+    return { startKey: "fechaEmisionInicio", endKey: "fechaEmisionFin" };
+  }
+  return { startKey: `${fieldKey}Inicio`, endKey: `${fieldKey}Fin` };
+}
+
+function buildDateRangeFromFilterValues(
+  filters: Record<string, unknown>,
+  fieldKey: string
+): DateRange {
+  const { startKey, endKey } = resolveDateFilterKeys(fieldKey);
+  const start = parseLocalDateStr(filters[startKey]);
+  const end = parseLocalDateStr(filters[endKey]);
+  if (start && end) return [start, end];
+  return fiscalFilterTodayDateRange();
+}
+
+function applyDefaultDateFilters<F extends Record<string, any>>(
+  filters: F,
+  fields: FilterField[]
+): { filters: F; ranges: Record<string, DateRange> } {
+  const next = { ...filters } as F;
+  const ranges: Record<string, DateRange> = {};
+  const [todayStart, todayEnd] = fiscalFilterTodayDateRange();
+  const todayStartStr = formatLocalDateStr(todayStart);
+  const todayEndStr = formatLocalDateStr(todayEnd);
+
+  for (const field of fields) {
+    if (field.type !== "dateRange") continue;
+    const { startKey, endKey } = resolveDateFilterKeys(field.key);
+    const start = parseLocalDateStr((next as Record<string, unknown>)[startKey]);
+    const end = parseLocalDateStr((next as Record<string, unknown>)[endKey]);
+
+    if (start && end) {
+      ranges[field.key] = [start, end];
+      (next as Record<string, unknown>)[startKey] = formatLocalDateStr(
+        startOfLocalDay(start)
+      );
+      (next as Record<string, unknown>)[endKey] = formatLocalDateStr(
+        startOfLocalDay(end)
+      );
+    } else {
+      ranges[field.key] = [todayStart, todayEnd];
+      (next as Record<string, unknown>)[startKey] = todayStartStr;
+      (next as Record<string, unknown>)[endKey] = todayEndStr;
+    }
+  }
+
+  return { filters: next, ranges };
+}
+
+function hydrateFilterState<F extends Record<string, any>>(
+  initialFilters: F,
+  fields: FilterField[],
+  options?: {
+    restoreSavedFilters?: boolean;
+    sessionFiltersKey?: string;
+  }
+): { filters: F; ranges: Record<string, DateRange> } {
+  let effectiveFilters: F = { ...initialFilters };
+  if (options?.restoreSavedFilters && options.sessionFiltersKey) {
+    const savedFilters = readFiscalListFilters<F>(options.sessionFiltersKey);
+    if (savedFilters) {
+      effectiveFilters = { ...effectiveFilters, ...savedFilters };
+    }
+  }
+  return applyDefaultDateFilters(effectiveFilters, fields);
 }
 
 interface Props<F extends Record<string, any>> {
   fields: FilterField[];
   initialFilters: F;
+  /** Base al pulsar Limpiar; si no se define, se usa `initialFilters`. */
+  resetFiltersOnClear?: F;
   onSearch: (filters: F) => void;
-  storageKey?: string;
+  onFiltersChange?: (filters: F) => void;
+  onClear?: (filters: F) => void;
+  sessionFiltersKey?: string;
+  restoreSavedFilters?: boolean;
   validateFilters?: (filters: F) => string | null;
-  /** Se invoca una vez al montar con los filtros efectivos (guardados o initial). Usar para no hacer fetch hasta tener los filtros definitivos. */
   onHydrated?: (filters: F) => void;
 }
 
 export default function ReusableFiltersBar<F extends Record<string, any>>({
   fields,
   initialFilters,
+  resetFiltersOnClear,
   onSearch,
-  storageKey,
+  onFiltersChange,
+  onClear,
+  sessionFiltersKey,
+  restoreSavedFilters = false,
   validateFilters,
   onHydrated,
 }: Props<F>): ReactElement {
-  const [filters, setFilters] = useState<F>(initialFilters);
+  const [filterState] = useState(() =>
+    hydrateFilterState(initialFilters, fields, {
+      restoreSavedFilters,
+      sessionFiltersKey,
+    })
+  );
+  const [filters, setFilters] = useState<F>(filterState.filters);
   const [error, setError] = useState<string>("");
-  const [dateRanges, setDateRanges] = useState<Record<string, Date[]>>({});
-  const hasRestoredFromStorage = useRef(false);
+  const [dateRanges, setDateRanges] = useState<Record<string, DateRange>>(
+    filterState.ranges
+  );
+  const [providerOptions, setProviderOptions] = useState<SelectableOption<string>[]>([]);
   const hasHydratedRef = useRef(false);
+  const onHydratedRef = useRef(onHydrated);
+  onHydratedRef.current = onHydrated;
+  const needsProviderCatalog = fields.some((field) => field.type === "providerSelect");
+  const today = useRef(startOfLocalDay(new Date())).current;
 
   useEffect(() => {
-    let effectiveFilters: F = initialFilters;
-    if (storageKey) {
-      const savedFilters = getFiltersFromLocalStorage<F>(storageKey);
-      if (savedFilters) {
-        effectiveFilters = savedFilters;
-        setFilters(savedFilters);
-        // Restaurar rangos de fechas
-        fields.forEach(field => {
-          if (field.type === "dateRange") {
-            let startKey = `${field.key}Inicio`;
-            let endKey = `${field.key}Fin`;
-            
-            if (field.key === "fecha") {
-              startKey = "fechaInicio";
-              endKey = "fechaFinal";
-            } else if (field.key === "fechaRecepcion") {
-              startKey = "fechaInicioRecepcion";
-              endKey = "fechaFinalRecepcion";
-            } else if (field.key === "fechaPago") {
-              startKey = "fechaPagoInicio";
-              endKey = "fechaPagoFin";
-            } else if (field.key === "fechaEmision") {
-              startKey = "fechaEmisionInicio";
-              endKey = "fechaEmisionFin";
-            }
-            
-            const start = savedFilters[startKey];
-            const end = savedFilters[endKey];
-            if (start && end) {
-              setDateRanges(prev => ({
-                ...prev,
-                [field.key]: [new Date(start), new Date(end)],
-              }));
-            }
-          }
-        });
-        if (!hasRestoredFromStorage.current) {
-          hasRestoredFromStorage.current = true;
-          onSearch(savedFilters);
-        }
+    if (!needsProviderCatalog) return;
+    (async () => {
+      const list = await fetchProvidersAsCatalog("supplierNumber");
+      if (list) {
+        setProviderOptions(
+          list.map((item) => ({
+            label: String(item.label),
+            value: String(item.value),
+          }))
+        );
       }
-    }
-    if (!hasHydratedRef.current) {
-      hasHydratedRef.current = true;
-      onHydrated?.(effectiveFilters);
-    }
-  }, [storageKey, fields, onSearch, initialFilters, onHydrated]);
+    })();
+  }, [needsProviderCatalog]);
+
+  useEffect(() => {
+    if (hasHydratedRef.current) return;
+    hasHydratedRef.current = true;
+    onHydratedRef.current?.(filterState.filters);
+  }, [filterState.filters]);
 
   const handleFieldChange = useCallback(<K extends keyof F>(key: K) => {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { value: string } }) => {
@@ -101,180 +274,196 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
   }, []);
 
   const handleDateRangeChange = useCallback((fieldKey: string) => {
-    return (dates: (Date | null)[]) => {
-      setDateRanges(prev => ({ ...prev, [fieldKey]: dates.filter(Boolean) as Date[] }));
-      // Mapear campos de fecha comunes
-      let startKey = `${fieldKey}Inicio`;
-      let endKey = `${fieldKey}Fin`;
-      
-      // Casos especiales
-      if (fieldKey === "fecha") {
-        startKey = "fechaInicio";
-        endKey = "fechaFinal";
-      } else if (fieldKey === "fechaRecepcion") {
-        startKey = "fechaInicioRecepcion";
-        endKey = "fechaFinalRecepcion";
-      } else if (fieldKey === "fechaPago") {
-        startKey = "fechaPagoInicio";
-        endKey = "fechaPagoFin";
-      } else if (fieldKey === "fechaEmision") {
-        startKey = "fechaEmisionInicio";
-        endKey = "fechaEmisionFin";
-      } else if (fieldKey.includes("fecha")) {
-        startKey = `${fieldKey}Inicio`;
-        endKey = `${fieldKey}Fin`;
+    return (dates: DateRange) => {
+      const [start, end] = dates;
+      setDateRanges((prev) => ({ ...prev, [fieldKey]: dates }));
+
+      const { startKey, endKey } = resolveDateFilterKeys(fieldKey);
+      if (!start || !end) {
+        setFilters((prev) => ({
+          ...prev,
+          [startKey]: "",
+          [endKey]: "",
+        }));
+        setError("");
+        return;
       }
-      
-      setFilters(prev => ({
+
+      setFilters((prev) => ({
         ...prev,
-        [startKey]: dates?.[0]?.toISOString().split('T')[0] ?? prev[startKey],
-        [endKey]: dates?.[1]?.toISOString().split('T')[0] ?? prev[endKey],
+        [startKey]: formatLocalDateStr(startOfLocalDay(start)),
+        [endKey]: formatLocalDateStr(startOfLocalDay(end)),
       }));
       setError("");
     };
   }, []);
 
   const handleClear = useCallback(() => {
-    setFilters([] as unknown as F);
-    setDateRanges({});
     setError("");
-    if (storageKey) {
-      saveFiltersToLocalStorage(storageKey, initialFilters);
-    }
-    onSearch(initialFilters);
-  }, [initialFilters, storageKey, onSearch]);
+    const base = resetFiltersOnClear ?? initialFilters;
+    const cleared = applyDefaultDateFilters({ ...base } as F, fields);
+    setFilters(cleared.filters);
+    setDateRanges(cleared.ranges);
+    onFiltersChange?.(cleared.filters);
+    onClear?.(cleared.filters);
+  }, [fields, initialFilters, resetFiltersOnClear, onFiltersChange, onClear]);
+
+  const validateDateRangeField = useCallback(
+    (
+      field: FilterField,
+      range: DateRange,
+      normalizedFilters: F
+    ): string | null => {
+      const [d1, d2] = range;
+      const { startKey, endKey } = resolveDateFilterKeys(field.key);
+
+      if (field.required && (!d1 || !d2)) {
+        return `${field.label} es obligatorio`;
+      }
+      if (!d1 || !d2) return null;
+
+      const start = startOfLocalDay(d1);
+      const end = startOfLocalDay(d2);
+
+      if (end > today) {
+        return "La fecha fin no puede ser posterior a la fecha actual.";
+      }
+      if (start > end) {
+        return `La fecha de inicio no puede ser mayor a la fecha final en ${field.label}`;
+      }
+      if (isDateRangeOverSixMonths(start, end)) {
+        return "El rango máximo permitido es 6 meses.";
+      }
+
+      (normalizedFilters as Record<string, unknown>)[startKey] =
+        formatLocalDateStr(start);
+      (normalizedFilters as Record<string, unknown>)[endKey] =
+        formatLocalDateStr(end);
+      return null;
+    },
+    [today]
+  );
 
   const handleSubmit = useCallback(() => {
     setError("");
-    
-    // Validación personalizada
+    const normalizedFilters = normalizeFiltersForSubmit(filters, fields);
+
     if (validateFilters) {
-      const validationError = validateFilters(filters);
+      const validationError = validateFilters(normalizedFilters);
       if (validationError) {
         setError(validationError);
         return;
       }
     }
 
-    // Validación de campos requeridos
-    const requiredFields = fields.filter(f => f.required);
-    for (const field of requiredFields) {
-          if (field.type === "dateRange") {
-            let startKey = `${field.key}Inicio`;
-            let endKey = `${field.key}Fin`;
-            
-            if (field.key === "fecha") {
-              startKey = "fechaInicio";
-              endKey = "fechaFinal";
-            } else if (field.key === "fechaRecepcion") {
-              startKey = "fechaInicioRecepcion";
-              endKey = "fechaFinalRecepcion";
-            } else if (field.key === "fechaPago") {
-              startKey = "fechaPagoInicio";
-              endKey = "fechaPagoFin";
-            } else if (field.key === "fechaEmision") {
-              startKey = "fechaEmisionInicio";
-              endKey = "fechaEmisionFin";
-            }
-            
-            if (!filters[startKey] || !filters[endKey]) {
-              setError(`${field.label} es obligatorio`);
-              return;
-            }
-            const start = new Date(filters[startKey]);
-            const end = new Date(filters[endKey]);
-            if (start > end) {
-              setError(`La fecha de inicio no puede ser mayor a la fecha final en ${field.label}`);
-              return;
-            }
-          } else {
-        const value = filters[field.key];
-        if (!value || (typeof value === "string" && value.trim() === "")) {
-          setError(`${field.label} es obligatorio`);
+    for (const field of fields) {
+      if (field.type === "dateRange") {
+        const range =
+          dateRanges[field.key] ??
+          buildDateRangeFromFilterValues(normalizedFilters as Record<string, unknown>, field.key);
+        const dateError = validateDateRangeField(field, range, normalizedFilters);
+        if (dateError) {
+          setError(dateError);
           return;
         }
+        continue;
+      }
+
+      if (!field.required) continue;
+      const value = normalizedFilters[field.key];
+      if (!value || (typeof value === "string" && value.trim() === "")) {
+        setError(`${field.label} es obligatorio`);
+        return;
       }
     }
 
-    if (storageKey) {
-      saveFiltersToLocalStorage(storageKey, filters);
-    }
-    onSearch(filters);
-  }, [filters, fields, validateFilters, onSearch, storageKey]);
+    setFilters(normalizedFilters);
+    setDateRanges((prev) => {
+      const next = { ...prev };
+      for (const field of fields) {
+        if (field.type !== "dateRange") continue;
+        const { startKey, endKey } = resolveDateFilterKeys(field.key);
+        const start = parseLocalDateStr(
+          (normalizedFilters as Record<string, unknown>)[startKey]
+        );
+        const end = parseLocalDateStr(
+          (normalizedFilters as Record<string, unknown>)[endKey]
+        );
+        if (start && end) next[field.key] = [start, end];
+      }
+      return next;
+    });
+    onSearch(normalizedFilters);
+  }, [
+    filters,
+    fields,
+    validateFilters,
+    onSearch,
+    dateRanges,
+    validateDateRangeField,
+  ]);
 
   return (
-    <div>
-      
-      <div className="fiscal-flex fiscal-flex-wrap">
+    <div className="rc-filters">
+      <div className="rc-row finz-filter-row">
         {fields.map((field) => {
+          const wrapperClass = resolveFieldWrapperClass(field);
+
           if (field.type === "text") {
             return (
-              <div key={field.key} className={field.width === "450px" ? "fiscal-w-450" : field.width === "650px" ? "fiscal-w-650" : "fiscal-w-auto"}>
-                <GenericInput
-                  label={field.label}
-                  value={String(filters[field.key] || "")}
-                  onChange={handleFieldChange(field.key)}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                />
-              </div>
+              <GenericInputSearch
+                key={field.key}
+                value={String(filters[field.key] || "")}
+                onChange={handleFieldChange(field.key)}
+                placeholder={resolveTextPlaceholder(field)}
+                className="generic-input rc-filter-input"
+              />
             );
           }
 
-          if (field.type === "select") {
-            return (
-              <div key={field.key} className={field.width ? (field.width === "450px" ? "fiscal-w-450" : "fiscal-w-650") : "fiscal-w-auto"}>
-                <GenericSelect
-                  value={String(filters[field.key] || "")}
-                  onChange={handleFieldChange(field.key)}
-                  placeholder={field.placeholder || "Seleccione una opción"}
-                  options={field.options || []}
-                />
-              </div>
+          if (
+            field.type === "select" ||
+            field.type === "selectFloating" ||
+            field.type === "providerSelect"
+          ) {
+            const options =
+              field.type === "providerSelect"
+                ? providerOptions
+                : mapSelectOptions(field.options);
+            const select = (
+              <GenericSelectSearchable
+                value={selectFilterValue(filters[field.key])}
+                onChange={handleFieldChange(field.key)}
+                options={options}
+                placeholder={resolveSelectPlaceholder(field)}
+              />
             );
-          }
 
-          if (field.type === "selectFloating") {
-            return (
-              <div key={field.key} className={field.width === "650px" ? "fiscal-w-650" : "fiscal-w-450"}>
-                <GenericSelectFloating
-                  label={field.label}
-                  value={String(filters[field.key] || "")}
-                  onChange={handleFieldChange(field.key)}
-                  options={field.options || []}
-                  placeholder={field.placeholder || "Seleccione una opción"}
-                />
-              </div>
-            );
+            if (wrapperClass) {
+              return (
+                <div key={field.key} className={wrapperClass}>
+                  {select}
+                </div>
+              );
+            }
+
+            return <div key={field.key}>{select}</div>;
           }
 
           if (field.type === "dateRange") {
-            let startKey = `${field.key}Inicio`;
-            let endKey = `${field.key}Fin`;
-            
-            if (field.key === "fecha") {
-              startKey = "fechaInicio";
-              endKey = "fechaFinal";
-            } else if (field.key === "fechaRecepcion") {
-              startKey = "fechaInicioRecepcion";
-              endKey = "fechaFinalRecepcion";
-            } else if (field.key === "fechaPago") {
-              startKey = "fechaPagoInicio";
-              endKey = "fechaPagoFin";
-            } else if (field.key === "fechaEmision") {
-              startKey = "fechaEmisionInicio";
-              endKey = "fechaEmisionFin";
-            }
-            
+            const range =
+              dateRanges[field.key] ??
+              buildDateRangeFromFilterValues(
+                filters as Record<string, unknown>,
+                field.key
+              );
+
             return (
-              <div key={field.key}>
+              <div key={field.key} className={wrapperClass}>
                 <GenericDateRangePicker
-                  value={dateRanges[field.key]?.length === 2 ? (dateRanges[field.key] as [Date | null, Date | null]) : [
-                    filters[startKey] ? new Date(filters[startKey]) : null,
-                    filters[endKey] ? new Date(filters[endKey]) : null,
-                  ]}
+                  value={range}
                   onChange={handleDateRangeChange(field.key)}
-                  placeholder={field.placeholder || "Rango de fechas"}
+                  placeholder={resolveDatePlaceholder(field)}
                 />
               </div>
             );
@@ -282,22 +471,25 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
 
           return null;
         })}
-
-        
-      <div className="fiscal-flex fiscal-gap-sm fiscal-justify-end">
-        <GenericButton variant="outline" onClick={handleClear}>
-          Limpiar filtros
-        </GenericButton>
-        <GenericButton variant="outline" onClick={handleSubmit}>
-          Buscar
-        </GenericButton>
-      </div>
-      </div>
-      {error && (
-        <div className="fiscal-mt-2">
-          <ErrorMessage message={error} />
+        <div className="finz-filter-actions">
+          <GenericButton variant="outlineFill" onClick={handleSubmit}>
+            Buscar
+          </GenericButton>
+          <GenericButton variant="outlineFill" onClick={handleClear}>
+            Limpiar
+          </GenericButton>
         </div>
-      )}
+      </div>
+      <GenericModal
+        visible={!!error}
+        variant="alert"
+        severity="warning"
+        title="Advertencia"
+        message={error}
+        buttonText="Aceptar"
+        onClose={() => setError("")}
+        onConfirm={() => setError("")}
+      />
     </div>
   );
 }

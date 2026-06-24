@@ -3,6 +3,7 @@ export interface ComplementPaymentFilters {
   serie?: string;
   folio?: string;
   rfcEmisor?: string;
+  numeroProveedor?: string;
   rfcReceptor?: string;
   fechaPagoInicio?: string;
   fechaPagoFin?: string;
@@ -22,6 +23,7 @@ export interface ErrorResponse {
 export const EMPTY_COMPLEMENT_PAYMENT: ComplementPaymentFilters = {
   fechaPagoInicio: "",
   fechaPagoFin: "",
+  numeroProveedor: "",
   page: 0,
   size: 10,
 };

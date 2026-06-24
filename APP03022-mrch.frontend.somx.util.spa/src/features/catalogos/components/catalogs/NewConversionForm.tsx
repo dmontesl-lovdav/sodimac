@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { conversionService, catalogService, catalogElementService } from '@features/catalogos/services/catalogosApi';
+import { useModalNotification } from '@shared/components/ui/modal';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 export default function NewConversionForm() {
   const navigate = useNavigate();
   const { elementId } = useParams<{ elementId: string }>();
+  const { showSuccess, ModalNode } = useModalNotification();
 
   const [expandedSteps, setExpandedSteps] = useState<number[]>([1]);
   const [catalogs, setCatalogs] = useState<any[]>([]);
@@ -84,8 +88,11 @@ export default function NewConversionForm() {
       });
 
       const convId = result.idConversion || result.id || '';
-      alert(`La conversión ${convId} se ha registrado exitosamente.`);
-      navigate(`/util/catalogos/elementos/${elementId}/conversiones`);
+      showSuccess(
+        `La conversión ${convId} se ha registrado exitosamente.`,
+        'Conversión creada',
+        () => navigate(`/util/catalogos/elementos/${elementId}/conversiones`),
+      );
     } catch (error: any) {
       const status = error?.response?.status;
       const msg = error?.response?.data?.message || error?.response?.data?.details;
@@ -155,17 +162,14 @@ export default function NewConversionForm() {
 
   return (
     <div style={S.container}>
-      <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>
-        <span style={{ color: '#0066CC', cursor: 'pointer' }} onClick={() => navigate('/')}>Inicio</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer' }} onClick={() => navigate('/util/catalogos/catalogs')}>Gestión de Catálogos</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer' }} onClick={() => navigate('/util/catalogos/catalogs')}>Catálogos</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer' }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones`)}>Conversiones</span>
-        {' / '}
-        <span>Nueva Conversión</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: 'Conversiones', to: `/util/catalogos/elementos/${elementId}/conversiones` },
+          { label: 'Nueva Conversión' },
+        ])}
+      />
 
       {message && (
         <div style={{ ...S.msg, backgroundColor: message.type === 'success' ? '#dcfce7' : '#fee2e2', color: message.type === 'success' ? '#166534' : '#991b1b' }}>
@@ -281,6 +285,7 @@ export default function NewConversionForm() {
           </div>
         </div>
       )}
+      {ModalNode}
     </div>
   );
 }

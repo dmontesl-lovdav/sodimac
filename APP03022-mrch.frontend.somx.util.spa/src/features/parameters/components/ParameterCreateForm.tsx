@@ -10,6 +10,14 @@ registerLocale('es', es);
 import { CatalogItem } from '../services/parameterService';
 import '../styles/AddEditParameterForm.css';
 import { useCreateParameter, useCheckParameterNameExists } from '../hooks';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
+
+const toIsoStartOfDay = (date: Date): string => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+};
 
 // Zod Schema for form validation
 const parameterSchema = z.object({
@@ -83,15 +91,12 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
         },
     });
 
-    // Use TanStack Query mutation for real API call
     const createMutation = useCreateParameter();
     const checkNameMutation = useCheckParameterNameExists();
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const { showSuccess, showError, ModalNode } = useModalNotification();
     const [nameExistsError, setNameExistsError] = useState<string | null>(null);
     const [isCheckingName, setIsCheckingName] = useState(false);
 
-    // Validación onBlur para verificar si el nombre ya existe
     const handleNameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const name = e.target.value.trim();
         if (!name) {
@@ -108,7 +113,6 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
                 setNameExistsError(null);
             }
         } catch {
-            // Si falla la verificación, no bloqueamos al usuario
             setNameExistsError(null);
         } finally {
             setIsCheckingName(false);
@@ -116,14 +120,13 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
     };
 
     const onSubmit = (data: ParameterFormData) => {
-        // Bloquear si el nombre ya existe
         if (nameExistsError) {
-            setErrorMessage('No se puede crear el parámetro porque el nombre ya existe.');
+            showError(
+                'El nombre del parámetro ya está en uso. Localiza el registro en el listado y utiliza la opción Editar para crear una nueva versión.',
+                'No se puede crear el parámetro',
+            );
             return;
         }
-
-        setSuccessMessage(null);
-        setErrorMessage(null);
 
         createMutation.mutate(
             {
@@ -132,25 +135,26 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
                 name: data.name,
                 description: data.description,
                 value: data.value,
-                startDate: data.startDate.toISOString().split('T')[0],
-                endDate: data.endDate?.toISOString().split('T')[0],
+                startDate: toIsoStartOfDay(data.startDate),
+                endDate: data.endDate ? toIsoStartOfDay(data.endDate) : undefined,
             },
             {
                 onSuccess: () => {
-                    setSuccessMessage('El parámetro ha sido creado correctamente.');
-                    setTimeout(() => {
-                        onSuccess();
-                    }, 1500);
+                    showSuccess(
+                        'El parámetro fue creado correctamente.',
+                        'Operación exitosa',
+                        () => onSuccess(),
+                    );
                 },
                 onError: (error: unknown) => {
-                    let errorMsg = 'Error desconocido';
-                    if (error instanceof Error) {
-                        errorMsg = error.message;
-                    } else if (typeof error === 'object' && error !== null && 'message' in error) {
-                        errorMsg = String((error as { message: unknown }).message);
-                    }
                     console.error('Error al crear parámetro:', error);
-                    setErrorMessage(`Error al crear el parámetro: ${errorMsg}`);
+                    showError(
+                        extractApiErrorMessage(error, {
+                            fallback:
+                                'No fue posible crear el parámetro. Verifica la información e inténtalo nuevamente.',
+                        }),
+                        'No se pudo crear el parámetro',
+                    );
                 },
             }
         );
@@ -158,8 +162,6 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
 
     const handleClear = () => {
         reset();
-        setSuccessMessage(null);
-        setErrorMessage(null);
         setNameExistsError(null);
     };
 
@@ -367,39 +369,6 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
                             </div>
                         )}
 
-                        {successMessage && (
-                            <div style={{
-                                backgroundColor: '#d4edda',
-                                color: '#155724',
-                                padding: '12px 16px',
-                                borderRadius: '6px',
-                                marginBottom: '16px',
-                                fontWeight: 500,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                                {successMessage}
-                            </div>
-                        )}
-
-                        {errorMessage && (
-                            <div style={{
-                                backgroundColor: '#f8d7da',
-                                color: '#721c24',
-                                padding: '12px 16px',
-                                borderRadius: '6px',
-                                marginBottom: '16px',
-                                fontWeight: 500
-                            }}>
-                                {errorMessage}
-                            </div>
-                        )}
-
                         <div className="parameter-create__footer">
                             <div className="parameter-create__footer-left">
                                 <button type="button" className="parameter-create__btn-clear" onClick={handleClear}>
@@ -420,6 +389,7 @@ export const ParameterCreateForm: FC<ParameterCreateFormProps> = ({
                     </form>
                 </div>
             </div>
+            {ModalNode}
         </div>
     );
 };

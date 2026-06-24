@@ -13,7 +13,7 @@ import { OrderPillStatus } from "./ReceptionPillStatus";
 import { GenericInput, GenericSelect } from "@/shared/components/ui";
 import "./ReceptionsTable.css";
 
-const ActionOptions = [{ label: "Exportar a CSV", value: "csv" }];
+const ActionOptions = [{ label: "Exportar CSV", value: "csv" }];
 
 export default function ResultsTable({ rows, loading }: { rows: Reception[]; loading: boolean }): ReactElement {
     const nav = useNavigate();
@@ -31,7 +31,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
     const handleDownloadCSV = () => {
         const selectedValues = selectableReceptions.length ? selectableReceptions : rows;
         const headers = [
-            "Recepción", "Orden de compra", "Guía", "Sucursal", "Id Origen", "Descripción Origen",
+            "Recepción", "Orden Compra", "Guía", "Sucursal", "Id Origen", "Descripción Origen",
             "Fecha Recepción", "Fecha Registro Documento", "Importe", "Estatus", "Id Proveedor",
             "Nombre Proveedor", "UUID", "Folio", "Monto Factura"
         ];
@@ -48,7 +48,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
                 formatDate(item.receptionDate),
                 formatDate(item.receptionDate),
                 item.amount,
-                filtered?.label || "",
+                filtered?.description ?? filtered?.label ?? "",
                 item.supplierNumber,
                 item.vendorName,
                 item.purchaseOrderId,

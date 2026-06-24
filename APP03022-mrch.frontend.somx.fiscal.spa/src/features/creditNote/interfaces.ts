@@ -13,6 +13,7 @@ export interface CreditNoteFilters {
   serie: string;
   uuid: string;
   folio: string;
+  idProveedor: string;
 }
 
 export const EMPTY_CREDIT_NOTE: CreditNoteFilters = {
@@ -24,7 +25,8 @@ export const EMPTY_CREDIT_NOTE: CreditNoteFilters = {
   size: 10,
   serie: "",
   uuid: "",
-  folio: ""
+  folio: "",
+  idProveedor: "",
 }
 
 export interface CreditNote {
@@ -51,6 +53,7 @@ export interface CreditNote {
   estatus: number | undefined | null;
   statusName: string;
   supplierName: string | null;
+  tipoProveedorDescripcion: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   emisorRfc: string | null;

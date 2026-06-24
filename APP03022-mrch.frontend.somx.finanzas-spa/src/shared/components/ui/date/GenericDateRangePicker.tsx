@@ -131,6 +131,7 @@ export default function GenericDateRangePicker({
         locale={es}
         startDate={internalRange?.[0]}
         endDate={internalRange?.[1]}
+        maxDate={new Date()}
         onChange={(dates) => handleChange(dates as DateRange)}
         dateFormat="dd/MM/yyyy"
         isClearable={false}  // 🔥 apagamos la X rota del lib

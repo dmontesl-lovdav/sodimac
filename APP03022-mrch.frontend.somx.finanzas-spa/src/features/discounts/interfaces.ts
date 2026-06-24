@@ -65,12 +65,30 @@ export interface StampedRebate {
       createdAt: string
     }
 
+/** Fila de catálogo BFF (`details` en CatTipoRebate, CatTipoProveedor, etc.). */
+export interface CatalogDetailRow {
+    key?: string;
+    internalStatus?: number;
+    externalKey?: string | null;
+    value?: string;
+    description?: string;
+}
+
 export interface Rebate {
     rebateId: string,
     documentNumber: string,
     documentReference: string,
+    /** Alias que puede enviar la API en lugar de `documentReference`. */
+    referenceNumber?: string,
     sapDocument: string,
     supplierNumber: number,
+    /** Alias API (`vendorNumber`). */
+    vendorNumber?: number,
+    /** Tipo de rebate (`source` en query / catálogo). */
+    source?: number,
+    /** Si el backend envía nombre de proveedor (recomendado). */
+    vendorName?: string,
+    supplier?: Supplier,
     amount: number,
     originId: number,
     periodId: number,
@@ -79,7 +97,27 @@ export interface Rebate {
     status: number,
     createdBy: string,
     createdAt: string,
-    stampedRebate: StampedRebate
+    stampedRebate?: StampedRebate | null,
+}
+
+export function getRebateReference(r: Rebate): string {
+    return (r.referenceNumber ?? r.documentReference ?? "").trim();
+}
+
+export function getRebateVendorNumber(r: Rebate): number | undefined {
+    const n = r.vendorNumber ?? r.supplierNumber;
+    if (n == null || !Number.isFinite(Number(n))) return undefined;
+    return Number(n);
+}
+
+export function getRebateSourceId(r: Rebate): number | undefined {
+    if (r.source != null && Number.isFinite(Number(r.source))) {
+        return Number(r.source);
+    }
+    if (r.originId != null && Number.isFinite(Number(r.originId))) {
+        return Number(r.originId);
+    }
+    return undefined;
 }
 
 
@@ -90,10 +128,13 @@ export interface ProvidersOptions {
 }
 
 export interface RebateFilters {
-  postingDate: string;
-  dueDate: string;
-  pageNumber: number,
-  pageSize: number,
-  supplierNumber?: number | undefined;
-  status?: number | undefined;
+  from: string;
+  to: string;
+  pageNumber: number;
+  pageSize: number;
+  supplierNumber?: number;
+  status?: number;
+  documentNumber?: string;
+  sapDocument?: string;
+  source?: number;
 }

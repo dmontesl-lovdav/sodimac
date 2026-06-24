@@ -1,0 +1,18 @@
+/* Grupo de acciones pie de página / barra lateral: pegado al borde derecho del bloque donde viva */
+
+.finz-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px 16px;
+    width: 100%;
+}
+
+.finz-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}

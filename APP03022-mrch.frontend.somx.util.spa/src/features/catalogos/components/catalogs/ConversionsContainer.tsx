@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { conversionService, catalogElementService } from '@features/catalogos/services/catalogosApi';
 import { exportToCSV, exportToExcel } from '@features/catalogos/utils/export';
+import { Pagination } from '@shared/components/ui/pagination';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 export default function ConversionsContainer() {
   const navigate = useNavigate();
@@ -22,11 +25,12 @@ export default function ConversionsContainer() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [filters, setFilters] = useState({ idElemento: '', elemento: '', valor: '', catalogoOrigen: '', estatus: '' });
 
-  const performSearch = useCallback(async (page = 1) => {
+  const performSearch = useCallback(async (page = 1, overridePageSize?: number) => {
     if (!elementId) return;
     setIsLoading(true);
     try {
-      const params: any = { idElementoOrigen: parseInt(elementId), page, pageSize, sortBy: 'createdAt', sortDir: 'desc' };
+      const effectivePageSize = overridePageSize ?? pageSize;
+      const params: any = { idElementoOrigen: parseInt(elementId), page, pageSize: effectivePageSize, sortBy: 'createdAt', sortDir: 'desc' };
       if (filters.idElemento) params.idElemento = parseInt(filters.idElemento);
       if (filters.elemento) params.elemento = filters.elemento;
       if (filters.valor) params.valorElemento = filters.valor;
@@ -224,17 +228,14 @@ export default function ConversionsContainer() {
 
   return (
     <div style={S.container}>
-      <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>
-        <span style={{ color: '#0066CC', cursor: 'pointer', textDecoration: 'none' }} onClick={() => navigate('/')}>Inicio</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer', textDecoration: 'none' }} onClick={() => navigate('/util/catalogos/catalogs')}>Gestión de Catálogos</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer', textDecoration: 'none' }} onClick={() => navigate('/util/catalogos/catalogs')}>Catálogos</span>
-        {' / '}
-        <span style={{ color: '#0066CC', cursor: 'pointer', textDecoration: 'none' }} onClick={() => navigate(-1 as any)}>Elementos</span>
-        {' / '}
-        <span>Conversiones</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: 'Elementos' },
+          { label: 'Conversiones' },
+        ])}
+      />
 
       {message && (
         <div style={{ ...S.msg, backgroundColor: message.type === 'success' ? '#dcfce7' : '#fee2e2', color: message.type === 'success' ? '#166534' : '#991b1b' }}>
@@ -325,36 +326,17 @@ export default function ConversionsContainer() {
             </table>
           </div>
 
-          <div style={S.pagination}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              Items por página:{' '}
-              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); performSearch(1); }}
-                style={{ padding: '0.2rem', borderRadius: '0.25rem', fontSize: '0.8rem' }}>
-                <option value={10}>10</option><option value={20}>20</option><option value={50}>50</option>
-              </select>
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              Ir a:{' '}
-              <input type="number" min={1} max={totalPages || 1} value={currentPage}
-                onChange={e => { const p = Number(e.target.value); if (p >= 1 && p <= totalPages) performSearch(p); }}
-                style={{ width: '45px', padding: '0.2rem', borderRadius: '0.25rem', fontSize: '0.8rem' }} />
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              {totalResults > 0 ? (currentPage-1)*pageSize+1 : 0}-{Math.min(currentPage*pageSize, totalResults)} de {totalResults}
-            </span>
-            <button style={S.pageBtn} disabled={currentPage===1} onClick={() => performSearch(currentPage-1)}>‹</button>
-            {Array.from({ length: Math.min(5, totalPages || 1) }, (_, i) => {
-              let p;
-              if (totalPages <= 5) p = i + 1;
-              else if (currentPage <= 3) p = i + 1;
-              else if (currentPage >= totalPages - 2) p = totalPages - 4 + i;
-              else p = currentPage - 2 + i;
-              return (
-                <button key={p} style={{ ...S.pageBtn, ...(currentPage === p ? S.pageBtnActive : {}) }} onClick={() => performSearch(p)}>{p}</button>
-              );
-            })}
-            <button style={S.pageBtn} disabled={currentPage===totalPages||totalPages===0} onClick={() => performSearch(currentPage+1)}>›</button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalResults}
+            pageSize={pageSize}
+            onPageChange={(p) => performSearch(p)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              performSearch(1, newSize);
+            }}
+          />
         </>
       )}
 

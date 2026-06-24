@@ -31,6 +31,9 @@ export interface ThreeWayMatchRecord {
     fechaPago: string | null;
     montoPago: string | null;
 
+    /** Razón social del proveedor (si el backend la envía). */
+    nombreProveedor?: string | null;
+
     currency: string;
     exchangeRate: string;
     estatus: number;
@@ -50,4 +53,5 @@ export interface ThreeWayMatchFiltersProps {
         po?: string;
         reception?: string;
     }) => void;
+    onClear: () => void;
 }

@@ -38,7 +38,10 @@ export default function GenericTable({
     enableSelection = false,
     selectedIds = [],
     onSelectRow = () => { },
+    selectionHeader = null,
     totalItems,
+    showPagination = true,
+    showPageSizeSelector = true,
 }) {
 
     const nav = useNavigate();
@@ -92,7 +95,9 @@ export default function GenericTable({
                 <thead>
                     <tr>
                         {enableSelection && (
-                            <th className="text-center" style={{ width: 40 }}></th>
+                            <th className="text-center" style={{ width: 40 }}>
+                                {selectionHeader}
+                            </th>
                         )}
 
                         {columns.map(({ header, align = 'left' }) => (
@@ -169,76 +174,80 @@ export default function GenericTable({
                 </tbody>
             </table>
 
-            <div className="pagination">
+            {showPagination ? (
+                <div className="pagination">
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    Filas por página:
-                    <div style={{ position: 'relative' }}>
-                        <select
-                            value={perPage}
-                            onChange={(e) => onChangePerPage(+e.target.value)}
+                    {showPageSizeSelector ? (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            Filas por página:
+                            <div style={{ position: 'relative' }}>
+                                <select
+                                    value={perPage}
+                                    onChange={(e) => onChangePerPage(+e.target.value)}
+                                >
+                                    {[5, 10, 25, 50].map((n) => (
+                                        <option key={n}>{n}</option>
+                                    ))}
+                                </select>
+                                <span style={{
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    pointerEvents: 'none',
+                                    color: '#002d4c'
+                                }}>▾</span>
+                            </div>
+                        </label>
+                    ) : null}
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        Ir a:
+                        <input
+                            type="number"
+                            min={1}
+                            max={totalPages}
+                            value={page}
+                            onChange={(e) => onChangePage(+e.target.value || 1)}
+                        />
+                    </label>
+
+                    <span>{firstIdx}-{lastIdx} de {N}</span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                            onClick={() => onChangePage(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                            className={`pagination-arrow ${page === 1 ? 'disabled' : ''}`}
                         >
-                            {[5, 10, 25, 50].map((n) => (
-                                <option key={n}>{n}</option>
+                            ‹
+                        </button>
+
+                        {[...Array(totalPages).keys()]
+                            .map((i) => i + 1)
+                            .slice(
+                                Math.max(0, Math.min(page - 3, totalPages - 5)),
+                                Math.max(0, Math.min(page - 3, totalPages - 5)) + 5
+                            )
+                            .map((n) => (
+                                <button
+                                    key={n}
+                                    onClick={() => onChangePage(n)}
+                                    className={`page-btn ${page === n ? 'active' : ''}`}
+                                >
+                                    {n}
+                                </button>
                             ))}
-                        </select>
-                        <span style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: 0,
-                            pointerEvents: 'none',
-                            color: '#002d4c'
-                        }}>▾</span>
+
+                        <button
+                            onClick={() => onChangePage(Math.min(totalPages, page + 1))}
+                            disabled={page === totalPages}
+                            className={`pagination-arrow ${page === totalPages ? 'disabled' : ''}`}
+                        >
+                            ›
+                        </button>
                     </div>
-                </label>
-
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    Ir a:
-                    <input
-                        type="number"
-                        min={1}
-                        max={totalPages}
-                        value={page}
-                        onChange={(e) => onChangePage(+e.target.value || 1)}
-                    />
-                </label>
-
-                <span>{firstIdx}-{lastIdx} de {N}</span>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button
-                        onClick={() => onChangePage(Math.max(1, page - 1))}
-                        disabled={page === 1}
-                        className={`pagination-arrow ${page === 1 ? 'disabled' : ''}`}
-                    >
-                        ‹
-                    </button>
-
-                    {[...Array(totalPages).keys()]
-                        .map((i) => i + 1)
-                        .slice(
-                            Math.max(0, Math.min(page - 3, totalPages - 5)),
-                            Math.max(0, Math.min(page - 3, totalPages - 5)) + 5
-                        )
-                        .map((n) => (
-                            <button
-                                key={n}
-                                onClick={() => onChangePage(n)}
-                                className={`page-btn ${page === n ? 'active' : ''}`}
-                            >
-                                {n}
-                            </button>
-                        ))}
-
-                    <button
-                        onClick={() => onChangePage(Math.min(totalPages, page + 1))}
-                        disabled={page === totalPages}
-                        className={`pagination-arrow ${page === totalPages ? 'disabled' : ''}`}
-                    >
-                        ›
-                    </button>
                 </div>
-            </div>
+            ) : null}
 
             <div className="table-divider" />
         </div>

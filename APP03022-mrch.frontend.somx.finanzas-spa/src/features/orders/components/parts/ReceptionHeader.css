@@ -1,27 +1,58 @@
 .rc-header-card {
-    margin-top: 8px;
+    margin-top: 4px;
+}
+
+.rc-header-top {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.rc-header-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.rc-title-inline {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    margin-bottom: 0;
 }
 
 .rc-section-title {
+    font-size: 1rem;
     font-weight: 700;
+    margin: 0;
 }
 
-.rc-main-pill {
-    padding-left: 4px;
+.rc-ord-val {
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .rc-summary-grid {
     border: 1px solid #e5e7eb;
+    border-radius: 8px;
     display: grid;
-    gap: 12px;
+    gap: 8px 12px;
     grid-template-columns: repeat(6, 1fr);
-    margin-top: 20px;
-    padding: 12px;
+    margin-top: 8px;
+    padding: 10px 12px;
 }
 
 .rc-label {
+    font-size: 0.75rem;
     font-weight: 700;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.rc-summary-item > div:not(.rc-label) {
+    font-size: 0.875rem;
 }
 
 @media (max-width: 1200px) {

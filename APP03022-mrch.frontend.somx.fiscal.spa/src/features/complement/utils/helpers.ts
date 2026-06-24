@@ -36,21 +36,29 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
       monto: monto ? Number(monto).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : "",
       fechaTimbrado: getAttr(timbre, "FechaTimbrado") ?? "",
     };
-  } catch(err) {
-    console.error("Error parsing XML:", err);
+  } catch {
     return null;
   }
 }
 
 
 
+function resolvePaymentYear(row: ComplementPayment): string {
+  if (row.paymentDate) {
+    return String(new Date(row.paymentDate).getFullYear());
+  }
+  if (row.createdAt) {
+    return String(new Date(row.createdAt).getFullYear());
+  }
+  return "--";
+}
+
 export function toPaymentHeader(row: ComplementPayment): PaymentHeaderData {
-  const anio = row.paymentDate ? String(new Date(row.paymentDate).getFullYear()) : row.createdAt ? String(new Date(row.createdAt).getFullYear()) : "--";
   return {
     idProveedor: row.issuerRfc ?? "--",
     nombreProveedor: row.issuerName ?? "--",
     referenciaPago: row.paymentsUuid ?? "--",
-    anioPagos: anio,
+    anioPagos: resolvePaymentYear(row),
     moneda: "MXN",
     monto: row.totalAmount != null ? formatAmount(row.totalAmount) : "--",
     estatus: row.statusDescription ?? "--",

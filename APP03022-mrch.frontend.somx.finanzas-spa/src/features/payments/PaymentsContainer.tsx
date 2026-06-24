@@ -1,9 +1,9 @@
 // FILE: src/features/payments/PaymentsContainer.tsx
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import downloadIconUrl from "@assets/download.svg";
 
 import { Breadcrumb, GenericModal, GenericButton } from "@shared/components/ui";
+import { withFinanceBreadcrumb } from "@shared/components/ui/navigation/financeBreadcrumb";
 import { Title, Divider } from "@/shared/components/ui/misc";
 
 import FiltersBar from "./components/FiltersBar";
@@ -13,18 +13,18 @@ import { paymentsService } from "./api/paymentsService";
 import { PaymentRecord, PaymentSearchParams } from "./interfaces";
 import { PaymentFiltersValues } from "./components/FiltersBar";
 import { authenticator } from "@/configuration/ConfigurationBuilder";
+import { getErrorMessage } from "@/utils/errorMessage";
 
 import "./styles/PaymentsContainer.css";
+import {
+    FINANCE_LIST_KEYS,
+    useFinanceListScreenSession,
+    useFinanceListRefetchOnReturn,
+} from "@/shared/hooks";
 
 type ModalSeverity = "success" | "error" | "warning" | "info";
 
 export default function PaymentsContainer(): ReactElement {
-    const location = useLocation();
-    const restoredFilters = (location.state as any)?.filters as
-        | PaymentFiltersValues
-        | undefined;
-    const hasRestored = useRef(false);
-
     const [payments, setPayments] = useState<PaymentRecord[]>([]);
     const [allFilteredPayments, setAllFilteredPayments] = useState<PaymentRecord[]>(
         []
@@ -44,6 +44,11 @@ export default function PaymentsContainer(): ReactElement {
     const [totalItems, setTotalItems] = useState(0);
 
     const [isAdmin, setIsAdmin] = useState(false);
+    const warnIfEmptyRef = useRef(false);
+
+    const returningFromDetail = useFinanceListScreenSession(
+        FINANCE_LIST_KEYS.payments
+    );
 
     // Modal state for errors/info
     const [modalTitle, setModalTitle] = useState<string>("");
@@ -55,13 +60,6 @@ export default function PaymentsContainer(): ReactElement {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => {
-        if (restoredFilters && !hasRestored.current) {
-            hasRestored.current = true;
-            handleSearch(restoredFilters, 1, perPage);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [restoredFilters]);
 
     const checkAdmin = async () => {
         try {
@@ -77,7 +75,15 @@ export default function PaymentsContainer(): ReactElement {
             const msgs = await paymentsService.getMessages();
             setMessages(msgs);
         } catch (err) {
-            console.error("Error loading messages:", err);
+            warnIfEmptyRef.current = false;
+            setModalSeverity("warning");
+            setModalTitle("Atención");
+            setError(
+                getErrorMessage(
+                    err,
+                    "No se pudieron cargar los mensajes del catálogo."
+                )
+            );
         }
     };
 
@@ -124,7 +130,7 @@ export default function PaymentsContainer(): ReactElement {
                 );
             }
 
-            if (filteredItems.length === 0) {
+            if (filteredItems.length === 0 && warnIfEmptyRef.current) {
                 setModalSeverity("info");
                 setModalTitle("Sin resultados");
                 setError(
@@ -157,16 +163,11 @@ export default function PaymentsContainer(): ReactElement {
             setTotalPages(result.totalPages);
             setTotalItems(result.totalItems);
         } catch (err: any) {
-            console.error("Error searching payments:", err);
-            const detail = err?.response
-                ? `Status ${err.response.status}: ${JSON.stringify(
-                    err.response.data ?? err.message
-                )}`
-                : err?.message || "Error desconocido";
-
             setModalSeverity("error");
             setModalTitle("Error");
-            setError(`Error al buscar pagos: ${detail}`);
+            setError(
+                getErrorMessage(err, "Error al buscar pagos.")
+            );
 
             setPayments([]);
             setAllFilteredPayments([]);
@@ -174,9 +175,18 @@ export default function PaymentsContainer(): ReactElement {
             setTotalPages(1);
             setTotalItems(0);
         } finally {
+            warnIfEmptyRef.current = false;
             setLoading(false);
         }
     };
+
+    useFinanceListRefetchOnReturn(
+        FINANCE_LIST_KEYS.payments,
+        returningFromDetail,
+        (filters) => {
+            handleSearch(filters as PaymentFiltersValues, 1, perPage);
+        }
+    );
 
     const handlePageChange = async (newPage: number) => {
         if (!lastFilters) return;
@@ -217,12 +227,13 @@ export default function PaymentsContainer(): ReactElement {
 
         const now = new Date();
         const pad2 = (value: number) => value.toString().padStart(2, "0");
-
-        const fileName = `pagos_${now.getFullYear()}_${pad2(
-            now.getMonth() + 1
-        )}_${pad2(now.getDate())}_${pad2(now.getHours())}:${pad2(
-            now.getMinutes()
-        )}:${pad2(now.getSeconds())}.csv`;
+        const ymd = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(
+            now.getDate()
+        )}`;
+        const hms = `${pad2(now.getHours())}.${pad2(now.getMinutes())}.${pad2(
+            now.getSeconds()
+        )}`;
+        const fileName = `pagos_${ymd}_${hms}.csv`;
 
         a.href = url;
         a.download = fileName;
@@ -233,6 +244,7 @@ export default function PaymentsContainer(): ReactElement {
     };
 
     const handleClearSearch = () => {
+        warnIfEmptyRef.current = false;
         setPayments([]);
         setAllFilteredPayments([]);
         setError("");
@@ -247,10 +259,7 @@ export default function PaymentsContainer(): ReactElement {
     return (
         <div className="pay-layout">
             <Breadcrumb
-                items={[
-                    { label: "Finanzas", to: "/finanzas" },
-                    { label: "Pagos" },
-                ]}
+                items={withFinanceBreadcrumb([{ label: "Pagos" }])}
             />
 
             <div className="pay-box">
@@ -282,7 +291,7 @@ export default function PaymentsContainer(): ReactElement {
                                         maskImage: `url(${downloadIconUrl})`,
                                     }}
                                 />
-                                Descargar CSV
+                                Exportar CSV
                             </span>
                         </GenericButton>
                     </div>
@@ -291,13 +300,13 @@ export default function PaymentsContainer(): ReactElement {
                 <div className="pay-filters-section">
                     <FiltersBar
                         onSearch={(criteria) => {
+                            warnIfEmptyRef.current = true;
                             setPage(1);
                             handleSearch({ ...criteria }, 1, perPage);
                         }}
                         onClear={handleClearSearch}
                         isAdmin={isAdmin}
                         messages={messages}
-                        initialValues={restoredFilters || null}
                     />
                 </div>
 

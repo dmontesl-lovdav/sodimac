@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import type { TraceFolioPayload } from "@/services/TraceabilityClient";
+import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 import { useLocation } from "react-router-dom";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
@@ -55,21 +57,24 @@ function parsePaymentQuery(search: string): QueryPaymentData | null {
 
 
 const BREADCRUMB: BreadcrumbItem[] = [
-  { label: "Home", to: "/" },
   { label: "Fiscal", to: "/" },
   { label: "Añadir complemento de pago" },
 ];
 
 
 export default function AddComplement() {
-  const traceFolioPayload = { 
-    codigoModulo: "FIS",
-    pantallaOrigen: "Añadir complemento de pago",
-    caso: "POST", 
-    metadatos: {},
-    idUsuario: "1",
-    origen: "fiscal",
-  };
+  const traceFolioPayload = useMemo<TraceFolioPayload>(
+    () => ({
+      idAplicativo: "fiscal-front",
+      idModulo: "COMPLEMENT",
+      paso: "INIT_UPLOAD_XML",
+      detalle: "Inicio de trazabilidad en pantalla Añadir complemento de pago (fiscal-front).",
+      fechaHora: new Date().toISOString(),
+      tipoEvento: "INFO",
+      idUsuario: getUserIdFromStore() ?? "1",
+    }),
+    []
+  );
   return decorate(
     BREADCRUMB,
     "/",
@@ -111,7 +116,7 @@ function AddComplementContent() {
 
   const payment = (location.state as { payment?: PaymentHeaderData } | null)?.payment ?? null;
   const header: PaymentHeaderData = payment ?? paymentFromQuery ?? EMPTY_HEADER;
-  const client = createComplementPaymentClient();
+  const client = useMemo(() => createComplementPaymentClient(), []);
 
   const [xmlFile, setXmlFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -186,7 +191,7 @@ function AddComplementContent() {
         );
       }
     },
-    [traceId, addLog, client]
+    [traceId, addLog, client, handleXmlSelect]
   );
 
   const handlePublish = useCallback(async () => {
@@ -272,6 +277,7 @@ function AddComplementContent() {
         </div>
       </section>
       <Divider />
+      {noTraceWarning}
       {
         hasTraceId ? (
           <div>
@@ -279,7 +285,9 @@ function AddComplementContent() {
         <h5 className="fiscal-mb-2">Carga de archivos</h5>
         <div className="fiscal-row fiscal-gap">
           <div className="fiscal-col-6">
-            <label className="fiscal-block fiscal-font-medium fiscal-mb-2">Complemento XML (obligatorio)</label>
+            <p className="fiscal-block fiscal-font-medium fiscal-mb-2" id="complement-xml-label">
+              Complemento XML (obligatorio)
+            </p>
             {!xmlFile ? (
               <GenericDropzone
                 file={xmlFile}
@@ -316,7 +324,9 @@ function AddComplementContent() {
             )}
           </div>
           <div className="fiscal-col-6">
-            <label className="fiscal-block fiscal-font-medium fiscal-mb-2">PDF (opcional)</label>
+            <p className="fiscal-block fiscal-font-medium fiscal-mb-2" id="complement-pdf-label">
+              PDF (opcional)
+            </p>
             {!pdfFile ? (
               <GenericDropzone
                 file={pdfFile}
@@ -346,10 +356,10 @@ function AddComplementContent() {
       <Divider />
       <section className="fiscal-mb-4">
         <div className="fiscal-flex fiscal-gap-2 fiscal-flex-wrap">
-          <GenericButton onClick={handlePublish} disabled={!canPublish}>
+          <GenericButton onClick={() => { handlePublish(); }} disabled={!canPublish}>
             {isUploading && !published ? "Publicando…" : "Publicar complemento"}
           </GenericButton>
-          <GenericButton variant="outline" onClick={handleRelate} disabled={!canRelate}>
+          <GenericButton variant="outline" onClick={() => { handleRelate(); }} disabled={!canRelate}>
             Relacionar complemento
           </GenericButton>
         </div>

@@ -12,6 +12,7 @@
     padding: 24px 0;
     margin-top: 16px;
     background: transparent;
+    overflow: visible;
 }
 
 .dc-header {
@@ -31,6 +32,7 @@
 .dc-filters-section {
     margin-top: 16px;
     margin-bottom: 18px;
+    overflow: visible;
 }
 
 .dc-grid-section {

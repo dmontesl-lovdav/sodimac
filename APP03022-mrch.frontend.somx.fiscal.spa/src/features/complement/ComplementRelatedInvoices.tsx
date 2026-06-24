@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
-import DataGrid, { DataGridColumn, RowAction } from "@/shared/components/ui/datagrid/DataGrid";
-import { formatDate, formatAmount, fetchProvidersAsCatalog, fetchCatalog } from "@/utils/utils";
+import { useCallback, useRef, useState } from "react";
+import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { formatDate, formatAmount } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
-import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
 import { createComplementPaymentClient } from "./api/ComplementPaymentClient";
-import { ComplementPaymentFilters, EMPTY_COMPLEMENT_PAYMENT, RelatedInvoice, type ComplementPayment, type PaymentHeaderData } from "./interfaces";
-import { Divider, Title } from "@/shared/components/ui/misc";
-import { createCreditsClient } from "../creditNote/api/CreditsClient";
+import { ComplementPaymentFilters, RelatedInvoice } from "./interfaces";
+import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import viewIcon from "@assets/eye-show.svg";
-import type { SelectableOption } from "@/utils/utils";
 import { useParams } from "react-router-dom";
+import {
+  FISCAL_LIST_KEYS,
+  useFiscalListReturnFromDetail,
+} from "@/shared/session/fiscalListSession";
 
 const breadcrumb: BreadcrumbItem[] = [
-  { label: "Home", to: "/" },
   { label: "Fiscal", to: "/" },
   { label: "Consulta complemento pago", to: "/fiscal/consulta-complemento-pago" },
   { label: "Facturas relacionadas", to: "/fiscal/complemento/:uuid" },
@@ -30,6 +30,9 @@ const columns: DataGridColumn<RelatedInvoice>[] = [
 export default function ComplementRelatedInvoices() {
  const client = createComplementPaymentClient();
 const { uuid } = useParams<{ uuid: string }>();
+  useFiscalListReturnFromDetail(FISCAL_LIST_KEYS.complementPayments);
+  const gridRef = useRef<DataGridHandle>(null);
+  const [canExportCsv, setCanExportCsv] = useState(false);
 
   const rowActions: RowAction<RelatedInvoice>[] = [
     {
@@ -62,20 +65,33 @@ const { uuid } = useParams<{ uuid: string }>();
 
   return decorate(
     breadcrumb,
-    "/",
+    "/fiscal/consulta-complemento-pago",
     <div>
-      <Title title="Facturas relacionadas" description="Consulta las facturas relacionadas con el complemento de pago seleccionado."  />
+      <Title
+        title="Facturas relacionadas"
+        description="Consulta las facturas relacionadas con el complemento de pago seleccionado."
+        actions={
+          <ExportCsvButton
+            disabled={!canExportCsv}
+            onClick={() => gridRef.current?.exportCsv()}
+          />
+        }
+      />
       
       <Divider />
       <DataGrid<RelatedInvoice, ComplementPaymentFilters>
+          ref={gridRef}
           columns={columns}
           getRowId={r => r.relatedDocumentUuid}
           fetchFn={handleFetch}
           filters={{ uuid }}
+          fetchEnabled
           initialPage={0}
           initialSize={10}
           selectable
           enableCsv
+          hideCsvToolbar
+          onExportAvailabilityChange={setCanExportCsv}
           csvFilename={`Factura complemento ${uuid} ${formatDate(new Date().toString(), true)}`}
           enableXml
           enablePdf

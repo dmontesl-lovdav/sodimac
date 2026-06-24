@@ -17,7 +17,8 @@ export interface InvoiceFilters {
   serie: string;
   uuid: string;
   folio: string;
-  idProveedor?: string;
+  idProveedor: string;
+  tipoProveedor?: string;
   paymentUUID?: string;
 }
 
@@ -30,7 +31,9 @@ export const EMPTY_INVOICE: InvoiceFilters = {
   size: 10,
   serie: "",
   uuid: "",
-  folio: ""
+  folio: "",
+  idProveedor: "",
+  tipoProveedor: "",
 }
 
 export interface Invoice {
@@ -71,6 +74,7 @@ export interface Invoice {
   noOrdenCompra: string | null;
   noRecepcion: string | null;
   numeroProveedor: string | null;
+  tipoProveedorDescripcion: string | null;
   tipoProveedor: string | null;
   guiaEntrega: string | null;
   xmlContent: string | null;

@@ -1,0 +1,37 @@
+/* Chips de estado (lista recepciones, pagos, etc.) */
+.somx-status-pill {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.35;
+    max-width: 100%;
+    padding: 2px 8px;
+    white-space: normal;
+}
+
+.somx-status-pill--lg {
+    font-size: 0.8125rem;
+    padding: 4px 10px;
+}
+
+.somx-status-pill--success,
+.somx-status-pill--done {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.somx-status-pill--warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.somx-status-pill--error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.somx-status-pill--info {
+    background: #e0e7ff;
+    color: #3730a3;
+}

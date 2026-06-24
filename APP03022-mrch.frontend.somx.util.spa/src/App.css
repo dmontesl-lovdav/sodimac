@@ -23,3 +23,7 @@ a {
 button {
     font-family: inherit;
 }
+
+@keyframes somx-spin {
+    to { transform: rotate(360deg); }
+}

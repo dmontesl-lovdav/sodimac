@@ -1,34 +1,66 @@
-/* ========================= */
-/* DESCUENTOS - FILTERS      */
-/* ========================= */
+/* DESCUENTOS - FILTERS (layout base: financeFiltersLayout.css) */
 
 .dc-filters {
     margin-bottom: 24px;
+    overflow: visible;
+    width: 100%;
 }
 
-/* Fila horizontal real (mismo patrón Recepciones / ThreeWayMatch) */
 .dc-row {
+    overflow: visible;
+    width: 100%;
+}
+
+.dc-filters .finz-filter-row > .dc-filter-document,
+.dc-filters .finz-filter-row > .dc-filter-sap {
+    flex: 0 1 150px;
+    min-width: 150px;
+    max-width: 180px;
+}
+
+.dc-filters .finz-filter-row > .dc-filter-rebate-type,
+.dc-filters .finz-filter-row > .dc-filter-status-wrap {
+    flex: 0 1 150px;
+    min-width: 150px;
+    max-width: 180px;
+}
+
+.dc-filters .finz-filter-row > .dc-field-dates {
+    flex: 2 1 280px;
+    min-width: 250px;
+    max-width: 100%;
     display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: nowrap;
+    align-items: center;
 }
 
-/* Forzamos tamaños consistentes para wrappers somx */
-.dc-row .somx-input-wrapper,
-.dc-row .somx-select-wrapper,
-.dc-row .dr-wrapper {
-    width: auto !important;
-    min-width: 220px;
-    flex: 0 0 auto;
+.dc-filters .dc-field-dates .dr-wrapper,
+.dc-filters .dc-field-dates .dr-container {
+    width: 100%;
+    min-width: 250px;
 }
 
-/* Date range un poquito más ancho */
-.dc-row .dr-wrapper {
-    min-width: 260px;
+.dc-row .dc-filter-input {
+    min-width: 0;
+    box-sizing: border-box;
 }
 
-/* Inputs internos (si aplica) */
-.dc-row .somx-input {
-    width: 200px;
+@media (max-width: 900px) {
+    .dc-filters .finz-filter-row {
+        padding-inline: 0;
+    }
+
+    .dc-filters .finz-filter-row > .dc-filter-document,
+    .dc-filters .finz-filter-row > .dc-filter-sap,
+    .dc-filters .finz-filter-row > .dc-filter-rebate-type,
+    .dc-filters .finz-filter-row > .dc-filter-status-wrap,
+    .dc-filters .finz-filter-row > .dc-field-dates {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .dc-filters .dc-field-dates .dr-container {
+        min-width: 0;
+    }
 }

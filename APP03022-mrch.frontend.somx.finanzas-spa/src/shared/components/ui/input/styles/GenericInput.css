@@ -1,0 +1,108 @@
+/* =============================== */
+/*   GENERIC INPUT (floating)      */
+/*   Alineado con GenericInputSearch / GenericSelect (UAT) */
+/* =============================== */
+
+.generic-textfield-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 100%;
+    vertical-align: top;
+}
+
+.generic-textfield-wrapper--with-counter {
+    padding-bottom: 22px;
+}
+
+.generic-textfield-input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 44px;
+    padding: 16px 16px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.25;
+    background: #ffffff;
+    color: #374151;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.generic-textfield-input--labeled::placeholder {
+    color: transparent;
+}
+
+.generic-textfield-input--labeled:focus::placeholder {
+    color: #9ca3af;
+}
+
+.generic-textfield-input:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+.generic-textfield-input--disabled {
+    background: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.generic-textfield-input--error:not(:disabled) {
+    border-color: #f87171;
+}
+
+.generic-textfield-input--error:not(:disabled):focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.generic-textfield-label {
+    position: absolute;
+    pointer-events: none;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 32px);
+    transition:
+        top 0.2s ease,
+        transform 0.2s ease,
+        font-size 0.2s ease,
+        color 0.2s ease;
+}
+
+.generic-textfield-label--floating {
+    top: 9px;
+    transform: translateY(0);
+    font-size: 11px;
+}
+
+.generic-textfield-label--tone-idle {
+    color: #6b7280;
+}
+
+.generic-textfield-label--tone-focus {
+    color: #0284c7;
+}
+
+.generic-textfield-label--tone-error {
+    color: #dc2626;
+}
+
+.generic-textfield-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 2px;
+    font-size: 12px;
+    line-height: 1;
+    color: #6b7280;
+}
+
+.generic-textfield-counter--error {
+    color: #dc2626;
+}

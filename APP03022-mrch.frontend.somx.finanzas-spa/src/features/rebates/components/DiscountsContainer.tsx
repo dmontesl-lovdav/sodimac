@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { GenericModal } from '@shared/components/ui';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { useFinanceAlertModal } from '@/shared/hooks/useFinanceAlertModal';
 import FiltersBar from './parts/FiltersBar';
 import ResultsTable from './parts/ResultsTable';
 import { rebatesService } from '../api/rebatesService';
@@ -26,6 +29,7 @@ const styles = {
 };
 
 export default function DiscountsContainer() {
+    const financeAlert = useFinanceAlertModal();
     const [filters, setFilters] = useState<any>({});
     const [data, setData] = useState<DiscountRecord[]>([]);
     const [loading, setLoading] = useState(false);
@@ -36,36 +40,58 @@ export default function DiscountsContainer() {
             const result = await rebatesService.searchDiscounts(values);
             setData(result.items);
             setFilters(values);
+
+            if (result.items.length === 0) {
+                financeAlert.showWarning(
+                    'Sin registros',
+                    'No se encontraron descuentos con los criterios indicados.'
+                );
+            }
         } catch (err) {
-            console.error('Error loading discounts', err);
+            financeAlert.showErrorFrom(
+                'Error',
+                err,
+                'No fue posible cargar los descuentos comerciales. Intenta nuevamente.'
+            );
             setData([]);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        handleSearch({});
-    }, []);
+    const handleClear = () => {
+        setData([]);
+        setFilters({});
+    };
 
     return (
         <div style={styles.container}>
             <Breadcrumb
-                items={[
-                    { label: 'Inicio', to: '/' },
-                    { label: 'Finanzas', to: '/finanzas' },
-                    { label: 'Descuentos comerciales' },
-                ]}
+                items={withFinanceBreadcrumb([{ label: 'Descuentos comerciales' }])}
             />
 
             <h1 style={styles.title}>Listado de acuerdos comerciales</h1>
             <p style={styles.subtitle}>Buscar descuentos comerciales aplicados</p>
 
-            <FiltersBar onSearch={handleSearch} />
+            <FiltersBar onSearch={handleSearch} onClear={handleClear} />
 
             <div style={styles.tableWrapper}>
                 <ResultsTable rows={data} loading={loading} />
             </div>
+
+            {loading && (
+                <GenericModal visible variant="loading" message="Cargando…" />
+            )}
+
+            <GenericModal
+                visible={financeAlert.alertVisible}
+                variant="alert"
+                severity={financeAlert.alertSeverity}
+                title={financeAlert.alertTitle}
+                message={financeAlert.alertMessage}
+                buttonText="Aceptar"
+                onClose={financeAlert.closeAlert}
+            />
         </div>
     );
 }

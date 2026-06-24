@@ -136,3 +136,178 @@
     color: #dc2626;
     font-size: 11px;
 }
+
+.parameter-create__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.parameter-create__section-header {
+    margin-bottom: 12px;
+}
+
+.parameter-create__section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.parameter-create__section-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.parameter-create__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.parameter-create__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.parameter-create__input,
+.parameter-create__select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1f2937;
+    background-color: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    width: 100%;
+    max-width: 480px;
+}
+
+.parameter-create__input:focus,
+.parameter-create__select:focus {
+    outline: none;
+    border-color: #0071CE;
+    box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.15);
+}
+
+.parameter-create__input:disabled,
+.parameter-create__select:disabled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.parameter-create__input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 480px;
+}
+
+.parameter-create__input-wrapper .react-datepicker-wrapper {
+    width: 100%;
+}
+
+.parameter-create__input-wrapper .react-datepicker__input-container input {
+    padding: 8px 12px;
+    padding-right: 36px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1f2937;
+    background-color: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.parameter-create__input-wrapper .react-datepicker__input-container input:focus {
+    outline: none;
+    border-color: #0071CE;
+    box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.15);
+}
+
+.parameter-create__datepicker-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+}
+
+.parameter-create__error-msg {
+    font-size: 12px;
+    color: #dc2626;
+}
+
+.parameter-create__char-count {
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: -8px;
+    max-width: 480px;
+}
+
+.parameter-create__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.parameter-create__footer-left {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.parameter-create__btn-clear,
+.parameter-create__btn-back {
+    padding: 8px 18px;
+    background-color: transparent;
+    color: #003865;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+}
+
+.parameter-create__btn-clear:hover,
+.parameter-create__btn-back:hover {
+    color: #0071CE;
+}
+
+.parameter-create__btn-save {
+    padding: 9px 24px;
+    background-color: #002d4c;
+    color: #ffffff;
+    border: 1px solid #002d4c;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.parameter-create__btn-save:hover:not(:disabled) {
+    background-color: #003865;
+    border-color: #003865;
+}
+
+.parameter-create__btn-save:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

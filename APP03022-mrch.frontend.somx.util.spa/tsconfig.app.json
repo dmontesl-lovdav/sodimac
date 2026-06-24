@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    /* ---------- Build info ---------- */
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    /* ---------- Target & libs ---------- */
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": [
@@ -10,7 +8,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    /* ---------- Module / bundler ---------- */
+    "types": ["jest", "node"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -19,18 +17,15 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    /* ---------- NEW ---------- */
     "allowJs": true,
-    /* ---------- Linting / strictness ---------- */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    /* ---------- Interop ---------- */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    /* ---------- Paths / aliases ---------- */
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -44,7 +39,6 @@
       ]
     }
   },
-  /* ---------- incluye .tsx, .ts, .jsx, .js dentro de src ---------- */
   "include": [
     "src"
   ]

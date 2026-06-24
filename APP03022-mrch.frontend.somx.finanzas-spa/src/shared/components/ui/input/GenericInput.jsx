@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 
+import './styles/GenericInput.css';
+
 export default function GenericInput({
   label = '',
   value = '',
@@ -41,8 +43,31 @@ export default function GenericInput({
     };
   }, [id]);
 
+  const wrapperMods = [
+    'generic-textfield-wrapper',
+    maxLength !== undefined ? 'generic-textfield-wrapper--with-counter' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const toneClass = error
+    ? 'generic-textfield-label--tone-error'
+    : focused
+      ? 'generic-textfield-label--tone-focus'
+      : 'generic-textfield-label--tone-idle';
+
+  const inputMods = [
+    'generic-textfield-input',
+    label ? 'generic-textfield-input--labeled' : '',
+    disabled ? 'generic-textfield-input--disabled' : '',
+    error ? 'generic-textfield-input--error' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={`somx-input-wrapper ${className}`}>
+    <div className={wrapperMods}>
       <input
         id={id}
         name={name}
@@ -57,21 +82,20 @@ export default function GenericInput({
         maxLength={maxLength}
         aria-invalid={!!error}
         aria-describedby={maxLength ? counterId : undefined}
-        className={`somx-input ${disabled ? 'somx-input-disabled' : ''} ${error ? 'somx-input-error' : ''
-          }`}
+        className={inputMods}
         {...props}
       />
 
       {label && (
         <label
           htmlFor={id}
-          className={`somx-label ${focused || hasValue ? 'somx-label-focused' : 'somx-label-default'
-            } ${error
-              ? 'somx-label-error'
-              : focused
-                ? 'somx-label-focused-color'
-                : 'somx-label-default-color'
-            }`}
+          className={[
+            'generic-textfield-label',
+            focused || hasValue ? 'generic-textfield-label--floating' : '',
+            toneClass,
+          ]
+            .filter(Boolean)
+            .join(' ')}
           style={{ left: `${leftPad}px` }}
         >
           {label}
@@ -82,7 +106,12 @@ export default function GenericInput({
       {maxLength !== undefined && (
         <div
           id={counterId}
-          className={`somx-counter ${error ? 'somx-counter-error' : ''}`}
+          className={[
+            'generic-textfield-counter',
+            error ? 'generic-textfield-counter--error' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
           {length} / {maxLength}
         </div>

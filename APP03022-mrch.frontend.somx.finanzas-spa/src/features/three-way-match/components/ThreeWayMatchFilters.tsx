@@ -1,33 +1,84 @@
 import {
-    GenericSelectSearchable,
     GenericDateRangePicker,
     GenericInputSearch,
     GenericButton,
-    GenericModal
+    GenericModal,
+    GenericSelectSearchable,
 } from '@shared/components/ui';
 import type { ThreeWayMatchFiltersProps } from '../interfaces';
 import '../styles/ThreeWayMatchFilters.css';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchProvidersAsCatalog } from '@/utils/utils';
+import {
+    FINANCE_LIST_KEYS,
+    financeListTodayDateRange,
+    readFinanceListFilters,
+    parseFinanceListDateRange,
+    formatFinanceListLocalDate,
+    useFinanceListDefaultsOnUrlReset,
+} from '@/shared/hooks';
 
-export default function ThreeWayMatchFilters({ isAdmin, onSearch }: ThreeWayMatchFiltersProps) {
+type SavedTwmFilters = {
+    startDate?: string;
+    endDate?: string;
+    supplier?: string;
+    po?: string;
+    reception?: string;
+};
 
-    const today = new Date();
-    const defaultStart = new Date(today);
-    defaultStart.setDate(today.getDate() - 7);
-
-    const defaultEnd = new Date(today);
-    defaultEnd.setDate(today.getDate() - 1);
-
-    const [dateType, setDateType] = useState<string>('fechaRecepcion');
-    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-        defaultStart,
-        defaultEnd
-    ]);
+export default function ThreeWayMatchFilters({ isAdmin, onSearch, onClear }: ThreeWayMatchFiltersProps) {
+    const hydratedRef = useRef(false);
+    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(() =>
+        financeListTodayDateRange()
+    );
     const [supplier, setSupplier] = useState<string>('');
+    const [providers, setProviders] = useState<{ label: string; value: string }[]>([]);
     const [po, setPo] = useState<string>('');
     const [reception, setReception] = useState<string>('');
 
     const [rangeErrorModal, setRangeErrorModal] = useState<boolean>(false);
+
+    const applyFilterDefaults = useCallback(() => {
+        setDateRange(financeListTodayDateRange());
+        setSupplier('');
+        setPo('');
+        setReception('');
+    }, []);
+
+    useFinanceListDefaultsOnUrlReset(
+        FINANCE_LIST_KEYS.threeWayMatch.moduleKey,
+        applyFilterDefaults
+    );
+
+    useEffect(() => {
+        if (!isAdmin) return;
+        (async () => {
+            const list = await fetchProvidersAsCatalog('supplierNumber');
+            if (list) setProviders(list);
+        })();
+    }, [isAdmin]);
+
+    useEffect(() => {
+        if (hydratedRef.current) return;
+        hydratedRef.current = true;
+
+        const saved = readFinanceListFilters<SavedTwmFilters>(
+            FINANCE_LIST_KEYS.threeWayMatch.filters
+        );
+        if (!saved) {
+            setDateRange(financeListTodayDateRange());
+            return;
+        }
+
+        const [start, end] = parseFinanceListDateRange(
+            saved.startDate,
+            saved.endDate
+        );
+        setDateRange(start && end ? [start, end] : financeListTodayDateRange());
+        setSupplier(saved.supplier ?? '');
+        setPo(saved.po ?? '');
+        setReception(saved.reception ?? '');
+    }, []);
 
     const validateRange = (): boolean => {
         const [d1, d2] = dateRange;
@@ -50,50 +101,36 @@ export default function ThreeWayMatchFilters({ isAdmin, onSearch }: ThreeWayMatc
         const [start, end] = dateRange;
 
         onSearch({
-            dateType,
-            startDate: start ? start.toISOString().slice(0, 10) : '',
-            endDate: end ? end.toISOString().slice(0, 10) : '',
-            supplier,
+            dateType: 'fechaRecepcion',
+            startDate: start ? formatFinanceListLocalDate(start) : '',
+            endDate: end ? formatFinanceListLocalDate(end) : '',
+            supplier: supplier.trim() || undefined,
             po,
-            reception
+            reception,
         });
+    };
+
+    const handleClear = (): void => {
+        applyFilterDefaults();
+        onClear();
     };
 
     return (
         <>
             <div className="twm-filters">
-                <div className="twm-row">
-
-                    <GenericSelectSearchable
-                        value={dateType}
-                        onChange={(e: { target: { value: string } }) =>
-                            setDateType(e.target.value)
-                        }
-                        options={[
-                            { value: 'fechaRecepcion', label: 'Fecha recepción' },
-                            { value: 'fechaTimbrado', label: 'Fecha timbrado' },
-                            { value: 'fechaOrdenCompra', label: 'Fecha orden de compra' },
-                            { value: 'fechaPago', label: 'Fecha pago' },
-                        ]}
-                        placeholder="Selecciona tipo de fecha"
-                        widthClass="gs-width-md"
-                    />
-
-                    <GenericDateRangePicker
-                        value={dateRange}
-                        onChange={(dates) => setDateRange(dates)}
-                        placeholder="Fecha desde – hasta"
-                        size="md"
-                    />
-
+                <div className="twm-row finz-filter-row">
                     {isAdmin && (
-                        <GenericInputSearch
-                            value={supplier}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setSupplier(e.target.value)
-                            }
-                            placeholder="Proveedor"
-                        />
+                        <div className="twm-field-provider">
+                            <GenericSelectSearchable
+                                value={supplier}
+                                onChange={(e: { target: { value: string } }) =>
+                                    setSupplier(e.target.value)
+                                }
+                                options={providers}
+                                placeholder="Nombre Proveedor"
+                                widthClass="gs-width-provider"
+                            />
+                        </div>
                     )}
 
                     <GenericInputSearch
@@ -101,7 +138,8 @@ export default function ThreeWayMatchFilters({ isAdmin, onSearch }: ThreeWayMatc
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setPo(e.target.value)
                         }
-                        placeholder="Orden compra"
+                        placeholder="Orden Compra"
+                        className="generic-input twm-filter-input"
                     />
 
                     <GenericInputSearch
@@ -110,14 +148,27 @@ export default function ThreeWayMatchFilters({ isAdmin, onSearch }: ThreeWayMatc
                             setReception(e.target.value)
                         }
                         placeholder="Recepción"
+                        className="generic-input twm-filter-input"
                     />
 
-                    <GenericButton
-                        variant="outline"
-                        onClick={handleSearch}>
-                        Buscar
-                    </GenericButton>
+                    <div className="twm-field-dates">
+                        <GenericDateRangePicker
+                            value={dateRange}
+                            onChange={(dates) => setDateRange(dates)}
+                            placeholder="Fecha Recepción"
+                            size="md"
+                        />
+                    </div>
 
+                    <div className="finz-filter-actions">
+                        <GenericButton variant="outlineFill" onClick={handleSearch}>
+                            Buscar
+                        </GenericButton>
+
+                        <GenericButton variant="outlineFill" onClick={handleClear}>
+                            Limpiar
+                        </GenericButton>
+                    </div>
                 </div>
             </div>
 

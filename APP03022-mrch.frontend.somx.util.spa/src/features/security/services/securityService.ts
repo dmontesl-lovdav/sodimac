@@ -1,4 +1,6 @@
-import apiClient from '@/shared/api/apiClient';
+import apiClient from '@/services/apiClient';
+import axios from 'axios';
+import { saveAs } from 'file-saver';
 import type {
   AssignmentResponse,
   AttributeValueOption,
@@ -9,6 +11,11 @@ import type {
   SecurityFilters,
   SecurityRow,
   UserAttribute,
+  UserCatalogSearchFilters,
+  UserCatalogSearchResult,
+  UserCatalogDetailResponse,
+  UserCatalogDetailQuery,
+  UserApplicationEventsResponse,
 } from '../types';
 
 interface ApiEnvelope<T> {
@@ -88,6 +95,46 @@ const mapUserAttribute = (row: BackendUserAttribute): UserAttribute => ({
   updatedBy: row.updatedBy == null ? undefined : String(row.updatedBy),
   updatedAt: row.updatedAt ? row.updatedAt.split('T')[0] : undefined,
 });
+
+function apiBaseUrl(): string {
+  return (process.env.API_URL ?? '/api').replace(/\/+$/, '');
+}
+
+function buildCsvFilename(tableName: string): string {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = String(now.getFullYear());
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const safeTableName = tableName
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '-');
+
+  return `${safeTableName}-${dd}-${mm}-${yyyy}-${hh}-${min}.csv`;
+}
+
+function userCatalogQueryParams(
+  filters: UserCatalogSearchFilters,
+  extra?: Record<string, string | number | undefined>,
+): Record<string, string | number | undefined> {
+  return {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    status: filters.status === '' ? undefined : Number(filters.status),
+    email: filters.email?.trim() || undefined,
+    name: filters.name?.trim() || undefined,
+    ...extra,
+  };
+}
+
+function traceHeaders(traceFrontId?: string): Record<string, string> | undefined {
+  return traceFrontId ? { TraceFrontId: traceFrontId } : undefined;
+}
 
 function toParams(filters: SecurityFilters) {
   return {
@@ -258,5 +305,112 @@ export const securityService = {
 
   saveApplicationEventAssignment: async (id: number, selectedIds: number[]): Promise<void> => {
     await apiClient.request(`/security/modules/${id}/processes`, 'put', { selectedIds });
+  },
+
+  searchUserCatalog: async (
+    filters: UserCatalogSearchFilters,
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortDir: 'ASC' | 'DESC',
+    traceFrontId?: string,
+  ): Promise<UserCatalogSearchResult> => {
+    const response = await apiClient.request<ApiEnvelope<UserCatalogSearchResult>>(
+      '/security/user-catalog',
+      'get',
+      undefined,
+      {
+        params: userCatalogQueryParams(filters, { page, limit, sortBy, sortDir }),
+        headers: traceHeaders(traceFrontId),
+      },
+    );
+    return response.data;
+  },
+
+  downloadUserCatalogCsv: async (
+    filters: UserCatalogSearchFilters,
+    traceFrontId?: string,
+    filename = buildCsvFilename('Catálogo Usuarios'),
+  ): Promise<void> => {
+    const res = await axios.get(`${apiBaseUrl()}/security/user-catalog/csv`, {
+      params: userCatalogQueryParams(filters),
+      responseType: 'blob',
+      headers: {
+        'X-User-Id': 'TEST_USER_01',
+        Accept: 'text/csv',
+        ...(traceFrontId ? { TraceFrontId: traceFrontId } : {}),
+      },
+    });
+    saveAs(res.data as Blob, filename);
+  },
+
+  getUserCatalogDetail: async (
+    userId: number,
+    query: UserCatalogDetailQuery,
+    traceFrontId?: string,
+  ): Promise<UserCatalogDetailResponse> => {
+    const response = await apiClient.request<ApiEnvelope<UserCatalogDetailResponse>>(
+      `/security/users/${userId}/catalog-detail`,
+      'get',
+      undefined,
+      {
+        params: {
+          rolesPage: query.rolesPage,
+          applicationsPage: query.applicationsPage,
+          attributesPage: query.attributesPage,
+          matrixPage: query.matrixPage,
+          matrixPageSize: query.matrixPageSize,
+        },
+        headers: traceHeaders(traceFrontId),
+      },
+    );
+    return response.data;
+  },
+
+  getUserApplicationEventsCatalog: async (
+    userId: number,
+    moduleId: number,
+    traceFrontId?: string,
+  ): Promise<UserApplicationEventsResponse> => {
+    const response = await apiClient.request<ApiEnvelope<UserApplicationEventsResponse>>(
+      `/security/users/${userId}/applications/${moduleId}/events-catalog`,
+      'get',
+      undefined,
+      { headers: traceHeaders(traceFrontId) },
+    );
+    return response.data;
+  },
+
+  setUserModuleProcessAssigned: async (
+    userId: number,
+    moduleProcessId: number,
+    assign: boolean,
+    traceFrontId?: string,
+  ): Promise<void> => {
+    await apiClient.request(
+      `/security/users/${userId}/module-processes/${moduleProcessId}`,
+      'put',
+      { assign },
+      { headers: traceHeaders(traceFrontId) },
+    );
+  },
+
+  appendUserProfileToUser: async (userId: number, profileId: number, traceFrontId?: string): Promise<void> => {
+    await apiClient.request(
+      `/security/users/${userId}/profiles`,
+      'post',
+      { profileId },
+      { headers: traceHeaders(traceFrontId) },
+    );
+  },
+
+  getAccessContext: async (userKey: string, idPerfil?: number, langId?: number): Promise<unknown> => {
+    const response = await apiClient.request<ApiEnvelope<unknown>>(
+      `/security/user-details/${encodeURIComponent(userKey)}`,
+      'get',
+      undefined,
+      { params: { idPerfil, langId } },
+    );
+    return response.data;
   },
 };

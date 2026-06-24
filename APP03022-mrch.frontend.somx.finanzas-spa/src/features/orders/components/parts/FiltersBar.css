@@ -1,31 +1,61 @@
 .rc-filters {
-    margin-bottom: 24px;
+    width: 100%;
 }
 
-.rc-row {
-    align-items: flex-end;
+/* Campos compactos: ancho mínimo fijo para no comprimir el rango de fechas */
+.rc-filters .finz-filter-row > .rc-filter-provider-type {
+    flex: 0 1 150px;
+    min-width: 150px;
+    max-width: 174px;
+}
+
+.rc-filters .finz-filter-row > .rc-filter-order {
+    flex: 0 1 150px;
+    min-width: 150px;
+    max-width: 180px;
+}
+
+.rc-filters .finz-filter-row > .rc-filter-status-wrap {
+    flex: 0 1 150px;
+    min-width: 150px;
+    max-width: 180px;
+}
+
+/* Rango de fechas: más ancho y prioridad de crecimiento */
+.rc-filters .finz-filter-row > .rc-field-dates {
+    flex: 2 1 280px;
+    min-width: 260px;
+    max-width: 100%;
     display: flex;
-    flex-wrap: nowrap;
-    gap: 16px;
+    align-items: center;
 }
 
-.rc-row .somx-input-wrapper,
-.rc-row .somx-select-wrapper {
-    flex: 0 0 auto;
-    min-width: 180px;
-    width: auto !important;
+.rc-filters .rc-field-dates .dr-wrapper,
+.rc-filters .rc-field-dates .dr-container {
+    width: 100%;
+    min-width: 240px;
 }
 
-.rc-row .somx-select-wrapper {
-    min-width: 220px;
-}
-
-.rc-row .somx-input {
-    width: 180px;
+.rc-row .rc-filter-input {
+    min-width: 0;
 }
 
 @media (max-width: 900px) {
-    .rc-row {
-        flex-wrap: wrap;
+    .rc-filters .finz-filter-row {
+        padding-inline: 0;
+    }
+
+    .rc-filters .finz-filter-row > .rc-filter-provider-type,
+    .rc-filters .finz-filter-row > .rc-filter-order,
+    .rc-filters .finz-filter-row > .rc-filter-status-wrap,
+    .rc-filters .finz-filter-row > .rc-field-dates {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .rc-filters .rc-field-dates .dr-container {
+        min-width: 0;
     }
 }

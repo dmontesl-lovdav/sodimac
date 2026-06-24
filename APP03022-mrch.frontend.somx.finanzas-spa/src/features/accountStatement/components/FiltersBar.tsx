@@ -1,7 +1,13 @@
-import { useState, useMemo, useEffect, type ChangeEvent, type ReactElement } from 'react';
-import { GenericButton, GenericSelect, GenericInputSearch } from '@shared/components/ui';
-import type { AccountStatementFilters, ProviderOption } from '../interfaces';
-import { fetchProvidersAsCatalog, MONTHS } from '@/utils/utils';
+import { useState, useMemo, useEffect, useRef, useCallback, type ReactElement } from 'react';
+import {
+    FINANCE_LIST_KEYS,
+    readFinanceListFilters,
+    saveFinanceListFilters,
+    useFinanceListDefaultsOnUrlReset,
+} from '@/shared/hooks';
+import { GenericButton, GenericModal, GenericSelect, GenericSelectSearchable } from '@shared/components/ui';
+import type { AccountStatementFilters } from '../interfaces';
+import { MONTHS } from '@/utils/utils';
 
 import '../styles/AccountStatementFilters.css';
 
@@ -11,6 +17,7 @@ interface FiltersBarProps {
     onSearch: (values: AccountStatementFilters) => void;
     onClear?: () => void;
     isAdmin?: boolean;
+    providers: { label: string; value: string }[];
 }
 
 function getCurrentYear(): number {
@@ -50,27 +57,43 @@ export default function FiltersBar({
     onSearch,
     onClear,
     isAdmin = false,
+    providers,
 }: FiltersBarProps): ReactElement {
     const years = useMemo(() => yearOptions(), []);
-    const [providerId, setProviderId] = useState<string>(' ');
-    const [providers, setProviders] = useState<ProviderOption[]>([]);
+    const [providerId, setProviderId] = useState<string>('');
     const [year, setYear] = useState(() => getDefaultYear());
     const [month, setMonth] = useState<number | 'all'>(() =>
         getDefaultMonth(getDefaultYear())
     );
 
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const hydratedRef = useRef(false);
+
+    const applyFilterDefaults = useCallback(() => {
+        const defY = getDefaultYear();
+        setProviderId('');
+        setYear(defY);
+        setMonth(getDefaultMonth(defY));
+    }, []);
+
+    useFinanceListDefaultsOnUrlReset(
+        FINANCE_LIST_KEYS.accountStatement.moduleKey,
+        applyFilterDefaults
+    );
+
+
+
     useEffect(() => {
-        if (!isAdmin) return;
-        const load = async () => {
-            const response = await fetchProvidersAsCatalog();
-            if (response && response.length > 0) {
-                setProviders(response);
-            } else {
-                setProviders([{ value: ' ', label: 'Todos los proveedores' }]);
-            }
-        };
-        load();
-    }, [isAdmin]);
+        if (hydratedRef.current) return;
+        hydratedRef.current = true;
+        const saved = readFinanceListFilters<AccountStatementFilters>(
+            FINANCE_LIST_KEYS.accountStatement.filters
+        );
+        if (!saved) return;
+        if (saved.providerId != null) setProviderId(String(saved.providerId));
+        if (saved.year != null) setYear(Number(saved.year));
+        if (saved.month != null) setMonth(saved.month);
+    }, []);
 
     const yearSelectOptions = useMemo(
         () => years.map((y) => ({ value: String(y), label: String(y) })),
@@ -80,7 +103,7 @@ export default function FiltersBar({
     const mesOptions = useMemo((): { value: number | 'all'; label: string }[] => {
         const y = getCurrentYear();
         const m = getCurrentMonth();
-        const maxMes = year === y ? Math.max(1, m - 1) : 12;
+        const maxMes = year === y ? m : 12;
         const list = MONTHS.filter((x) => x.value <= maxMes);
         if (isAdmin) {
             return [{ value: 'all', label: 'Todos los meses' }, ...list];
@@ -97,24 +120,34 @@ export default function FiltersBar({
         [mesOptions]
     );
 
-    const handleYearChange = (e: ChangeEvent<HTMLSelectElement>) => {
-        const y = Number((e.target as HTMLSelectElement).value);
+    const handleYearChange = (e: { target: { value: string } }) => {
+        const y = Number(e.target.value);
         setYear(y);
+        if (month === 'all') return;
+        const cy = getCurrentYear();
+        const cm = getCurrentMonth();
+        const maxMes = y === cy ? cm : 12;
+        if (typeof month === 'number' && month <= maxMes) return;
         setMonth(getDefaultMonth(y));
     };
 
-    const handleMonthChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const handleMonthChange = (e: { target: { value: string } }) => {
         const v = e.target.value;
         setMonth(v === 'all' ? 'all' : Number(v));
     };
 
     const handleSubmit = () => {
-        onSearch({
+        const validMonths = mesSelectOptions.map((o) => o.value);
+        const currentMonthValue = month === 'all' ? 'all' : String(month);
+        if (!validMonths.includes(currentMonthValue)) {
+            setErrorMsg('El mes es requerido. Selecciona un mes o la opción "Todos los meses".');
+            return;
+        }
+
+        const payload: AccountStatementFilters = {
             providerId:
-                isAdmin && providerId && providerId.trim() !== ''
-                    ? providerId.trim() === ' '
-                        ? undefined
-                        : providerId
+                isAdmin && providerId.trim() !== ''
+                    ? providerId.trim()
                     : undefined,
             year,
             month:
@@ -123,64 +156,80 @@ export default function FiltersBar({
                     : typeof month === 'number'
                         ? month
                         : Number(month),
-        });
+        };
+        saveFinanceListFilters(
+            FINANCE_LIST_KEYS.accountStatement.filters,
+            payload
+        );
+        onSearch(payload);
     };
 
     const handleClear = () => {
         const defY = getDefaultYear();
-        setProviderId(' ');
+        const defMonth = getDefaultMonth(defY);
+        setProviderId('');
         setYear(defY);
-        setMonth(getDefaultMonth(defY));
+        setMonth(defMonth);
         onClear?.();
     };
 
     const mesValue = month === 'all' ? 'all' : String(month);
 
     return (
-        <div className="al-filters">
-            <div className="al-row">
-                {isAdmin && (
-                    <div className="as-field">
-                        <GenericInputSearch
-                            value={providerId}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                setProviderId(e.target.value)
-                            }
-                            placeholder="Proveedor"
+        <>
+            <GenericModal
+                visible={!!errorMsg}
+                variant="alert"
+                severity="warning"
+                title="Advertencia"
+                message={errorMsg ?? ''}
+                buttonText="Aceptar"
+                onClose={() => setErrorMsg(null)}
+                onConfirm={() => setErrorMsg(null)}
+            />
+            <div className="al-filters">
+                <div className="al-row finz-filter-row">
+                    {isAdmin && (
+                        <div className="as-field">
+                            <GenericSelectSearchable
+                                value={providerId}
+                                onChange={(e: { target: { value: string } }) =>
+                                    setProviderId(e.target.value)
+                                }
+                                options={providers}
+                                placeholder="Nombre Proveedor"
+                                widthClass="gs-width-provider"
+                            />
+                        </div>
+                    )}
 
+                    <div className="as-field">
+                        <GenericSelectSearchable
+                            value={mesValue}
+                            onChange={handleMonthChange}
+                            options={mesSelectOptions}
                         />
                     </div>
-                )}
 
-                <div className="as-field">
-                    <GenericSelect
-                        value={String(year)}
-                        onChange={handleYearChange}
-                        placeholder="Año"
-                        options={yearSelectOptions}
-                    />
-                </div>
+                    <div className="as-field">
+                        <GenericSelectSearchable
+                            value={String(year)}
+                            onChange={handleYearChange}
+                            placeholder="Año"
+                            options={yearSelectOptions}
+                        />
+                    </div>
 
-                <div className="as-field">
-                    <GenericSelect
-                        value={mesValue}
-                        onChange={handleMonthChange}
-                        placeholder="Mes"
-                        options={mesSelectOptions}
-                    />
-                </div>
-
-                <div className="as-action">
-                    <GenericButton variant="outlineFill" onClick={handleClear}>
-                        Limpiar
-                    </GenericButton>
-                </div>
-                <div className="as-action">
-                    <GenericButton variant="primary" onClick={handleSubmit}>
-                        Buscar
-                    </GenericButton>
+                    <div className="as-action finz-filter-actions">
+                        <GenericButton variant="primary" onClick={handleSubmit}>
+                            Buscar
+                        </GenericButton>
+                        <GenericButton variant="outlineFill" onClick={handleClear}>
+                            Limpiar
+                        </GenericButton>
+                    </div>
                 </div>
             </div>
-        </div >
+        </>
     );
 }

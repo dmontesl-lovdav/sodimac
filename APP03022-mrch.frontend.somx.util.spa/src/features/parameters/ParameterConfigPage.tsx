@@ -11,6 +11,8 @@ import type { Parameter, ParameterFilters, ParameterListParams } from './types';
 import { parameterService } from './services/parameterService';
 import GenericButton from '@shared/components/ui/button/GenericButton';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import documentIconUrl from '@/shared/icons/document.svg';
@@ -44,10 +46,10 @@ export const ParameterConfigPage = () => {
   const [statusChangeParameter, setStatusChangeParameter] = useState<Parameter | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   const queryClient = useQueryClient();
+  const { showError, showSuccess, ModalNode } = useModalNotification();
 
   const { data: catalogs, isLoading: isLoadingCatalogs, error: catalogsError } = useCatalogs();
 
@@ -187,15 +189,19 @@ export const ParameterConfigPage = () => {
       await parameterService.updateStatus(statusChangeParameter.idParameter, newStatus);
       setIsStatusModalOpen(false);
       setStatusChangeParameter(null);
-      setToastMessage({ type: 'success', text: 'El estatus del parámetro se actualizó correctamente' });
+      showSuccess('El estatus del parámetro se actualizó correctamente.', 'Operación exitosa');
       queryClient.invalidateQueries({ queryKey: parameterKeys.lists() });
       if (hasSearched) setTimeout(() => refetchParameters(), 100);
-      setTimeout(() => setToastMessage(null), 4000);
-    } catch {
+    } catch (err) {
+      console.error('Error al actualizar estatus de parámetro:', err);
       setIsStatusModalOpen(false);
       setStatusChangeParameter(null);
-      setToastMessage({ type: 'error', text: 'Error al actualizar el estatus' });
-      setTimeout(() => setToastMessage(null), 4000);
+      showError(
+        extractApiErrorMessage(err, {
+          fallback: 'No fue posible actualizar el estatus del parámetro. Inténtalo nuevamente.',
+        }),
+        'No se pudo actualizar el estatus',
+      );
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -217,12 +223,18 @@ export const ParameterConfigPage = () => {
   };
 
   const exportData = (dataToExport: Parameter[], format: 'csv' | 'xlsx') => {
-    if (dataToExport.length === 0) { alert('No hay datos para exportar'); return; }
-    if (dataToExport.length > 5000) { alert('El máximo de registros a exportar es de 5,000.'); return; }
+    if (dataToExport.length === 0) {
+      showError('No hay datos para exportar con los filtros aplicados.', 'Exportación');
+      return;
+    }
+    if (dataToExport.length > 5000) {
+      showError('El máximo de registros a exportar es de 5,000. Aplica filtros para reducir el resultado.', 'Exportación');
+      return;
+    }
 
     const now = new Date();
     const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-    const filename = `Parametros_${timestamp}.${format}`;
+    const filename = `parametros_${timestamp}.${format}`;
     const catalogData = catalogs ?? { modules: [], parameterTypes: [], statuses: [] };
 
     const formattedData = dataToExport.map(item => ({
@@ -269,7 +281,17 @@ export const ParameterConfigPage = () => {
         if (appliedFilters.parameterName) data = data.filter(p => p.name.toLowerCase().includes(appliedFilters.parameterName.toLowerCase()));
         if (selectedIds.size > 0) data = data.filter(item => selectedIds.has(item.id));
         exportData(data, format);
-      } catch { alert('Error al obtener los datos para exportar.'); } finally { setIsExporting(false); }
+      } catch (err) {
+        console.error('Error al exportar parámetros:', err);
+        showError(
+          extractApiErrorMessage(err, {
+            fallback: 'No fue posible obtener los datos para exportar. Inténtalo nuevamente.',
+          }),
+          'Error al exportar',
+        );
+      } finally {
+        setIsExporting(false);
+      }
       return;
     }
     let data = filteredItems;
@@ -412,24 +434,7 @@ export const ParameterConfigPage = () => {
 
       {isExporting && <GenericModal visible variant="loading" message="Exportando datos..." />}
 
-      {toastMessage && (
-        <div style={{
-          position: 'fixed', bottom: 24, right: 24, padding: '14px 20px',
-          borderRadius: 8, zIndex: 1001, display: 'flex', alignItems: 'center', gap: 10,
-          fontSize: 14, fontWeight: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          backgroundColor: toastMessage.type === 'success' ? '#e6f7ef' : '#fdecea',
-          color: toastMessage.type === 'success' ? '#2e7d32' : '#d32f2f',
-        }}>
-          {toastMessage.text}
-          <button
-            type="button"
-            onClick={() => setToastMessage(null)}
-            style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {ModalNode}
     </div>
   );
 };

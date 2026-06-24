@@ -1,18 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
-import DataGrid, { DataGridColumn, RowAction } from "@/shared/components/ui/datagrid/DataGrid";
-import { formatDate, formatAmount, fetchProvidersAsCatalog, fetchCatalog } from "@/utils/utils";
+import { useState, useEffect, useCallback, useRef } from "react";
+import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { formatDate, formatAmount, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
 import { createComplementPaymentClient } from "./api/ComplementPaymentClient";
-import { ComplementPaymentFilters, EMPTY_COMPLEMENT_PAYMENT, type ComplementPayment, type PaymentHeaderData } from "./interfaces";
-import { Divider, Title } from "@/shared/components/ui/misc";
+import { ComplementPaymentFilters, EMPTY_COMPLEMENT_PAYMENT, type ComplementPayment } from "./interfaces";
+import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import { createCreditsClient } from "../creditNote/api/CreditsClient";
 import viewIcon from "@assets/eye-show.svg";
-import type { SelectableOption } from "@/utils/utils";
+import {
+  FISCAL_LIST_KEYS,
+  saveFiscalListFilters,
+  useFiscalListRefetchOnReturn,
+  useFiscalListScreenSession,
+} from "@/shared/session/fiscalListSession";
 
 const breadcrumb: BreadcrumbItem[] = [
-  { label: "Home", to: "/" },
   { label: "Fiscal", to: "/" },
   { label: "Consulta complemento pago" },
 ];
@@ -32,12 +36,18 @@ const columns: DataGridColumn<ComplementPayment>[] = [
   ];
 
 export default function ComplementContainer() {
+  const returningFromDetail = useFiscalListScreenSession(
+    FISCAL_LIST_KEYS.complementPayments
+  );
   const [filters, setFilters] = useState<ComplementPaymentFilters>(EMPTY_COMPLEMENT_PAYMENT);
   const [filtersReady, setFiltersReady] = useState(false);
-  const [providers, setProviders] = useState<SelectableOption[]>([]);
-  const [statusPaymentComplement, setStatusPaymentComplement] = useState<SelectableOption[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [statusPaymentComplement, setStatusPaymentComplement] = useState<{ label: string; value: string }[]>([]);
+  const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
   const client = createComplementPaymentClient();
   const invoiceClient = createCreditsClient();
+  const gridRef = useRef<DataGridHandle>(null);
+  const [canExportCsv, setCanExportCsv] = useState(false);
 
   const rowActions: RowAction<ComplementPayment>[] = [
     {
@@ -64,8 +74,16 @@ export default function ComplementContainer() {
   }, [client]);
 
   const areFiltersEmpty = useCallback((f: ComplementPaymentFilters) => {
-    const v = (x: any) => (x == null || x === "") || (typeof x === "string" && !x.trim());
-    return v(f?.fechaPagoInicio) && v(f?.fechaPagoFin) && v(f?.rfcEmisor) && v(f?.status) && v(f?.serie) && v(f?.folio) && v(f?.uuid);
+    const v = (x: unknown) => x == null || x === "" || (typeof x === "string" && !x.trim());
+    return (
+      v(f?.fechaPagoInicio) &&
+      v(f?.fechaPagoFin) &&
+      v(f?.numeroProveedor) &&
+      v(f?.status) &&
+      v(f?.serie) &&
+      v(f?.folio) &&
+      v(f?.uuid)
+    );
   }, []);
 
   const fetchFnOrEmpty = useCallback(
@@ -77,63 +95,81 @@ export default function ComplementContainer() {
   );
 
   useEffect(() => {
-    const fetchProviders = async () => {
-      const response = await fetchProvidersAsCatalog();
-      if (response) {
-        setProviders(response);
-      }
-    };
-    fetchProviders();
     const fetchStatus = async () => {
-      const options = await fetchCatalog("CatEstatusPago");
-      if(options){
-        const mappedOptions = options.details.map((opt: any) => ({ label: opt.description, value: String(opt.internalStatus) }));
-        setStatusPaymentComplement(mappedOptions);
+      const statusCatalog = await fetchCatalogDetails("CATESTATUSCOMPLEMENTO");
+      if(statusCatalog){
+        setStatusPaymentComplement(fetchCatalogAsSelectableOptions(statusCatalog, "Todos los estados"));
       }
     };
     fetchStatus();
   }, []);
 
+  
+
+  useEffect(() => {
+    const fetchProviderType = async () => {
+      const options = await fetchCatalogDetails("CatTipoProveedor");
+      if (options) {
+        setProviderTypeOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
+      }
+    }
+    fetchProviderType();
+  }, []);
+
   const handleSearch = (newFilters: ComplementPaymentFilters) => {
+    saveFiscalListFilters(FISCAL_LIST_KEYS.complementPayments.filters, newFilters);
     setFilters(newFilters);
+    setHasSearched(true);
   };
+
+  const handleFiltersChange = (newFilters: ComplementPaymentFilters) => {
+    setFilters(newFilters);
+    setHasSearched(false);
+  };
+
+  useFiscalListRefetchOnReturn<ComplementPaymentFilters>(
+    FISCAL_LIST_KEYS.complementPayments,
+    returningFromDetail,
+    handleSearch
+  );
 
   const filterFields: FilterField[] = [
     {
-      key: "fechaPago",
-      label: "Rango de fechas de pago",
-      type: "dateRange",
-    },
-    {
-      key: "rfcEmisor",
-      label: "Proveedor",
-      type: "select",
-      options: providers
-    },
-    {
-      key: "status",
-      label: "Estatus",
-      type: "select",
-      options: statusPaymentComplement,
-      placeholder: "Seleccione estatus",
+      key: "numeroProveedor",
+      label: "Nombre Proveedor",
+      type: "providerSelect",
     },
     {
       key: "serie",
       label: "Serie",
       type: "text",
-      placeholder: "XXXX000XXX",
     },
     {
       key: "folio",
       label: "Folio",
       type: "text",
-      placeholder: "000000",
     },
     {
       key: "uuid",
       label: "UUID",
       type: "text",
-      placeholder: "000000-0000-0000",
+    },
+    {
+      key: "tipoProveedor",
+      label: "Tipo Proveedor",
+      type: "select",
+      options: providerTypeOptions,
+    },
+    {
+      key: "status",
+      label: "Estado complemento de pago",
+      type: "select",
+      options: statusPaymentComplement,
+    },
+    {
+      key: "fechaPago",
+      label: "Fecha búsqueda",
+      type: "dateRange",
     },
   ];
 
@@ -141,34 +177,49 @@ export default function ComplementContainer() {
     breadcrumb,
     "/",
     <div>
-      <Title title="Consulta complemento pago" description="Consulta el historial de complementos publicados y su estatus de validación. "  />
+      <Title
+        title="Consulta complemento pago"
+        description="Consulta el historial de complementos publicados y su estatus de validación."
+        actions={
+          <ExportCsvButton
+            disabled={!canExportCsv}
+            onClick={() => gridRef.current?.exportCsv()}
+          />
+        }
+      />
       <ReusableFiltersBar<ComplementPaymentFilters>
         fields={filterFields}
         initialFilters={EMPTY_COMPLEMENT_PAYMENT}
         onSearch={handleSearch}
+        onFiltersChange={handleFiltersChange}
         onHydrated={(f) => {
           setFilters(f);
           setFiltersReady(true);
         }}
-        storageKey="complementPaymentFilters"
+        sessionFiltersKey={FISCAL_LIST_KEYS.complementPayments.filters}
+        restoreSavedFilters={returningFromDetail}
       />
       <Divider />
       {filtersReady && (
         <DataGrid<ComplementPayment, ComplementPaymentFilters>
+          ref={gridRef}
           columns={columns}
           getRowId={r => r.paymentsUuid}
           fetchFn={fetchFnOrEmpty}
           filters={filters}
+          fetchEnabled={hasSearched}
           initialPage={0}
           initialSize={10}
           selectable
           enableCsv
+          hideCsvToolbar
+          onExportAvailabilityChange={setCanExportCsv}
           csvFilename={`Complementos de pago ${formatDate(new Date().toString(), true)}`}
           enableXml
           enablePdf
           getXmlContent={handleGetXmlContent}
           rowActions={rowActions}
-          filtersEmpty={areFiltersEmpty(filters)}
+          filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
         />
       )}
     </div>

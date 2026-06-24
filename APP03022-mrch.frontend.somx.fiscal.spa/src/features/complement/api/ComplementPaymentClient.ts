@@ -1,11 +1,22 @@
+import type { AxiosRequestConfig } from "axios";
 import { createApiClient, type ApiClient } from "@/services/ApiClient";
-import type { ComplementPaymentFilters, ComplementPaymentResponse } from "../interfaces";
+import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
+import type { ComplementPaymentFilters, ComplementPaymentResponse, RelatedInvoice } from "../interfaces";
+
+/** Respuesta paginada de facturas relacionadas a un complemento (según consumo en `ComplementRelatedInvoices`). */
+export type RelatedDocumentsResponse = {
+  content?: RelatedInvoice[];
+  totalElements?: number;
+  totalPages?: number;
+  page?: number;
+};
 
 const buildSearchParams = (filters: ComplementPaymentFilters): URLSearchParams => {
   const params = new URLSearchParams();
   if (filters.uuid) params.append("paymentsUuid", filters.uuid);
   if (filters.serie) params.append("series", filters.serie);
   if (filters.folio) params.append("folio", filters.folio);
+  if (filters.numeroProveedor?.trim()) params.append("numeroProveedor", filters.numeroProveedor.trim());
   if (filters.rfcEmisor) params.append("rfcEmisor", filters.rfcEmisor);
   if (filters.rfcReceptor) params.append("rfcReceptor", filters.rfcReceptor);
   if (filters.fechaPagoInicio) params.append("fechaPagoInicio", filters.fechaPagoInicio);
@@ -18,30 +29,40 @@ const buildSearchParams = (filters: ComplementPaymentFilters): URLSearchParams =
   return params;
 };
 
+const textResponse: AxiosRequestConfig = { responseType: "text" };
+const blobResponse: AxiosRequestConfig = { responseType: "blob" };
+
 export const createComplementPaymentClient = (api?: ApiClient) => {
   const client = api ?? createApiClient();
 
   return {
-    getUser : () => client.getUserId(),
+    getUser: (): string | null => getUserIdFromStore(),
 
     getComplementPayments: (filters: ComplementPaymentFilters): Promise<ComplementPaymentResponse> => {
       const path = `fiscal/complementos-pago/buscar?${buildSearchParams(filters).toString()}`;
-      return client.execute<ComplementPaymentResponse>(path, "get");
+      return client.request<ComplementPaymentResponse>(path, "get");
     },
 
-    getRelatedInvoices: (paymentUUID: string) => client.execute<any>("related-documents/by-payment/"+paymentUUID, "get"),
+    getRelatedInvoices: (paymentUUID: string) =>
+      client.request<RelatedDocumentsResponse>(`related-documents/by-payment/${paymentUUID}`, "get"),
 
-
-    getXmlDocument: (uuid: string) => client.fetchDocument(`invoices/${uuid}/xml`),
+    getXmlDocument: async (uuid: string): Promise<{ data: string }> => {
+      const data = await client.request<string>(`invoices/${uuid}/xml`, "get", undefined, textResponse);
+      return { data };
+    },
 
     getPdfDocument: (uuid: string) =>
-      client.fetchDocument(`pdf/from-uuid/${uuid}?inline=true`),
+      client.request<Blob>(`pdf/from-uuid/${uuid}?inline=true`, "get", undefined, blobResponse),
 
     publishComplement: (formData: FormData) =>
-      client.execute<{ success?: boolean; message?: string }>("fiscal/complementos-pago/registrar", "post", formData),
+      client.request<{ success?: boolean; message?: string }>(
+        "fiscal/complementos-pago/registrar",
+        "post",
+        formData
+      ),
 
     relateComplement: (transactionId: string, idPago: string) =>
-      client.execute<{ success?: boolean; message?: string }>("fiscal/complementos-pago/relacionar", "post", {
+      client.request<{ success?: boolean; message?: string }>("fiscal/complementos-pago/relacionar", "post", {
         idTransaccion: transactionId,
         idPago,
       }),

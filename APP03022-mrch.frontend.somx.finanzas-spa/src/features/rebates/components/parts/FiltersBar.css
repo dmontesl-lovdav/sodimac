@@ -1,0 +1,15 @@
+.rb-filters {
+    margin-bottom: 1.5rem;
+    overflow: visible;
+    width: 100%;
+}
+
+.rb-field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.rb-field .dr-wrapper {
+    width: 100%;
+}

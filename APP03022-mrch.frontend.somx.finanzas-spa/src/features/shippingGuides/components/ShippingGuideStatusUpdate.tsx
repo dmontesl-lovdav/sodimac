@@ -1,14 +1,25 @@
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
+import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
 import GenericModal from "@shared/components/ui/modal/GenericModal";
+import {
+    GenericButton,
+    GenericInput,
+    GenericSelect,
+} from "@/shared/components/ui";
 import { ChangeEvent, ReactElement, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { shippingGuideService } from "../api/ShippingGuideClient";
 import {
     ShippingGuide,
     ShippingGuideDetail,
     ShippingGuideStatusHistory,
+    getNumericGuideStatus,
 } from "../interfaces";
+import { getErrorMessage } from "@/utils/errorMessage";
+import { formatDateTime } from "@/utils/utils";
+import { getShippingGuideStatusCode } from "../utils/shippingGuideStatus";
+import { FINANCE_LIST_KEYS } from "@/shared/hooks";
 import "../styles/shippingGuides.css";
 
 type StatusOption = { value: number; label: string };
@@ -32,23 +43,37 @@ const allowedTargets = (current?: number) => {
     return [];
 };
 
-const buildBreadcrumb = (guideId?: string): BreadcrumbItem[] => [
-    { label: "Finanzas", to: "/" },
-    { label: "Guías de Embarque", to: "/guias" },
-    { label: guideId ? `Guía ${guideId}` : "Detalle" },
-    { label: "Actualizar estatus" },
-];
+/** Catálogo de estatus en fila (objeto) o número en detalle API */
+const getGuideStatusNum = (g?: ShippingGuide): number | undefined => {
+    if (g?.status == null) return undefined;
+    const n = getShippingGuideStatusCode(g);
+    return Number.isFinite(n) ? n : undefined;
+};
+
+const buildBreadcrumb = (
+    guideId?: string,
+    guideNumber?: string
+): BreadcrumbItem[] =>
+    withFinanceBreadcrumb([
+        { label: "Guías de Embarque", to: "/finanzas/guias" },
+        {
+            label: guideNumber ? `Guía ${guideNumber}` : guideId ? "Detalle guía" : "Guía",
+            to: guideId ? `/finanzas/guias/${guideId}` : undefined,
+        },
+        { label: "Actualizar estatus" },
+    ]);
 
 const styles = {
     container: {
         display: "flex",
         flexDirection: "column" as const,
-        gap: "1rem",
+        gap: "1.25rem",
     },
-    formGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    formVertical: {
+        display: "flex",
+        flexDirection: "column" as const,
         gap: "1rem",
+        maxWidth: "560px",
     },
     fieldLabel: {
         fontSize: "12px",
@@ -58,19 +83,26 @@ const styles = {
 
 export default function ShippingGuideStatusUpdate(): ReactElement {
     const { guideId } = useParams<{ guideId: string }>();
-    const nav = useNavigate();
     const location = useLocation();
 
-    const guideFromState = (location.state as any)?.guide as ShippingGuide | undefined;
+    const guideFromState = (location.state as any)?.guide as
+        | ShippingGuide
+        | undefined;
+
+    const [guideCard, setGuideCard] = useState<ShippingGuide | null>(
+        guideFromState ?? null
+    );
 
     const [loading, setLoading] = useState<boolean>(false);
     const [detail, setDetail] = useState<ShippingGuideDetail | null>(null);
     const [history, setHistory] = useState<ShippingGuideStatusHistory[]>([]);
+    const initialStatus = getGuideStatusNum(guideFromState);
+
     const [currentStatus, setCurrentStatus] = useState<number | undefined>(
-        guideFromState?.status
+        initialStatus
     );
     const [targetStatus, setTargetStatus] = useState<number | undefined>(
-        guideFromState?.status
+        initialStatus
     );
     const [reasonId, setReasonId] = useState<string>("");
     const [series, setSeries] = useState<string>("");
@@ -90,8 +122,9 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
             try {
                 const d = await shippingGuideService.getDetail(id);
                 setDetail(d);
-                setCurrentStatus(d.status);
-                setTargetStatus(d.status);
+                const sn = getNumericGuideStatus(d.status);
+                setCurrentStatus(sn);
+                setTargetStatus(sn);
             } finally {
                 setLoading(false);
             }
@@ -114,9 +147,48 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
         }
     }, [guideId, guideFromState]);
 
+    useEffect(() => {
+        if (guideFromState) {
+            setGuideCard(guideFromState);
+        }
+    }, [guideFromState]);
+
+    useEffect(() => {
+        if (guideFromState || !guideId) return;
+        let cancelled = false;
+        (async () => {
+            const end = new Date();
+            const start = new Date();
+            start.setFullYear(start.getFullYear() - 1);
+            try {
+                const rows = await shippingGuideService.get({
+                    from: start.toISOString().slice(0, 10),
+                    to: end.toISOString().slice(0, 10),
+                });
+                const found = Array.isArray(rows)
+                    ? rows.find((g) => g.shippingGuideId === guideId)
+                    : undefined;
+                if (!cancelled) setGuideCard(found || null);
+            } catch {
+                if (!cancelled) setGuideCard(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [guideId, guideFromState]);
+
     const allowedTargetsForCurrent = useMemo(
         () => allowedTargets(currentStatus),
         [currentStatus]
+    );
+
+    const targetStatusSelectOptions = useMemo(
+        () =>
+            statusOptions.filter((s) =>
+                allowedTargetsForCurrent.includes(s.value)
+            ),
+        [allowedTargetsForCurrent]
     );
 
     useEffect(() => {
@@ -152,7 +224,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
             });
             return false;
         }
-        if (!currentStatus || allowedTargetsForCurrent.length === 0) {
+        if (currentStatus === undefined || allowedTargetsForCurrent.length === 0) {
             setAlertModal({
                 visible: true,
                 title: "Estatus no permitido",
@@ -266,15 +338,15 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
             });
 
             setCurrentStatus(targetStatus);
-        } catch (error: any) {
-            const code = error?.response?.status ?? "N/D";
-            const reason =
-                error?.response?.data?.message ??
-                "Motivo no disponible";
+        } catch (error: unknown) {
+            const detail = getErrorMessage(
+                error,
+                "No fue posible actualizar el estatus de la guía."
+            );
             setAlertModal({
                 visible: true,
                 title: "Error al cambiar estatus",
-                message: `Error al intentar cambiar de estatus la guía seleccionada, código de error [${code}] - Motivo [${reason}]`,
+                message: detail,
                 severity: "error",
             });
         } finally {
@@ -317,9 +389,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                         {history.map((h, idx) => (
                             <tr key={idx} className="gt-row">
                                 <td className="gt-td">
-                                    {new Date(
-                                        h.registeredAt
-                                    ).toLocaleString("es-MX")}
+                                    {formatDateTime(h.registeredAt, { seconds: true })}
                                 </td>
                                 <td className="gt-td">
                                     {statusOptions.find(
@@ -342,24 +412,57 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
     };
 
     return decorate(
-        buildBreadcrumb(guideId),
-        "/guias",
+        buildBreadcrumb(
+            guideId,
+            guideCard?.guideNumber ?? guideFromState?.guideNumber
+        ),
+        guideId ? `/finanzas/guias/${guideId}` : "/finanzas/guias",
         <div style={styles.container}>
-            <div className="sg-header">
-                <div className="sg-title">
+            <div className="sg-status-header-card">
+                <div className="sg-title" style={{ marginBottom: "12px" }}>
                     Actualizar estatus
+                </div>
+                <div className="sg-status-header-grid">
+                    <div>
+                        <div className="sg-status-field-label">
+                            Número proveedor
+                        </div>
+                        <div className="sg-status-field-value">
+                            {guideCard?.vendorNumber ??
+                                guideCard?.supplier?.supplierNumber ??
+                                "N/D"}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="sg-status-field-label">
+                            Nombre proveedor
+                        </div>
+                        <div className="sg-status-field-value">
+                            {guideCard?.supplier?.businessName ?? "N/D"}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="sg-status-field-label">
+                            Orden Compra
+                        </div>
+                        <div className="sg-status-field-value">
+                            {guideCard?.orderNumber?.trim()
+                                ? guideCard.orderNumber
+                                : "N/D"}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="sg-status-field-label">
+                            Guía embarque
+                        </div>
+                        <div className="sg-status-field-value">
+                            {guideCard?.guideNumber || guideId || "N/D"}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="sg-divider" />
-
-            <div className="sg-title" style={{ fontSize: "14px" }}>
-                Guía: {guideId || "N/D"}
-            </div>
-
-            <div className="sg-divider" />
-
-            <div style={styles.formGrid}>
+            <div className="sg-form-vertical" style={styles.formVertical}>
                 <div>
                     <label
                         className="sg-title"
@@ -368,10 +471,8 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                         Estatus actual
                     </label>
                     <div>
-                        {statusOptions.find(
-                            (s) =>
-                                s.value === currentStatus
-                        )?.label || "N/D"}
+                        {statusOptions.find((s) => s.value === currentStatus)
+                            ?.label || "N/D"}
                     </div>
                 </div>
 
@@ -382,35 +483,32 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                     >
                         Nuevo estatus
                     </label>
-                    <select
-                        value={targetStatus ?? ""}
+                    <GenericSelect
+                        value={
+                            targetStatus !== undefined
+                                ? String(targetStatus)
+                                : ""
+                        }
                         onChange={(
                             e: ChangeEvent<HTMLSelectElement>
-                        ) =>
-                            handleStatusChange(
-                                Number(e.target.value)
-                            )
-                        }
-                        className="sg-select"
-                    >
-                        <option value="">
-                            Selecciona estatus
-                        </option>
-                        {statusOptions
-                            .filter((s) =>
-                                allowedTargetsForCurrent.includes(
-                                    s.value
-                                )
-                            )
-                            .map((s) => (
-                                <option
-                                    key={s.value}
-                                    value={s.value}
-                                >
-                                    {s.label}
-                                </option>
-                            ))}
-                    </select>
+                        ) => {
+                            const v = e.target.value;
+                            if (v === "") {
+                                setTargetStatus(undefined);
+                                resetFields();
+                                return;
+                            }
+                            handleStatusChange(Number(v));
+                        }}
+                        placeholder="Selecciona estatus"
+                        options={targetStatusSelectOptions.map(
+                            (s) => ({
+                                value: String(s.value),
+                                label: s.label,
+                            })
+                        )}
+                        containerClassName="sg-generic-select-wrap"
+                    />
                 </div>
 
                 <div>
@@ -420,122 +518,80 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                     >
                         Motivo de cambio
                     </label>
-                    <select
+                    <GenericSelect
                         value={reasonId}
                         onChange={(
                             e: ChangeEvent<HTMLSelectElement>
                         ) =>
                             setReasonId(e.target.value)
                         }
-                        className="sg-select"
-                    >
-                        <option value="">
-                            Selecciona motivo
-                        </option>
-                        {reasonCatalog.map((r) => (
-                            <option
-                                key={r.value}
-                                value={r.value}
-                            >
-                                {r.label}
-                            </option>
-                        ))}
-                    </select>
+                        placeholder="Selecciona motivo"
+                        options={reasonCatalog.map((r) => ({
+                            value: String(r.value),
+                            label: r.label,
+                        }))}
+                        containerClassName="sg-generic-select-wrap"
+                    />
                 </div>
-            </div>
 
-            {targetStatus === 3 && (
-                <div style={styles.formGrid}>
-                    <div>
-                        <label
-                            className="sg-title"
-                            style={styles.fieldLabel}
-                        >
-                            Serie (100)
-                        </label>
-                        <input
+                {targetStatus === 3 && (
+                    <>
+                        <GenericInput
+                            label="Serie (100)"
                             value={series}
                             maxLength={100}
-                            onChange={(e) =>
-                                setSeries(e.target.value)
-                            }
-                            className="sg-input"
+                            onChange={(
+                                e: ChangeEvent<HTMLInputElement>
+                            ) => setSeries(e.target.value)}
                             placeholder="Serie"
                         />
-                    </div>
-
-                    <div>
-                        <label
-                            className="sg-title"
-                            style={styles.fieldLabel}
-                        >
-                            Folio (100)
-                        </label>
-                        <input
+                        <GenericInput
+                            label="Folio (100)"
                             value={folio}
                             maxLength={100}
-                            onChange={(e) =>
-                                setFolio(e.target.value)
-                            }
-                            className="sg-input"
+                            onChange={(
+                                e: ChangeEvent<HTMLInputElement>
+                            ) => setFolio(e.target.value)}
                             placeholder="Folio"
                         />
-                    </div>
-
-                    <div>
-                        <label
-                            className="sg-title"
-                            style={styles.fieldLabel}
-                        >
-                            UUID (36)
-                        </label>
-                        <input
+                        <GenericInput
+                            label="UUID (36)"
                             value={uuid}
                             maxLength={36}
-                            onChange={(e) =>
-                                setUuid(e.target.value)
-                            }
-                            className="sg-input"
+                            onChange={(
+                                e: ChangeEvent<HTMLInputElement>
+                            ) => setUuid(e.target.value)}
                             placeholder="UUID"
                         />
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
 
-            <div>
-                <label
-                    className="sg-title"
-                    style={styles.fieldLabel}
-                >
-                    Comentario (254)
-                </label>
-                <textarea
-                    value={comment}
-                    maxLength={254}
-                    onChange={(e) =>
-                        setComment(e.target.value)
-                    }
-                    className="sg-textarea"
-                    placeholder="Describe el motivo del cambio"
-                />
+                <div>
+                    <label
+                        className="sg-title"
+                        style={styles.fieldLabel}
+                    >
+                        Comentario (254)
+                    </label>
+                    <textarea
+                        value={comment}
+                        maxLength={254}
+                        onChange={(e) => setComment(e.target.value)}
+                        className="sg-textarea"
+                        placeholder="Describe el motivo del cambio"
+                    />
+                </div>
             </div>
 
-            <div className="sg-modal-footer">
-                <button
-                    className="sg-btn sg-btn-outline"
-                    onClick={() => nav(-1)}
-                >
-                    Regresar
-                </button>
-                <button
-                    className="sg-btn sg-btn-primary"
+            <div className="sg-status-actions-row">
+                <GenericButton
+                    variant="primary"
+                    type="button"
                     onClick={handleSubmit}
                     disabled={loading}
                 >
-                    {loading
-                        ? "Actualizando..."
-                        : "Actualizar estatus"}
-                </button>
+                    {loading ? "Actualizando..." : "Actualizar estatus"}
+                </GenericButton>
             </div>
 
             {renderHistory()}
@@ -546,6 +602,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                 title={alertModal.title}
                 message={alertModal.message}
                 severity={alertModal.severity}
+                buttonText="Aceptar"
                 onClose={() =>
                     setAlertModal({
                         ...alertModal,
@@ -554,6 +611,11 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                 }
             />
         </div>,
-        loading
+        loading,
+        undefined,
+        {
+            actionsAlign: "end",
+            financeListSession: FINANCE_LIST_KEYS.shippingGuides,
+        }
     );
 }

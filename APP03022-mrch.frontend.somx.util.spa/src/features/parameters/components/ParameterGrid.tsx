@@ -127,6 +127,41 @@ export const ParameterGrid: FC<ParameterGridProps> = ({
     { header: 'Fecha Registro', render: (row: Parameter) => formatDate(row.createdAt) },
     { header: 'Usuario Mod.', render: (row: Parameter) => row.updatedBy ?? '-' },
     { header: 'Fecha Mod.', render: (row: Parameter) => row.updatedAt ? formatDate(row.updatedAt) : '-' },
+    {
+      header: 'Activar / Desactivar',
+      align: 'center' as const,
+      render: (row: Parameter) => {
+        const enabled = canChangeStatus(row);
+        return (
+          <label
+            className={`switch ${!enabled ? 'switch--disabled' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              if (enabled) onStatusChange?.(row);
+            }}
+            style={{
+              opacity: enabled ? 1 : 0.5,
+              cursor: enabled ? 'pointer' : 'not-allowed',
+            }}
+            title={
+              enabled
+                ? getEffectiveStatus(row) === 1
+                  ? 'Desactivar parámetro'
+                  : 'Activar parámetro'
+                : 'No se puede modificar el estatus de esta versión'
+            }
+          >
+            <input
+              type="checkbox"
+              checked={getEffectiveStatus(row) === 1}
+              readOnly
+              disabled={!enabled}
+            />
+            <span className="switch__slider" />
+          </label>
+        );
+      },
+    },
   ];
 
   const actions = [
@@ -163,34 +198,6 @@ export const ParameterGrid: FC<ParameterGridProps> = ({
         onChangePerPage={onPageSizeChange}
         onChangePage={onPageChange}
       />
-
-      {items.map(parameter => (
-        canChangeStatus(parameter) ? null : null
-      ))}
-
-      {items.length > 0 && (
-        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {items.map(parameter => (
-            <div key={parameter.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{ color: '#6b7280' }}>{parameter.id}:</span>
-              <label
-                className={`switch ${!canChangeStatus(parameter) ? 'switch--disabled' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (canChangeStatus(parameter)) onStatusChange?.(parameter);
-                }}
-                style={{
-                  opacity: canChangeStatus(parameter) ? 1 : 0.5,
-                  cursor: canChangeStatus(parameter) ? 'pointer' : 'not-allowed',
-                }}
-              >
-                <input type="checkbox" checked={getEffectiveStatus(parameter) === 1} readOnly disabled={!canChangeStatus(parameter)} />
-                <span className="switch__slider" />
-              </label>
-            </div>
-          ))}
-        </div>
-      )}
     </section>
   );
 };

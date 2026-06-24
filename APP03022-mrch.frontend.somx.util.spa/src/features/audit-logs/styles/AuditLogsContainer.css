@@ -1,0 +1,39 @@
+.al-layout {
+    width: 100%;
+}
+
+.al-box {
+    background: #fff;
+    border: 1px solid #e6e9ef;
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.al-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.al-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.al-description {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: #667085;
+}
+
+.al-filters-section {
+    margin-top: 24px;
+    /* antes 12px */
+}
+
+.al-grid-section {
+    margin-top: 24px;
+}

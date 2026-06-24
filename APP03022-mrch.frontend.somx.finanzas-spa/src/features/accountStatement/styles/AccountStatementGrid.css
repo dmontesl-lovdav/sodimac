@@ -35,10 +35,12 @@
     transform: translateY(-1px);
 }
 
-.as-action-btn:disabled {
+.as-action-btn:disabled,
+.as-action-btn.as-action-btn--disabled {
     opacity: 0.45;
     cursor: not-allowed;
     transform: none;
+    pointer-events: none;
 }
 
 .as-action-icon {

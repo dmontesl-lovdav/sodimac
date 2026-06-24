@@ -1,0 +1,402 @@
+
+.somx-container {
+  padding: 1.5rem 2rem;
+  background-color: #f9fafb;
+  min-height: 100%;
+  font-family: inherit;
+  color: #1f2937;
+}
+
+.somx-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.25rem;
+}
+
+.somx-breadcrumb {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.somx-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.somx-page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.somx-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.somx-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.somx-filters-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.somx-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+
+.somx-form-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.somx-form-input,
+.somx-form-select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.somx-form-input:focus,
+.somx-form-select:focus {
+  border-color: #003865;
+  box-shadow: 0 0 0 3px rgba(0, 56, 101, 0.12);
+}
+
+.somx-form-input:disabled,
+.somx-form-select:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.somx-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #002d4c;
+}
+
+.somx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.somx-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.somx-btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.somx-btn-primary {
+  background-color: #002d4c;
+  color: #ffffff;
+  border-color: #002d4c;
+}
+.somx-btn-primary:hover:not(:disabled) {
+  background-color: #003865;
+  border-color: #003865;
+}
+
+.somx-btn-secondary {
+  background-color: #ffffff;
+  color: #1f2937;
+  border-color: #d1d5db;
+}
+.somx-btn-secondary:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.somx-btn-success {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+.somx-btn-success:hover:not(:disabled) {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+.somx-btn-warning {
+  background-color: #f59e0b;
+  color: #ffffff;
+  border-color: #f59e0b;
+}
+.somx-btn-warning:hover:not(:disabled) {
+  background-color: #d97706;
+  border-color: #d97706;
+}
+
+.somx-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+.somx-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.somx-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.somx-actions-left,
+.somx-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.somx-export-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  background-color: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  outline: none;
+}
+
+.somx-table-container {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+.somx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.somx-table thead th {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #002d4c;
+  background-color: #eaf5fc;
+  white-space: nowrap;
+  border-bottom: 1px solid #d1d5db;
+  font-size: 0.75rem;
+}
+
+.somx-table tbody td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  vertical-align: middle;
+}
+
+.somx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.somx-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.somx-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.somx-badge-success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+.somx-badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.somx-badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+.somx-badge-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.somx-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.somx-pagination-info {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.somx-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.somx-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  gap: 1rem;
+}
+
+.somx-loading-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #002d4c;
+  border-radius: 50%;
+  animation: somx-spin 0.8s linear infinite;
+}
+
+@keyframes somx-spin {
+  to { transform: rotate(360deg); }
+}
+
+.somx-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.somx-modal {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.somx-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.somx-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.somx-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b7280;
+  line-height: 1;
+}
+.somx-modal-close:hover {
+  color: #1f2937;
+}
+
+.somx-modal-body {
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.somx-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.somx-flex {
+  display: flex;
+}
+.somx-grid {
+  display: grid;
+}
+.somx-grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.somx-gap-sm { gap: 0.5rem; }
+.somx-gap-md { gap: 1rem; }
+.somx-mt-md  { margin-top: 1rem; }
+
+.somx-text-center { text-align: center; }
+.somx-text-sm     { font-size: 0.8125rem; }
+.somx-text-gray   { color: #6b7280; }

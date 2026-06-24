@@ -4,7 +4,9 @@ import {
     ShippingGuide,
     ShippingGuideDetail,
     ShippingGuideFilter,
-    ShippingGuideStatusHistory
+    ShippingGuideStatusHistory,
+    CancelShippingGuidesPayload,
+    UpdateShippingGuideStatusPayload,
 } from "../interfaces";
 
 const api = createApiClient();
@@ -57,59 +59,76 @@ export const shippingGuideService = {
 
         if (filter.trailerPlate) params.trailerPlate = filter.trailerPlate;
         if (filter.deliveryType) params.deliveryType = filter.deliveryType;
+        if (filter.status != null && !Number.isNaN(Number(filter.status))) {
+            params.status = filter.status;
+        }
 
-        // ✅ Formateo robusto de fechas al estilo audit-logs
-        if (filter.from) params.from = new Date(filter.from).toISOString();
-        if (filter.to) params.to = new Date(filter.to).toISOString();
+        if (filter.from) params.from = filter.from;
+        if (filter.to) params.to = filter.to;
+        params.pageNumber = 1;
+        params.pageSize = 500;
 
-        // Convertimos el objeto en un query string válido
         const query = toQuery(params);
         const queryString = query ? `?${query}` : "";
 
         if (binary) {
-            await api.requestBinary(
-                `${ROUTE}/csv${queryString}`,
-                "get"
-            );
+            await api.requestBinary(`${ROUTE}/csv${queryString}`, "get");
             return [];
         }
 
-        return api.request<ShippingGuide[]>(
-            `${ROUTE}${queryString}`,
-            "get"
-        );
+        console.log(queryString);
+
+        const raw = await api.request<unknown>(`${ROUTE}${queryString}`, "get");
+
+        let content: ShippingGuide[] = [];
+        if (Array.isArray(raw)) {
+            content = raw;
+        } else if (raw && typeof raw === "object") {
+            const o = raw as Record<string, unknown>;
+            const data = o.data as Record<string, unknown> | undefined;
+            if (Array.isArray(data?.content)) {
+                content = data.content as ShippingGuide[];
+            } else if (Array.isArray(o.content)) {
+                content = o.content as ShippingGuide[];
+            }
+        }
+
+        return content;
     },
 
     async getDetail(
         shippingGuideId: string
     ): Promise<ShippingGuideDetail> {
-        return api.request<ShippingGuideDetail>(
+        const raw = await api.request<unknown>(
             `${ROUTE}/${shippingGuideId}`,
             "get"
         );
+        if (raw && typeof raw === "object") {
+            const o = raw as Record<string, unknown>;
+            const success = o.success;
+            if (success === false) {
+                const msg =
+                    typeof o.message === "string" && o.message.trim()
+                        ? o.message
+                        : "No fue posible obtener el detalle de la guía.";
+                throw new Error(msg);
+            }
+            const data = o.data;
+            if (data && typeof data === "object" && "shippingGuideId" in data) {
+                return data as ShippingGuideDetail;
+            }
+            if ("shippingGuideId" in o) {
+                return raw as ShippingGuideDetail;
+            }
+        }
+        throw new Error("Respuesta de detalle de guía no reconocida.");
     },
 
-    async cancel(payload: {
-        shippingGuideIds: string[];
-        reasonId: number;
-        comment: string;
-    }): Promise<void> {
-        return api.request<void>(
-            `${ROUTE}/cancel`,
-            "post",
-            payload
-        );
+    async cancel(payload: CancelShippingGuidesPayload): Promise<void> {
+        return api.request<void>(`${ROUTE}/cancel`, "post", payload);
     },
 
-    async updateStatus(payload: {
-        shippingGuideId: string;
-        targetStatus: number;
-        reasonId: number;
-        series?: string;
-        folio?: string;
-        uuid?: string;
-        comment: string;
-    }): Promise<void> {
+    async updateStatus(payload: UpdateShippingGuideStatusPayload): Promise<void> {
         return api.request<void>(
             `${ROUTE}/status`,
             "post",

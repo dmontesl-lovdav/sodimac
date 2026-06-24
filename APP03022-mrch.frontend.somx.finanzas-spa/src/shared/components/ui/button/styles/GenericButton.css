@@ -95,7 +95,7 @@
     color: white;
 }
 
-/* --- TEXT / LINK SECONDARY (como "Volver") --- */
+/* --- TEXT / LINK SECONDARY --- */
 .btn-text {
     height: auto;
     padding: 0;
@@ -117,6 +117,27 @@
     color: #003865;
     text-decoration: underline;
     text-underline-offset: 2px;
+}
+
+/* --- VOLVER / regreso (texto azul marca, antes de botón principal) --- */
+.generic-btn.btn-back {
+    height: auto;
+    min-height: 44px;
+    padding: 0 0.625rem;
+
+    background: transparent;
+    border: none;
+
+    font-size: 14px;
+    font-weight: 700;
+    color: #003865;
+    text-decoration: none;
+}
+
+.generic-btn.btn-back:hover:not(.disabled) {
+    color: #002d4c;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 /* --- CANCEL (rojo) --- */

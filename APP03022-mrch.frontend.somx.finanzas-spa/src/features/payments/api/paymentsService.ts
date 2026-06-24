@@ -6,6 +6,7 @@ import {
     PaymentDocument
 } from '../interfaces';
 import { createApiClient } from '@/services/ApiClient';
+import { formatDate, parseDisplayDate } from '@/utils/utils';
 
 const api = createApiClient();
 
@@ -54,20 +55,14 @@ class PaymentsClient {
             amount: Number(item.amount) || 0,
             documentType: item.documentType || '',
             sapDocument: item.sapDocument || '',
-            paymentDate: item.paymentDate
-                ? new Date(item.paymentDate).toLocaleDateString('es-MX')
-                : '',
+            paymentDate: item.paymentDate ? formatDate(item.paymentDate) : '',
             paymentYear: item.paymentDate
-                ? new Date(item.paymentDate).getFullYear().toString()
+                ? String(parseDisplayDate(item.paymentDate)?.getFullYear() ?? '')
                 : '',
             status: getStatusLabel(item.status),
             statusId: item.status ?? 0,
-            createdAt: item.createdAt
-                ? new Date(item.createdAt).toLocaleDateString('es-MX')
-                : '',
-            updatedAt: item.updatedAt
-                ? new Date(item.updatedAt).toLocaleDateString('es-MX')
-                : '',
+            createdAt: item.createdAt ? formatDate(item.createdAt) : '',
+            updatedAt: item.updatedAt ? formatDate(item.updatedAt) : '',
         }));
 
         return {
@@ -135,31 +130,19 @@ class PaymentsClient {
                 documentNumber: doc.documentNumber || '',
                 documentType: doc.documentType || '',
                 reference: doc.reference || '',
-                documentDate: doc.documentDate
-                    ? new Date(doc.documentDate).toLocaleDateString('es-MX')
-                    : '',
-                accountingDate: doc.accountingDate
-                    ? new Date(doc.accountingDate).toLocaleDateString('es-MX')
-                    : '',
-                dueDate: doc.dueDate
-                    ? new Date(doc.dueDate).toLocaleDateString('es-MX')
-                    : '',
+                documentDate: doc.documentDate ? formatDate(doc.documentDate) : '',
+                accountingDate: doc.accountingDate ? formatDate(doc.accountingDate) : '',
+                dueDate: doc.dueDate ? formatDate(doc.dueDate) : '',
                 currency: doc.currency || 'MXN',
                 amount: Number(doc.amount) || 0,
                 serie: doc.serie || '',
                 folio: doc.folio || '',
                 uuid: doc.uuid || '',
                 sapDocument: doc.sapDocument || '',
-                paymentDate: doc.paymentDate
-                    ? new Date(doc.paymentDate).toLocaleDateString('es-MX')
-                    : '',
+                paymentDate: doc.paymentDate ? formatDate(doc.paymentDate) : '',
                 status: doc.status || 'Activo',
-                createdAt: doc.createdAt
-                    ? new Date(doc.createdAt).toLocaleDateString('es-MX')
-                    : '',
-                updatedAt: doc.updatedAt
-                    ? new Date(doc.updatedAt).toLocaleDateString('es-MX')
-                    : '',
+                createdAt: doc.createdAt ? formatDate(doc.createdAt) : '',
+                updatedAt: doc.updatedAt ? formatDate(doc.updatedAt) : '',
             }));
         } catch (err) {
             console.error('[PaymentsService] Error fetching accounts:', err);
@@ -173,17 +156,19 @@ class PaymentsClient {
     }
 
     exportPaymentsCsv(rows: PaymentRecord[]): Blob {
+        /** Misma presentación que la columna «Fecha Pago» del grid de consulta. */
+        /** Encabezados y orden idénticos al grid de ResultsTable (sin columna Acción). */
         const headers = [
-            'Referencia de pago',
-            'Número proveedor',
-            'Nombre proveedor',
-            'Moneda',
+            'Referencia Pago',
             'Importe',
-            'Fecha de pago',
-            'Año de pago',
+            'Moneda',
+            'Año Pago',
+            'Fecha Pago',
+            'Número Proveedor',
+            'Nombre Proveedor',
+            'Fecha Registro',
+            'Fecha Actualización',
             'Estatus',
-            'Fecha de registro',
-            'Fecha de actualización',
         ];
 
         const formatAmount = (amount: number): string =>
@@ -194,15 +179,15 @@ class PaymentsClient {
 
         const csvRows = rows.map(item => [
             item.documentReference,
+            formatAmount(item.amount),
+            item.currency,
+            item.paymentYear,
+            formatDate(item.paymentDate),
             item.providerNumber,
             item.providerName,
-            item.currency,
-            formatAmount(item.amount),
-            item.paymentDate,
-            item.paymentYear,
-            item.status,
             item.createdAt,
             item.updatedAt,
+            item.status,
         ]);
 
         const csvContent =

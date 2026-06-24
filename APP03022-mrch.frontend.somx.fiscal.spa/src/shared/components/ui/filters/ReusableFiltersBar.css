@@ -1,0 +1,41 @@
+.rc-filter-status-wrap {
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.rc-filters {
+    width: 100%;
+}
+
+.rc-filters .finz-filter-row > div {
+    display: flex;
+    align-items: flex-end;
+}
+
+.rc-filters .finz-filter-row .generic-select-searchable {
+    width: 95% !important;
+    max-width: 95% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+}
+
+.rc-field-dates {
+    flex: 1 1 220px;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+}
+
+.rc-row .rc-filter-input {
+    min-width: 0;
+}
+
+@media (max-width: 900px) {
+    .rc-filters .finz-filter-row {
+        padding-inline: 0;
+    }
+
+    .rc-filter-status-wrap {
+        min-width: 0;
+    }
+}

@@ -21,6 +21,34 @@
     text-align: center;
 }
 
+.gm-content-wide {
+    max-width: 640px;
+}
+
+.gm-items {
+    text-align: left;
+    list-style: none;
+    margin: 12px 0 16px;
+    padding: 12px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.gm-items-item {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #991b1b;
+    padding: 4px 0;
+    border-bottom: 1px solid #fecaca;
+}
+
+.gm-items-item:last-child {
+    border-bottom: none;
+}
+
 .gm-loading {
     display: flex;
     flex-direction: column;

@@ -4,6 +4,11 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { catalogService, catalogElementService } from '@features/catalogos/services/catalogosApi';
 import type { CatalogElementCreateDto } from '@features/catalogos/services/catalogosApi';
+import '@features/catalogos/styles/catalogos-shared.css';
+import { useModalNotification } from '@shared/components/ui/modal';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
+import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
+import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
 interface CatalogFormData {
   code: string;
@@ -319,6 +324,7 @@ export default function CatalogForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showSuccess, showError, showWarning, showErrorList, ModalNode } = useModalNotification();
 
   const isEditMode = !!id;
 
@@ -371,8 +377,9 @@ export default function CatalogForm() {
         })
         .catch((error) => {
           console.error('Error loading catalog:', error);
-          alert('No se pudo cargar el catálogo. Verifique que existe.');
-          navigate('/util/catalogos/catalogs');
+          showError('No se pudo cargar el catálogo. Verifique que existe.', 'Error al cargar', () =>
+            navigate('/util/catalogos/catalogs'),
+          );
         })
         .finally(() => {
           setIsLoading(false);
@@ -571,13 +578,39 @@ export default function CatalogForm() {
 
         if (errors.length > 0) {
           setValidationErrors(errors);
-          setShowValidationErrors(true);
+          showErrorList({
+            title: 'Errores en la plantilla',
+            items: errors.map((err) => err.description),
+          });
+          setShowValidationErrors(false);
           setIsValidating(false);
           return;
         }
-      } catch (error) {
+      } catch (error: any) {
+        const apiErrors = error?.response?.data?.errors;
+        if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+          const mapped: ValidationError[] = apiErrors.map((err: any) => ({
+            row: err.row,
+            cell: err.cell,
+            column: err.column,
+            description: err.message,
+          }));
+          setValidationErrors(mapped);
+          showErrorList({
+            title: 'Errores en la plantilla',
+            items: mapped.map((e) => e.description),
+          });
+          setShowValidationErrors(false);
+          setIsValidating(false);
+          return;
+        }
+
         console.error('Error validating file:', error);
-        alert('Ocurrió un problema al validar el archivo. Intente nuevamente.');
+        const backendMsg =
+          error?.response?.data?.error ??
+          error?.response?.data?.message ??
+          'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
+        showError(backendMsg, 'Error al validar');
         setIsValidating(false);
         return;
       }
@@ -596,7 +629,13 @@ export default function CatalogForm() {
           description: formData.description || undefined,
           catalogType: catalogType,
         });
-        alert(`El catálogo "${formData.name}" se ha editado exitosamente.`);
+        showSuccess(
+          `El catálogo "${formData.name}" se ha editado exitosamente.`,
+          'Catálogo actualizado',
+          () => navigate('/util/catalogos/catalogs'),
+        );
+        setIsSaving(false);
+        return;
       } else {
         const createdCatalog = await catalogService.create({
           code: formData.code,
@@ -629,24 +668,43 @@ export default function CatalogForm() {
             }
 
             if (conversionCount > 0) {
-              alert(`El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos, incluyendo ${conversionCount} con valor de conversión.`);
+              showSuccess(
+                `El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos, incluyendo ${conversionCount} con valor de conversión.`,
+                'Catálogo creado',
+                () => navigate('/util/catalogos/catalogs'),
+              );
             } else {
-              alert(`El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos.`);
+              showSuccess(
+                `El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos.`,
+                'Catálogo creado',
+                () => navigate('/util/catalogos/catalogs'),
+              );
             }
           } catch (elemError: any) {
             console.error('Error creating elements from layout:', elemError);
             const msg = elemError?.response?.data?.message || 'Error al crear algunos elementos del layout.';
-            alert(`El catálogo se creó pero hubo un error al cargar elementos: ${msg}`);
+            showWarning(
+              `El catálogo se creó pero hubo un error al cargar elementos: ${msg}`,
+              'Atención',
+              () => navigate('/util/catalogos/catalogs'),
+            );
           }
         } else {
-          alert(`El catálogo "${formData.name}" se ha registrado exitosamente.`);
+          showSuccess(
+            `El catálogo "${formData.name}" se ha registrado exitosamente.`,
+            'Catálogo creado',
+            () => navigate('/util/catalogos/catalogs'),
+          );
         }
       }
-      navigate('/util/catalogos/catalogs');
     } catch (error: any) {
       console.error('Error saving catalog:', error);
-      const errorMessage = error?.response?.data?.message || 'Ocurrió un error al guardar los cambios. Intente nuevamente.';
-      alert(errorMessage);
+      showError(
+        extractApiErrorMessage(error, {
+          fallback: 'No fue posible guardar los cambios del catálogo. Inténtalo nuevamente.',
+        }),
+        'No se pudo guardar el catálogo',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -738,44 +796,27 @@ export default function CatalogForm() {
   const validateFileWithBackend = async (): Promise<ValidationError[]> => {
     if (!uploadedFile?.file) return [];
 
-    try {
-      const payload = new FormData();
-      payload.append('file', uploadedFile.file);
-      payload.append('tipoCatalogoSeleccionado', formData.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO');
-      payload.append('nombreCatalogo', formData.name);
+    const result = await catalogService.validateLayout(
+      uploadedFile.file,
+      formData.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO',
+      formData.name,
+    );
 
-      const response = await fetch('http://localhost:8083/catalogos/validate-layout', {
-        method: 'POST',
-        body: payload,
-      });
-
-      if (!response.ok) {
-        if (response.status === 403) throw new Error('No cuenta con permisos para validar/cargar catálogos.');
-        throw new Error('Error al validar el archivo');
-      }
-
-      const result = await response.json();
-
-      if (result.valid || result.isValid) {
-        setBackendReportId(null);
-        return [];
-      }
-
-      if (result.reportAvailable && result.reportId) {
-        setBackendReportId(result.reportId);
-      }
-
-      return (result.errors || []).map((err: any) => ({
-        row: err.row,
-        cell: err.cell,
-        column: err.column,
-        description: err.message,
-        code: null,
-      }));
-    } catch (error: any) {
-      console.error('Error validating file:', error);
-      throw error;
+    if (result.isValid) {
+      setBackendReportId(null);
+      return [];
     }
+
+    if (result.reportAvailable && result.reportId) {
+      setBackendReportId(result.reportId);
+    }
+
+    return (result.errors || []).map((err) => ({
+      row: err.row,
+      cell: err.cell,
+      column: err.column,
+      description: err.message,
+    }));
   };
 
   const downloadErrorReport = async () => {
@@ -827,30 +868,13 @@ export default function CatalogForm() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.breadcrumb}>
-        <span
-          style={styles.breadcrumbLink}
-          onClick={() => navigate('/util/catalogos')}
-        >
-          Inicio
-        </span>
-        {' / '}
-        <span
-          style={styles.breadcrumbLink}
-          onClick={() => navigate('/util/catalogos/catalogs')}
-        >
-          Gestión de Catálogos
-        </span>
-        {' / '}
-        <span
-          style={styles.breadcrumbLink}
-          onClick={() => navigate('/util/catalogos/catalogs')}
-        >
-          Catálogos
-        </span>
-        {' / '}
-        <span>{isEditMode ? 'Editar Catálogo' : 'Nuevo Catálogo'}</span>
-      </div>
+      <Breadcrumb
+        items={withFinanceBreadcrumb([
+          { label: 'Gestión de Catálogos', to: '/util/catalogos' },
+          { label: 'Catálogos', to: '/util/catalogos/catalogs' },
+          { label: isEditMode ? 'Editar Catálogo' : 'Nuevo Catálogo' },
+        ])}
+      />
 
       {isLoading ? (
         <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -1227,7 +1251,7 @@ export default function CatalogForm() {
         </>
         )}
 
-        {!isEditMode && showValidationErrors && validationErrors.length > 0 && (
+        {!isEditMode && validationErrors.length > ERROR_THRESHOLD && backendReportId && (
           <div
             style={{
               marginTop: '1.5rem',
@@ -1242,70 +1266,23 @@ export default function CatalogForm() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '1rem',
+                gap: '1rem',
               }}
             >
-              <h4 style={{ margin: 0, color: '#991b1b', fontSize: '1rem' }}>
-                {validationErrors.length > ERROR_THRESHOLD
-                  ? `Se encontraron ${validationErrors.length} errores en el archivo.`
-                  : `Errores de validación (${validationErrors.length})`}
-              </h4>
-              {validationErrors.length > ERROR_THRESHOLD && (
-                <button
-                  style={{
-                    ...styles.outlineBtn,
-                    borderColor: '#991b1b',
-                    color: '#991b1b',
-                  }}
-                  onClick={downloadErrorReport}
-                >
-                  ⬇ Descargar reporte de errores
-                </button>
-              )}
-            </div>
-
-            {validationErrors.length <= ERROR_THRESHOLD ? (
-              <ul
+              <span style={{ color: '#991b1b', fontSize: '0.875rem' }}>
+                Se encontraron {validationErrors.length} errores en el archivo. Descarga el reporte para revisarlos todos.
+              </span>
+              <button
                 style={{
-                  margin: 0,
-                  paddingLeft: '1.5rem',
-                  maxHeight: '200px',
-                  overflowY: 'auto',
+                  ...styles.outlineBtn,
+                  borderColor: '#991b1b',
+                  color: '#991b1b',
                 }}
+                onClick={downloadErrorReport}
               >
-                {validationErrors.map((error, index) => (
-                  <li
-                    key={index}
-                    style={{
-                      fontSize: '0.875rem',
-                      color: '#991b1b',
-                      marginBottom: '0.25rem',
-                    }}
-                  >
-                    Error en la celda {error.cell}: {error.description}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ fontSize: '0.875rem', color: '#991b1b', margin: 0 }}>
-                Descargue el reporte para ver el listado completo de errores.
-              </p>
-            )}
-
-            <button
-              style={{
-                marginTop: '1rem',
-                background: 'none',
-                border: 'none',
-                color: '#003865',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-              onClick={() => setShowValidationErrors(false)}
-            >
-              Ocultar errores
-            </button>
+                ⬇ Descargar reporte de errores
+              </button>
+            </div>
           </div>
         )}
 
@@ -1483,6 +1460,7 @@ export default function CatalogForm() {
           </div>
         </div>
       )}
+      {ModalNode}
     </div>
   );
 }

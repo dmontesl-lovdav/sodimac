@@ -13,6 +13,7 @@ export default function GenericModal({
     buttonText = 'Aceptar',
     confirmText = 'Aceptar',
     cancelText = 'Cancelar',
+    items,
     onClose,
     onConfirm,
     onCancel,
@@ -60,7 +61,7 @@ export default function GenericModal({
                     </div>
                 </div>
             ) : (
-                <div className="gm-box gm-content">
+                <div className={`gm-box gm-content ${Array.isArray(items) && items.length > 0 ? 'gm-content-wide' : ''}`}>
                     <div className={`gm-icon-circle ${palette[severity].bg}`}>
                         {React.createElement(palette[severity].icon, {
                             className: `gm-icon ${palette[severity].color}`,
@@ -69,7 +70,17 @@ export default function GenericModal({
 
                     {title && <h3 className="gm-title">{title}</h3>}
 
-                    <p className="gm-text">{message}</p>
+                    {message && <p className="gm-text">{message}</p>}
+
+                    {Array.isArray(items) && items.length > 0 && (
+                        <ul className="gm-items">
+                            {items.map((it, idx) => (
+                                <li key={idx} className="gm-items-item">
+                                    {it}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
 
                     <button onClick={onClose} className="gm-btn gm-btn-confirm gm-btn-full">
                         {buttonText}

@@ -198,7 +198,10 @@ public enum FiscalMessageCode {
     WRN7031("WRN7031", "La factura se registró como Rechazo Comercial: el subtotal de la factura ({0}) es menor al importe de la recepción ({1}) y la diferencia supera la tolerancia permitida de {2}."),
 
     // Factura ya cargada manualmente (existe el folio fiscal en tenant_finance.addendum_manual) - QA 2026-06-23
-    WRN7032("WRN7032", "La factura se encuentra previamente registrada manualmente, Por favor, validar con el área de finanzas.");
+    WRN7032("WRN7032", "La factura se encuentra previamente registrada manualmente, Por favor, validar con el área de finanzas."),
+
+    // PDF no se pudo almacenar en el bucket (la factura sí se registró) - QA 2026-06-23
+    WRN7033("WRN7033", "La factura se registró correctamente, pero el PDF no se pudo almacenar. El documento podría no estar disponible para descarga; intente cargarlo nuevamente o contacte a soporte.");
 
     private final String code;
     private final String message;

@@ -330,6 +330,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 9.5: SUBIR PDF A GCS (opcional) ===
             // Rechazo Comercial (factura menor a la recepción fuera de tolerancia): NO se sube el
             // PDF al bucket (decisión Ivan 2026-06-22). El XML sí queda persistido en BD (xml_content).
+            String pdfUploadWarning = null; // WRN7033 si el upload del PDF falla (no crítico)
             boolean esRechazoComercial = toleranceResult.statusFactura == InvoiceStatus.RECHAZO_COMERCIAL.getCodigo();
             if (pdfFile != null && !pdfFile.isEmpty() && !esRechazoComercial) {
                 try {
@@ -338,7 +339,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                     invoiceRepository.save(savedInvoice);
                     log.info("PDF subido a GCS. Object: {}", gcsObject);
                 } catch (Exception e) {
+                    // No crítico: la factura ya quedó registrada. Se informa al front vía warnings[]
+                    // (WRN7033) para que sepa que el PDF no quedó disponible y pueda reintentar.
                     log.warn("PDF no pudo subirse a GCS (no crítico, factura ya registrada): {}", e.getMessage());
+                    pdfUploadWarning = messageCatalog.getMessage(FiscalMessageCode.WRN7033);
                 }
             } else if (esRechazoComercial) {
                 log.info("Factura en Rechazo Comercial: se omite la subida del PDF al bucket (XML persiste en BD)");
@@ -371,6 +375,11 @@ public class InvoiceServiceImpl implements InvoiceService {
             // Fuera de tolerancia: registro exitoso, se adjunta advertencia (WRN7030 parcial / WRN7031 rechazo comercial).
             if (toleranceResult.warning != null) {
                 response.getWarnings().add(toleranceResult.warning);
+            }
+
+            // PDF no se pudo subir al bucket: registro exitoso, se informa al front (WRN7033).
+            if (pdfUploadWarning != null) {
+                response.getWarnings().add(pdfUploadWarning);
             }
 
             long duration = System.currentTimeMillis() - startTime;

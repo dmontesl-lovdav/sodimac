@@ -4,6 +4,32 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-24 | Descarga de PDF baja "vacío" + warnings[] del /register
+
+**Reporte**: `GET /ppsomx/fiscal/invoices/{uuid}/pdf` baja el PDF vacío. URL reportada usaba
+`61442df7-...` que es el **fiscalUuid**.
+
+**Diagnóstico (2 cosas)**:
+1. **UUID invertido (front)**: el endpoint hace `findById` = PK **`invoiceUuid`** (interno), no el
+   `fiscalUuid` (folio fiscal). Con el fiscalUuid no encuentra → ERR001 → el front guarda el JSON de
+   error como `.pdf` (de ahí el "vacío"). Fix front: usar `response.invoiceUuid` del /register.
+2. **Esa factura no tenía PDF en bucket**: `pdf_gcs_object` vacío (18 de 23 facturas igual). El front
+   casi nunca adjunta el `pdfFile` al registrar, o el upload falló silencioso. La feature **sí
+   funciona** (5 facturas con objeto válido en `bk-fiscal-uat/fiscal-somx/{invoiceUuid}.pdf`).
+
+**Cambio back (HECHO, desplegado UAT)** — `375f545`: si el PDF se manda pero el bucket falla, el
+/register ahora regresa éxito **con `WRN7033` en `warnings[]`** (antes era silencioso). La factura
+igual se registra (no crítico). **Fer debe leer `warnings[]` y mostrarlo** tras registrar.
+
+**Mensaje enviado a Fer**: (1) usar `invoiceUuid` no `fiscalUuid` en la URL de descarga + revisar
+HTTP code; (2) mostrar `response.warnings[]` (incluye WRN7033 si falla el PDF).
+
+**Detalle GCS**: subida en PASO 9.5 de `InvoiceServiceImpl` → `GcsStorageServiceImpl.uploadPdf` →
+guarda path en `invoice.pdf_gcs_object`. Descarga: `getPdfByInvoiceUuid` → `downloadPdf`. Config:
+`fiscal.storage.gcs.bucket` (`GCS_BUCKET`) / `fiscal.storage.gcs.prefix` (`GCS_PREFIX_SOMX`).
+
+---
+
 ## 2026-06-19 | Lista de 6 issues (search + complementos + NC descuento comercial)
 
 Fer reportó 6 puntos sobre `/invoices/search`, `complementos-pago/buscar` y NC. Detalle y análisis en [docs/analisis/QA-FER-2026-06-issues-search.md](../analisis/QA-FER-2026-06-issues-search.md).

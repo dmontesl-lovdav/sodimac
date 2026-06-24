@@ -49,8 +49,19 @@ public class DetecnoClient {
 	private final SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
 
 	public DetecnoResponse getOrdenesCompra() {
+		return executeConsulta(createUriString());
+	}
 
-		String url = createUriString();
+	// Overload para descarga por periodos: consulta un rango explicito (formato yyyy/MM/dd).
+	public DetecnoResponse getOrdenesCompra(String fechaInicio, String fechaFin) {
+		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(URL_CONSULTA);
+		logger.info("Se consultan dias del: {} al {}", fechaInicio, fechaFin);
+		uriBuilder.queryParam("fechainicio", fechaInicio);
+		uriBuilder.queryParam("fechaFin", fechaFin);
+		return executeConsulta(uriBuilder.toUriString());
+	}
+
+	private DetecnoResponse executeConsulta(String url) {
 
 		HttpHeaders headers = new HttpHeaders();
 		String token = getAccessToken();

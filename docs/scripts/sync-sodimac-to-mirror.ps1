@@ -14,7 +14,8 @@
   Detalle del flujo: docs/SINCRONIZACION-MIRROR-SODIMAC.md (Direccion A).
 
 .PARAMETER Projects
-  Lista de carpetas de proyecto a sincronizar. Default: los 6 (3 backends + 3 bff).
+  Lista de carpetas de proyecto a sincronizar. Default: los 9 (3 backends + 3 bff + 3 fronts SPA).
+  OJO: el front se publica a UAT por su propio pipeline; sincronizarlo solo lo trae al mirror.
 
 .PARAMETER Yes
   Omite la confirmacion antes del commit/push (modo desatendido).
@@ -34,7 +35,12 @@ param(
     # BFFs
     "APP03022-mrch.bff.somx.ppsomx.fiscal",
     "APP03022-mrch.bff.somx.ppsomx.finanzas",
-    "APP03022-mrch-bff-somx-ppsomx-util"   # OJO: bff util usa GUIONES, no puntos
+    "APP03022-mrch-bff-somx-ppsomx-util",  # OJO: bff util usa GUIONES, no puntos
+    # Fronts (SPA). OJO naming inconsistente: finanzas con GUION, fiscal/util con PUNTO.
+    # Verificar el nombre real de la carpeta en C:\workspace-fbc-github antes de correr.
+    "APP03022-mrch.frontend.somx.fiscal.spa",
+    "APP03022-mrch.frontend.somx.finanzas-spa",
+    "APP03022-mrch.frontend.somx.util.spa"
   ),
   [string] $RealRoot     = "C:\workspace-fbc-github",
   [string] $Mirror       = "C:\local",

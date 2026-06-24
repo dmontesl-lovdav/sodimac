@@ -2,8 +2,10 @@ package com.sodimac.oc.batch;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +82,9 @@ public class MainComponent {
 			bloqueIni.setTime(inicio);
 
 			int bloque = 0;
+			int bloquesOk = 0;
 			long totalOrdenes = 0;
+			List<String> bloquesFallidos = new ArrayList<>();
 
 			while (!bloqueIni.getTime().after(fin)) {
 				Calendar bloqueFin = (Calendar) bloqueIni.clone();
@@ -93,20 +97,32 @@ public class MainComponent {
 				String ff = format.format(bloqueFin.getTime());
 
 				bloque++;
-				logger.info("Bloque {}: descargando {} al {}", bloque, fi, ff);
 
-				DetecnoResponse ordenes = detecnoClient.getOrdenesCompra(fi, ff);
-				logger.info("Bloque {}: se obtuvieron {} ordenes", bloque, ordenes.getTotalCount());
+				// Cada bloque es independiente: si uno falla, se registra y se continua con el resto.
+				try {
+					logger.info("Bloque {}: descargando {} al {}", bloque, fi, ff);
 
-				ordenCompraService.saveOrdenesBatch(ordenes.getData());
-				ordenCompraService.ejecutaSP();
-				totalOrdenes += ordenes.getData().size();
+					DetecnoResponse ordenes = detecnoClient.getOrdenesCompra(fi, ff);
+					logger.info("Bloque {}: se obtuvieron {} ordenes", bloque, ordenes.getTotalCount());
+
+					ordenCompraService.saveOrdenesBatch(ordenes.getData());
+					ordenCompraService.ejecutaSP();
+
+					totalOrdenes += ordenes.getData().size();
+					bloquesOk++;
+				} catch (Exception e) {
+					bloquesFallidos.add(fi + " al " + ff);
+					logger.error("Bloque {} FALLO ({} al {}): {}. Se continua con el siguiente.", bloque, fi, ff, e.getMessage(), e);
+				}
 
 				bloqueIni.setTime(bloqueFin.getTime());
 				bloqueIni.add(Calendar.DAY_OF_YEAR, 1);
 			}
 
-			logger.info("Termina descarga por periodos. {} bloques procesados, {} ordenes en total", bloque, totalOrdenes);
+			logger.info("Termina descarga por periodos. {} bloques OK de {}, {} ordenes en total", bloquesOk, bloque, totalOrdenes);
+			if (!bloquesFallidos.isEmpty()) {
+				logger.warn("Bloques FALLIDOS ({}): {}. Re-ejecutar solo esos rangos.", bloquesFallidos.size(), bloquesFallidos);
+			}
 		} catch (ParseException e) {
 			throw new RuntimeException("Formato de fecha invalido en descarga.periodo (esperado yyyy/MM/dd)", e);
 		}

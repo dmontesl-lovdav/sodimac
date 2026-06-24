@@ -32,17 +32,24 @@ Alimenta la pantalla de NC (F96, front).
 **F95 (FormaPago): YA EXISTÍA** — `ComprobanteResponse.formaPago` ya se exponía y poblaba (=99 en la
 prueba). Sin cambio de back; el front solo debe leerlo.
 
-### F94 — Factura monto > recepción: sale "éxito" sin alerta de NC — probable FRONT
-El back **sí** devuelve `WRN7030` en `response.warnings[]` (validado en fila 56). Si sale "éxito"
-sin la alerta: o (a) el caso quedó **dentro de tolerancia** (±$40) → Recibida, sin warning
-(correcto), o (b) el **front finanzas/recepción no muestra `warnings[]`**. Pantalla Finanzas.
-**Confirmar:** montos usados + si el front lee `warnings[]`.
+### F94 — Factura monto > recepción: sale "éxito" sin alerta de NC — **FRONT (finanzas-spa)** ✅ CONFIRMADO
+El back **sí** devuelve `WRN7030` en `response.warnings[]` (validado fila 56). Bug en el front:
+`finanzas-spa/src/features/orders/components/parts/ReceptionInvoiceControl.tsx` (L73-106):
+1. El front **duplica la lógica de tolerancia** hardcodeada (`difference > 40`) en vez de confiar en
+   el back. Solo llama `client.create()` si `difference > 40`.
+2. En éxito (L78-90) **ignora `response.warnings[]`** y pinta fijo `"Tu factura se procesó
+   correctamente"` → nunca muestra WRN7030 (alerta de NC).
+3. La rama `else` (diff ≤ 40, L104-106) muestra el mensaje **al revés**: `"Hay una diferencia mayor a
+   $40..."`.
+**Fix front:** quitar la tolerancia local, registrar siempre y mostrar `response.warnings[]`
+(WRN7030) tras el éxito. La tolerancia ya la evalúa el back. **No es back.**
 
-### F93 — Monto de factura relacionada = subtotal, no total — probable FRONT (finanzas)
-En el detalle de la recepción, el monto de la factura relacionada muestra el **total** (con
-impuestos); debe mostrar **subtotal**. `InvoiceSearchResponse` ya expone `subtotal` y `total`
-separados. **Confirmar de dónde toma el monto** (fiscal `/invoices/search` vs endpoint finanzas);
-si es del search, el front debe usar `subtotal`.
+### F93 — Monto de factura relacionada = subtotal, no total — **FRONT (finanzas-spa)** ✅ CONFIRMADO
+`finanzas-spa/src/features/orders/components/ReceptionCredits.tsx` (L46): la columna **"Importe"**
+usa `r.invoice.total` (con impuestos); debe usar `r.invoice.subtotal`. El back ya expone ambos
+(`InvoiceSearchResponse` → `subtotal` y `total` separados; `Invoice` interface L199/L203 tiene los
+dos). **Fix front:** cambiar `r.invoice.total` → `r.invoice.subtotal` en accessor y exportAccessor.
+**No es back.**
 
 ### F96 — Pantalla NC: uuid relacionado en su campo — FRONT
 Consume F97. Hoy la pantalla toma el UUID de la propia NC; debe mostrar el de la factura relacionada.
@@ -50,7 +57,14 @@ Consume F97. Hoy la pantalla toma el UUID de la propia NC; debe mostrar el de la
 ## Resumen back (David)
 | Fila | Punto | Estado |
 |---|---|---|
-| F98 | serie/folio: rechazar solo si faltan ambos | ⏳ confirmar regla con Ivan, luego `||`→`&&` |
-| F97 | exponer uuid relacionado en `xml/process/file` (+ FormaPago F95) | ⬜ codear (FiscalXmlResponse) |
-| F94 | warning NC en pantalla | ⚠️ back ya manda warnings[]; confirmar front/montos |
-| F93 | monto relacionado subtotal vs total | ⚠️ confirmar origen; probable front finanzas |
+| F98 | serie/folio: folio requerido, serie opcional | ✅ HECHO + validado UAT (`2e36ddd`). Folio sin serie → RES004; sin folio → WRN7012 |
+| F97 | exponer uuid relacionado en `xml/process/file` (+ FormaPago F95) | ✅ HECHO + validado UAT (`edd6ee2`). `uuidRelacionado=A9651E62...`, `tipoRelacion=01`, `formaPago=99` |
+| F94 | warning NC en pantalla | 🔵 **FRONT** confirmado — `ReceptionInvoiceControl.tsx` L73-106 ignora `warnings[]` + tolerancia local hardcodeada. Back OK |
+| F93 | monto relacionado subtotal vs total | 🔵 **FRONT** confirmado — `ReceptionCredits.tsx` L46 usa `total`, debe `subtotal`. Back OK |
+
+## Excel (xlsx v6)
+- F97 → Rev DEV ✔ / Ajuste DEV ✔ (validado UAT 2026-06-23)
+- F98 → Rev DEV ✔ / Ajuste DEV ✔ (validado UAT 2026-06-23)
+- F94, F93 → pendientes (front/finanzas)
+- F95 (FormaPago) → front (back ya lo expone)
+- F96 (uuid relacionado en pantalla NC) → front (consume F97)

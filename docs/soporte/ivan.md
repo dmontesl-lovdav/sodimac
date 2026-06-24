@@ -4,6 +4,34 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-23 | Llamada NC: serie/folio, uuid relacionado, F94/F93 (front)
+
+**Contexto**: puntos de una llamada haciendo el flujo de NC (matriz xlsx v6, filas 93-98).
+
+**Back (David) — HECHO + validado UAT**:
+- **F98** (`2e36ddd`): factura sin serie no se podía subir. Regla nueva: **folio requerido, serie
+  opcional** (CFDI 4.0 SAT). Folio sin serie → RES004; sin folio → WRN7012. Mensajes WRN7012/7015
+  ajustados a "requiere un folio".
+- **F97** (`edd6ee2`): `xml/process/file` ahora regresa `uuidRelacionado` + `tipoRelacion` desde
+  `CfdiRelacionados`. Validado con NC real: `uuidRelacionado=A9651E62...`, `tipoRelacion=01`,
+  `formaPago=99` (F95 ya existía).
+
+**Front (finanzas-spa) — NO es back, confirmado en código** (repos sincronizados 2026-06-23):
+- **F94**: "éxito sin alerta NC". `ReceptionInvoiceControl.tsx` L73-106 duplica tolerancia local
+  hardcodeada (`difference > 40`) e **ignora `response.warnings[]`** (back sí manda WRN7030). En
+  éxito pinta fijo "Tu factura se procesó correctamente". Fix front: quitar tolerancia local +
+  mostrar warnings.
+- **F93**: monto de factura relacionada usa **total**, debe **subtotal**. `ReceptionCredits.tsx` L46
+  usa `r.invoice.total` → cambiar a `r.invoice.subtotal`. Back ya expone ambos.
+
+**Para Ivan**: F97/F98 listos en UAT (marcar Excel). F94/F93/F95/F96 son **front** → equipo
+finanzas-spa.
+
+**Detalle**: [docs/analisis/QA-IVAN-2026-06-23b-nc-serie-folio-uuid-relacionado.md](../analisis/QA-IVAN-2026-06-23b-nc-serie-folio-uuid-relacionado.md)
+**Estado**: back cerrado y validado; front pendiente (otro equipo).
+
+---
+
 ## 2026-06-23 | Nuevos puntos: addenda manual, CatRfcReceptor, condición de pago NC
 
 **Contexto**: Ivan pasó comentarios para `/register` (carga XML): validar receptor contra

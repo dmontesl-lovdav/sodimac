@@ -98,7 +98,8 @@ public class MainComponent {
 
 				bloque++;
 
-				// Cada bloque es independiente: si uno falla, se registra y se continua con el resto.
+				// Cada bloque solo descarga e inserta en la temp. El SP es O(n^2) sobre la tabla
+				// historica, por eso se ejecuta UNA sola vez al final (no por bloque).
 				try {
 					logger.info("Bloque {}: descargando {} al {}", bloque, fi, ff);
 
@@ -106,7 +107,6 @@ public class MainComponent {
 					logger.info("Bloque {}: se obtuvieron {} ordenes", bloque, ordenes.getTotalCount());
 
 					ordenCompraService.saveOrdenesBatch(ordenes.getData());
-					ordenCompraService.ejecutaSP();
 
 					totalOrdenes += ordenes.getData().size();
 					bloquesOk++;
@@ -119,9 +119,18 @@ public class MainComponent {
 				bloqueIni.add(Calendar.DAY_OF_YEAR, 1);
 			}
 
-			logger.info("Termina descarga por periodos. {} bloques OK de {}, {} ordenes en total", bloquesOk, bloque, totalOrdenes);
+			logger.info("Descarga terminada. {} bloques OK de {}, {} ordenes insertadas en temp.", bloquesOk, bloque, totalOrdenes);
 			if (!bloquesFallidos.isEmpty()) {
 				logger.warn("Bloques FALLIDOS ({}): {}. Re-ejecutar solo esos rangos.", bloquesFallidos.size(), bloquesFallidos);
+			}
+
+			// SP una sola vez sobre toda la temp ya cargada.
+			if (totalOrdenes > 0) {
+				logger.info("Inicia ejecucion del SP [uspRegistroOrdenCompraProveedor] sobre {} ordenes", totalOrdenes);
+				ordenCompraService.ejecutaSP();
+				logger.info("SP finalizado.");
+			} else {
+				logger.warn("No se inserto ninguna orden, se omite la ejecucion del SP.");
 			}
 		} catch (ParseException e) {
 			throw new RuntimeException("Formato de fecha invalido en descarga.periodo (esperado yyyy/MM/dd)", e);

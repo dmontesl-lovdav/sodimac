@@ -35,10 +35,34 @@ Campos del éxito (`InvoiceRegistrationResponse`): `code` (RES004), `message`, `
 `documentType` (I=factura, E=NC), `issuerRfc`, `receiverRfc`, `total`, `issueDate`, `hasAddenda`,
 `pendingAddenda`, `warnings[]`, `processedAt`.
 
-Error (HTTP 400/500): `{timestamp, status, error, code, message, path}`.
+**Respuesta de error** (`GlobalExceptionHandler`). Campos garantizados en todo error: `timestamp,
+status, error, code, message, path`. Variantes:
+- **Negocio** (`FiscalException`) → `HTTP 400`, `error:"Business Error"`, `code` = WRN/BUS (WRN7012
+  folio, WRN7013 duplicado, WRN7032 addenda manual, BUS008 receptor, etc.).
+- **Validación `@Valid`** → `HTTP 400`, `error:"Validation Error"`, `code:"ERR035"`, + mapa `errors{}`.
+- **Argumento inválido** (`IllegalArgumentException`) → `HTTP 400`, `error:"Invalid Argument"`,
+  `code:"ERR003"`.
+- **Interno no controlado** → `HTTP 500`, `error:"Internal Server Error"`, `code:"ERR036"`.
+
+```json
+// Negocio (400)
+{ "timestamp":"2026-06-25T10:34:12.184", "status":400, "error":"Business Error",
+  "code":"WRN7012", "message":"La factura requiere un folio...", "path":"/invoices/register" }
+// Validación (400) — agrega errors{}
+{ "timestamp":"...", "status":400, "error":"Validation Error", "code":"ERR035",
+  "message":"Error de validación...", "errors":{"xml":"El archivo XML es obligatorio"}, "path":"..." }
+// Interno (500)
+{ "timestamp":"...", "status":500, "error":"Internal Server Error", "code":"ERR036",
+  "message":"Ocurrió un error interno...", "path":"/invoices/register" }
+```
+
+Type TS error: `{ timestamp, status, error, code, message, path, errors?: Record<string,string> }`
+(`errors` solo en Validation Error). Fuente:
+[GlobalExceptionHandler.java](../../APP03022-mrch.backend.somx.fiscal-api/src/main/java/com/sodimac/fiscal/api/exception/GlobalExceptionHandler.java).
 
 **Resumen para el front**: 200 → tipar como `RegisterResponse` y **revisar `warnings[]`** (vacío = OK;
-WRN7030 = pedir NC; WRN7033 = avisar PDF no disponible). 400/500 → mostrar `message` del error.
+WRN7030 = pedir NC; WRN7033 = avisar PDF no disponible). 400/500 → tipar como `ErrorResponse` y
+mostrar `message`.
 
 ---
 

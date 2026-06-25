@@ -4,6 +4,44 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-25 | Estructura de respuesta /register (éxito, PDF fallido, NC) + manejo en front
+
+Fer pidió: (1) confirmar que el aviso de NC (monto mayor) siempre sale igual, (2) si `message`
+siempre viene, (3) si el punto F96 es UUID mal referenciado, y (4) ejemplos de response para tipar
+el front.
+
+**Reglas confirmadas en código** (`InvoiceRegistrationResponse` + `GlobalExceptionHandler`):
+- **Monto mayor a recepción fuera de tolerancia (±40)** → `HTTP 200`, `success:true`, factura
+  **Recibido Parcial**, aviso de NC en **`warnings[]`** (WRN7030), **NO** en `message`. Dentro de
+  tolerancia → `warnings:[]`. Menor fuera de tolerancia → Rechazo Comercial (WRN7031).
+- **`message` siempre presente** en éxito y error, pero la **forma del objeto cambia**: éxito trae
+  `success`/`warnings`/`invoiceUuid`; error es `{timestamp,status,error,code,message,path}` (sin
+  `success` ni `warnings`). **Ramificar por HTTP status** (200 vs 400/500), no solo por `success`.
+- **F96 (pantalla NC): sí, UUID mal referenciado.** Hoy pone el UUID de la propia NC en el campo
+  "uuid relacionado"; debe poner el de la factura relacionada = `uuidRelacionado` que ya expone
+  `POST /fiscal/xml/process/file` (F97). Ver
+  [docs/analisis/QA-IVAN-2026-06-23b-nc-serie-folio-uuid-relacionado.md](../analisis/QA-IVAN-2026-06-23b-nc-serie-folio-uuid-relacionado.md).
+
+**Ejemplos de response (todos HTTP 200, success:true; diferencia en `warnings[]`):**
+
+1. Factura OK → `warnings: []`.
+2. Factura OK pero PDF no subió al bucket → `warnings: ["La factura se registró correctamente, pero
+   el PDF no se pudo almacenar..."]` (WRN7033).
+3. Factura mayor a recepción → Recibido Parcial → `warnings: ["La factura se registró como Recibido
+   Parcial: ... Se requiere una nota de crédito..."]` (WRN7030).
+
+Campos del éxito (`InvoiceRegistrationResponse`): `code` (RES004), `message`, `success`,
+`invoiceUuid` (usar para `GET /invoices/{invoiceUuid}/pdf`), `fiscalUuid`, `series`, `folio`,
+`documentType` (I=factura, E=NC), `issuerRfc`, `receiverRfc`, `total`, `issueDate`, `hasAddenda`,
+`pendingAddenda`, `warnings[]`, `processedAt`.
+
+Error (HTTP 400/500): `{timestamp, status, error, code, message, path}`.
+
+**Resumen para el front**: 200 → tipar como `RegisterResponse` y **revisar `warnings[]`** (vacío = OK;
+WRN7030 = pedir NC; WRN7033 = avisar PDF no disponible). 400/500 → mostrar `message` del error.
+
+---
+
 ## 2026-06-24 | Descarga de PDF baja "vacío" + warnings[] del /register
 
 **Reporte**: `GET /ppsomx/fiscal/invoices/{uuid}/pdf` baja el PDF vacío. URL reportada usaba

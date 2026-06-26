@@ -2645,15 +2645,31 @@ public class InvoiceServiceImpl implements InvoiceService {
         InvoiceEntity invoice = invoiceRepository.findById(uuid)
                 .orElseThrow(() -> new FiscalException(FiscalMessageCode.ERR001, "Factura no encontrada: " + invoiceUuid));
 
-        if (invoice.getPdfGcsObject() == null || invoice.getPdfGcsObject().isBlank()) {
-            throw new FiscalException(FiscalMessageCode.ERR001, "No hay PDF disponible para la factura: " + invoiceUuid);
+        // 1) Si el PDF está en el bucket, se descarga directo.
+        if (invoice.getPdfGcsObject() != null && !invoice.getPdfGcsObject().isBlank()) {
+            try {
+                return gcsStorageService.downloadPdf(invoice.getPdfGcsObject());
+            } catch (Exception e) {
+                // No se aborta: si el bucket falla se intenta generar el PDF desde el XML (fallback).
+                log.warn("PDF en bucket no disponible (object={}); se generará desde el XML. {}",
+                        invoice.getPdfGcsObject(), e.getMessage());
+            }
         }
 
+        // 2) Fallback: el PDF no se subió (o el bucket falló) -> se genera a partir del XML (xml_content)
+        // con el renderizador XSLT (Formato4.0.xsl). Decisión Ivan 2026-06-26.
+        String xmlContent = invoice.getXmlContent();
+        if (xmlContent == null || xmlContent.isBlank()) {
+            throw new FiscalException(FiscalMessageCode.ERR001,
+                    "No hay PDF ni XML disponible para la factura: " + invoiceUuid);
+        }
         try {
-            return gcsStorageService.downloadPdf(invoice.getPdfGcsObject());
+            log.info("Generando PDF desde XML (fallback) para invoice {}", invoiceUuid);
+            return pdfRenderService.renderFromXml(xmlContent);
         } catch (Exception e) {
-            log.error("Error al descargar PDF de GCS. object={} error={}", invoice.getPdfGcsObject(), e.getMessage());
-            throw new FiscalException(FiscalMessageCode.ERR001, "Error al obtener el PDF: " + e.getMessage());
+            log.error("Error generando PDF desde XML. invoice={} error={}", invoiceUuid, e.getMessage());
+            throw new FiscalException(FiscalMessageCode.ERR001,
+                    "Error al generar el PDF desde el XML: " + e.getMessage());
         }
     }
 

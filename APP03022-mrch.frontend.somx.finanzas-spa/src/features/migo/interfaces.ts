@@ -37,6 +37,7 @@ export interface MigoReception {
     isValid: boolean;
     validationError?: string;
     rowNumber: number;
+    numeroProveedor?: string | null;
     vendorName?: string;
     emailFinancial?: string;
 }

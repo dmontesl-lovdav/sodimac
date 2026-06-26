@@ -11,6 +11,7 @@ import GenericTable from '@/shared/components/ui/table/GenericTable';
 import type { Column, RowAction } from '@/shared/components/ui/table/GenericTable';
 import { StatusPill } from '@/shared/components/ui/statusPill/StatusPill';
 import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import eyeIcon from '@assets/eye-show.svg';
 
@@ -26,6 +27,7 @@ interface GroupedReception {
     nroOc: number;
     nroRecepcion: number;
     sucursal: number;
+    numeroProveedor: string;
     nroGuia: string;
     origen: string;
     fechaRecepcion: string;
@@ -117,6 +119,7 @@ export default function MigoReceptions(): ReactElement {
                     nroOc: r.nroOc,
                     nroRecepcion: r.nroRecepcion,
                     sucursal: r.sucursal,
+                    numeroProveedor: (r.numeroProveedor ?? '').toString().trim(),
                     nroGuia: r.nroGuia ?? '-',
                     origen: r.origen ?? '-',
                     fechaRecepcion: r.fechaRecepcion,
@@ -151,15 +154,16 @@ export default function MigoReceptions(): ReactElement {
     const st = doc ? MIGO_STATUS_MAP[doc.status] : null;
 
     const columns: Column<GroupedReception>[] = [
-        { header: 'Nro. Orden de Compra', render: (r) => r.nroOc },
-        { header: 'Nro. Recepción', render: (r) => r.nroRecepcion },
+        { header: 'Orden Compra', render: (r) => r.nroOc },
+        { header: 'Recepción', render: (r) => r.nroRecepcion },
         { header: 'Sucursal', align: 'center', render: (r) => r.sucursal },
-        { header: 'Proveedor', render: (r) => r.vendorName || '--' },
+        { header: 'Número Proveedor', render: (r) => r.numeroProveedor || '--' },
+        { header: 'Nombre Proveedor', render: (r) => r.vendorName || '--' },
         { header: 'Correo electrónico', render: (r) => r.emailFinancial || '--' },
-        { header: 'Nro. Guía', render: (r) => r.nroGuia },
+        { header: 'Guía', render: (r) => r.nroGuia },
         { header: 'Origen', render: (r) => r.origen },
         { header: 'Fecha Recepción', render: (r) => formatDate(r.fechaRecepcion) },
-        { header: 'Importe sin Impuestos', align: 'right', render: (r) => formatCurrency(r.importeSinImpuesto) },
+        { header: 'Importe', align: 'right', render: (r) => formatCurrency(r.importeSinImpuesto) },
         { header: 'Monto OC', align: 'right', render: (r) => formatCurrency(r.montoOc) },
     ];
 
@@ -191,9 +195,11 @@ export default function MigoReceptions(): ReactElement {
                         <p className="migo-description">Listado de OC y recepciones publicadas en el documento.</p>
                     </div>
                     <div className="migo-toolbar finz-toolbar-actions">
-                        <GenericButton variant="primary" onClick={handleExportCsv}>
-                            Exportar CSV
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.MIGO.DOWNLOAD_CSV_DETAIL}>
+                            <GenericButton variant="primary" onClick={handleExportCsv}>
+                                Exportar CSV
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
 

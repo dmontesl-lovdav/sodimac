@@ -46,7 +46,7 @@ const buildDetail = (reception: Reception) => {
     const columns: Column<Invoice>[] = [
         { header: "UUID", render: (r: any) => r.invoiceUuid },
         { header: "Fecha Registro", render: r => r.certificationDate ? formatDate(r.certificationDate) : "N/D" },
-        { header: "Importe", render: r => formatAmount(r.total) },
+        { header: "Importe", render: r => formatAmount(r.subtotal ?? 0) },
         { header: "Serie", render: r => r.series },
         { header: "Folio", render: r => r.folio ?? "--" },
         { header: "Tipo", render: r => r.documentType ?? "--" }
@@ -77,7 +77,7 @@ const buildDetail = (reception: Reception) => {
         <div className="rc-credits-container">
             <div className="rc-credits-card">
                 <div className="rc-credits-row">
-                    <div className="rc-credits-title">Facturas asignadas</div>
+                    <div className="rc-credits-title">Facturas relacionadas</div>
                 </div>
                 <div className="rc-credits-spacer" />
                 <GenericTable

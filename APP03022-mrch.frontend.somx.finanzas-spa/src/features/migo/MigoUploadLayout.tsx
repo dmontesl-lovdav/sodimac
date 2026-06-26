@@ -8,6 +8,7 @@ import {
     useFinanceListReturnFromDetail,
 } from '@/shared/hooks';
 import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import { migoService } from './api/MigoClient';
 
@@ -316,13 +317,15 @@ export default function MigoUploadLayout(): ReactElement {
                             Volver
                         </BackLinkButton>
                         {!summary && (
-                            <GenericButton
-                                variant="primary"
-                                onClick={handleUpload}
-                                disabled={!file || uploading}
-                            >
-                                {uploading ? 'Publicando...' : 'Publicar'}
-                            </GenericButton>
+                            <PermissionGate appEvent={APP_EVENT.MIGO.PUBLISH}>
+                                <GenericButton
+                                    variant="primary"
+                                    onClick={handleUpload}
+                                    disabled={!file || uploading}
+                                >
+                                    {uploading ? 'Publicando...' : 'Publicar'}
+                                </GenericButton>
+                            </PermissionGate>
                         )}
                     </div>
                 </div>

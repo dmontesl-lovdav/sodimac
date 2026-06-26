@@ -7,6 +7,7 @@ import {
 } from "@shared/components/ui";
 import type { ChangeEvent, ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import type { ProvidersOptions } from "@/features/orders/interfaces";
 import { fetchProvidersAsCatalog } from "@/utils/utils";
@@ -265,12 +266,16 @@ export default function FiltersBar({
                     </div>
 
                     <div className="pay-actions-container finz-filter-actions">
-                        <GenericButton variant="outlineFill" onClick={handleSearch}>
-                            Buscar
-                        </GenericButton>
-                        <GenericButton variant="outlineFill" onClick={handleClear}>
-                            Limpiar
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.SEARCH}>
+                            <GenericButton variant="outlineFill" onClick={handleSearch}>
+                                Buscar
+                            </GenericButton>
+                        </PermissionGate>
+                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.CLEAR_FILTERS}>
+                            <GenericButton variant="outlineFill" onClick={handleClear}>
+                                Limpiar
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
             </div>

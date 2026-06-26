@@ -1,25 +1,24 @@
 import * as purchaseOrderRepo from "@/repositories/purchaseOrder.repo.js";
+import * as tenantFianaceAddenduemRepo from "@/repositories/tenant_fiscal.addendum.repo.js";
 import * as rececetionRepo from "@/repositories/reception.repo.js";
-import * as shippingRepo from "@/repositories/shippingGuide.repo.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
-import { string, z } from "zod/v4";
-import type { Request } from "express";
+import { z } from "zod/v4";
+import { HttpError } from "@/utils/HttpError.js";
 import type {
 CreatePurchaseOrderDto,
 UpdatePurchaseOrderDto,
 ListPurchaseOrderQueryDto,
-GuideNumberDto
 } from "@/schemas/purchaseOrder.schema.js";
 import type {
 ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
+import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js";
 import { Reception } from '@/entities/Reception.entity.js';
 import { ReceptionSku } from '@/entities/ReceptionSku.entity.js';
 import { AddendumManual } from '@/entities/AddendumManual.entity.js';
-import { ShippingGuidePurchaseOrder } from '@/entities/ShippingGuidePurchaseOrder.entity.js';
 import {
     FindOptionsWhere,
     EntityManager,
@@ -28,15 +27,11 @@ import {
     LessThanOrEqual
 } from "typeorm";
 import { logger } from "@/utils/logger.js";
-import * as svcShipping from "@/services/shippingGuide.service.js";
-import { ResponseHandlerDTO } from "@/response/ResponseHandler.dto.js";
-import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
 import * as svcAxios from "@/services/axios.service.js";
 import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 import { DeepPartial } from 'typeorm';
 import * as constants from "@/constants/catalogConstantsCodes.js";
-import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import * as POUtils from "@/utils/purchaseOrder.utils.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
@@ -182,6 +177,11 @@ export async function updateReception(dto: UpdatePurchaseOrderDto, token: string
 
     if (dto.uuid != null && dto.uuid != undefined && dto.status == 2) {
         const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
+        //Valida que no exista en tenant_fiscal.Invoice
+        const add = await tenantFianaceAddenduemRepo.findByInvoideUuid(dto.uuid);
+        if (add){
+             throw new HttpError(404, "La factura se encuentra previamente registrada, Por favor, validar con el área de finanzas");
+        }
         const addendaManual = new AddendumManual();
         addendaManual.supplierNumber = dto.supplierNumber;
         addendaManual.orderNumber = dto.orderNumber;

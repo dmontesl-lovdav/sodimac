@@ -13,6 +13,7 @@ import type { PaymentRecord } from "../interfaces";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
 import type { PaymentFiltersValues } from "./FiltersBar";
 
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import "../styles/PaymentsResultsTable.css";
 
 interface ResultsTableProps {
@@ -94,38 +95,42 @@ export default function ResultsTable({
 
                 return (
                     <div className="pay-actions">
-                        <button
-                            title="Ver detalle"
-                            onClick={() => handleViewDetail(r)}
-                            className="pay-action-btn"
-                            type="button"
-                        >
-                            <img src={eyeIconUrl} alt="Ver" className="pay-action-icon" />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.VIEW_DETAIL}>
+                            <button
+                                title="Ver detalle"
+                                onClick={() => handleViewDetail(r)}
+                                className="pay-action-btn"
+                                type="button"
+                            >
+                                <img src={eyeIconUrl} alt="Ver" className="pay-action-icon" />
+                            </button>
+                        </PermissionGate>
 
-                        <button
-                            title={
-                                disabledAdd
-                                    ? "No disponible (solo pagos pendientes de complemento)"
-                                    : "Agregar complemento de pago"
-                            }
-                            onClick={() =>
-                                !disabledAdd &&
-                                (window.location.href = buildFiscalSpaUrl(
-                                    "publicar-complemento",
-                                    params
-                                ))
-                            }
-                            className="pay-action-btn"
-                            type="button"
-                            disabled={disabledAdd}
-                            style={{
-                                cursor: disabledAdd ? "not-allowed" : "pointer",
-                                opacity: disabledAdd ? 0.4 : 1,
-                            }}
-                        >
-                            <img src={plusIconUrl} alt="Agregar" className="pay-action-icon" />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+                            <button
+                                title={
+                                    disabledAdd
+                                        ? "No disponible (solo pagos pendientes de complemento)"
+                                        : "Agregar complemento de pago"
+                                }
+                                onClick={() =>
+                                    !disabledAdd &&
+                                    (window.location.href = buildFiscalSpaUrl(
+                                        "publicar-complemento",
+                                        params
+                                    ))
+                                }
+                                className="pay-action-btn"
+                                type="button"
+                                disabled={disabledAdd}
+                                style={{
+                                    cursor: disabledAdd ? "not-allowed" : "pointer",
+                                    opacity: disabledAdd ? 0.4 : 1,
+                                }}
+                            >
+                                <img src={plusIconUrl} alt="Agregar" className="pay-action-icon" />
+                            </button>
+                        </PermissionGate>
                     </div>
                 );
             },

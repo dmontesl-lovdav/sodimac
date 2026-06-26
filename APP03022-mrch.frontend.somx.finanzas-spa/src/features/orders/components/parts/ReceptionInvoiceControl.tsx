@@ -8,7 +8,7 @@ import {
     RECEPTION_INVOICE_TRANSACTION,
     TransactionIdClient,
 } from "../../api/transactionIdClient";
-import { CatalogDetail, CatalogDetailRow, fetchCatalog, fetchProviderBlockers, fetchSystemParameters, formatAmount, formatDate, SupplierBlock } from "@/utils/utils";
+import { CatalogDetail, CatalogDetailRow, fetchCatalog, fetchProviderBlockers, fetchSystemParameters, formatAmount, formatDate, parseDisplayDate, startOfLocalDay, endOfLocalDay, SupplierBlock } from "@/utils/utils";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import type {
     SystemParameter,
@@ -132,13 +132,15 @@ export const ReceptionInvoiceControl = forwardRef<
 
             if (provider_blocks) {
                 const now = new Date();
-                const isBlocked = provider_blocks.some(
-                    (b) =>
-                        b.currentlyBlocked &&
-                        String(b.supplierNumber) == String(supplierInfo.number) &&
-                        new Date(b.validFrom) <= now &&
-                        new Date(b.validTo+"T23:59:59") >= now
-                );
+                const isBlocked = provider_blocks.some((b) => {
+                    if (!b.currentlyBlocked || String(b.supplierNumber) !== String(supplierInfo.number)) {
+                        return false;
+                    }
+                    const from = parseDisplayDate(b.validFrom);
+                    const to = parseDisplayDate(b.validTo);
+                    if (!from || !to) return false;
+                    return now >= startOfLocalDay(from) && now <= endOfLocalDay(to);
+                });
                 if (isBlocked) {
                     setIsBlockedProvider(true);
                     showValidationAlert("Actualmente existe un bloqueo para la publicación de facturas según el proveedor. Por favor, valida con el área de Finanzas de Sodimac para continuar.");
@@ -176,6 +178,19 @@ export const ReceptionInvoiceControl = forwardRef<
         setIsValidInvoice(false);
         setDataMsg("");
         invoiceAlert.showWarning("Atención", message);
+    };
+
+    const showFinishAlert = (response: { message?: string; warnings?: string[] }) => {
+        setDataMsg("");
+        const warnings = (response.warnings ?? []).filter((w) => String(w).trim() !== "");
+        if (warnings.length > 0) {
+            invoiceAlert.showWarning("Atención", warnings.join("\n\n"));
+            return;
+        }
+        invoiceAlert.showSuccess(
+            "Operación exitosa",
+            response.message || "Tu factura se procesó correctamente."
+        );
     };
 
     const validateInvoice = async () => {
@@ -259,10 +274,7 @@ export const ReceptionInvoiceControl = forwardRef<
                     setDataMsg("");
                     setIsValidInvoice(true);
                     setIsFinished(true);
-                    invoiceAlert.showSuccess(
-                        "Operación exitosa",
-                        "Tu factura se procesó correctamente."
-                    );
+                    showFinishAlert(response);
                 } else {
                     setDataMsg("");
                     invoiceAlert.showError(

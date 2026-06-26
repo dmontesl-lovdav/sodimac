@@ -108,6 +108,19 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
             render: (r: Reception) => r.order?.shippingGuideNumber ?? "--",
         },
         {
+            header: "Sucursal",
+            align: "center" as const,
+            render: (r: Reception) => r.destinationId ?? "--",
+        },
+        {
+            header: "Número Proveedor",
+            render: (r: Reception) => r.supplier?.supplierNumber ?? r.supplierNumber ?? "--",
+        },
+        {
+            header: "Nombre Proveedor",
+            render: (r: Reception) => r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
+        },
+        {
             header: "Tipo Proveedor",
             render: (r: Reception) => resolveProviderTypeLabel(r),
         },
@@ -133,14 +146,6 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
                 const inv = getAdendumReferences(r);
                 return inv?.invoiceUuid ?? inv?.invoice_uuid ?? "--";
             },
-        },
-        {
-            header: "Número Proveedor",
-            render: (r: Reception) => r.supplier?.supplierNumber ?? r.supplierNumber ?? "--",
-        },
-        {
-            header: "Nombre Proveedor",
-            render: (r: Reception) => r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
         },
         {
             header: "Fecha Recepción",

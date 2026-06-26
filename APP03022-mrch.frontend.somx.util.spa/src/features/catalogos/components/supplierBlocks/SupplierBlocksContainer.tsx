@@ -588,9 +588,16 @@ const SupplierBlocksContainer = () => {
               <label style={styles.filterLabel}>Número Proveedor</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 style={styles.filterInput}
                 value={filters.supplierNumber}
-                onChange={(e) => setFilters({ ...filters, supplierNumber: e.target.value })}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    supplierNumber: e.target.value.replace(/\D+/g, ''),
+                  })
+                }
                 placeholder="Buscar..."
               />
             </div>

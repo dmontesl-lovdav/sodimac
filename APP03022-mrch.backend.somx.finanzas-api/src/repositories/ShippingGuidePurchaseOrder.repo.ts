@@ -1,7 +1,5 @@
 import { getDataSource } from "@/config/typeorm-datasource.js";
 import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
-import { ListShippingGuideQuery } from "@/schemas/shippingGuide.schema.js";
-import { Between, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
 import { logger } from "@/utils/logger.js";
 
 export const repo = () => getDataSource().getRepository(ShippingGuidePurchaseOrder);

@@ -24,6 +24,7 @@ import {
 } from "../shippingGuideStatusCatalog";
 import { resolvePurchaseOrderStatusDescription } from "../purchaseOrderStatusLabels";
 import { getShippingGuideStatusCode } from "../utils/shippingGuideStatus";
+import { APP_EVENT, useSecurityContext } from "@shared/security";
 import "../styles/shippingGuides.css";
 
 const statusBadgeByCode: Record<number, string> = {
@@ -86,6 +87,7 @@ export function ShippingGuideGrid({
   onDownloadXmlRow,
 }: ShippingGuideGridProps): ReactElement {
   const nav = useNavigate();
+  const { hasEvent } = useSecurityContext();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -208,42 +210,60 @@ export function ShippingGuideGrid({
     },
   ];
 
-  const actions: RowAction<ShippingGuide>[] = [
+  const allActions: { gate: { app: string; event: string }; action: RowAction<ShippingGuide> }[] = [
     {
-      title: "Ver",
-      icon: eyeIcon,
-      onClick: (guide) => nav(`/finanzas/guias/${guide.shippingGuideId}`),
+      gate: APP_EVENT.CARTA_PORTE.VIEW_DETAIL,
+      action: {
+        title: "Ver",
+        icon: eyeIcon,
+        onClick: (guide) => nav(`/finanzas/guias/${guide.shippingGuideId}`),
+      },
     },
     {
-      title: "Exportar CSV",
-      icon: csvIcon,
-      onClick: (guide) => onDownloadCsvRow?.(guide),
-      isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
+      gate: APP_EVENT.CARTA_PORTE.DOWNLOAD_CSV,
+      action: {
+        title: "Exportar CSV",
+        icon: csvIcon,
+        onClick: (guide) => onDownloadCsvRow?.(guide),
+        isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
+      },
     },
     {
-      title: "Exportar XML",
-      icon: xmlIcon,
-      onClick: (guide) => onDownloadXmlRow?.(guide),
-      isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
+      gate: APP_EVENT.CARTA_PORTE.DOWNLOAD_XML,
+      action: {
+        title: "Exportar XML",
+        icon: xmlIcon,
+        onClick: (guide) => onDownloadXmlRow?.(guide),
+        isDisabled: (guide) => getShippingGuideStatusCode(guide) === 9,
+      },
     },
     {
-      title: "Cancelar",
-      icon: deleteIcon,
-      onClick: (guide) => onRequestCancel?.([guide]),
-      isDisabled: (guide) => ![1, 2].includes(getShippingGuideStatusCode(guide)),
+      gate: APP_EVENT.CARTA_PORTE.CANCEL,
+      action: {
+        title: "Cancelar",
+        icon: deleteIcon,
+        onClick: (guide) => onRequestCancel?.([guide]),
+        isDisabled: (guide) => ![1, 2].includes(getShippingGuideStatusCode(guide)),
+      },
     },
     {
-      title: "Actualizar estatus",
-      icon: editIcon,
-      onClick: (guide) =>
-        onRequestStatusUpdate
-          ? onRequestStatusUpdate(guide)
-          : nav(`/finanzas/guias/${guide.shippingGuideId}/estatus`, {
-              state: { guide },
-            }),
-      isDisabled: (guide) => ![1, 4].includes(getShippingGuideStatusCode(guide)),
+      gate: APP_EVENT.CARTA_PORTE.UPDATE_STATUS,
+      action: {
+        title: "Actualizar estatus",
+        icon: editIcon,
+        onClick: (guide) =>
+          onRequestStatusUpdate
+            ? onRequestStatusUpdate(guide)
+            : nav(`/finanzas/guias/${guide.shippingGuideId}/estatus`, {
+                state: { guide },
+              }),
+        isDisabled: (guide) => ![1, 4].includes(getShippingGuideStatusCode(guide)),
+      },
     },
   ];
+  const actions: RowAction<ShippingGuide>[] = allActions
+    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .map(({ action }) => action);
 
   return (
     <GenericTable<ShippingGuide>

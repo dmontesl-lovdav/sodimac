@@ -16,6 +16,7 @@ import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 
 interface Props {
     rows: Rebate[];
@@ -108,47 +109,51 @@ export default function DiscountsGridTable({
 
                 return (
                     <div className="table-actions">
-                        <button
-                            title="Ver descuento relacionado"
-                            type="button"
-                            disabled={disabled}
-                            onClick={() =>
-                                !disabled &&
-                                nav(
-                                    `${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`
-                                )
-                            }
-                            style={{
-                                cursor: disabled ? "not-allowed" : "pointer",
-                                opacity: disabled ? 0.4 : 1,
-                                background: "transparent",
-                                border: "none",
-                                padding: 0,
-                            }}
-                        >
-                            <img src={eyeIconUrl} alt="Ver" width={20} height={20} />
-                        </button>
-                        <button
-                            title="Relacionar Nota de Crédito"
-                            type="button"
-                            disabled={disabled}
-                            onClick={() =>
-                                !disabled &&
-                                (window.location.href = buildFiscalSpaUrl(
-                                    "publicar-nota-credito",
-                                    fiscalParams
-                                ))
-                            }
-                            style={{
-                                cursor: disabled ? "not-allowed" : "pointer",
-                                opacity: disabled ? 0.4 : 1,
-                                background: "transparent",
-                                border: "none",
-                                padding: 0,
-                            }}
-                        >
-                            <img src={plusIconUrl} alt="Relacionar" width={20} height={20} />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.DISCOUNTS.VIEW_DETAIL}>
+                            <button
+                                title="Ver descuento relacionado"
+                                type="button"
+                                disabled={disabled}
+                                onClick={() =>
+                                    !disabled &&
+                                    nav(
+                                        `${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`
+                                    )
+                                }
+                                style={{
+                                    cursor: disabled ? "not-allowed" : "pointer",
+                                    opacity: disabled ? 0.4 : 1,
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: 0,
+                                }}
+                            >
+                                <img src={eyeIconUrl} alt="Ver" width={20} height={20} />
+                            </button>
+                        </PermissionGate>
+                        <PermissionGate appEvent={APP_EVENT.DISCOUNTS.LINK_CREDIT_NOTE}>
+                            <button
+                                title="Relacionar Nota de Crédito"
+                                type="button"
+                                disabled={disabled}
+                                onClick={() =>
+                                    !disabled &&
+                                    (window.location.href = buildFiscalSpaUrl(
+                                        "publicar-nota-credito",
+                                        fiscalParams
+                                    ))
+                                }
+                                style={{
+                                    cursor: disabled ? "not-allowed" : "pointer",
+                                    opacity: disabled ? 0.4 : 1,
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: 0,
+                                }}
+                            >
+                                <img src={plusIconUrl} alt="Relacionar" width={20} height={20} />
+                            </button>
+                        </PermissionGate>
                     </div>
                 );
             },

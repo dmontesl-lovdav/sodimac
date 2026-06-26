@@ -42,6 +42,10 @@ type CreditNoteXmlData = {
     uuid: string;
     fechaTimbrado: string;
   };
+  comprobante: {
+    tipoDeComprobante: string;
+    formaPago: string;
+  };
   rfcEmisor: string;
   nombreProveedor: string;
   serie: string;
@@ -93,6 +97,10 @@ function parseValidatedXml(data: unknown): CreditNoteXmlData | null {
     timbreFiscalDigital: {
       uuid: String(timbre.uuid ?? ""),
       fechaTimbrado: String(timbre.fechaTimbrado ?? ""),
+    },
+    comprobante: {
+      tipoDeComprobante: String(comprobante.tipoDeComprobante ?? ""),
+      formaPago: String(comprobante.formaPago ?? ""),
     },
     rfcEmisor: String(emisor.rfc ?? ""),
     nombreProveedor: String(emisor.nombre ?? ""),
@@ -165,14 +173,12 @@ function RelatedInvoiceGrid({
             <th>Serie</th>
             <th>Folio</th>
             <th>Subtotal</th>
-            <th>Total</th>
             <th>UUID</th>
             <th>NC Relacionadas</th>
             <th>Tipo Proveedor</th>
             <th>Número Proveedor</th>
             <th>RFC</th>
             <th>Nombre Proveedor</th>
-            <th>Fecha Emisión</th>
             <th>Fecha Recepción</th>
             <th>Estado</th>
             <th>Acción</th>
@@ -185,7 +191,6 @@ function RelatedInvoiceGrid({
             <td>
               {invoice.subtotal != null ? formatAmount(invoice.subtotal) : "--"}
             </td>
-            <td>{invoice.total != null ? formatAmount(invoice.total) : "--"}</td>
             <td className="pcn-cell-wrap">
               {invoice.fiscalUuid ?? invoice.invoiceUuid ?? "--"}
             </td>
@@ -195,11 +200,8 @@ function RelatedInvoiceGrid({
             <td>{invoice.emisorRfc ?? "--"}</td>
             <td>{invoice.supplierName ?? invoice.emisorName ?? "--"}</td>
             <td>
-              {invoice.issueDate ? formatDate(invoice.issueDate) : "N/D"}
-            </td>
-            <td>
-              {invoice.certificationDate
-                ? formatDate(invoice.certificationDate)
+              {invoice.createdAt
+                ? formatDate(invoice.createdAt)
                 : "N/D"}
             </td>
             <td>{invoice.statusName ?? "--"}</td>
@@ -341,6 +343,8 @@ function PublishCreditNoteContent() {
     setIsValidating(false);
     setOperationResult(null);
     setPublished(false);
+    setInvoice("");
+
   }, []);
 
   const handleViewInvoice = useCallback(
@@ -558,7 +562,18 @@ function PublishCreditNoteContent() {
       {noTraceWarning}
 
       <div className="pcn-control">
-       
+      {
+        relatedInvoice && (
+          <div>
+            <h2 className="pcn-section-title">Datos de la factura relacionada</h2>
+            <RelatedInvoiceGrid
+              invoice={relatedInvoice}
+              loading={loadingInvoice}
+              onViewInvoice={handleViewInvoice}
+            />
+          </div>
+        )
+       }
 
         {isUploading ? <GenericLinearProgress /> : null}
 
@@ -665,6 +680,14 @@ function PublishCreditNoteContent() {
                       </td>
                     </tr>
                     <tr>
+                      <td className="pcn-cell pcn-cell-label">
+                        Forma de Pago:
+                      </td>
+                      <td className="pcn-cell">
+                        {creditNoteData.comprobante.formaPago}
+                      </td>
+                    </tr>
+                    <tr>
                       <td className="pcn-cell pcn-cell-label">UUID Factura:</td>
                       <td className="pcn-cell">{creditNoteData.timbreFiscalDigital.uuid}</td>
                     </tr>
@@ -674,18 +697,7 @@ function PublishCreditNoteContent() {
             </div>
           )}
         </div>
-       {
-        relatedInvoice && (
-          <div>
-            <h2 className="pcn-section-title">Datos de la factura relacionada</h2>
-            <RelatedInvoiceGrid
-              invoice={relatedInvoice}
-              loading={loadingInvoice}
-              onViewInvoice={handleViewInvoice}
-            />
-          </div>
-        )
-       }
+       
       </div>
 
       {operationResult && traceId && operationResult.severity !== "error" && (

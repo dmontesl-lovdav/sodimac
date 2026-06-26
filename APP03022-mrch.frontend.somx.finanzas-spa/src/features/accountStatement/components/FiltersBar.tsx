@@ -8,6 +8,7 @@ import {
 import { GenericButton, GenericModal, GenericSelect, GenericSelectSearchable } from '@shared/components/ui';
 import type { AccountStatementFilters } from '../interfaces';
 import { MONTHS } from '@/utils/utils';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import '../styles/AccountStatementFilters.css';
 
@@ -221,12 +222,16 @@ export default function FiltersBar({
                     </div>
 
                     <div className="as-action finz-filter-actions">
-                        <GenericButton variant="primary" onClick={handleSubmit}>
-                            Buscar
-                        </GenericButton>
-                        <GenericButton variant="outlineFill" onClick={handleClear}>
-                            Limpiar
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.SEARCH}>
+                            <GenericButton variant="primary" onClick={handleSubmit}>
+                                Buscar
+                            </GenericButton>
+                        </PermissionGate>
+                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.CLEAR_FILTERS}>
+                            <GenericButton variant="outlineFill" onClick={handleClear}>
+                                Limpiar
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
             </div>

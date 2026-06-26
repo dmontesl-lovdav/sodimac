@@ -20,6 +20,7 @@ import { getErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/utils";
 import { getShippingGuideStatusCode } from "../utils/shippingGuideStatus";
 import { FINANCE_LIST_KEYS } from "@/shared/hooks";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import "../styles/shippingGuides.css";
 
 type StatusOption = { value: number; label: string };
@@ -584,14 +585,16 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
             </div>
 
             <div className="sg-status-actions-row">
-                <GenericButton
-                    variant="primary"
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={loading}
-                >
-                    {loading ? "Actualizando..." : "Actualizar estatus"}
-                </GenericButton>
+                <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.UPDATE_STATUS}>
+                    <GenericButton
+                        variant="primary"
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? "Actualizando..." : "Actualizar estatus"}
+                    </GenericButton>
+                </PermissionGate>
             </div>
 
             {renderHistory()}

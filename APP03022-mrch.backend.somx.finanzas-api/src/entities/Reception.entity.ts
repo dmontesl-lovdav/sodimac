@@ -75,17 +75,9 @@ export class Reception {
     @OneToOne(() => AddendumManual, addendumManual => addendumManual.reception, { cascade: true, eager: true })
     addendumManual?: AddendumManual;
 
-    // @OneToMany(() => Addendum, (addendum) => addendum.reception, { cascade: true, eager: true })
-    // @JoinColumn({ name: 'reception_number' })
-    // addendums?: Addendum[];
+    @OneToOne(() => Addendum, (addendum) => addendum.reception, { cascade: true, eager: true })
 
-    @OneToOne(() => Addendum, addendum => addendum.reception, { cascade: true, eager: true })
-    @OneToOne(
-        () => Addendum,
-        (addendum) => addendum.reception,
-        { cascade: true, eager: true }
-    )
-    @JoinColumn({ name: 'reception_number' })
+    @JoinColumn({ name: 'reception_id' })
     addendums?: any;
 
     listAddendum?: any;

@@ -389,27 +389,38 @@ export default function ImportElementsContainer() {
     setIsDownloading(true);
 
     try {
-      const templateFile = catalog.type === 'Primario' ? 'c_Paises.xlsx' : 'c_Estados.xlsx';
-      
-      const date = new Date();
-      const formattedDate = `${String(date.getDate()).padStart(2, '0')}${String(date.getMonth() + 1).padStart(2, '0')}${date.getFullYear()}`;
-      
-      const catalogName = catalog.name.replace(/\s+/g, '_').toLowerCase();
-      const downloadFileName = `${catalogName}_${formattedDate}.xlsx`;
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const dateStr = `${day}${month}${year}`;
+      const catalogName =
+        catalog.name.replace(/\s+/g, '_').toLowerCase() || 'plantilla';
+      const downloadFileName = `${catalogName}_${dateStr}.xlsx`;
 
-      const response = await fetch(`/templates/${templateFile}`);
-      if (!response.ok) {
-        throw new Error('No se pudo descargar la plantilla');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = downloadFileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const isPrimario = catalog.type === 'Primario';
+      const headers = [
+        'tipoCatalogo',
+        'elemento',
+        'valor',
+        'fechaInicioVigencia',
+        'fechaFinVigencia',
+        'idPadre',
+        'valorConversion',
+      ];
+      const exampleRow = isPrimario
+        ? ['primario', 'México', 'MEX', '2025-01-01', '2025-12-31', '', 'MX']
+        : ['secundario', 'Jalisco', 'JAL', '2025-01-01', '', '151', '21'];
+
+      const wsData = [headers, exampleRow];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Layout');
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      saveAs(blob, downloadFileName);
     } catch (error) {
       console.error('Error downloading template:', error);
       showError('Ocurrió un problema al descargar la plantilla. Intente nuevamente.');

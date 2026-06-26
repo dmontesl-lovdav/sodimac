@@ -32,12 +32,6 @@ export async function findAllPaginated(filter: FindOptionsWhere<ShippingGuide>, 
 export async function findById(id: string) {
     const entityFinded = await repo().findOne({
         where: { shippingGuideId: id }
-        /*,
-        relations: {
-            shippingGuidePurchaseOrders: {
-                purchaseOrder: { receptions: true },
-            },
-        },*/
     });
     logger.info("✅ shippingGuide finded  → data={}", entityFinded);
     return entityFinded;

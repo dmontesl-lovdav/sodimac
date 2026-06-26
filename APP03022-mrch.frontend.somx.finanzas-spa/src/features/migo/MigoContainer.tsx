@@ -15,6 +15,7 @@ import deleteIcon from '@assets/delete.svg';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoSearchFilters } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
+import { APP_EVENT, PermissionGate, useSecurityContext } from '@shared/security';
 
 import './styles/MigoContainer.css';
 import { useFinanceAlertModal } from '@/shared/hooks/useFinanceAlertModal';
@@ -59,6 +60,7 @@ export default function MigoContainer(): ReactElement {
     const financeAlert = useFinanceAlertModal();
     const notifyIfEmptySearch = useRef(false);
     const [searchParams] = useSearchParams();
+    const { hasEvent } = useSecurityContext();
 
     const locationState = (location.state as any) || {};
     const paymentFromState = locationState?.payment;
@@ -386,30 +388,45 @@ export default function MigoContainer(): ReactElement {
         },
     ];
 
-    const rowActions: RowAction<MigoDocument>[] = [
+    const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<MigoDocument> }[] = [
         {
-            title: 'Ver Recepciones',
-            icon: eyeIcon,
-            onClick: (row) => navigate(`/finanzas/migo/${row.migoDocumentId}/recepciones`),
+            gate: APP_EVENT.MIGO.VIEW_DETAIL,
+            action: {
+                title: 'Ver Recepciones',
+                icon: eyeIcon,
+                onClick: (row) => navigate(`/finanzas/migo/${row.migoDocumentId}/recepciones`),
+            },
         },
         {
-            title: 'Autorizar',
-            icon: editIcon,
-            onClick: (row) => openAuthorizeConfirm(row),
-            isDisabled: (row) => row.status !== 9 || actionLoading,
+            gate: APP_EVENT.MIGO.AUTHORIZE,
+            action: {
+                title: 'Autorizar',
+                icon: editIcon,
+                onClick: (row) => openAuthorizeConfirm(row),
+                isDisabled: (row) => row.status !== 9 || actionLoading,
+            },
         },
         {
-            title: 'Rechazar',
-            icon: deleteIcon,
-            onClick: (row) => openRejectModal(row),
-            isDisabled: (row) => row.status !== 9 || actionLoading,
+            gate: APP_EVENT.MIGO.REJECT,
+            action: {
+                title: 'Rechazar',
+                icon: deleteIcon,
+                onClick: (row) => openRejectModal(row),
+                isDisabled: (row) => row.status !== 9 || actionLoading,
+            },
         },
         {
-            title: 'Exportar CSV',
-            icon: csvIcon,
-            onClick: (row) => handleExportCsv(row),
+            gate: APP_EVENT.MIGO.DOWNLOAD_CSV,
+            action: {
+                title: 'Exportar CSV',
+                icon: csvIcon,
+                onClick: (row) => handleExportCsv(row),
+            },
         },
     ];
+    const rowActions: RowAction<MigoDocument>[] = rowActionDescriptors
+        .filter(({ gate }) => hasEvent(gate.app, gate.event))
+        .map(({ action }) => action);
 
     return (
         <div className="migo-layout">
@@ -426,12 +443,14 @@ export default function MigoContainer(): ReactElement {
                         </p>
                     </div>
                     <div className="migo-toolbar">
-                        <GenericButton
-                            variant="primary"
-                            onClick={handleGoToPublish}
-                        >
-                            {paymentContext ? 'Publicar complemento' : 'Publicar OC'}
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.MIGO.PUBLISH}>
+                            <GenericButton
+                                variant="primary"
+                                onClick={handleGoToPublish}
+                            >
+                                {paymentContext ? 'Publicar complemento' : 'Publicar OC'}
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
 
@@ -482,13 +501,17 @@ export default function MigoContainer(): ReactElement {
                                 className="migo-filter-input"
                             />
 
-                            <GenericButton variant="outline" onClick={handleSearch}>
-                                Buscar
-                            </GenericButton>
+                            <PermissionGate appEvent={APP_EVENT.MIGO.SEARCH}>
+                                <GenericButton variant="outline" onClick={handleSearch}>
+                                    Buscar
+                                </GenericButton>
+                            </PermissionGate>
 
-                            <GenericButton variant="outline" onClick={handleClear}>
-                                Limpiar
-                            </GenericButton>
+                            <PermissionGate appEvent={APP_EVENT.MIGO.CLEAR_FILTERS}>
+                                <GenericButton variant="outline" onClick={handleClear}>
+                                    Limpiar
+                                </GenericButton>
+                            </PermissionGate>
                         </div>
                     </div>
                 </div>

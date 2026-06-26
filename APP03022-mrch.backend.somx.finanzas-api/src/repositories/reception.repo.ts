@@ -2,14 +2,12 @@ import { datasource } from "@/config/typeorm-datasource.js";
 import { Reception } from "@/entities/Reception.entity.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js"
-import { Between,  } from "typeorm";
 import type {
 ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
-import { number, z } from "zod/v4";
-import { In, type FindOptionsWhere } from "typeorm";
-import { Raw } from 'typeorm';
-import { DeepPartial } from 'typeorm';
+import { z } from "zod/v4";
+import { In, type FindOptionsWhere, Between, DeepPartial } from "typeorm";
+import { Not } from 'typeorm';
 
 export const repo = () => datasource.getRepository(Reception);
 
@@ -78,7 +76,8 @@ export async function findByVendorAndDateRange(vendorNumber: number, start: Date
 }
 
 export async function updateOne(receptionId: string, rec: Reception) {
-    await repo().update({ receptionId }, rec);
+    //await repo().update({ receptionId }, rec);
+    await repo().save(rec);
     return findById(receptionId);
 }
 
@@ -120,7 +119,7 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         if(filter.status !== undefined && filter.status != 8){  // status=8 Borrado logico
             whereClause.status = filter.status;
         } else {
-            whereClause.status != z.coerce.number().parse(8);   //No se le permite ver al front las de estatus= 8 Borrado logico
+            whereClause.status = Not(8);   //No se le permite ver al front las de estatus= 8 Borrado logico
         }
         if(filter.receptionId !== undefined){
             whereClause.receptionId = filter.receptionId;

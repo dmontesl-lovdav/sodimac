@@ -240,21 +240,51 @@ function extractKeyNumberFromError(err: unknown, prefix: string): number | null 
 }
 
 async function createDictionaryEntry(elementName: string): Promise<number> {
-    return await datasource.transaction(async (manager) => {
-        const dictRepoInstance = manager.getRepository(DictionaryLang);
+    const MAX_ATTEMPTS = 8;
+    let lastErr: unknown = null;
 
-        const tempDictId = -(Math.floor(Math.random() * 2_000_000_000) + 1);
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        try {
+            return await datasource.transaction(async (manager) => {
+                const dictRepoInstance = manager.getRepository(DictionaryLang);
 
-        const entry = dictRepoInstance.create({
-            dictId: tempDictId,
-            langId: DEFAULT_LANG_ID,
-            description: elementName,
-        });
-        let saved = await dictRepoInstance.save(entry);
-        saved.dictId = saved.id;
-        saved = await dictRepoInstance.save(saved);
-        return saved.id;
-    });
+                const maxRow = await manager
+                    .createQueryBuilder()
+                    .select('COALESCE(MAX(d.dict_id), 0)', 'max')
+                    .from(DictionaryLang, 'd')
+                    .where('d.lang_id = :langId', { langId: DEFAULT_LANG_ID })
+                    .getRawOne<{ max: number | string }>();
+
+                const rawMax = maxRow?.max;
+                const currentMax =
+                    typeof rawMax === 'string' ? Number.parseInt(rawMax, 10) : (rawMax ?? 0);
+                const bump = attempt === 0 ? 1 : 1 + Math.floor(Math.random() * attempt * 4);
+                const nextDictId = (Number.isFinite(currentMax) ? currentMax : 0) + bump;
+
+                const entry = dictRepoInstance.create({
+                    dictId: nextDictId,
+                    langId: DEFAULT_LANG_ID,
+                    description: elementName,
+                });
+                const saved = await dictRepoInstance.save(entry);
+                return saved.dictId;
+            });
+        } catch (err) {
+            lastErr = err;
+            if (isDictionaryUniqueViolation(err)) continue;
+            throw err;
+        }
+    }
+
+    throw lastErr ?? new Error('No fue posible asignar un dict_id único después de múltiples intentos.');
+}
+
+function isDictionaryUniqueViolation(err: unknown): boolean {
+    const e = err as { code?: string; driverError?: { code?: string }; detail?: string };
+    const code = e?.code ?? e?.driverError?.code;
+    if (code !== '23505') return false;
+    const detail = (e?.detail ?? '').toLowerCase();
+    return detail.includes('dict_id') && detail.includes('lang_id');
 }
 
 async function updateDictionaryEntry(dictId: number | null | undefined, newName: string): Promise<void> {

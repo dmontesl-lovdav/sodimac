@@ -12,6 +12,7 @@ import { Title, Divider } from "@/shared/components/ui/misc";
 
 import DiscountsGridTable from "./components/DiscountsGridTable";
 
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import "./styles/DiscountsContainer.css";
 import {
   exportToCSV,
@@ -266,14 +267,16 @@ export default function DiscountsContainer(): ReactElement {
               Consulta y seguimiento de rebates/documentos comerciales.
             </p>
           </div>
-          <GenericButton
-            variant="primary"
-            onClick={handleExportCsv}
-            disabled={loading || rows.length === 0}
-            type="button"
-          >
-            Exportar CSV
-          </GenericButton>
+          <PermissionGate appEvent={APP_EVENT.DISCOUNTS.DOWNLOAD_CSV}>
+            <GenericButton
+              variant="primary"
+              onClick={handleExportCsv}
+              disabled={loading || rows.length === 0}
+              type="button"
+            >
+              Exportar CSV
+            </GenericButton>
+          </PermissionGate>
         </div>
 
         <div className="dc-filters-section">

@@ -10,6 +10,7 @@ import {
 import GenericTable from '@/shared/components/ui/table/GenericTable';
 import type { Column } from '@/shared/components/ui/table/GenericTable';
 import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import { formatDate } from '@/utils/utils';
 import { migoService } from './api/MigoClient';
@@ -154,9 +155,11 @@ export default function MigoArticles(): ReactElement {
                         <p className="migo-description">Detalle de artículos de la recepción seleccionada.</p>
                     </div>
                     <div className="migo-toolbar finz-toolbar-actions">
-                        <GenericButton variant="primary" onClick={handleExportCsv} disabled={articles.length === 0}>
-                            Exportar CSV
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.MIGO.DOWNLOAD_CSV_DETAIL}>
+                            <GenericButton variant="primary" onClick={handleExportCsv} disabled={articles.length === 0}>
+                                Exportar CSV
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
 
@@ -199,6 +202,14 @@ export default function MigoArticles(): ReactElement {
                                         : headerData.importeSinImpuesto,
                                 )}
                             </div>
+                        </div>
+                        <div>
+                            <div className="migo-summary-label">Número de Proveedor</div>
+                            <div className="migo-summary-value">{headerData.numeroProveedor ?? '-'}</div>
+                        </div>
+                        <div>
+                            <div className="migo-summary-label">Nombre de Proveedor</div>
+                            <div className="migo-summary-value">{headerData.vendorName ?? '-'}</div>
                         </div>
                     </div>
                 )}

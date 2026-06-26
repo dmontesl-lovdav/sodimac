@@ -241,8 +241,6 @@ export async function create(req: AuthenticatedRequest
     , files: Express.Multer.File[] | null,  origin: number
     , status: number, transactionalEntityManager: EntityManager, saveFileOnDb?: string, createShippingGuideList: CreateShippingGuideDto[] = []) {
 
-    const token = req.authToken ?? '';
-    const folder = "";
     let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "", "");
 
 

@@ -12,6 +12,7 @@ import requestConfirmIcon from "@assets/RequestConfirmIcon.svg";
 import deleteIcon from "@assets/delete.svg";
 
 import { formatDate, MONTHS } from "@/utils/utils";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import "../styles/AccountStatementGrid.css";
 
@@ -94,46 +95,52 @@ export default function AccountStatementGrid({
 
                 return (
                     <div className="as-actions">
-                        <button
-                            title="Ver"
-                            onClick={() => onView(r)}
-                            className="as-action-btn"
-                            type="button"
-                        >
-                            <img src={eyeShowIcon} alt="Ver" className="as-action-icon" />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.VIEW_DETAIL}>
+                            <button
+                                title="Ver"
+                                onClick={() => onView(r)}
+                                className="as-action-btn"
+                                type="button"
+                            >
+                                <img src={eyeShowIcon} alt="Ver" className="as-action-icon" />
+                            </button>
+                        </PermissionGate>
 
-                        <button
-                            title={
-                                canConfirm
-                                    ? "Confirmar revisión"
-                                    : "No disponible para este estatus"
-                            }
-                            onClick={() => canConfirm && onReview(r)}
-                            className={actionBtnClass(!canConfirm)}
-                            type="button"
-                            disabled={!canConfirm}
-                        >
-                            <img
-                                src={requestConfirmIcon}
-                                alt="Confirmar revisión"
-                                className="as-action-icon"
-                            />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.CONFIRM_REVIEW}>
+                            <button
+                                title={
+                                    canConfirm
+                                        ? "Confirmar revisión"
+                                        : "No disponible para este estatus"
+                                }
+                                onClick={() => canConfirm && onReview(r)}
+                                className={actionBtnClass(!canConfirm)}
+                                type="button"
+                                disabled={!canConfirm}
+                            >
+                                <img
+                                    src={requestConfirmIcon}
+                                    alt="Confirmar revisión"
+                                    className="as-action-icon"
+                                />
+                            </button>
+                        </PermissionGate>
 
-                        <button
-                            title={
-                                canReject
-                                    ? "Rechazar"
-                                    : "No disponible para este estatus"
-                            }
-                            onClick={() => canReject && onReject(r)}
-                            className={actionBtnClass(!canReject)}
-                            type="button"
-                            disabled={!canReject}
-                        >
-                            <img src={deleteIcon} alt="Rechazar" className="as-action-icon" />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.REQUEST_REVIEW}>
+                            <button
+                                title={
+                                    canReject
+                                        ? "Rechazar"
+                                        : "No disponible para este estatus"
+                                }
+                                onClick={() => canReject && onReject(r)}
+                                className={actionBtnClass(!canReject)}
+                                type="button"
+                                disabled={!canReject}
+                            >
+                                <img src={deleteIcon} alt="Rechazar" className="as-action-icon" />
+                            </button>
+                        </PermissionGate>
                     </div>
                 );
             },

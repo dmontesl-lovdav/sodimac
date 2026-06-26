@@ -5,9 +5,6 @@ import {
     UpdateSapDocumentSchema,
     ListSapDocumentQuerySchema,
     IdParamSchema,
-    type CreateSapDocumentDto,
-    type UpdateSapDocumentDto,
-    type ListSapDocumentQuery,
 } from "@/schemas/sapDocument.schema.js";
 import { validateBody, validateParams } from "@/middlewares/validate.js";
 

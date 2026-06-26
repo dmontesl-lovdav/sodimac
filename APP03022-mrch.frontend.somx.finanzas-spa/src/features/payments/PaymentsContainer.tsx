@@ -8,6 +8,7 @@ import { Title, Divider } from "@/shared/components/ui/misc";
 
 import FiltersBar from "./components/FiltersBar";
 import ResultsTable from "./components/ResultsTable";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import { paymentsService } from "./api/paymentsService";
 import { PaymentRecord, PaymentSearchParams } from "./interfaces";
@@ -272,28 +273,30 @@ export default function PaymentsContainer(): ReactElement {
                     </div>
 
                     <div className="pay-header-actions">
-                        <GenericButton
-                            onClick={handleExportCsv}
-                            disabled={loading || payments.length === 0}
-                        >
-                            <span
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                }}
+                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.DOWNLOAD_CSV}>
+                            <GenericButton
+                                onClick={handleExportCsv}
+                                disabled={loading || payments.length === 0}
                             >
                                 <span
-                                    className="pay-download-ico"
-                                    aria-hidden="true"
                                     style={{
-                                        WebkitMaskImage: `url(${downloadIconUrl})`,
-                                        maskImage: `url(${downloadIconUrl})`,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
                                     }}
-                                />
-                                Exportar CSV
-                            </span>
-                        </GenericButton>
+                                >
+                                    <span
+                                        className="pay-download-ico"
+                                        aria-hidden="true"
+                                        style={{
+                                            WebkitMaskImage: `url(${downloadIconUrl})`,
+                                            maskImage: `url(${downloadIconUrl})`,
+                                        }}
+                                    />
+                                    Exportar CSV
+                                </span>
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
 

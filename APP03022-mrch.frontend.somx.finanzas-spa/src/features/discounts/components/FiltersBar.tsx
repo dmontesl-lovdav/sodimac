@@ -7,6 +7,7 @@ import {
 import { GenericDateRangePicker } from "@shared/components/ui/date";
 import type { ChangeEvent, ReactElement } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
   RebateStatusOptions,
   RebateFilters,
@@ -228,12 +229,16 @@ export default function FiltersBar({ onSearch, onClear, providers, rebateTypeOpt
         </div>
 
         <div className="finz-filter-actions">
-          <GenericButton variant="outlineFill" onClick={handleSubmit}>
-            Buscar
-          </GenericButton>
-          <GenericButton variant="outline" onClick={handleClear}>
-            Limpiar
-          </GenericButton>
+          <PermissionGate appEvent={APP_EVENT.DISCOUNTS.SEARCH}>
+            <GenericButton variant="outlineFill" onClick={handleSubmit}>
+              Buscar
+            </GenericButton>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.DISCOUNTS.CLEAR_FILTERS}>
+            <GenericButton variant="outline" onClick={handleClear}>
+              Limpiar
+            </GenericButton>
+          </PermissionGate>
         </div>
       </div>
     </div>

@@ -350,37 +350,6 @@ export async function validarStatus(reception: Reception, newStatus: number, opt
     const statusActual = reception.status;
     const isValid = await svcAxios.ValidStatus((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogStatusTrain.CATALOGS_API_STATUS_TRAIN + constants.CatalogStatusTrain.CATALOGS_API_VALID_TRAIN, optionId, (statusActual?? 0) ,newStatus, token ?? ''  );
     return isValid;
-
-    // let response = false;
-    // //statusActual == 0, Recepción disponilbe, 1=Consumida, 2=Consumida manual, 7=cancelada, 8=Borrado logico
-    // if(statusActual == 0 && (newStatus == 1 || newStatus == 2 || newStatus == 7 || newStatus == 8)){
-    //     response = true;
-    // }
-    // //1=Consumida, 3=En proceso Contable, 4=Rechazo Contable
-    // if(statusActual == 1 && (newStatus == 3 || newStatus == 4)){ 
-    //     response = true; 
-    // }
-    // //2=Consumida manual
-    // if(statusActual == 2 && newStatus == 3 || newStatus == 4){ 
-    //     response = true; 
-    // }
-    // //5=En proceso de Pago
-    // if(statusActual == 3 && newStatus == 5){ 
-    //     response = true; 
-    // }
-    // if(statusActual == 4 && newStatus == 5){ 
-    //     response = true; 
-    // }
-    // //6=Pagada
-    // if(statusActual == 5 && newStatus == 6){ 
-    //     response = true; 
-    // }
-    // //6=Pagada, 7=Cancelada, 8=Borrado logico
-    // if(statusActual == 6 || statusActual == 7 || statusActual == 8 ){ 
-    //     response = false; 
-    // }
-
-    // return response;
 }
 
 export function applyOriginCatalogLabels(receptions: Reception[], lookup: Map<number, string>): void {

@@ -201,6 +201,11 @@ const SupplierBlockForm = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
+    if (name === 'supplierNumber') {
+      const onlyDigits = value.replace(/\D+/g, '');
+      setFormData({ ...formData, [name]: onlyDigits });
+      return;
+    }
     setFormData({ ...formData, [name]: value });
   };
 
@@ -284,6 +289,8 @@ const SupplierBlockForm = () => {
               <label style={styles.formLabel}>Número de Proveedor *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 name="supplierNumber"
                 style={styles.formInput}
                 value={formData.supplierNumber}
@@ -291,7 +298,7 @@ const SupplierBlockForm = () => {
                 onBlur={handleSupplierBlur}
                 required
                 disabled={isEditing}
-                placeholder="Ej: PROV001"
+                placeholder="Ej: 100123"
               />
               {supplierSearching && <span style={styles.helperText}>Buscando...</span>}
             </div>

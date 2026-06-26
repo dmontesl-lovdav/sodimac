@@ -1,7 +1,5 @@
 import { datasource } from "@/config/typeorm-datasource.js";
 import { ShippingGuideFile } from "@/entities/ShippingGuideFile.entity.js";
-import multer from "multer";
-import { Between, In, type FindOptionsWhere } from "typeorm";
 
 export const repo = () => datasource.getRepository(ShippingGuideFile);
 

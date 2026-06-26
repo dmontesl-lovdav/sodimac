@@ -11,6 +11,7 @@ export const APP_KEYS = {
     CREDIT_NOTES:        'APL010',
     PAYMENT_COMPLEMENTS: 'APL011',
     PARAMETERS:          'APL012',
+    PAYMENTS:            'APL0017',
     AUDIT_LOG:           'APL013',
     PROFILE_ADMIN:       'APL014',
     ROLES_ADMIN:         'APL015',

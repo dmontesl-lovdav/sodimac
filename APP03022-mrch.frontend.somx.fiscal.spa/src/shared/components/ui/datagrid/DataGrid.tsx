@@ -80,24 +80,66 @@ type DataGridProps<T, F = any> = {
 };
 
 /** ------------------------------------------------------------
- * Helper interno: descargar PDF desde una URL.
+ * Parsea el XML de error que devuelve el API cuando falla el PDF.
+ * Ejemplo: <FiscalErrorResponse><errorCode>ERR001</errorCode>...</FiscalErrorResponse>
  * ------------------------------------------------------------ */
-function downloadPDF(pdfUrl?: string | null, filename: string = "documento.pdf") {
+function parseFiscalXmlError(xmlText: string): string {
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    const errorCode   = doc.querySelector("errorCode")?.textContent?.trim();
+    const message     = doc.querySelector("message")?.textContent?.trim();
+    const addInfo     = doc.querySelector("additionalInfo")?.textContent?.trim();
+    if (message) {
+      return [errorCode ? `[${errorCode}]` : "", message, addInfo]
+        .filter(Boolean)
+        .join(" — ");
+    }
+  } catch {
+    /* ignore */
+  }
+  return "Error al descargar el PDF. No hay PDF disponible para descarga.";
+}
+
+/** ------------------------------------------------------------
+ * Descarga el PDF haciendo un fetch real para poder detectar
+ * respuestas de error (XML) en lugar de abrir el link directo.
+ * ------------------------------------------------------------ */
+async function fetchAndDownloadPdf(
+  pdfUrl: string | null | undefined,
+  filename: string,
+  onError: (msg: string) => void
+): Promise<void> {
   const url = (pdfUrl ?? "").trim();
   if (!url) {
-    console.warn("downloadPDF: URL vacía o nula.");
+    onError("No hay URL de PDF disponible para este registro.");
     return;
   }
   const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = safeName;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  requestAnimationFrame(() => {
-    document.body.removeChild(a);
-  });
+  try {
+    const res = await fetch(url, { credentials: "include" });
+    const contentType = res.headers.get("Content-Type") ?? "";
+
+    if (!res.ok || contentType.includes("xml") || contentType.includes("text/")) {
+      const text = await res.text();
+      onError(parseFiscalXmlError(text));
+      return;
+    }
+
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = safeName;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    requestAnimationFrame(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    });
+  } catch {
+    onError("Error al descargar el PDF. Inténtalo nuevamente.");
+  }
 }
 
 /** ------------------------------------------------------------
@@ -228,6 +270,7 @@ function DataGridInner<T, F = any>(
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [processing, setProcessing] = useState<boolean>(false);
   const [xmlErrorMsg, setXmlErrorMsg] = useState<string | undefined>(undefined);
+  const [pdfErrorMsg, setPdfErrorMsg] = useState<string | undefined>(undefined);
   const [emptySearchAlertOpen, setEmptySearchAlertOpen] = useState(false);
   const prevLoadingRef = useRef(false);
 
@@ -377,7 +420,7 @@ function DataGridInner<T, F = any>(
         getPdfUrl ??
         ((row: any) => {
           const baseUrl = process.env.API_BASE_URL || "";
-          const fiscalUuid = row?.fiscalUuid;
+          const fiscalUuid = row?.invoiceUuid;
           if (!fiscalUuid) return null;
           return `${baseUrl}/invoices/${fiscalUuid}/pdf`;
         });
@@ -387,10 +430,10 @@ function DataGridInner<T, F = any>(
       actions.push({
         title: "Descargar PDF",
         icon: pdfIconUrl,
-        onClick: (row: T) => {
+        onClick: async (row: T) => {
           const url = pdfUrlGetter(row);
           const fname = pdfNameGetter(row);
-          downloadPDF(url, fname);
+          await fetchAndDownloadPdf(url, fname, setPdfErrorMsg);
         },
       });
     }
@@ -439,6 +482,19 @@ function DataGridInner<T, F = any>(
       buttonText="Aceptar"
       onClose={() => setXmlErrorMsg(undefined)}
       onConfirm={() => setXmlErrorMsg(undefined)}
+    />
+  );
+
+  const pdfErrorModal = (
+    <GenericModal
+      visible={!!pdfErrorMsg}
+      variant="alert"
+      severity="error"
+      title="Error al descargar PDF"
+      message={pdfErrorMsg || ""}
+      buttonText="Aceptar"
+      onClose={() => setPdfErrorMsg(undefined)}
+      onConfirm={() => setPdfErrorMsg(undefined)}
     />
   );
 
@@ -512,6 +568,7 @@ function DataGridInner<T, F = any>(
       </div>
       {processingModal}
       {xmlErrorModal}
+      {pdfErrorModal}
       {emptySearchModal}
     </>
   );

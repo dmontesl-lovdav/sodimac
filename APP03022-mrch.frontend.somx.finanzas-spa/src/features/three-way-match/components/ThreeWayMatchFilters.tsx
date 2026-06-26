@@ -9,6 +9,7 @@ import type { ThreeWayMatchFiltersProps } from '../interfaces';
 import '../styles/ThreeWayMatchFilters.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchProvidersAsCatalog } from '@/utils/utils';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 import {
     FINANCE_LIST_KEYS,
     financeListTodayDateRange,
@@ -161,13 +162,17 @@ export default function ThreeWayMatchFilters({ isAdmin, onSearch, onClear }: Thr
                     </div>
 
                     <div className="finz-filter-actions">
-                        <GenericButton variant="outlineFill" onClick={handleSearch}>
-                            Buscar
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.THREE_WAY_MATCH.SEARCH}>
+                            <GenericButton variant="outlineFill" onClick={handleSearch}>
+                                Buscar
+                            </GenericButton>
+                        </PermissionGate>
 
-                        <GenericButton variant="outlineFill" onClick={handleClear}>
-                            Limpiar
-                        </GenericButton>
+                        <PermissionGate appEvent={APP_EVENT.THREE_WAY_MATCH.CLEAR_FILTERS}>
+                            <GenericButton variant="outlineFill" onClick={handleClear}>
+                                Limpiar
+                            </GenericButton>
+                        </PermissionGate>
                     </div>
                 </div>
             </div>

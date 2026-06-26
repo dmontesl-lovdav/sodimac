@@ -1,8 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn ,
-    OneToMany,
-    JoinColumn
 } from 'typeorm';
-import { PurchaseOrder } from './PurchaseOrder.entity.js';
 
 @Entity({ name: 'cat_supplier', schema: "tenant_catalogs" })
 export class Supplier {

@@ -67,6 +67,18 @@ export async function save(request: AuthenticatedRequest, response: Response, ne
     }
 }
 
+type PurchaseOrderExtended = PurchaseOrder & {
+    supplier?: Supplier | undefined;
+    vendorName?: string;
+};
+
+type ReceptionExtended = Reception & {
+    supplier?: Supplier | undefined;
+    vendorName?: string;
+    color?: string;
+};
+
+
 // GET /
 export async function list(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
@@ -147,10 +159,11 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
 
         console.log("[purchaseOrder.list] totalCount:", totalCount);
 
-        const result = await purchaseOrderQuery
+        const resultTmp = await purchaseOrderQuery
             .skip(skip)
             .take(parseInt(dto.pageSize))
             .getMany();
+        const result = resultTmp as PurchaseOrderExtended[];
 
         console.log("[purchaseOrder.list] result length:", result.length);
         console.log("[purchaseOrder.list] first result:", JSON.stringify(result[0] ?? null, null, 2));
@@ -180,15 +193,15 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
 
             console.log("[purchaseOrder.list] found supplier:", JSON.stringify(foundSupplier ?? null, null, 2));
 
-            (item as any).supplier = foundSupplier;
-            (item as any).vendorName = foundSupplier?.businessName ?? "";
+            item.supplier = foundSupplier;
+            item.vendorName = foundSupplier?.businessName ?? "";
 
-            item.receptions?.forEach((reception) => {
-                (reception as any).supplier = foundSupplier;
-                (reception as any).vendorName = foundSupplier?.businessName ?? "";
-                const result = CatEstatusRecepcion.find(ite => ite.value === reception.status?.toString());
-                if(result){
-                    (reception as any).color = result.color;
+            item.receptions?.forEach((reception: ReceptionExtended) => {
+                reception.supplier = foundSupplier;
+                reception.vendorName = foundSupplier?.businessName ?? "";
+                const statusResult  = CatEstatusRecepcion.find(ite => ite.value === reception.status?.toString());
+                if(statusResult){
+                    reception.color = statusResult.color;
                 }
             });
         });
@@ -257,7 +270,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
 // GET /:uuid
 export async function getById(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
-        const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") as string | FindOperator<string> });
+        const rows = await getPurchaseOrdersRepo().findBy({ purchaseOrderId: Equal(request.params.uuid || "") });
         if (!rows || rows.length === 0) response.json({});
         for (const row of rows) {
             const purchaseOrderId = row.purchaseOrderId;
@@ -269,10 +282,10 @@ export async function getById(request: AuthenticatedRequest, response: Response,
                 id: row.purchaseOrderId
             })  .getMany();
 
-            row.receptions?.forEach((it, idx) =>{
+            row.receptions?.forEach((it: ReceptionExtended, idx) =>{
                 const result = CatEstatusRecepcion.find(ite => ite.value === it.status?.toString());
                 if(result){
-                    (it as any).color = result.color;
+                    it.color = result.color;
                 }
             });
 
@@ -361,7 +374,7 @@ export async function updateReceptionStatusByUuid(request: AuthenticatedRequest,
             throw new HttpError(400, "Missing update body");
         }
 
-        const row = await getReceiptsRepo().findBy({ receptionId: Equal(request.params.uuid || "") as string | FindOperator<string> });
+        const row = await getReceiptsRepo().findBy({ receptionId: Equal(request.params.uuid || "") });
         if (!row || row.length === 0 || !row[0]) {
             throw new HttpError(400, "Invalid uuid");
         }
@@ -507,11 +520,13 @@ function buildCriteria(criteria: PurchaseOrderCriteria): FindOptionsWhere<Purcha
 
     let from: Date | undefined;
     let to: Date | undefined;
-    if (criteria.dateFrom?.match(DATE_TIME_FORMAT)){
+    const isValidDateFrom = DATE_TIME_FORMAT.exec(criteria.dateFrom ?? "") !== null;
+    if (isValidDateFrom){
         from = new Date(criteria.dateFrom);
         createdAt.createdAt = MoreThanOrEqual(from);
     }
-    if (criteria.dateTo?.match(DATE_TIME_FORMAT)) {
+    const isValidDateTo = DATE_TIME_FORMAT.exec(criteria.dateTo ?? "") !== null;
+    if (isValidDateTo) {
         to = new Date(criteria.dateTo);
         createdAt.createdAt = from ? Between(from, to) : LessThanOrEqual(to);
     }

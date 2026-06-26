@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import {
     CreateReceiptionSkuSchema,
-    type CreateReceiptionSkuDto,
 } from "@/schemas/receptionSku.schema.js";
 
 export const ListReceptionQuerySchema = z.object({

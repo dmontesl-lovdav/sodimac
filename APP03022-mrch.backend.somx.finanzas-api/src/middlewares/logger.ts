@@ -2,7 +2,6 @@ import { datasource } from "@/config/typeorm-datasource.js";
 import { v4 as uuidv4 } from 'uuid';
 import { AsyncLocalStorage } from 'async_hooks';
 import { Request, Response, NextFunction } from 'express';
-import * as svcAxios from "@/services/axios.service.js";
 import 'dotenv/config';
 
 type TaskContext = {
@@ -66,7 +65,7 @@ function inferTipoEvento(isError: boolean, meta?: LogMeta): AuditEventType {
 export async function logActivity(
   isError: boolean,
   message: string,
-  messageDetail: string | null | unknown,
+  messageDetail: unknown,
   details: any = {},
   duration_ms: number = 0,
   meta: LogMeta = {}

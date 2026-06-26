@@ -8,6 +8,7 @@ import { GenericDateRangePicker } from "@shared/components/ui/date";
 import type { ChangeEvent, ReactElement } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { ShippingGuideFilter } from "../interfaces";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
   fetchProvidersAsCatalog,
   endOfLocalDay,
@@ -244,12 +245,16 @@ export default function ShippingGuideFilterBar({
         </div>
 
         <div className="finz-filter-actions sg-filter-actions">
-          <GenericButton variant="outlineFill" onClick={handleSearchClick}>
-            Buscar
-          </GenericButton>
-          <GenericButton variant="outlineFill" onClick={handleClear}>
-            Limpiar
-          </GenericButton>
+          <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.SEARCH}>
+            <GenericButton variant="outlineFill" onClick={handleSearchClick}>
+              Buscar
+            </GenericButton>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.CLEAR_FILTERS}>
+            <GenericButton variant="outlineFill" onClick={handleClear}>
+              Limpiar
+            </GenericButton>
+          </PermissionGate>
         </div>
       </div>
 

@@ -7,7 +7,6 @@ import {
     UpdateShippingGuideSchema,
     CancelShippingGuidesSchema,
     UpdateShippingGuideStatusSchema,
-    NameFileParamSchema,
 } from "@/schemas/shippingGuide.schema.js";
 import {  DownloadFileSchema} from "@/schemas/storageGcp.schema.js";
 import { activityLogger, logBeforeMethod } from "@/middlewares/logger.js";

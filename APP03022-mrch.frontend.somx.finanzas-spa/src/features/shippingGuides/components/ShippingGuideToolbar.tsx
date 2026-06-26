@@ -1,4 +1,5 @@
 import { GenericButton } from "@shared/components/ui";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 
 interface Props {
   onExportCsv: () => void;
@@ -32,64 +33,70 @@ export default function ShippingGuideToolbar({
   return (
     <div className="twm-toolbar twm-toolbar-cluster">
       {onCancelSelection && (
+        <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.CANCEL}>
+          <GenericButton
+            type="button"
+            variant="outlineFill"
+            onClick={onCancelSelection}
+            disabled={cancelDisabled}
+          >
+            <span
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <CancelIcon />
+              Cancelar
+            </span>
+          </GenericButton>
+        </PermissionGate>
+      )}
+
+      <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.DOWNLOAD_XLS}>
         <GenericButton
           type="button"
           variant="outlineFill"
-          onClick={onCancelSelection}
-          disabled={cancelDisabled}
+          onClick={onExportXlsx}
+          disabled={disabled}
         >
-          <span
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-          >
-            <CancelIcon />
-            Cancelar
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 2h9l5 5v15H6z"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2" />
+              <text x="6" y="20" fontSize="7" fill="currentColor">
+                XLS
+              </text>
+            </svg>
+            Exportar Excel
           </span>
         </GenericButton>
-      )}
+      </PermissionGate>
 
-      <GenericButton
-        type="button"
-        variant="outlineFill"
-        onClick={onExportXlsx}
-        disabled={disabled}
-      >
-        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M6 2h9l5 5v15H6z"
-              stroke="currentColor"
-              strokeWidth="2"
-            />
-            <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2" />
-            <text x="6" y="20" fontSize="7" fill="currentColor">
-              XLS
-            </text>
-          </svg>
-          Exportar Excel
-        </span>
-      </GenericButton>
-
-      <GenericButton
-        type="button"
-        variant="primary"
-        onClick={onExportCsv}
-        disabled={disabled}
-      >
-        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M6 2h9l5 5v15H6z"
-              stroke="currentColor"
-              strokeWidth="2"
-            />
-            <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2" />
-            <text x="7" y="20" fontSize="8" fill="currentColor">
-              CSV
-            </text>
-          </svg>
-          Exportar CSV
-        </span>
-      </GenericButton>
+      <PermissionGate appEvent={APP_EVENT.CARTA_PORTE.DOWNLOAD_CSV}>
+        <GenericButton
+          type="button"
+          variant="primary"
+          onClick={onExportCsv}
+          disabled={disabled}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 2h9l5 5v15H6z"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2" />
+              <text x="7" y="20" fontSize="8" fill="currentColor">
+                CSV
+              </text>
+            </svg>
+            Exportar CSV
+          </span>
+        </GenericButton>
+      </PermissionGate>
     </div>
   );
 }

@@ -4,6 +4,31 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-26 | PDF: fallback genera desde XML si no está en el bucket
+
+**Pedido Ivan**: al bajar el PDF, si no se subió al bucket, generarlo a partir del XML (usar la
+funcionalidad XSLT de Robert). Inicialmente pidió subir el XML al bucket; se resolvió mejor leyendo
+el XML de BD.
+
+**Hecho** (`e7a2ccb`, desplegado UAT 2026-06-26): `GET /invoices/{uuid}/pdf` ahora:
+1. Si `pdf_gcs_object` existe → descarga el PDF del bucket (igual que antes).
+2. Si NO existe (o el bucket falla) → **genera el PDF desde `invoice.xml_content`** con
+   `pdfRenderService.renderFromXml` (XSLT `Formato4.0.xsl` + QR, la funcionalidad de Robert).
+3. Solo da ERR001 si no hay ni PDF ni XML.
+
+**Decisión**: el fallback lee `xml_content` de **BD**, no del bucket. El XML ya se persiste siempre
+en BD al registrar (PASO 9.5), así que NO hace falta subir el XML al bucket (un artefacto menos) ni
+migración/columna nueva. Logra lo que Ivan pidió de forma más robusta (la BD siempre tiene el XML
+aunque el bucket falle).
+
+**Validado local**: factura con `pdf_gcs_object` vacío + `xml_content` → `GET .../pdf` HTTP 200, PDF
+válido generado desde XML (antes ERR001). Solo jar, sin SQL. Relacionado: WRN7033 (`375f545`) sigue
+avisando en `warnings[]` cuando el PDF no se sube.
+
+**Detalle**: [[project_fiscal_pdf_gcs_flow]] en memoria.
+
+---
+
 ## 2026-06-23 | Llamada NC: serie/folio, uuid relacionado, F94/F93 (front)
 
 **Contexto**: puntos de una llamada haciendo el flujo de NC (matriz xlsx v6, filas 93-98).

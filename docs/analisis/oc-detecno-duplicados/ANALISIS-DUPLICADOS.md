@@ -129,6 +129,16 @@ Si `copias` >> 1 con clave identica → `NOT EXISTS` roto, 100% confirmado.
 
 ---
 
+## Estructura de la tabla (sp_help / sys.columns 2026-06-25)
+
+- **HEAP**: sin PK, sin clustered, sin indice unico. Nada impide duplicar (raiz habilitadora).
+- Indices existentes: `(OrdenCompra)` y `(NumeroProveedor, OrdenCompra, Recepcion)`.
+- Columnas clave: `NumeroProveedor/OrdenCompra/Recepcion` = `numeric(9)`,
+  `FechaRecepcion` = `varchar(50)` NULLABLE, `Estatus` = `varchar(10)`,
+  `FechaRegistro` = `datetime`, `Uuid` = `varchar(36)`.
+- `FechaRecepcion` varchar pero los duplicados son byte-identicos -> el indice unico
+  los colapsa sin normalizar. Normalizar a datetime = hardening opcional, no bloqueante.
+
 ## Plan de remediacion (REQUIERE aprobacion + backup + ventana)
 
 ### Fase 0 — Esperar rollback en curso

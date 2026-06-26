@@ -10,18 +10,25 @@ FROM OrdenCompraProveedor
 GROUP BY NumeroProveedor, OrdenCompra, Recepcion, FechaRecepcion, Estatus
 HAVING COUNT(*) > 1;
 
--- 1) Indice UNICO sobre la clave de negocio.
---    IGNORE_DUP_KEY=ON -> un INSERT de duplicado se ignora (warning) en vez de fallar.
---    Esto hace el dedup a nivel motor: imposible volver a duplicar.
-CREATE UNIQUE INDEX UX_OrdenCompraProveedor_Negocio
+-- Contexto: la tabla original es un HEAP (sin PK, sin clustered, sin indice unico).
+-- Ya existe IX_OrdenCompraProveedor_OrdenCompra_Recepcion_Proveedor sobre
+-- (NumeroProveedor, OrdenCompra, Recepcion) -> NO recrearlo.
+
+-- 1) Indice UNICO CLUSTERED sobre la clave de negocio.
+--    - Elimina el HEAP (ordena fisicamente por clave de negocio).
+--    - IGNORE_DUP_KEY=ON -> un INSERT de duplicado se ignora (warning) en vez de fallar.
+--    - Dedup a nivel motor: imposible volver a duplicar.
+CREATE UNIQUE CLUSTERED INDEX UX_OrdenCompraProveedor_Negocio
 ON OrdenCompraProveedor (NumeroProveedor, OrdenCompra, Recepcion, FechaRecepcion, Estatus)
 WITH (IGNORE_DUP_KEY = ON);
 
--- 2) Indice de apoyo para los lookups por (prov, oc, recepcion) del SP/vista
-CREATE INDEX IX_OrdenCompraProveedor_ProvOcRec
-ON OrdenCompraProveedor (NumeroProveedor, OrdenCompra, Recepcion)
-INCLUDE (FechaRecepcion, Estatus, FechaRegistro, Uuid);
-
--- Nota: si FechaRecepcion es VARCHAR con formato inconsistente, normalizar a DATETIME
--- ANTES de crear el indice unico, o el blindaje no cubre variantes del mismo instante.
--- Verificar tipo:  EXEC sp_help 'OrdenCompraProveedor';
+-- FechaRecepcion es varchar(50). Los duplicados medidos eran byte-identicos
+-- ("2026-01-05T00:00:00") -> Detecno manda formato consistente -> el indice unico
+-- los colapsa sin normalizar. NO requiere convertir a datetime para el fix actual.
+--
+-- Riesgo residual: si Detecno cambia el formato del string a futuro, generaria claves
+-- "distintas". Hardening opcional (no bloqueante): normalizar FechaRecepcion a datetime
+-- en tabla y en el batch (entity Java + columna).
+--
+-- Ojo NULL: FechaRecepcion es nullable. Un indice UNICO en SQL Server permite UNA sola
+-- fila con NULL por combinacion. No deberia haber ordenes reales con FechaRecepcion NULL.

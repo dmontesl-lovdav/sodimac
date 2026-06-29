@@ -115,8 +115,13 @@ NO se puede reusar para el mensaje de confirmación de rechazo. Hay que crear un
 muestra ANTES; si el usuario acepta, recién ahí el back ejecuta la cascada. Definir si el back lo
 devuelve como warning o es 100% front.
 
-**#B — Estatus de cancelación de NC: 9 vs 10.** Ivan dijo NCs → "9 Canceladas", pero el enum
-`CreditNoteStatus.CANCELADA` = **10**. Confirmar cuál es el correcto (¿el tren v1.0 renumera a 9?).
+**#B — Estatus de cancelación de NC: 9 (RESUELTO).** Ivan tenía razón: el catálogo real
+`CatEstatusNotaCredito` dice **9 = Cancelada**, 10 = Borrada. El enum Java `CreditNoteStatus` está
+**desactualizado** (tiene 10=Cancelada, sin 9; toda la numeración difiere del catálogo). Igual que la
+trampa de factura (enum dice Recibida(3), catálogo dice "En proceso de envió"): **manda el catálogo de
+BD, no el enum**. → Para la cascada uso **9 = Cancelada**. Nota: el enum `CreditNoteStatus` debería
+limpiarse/alinearse al catálogo en otra tarea (riesgo en `validateStatusTransition` para NC).
+Catálogo completo en [[reference_fiscal_status_catalogs]].
 
 ## Gap técnico (sigue)
 El `reception_id` (UUID) NO está en la factura, solo `addendum.reception_number`. Para re-consultar

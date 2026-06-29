@@ -201,7 +201,10 @@ public enum FiscalMessageCode {
     WRN7032("WRN7032", "La factura se encuentra previamente registrada manualmente, Por favor, validar con el área de finanzas."),
 
     // PDF no se pudo almacenar en el bucket (la factura sí se registró) - QA 2026-06-23
-    WRN7033("WRN7033", "La factura se registró correctamente, pero el PDF no se pudo almacenar. El documento podría no estar disponible para descarga; intente cargarlo nuevamente o contacte a soporte.");
+    WRN7033("WRN7033", "La factura se registró correctamente, pero el PDF no se pudo almacenar. El documento podría no estar disponible para descarga; intente cargarlo nuevamente o contacte a soporte."),
+
+    // Confirmación: la NC dejaría el neto (factura - NCs) por debajo de la recepción -> rechazo. Fila 104 QA.
+    WRN7034("WRN7034", "La factura será rechazada y las notas de crédito serán canceladas, ya que el monto total de la factura menos las notas de crédito son menor al monto disponible de la recepción, ¿Desea continuar?");
 
     private final String code;
     private final String message;

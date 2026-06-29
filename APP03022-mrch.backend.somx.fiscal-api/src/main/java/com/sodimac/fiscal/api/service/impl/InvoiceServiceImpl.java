@@ -121,7 +121,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Transactional
     public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
             String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile,
-            String tipoNotaCredito) {
+            String tipoNotaCredito, boolean confirmarCancelacionNc) {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
@@ -354,6 +354,15 @@ public class InvoiceServiceImpl implements InvoiceService {
             // (factura menor) NO se toca. QA filas 54-57 / catálogo CatEstatusRecepcion.
             if (tipoDocumento == TipoDocumentoFiscal.FACTURA && !esRechazoComercial) {
                 marcarRecepcionConsumida(receptionId, idTransaccion, SERVICE_NAME);
+            }
+
+            // === PASO 9.7: RE-EVALUAR TOLERANCIA DE LA FACTURA TRAS APLICAR LA NC (fila 104 QA) ===
+            // Al subir una NC, el neto (subtotal factura - Σ subtotal NCs vinculadas) se re-evalúa vs
+            // la recepción: dentro de tolerancia -> factura a 3 (En proceso de envío); por debajo y
+            // fuera de tolerancia -> cascada de rechazo (factura a 1, NCs a 9 Cancelada, recepción a 0
+            // Disponible), previa confirmación del usuario (WRN7034). Decisión Ivan 2026-06-29.
+            if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
+                reevaluarFacturaTrasNc(savedInvoice, confirmarCancelacionNc, idTransaccion, SERVICE_NAME);
             }
 
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PERSISTIR_DOCUMENTO.getCode(), SERVICE_NAME,
@@ -1144,6 +1153,149 @@ public class InvoiceServiceImpl implements InvoiceService {
         } catch (IllegalArgumentException e) {
             log.warn("receptionId '{}' no es UUID válido: no se actualiza estatus de recepción", receptionId);
         }
+    }
+
+    /**
+     * Re-evalúa la tolerancia de la(s) factura(s) relacionadas a una NC recién registrada (fila 104 QA,
+     * decisión Ivan 2026-06-29). Solo actúa sobre facturas en Recibido Parcial (2):
+     * <ul>
+     *   <li>neto = subtotal factura - Σ subtotal de TODAS las NCs vinculadas.</li>
+     *   <li>|neto - recepción| ≤ tolerancia -> factura a 3 (En proceso de envío).</li>
+     *   <li>neto &lt; recepción y fuera de tolerancia -> cascada de rechazo (requiere confirmación,
+     *       WRN7034): factura a 1, NCs a 9 (Cancelada), recepción a 0 (Disponible).</li>
+     *   <li>neto &gt; recepción y fuera de tolerancia -> sigue en 2 (faltan más NCs).</li>
+     * </ul>
+     */
+    private void reevaluarFacturaTrasNc(InvoiceEntity nc, boolean confirmarCancelacionNc,
+            String idTransaccion, String serviceName) {
+        List<RelatedCfdiEntity> relacionesNc = relatedCfdiRepository.findByInvoiceUuid(nc.getInvoiceUuid());
+        for (RelatedCfdiEntity relNc : relacionesNc) {
+            Optional<InvoiceEntity> facturaOpt = invoiceRepository.findById(relNc.getRelatedInvoiceUuid());
+            if (facturaOpt.isEmpty()) {
+                continue;
+            }
+            InvoiceEntity factura = facturaOpt.get();
+
+            // Solo aplica desde Recibido Parcial (2) (regla Ivan: solo cambia el estatus si está en 2).
+            if (!InvoiceStatus.RECIBIDO_PARCIAL.getCodigo().equals(factura.getStatus())
+                    || factura.getSubtotal() == null) {
+                log.debug("Factura {} no aplica re-eval NC (status={})", factura.getInvoiceUuid(), factura.getStatus());
+                continue;
+            }
+
+            // Sumar subtotales de TODAS las NCs vinculadas a la factura (incluye la recién registrada).
+            BigDecimal sumaNc = BigDecimal.ZERO;
+            for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(factura.getInvoiceUuid())) {
+                Optional<InvoiceEntity> ncRelOpt = invoiceRepository.findById(rel.getInvoiceUuid());
+                if (ncRelOpt.isPresent() && ncRelOpt.get().getSubtotal() != null) {
+                    sumaNc = sumaNc.add(ncRelOpt.get().getSubtotal());
+                }
+            }
+            BigDecimal neto = factura.getSubtotal().subtract(sumaNc);
+
+            ReceptionEntity reception = resolveReceptionDeFactura(factura.getInvoiceUuid());
+            if (reception == null || reception.getAmount() == null) {
+                log.warn("No se resolvió la recepción de la factura {}; no se re-evalúa tolerancia tras NC",
+                        factura.getInvoiceUuid());
+                continue;
+            }
+            BigDecimal receptionAmount = reception.getAmount();
+            BigDecimal tolerance = resolveTolerance(receptionAmount);
+            BigDecimal diff = neto.subtract(receptionAmount).abs();
+            log.info("Re-eval NC->factura {}: subtotal={}, sumaNC={}, neto={}, recepcion={}, diff={}, tol={}",
+                    factura.getInvoiceUuid(), factura.getSubtotal(), sumaNc, neto, receptionAmount, diff, tolerance);
+
+            if (diff.compareTo(tolerance) <= 0) {
+                // Neto en tolerancia -> factura a 3 (En proceso de envío).
+                factura.setStatus(InvoiceStatus.RECIBIDA.getCodigo());
+                invoiceRepository.save(factura);
+                log.info("Factura {} -> estatus 3 (neto en tolerancia tras NC)", factura.getInvoiceUuid());
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                        "system", false, "Factura a 3 (En proceso de envío): neto (factura - NCs) en tolerancia",
+                        "factura=" + factura.getInvoiceUuid() + ", neto=" + neto.toPlainString()
+                                + ", recepcion=" + receptionAmount.toPlainString(), null, null);
+            } else if (neto.compareTo(receptionAmount) < 0) {
+                // Neto por debajo de la recepción y fuera de tolerancia -> cascada de rechazo.
+                // Requiere confirmación (front muestra WRN7034). Sin confirmar -> rollback de la NC.
+                if (!confirmarCancelacionNc) {
+                    log.warn("NC dejaría la factura {} en rechazo (neto {} < recepción {}); falta confirmación -> WRN7034",
+                            factura.getInvoiceUuid(), neto, receptionAmount);
+                    messageCatalog.throwException(FiscalMessageCode.WRN7034);
+                }
+                ejecutarCascadaRechazoNc(factura, reception, neto, receptionAmount, tolerance, idTransaccion, serviceName);
+            } else {
+                // neto > recepción fuera de tolerancia -> aún falta NC; se queda en 2 (Recibido Parcial).
+                log.info("Factura {} sigue en Recibido Parcial (neto {} aún mayor a recepción {})",
+                        factura.getInvoiceUuid(), neto, receptionAmount);
+            }
+        }
+    }
+
+    /**
+     * Cascada de rechazo cuando el neto (factura - NCs) queda por debajo de la recepción fuera de
+     * tolerancia (fila 104): factura -> 1 (Rechazo Comercial) con motivo en bitácora, NCs vinculadas
+     * -> 9 (Cancelada, catálogo CatEstatusNotaCredito), recepción -> 0 (Disponible) para que el
+     * proveedor pueda volver a subir su factura.
+     */
+    private void ejecutarCascadaRechazoNc(InvoiceEntity factura, ReceptionEntity reception,
+            BigDecimal neto, BigDecimal receptionAmount, BigDecimal tolerance,
+            String idTransaccion, String serviceName) {
+        final int NC_CANCELADA = 9;                              // CatEstatusNotaCredito 9 = Cancelada
+        final BigDecimal RECEPCION_DISPONIBLE = BigDecimal.ZERO; // CatEstatusRecepcion 0 = Disponible
+
+        String motivo = "Neto (factura - NCs)=" + neto.toPlainString() + " menor a recepción="
+                + receptionAmount.toPlainString() + " fuera de tolerancia=" + tolerance.toPlainString();
+
+        // 1. Factura -> 1 Rechazo Comercial (motivo en log/bitácora).
+        factura.setStatus(InvoiceStatus.RECHAZO_COMERCIAL.getCodigo());
+        invoiceRepository.save(factura);
+        log.warn("Cascada rechazo factura {}: {}", factura.getInvoiceUuid(), motivo);
+        auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                "system", true, "Factura a Rechazo Comercial: neto (factura - NCs) menor a la recepción fuera de tolerancia",
+                motivo, null, null);
+
+        // 2. NCs vinculadas -> 9 Cancelada.
+        for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(factura.getInvoiceUuid())) {
+            invoiceRepository.findById(rel.getInvoiceUuid()).ifPresent(ncRel -> {
+                ncRel.setStatus(NC_CANCELADA);
+                invoiceRepository.save(ncRel);
+            });
+        }
+
+        // 3. Recepción -> 0 Disponible (el proveedor podrá volver a subir su factura).
+        reception.setStatus(RECEPCION_DISPONIBLE);
+        receptionRepository.save(reception);
+        log.info("Cascada rechazo completa. Factura {} -> 1, NCs -> 9, recepción {} -> 0 (Disponible)",
+                factura.getInvoiceUuid(), reception.getReceptionId());
+    }
+
+    /**
+     * Resuelve la recepción de una factura a partir de addendum.reception_number (la factura no
+     * guarda el UUID de la recepción). Devuelve null si no se puede resolver.
+     */
+    private ReceptionEntity resolveReceptionDeFactura(UUID facturaUuid) {
+        Optional<AddendumEntity> addOpt = addendumRepository.findByInvoiceUuid(facturaUuid);
+        if (addOpt.isEmpty() || addOpt.get().getReceptionNumber() == null
+                || addOpt.get().getReceptionNumber().isBlank()) {
+            return null;
+        }
+        return receptionRepository.findByReceptionNumber(addOpt.get().getReceptionNumber().trim()).orElse(null);
+    }
+
+    /**
+     * Tolerancia efectiva (misma regla que {@link #validateImporteTolerance}): monto (id 3) tiene
+     * prioridad; si no, porcentaje (id 4) sobre el importe de la recepción; si ambos off -> 0 (exacto).
+     */
+    private BigDecimal resolveTolerance(BigDecimal receptionAmount) {
+        BigDecimal toleranceMonto = readActiveParamValue(CatParameterKey.TOLERANCIA_IMPORTE.getId());
+        BigDecimal tolerancePct = readActiveParamValue(CatParameterKey.TOLERANCIA_PORCENTAJE.getId());
+        if (toleranceMonto != null) {
+            return toleranceMonto;
+        }
+        if (tolerancePct != null) {
+            return receptionAmount.multiply(tolerancePct).abs();
+        }
+        return BigDecimal.ZERO;
     }
 
     /**

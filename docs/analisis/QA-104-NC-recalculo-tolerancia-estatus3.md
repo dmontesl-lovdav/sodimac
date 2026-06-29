@@ -134,6 +134,33 @@ rechazo cross-módulo** (factura→1, NCs→cancelada, recepción→disponible) 
 Transiciones a validar en el tren: 2→3 (ya existe) y 2→1 (Recibido Parcial → Rechazo Comercial, ya
 existe: `RECIBIDO_PARCIAL → {1,3,18}`).
 
+## Implementación (HECHO, `7600fca` + fixes)
+- **PASO 9.7** en `registerInvoice`: al registrar NC → `reevaluarFacturaTrasNc`. Solo actúa si la
+  factura está en 2 (Recibido Parcial). neto = subtotal factura − Σ subtotal de TODAS las NCs
+  vinculadas (`related_cfdi`). 3 desenlaces: dentro tol → 3; neto<recepción fuera tol → cascada;
+  neto>recepción fuera tol → sigue 2.
+- **Cascada** `ejecutarCascadaRechazoNc`: factura → 1, NCs → 9 (Cancelada), recepción → 0
+  (Disponible) + motivo en bitácora. Gateada por `confirmarCancelacionNc`: si false y aplica →
+  `WRN7034` (throw → rollback de la NC, no se registra); si true → ejecuta.
+- **Nuevo param** `confirmarCancelacionNc` (boolean, default false) en `POST /invoices/register`
+  (controller + service + interface). **Nuevo** `ReceptionRepository.findByReceptionNumber`.
+  **Nuevo** `WRN7034`. Tolerancia reusa `cat_parameter` (helper `resolveTolerance`).
+- **Gap resuelto**: el receptionId no está en la factura → se resuelve la recepción por
+  `addendum.reception_number` (`resolveReceptionDeFactura`).
+
+## Pruebas (VALIDADO LOCAL 2026-06-29, PAC omitido)
+Escenario: recepción=6000, factura_mayor subtotal=9000 → status 2 (WRN7030). Tolerancia=40 (monto).
+| Caso | NC subtotal | neto | Resultado | ✓ |
+|---|---|---|---|---|
+| Dentro de tolerancia | 2980 | 6020 (diff 20≤40) | factura 2 → **3** | ✔ |
+| Sobre-corrige, sin confirmar | 3100 | 5900 (<6000, diff 100) | **WRN7034** HTTP 400 + rollback (factura sigue 2, NC no registra) | ✔ |
+| Sobre-corrige, confirmando | 3100 | 5900 | factura → **1**, NC → **9**, recepción → **0** | ✔ |
+
+**Nota de entorno (solo local)**: `SatCatalogService.getActiveCatalogValues` lee de **util-api** (HTTP),
+no del DB. Para validar NC en local hay que levantar util-api (:3712) y apuntar fiscal con
+`--utils.api.url=http://localhost:3712/api` (el `/api` lo agrega el bff en UAT; directo al util-api
+hace falta el prefijo, si no → 404 → BUS058). En UAT no aplica.
+
 ## Resumen
 - Neto = subtotal factura − Σ subtotal NC, recalculado en vivo en cada alta de NC.
 - 3 desenlaces: dentro tol → 3; sigue faltando → 2; sobre-corrige → cascada rechazo (1 + NC cancel +

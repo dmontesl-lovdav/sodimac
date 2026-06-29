@@ -4,6 +4,31 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-06-29 | Fila 104: recalcular tolerancia (factura − NCs) → estatus 3
+
+**Pedido (matriz v8, fila 104, Alto, David, Fiscal/NC)**: cambiar la factura a **estatus 3 (En
+proceso de envío)** cuando `(factura − NCs)` entre en tolerancia vs la recepción. (Fila 33 "cancelar
+factura" se reasignó a Fernando/front — ya no es de David.)
+
+**Hallazgo clave**: la resta **NO se persiste** en BD. No hay columna saldo/neto; cada NC es un
+registro aparte, `related_cfdi` solo guarda el vínculo UUID, `reception.amount` no se modifica al
+cargar NC. → El neto se recalcula en vivo sumando **todas** las NCs vinculadas (Opción A, sin
+migración). "Solo restar la última" obligaría a crear un saldo (frágil, no recomendado).
+
+**Dónde**: trigger en `saveRelatedCfdis` al registrar la NC; si factura en 2 (Recibido Parcial) y
+neto en tolerancia → status 3. Transición 2→3 ya existe (sin cambio enum). **Gap**: el `reception_id`
+no se guarda en la factura (solo `addendum.reception_number`) → resolver monto recepción por número
+o persistir UUID.
+
+**5 dudas enviadas a Ivan**: (1) restar por subtotal o total; (2) todas las NCs vs última
+(confirmado: todas); (3) solo desde Recibido Parcial(2)→3; (4) qué pasa si sobre-corrige (neto bajo
+tolerancia); (5) recalcular también al cancelar NC (revertir 3→2).
+
+**Detalle**: [docs/analisis/QA-104-NC-recalculo-tolerancia-estatus3.md](../analisis/QA-104-NC-recalculo-tolerancia-estatus3.md)
+**Estado**: análisis hecho, sin codear, esperando confirmación de Ivan (5 dudas).
+
+---
+
 ## 2026-06-26 | PDF: fallback genera desde XML si no está en el bucket
 
 **Pedido Ivan**: al bajar el PDF, si no se subió al bucket, generarlo a partir del XML (usar la

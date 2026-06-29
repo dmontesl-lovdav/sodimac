@@ -73,22 +73,65 @@ factura **solo se guarda `addendum.reception_number`** (el número, no el UUID).
 - (b) Persistir `reception_id` (UUID) en `addendum`/`invoice` al registrar.
 Recomiendo (a) si `reception_number` es único; si no, (b) con columna nueva (mini-migración).
 
-## Dudas para Ivan (antes de codear)
-1. **¿Qué monto se resta?** Hoy la tolerancia compara **subtotal** de factura vs recepción. La NC
-   ¿se resta por **subtotal** o por **total** (con IVA)? (BUS061 usa total; F93 dice mostrar subtotal.)
-   Lo lógico para que cuadre con la recepción es **subtotal − Σ subtotal NC**, pero confirmar.
-2. **¿Suma de todas o solo la última?** Confirmado por código: como no se persiste saldo, hay que
-   sumar **todas** las NCs vinculadas. (Salvo que se quiera persistir saldo — no recomendado.)
-3. **¿Desde qué estatus se dispara?** Solo desde **Recibido Parcial (2) → 3**, ¿o también aplica a
-   otros? (Rechazo Comercial (1) no tiene transición a 3 en el tren actual.)
-4. **¿Y si la NC deja el neto POR DEBAJO de la tolerancia** (sobre-corrige, neto < recepción fuera de
-   tolerancia)? ¿Se queda en 2, pasa a Rechazo Comercial (1), o no importa? El requerimiento solo
-   habla del caso "entra en tolerancia → 3".
-5. **¿El recálculo corre al registrar la NC** (mi propuesta), o también debería correr al **cancelar**
-   una NC (revertir el estatus)? Hoy la NC se puede cancelar (CreditNoteStatus.CANCELADA).
+## Reglas confirmadas por Ivan (2026-06-29)
+
+1. **Monto = SUBTOTAL.** El portal maneja todo sin impuestos. `neto = subtotal_factura −
+   Σ(subtotal de TODAS las NCs vinculadas)`. (No total/IVA.)
+2. **Sumatoria al momento, todas las NCs.** Confirmado: no hay monto fijo/saldo, se recalcula en vivo
+   cada vez (Opción A).
+3. **Solo cambia a 3 cuando se cumple la regla** `recepción dentro de tolerancia vs (factura − Σ NC)`.
+   Origen: Recibido Parcial (2) → 3. No otros estatus.
+4. **Si el neto sobre-corrige** (queda por debajo de la recepción fuera de tolerancia) → **cascada de
+   rechazo**:
+   - Factura → **1 Rechazo Comercial**, guardando en el **log el motivo**.
+   - Las NCs vinculadas → **Canceladas** (Ivan dijo "9"; el código tiene `CreditNoteStatus.CANCELADA`
+     = **10** → ⚠️ ver choque #B).
+   - La recepción/OC → **Disponible (0)** para que el proveedor vuelva a subir su factura.
+   - **Front** muestra confirmación ANTES de ejecutar: `"La factura será rechazada y las notas de
+     crédito serán canceladas, ya que el monto total de la factura menos las notas de crédito son
+     menor al monto disponible de la recepción, ¿Desea continuar?"` (Ivan lo etiquetó `WRN7032` →
+     ⚠️ ese código YA existe para otra cosa, ver choque #A).
+5. **El recálculo corre cada vez que el proveedor sube una NC** (al registrar). No al cancelar.
+
+### Lógica final (al registrar cada NC, en `saveRelatedCfdis`)
+```
+neto = subtotal_factura − Σ(subtotal_NC vinculadas)
+diff = |neto − receptionAmount|   (misma tolerancia cat_parameter)
+si diff ≤ tolerance        → factura = 3 (En proceso de envío)   [desde 2]
+si neto > recepción y fuera → factura se queda 2 (Recibido Parcial)  [aún falta NC]
+si neto < recepción y fuera → CASCADA RECHAZO:
+        factura = 1 (Rechazo Comercial) + log motivo
+        NCs vinculadas = Cancelada (9? / 10?)
+        recepción = 0 (Disponible)
+        (front confirma antes con el msg WRN7032/nuevo)
+```
+
+## Choques detectados (confirmar antes/durante)
+
+**#A — El código WRN7032 ya está usado.** `WRN7032` = "La factura se encuentra previamente
+registrada manualmente..." (addenda manual, validado UAT 2026-06-23, [[project_addenda_manual_wrn7032]]).
+NO se puede reusar para el mensaje de confirmación de rechazo. Hay que crear un **código nuevo**
+(ej. `WRN7034`). Además ese mensaje es un **confirm de front** ("¿Desea continuar?"): el front lo
+muestra ANTES; si el usuario acepta, recién ahí el back ejecuta la cascada. Definir si el back lo
+devuelve como warning o es 100% front.
+
+**#B — Estatus de cancelación de NC: 9 vs 10.** Ivan dijo NCs → "9 Canceladas", pero el enum
+`CreditNoteStatus.CANCELADA` = **10**. Confirmar cuál es el correcto (¿el tren v1.0 renumera a 9?).
+
+## Gap técnico (sigue)
+El `reception_id` (UUID) NO está en la factura, solo `addendum.reception_number`. Para re-consultar
+el monto de recepción Y para poder ponerla en Disponible (0) en la cascada, se necesita el UUID:
+resolver por `reception_number` (si es único) o persistir el UUID al registrar.
+
+## Alcance real (creció)
+Ya no es "solo pasar a 3". Es **re-evaluar tolerancia con el neto en cada alta de NC** + **cascada de
+rechazo cross-módulo** (factura→1, NCs→cancelada, recepción→disponible) + **mensaje nuevo de front**.
+Transiciones a validar en el tren: 2→3 (ya existe) y 2→1 (Recibido Parcial → Rechazo Comercial, ya
+existe: `RECIBIDO_PARCIAL → {1,3,18}`).
 
 ## Resumen
-- La resta **no se persiste** → recalcular en vivo sumando todas las NCs (Opción A, sin migración).
-- Transición 2→3 ya existe en el enum; el trigger va en `saveRelatedCfdis` al registrar la NC.
-- Gap: falta el `reception_id` en la factura para re-consultar el monto de recepción.
-- 5 dudas para Ivan antes de codear (sobre todo subtotal-vs-total y qué pasa si sobre-corrige).
+- Neto = subtotal factura − Σ subtotal NC, recalculado en vivo en cada alta de NC.
+- 3 desenlaces: dentro tol → 3; sigue faltando → 2; sobre-corrige → cascada rechazo (1 + NC cancel +
+  recepción disponible + confirm front).
+- Pendiente confirmar: código del msg (WRN7032 chocado → nuevo) y estatus cancel NC (9 vs 10).
+- Gap: receptionId no persistido en la factura.

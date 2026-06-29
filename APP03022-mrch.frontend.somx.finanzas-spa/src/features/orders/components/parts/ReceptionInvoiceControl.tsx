@@ -1,5 +1,5 @@
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Reception } from "../../interfaces";
 import type { ReceptionSupplierInfo } from "../../receptionSupplierInfo";
 import { GenericLinearProgress, GenericModal } from "@/shared/components/ui";
@@ -65,6 +65,8 @@ export const ReceptionInvoiceControl = forwardRef<
     const invoiceAlert = useFinanceAlertModal();
     const xmlInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
+    const fileXMLRef = useRef<File | null>(null);
+    const filePDFRef = useRef<File | null>(null);
     const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
     const [fileXML, setFileXML] = useState<File | null>(null);
     const [filePDF, setFilePDF] = useState<File | null>(null);
@@ -161,8 +163,10 @@ export const ReceptionInvoiceControl = forwardRef<
         if (pdfInputRef.current) pdfInputRef.current.value = "";
     };
 
-    const handleClearForm = () => {
+    const handleClearForm = useCallback(() => {
         resetFileInputs();
+        fileXMLRef.current = null;
+        filePDFRef.current = null;
         setFileXML(null);
         setFilePDF(null);
         setInvoiceData(null);
@@ -172,7 +176,7 @@ export const ReceptionInvoiceControl = forwardRef<
         setRegisteredFiscalUuid("");
         setIsValidating(false);
         setIsProcessing(false);
-    };
+    }, []);
 
     const showValidationAlert = (message: string) => {
         setIsValidInvoice(false);
@@ -194,11 +198,14 @@ export const ReceptionInvoiceControl = forwardRef<
     };
 
     const validateInvoice = async () => {
-        if (!fileXML) {
+        const currentXml = fileXMLRef.current ?? xmlInputRef.current?.files?.[0] ?? null;
+        const currentPdf = filePDFRef.current ?? pdfInputRef.current?.files?.[0] ?? null;
+
+        if (!currentXml) {
             showValidationAlert("El archivo XML es requerido");
             return;
         }
-        if (!optionalPdf.isEnabled && !filePDF) {
+        if (!optionalPdf.isEnabled && !currentPdf) {
             showValidationAlert("El archivo PDF es requerido");
             return;
         }
@@ -250,7 +257,7 @@ export const ReceptionInvoiceControl = forwardRef<
                         supplierNumber: reception.supplierNumber,
                     },
                 });
-                const response = await client.create(fileXML, filePDF, {
+                const response = await client.create(currentXml, currentPdf, {
                     idTransaccion: trace.uuidInterno,
                     receptionId: reception.receptionId,
                     supplierNumber: supplierInfo.number,
@@ -299,18 +306,22 @@ export const ReceptionInvoiceControl = forwardRef<
         }
     }
 
-    const handleFilePDFChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0] || null;
-        setIsValidInvoice(true);
+    const handleFilePDFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0] ?? null;
+        filePDFRef.current = selectedFile;
         setFilePDF(selectedFile);
+        if (selectedFile) {
+            setIsValidInvoice(true);
+        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setDataMsg("");
         setInvoiceData(null);
         setIsValidating(true)
-        const selectedFile = e.target.files?.[0] || null;
+        const selectedFile = e.target.files?.[0] ?? null;
         if (selectedFile) {
+            fileXMLRef.current = selectedFile;
             setFileXML(selectedFile);
             try {
                 const data = await client.validateInvoice(selectedFile);
@@ -374,17 +385,20 @@ export const ReceptionInvoiceControl = forwardRef<
     const isSaveDisabled =
         isFinished || isProcessing || !invoiceData || !isValidInvoice || isBlockedType || isBlockedProvider ;
 
+    const validateInvoiceRef = useRef(validateInvoice);
+    validateInvoiceRef.current = validateInvoice;
+
     useImperativeHandle(
         ref,
         () => ({
             submit: () => {
-                validateInvoice();
+                validateInvoiceRef.current();
             },
             clear: handleClearForm,
             isSaveDisabled,
             isClearDisabled: isProcessing || isFinished || isBlockedType || isBlockedProvider,
         }),
-        [isSaveDisabled, isProcessing, isBlockedType, isBlockedProvider]
+        [isSaveDisabled, isProcessing, isFinished, isBlockedType, isBlockedProvider, handleClearForm]
     );
 
     useEffect(() => {

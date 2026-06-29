@@ -116,7 +116,9 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       if (providersRes) setProviders(providersRes);
 
       if (tipoProveedorRes) {
-        setProviderTypeCatalog(fetchCatalogAsSelectableOptions(tipoProveedorRes, "Todos los tipos"));
+        const mappedProviderType = fetchCatalogAsSelectableOptions(tipoProveedorRes, "Todos los tipos", "internalStatus");
+        console.log("mappedProviderType", mappedProviderType);
+        setProviderTypeCatalog(fetchCatalogAsSelectableOptions(tipoProveedorRes, "Todos los tipos", "internalStatus"));
       }
 
       if (tipoRecepcionRes) {

@@ -1,6 +1,6 @@
 import { createApiClient, type ApiClient } from "@/services/ApiClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
-import type { CreditNotePublishApiPayload } from "../utils/publishCreditNoteResponse";
+import type { PublishCreditNoteResponse } from "../parts/types";
 
 const fiscalApi = createApiClient({
   baseUrl: process.env.FISCAL_API_URL || "",
@@ -19,6 +19,6 @@ export const createCreditNotePublishClient = (api?: ApiClient) => {
     },
 
     publishCreditNote: (formData: FormData) =>
-      client.request<CreditNotePublishApiPayload>("invoices/register", "post", formData),
+      client.request<PublishCreditNoteResponse>("invoices/register", "post", formData),
   };
 };

@@ -323,7 +323,7 @@ export async function fetchProviderBlockers(): Promise<unknown | null> {
 }
 
 
-export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "Todos"): SelectableOption<string>[] {
+export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "Todos", field: string = "value"): SelectableOption<string>[] {
   const raw = data as Record<string, unknown> | null | undefined;
   const rows: CatalogDetail[] = Array.isArray(data)
     ? data
@@ -333,7 +333,7 @@ export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "T
   const mapped = rows
     .map((row) => ({
       label: row.description,
-      value: String(row.value ?? ""),
+      value: String(row[field as keyof CatalogDetail] ?? ""),
     })).filter((row)=>!row.label.toLowerCase().includes("borrado"))
     .sort((a, b) => Number(a.value) - Number(b.value));
   return [

@@ -6,14 +6,16 @@ import "./ExportCsvButton.css";
 type ExportCsvButtonProps = {
   onClick: () => void;
   disabled?: boolean;
+  variant?: "primary" | "secondary" | "outline" | "link" ;
 };
 
 export function ExportCsvButton({
   onClick,
   disabled = false,
+  variant = "primary",
 }: ExportCsvButtonProps): ReactElement {
   return (
-    <GenericButton variant="primary" onClick={onClick} disabled={disabled}>
+    <GenericButton variant={variant} onClick={onClick} disabled={disabled}>
       <span className="fiscal-export-csv-content">
         <span
           className="fiscal-export-csv-icon"

@@ -5,6 +5,25 @@ export type SelectableOption<T = string> = {
   value: T;
 };
 
+export interface SystemParameter {
+  idParameter: number;
+  idModule: number;
+  idType: number;
+  name: string;
+  description: string | null;
+  value: string | number;
+  version: string;
+}
+
+export interface SystemParametersResponse {
+  success: boolean;
+  data: SystemParameter[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 interface CatalogDetail {
   key: string;
   internalStatus: string | null;
@@ -339,6 +358,22 @@ export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "T
     { label: labelSet, value: " " },
     ...mapped
   ];
+}
+
+/** Obtención de parámetros de configuración del sistema */
+export async function fetchSystemParameters(): Promise<SystemParametersResponse | null> {
+  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  if (base) {
+    try {
+      const response = await fetch(`${base}/parameters`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error("fetchSystemParameters:", error);
+    }
+  }
+  return null;
 }
 
 export const getStandardFilename = (r: any) => {

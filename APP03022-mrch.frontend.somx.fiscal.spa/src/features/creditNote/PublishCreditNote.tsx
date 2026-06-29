@@ -1,118 +1,29 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { TraceFolioPayload } from "@/services/TraceabilityClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
+import { useLocation, useNavigate } from "react-router-dom";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
-import {
-  GenericButton,
-  GenericModal,
-} from "@/shared/components/ui";
+import { GenericButton, GenericModal } from "@/shared/components/ui";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
-import {
-  formatAmount,
-  formatDate,
-  formatLocalDateStr,
-  getErrorMessage,
-  startOfLocalDay,
-} from "@/utils/utils";
+import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, SystemParameter } from "@/utils/utils";
 import "@/shared/components/ui/alerts/Alerts.css";
-import iconSuccess from "@assets/icons/alert-up.png";
-import iconWarning from "@assets/icons/warning.png";
-import viewIcon from "@assets/eye-show.svg";
+import type { Invoice } from "../invoice/interfaces";
 import { createCreditNotePublishClient } from "./api/CreditNotePublishClient";
-import { createInvoicesClient } from "../invoice/api/InvoiceClient";
-import {
-  EMPTY_INVOICE,
-  type Invoice,
-} from "../invoice/interfaces";
-import BitacoraErrorModal from "@/shared/components/ui/modal/BitacoraErrorModal";
-import {
-  normalizePublishCreditNoteResponse,
-  resolvePublishCreditNoteOutcome,
-} from "./utils/publishCreditNoteResponse";
+import { BREADCRUMB, MAX_BYTES, MAX_MB } from "./parts/constants";
+import { parsePublishQuery, isCommercialDiscountFlow } from "./parts/publishQuery";
+import { parseValidatedXml, getXmlValidationMessage } from "./parts/parseValidatedXml";
+import { buildPublishFormData } from "./parts/buildPublishFormData";
+import { useRelatedInvoice } from "./parts/useRelatedInvoice";
+import RelatedInvoiceGrid from "./parts/RelatedInvoiceGrid";
+import CreditNoteSummary from "./parts/CreditNoteSummary";
+import PublishResultNotice from "./parts/PublishResultNotice";
+import { buildFinishModal, isPublishSuccessful } from "./parts/publishResult";
+import type { CreditNoteXmlData, FinishModalState } from "./parts/types";
 import "./PublishCreditNote.css";
 
-const MAX_MB = 10;
-const MAX_BYTES = MAX_MB * 1024 * 1024;
-
-type CreditNoteXmlData = {
-  timbreFiscalDigital: {
-    uuid: string;
-    fechaTimbrado: string;
-  };
-  comprobante: {
-    tipoDeComprobante: string;
-    formaPago: string;
-  };
-  rfcEmisor: string;
-  nombreProveedor: string;
-  serie: string;
-  folio: string;
-  monto: string;
-  fechaTimbrado: string;
-  usoCfdi: string;
-  tipoDeComprobante: string;
-  uuid: string;
-};
-
-type PublishQuery = {
-  supplierNumber: string;
-  documentNumber: string;
-  currency: string;
-  amount: string;
-  postingDate: string;
-  relatedInvoiceUuid: string;
-};
-
-const BREADCRUMB: BreadcrumbItem[] = [
-  { label: "Fiscal", to: "/" },
-  { label: "Notas de Crédito", to: "/fiscal/notas-credito" },
-  { label: "Publicar Nota de Crédito" },
-];
-
-function parsePublishQuery(search: string): PublishQuery {
-  const params = new URLSearchParams(search);
-  return {
-    supplierNumber: params.get("supplierNumber") ?? "",
-    documentNumber: params.get("documentNumber") ?? "",
-    currency: params.get("currency") ?? "MXN",
-    amount: params.get("amount") ?? "",
-    postingDate: params.get("postingDate") ?? "",
-    relatedInvoiceUuid: params.get("uuid") ?? "",
-  };
-}
-
-function parseValidatedXml(data: unknown): CreditNoteXmlData | null {
-  if (!data || typeof data !== "object") return null;
-  const root = data as Record<string, unknown>;
-  const emisor = root.emisor as Record<string, unknown> | undefined;
-  const comprobante = root.comprobante as Record<string, unknown> | undefined;
-  const receptor = root.receptor as Record<string, unknown> | undefined;
-  const timbre = root.timbreFiscalDigital as Record<string, unknown> | undefined;
-  if (!emisor || !comprobante || !timbre) return null;
-
-  return {
-    timbreFiscalDigital: {
-      uuid: String(timbre.uuid ?? ""),
-      fechaTimbrado: String(timbre.fechaTimbrado ?? ""),
-    },
-    comprobante: {
-      tipoDeComprobante: String(comprobante.tipoDeComprobante ?? ""),
-      formaPago: String(comprobante.formaPago ?? ""),
-    },
-    rfcEmisor: String(emisor.rfc ?? ""),
-    nombreProveedor: String(emisor.nombre ?? ""),
-    serie: String(comprobante.serie ?? ""),
-    folio: String(comprobante.folio ?? ""),
-    monto: String(comprobante.subTotal ?? comprobante.total ?? ""),
-    fechaTimbrado: String(comprobante.fecha ?? ""),
-    usoCfdi: String(receptor?.usoCFDI ?? ""),
-    tipoDeComprobante: String(comprobante.tipoDeComprobante ?? ""),
-    uuid: String(timbre.uuid ?? ""),
-  };
-}
+const PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT = 12;
+const PARAM_OPTIONAL_PDF_CREDIT_NOTE = 11;
 
 export default function PublishCreditNote() {
   const traceFolioPayload = useMemo<TraceFolioPayload>(
@@ -137,191 +48,73 @@ export default function PublishCreditNote() {
   );
 }
 
-type OperationSeverity = "success" | "warning" | "error";
-type OperationResult = { severity: OperationSeverity; backendText?: string };
-
-function RelatedInvoiceGrid({
-  invoice,
-  loading,
-  onViewInvoice,
-}: {
-  invoice: Invoice | null;
-  loading: boolean;
-  onViewInvoice: (row: Invoice) => void;
-}) {
-  if (loading) {
-    return <GenericLinearProgress />;
-  }
-
-  if (!invoice ) {
-    return (
-      <p className="pcn-invoice-grid-empty">
-        No se encontró la factura relacionada. Verifique los parámetros de la URL.
-      </p>
-    );
-  }
-
-  const ncCount = Array.isArray(invoice.notasCreditoRelacionadas)
-    ? invoice.notasCreditoRelacionadas.length
-    : 0;
-
-  return (
-    <div className="pcn-invoice-grid-wrap">
-      <table className="pcn-invoice-grid">
-        <thead>
-          <tr>
-            <th>Serie</th>
-            <th>Folio</th>
-            <th>Subtotal</th>
-            <th>UUID</th>
-            <th>NC Relacionadas</th>
-            <th>Tipo Proveedor</th>
-            <th>Número Proveedor</th>
-            <th>RFC</th>
-            <th>Nombre Proveedor</th>
-            <th>Fecha Recepción</th>
-            <th>Estado</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{invoice.series ?? "--"}</td>
-            <td>{invoice.folio ?? "--"}</td>
-            <td>
-              {invoice.subtotal != null ? formatAmount(invoice.subtotal) : "--"}
-            </td>
-            <td className="pcn-cell-wrap">
-              {invoice.fiscalUuid ?? invoice.invoiceUuid ?? "--"}
-            </td>
-            <td>{ncCount}</td>
-            <td>{invoice.tipoProveedor ?? "--"}</td>
-            <td>{invoice.numeroProveedor ?? "--"}</td>
-            <td>{invoice.emisorRfc ?? "--"}</td>
-            <td>{invoice.supplierName ?? invoice.emisorName ?? "--"}</td>
-            <td>
-              {invoice.createdAt
-                ? formatDate(invoice.createdAt)
-                : "N/D"}
-            </td>
-            <td>{invoice.statusName ?? "--"}</td>
-            <td>
-              <button
-                type="button"
-                className="pcn-action-btn"
-                title="Ver factura"
-                onClick={() => onViewInvoice(invoice)}
-              >
-                <img src={viewIcon} alt="Ver factura" className="pcn-action-icon" />
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function PublishCreditNoteContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const publishClient = useMemo(() => createCreditNotePublishClient(), []);
-  const invoiceClient = useMemo(
-    () =>
-      createInvoicesClient<{
-        content: Invoice[];
-        totalElements: number;
-      }>(),
-    []
-  );
-
-  const query = useMemo(
-    () => parsePublishQuery(location.search),
-    [location.search]
-  );
+  const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
+  const isDiscountFlow = isCommercialDiscountFlow(query);
 
   const xmlInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
-  const [relatedInvoice, setRelatedInvoice] = useState<Invoice | null>(null);
-  const [loadingInvoice, setLoadingInvoice] = useState(false);
-  const [invoiceLoaded, setInvoiceLoaded] = useState(false);
+  const [relatedInvoiceUuid, setRelatedInvoiceUuid] = useState("");
+  const { invoice: relatedInvoice, loading: loadingInvoice } =
+    useRelatedInvoice(relatedInvoiceUuid);
+
   const [xmlFile, setXmlFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [creditNoteData, setCreditNoteData] = useState<CreditNoteXmlData | null>(
-    null
-  );
+  const [creditNoteData, setCreditNoteData] = useState<CreditNoteXmlData | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isValidCreditNote, setIsValidCreditNote] = useState(false);
   const [dataMsg, setDataMsg] = useState("");
-  const [operationResult, setOperationResult] = useState<OperationResult | null>(
-    null
-  );
-  const [invoice, setInvoice] = useState("");
-  const [published, setPublished] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [registeredFiscalUuid, setRegisteredFiscalUuid] = useState("");
+  const [finishModal, setFinishModal] = useState<FinishModalState | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
   const { traceId, addLog, headerActions, noTraceWarning } = useTraceFolio();
   const hasTraceId = Boolean(traceId);
+  const uploadsLocked = isFinished || !hasTraceId;
+
+  const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
+  const [optionalPdf, setOptionalPdf] = useState({ value: "0", isEnabled: false });
+
+
+  const checkSystemParameterValue = (parameterId: number): { value: string; isEnabled: boolean } => {
+    const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
+    if (!parameter) {
+        return { value: "", isEnabled: false };
+    }
+
+    return {
+        value: String(parameter.value),
+        isEnabled: parameter.status == "1",
+    };
+};
+
+  useEffect(() => {
+    const fetchSystemParametersData = async () => {
+      const response = await fetchSystemParameters();
+      setSystemParameters(response?.data ?? null);
+    };
+    fetchSystemParametersData();
+  }, []);
+
+  useEffect(() => {
+    setOptionalPdf(checkSystemParameterValue((isDiscountFlow ? PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT : PARAM_OPTIONAL_PDF_CREDIT_NOTE)));
+  }, [systemParameters, isDiscountFlow]);
+
   const canPublish =
     hasTraceId &&
     Boolean(xmlFile) &&
     Boolean(creditNoteData) &&
     isValidCreditNote &&
     !isUploading &&
-    relatedInvoice &&
-    !published;
-
-  const FINANZAS_URL = process.env.FINANZAS_URL ?? "";
-  const traceIdLink = traceId ? (
-    <Link to={`${FINANZAS_URL}/#/auditoria/bitacora-actividades/tren/${traceId}`}>
-      {traceId}
-    </Link>
-  ) : null;
-
-  useEffect(() => {
-    const uuid = invoice.trim();
-    if (!uuid) {
-      setRelatedInvoice(null);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      setLoadingInvoice(true);
-      try {
-        const end = startOfLocalDay(new Date());
-        const start = new Date(end);
-        start.setMonth(start.getMonth() - 6);
-
-        const result = await invoiceClient.getInvoices({
-          ...EMPTY_INVOICE,
-          uuid,
-          fechaInicioRecepcion: formatLocalDateStr(start),
-          fechaFinalRecepcion: formatLocalDateStr(end),
-          page: 0,
-          size: 1,
-        });
-
-        if (cancelled) return;
-        setRelatedInvoice(result?.content?.[0] ?? null);
-        setInvoiceLoaded(true);
-        if(result?.content?.length ==0) {
-          showAlert("No se encontró la factura relacionada, verifique el archivo de la nota de crédito.");
-        }
-      } catch {
-        if (!cancelled) setRelatedInvoice(null);
-      } finally {
-        if (!cancelled) setLoadingInvoice(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [invoice, invoiceLoaded]);
+    !isFinished &&
+    (isDiscountFlow ? Boolean(query.supplierNumber.trim()) : Boolean(relatedInvoice));
 
   const showAlert = useCallback((message: string) => {
     setAlertMessage(message);
@@ -334,18 +127,16 @@ function PublishCreditNoteContent() {
   };
 
   const handleClearForm = useCallback(() => {
+    if (isFinished) return;
     resetFileInputs();
     setXmlFile(null);
     setPdfFile(null);
     setCreditNoteData(null);
+    setRelatedInvoiceUuid("");
     setIsValidCreditNote(false);
     setDataMsg("");
     setIsValidating(false);
-    setOperationResult(null);
-    setPublished(false);
-    setInvoice("");
-
-  }, []);
+  }, [isFinished]);
 
   const handleViewInvoice = useCallback(
     (invoice: Invoice) => {
@@ -361,16 +152,13 @@ function PublishCreditNoteContent() {
     [navigate]
   );
 
-  const handleFilePDFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPdfFile(e.target.files?.[0] ?? null);
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isFinished) return;
+
     setDataMsg("");
     setCreditNoteData(null);
+    setRelatedInvoiceUuid("");
     setIsValidating(true);
-    setOperationResult(null);
-    setPublished(false);
 
     const selectedFile = e.target.files?.[0] ?? null;
     if (!selectedFile) {
@@ -417,20 +205,18 @@ function PublishCreditNoteContent() {
         return;
       }
 
-      const root = data as Record<string, unknown>;
-      const metadatos = root.metadatos as Record<string, unknown> | undefined;
-      const xmlValidationOk = metadatos?.estado === "SUCCESS";
-      setIsValidCreditNote(xmlValidationOk);
+      const validation = getXmlValidationMessage(data);
+      setIsValidCreditNote(validation.ok);
 
-      if (xmlValidationOk) {
-        setDataMsg(String(metadatos?.mensaje ?? "XML validado correctamente."));
-        //setInvoice("49b6551d-59e0-4112-ac64-314752bac1db")
-        setInvoice(parsed.timbreFiscalDigital.uuid);
+      if (validation.ok) {
+        setDataMsg(validation.message);
+        setRelatedInvoiceUuid(parsed.uuidRelacionado);
+        if (!parsed.uuidRelacionado.trim()) {
+          showAlert("No se encontró la factura relacionada, verifique el archivo de la nota de crédito.");
+        }
       } else {
         setDataMsg("");
-        showAlert(
-          String(metadatos?.mensaje ?? "El archivo XML no es válido.")
-        );
+        showAlert(validation.message);
       }
     } catch (error: unknown) {
       showAlert(getErrorMessage(error, "No fue posible validar el archivo XML."));
@@ -441,12 +227,9 @@ function PublishCreditNoteContent() {
   };
 
   const handlePublish = useCallback(async () => {
-    if (!xmlFile || !traceId) return;
-
-    if (!creditNoteData?.monto) {
-      showAlert(
-        "Primero selecciona y valida el XML; cuando aparezca el resumen podrás guardar."
-      );
+    if (!xmlFile || !traceId || !creditNoteData || isFinished) return;
+    if (!optionalPdf.isEnabled) {
+      showAlert("El archivo PDF es requerido para publicar la nota de crédito.");
       return;
     }
 
@@ -458,55 +241,48 @@ function PublishCreditNoteContent() {
     }
 
     setIsUploading(true);
-    setOperationResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", xmlFile);
-      if (pdfFile) formData.append("pdfFile", pdfFile);
-      formData.append("idTransaccion", traceId);
-      formData.append("documentNumber", query.documentNumber);
-      formData.append("supplierNumber", query.supplierNumber);
-      formData.append("type", "2");
+      const formData = buildPublishFormData({
+        xmlFile,
+        pdfFile,
+        traceId,
+        query,
+        relatedInvoice,
+      });
 
       const response = await publishClient.publishCreditNote(formData);
-      const normalized = normalizePublishCreditNoteResponse(response);
-      const outcome = resolvePublishCreditNoteOutcome(normalized);
-      const logText = normalized.displayText || `Transacción ${traceId}`;
+      setIsFinished(true);
 
-      if (outcome === "success") {
-        setOperationResult({ severity: "success" });
-        addLog(logText, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "INFO", response);
-        if (normalized.creditNoteUuid) {
-          localStorage.setItem("lastCreditNoteUuid", normalized.creditNoteUuid);
-        }
-        setPublished(true);
-        setDataMsg("Tu nota de crédito se procesó correctamente");
+      if (isPublishSuccessful(response)) {
+        const fiscalUuid = String(response.fiscalUuid).trim();
+        setRegisteredFiscalUuid(fiscalUuid);
+        setFinishModal(buildFinishModal(response));
+        const logLevel =
+          (response.warnings ?? []).some((w) => String(w).trim()) ? "WARN" : "INFO";
+        addLog(
+          response.message || `Transacción ${traceId}`,
+          "CREDIT_NOTE",
+          "PUBLISH_CREDIT_NOTE",
+          logLevel,
+          response
+        );
         return;
       }
 
-      if (outcome === "warning") {
-        setOperationResult({ severity: "warning" });
-        addLog(logText, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "WARN", response);
-        setPublished(false);
-        return;
-      }
-
-      setOperationResult({
-        severity: "error",
-        backendText:
-          normalized.displayText || "Error al publicar la nota de crédito",
-      });
-      setPublished(false);
-      addLog(logText, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "ERROR", response);
-    } catch (error: unknown) {
-      const backendText = getErrorMessage(
-        error,
-        "Error al publicar la nota de crédito"
+      setFinishModal(buildFinishModal(response));
+      addLog(
+        response.message || `Transacción ${traceId}`,
+        "CREDIT_NOTE",
+        "PUBLISH_CREDIT_NOTE",
+        "ERROR",
+        response
       );
-      setOperationResult({ severity: "error", backendText });
-      setPublished(false);
-      addLog(backendText, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "ERROR", error);
+    } catch (error: unknown) {
+      setIsFinished(true);
+      const message = getErrorMessage(error, "Error al publicar la nota de crédito");
+      setFinishModal({ severity: "error", title: "Error", message });
+      addLog(message, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "ERROR", error);
     } finally {
       setIsUploading(false);
     }
@@ -515,25 +291,31 @@ function PublishCreditNoteContent() {
     pdfFile,
     traceId,
     creditNoteData,
+    isFinished,
+    query,
+    relatedInvoice,
     publishClient,
     addLog,
     showAlert,
   ]);
 
+  const uploadLabelClass = (extraDisabled = false) =>
+    `pcn-upload-label${uploadsLocked || extraDisabled ? " pcn-upload-label--disabled" : ""}`;
+
   return (
     <div>
-      <BitacoraErrorModal
-        visible={operationResult?.severity === "error" && !!traceId}
-        traceId={traceId}
-        message={
-          operationResult?.backendText || "Error al publicar la nota de crédito"
-        }
-        onClose={() => setOperationResult(null)}
-      />
+      {isUploading && <GenericModal visible variant="loading" message="Procesando…" />}
 
-      {isUploading && (
-        <GenericModal visible variant="loading" message="Procesando…" />
-      )}
+      <GenericModal
+        visible={!!finishModal}
+        variant="alert"
+        severity={finishModal?.severity ?? "info"}
+        title={finishModal?.title ?? ""}
+        message={finishModal?.message ?? ""}
+        buttonText="Aceptar"
+        onClose={() => setFinishModal(null)}
+        onConfirm={() => setFinishModal(null)}
+      />
 
       <div className="pcn-page-header">
         <div className="pcn-page-header-main">
@@ -545,15 +327,11 @@ function PublishCreditNoteContent() {
           <GenericButton
             variant="primary"
             disabled={!canPublish}
-            onClick={() => handlePublish()}
+            onClick={() => { handlePublish(); }}
           >
             Guardar
           </GenericButton>
-          <GenericButton
-            variant="outlineFill"
-            disabled={isUploading}
-            onClick={handleClearForm}
-          >
+          <GenericButton variant="outlineFill" disabled={isUploading || isFinished} onClick={handleClearForm}>
             Limpiar
           </GenericButton>
         </div>
@@ -562,8 +340,7 @@ function PublishCreditNoteContent() {
       {noTraceWarning}
 
       <div className="pcn-control">
-      {
-        relatedInvoice && (
+        {relatedInvoiceUuid && (
           <div>
             <h2 className="pcn-section-title">Datos de la factura relacionada</h2>
             <RelatedInvoiceGrid
@@ -572,8 +349,7 @@ function PublishCreditNoteContent() {
               onViewInvoice={handleViewInvoice}
             />
           </div>
-        )
-       }
+        )}
 
         {isUploading ? <GenericLinearProgress /> : null}
 
@@ -585,41 +361,40 @@ function PublishCreditNoteContent() {
               {isValidating ? (
                 <GenericLinearProgress />
               ) : (
-                <label className="pcn-upload-label">
+                <label className={uploadLabelClass()}>
                   <input
                     ref={xmlInputRef}
                     type="file"
                     accept=".xml"
                     className="pcn-file-input"
                     onChange={(event) => { handleFileChange(event); }}
-                    disabled={!hasTraceId || published}
+                    disabled={uploadsLocked}
                   />
-                  <p className="pcn-upload-text">
-                    Subir XML de la nota de crédito (Requerido)
-                  </p>
-                  {xmlFile && (
-                    <p className="pcn-upload-file">{xmlFile.name}</p>
-                  )}
+                  <p className="pcn-upload-text">Subir XML de la nota de crédito (Requerido)</p>
+                  {xmlFile && <p className="pcn-upload-file">{xmlFile.name}</p>}
                 </label>
               )}
 
-              <label className="pcn-upload-label">
+              <label className={uploadLabelClass()}>
                 <input
                   ref={pdfInputRef}
                   type="file"
                   accept=".pdf"
                   className="pcn-file-input"
-                  onChange={handleFilePDFChange}
-                  disabled={!hasTraceId || published}
+                  onChange={(e) => {
+                    if (isFinished) return;
+                    setPdfFile(e.target.files?.[0] ?? null);
+                  }}
+                  disabled={uploadsLocked}
                 />
-                <p className="pcn-upload-text">
-                  Subir PDF de la nota de crédito (opcional)
-                </p>
+                <p className="pcn-upload-text">Subir PDF de la nota de crédito ({optionalPdf.isEnabled ? "Opcional" : "Requerido"})</p>
                 {pdfFile && <p className="pcn-upload-file">{pdfFile.name}</p>}
               </label>
             </div>
 
-            {dataMsg.trim() !== "" ? (
+            {registeredFiscalUuid ? (
+              <PublishResultNotice fiscalUuid={registeredFiscalUuid} />
+            ) : dataMsg.trim() !== "" ? (
               <p
                 className={`pcn-notice pcn-notice--${isValidCreditNote ? "success" : "error"}`}
                 role="status"
@@ -630,102 +405,12 @@ function PublishCreditNoteContent() {
             ) : null}
           </div>
 
-          {creditNoteData && (
-            <div className="pcn-summary-wrap">
-              <div className="pcn-summary">
-                <table className="pcn-summary-table">
-                  <tbody>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">RFC Emisor:</td>
-                      <td className="pcn-cell">{creditNoteData.rfcEmisor}</td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">
-                        Nombre Proveedor:
-                      </td>
-                      <td className="pcn-cell">{creditNoteData.nombreProveedor}</td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">Serie:</td>
-                      <td className="pcn-cell">{creditNoteData.serie}</td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">Folio:</td>
-                      <td className="pcn-cell">{creditNoteData.folio}</td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">Importe:</td>
-                      <td className="pcn-cell">
-                        {formatAmount(parseFloat(creditNoteData.monto))}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">
-                        Fecha Timbrado:
-                      </td>
-                      <td className="pcn-cell">
-                        {formatDate(creditNoteData.fechaTimbrado, true)}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">Uso CFDI:</td>
-                      <td className="pcn-cell">{creditNoteData.usoCfdi}</td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">
-                        Tipo Comprobante:
-                      </td>
-                      <td className="pcn-cell">
-                        {creditNoteData.tipoDeComprobante}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">
-                        Forma de Pago:
-                      </td>
-                      <td className="pcn-cell">
-                        {creditNoteData.comprobante.formaPago}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="pcn-cell pcn-cell-label">UUID Factura:</td>
-                      <td className="pcn-cell">{creditNoteData.timbreFiscalDigital.uuid}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {creditNoteData && <CreditNoteSummary data={creditNoteData} />}
         </div>
-       
       </div>
 
-      {operationResult && traceId && operationResult.severity !== "error" && (
-        <div className="fiscal-mt-4">
-          {operationResult.severity === "success" && (
-            <div className="fiscal-alert-success">
-              <img src={iconSuccess} className="fiscal-alert-success-icon" alt="" />
-              <span className="fiscal-alert-success-text">
-                La nota de crédito se registró correctamente. ID de transacción:{" "}
-                {traceIdLink}.
-              </span>
-            </div>
-          )}
-
-          {operationResult.severity === "warning" && (
-            <div className="fiscal-alert-warning">
-              <img src={iconWarning} className="fiscal-alert-warning-icon" alt="" />
-              <span className="fiscal-alert-warning-text">
-                No fue posible publicar la nota de crédito, revisar el detalle en
-                la siguiente transacción {traceIdLink}.
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
       <GenericModal
-        visible={alertVisible}
+        visible={alertVisible && !isFinished}
         variant="alert"
         severity="warning"
         title="Atención"

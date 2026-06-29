@@ -243,6 +243,7 @@ export default function CreditsGrid() {
           <div className="fiscal-flex fiscal-gap-sm fiscal-flex-wrap fiscal-justify-end">
             <ExportCsvButton
               disabled={!canExportCsv}
+              variant="outline"
               onClick={() => gridRef.current?.exportCsv()}
             />
             <GenericButton onClick={() => navigate("/fiscal/publicar-nota-credito")} >

@@ -58,14 +58,9 @@ function filterByProviderType(
     return receptions;
   }
   const q = String(providerType).trim().toLowerCase();
-  return receptions.filter((r) => {
-    const st =
-      r.supplier?.supplierType ?? r.order?.supplier?.supplierType;
-    if (!st) return false;
-    return [st.code, st.description, st.id]
-      .filter((v) => v != null && String(v).trim() !== "")
-      .some((v) => String(v).trim().toLowerCase() === q);
-  });
+  console.log("providerType", providerType);
+  console.log("receptions", receptions);
+  return receptions.filter((r) => r.supplier?.supplierType?.id === Number(q));
 }
 
 export default function ReceptionContainer(): ReactElement {

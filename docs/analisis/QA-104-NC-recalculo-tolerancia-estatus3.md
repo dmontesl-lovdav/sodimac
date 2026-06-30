@@ -148,7 +148,13 @@ existe: `RECIBIDO_PARCIAL → {1,3,18}`).
 - **Gap resuelto**: el receptionId no está en la factura → se resuelve la recepción por
   `addendum.reception_number` (`resolveReceptionDeFactura`).
 
-## Pruebas (VALIDADO LOCAL 2026-06-29, PAC omitido)
+## Pruebas (VALIDADO LOCAL + UAT 2026-06-29, PAC omitido)
+**UAT 2026-06-29** (factura_mayor real `fiscal 31343515`, recepción 999056 amount=5000, tol=40):
+NC subtotal 4000 → neto 5000 → factura **2→3** ✔. NC subtotal 4200 → neto 4800: sin confirmar →
+**WRN7034** HTTP 400 + rollback (factura sigue 2, NC no registra) ✔; con `confirmarCancelacionNc=true`
+→ factura **1**, NC **9**, recepción **0** ✔. Mensaje WRN7034 sembrado en catálogo UAT.
+
+### Detalle local (mismo resultado)
 Escenario: recepción=6000, factura_mayor subtotal=9000 → status 2 (WRN7030). Tolerancia=40 (monto).
 | Caso | NC subtotal | neto | Resultado | ✓ |
 |---|---|---|---|---|

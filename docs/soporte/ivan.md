@@ -4,6 +4,27 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-02 | Fila 122: estatus de la NC acompaña a la factura (extensión 104)
+
+**Pedido (matriz v9, fila 122, Alto, David, Fiscal/NC)**: hoy (fila 104) la NC se registra en status 1
+y solo se re-evalúa la factura. Fila 122 quiere que la **NC acompañe**: **2 (Recibido Parcial)**
+mientras (Factura − NC) no cuadra con la recepción, y **3 (En proceso de envío)** —factura Y NC—
+cuando cuadra/entra en tolerancia.
+
+**Conflicto detectado (bloqueante)**: el requerimiento usa nombres de estatus de FACTURA, pero la NC
+tiene catálogo propio distinto (`CatEstatusNotaCredito`): ahí "Recibido Parcial" NO existe, y "En
+proceso de envío" = **1** (no 3). Además la cascada de fila 104 manda la NC a **9 (Cancelada)** usando
+el catálogo de NC → mezclar numeraciones en la misma columna `invoice.status` es inconsistente.
+
+**4 dudas enviadas a Ivan**: (1) NC usa CatEstatusNotaCredito o CatEstatusFactura; (2) estatus exacto
+de alta de NC con neto sin cuadrar ("Recibido Parcial" no existe en NC); (3) al cuadrar la NC va a 1 o
+a 3; (4) ¿reemplaza el status 1 actual de alta?
+
+**Detalle**: [docs/analisis/QA-104-NC-recalculo-tolerancia-estatus3.md](../analisis/QA-104-NC-recalculo-tolerancia-estatus3.md) (sección Fila 122).
+**Estado**: análisis hecho, sin codear, esperando confirmación de Ivan (numeración de estatus NC).
+
+---
+
 ## 2026-06-29 | Fila 104: recalcular tolerancia (factura − NCs) → estatus 3
 
 **Pedido (matriz v8, fila 104, Alto, David, Fiscal/NC)**: cambiar la factura a **estatus 3 (En

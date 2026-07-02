@@ -173,3 +173,50 @@ hace falta el prefijo, si no → 404 → BUS058). En UAT no aplica.
   recepción disponible + confirm front).
 - Pendiente confirmar: código del msg (WRN7032 chocado → nuevo) y estatus cancel NC (9 vs 10).
 - Gap: receptionId no persistido en la factura.
+
+---
+
+# Fila 122 — Estatus de la NC acompaña a la factura (extensión de 104)
+
+> Matriz xlsx v9, fila 122. David (Fiscal / NC). Alto. **Sin empezar** — esperando confirmación de Ivan.
+> Continúa fila 104 (que solo tocaba el estatus de la FACTURA). Ahora define el estatus de la **NC**.
+
+## Requerimiento (texto literal)
+> "Cuando la recepción vs (Factura − Nota de Crédito) no cumpla con la condición de la tolerancia o
+> sea igual valor de la recepción, el estatus de las notas de crédito darlas de alta con el estatus
+> **2 - Recibida parcial**, hasta que la factura − las notas de crédito sea igual al valor de la
+> recepción o cumplan con la tolerancia se cambia el estatus de la factura y nota de crédito a
+> **Proceso de Envío**."
+
+Lectura: hoy (fila 104) la NC se registra siempre en status 1 y solo se re-evalúa la FACTURA. Fila
+122 quiere que la NC **acompañe** a la factura: **2 (Recibido Parcial)** mientras el neto no cuadra,
+y **3 (En proceso de envío)** —factura Y NC— cuando cuadra.
+
+## Conflicto de catálogos (BLOQUEANTE, confirmar con Ivan)
+El requerimiento usa nombres de estatus de **factura**, pero la NC tiene catálogo propio distinto
+(ambos guardan en `invoice.status`). Ver [[reference_fiscal_status_catalogs]]:
+
+| # | CatEstatusFactura | CatEstatusNotaCredito |
+|---|---|---|
+| 1 | Rechazo Comercial | **En proceso de envío** |
+| 2 | **Recibido Parcial** | Pendiente Contabilizar |
+| 3 | **En proceso de envío** | En Proceso Descarga |
+| 9 | — | Cancelada |
+
+- "Recibido Parcial" **no existe** en el catálogo de NC.
+- "En proceso de envío" en NC es el **1**, no el 3.
+- Fila 104 (cascada) manda la NC a **9 (Cancelada)** usando el catálogo de NC → mezclar "2/3 estilo
+  factura" con "9 estilo NC" en la misma columna es inconsistente.
+
+## Dudas para Ivan (antes de codear)
+1. La NC ¿usa **CatEstatusNotaCredito** o **CatEstatusFactura** para su `status`?
+2. Alta de NC con neto sin cuadrar → ¿qué estatus exacto (número + catálogo)? ("Recibido Parcial" no
+   existe en NC.)
+3. Al cuadrar, factura → 3 (En proceso de envío, factura). La NC ¿va a **1** (En proceso de envío
+   según su catálogo) o a **3**?
+4. Hoy la NC se registra en status 1 (fila 104). ¿Fila 122 lo reemplaza?
+
+## Dónde tocaría (cuando se confirme)
+Mismo `reevaluarFacturaTrasNc` (PASO 9.7): además de mover la factura, setear el status de las NCs
+vinculadas (2 mientras falta / 3 al cuadrar). El alta de NC (`saveInvoiceToDatabase`, status
+hardcodeado 1) cambia al valor que confirme Ivan.

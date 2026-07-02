@@ -4,6 +4,22 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-02 | Ownership: extracción de descuentos comerciales = Robert (no David)
+
+**Pregunta Ivan**: ¿el proceso de extracción de descuentos comerciales lo trae David o Robert?
+
+**Respuesta**: **Robert.** Vive en el batch `rebate-agreements-sync` (épica **STM-336** "Módulo
+documentos fiscales pago y descuento", assignee **g_dop02**=Robert). Ese batch extrae los
+acuerdos/rebates del API de Azure (`rebate-management-prd.../contracts/MX/agreements`) → SQL Server
+`SODIMAC_REBATES_DEV`/`RebateAcuerdosTemp`. David solo lo **adoptó** (reasignado por Ivan 2026-06-01)
+para validarlo local; el código y el proceso son de Robert. Ver [[project_robert_batches_adopted]].
+
+**fiscal-api (David) NO extrae descuentos**: solo (a) guarda el `Descuento` del CFDI en
+`invoice.discount` (`InvoiceServiceImpl` L1033) y (b) marca el tipo NC = Descuento Comercial
+(tipo_nota_credito=2) al registrar. No hay extracción del lado fiscal.
+
+---
+
 ## 2026-07-02 | Fila 122: estatus de la NC acompaña a la factura (extensión 104)
 
 **Pedido (matriz v9, fila 122, Alto, David, Fiscal/NC)**: hoy (fila 104) la NC se registra en status 1

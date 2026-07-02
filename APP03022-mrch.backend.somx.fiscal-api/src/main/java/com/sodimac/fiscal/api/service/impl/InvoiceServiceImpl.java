@@ -1766,6 +1766,16 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors) {
         log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={}", allowedVendors);
+
+        // Fechas: obligatorias SOLO si NO se busca por UUID (fiscalUuid es único). Con UUID se omiten
+        // validación y filtro de fechas (decisión Fer/Ivan QA jul-2026).
+        if (searchRequest.getUuid() != null) {
+            log.info("Búsqueda por UUID -> se omiten la validación y el filtro de fechas");
+        } else if (searchRequest.getFechaInicioRecepcion() == null || searchRequest.getFechaFinalRecepcion() == null) {
+            log.error("Fechas de recepción faltantes en búsqueda sin UUID");
+            messageCatalog.throwException(FiscalMessageCode.BUS3103);
+        }
+
         Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors);
         Sort sort = Sort.by(
                 "DESC".equalsIgnoreCase(searchRequest.getSortDirection()) ? Sort.Direction.DESC : Sort.Direction.ASC,
@@ -1799,8 +1809,13 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("No. Recepcion: {}", searchRequest.getNoRecepcion());
 
         // === PASO 0: VALIDAR RANGO DE FECHAS (STM-393) ===
-        log.info("Paso 0: Validando rango de fechas");
-        validateDateRange(searchRequest.getFechaInicioRecepcion(), searchRequest.getFechaFinalRecepcion());
+        // Cuando se busca por UUID (fiscalUuid, único) las fechas se ignoran (Fer/Ivan QA jul-2026).
+        if (searchRequest.getUuid() != null) {
+            log.info("Paso 0: Búsqueda por UUID -> se omite la validación de fechas");
+        } else {
+            log.info("Paso 0: Validando rango de fechas");
+            validateDateRange(searchRequest.getFechaInicioRecepcion(), searchRequest.getFechaFinalRecepcion());
+        }
 
         // === PASO 0.5: VALIDAR ESTATUS CONTRA ENUM LOCAL ===
         if (searchRequest.getEstatus() != null) {

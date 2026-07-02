@@ -64,13 +64,17 @@ public class InvoiceSpecification {
             // (invoice.created_at), NO por la reception_date de finanzas (decisión negocio 2026-06-19;
             // revierte el cambio del 2026-06-18). Los campos del request se llaman fechaInicio/FinalRecepcion
             // pero refieren a la fecha de registro/recepción de la factura en el sistema.
-            if (searchRequest.getFechaInicioRecepcion() != null) {
-                LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startOfDay));
-            }
-            if (searchRequest.getFechaFinalRecepcion() != null) {
-                LocalDateTime endOfDay = searchRequest.getFechaFinalRecepcion().atTime(23, 59, 59);
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endOfDay));
+            // Si se busca por UUID (fiscalUuid, único) se ignora el filtro de fechas (Fer/Ivan QA
+            // jul-2026): garantiza que al capturar el UUID no se acote por fecha de registro.
+            if (searchRequest.getUuid() == null) {
+                if (searchRequest.getFechaInicioRecepcion() != null) {
+                    LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startOfDay));
+                }
+                if (searchRequest.getFechaFinalRecepcion() != null) {
+                    LocalDateTime endOfDay = searchRequest.getFechaFinalRecepcion().atTime(23, 59, 59);
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endOfDay));
+                }
             }
 
             // 4. Tipo de Documento (Obligatorio)

@@ -204,7 +204,11 @@ public enum FiscalMessageCode {
     WRN7033("WRN7033", "La factura se registró correctamente, pero el PDF no se pudo almacenar. El documento podría no estar disponible para descarga; intente cargarlo nuevamente o contacte a soporte."),
 
     // Confirmación: la NC dejaría el neto (factura - NCs) por debajo de la recepción -> rechazo. Fila 104 QA.
-    WRN7034("WRN7034", "La factura será rechazada y las notas de crédito serán canceladas, ya que el monto total de la factura menos las notas de crédito son menor al monto disponible de la recepción, ¿Desea continuar?");
+    WRN7034("WRN7034", "La factura será rechazada y las notas de crédito serán canceladas, ya que el monto total de la factura menos las notas de crédito son menor al monto disponible de la recepción, ¿Desea continuar?"),
+
+    // Búsqueda sin UUID: las fechas de recepción son obligatorias. QA Fer/Ivan jul-2026.
+    // Código BUS (no WRN) para que el ControllerAdvisor lo mapee a HTTP 400 (error de negocio).
+    BUS3103("BUS3103", "Las fechas de recepción son obligatorias cuando no se realiza la búsqueda por UUID.");
 
     private final String code;
     private final String message;

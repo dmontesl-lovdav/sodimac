@@ -2,7 +2,6 @@ package com.sodimac.fiscal.api.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,18 +37,16 @@ public class InvoiceSearchRequest {
 
     // ========== CAMPOS OBLIGATORIOS ==========
 
-    @NotNull(message = "Fecha inicio de recepción es obligatoria")
+    // Obligatorias SOLO cuando NO se busca por uuid (fiscalUuid es único; con uuid se ignoran las
+    // fechas). La validación condicional vive en InvoiceServiceImpl.searchInvoices (fila QA Fer/Ivan).
     @Schema(
-            description = "Fecha de inicio para filtrar por fecha de recepción (created_at)",
-            required = true,
+            description = "Fecha de inicio para filtrar por fecha de recepción (created_at). Obligatoria si no se envía uuid.",
             example = "2025-01-01"
     )
     private LocalDate fechaInicioRecepcion;
 
-    @NotNull(message = "Fecha final de recepción es obligatoria")
     @Schema(
-            description = "Fecha final para filtrar por fecha de recepción (created_at)",
-            required = true,
+            description = "Fecha final para filtrar por fecha de recepción (created_at). Obligatoria si no se envía uuid.",
             example = "2025-12-31"
     )
     private LocalDate fechaFinalRecepcion;

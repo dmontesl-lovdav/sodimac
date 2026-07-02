@@ -496,13 +496,14 @@ return (
                     <td className="rc-cell">{invoiceData.nombreProveedor}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Serie:</td>
-                    <td className="rc-cell">{invoiceData.serie}</td>
-                  </tr>
-                  <tr>
                     <td className="rc-cell rc-cell-label">UUID:</td>
                     <td className="rc-cell">{invoiceData.uuid}</td>
                   </tr>
+                  <tr>
+                    <td className="rc-cell rc-cell-label">Serie:</td>
+                    <td className="rc-cell">{invoiceData.serie}</td>
+                  </tr>
+                  
                   <tr>
                     <td className="rc-cell rc-cell-label">Folio:</td>
                     <td className="rc-cell">{invoiceData.folio}</td>

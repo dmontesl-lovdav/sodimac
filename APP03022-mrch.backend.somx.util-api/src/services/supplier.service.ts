@@ -40,7 +40,7 @@ async function getMessage(key: string, ...params: string[]): Promise<string> {
 }
 
 export async function findAll(): Promise<SupplierDto[]> {
-    const suppliers = await supplierRepo.findByStatus(Supplier.STATUS_ACTIVE);
+    const suppliers = await supplierRepo.findAllVisible();
     return supplierMapper.toDtoList(suppliers);
 }
 
@@ -65,8 +65,15 @@ export async function findByRfc(rfc: string): Promise<SupplierDto | null> {
 }
 
 export async function create(dto: SupplierCreateDto, createdBy: string): Promise<SupplierDto> {
-    if (await supplierRepo.existsBySupplierNumber(dto.supplierNumber)) {
+    const existingStatus = await supplierRepo.findExistingStatus(dto.supplierNumber);
+    if (existingStatus === 'active') {
         throw new Error(await getMessage(MSG_SUPPLIER_DUPLICATE, dto.supplierNumber));
+    }
+    if (existingStatus === 'inactive') {
+        throw new Error(
+            `Ya existe un proveedor inactivo con el número ${dto.supplierNumber}. ` +
+            `Búscalo en el listado (filtro Estatus = Inactivo) y reactívalo en lugar de crear uno nuevo.`,
+        );
     }
 
     const repo = datasource.getRepository(Supplier);
@@ -135,7 +142,7 @@ export async function update(id: number, dto: SupplierUpdateDto, updatedBy: stri
 export async function deleteSupplier(id: number, updatedBy: string): Promise<boolean> {
     const supplier = await supplierRepo.findById(id);
     if (!supplier) return false;
-    supplier.status = Supplier.STATUS_INACTIVE;
+    supplier.status = Supplier.STATUS_DELETED;
     supplier.updatedBy = updatedBy;
     await supplierRepo.save(supplier);
     return true;

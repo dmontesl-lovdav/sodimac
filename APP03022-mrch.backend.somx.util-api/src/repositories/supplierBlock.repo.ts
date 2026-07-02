@@ -1,5 +1,6 @@
 import { datasource } from '@/config/typeorm-datasource.js';
 import { SupplierBlock } from '@/entities/SupplierBlock.entity.js';
+import { Not } from 'typeorm';
 
 export const repo = () => datasource.getRepository(SupplierBlock);
 
@@ -20,6 +21,12 @@ export async function findBySupplierNumberAndStatus(
 
 export async function findByStatus(status: number): Promise<SupplierBlock[]> {
     return repo().find({ where: { status } });
+}
+
+export async function findAllVisible(): Promise<SupplierBlock[]> {
+    return repo().find({
+        where: { status: Not(SupplierBlock.STATUS_DELETED) },
+    });
 }
 
 export async function findActiveBlocksAtDate(

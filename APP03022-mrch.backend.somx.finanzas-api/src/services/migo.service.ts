@@ -59,11 +59,35 @@ export async function getDocumentById(id: string) {
     return ResponseHandler.responseBuilder("", doc, 0, StatusCodes.OK, true, "");
 }
 
+type SupplierInfo = { vendorName: string; emailFinancial: string };
+
+async function buildSupplierIndexByNumber(
+    authToken: string,
+): Promise<Map<number, SupplierInfo>> {
+    const index = new Map<number, SupplierInfo>();
+    let supplierList: Supplier[] = [];
+    try {
+        supplierList = await svcAxios.GetSuppliers(authToken);
+    } catch (err) {
+        logger.warn(`[MIGO] No se pudo obtener catálogo de proveedores: ${(err as Error).message}`);
+        return index;
+    }
+    for (const s of supplierList) {
+        const n = Number(s.supplierNumber);
+        if (!Number.isFinite(n)) continue;
+        index.set(n, {
+            vendorName: s.businessName ?? "",
+            emailFinancial: s.emailFinancial ?? "",
+        });
+    }
+    return index;
+}
+
 async function buildSupplierIndexByOc(
     rows: MigoDocumentReception[],
-    authToken: string,
-): Promise<Map<string, { vendorName: string; emailFinancial: string }>> {
-    const index = new Map<string, { vendorName: string; emailFinancial: string }>();
+    supplierIndexByNumber: Map<number, SupplierInfo>,
+): Promise<Map<string, SupplierInfo>> {
+    const index = new Map<string, SupplierInfo>();
     const distinctOcs = [...new Set(rows.map(r => String(r.nroOc)).filter(Boolean))];
     if (distinctOcs.length === 0) return index;
 
@@ -77,28 +101,9 @@ async function buildSupplierIndexByOc(
         return index;
     }
 
-    if (purchaseOrders.length === 0) return index;
-
-    let supplierList: Supplier[] = [];
-    try {
-        supplierList = await svcAxios.GetSuppliers(authToken);
-    } catch (err) {
-        logger.warn(`[MIGO] No se pudo obtener catálogo de proveedores: ${(err as Error).message}`);
-        return index;
-    }
-
-    const supplierByNumber = new Map<number, Supplier>();
-    for (const s of supplierList) {
-        const n = Number(s.supplierNumber);
-        if (Number.isFinite(n)) supplierByNumber.set(n, s);
-    }
-
     for (const po of purchaseOrders) {
-        const supplier = supplierByNumber.get(Number(po.supplierNumber));
-        index.set(po.orderNumber, {
-            vendorName: supplier?.businessName ?? "",
-            emailFinancial: supplier?.emailFinancial ?? "",
-        });
+        const info = supplierIndexByNumber.get(Number(po.supplierNumber));
+        if (info) index.set(po.orderNumber, info);
     }
     return index;
 }
@@ -107,9 +112,17 @@ export async function listReceptions(q: ListMigoReceptionsQueryDto, authToken = 
     const { result, total } = await migoRepo.findReceptionsByDocumentPaginated(q);
     const totalPages = Math.ceil(total / q.pageSize);
 
-    const supplierIndex = await buildSupplierIndexByOc(result, authToken);
+    const supplierIndexByNumber = await buildSupplierIndexByNumber(authToken);
+    const supplierIndexByOc = await buildSupplierIndexByOc(result, supplierIndexByNumber);
+
     const enrichedRows = result.map(row => {
-        const supplierInfo = supplierIndex.get(String(row.nroOc));
+        const supplierNumberRaw = (row.numeroProveedor ?? '').toString().trim();
+        const supplierNumberKey = Number(supplierNumberRaw);
+        const byNumber = Number.isFinite(supplierNumberKey)
+            ? supplierIndexByNumber.get(supplierNumberKey)
+            : undefined;
+        const byOc = supplierIndexByOc.get(String(row.nroOc));
+        const supplierInfo = byNumber ?? byOc;
         return {
             ...row,
             vendorName: supplierInfo?.vendorName ?? "",

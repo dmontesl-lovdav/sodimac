@@ -1,5 +1,4 @@
 import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
-import type { Request } from "express";
 import * as guides from "@/repositories/shippingGuide.repo.js";
 import * as receptions from "@/repositories/reception.repo.js";
 import type {
@@ -15,16 +14,12 @@ import { StatusCodes } from 'http-status-codes';
 import { Between, EntityManager, In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
 import * as svcAxios from "@/services/axios.service.js";
 import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
-import { ShippingGuideDocument } from "@/entities/ShippingGuideDocument.entity.js";
 import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 
 import { logger } from "@/utils/logger.js";
 import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
-import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
-import { logActivity, getTraceId } from '@/middlewares/logger.js';
-import { ShippingGuideFile } from '@/entities/ShippingGuideFile.entity.js';
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as SGUtils from "@/utils/shippingGuide.utils.js";
 
@@ -246,7 +241,7 @@ export async function create(req: AuthenticatedRequest
 
     for (const dto of createShippingGuideList) {
         //Valida si existe el proveedor
-        await SGUtils.validateSupplier(req, dto);
+        await SGUtils.validateSupplier(req, dto.vendorNumber);
         //Verifica que no exista la guia de embarque en la  base
         const shippingGuide = await SGUtils.validateShippingGuide(dto, transactionalEntityManager);
         if (!shippingGuide) {

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
 import { formatDate, formatAmount } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
@@ -33,14 +34,21 @@ const { uuid } = useParams<{ uuid: string }>();
   useFiscalListReturnFromDetail(FISCAL_LIST_KEYS.complementPayments);
   const gridRef = useRef<DataGridHandle>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
+  const { hasEvent } = useSecurityContext();
 
-  const rowActions: RowAction<RelatedInvoice>[] = [
+  const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<RelatedInvoice> }[] = [
     {
-      title: "Ver factura relacionada",
-      icon: viewIcon,
-      onClick: (row, nav) => nav(`/fiscal/complemento/${encodeURIComponent(row.relatedDocumentUuid)}`),
-    }
+      gate: APP_EVENT.PAYMENT_COMPLEMENTS.VIEW_DETAIL,
+      action: {
+        title: "Ver factura relacionada",
+        icon: viewIcon,
+        onClick: (row, nav) => nav(`/fiscal/complemento/${encodeURIComponent(row.relatedDocumentUuid)}`),
+      },
+    },
   ];
+  const rowActions: RowAction<RelatedInvoice>[] = rowActionDescriptors
+    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .map(({ action }) => action);
 
   const handleFetch = useCallback(async () => {
 
@@ -71,10 +79,12 @@ const { uuid } = useParams<{ uuid: string }>();
         title="Facturas relacionadas"
         description="Consulta las facturas relacionadas con el complemento de pago seleccionado."
         actions={
-          <ExportCsvButton
-            disabled={!canExportCsv}
-            onClick={() => gridRef.current?.exportCsv()}
-          />
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_CSV_DETAIL}>
+            <ExportCsvButton
+              disabled={!canExportCsv}
+              onClick={() => gridRef.current?.exportCsv()}
+            />
+          </PermissionGate>
         }
       />
       
@@ -95,6 +105,8 @@ const { uuid } = useParams<{ uuid: string }>();
           csvFilename={`Factura complemento ${uuid} ${formatDate(new Date().toString(), true)}`}
           enableXml
           enablePdf
+          xmlAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_XML}
+          pdfAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_PDF}
           rowActions={rowActions}
           filtersEmpty={false}
         />

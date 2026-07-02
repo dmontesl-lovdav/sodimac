@@ -19,6 +19,7 @@ import { PaymentCondition } from './PaymentCondition.entity.js';
 export class Supplier {
     public static readonly STATUS_ACTIVE = 1;
     public static readonly STATUS_INACTIVE = 0;
+    public static readonly STATUS_DELETED = 2;
 
     @PrimaryGeneratedColumn({ name: 'id', type: 'integer' })
     id!: number;

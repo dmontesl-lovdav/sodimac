@@ -2,7 +2,7 @@ import * as purchaseOrderRepo from "@/repositories/purchaseOrder.repo.js";
 import * as tenantFianaceAddenduemRepo from "@/repositories/tenant_fiscal.addendum.repo.js";
 import * as rececetionRepo from "@/repositories/reception.repo.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { z } from "zod/v4";
 import { HttpError } from "@/utils/HttpError.js";
 import type {
@@ -15,7 +15,6 @@ ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
-import { Addendum } from "@/entities/tenant_fiscal.addendum.entity.js";
 import { Reception } from '@/entities/Reception.entity.js';
 import { ReceptionSku } from '@/entities/ReceptionSku.entity.js';
 import { AddendumManual } from '@/entities/AddendumManual.entity.js';
@@ -34,6 +33,7 @@ import { DeepPartial } from 'typeorm';
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import * as POUtils from "@/utils/purchaseOrder.utils.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+import { QueryFailedError } from "typeorm"
 
 
 type Item = {
@@ -180,7 +180,7 @@ export async function updateReception(dto: UpdatePurchaseOrderDto, token: string
         //Valida que no exista en tenant_fiscal.Invoice
         const add = await tenantFianaceAddenduemRepo.findByInvoideUuid(dto.uuid);
         if (add){
-             throw new HttpError(404, "La factura se encuentra previamente registrada, Por favor, validar con el área de finanzas");
+             throw new HttpError(404, "La factura uuid se encuentra previamente registrada en addenda, Por favor, validar con el área de finanzas");
         }
         const addendaManual = new AddendumManual();
         addendaManual.supplierNumber = dto.supplierNumber;
@@ -199,9 +199,32 @@ export async function updateReception(dto: UpdatePurchaseOrderDto, token: string
     persistence.updatedAt = new Date();
 
     if (persistence?.receptionId && valStatus) {
-        const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId, persistence);
-        const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
-        return ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
+        try { 
+                const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId,persistence );
+                const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
+                return ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
+
+            } 
+            catch (error) {
+                // Validación para errores de base de datos
+                if (error instanceof QueryFailedError) {                  
+                        // PostgreSQL
+                        if ((error as any).code === '23505') {
+                            const detail = (error as any).detail;
+                            if (detail.includes('invoice_uuid')) {
+                               throw new HttpError(404, "La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzas");
+                            }
+                        }
+                    }
+
+                    // Otros errores
+                let err = "";
+                if (error instanceof Error) {
+                    err= error.message + error.cause + error.stack;
+                    throw new Error('Error al actualizar la recepción: ' + err);
+                }
+
+            }
     }
 
     const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103, token);

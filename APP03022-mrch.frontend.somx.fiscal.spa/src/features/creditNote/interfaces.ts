@@ -1,6 +1,7 @@
 /** Estatus: disponibles para cancelación */
 export const CREDIT_NOTE_PENDIENTE_CONTABILIZAR = 2;
-export const CREDIT_NOTE_RECHAZO_CONTABLE = 9;
+export const CREDIT_NOTE_RECHAZO_CONTABLE = 11;
+export const CREDIT_NOTE_PROCESS_SENDED = 1;
 
 export interface CreditNoteFilters {
   rfcEmisor: string;

@@ -13,6 +13,7 @@ export interface SystemParameter {
   description: string | null;
   value: string | number;
   version: string;
+  status: string;
 }
 
 export interface SystemParametersResponse {
@@ -308,7 +309,7 @@ export function mapCatalogResponseToFilterOptions(
 
 
 export async function fetchProvidersAsCatalog(valueField = "rfc", fullList: boolean = false): Promise<SelectableOption[] | null> {
-  const catalogs_api = String(process.env.CATALOGS_API_URL || "") + String(process.env.API_PROVIDERS || "");
+  const catalogs_api = String(process.env.CATALOGS_API_URL || "") + String(process.env.API_PROVIDERS +"");
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {

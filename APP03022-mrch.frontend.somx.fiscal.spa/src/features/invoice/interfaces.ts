@@ -5,6 +5,9 @@ export const INVOICE_STATUS_PENDIENTE_CONTABILIZACION = 3;
 /** Estatus: disponibles para cancelación */
 export const INVOICE_PENDIENTE_ADDENDA = 1;
 export const INVOICE_RECIBIDO_PARCIAL = 2;
+export const INVOICE_PROCESS_SENDED = 3;
+export const INVOICE_ERROR_DATA = 6;
+export const INVOICE_WRONG_DATA = 16;
 
 export interface InvoiceFilters {
   rfcEmisor: string;

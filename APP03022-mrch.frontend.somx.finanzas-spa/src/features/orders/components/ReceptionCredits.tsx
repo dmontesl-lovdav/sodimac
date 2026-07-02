@@ -20,6 +20,8 @@ import xmlIconUrl from "@/assets/xml.svg";
 import "./ReceptionCredits.css";
 import { useReceptionSupplierInfo } from "../receptionSupplierInfo";
 import { Column } from "@/shared/components/ui/table/GenericTable";
+import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
+import viewIcon from '@assets/eye-show.svg';
 
 const styles = {
     container: {
@@ -40,44 +42,60 @@ const styles = {
 };
 
 const buildDetail = (reception: Reception) => {
-    const invoice = InvoiceClient;
-    const addenda = reception.listAddendum?.map((addendum: Addendum) => addendum.invoice);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    useEffect(() => {
+        const fetchInvoices = async () => {
+            const response = await InvoiceClient.getInvoiceByReceptionId(reception.orderNumber, reception.createdAt+"", reception.createdAt+"");
+            setInvoices(response.data);
+        };
+        if (reception.createdAt) {
+            fetchInvoices();
+        }
+    }, [reception]);
+    const addenda = reception.listAddendum?.map((addendum: Addendum) => addendum);
 
-    const columns: Column<Invoice>[] = [
-        { header: "UUID", render: (r: any) => r.invoiceUuid },
-        { header: "Fecha Registro", render: r => r.certificationDate ? formatDate(r.certificationDate) : "N/D" },
-        { header: "Importe", render: r => formatAmount(r.subtotal ?? 0) },
-        { header: "Serie", render: r => r.series },
-        { header: "Folio", render: r => r.folio ?? "--" },
-        { header: "Tipo", render: r => r.documentType ?? "--" }
-        /*
+    const columns: Column<Addendum>[] = [
+        { header: "UUID", render: (r: any) => r.invoice.invoiceUuid },
+        { header: "Fecha Registro", render: r => r.createdAt ? formatDate(r.createdAt) : "N/D" },
+        { header: "Importe", render: r => formatAmount(r.invoice.subtotal ?? 0) },
+        { header: "Serie", render: r => r.invoice.series },
+        { header: "Folio", render: r => r.invoice.folio ?? "--" },
+        { header: "Tipo", render: r => r.invoice.documentType ?? "--" },
         {
             header: "Acción",
             align: "center",
             render: (r) => (
                 <div className="rc-action-wrap">
-                    <button
-                        title="Descargar XML"
-                        onClick={async () => {
-                            const data = await invoice.getXmlDocument(r.invoiceUuid ?? "");
-                            const xmlString = await data.text();
-                            downloadXML(xmlString, getStandardFilename(r.invoiceUuid ?? "") + ".xml");
-                        }}
+<a
+              href={buildFiscalSpaUrl(
+                "facturas",
+                new URLSearchParams({ uuid: r.invoice.invoiceUuid ?? "", start: r.createdAt ?? "", end: r.createdAt ?? "" })
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rc-invoice-fiscal-link"
+            >
+              <button
+                        title="Ver factura"
                         className="rc-action-btn"
                     >
-                        <img src={xmlIconUrl} alt="Ver" className="rc-action-icon" />
+                        <img src={viewIcon} alt="Ver factura" className="rc-action-icon" />
                     </button>
+            </a>
+
+
+                    
                 </div>
             ),
         },
-        */
+        
     ];
 
     return (
         <div className="rc-credits-container">
             <div className="rc-credits-card">
                 <div className="rc-credits-row">
-                    <div className="rc-credits-title">Facturas relacionadas</div>
+                    <div className="rc-credits-title">Documento fiscal relacionado</div>
                 </div>
                 <div className="rc-credits-spacer" />
                 <GenericTable

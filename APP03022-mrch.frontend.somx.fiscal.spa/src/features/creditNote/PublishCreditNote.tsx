@@ -4,6 +4,7 @@ import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { GenericButton, GenericModal } from "@/shared/components/ui";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
 import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, SystemParameter } from "@/utils/utils";
@@ -324,16 +325,20 @@ function PublishCreditNoteContent() {
         </div>
         <div className="pcn-page-header-actions">
           {headerActions}
-          <GenericButton
-            variant="primary"
-            disabled={!canPublish}
-            onClick={() => { handlePublish(); }}
-          >
-            Guardar
-          </GenericButton>
-          <GenericButton variant="outlineFill" disabled={isUploading || isFinished} onClick={handleClearForm}>
-            Limpiar
-          </GenericButton>
+          <PermissionGate appEvent={APP_EVENT.CREDIT_NOTES.PUBLISH}>
+            <GenericButton
+              variant="primary"
+              disabled={!canPublish}
+              onClick={() => { handlePublish(); }}
+            >
+              Guardar
+            </GenericButton>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.CREDIT_NOTES.CLEAR_FILTERS}>
+            <GenericButton variant="outlineFill" disabled={isUploading || isFinished} onClick={handleClearForm}>
+              Limpiar
+            </GenericButton>
+          </PermissionGate>
         </div>
       </div>
 

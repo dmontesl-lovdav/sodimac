@@ -14,6 +14,7 @@ import {
 export class SupplierBlock {
     public static readonly STATUS_ACTIVE = 1;
     public static readonly STATUS_INACTIVE = 0;
+    public static readonly STATUS_DELETED = 2;
 
     @PrimaryGeneratedColumn({ name: 'id', type: 'integer' })
     id!: number;

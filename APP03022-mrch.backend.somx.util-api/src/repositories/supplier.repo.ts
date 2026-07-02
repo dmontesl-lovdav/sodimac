@@ -1,5 +1,6 @@
 import { datasource } from '@/config/typeorm-datasource.js';
 import { Supplier } from '@/entities/Supplier.entity.js';
+import { Not } from 'typeorm';
 
 export const repo = () => datasource.getRepository(Supplier);
 
@@ -31,6 +32,26 @@ export async function findByStatus(status: number): Promise<Supplier[]> {
     });
 }
 
+export async function findAllVisible(): Promise<Supplier[]> {
+    return repo().find({
+        where: { status: Not(Supplier.STATUS_DELETED) },
+        relations: ['supplierType', 'paymentCondition']
+    });
+}
+
+export async function findExistingStatus(
+    supplierNumber: string,
+): Promise<'active' | 'inactive' | null> {
+    const existing = await repo().findOne({
+        where: { supplierNumber },
+        select: ['status'],
+    });
+    if (!existing) return null;
+    if (existing.status === Supplier.STATUS_ACTIVE) return 'active';
+    if (existing.status === Supplier.STATUS_INACTIVE) return 'inactive';
+    return null;
+}
+
 export async function findBySupplierTypeId(supplierTypeId: number): Promise<Supplier[]> {
     return repo().find({
         where: { supplierTypeId },
@@ -49,7 +70,9 @@ export async function findBySupplierTypeIdAndStatus(
 }
 
 export async function existsBySupplierNumber(supplierNumber: string): Promise<boolean> {
-    const count = await repo().count({ where: { supplierNumber } });
+    const count = await repo().count({
+        where: { supplierNumber, status: Not(Supplier.STATUS_DELETED) },
+    });
     return count > 0;
 }
 

@@ -6,6 +6,7 @@ import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { Divider, Title } from "@/shared/components/ui/misc";
 import { GenericDropzone, GenericButton, GenericModal } from "@/shared/components/ui";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import { createComplementPaymentClient } from "./api/ComplementPaymentClient";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
 import { EMPTY_HEADER, PaymentHeaderData, ProviderCatalogItem, QueryPaymentData, XmlComplementPreview } from "./interfaces";
@@ -356,12 +357,16 @@ function AddComplementContent() {
       <Divider />
       <section className="fiscal-mb-4">
         <div className="fiscal-flex fiscal-gap-2 fiscal-flex-wrap">
-          <GenericButton onClick={() => { handlePublish(); }} disabled={!canPublish}>
-            {isUploading && !published ? "Publicando…" : "Publicar complemento"}
-          </GenericButton>
-          <GenericButton variant="outline" onClick={() => { handleRelate(); }} disabled={!canRelate}>
-            Relacionar complemento
-          </GenericButton>
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+            <GenericButton onClick={() => { handlePublish(); }} disabled={!canPublish}>
+              {isUploading && !published ? "Publicando…" : "Publicar complemento"}
+            </GenericButton>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+            <GenericButton variant="outline" onClick={() => { handleRelate(); }} disabled={!canRelate}>
+              Relacionar complemento
+            </GenericButton>
+          </PermissionGate>
         </div>
       </section>
           </div>

@@ -42,7 +42,7 @@ function toDto(entity: SupplierBlock): SupplierBlockDto {
 }
 
 export async function findAll(): Promise<SupplierBlockDto[]> {
-    const blocks = await supplierBlockRepo.findByStatus(SupplierBlock.STATUS_ACTIVE);
+    const blocks = await supplierBlockRepo.findAllVisible();
     return blocks.map(toDto);
 }
 
@@ -155,7 +155,7 @@ export async function deleteBlock(id: number, updatedBy: string): Promise<boolea
     const block = await supplierBlockRepo.findById(id);
     if (!block) return false;
 
-    block.status = SupplierBlock.STATUS_INACTIVE;
+    block.status = SupplierBlock.STATUS_DELETED;
     block.updatedBy = updatedBy;
     await supplierBlockRepo.save(block);
     return true;

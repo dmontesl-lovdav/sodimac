@@ -107,6 +107,7 @@ export const EMPTY_RECEPTION: Reception = {
 }
 
 export const EMPTY_INVOICE: Invoice = {
+    createdAt: "",
     invoice_uuid: "",
     document_type: "",
     total: 0,
@@ -237,6 +238,7 @@ export interface Addendum {
 }
 
 export interface Invoice {
+  createdAt: any;
   invoice_uuid?: string;
   /** Alias camelCase usado en algunas respuestas/adendas. */
   invoiceUuid?: string;

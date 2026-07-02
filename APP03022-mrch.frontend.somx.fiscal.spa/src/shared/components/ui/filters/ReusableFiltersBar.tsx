@@ -8,6 +8,7 @@ import { GenericDateRangePicker } from "@shared/components/ui/date";
 import type { DateRange } from "@shared/components/ui/date";
 import type { ChangeEvent } from "react";
 import GenericModal from "@shared/components/ui/modal/GenericModal";
+import { PermissionGate } from "@shared/security";
 import "./ReusableFiltersBar.css";
 import { readFiscalListFilters } from "@/shared/session/fiscalListSession";
 import {
@@ -213,6 +214,8 @@ interface Props<F extends Record<string, any>> {
   restoreSavedFilters?: boolean;
   validateFilters?: (filters: F) => string | null;
   onHydrated?: (filters: F) => void;
+  searchAppEvent?: { app: string; event: string };
+  clearAppEvent?: { app: string; event: string };
 }
 
 export default function ReusableFiltersBar<F extends Record<string, any>>({
@@ -226,6 +229,8 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
   restoreSavedFilters = false,
   validateFilters,
   onHydrated,
+  searchAppEvent,
+  clearAppEvent,
 }: Props<F>): ReactElement {
   const [filterState] = useState(() =>
     hydrateFilterState(initialFilters, fields, {
@@ -472,12 +477,28 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
           return null;
         })}
         <div className="finz-filter-actions">
-          <GenericButton variant="outlineFill" onClick={handleSubmit}>
-            Buscar
-          </GenericButton>
-          <GenericButton variant="outlineFill" onClick={handleClear}>
-            Limpiar
-          </GenericButton>
+          {searchAppEvent ? (
+            <PermissionGate appEvent={searchAppEvent}>
+              <GenericButton variant="outlineFill" onClick={handleSubmit}>
+                Buscar
+              </GenericButton>
+            </PermissionGate>
+          ) : (
+            <GenericButton variant="outlineFill" onClick={handleSubmit}>
+              Buscar
+            </GenericButton>
+          )}
+          {clearAppEvent ? (
+            <PermissionGate appEvent={clearAppEvent}>
+              <GenericButton variant="outlineFill" onClick={handleClear}>
+                Limpiar
+              </GenericButton>
+            </PermissionGate>
+          ) : (
+            <GenericButton variant="outlineFill" onClick={handleClear}>
+              Limpiar
+            </GenericButton>
+          )}
         </div>
       </div>
       <GenericModal

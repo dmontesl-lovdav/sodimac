@@ -66,7 +66,6 @@ function buildOrdersFilterPayload(input: {
 
   const sn = input.provider.trim();
   const parsedSupplier = sn === "" ? NaN : Number(sn);
-
   return {
     purchaseOrderDateAtInitial: formatFinanceListLocalDate(dayStart)+"T00:00:00.000Z",
     purchaseOrderDateAtEnd: formatFinanceListLocalDate(dayEnd)+"T23:59:59.999Z",
@@ -75,7 +74,7 @@ function buildOrdersFilterPayload(input: {
     providerType: input.providerType.trim() || undefined,
     orderNumber: input.orderNumber.trim() || undefined,
     receptionNumber: input.receptionNumber.trim() || undefined,
-    status: input.status ? Number(input.status) : undefined,
+    status: input.status.trim() !== "" ? Number(input.status) : undefined,
     pageNumber: 1,
     pageSize: 10,
   };
@@ -116,8 +115,6 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       if (providersRes) setProviders(providersRes);
 
       if (tipoProveedorRes) {
-        const mappedProviderType = fetchCatalogAsSelectableOptions(tipoProveedorRes, "Todos los tipos", "internalStatus");
-        console.log("mappedProviderType", mappedProviderType);
         setProviderTypeCatalog(fetchCatalogAsSelectableOptions(tipoProveedorRes, "Todos los tipos", "internalStatus"));
       }
 

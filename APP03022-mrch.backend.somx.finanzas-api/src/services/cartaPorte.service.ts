@@ -1,5 +1,4 @@
-import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
-import * as guides from "@/repositories/shippingGuide.repo.js";
+
 import type {
     CreateShippingGuideDto,
 
@@ -10,14 +9,13 @@ import {
 
 } from "@/schemas/purchaseOrder.schema.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import * as svcShipping from "@/services/shippingGuide.service.js";
 import * as svcPurchaseO from "@/services/purchaseOrder.service.js";
 import { getDataSource } from "@/config/typeorm-datasource.js"; // Your DataSource instance
 import * as svcAxios from "@/services/axios.service.js";
 import 'dotenv/config';
 import * as constants from "@/constants/catalogConstantsCodes.js";
-import type { Request } from "express";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
 

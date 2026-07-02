@@ -9,6 +9,7 @@ import xmlIconUrl from "@assets/xml.svg";
 import pdfIconUrl from "@assets/pdf.svg";
 import { exportToCSV, getStandardFilename } from "@/utils/utils";
 import { usePaginatedData, type UsePaginatedDataOptions, parseFetchError } from "@/shared/components/ui/datagrid/hooks/usePaginatedData";
+import { useSecurityContext } from "@shared/security";
 
 /** Reexporta los tipos de GenericTable (no tienen 'accessor') */
 export type Column<T> = TableColumn<T>;
@@ -71,6 +72,9 @@ type DataGridProps<T, F = any> = {
   getFilename?: (row: T) => string; // default: `{folio|invoiceUuid|getRowId}`
   /** Acciones por fila adicionales (se muestran antes de XML/PDF) */
   rowActions?: GenericRowAction<T>[];
+
+  xmlAppEvent?: { app: string; event: string };
+  pdfAppEvent?: { app: string; event: string };
 
   /** Si es true y no hay filas, se muestra SimpleLobby con este mensaje (ej. "Realiza una búsqueda en los filtros"). */
   filtersEmpty?: boolean;
@@ -245,9 +249,15 @@ function DataGridInner<T, F = any>(
     filtersEmpty = false,
     emptyFiltersMessage = "Realiza una búsqueda en los filtros para mostrar resultados.",
     fetchEnabled = false,
+    xmlAppEvent,
+    pdfAppEvent,
   }: DataGridProps<T, F>,
   ref: React.ForwardedRef<DataGridHandle>
 ): ReactElement {
+  const sec = useSecurityContext();
+  const canXml = !xmlAppEvent || sec.hasEvent(xmlAppEvent.app, xmlAppEvent.event);
+  const canPdf = !pdfAppEvent || sec.hasEvent(pdfAppEvent.app, pdfAppEvent.event);
+
   // Si se pasa fetchFn, usar paginación automática
   const paginatedData = fetchFn && filters ? usePaginatedData<T, F>({
     fetchFn,
@@ -385,8 +395,7 @@ function DataGridInner<T, F = any>(
   const internalRowActions: GenericRowAction<T>[] = useMemo(() => {
     const actions: GenericRowAction<T>[] = [];
 
-    // Acción XML
-    if (enableXml) {
+    if (enableXml && canXml) {
       const xmlGetter: (row: T) => string | null | undefined | Promise<string | null | undefined> =
         getXmlContent ??
         ((row: any) => row?.xmlContent); // auto-detección por convención
@@ -414,8 +423,7 @@ function DataGridInner<T, F = any>(
       });
     }
 
-    // Acción PDF
-    if (enablePdf) {
+    if (enablePdf && canPdf) {
       const pdfUrlGetter: (row: T) => string | null | undefined =
         getPdfUrl ??
         ((row: any) => {
@@ -439,7 +447,7 @@ function DataGridInner<T, F = any>(
     }
 
     return actions;
-  }, [enableXml, enablePdf, getXmlContent, getFilename, getPdfUrl, getRowId]);
+  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl, getRowId]);
 
   const allRowActions = useMemo(
     () => [...(customRowActions ?? []), ...internalRowActions],

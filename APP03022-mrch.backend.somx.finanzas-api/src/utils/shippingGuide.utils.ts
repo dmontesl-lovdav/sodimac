@@ -1,26 +1,18 @@
 import { ShippingGuide } from "@/entities/ShippingGuide.entity.js";
 import type { Request } from "express";
-import * as guides from "@/repositories/shippingGuide.repo.js";
-import * as receptions from "@/repositories/reception.repo.js";
 import type {
     CreateShippingGuideDto,
-    ListShippingGuideQuery,
-    UpdateShippingGuideDto,
-    ShippginGuideSummaryListDto
 } from "@/schemas/shippingGuide.schema.js";
-import { Response } from "express";
-import { ResponseHandlerDTO, ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
+import { ResponseHandlerDTO } from '@/response/ResponseHandler.dto.js';
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
-import { Between, EntityManager, In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from "typeorm";
+import { EntityManager, type FindOptionsWhere } from "typeorm";
 import * as svcAxios from "@/services/axios.service.js";
-import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { ShippingGuideDocument } from "@/entities/ShippingGuideDocument.entity.js";
 import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 
 import { logger } from "@/utils/logger.js";
-import { ShippingGuidePurchaseOrder } from "@/entities/ShippingGuidePurchaseOrder.entity.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
@@ -47,18 +39,17 @@ export async function createShippingGuide(
     const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
     if (params.dto.shipingGuideDocumentList != null && params.dto.shipingGuideDocumentList.length > 0) {
         for (const shipdoc of params.dto.shipingGuideDocumentList) {
-            let shippingGuideFile: ShippingGuideFile;
             let datarec: Partial<ShippingGuideDocument> = {
                 fileName: shipdoc.fileName,
                 fileType: shipdoc.fileType,
                 status: 1, //Nace con el Status 1
             };
             if (params.origin == 2 && params.files != null && (params.saveFileOnDb?.toLowerCase() === "true")) { //Solo se guardan los documentos de CP
-                datarec = await saveFilesOnDb(params.files, shipdoc, params.transactionalEntityManager, datarec);
+                datarec = await saveFilesOnDb(params.files, shipdoc.fileName, params.transactionalEntityManager, datarec);
             }
             shippingGuideDocumentList.push(datarec);
         };
-    }
+    } 
 
     const data = {
         guideNumber: params.dto.guideNumber,
@@ -96,12 +87,12 @@ export async function createShippingGuide(
     }
     const CatMsgExc = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS208, token);
     logger.info("✅ Register Carta Porte shippingGuide SUCCESS → data={}", entityCreated);
-    params.resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: status }, 0, StatusCodes.CREATED, true, "", "BUS208");
+    params.resp = ResponseHandler.responseBuilder(CatMsgExc.description, { ...entityCreated, status: params.status }, 0, StatusCodes.CREATED, true, "", "BUS208");
     return params.resp;
 }
 
-export async function saveFilesOnDb(files: Express.Multer.File[], shipdoc: { fileName: string; fileType: number; status: number; }, transactionalEntityManager: EntityManager, datarec: Partial<ShippingGuideDocument>) {
-    const file = files.find(ite => ite.originalname == shipdoc.fileName);
+export async function saveFilesOnDb(files: Express.Multer.File[], fileName: string, transactionalEntityManager: EntityManager, datarec: Partial<ShippingGuideDocument>) {
+    const file = files.find(ite => ite.originalname == fileName);
     if (file != null) {
         let shippingGuideFileTmp: Partial<ShippingGuideFile> = {
             fileName: file?.originalname,
@@ -129,17 +120,18 @@ export async function saveFilesOnBucket(files: Express.Multer.File[], req: Reque
     return enviados;
 }
 
-export async function validateSupplier(req: AuthenticatedRequest, dto: { guideNumber: string; vendorNumber: number; truckPlate: string; originId: number; destinationId: number; deliveryType: number; status: number; deliveryDate: Date; shipingGuideDocumentList: { fileName: string; fileType: number; status: number; }[]; trailerPlate?: string | null | undefined; driverName?: string | null | undefined; driverLicense?: string | null | undefined; comments?: string | null | undefined; shippingDate?: Date | null | undefined; estimatedArrival?: Date | null | undefined; actualArrival?: Date | null | undefined; sentAt?: Date | null | undefined; createdBy?: number | null | undefined; }) {
+export async function validateSupplier(req: AuthenticatedRequest, vendorNumber: Number) {
     const supplierList = await svcAxios.GetSuppliers(req.authToken ?? '');
     const foundSupplier: Supplier | undefined = supplierList.find(
-        supplier => supplier.supplierNumber?.toString() === dto.vendorNumber?.toString()
+        supplier => supplier.supplierNumber?.toString() === vendorNumber?.toString()
     );
     if (foundSupplier == undefined) {
-        throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.vendorNumber);
+        throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + vendorNumber);
     }
 }
 
-export async function validateShippingGuide(dto: { guideNumber: string; vendorNumber: number; truckPlate: string; originId: number; destinationId: number; deliveryType: number; status: number; deliveryDate: Date; shipingGuideDocumentList: { fileName: string; fileType: number; status: number; }[]; trailerPlate?: string | null | undefined; driverName?: string | null | undefined; driverLicense?: string | null | undefined; comments?: string | null | undefined; shippingDate?: Date | null | undefined; estimatedArrival?: Date | null | undefined; actualArrival?: Date | null | undefined; sentAt?: Date | null | undefined; createdBy?: number | null | undefined; }, transactionalEntityManager: EntityManager) {
+export async function validateShippingGuide(dto: CreateShippingGuideDto
+    , transactionalEntityManager: EntityManager) {
     const filter: FindOptionsWhere<ShippingGuide> = {};
     if (dto.guideNumber !== undefined) {
         let guia = dto.guideNumber ?? '';

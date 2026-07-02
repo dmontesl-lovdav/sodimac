@@ -31,13 +31,25 @@ export const InvoiceClient = {
     async getInvoicesByUuid(uuid: string): Promise<any> {
         return fiscalApi.request<any>(`fiscal/search`, "post", {
             invoiceUuid: uuid,
+
+        });
+    },
+
+    async getInvoiceByReceptionId(receptionId: string, start: string, end: string): Promise<any> {
+        return fiscalApi.request<any>(`invoices/search`, "post", {
+            noRecepcion: receptionId,
+            tipoDocumento: "I",
+            fechaInicioRecepcion: start,
+            fechaFinalRecepcion: end,
+            page: 0,
+            size: 100,
         });
     },
 
     async create(invoice: File, pdf: File | null, options?: RegisterInvoiceOptions): Promise<any> {
         const form = new FormData();
         form.append("file", invoice);
-        if(pdf) {
+        if (pdf) {
             form.append("pdfFile", pdf);
         }
         appendFormField(form, "idTransaccion", options?.idTransaccion);

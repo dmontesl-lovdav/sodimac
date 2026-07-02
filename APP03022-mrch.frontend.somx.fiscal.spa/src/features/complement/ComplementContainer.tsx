@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
 import { formatDate, formatAmount, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
@@ -48,15 +49,22 @@ export default function ComplementContainer() {
   const invoiceClient = createCreditsClient();
   const gridRef = useRef<DataGridHandle>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
+  const { hasEvent } = useSecurityContext();
 
-  const rowActions: RowAction<ComplementPayment>[] = [
+  const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<ComplementPayment> }[] = [
     {
-      title: "Ver facturas relacionadas",
-      icon: viewIcon,
-      onClick: (row, nav) => nav(`/fiscal/complemento/${encodeURIComponent(row.paymentsUuid)}`),
-      isDisabled: (row) => !row.relatedDocumentsCount || row.relatedDocumentsCount <= 0,
-    }
+      gate: APP_EVENT.PAYMENT_COMPLEMENTS.VIEW_DETAIL,
+      action: {
+        title: "Ver facturas relacionadas",
+        icon: viewIcon,
+        onClick: (row, nav) => nav(`/fiscal/complemento/${encodeURIComponent(row.paymentsUuid)}`),
+        isDisabled: (row) => !row.relatedDocumentsCount || row.relatedDocumentsCount <= 0,
+      },
+    },
   ];
+  const rowActions: RowAction<ComplementPayment>[] = rowActionDescriptors
+    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .map(({ action }) => action);
 
   const handleGetXmlContent = useCallback(async (row: ComplementPayment) => {
     const { data } = await invoiceClient.getXmlDocument(row.paymentsUuid);
@@ -181,10 +189,12 @@ export default function ComplementContainer() {
         title="Consulta complemento pago"
         description="Consulta el historial de complementos publicados y su estatus de validación."
         actions={
-          <ExportCsvButton
-            disabled={!canExportCsv}
-            onClick={() => gridRef.current?.exportCsv()}
-          />
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_CSV}>
+            <ExportCsvButton
+              disabled={!canExportCsv}
+              onClick={() => gridRef.current?.exportCsv()}
+            />
+          </PermissionGate>
         }
       />
       <ReusableFiltersBar<ComplementPaymentFilters>
@@ -192,6 +202,8 @@ export default function ComplementContainer() {
         initialFilters={EMPTY_COMPLEMENT_PAYMENT}
         onSearch={handleSearch}
         onFiltersChange={handleFiltersChange}
+        searchAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.SEARCH}
+        clearAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.CLEAR_FILTERS}
         onHydrated={(f) => {
           setFilters(f);
           setFiltersReady(true);
@@ -217,6 +229,8 @@ export default function ComplementContainer() {
           csvFilename={`Complementos de pago ${formatDate(new Date().toString(), true)}`}
           enableXml
           enablePdf
+          xmlAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_XML}
+          pdfAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
           rowActions={rowActions}
           filtersEmpty={!hasSearched || areFiltersEmpty(filters)}

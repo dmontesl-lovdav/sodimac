@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
 import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
@@ -18,6 +19,9 @@ import {
   INVOICE_PENDIENTE_ADDENDA,
   INVOICE_RECIBIDO_PARCIAL,
   type Invoice,
+  INVOICE_WRONG_DATA,
+  INVOICE_ERROR_DATA,
+  INVOICE_PROCESS_SENDED,
 } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import {
@@ -108,7 +112,7 @@ export default function InvoicesGrid() {
   const gridRef = useRef<DataGridHandle>(null);
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
-  const isAdmin = true;
+  const { hasEvent } = useSecurityContext();
 
   useEffect(() => {
     const loadCatalogs = async () => {
@@ -237,39 +241,47 @@ export default function InvoicesGrid() {
     }
   };
 
-  const rowActions: RowAction<Invoice>[] = isAdmin
-    ? [
-      {
-          title: "Ver notas de crédito relacionadas",
-          icon: viewIcon,
-          onClick: (_row, _nav) => {
-            const ncUuid = _row.notasCreditoRelacionadas[0]?.fiscalUuid;
-            if (!ncUuid) return;
-            const qs = new URLSearchParams({
-              uuid: ncUuid,
-              start: filters.fechaInicioRecepcion,
-              end: filters.fechaFinalRecepcion,
-            });
-            _nav(`/fiscal/notas-credito?${qs.toString()}`);
-          },
-          isDisabled: (row) => row.notasCreditoRelacionadas.length === 0,
+  const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<Invoice> }[] = [
+    {
+      gate: APP_EVENT.INVOICES.LINK_CREDIT_NOTE,
+      action: {
+        title: "Ver notas de crédito relacionadas",
+        icon: viewIcon,
+        onClick: (_row, _nav) => {
+          const ncUuid = _row.notasCreditoRelacionadas[0]?.fiscalUuid;
+          if (!ncUuid) return;
+          const qs = new URLSearchParams({
+            uuid: ncUuid,
+            start: filters.fechaInicioRecepcion,
+            end: filters.fechaFinalRecepcion,
+          });
+          _nav(`/fiscal/notas-credito?${qs.toString()}`);
         },
-        {
-          title: "Reproceso contable",
-          icon: reprocessIcon,
-          onClick: (_row) => { openReprocessConfirm(_row); },
-          isDisabled: (row) => row.status !== INVOICE_STATUS_RECHAZO_CONTABLE,
-        },
-        
-        {
-          title: "Cancelar factura",
-          icon: deleteIcon,
-          onClick: (_row) => { openCancelConfirm(_row); },
-          isDisabled: (row) => row.status !== INVOICE_PENDIENTE_ADDENDA && row.status !== INVOICE_RECIBIDO_PARCIAL,
-        },
-        
-      ]
-    : [];
+        isDisabled: (row) => row.notasCreditoRelacionadas.length === 0,
+      },
+    },
+    {
+      gate: APP_EVENT.INVOICES.UPDATE_STATUS,
+      action: {
+        title: "Reproceso contable",
+        icon: reprocessIcon,
+        onClick: (_row) => { openReprocessConfirm(_row); },
+        isDisabled: (row) => row.status !== INVOICE_STATUS_RECHAZO_CONTABLE,
+      },
+    },
+    {
+      gate: APP_EVENT.INVOICES.CANCEL,
+      action: {
+        title: "Cancelar factura",
+        icon: deleteIcon,
+        onClick: (_row) => { openCancelConfirm(_row); },
+        isDisabled: (row) => row.status !== INVOICE_PROCESS_SENDED && row.status !== INVOICE_WRONG_DATA && row.status !== INVOICE_ERROR_DATA,
+      },
+    },
+  ];
+  const rowActions: RowAction<Invoice>[] = rowActionDescriptors
+    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .map(({ action }) => action);
 
   const filterFields: FilterField[] = useMemo(
     () => [
@@ -323,10 +335,12 @@ export default function InvoicesGrid() {
         title="Listado de Facturas"
         description="Consulte el historial de facturas recibidas y el estatus de validación de cada una."
         actions={
-          <ExportCsvButton
-            disabled={!canExportCsv}
-            onClick={() => gridRef.current?.exportCsv()}
-          />
+          <PermissionGate appEvent={APP_EVENT.INVOICES.DOWNLOAD_CSV}>
+            <ExportCsvButton
+              disabled={!canExportCsv}
+              onClick={() => gridRef.current?.exportCsv()}
+            />
+          </PermissionGate>
         }
       />
       <GenericModal
@@ -382,6 +396,8 @@ export default function InvoicesGrid() {
         onSearch={handleSearch}
         onFiltersChange={handleFiltersChange}
         onClear={handleFiltersClear}
+        searchAppEvent={APP_EVENT.INVOICES.SEARCH}
+        clearAppEvent={APP_EVENT.INVOICES.CLEAR_FILTERS}
         onHydrated={(f) => {
           setFiltersReady(true);
 
@@ -441,6 +457,8 @@ export default function InvoicesGrid() {
             csvFilename={`Facturas ${formatDate(new Date().toString(), true)}`}
             enableXml
             enablePdf
+            xmlAppEvent={APP_EVENT.INVOICES.DOWNLOAD_XML}
+            pdfAppEvent={APP_EVENT.INVOICES.DOWNLOAD_PDF}
             getXmlContent={handleGetXmlContent}
             getFilename={getXmlFileNameFromRow}
             filtersEmpty={!hasSearched || areFiltersEmpty(filters)}

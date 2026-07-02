@@ -1,12 +1,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
+import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
 import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
 import { createCreditsClient } from "./api/CreditsClient";
-import { CREDIT_NOTE_PENDIENTE_CONTABILIZAR, CREDIT_NOTE_RECHAZO_CONTABLE, CreditNoteFilters, EMPTY_CREDIT_NOTE, type CreditNote } from "./interfaces";
+import { CREDIT_NOTE_PENDIENTE_CONTABILIZAR, CREDIT_NOTE_PROCESS_SENDED, CREDIT_NOTE_RECHAZO_CONTABLE, CreditNoteFilters, EMPTY_CREDIT_NOTE, type CreditNote } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import viewIcon from '@assets/eye-show.svg';
 import trashIcon from '@assets/delete.svg';
@@ -60,6 +61,7 @@ export default function CreditsGrid() {
   const location = useLocation();
   const navigate = useNavigate();
   const gridRef = useRef<DataGridHandle>(null);
+  const { hasEvent } = useSecurityContext();
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
@@ -167,28 +169,37 @@ export default function CreditsGrid() {
     handleSearch
   );
 
-  const rowActions: RowAction<CreditNote>[] = [
+  const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<CreditNote> }[] = [
     {
-      title: "Ver factura relacionada",
-      icon: viewIcon,
-      onClick: (row, nav) => {
-        if (!row.relatedInvoiceUuid) return;
-        const qs = new URLSearchParams({
-          uuid: String(row.relatedInvoiceUuid),
-          start: filters.fechaInicioRecepcion,
-          end: filters.fechaFinalRecepcion,
-        });
-        nav(`/fiscal/facturas?${qs.toString()}`);
+      gate: APP_EVENT.CREDIT_NOTES.LINK_INVOICE,
+      action: {
+        title: "Ver factura relacionada",
+        icon: viewIcon,
+        onClick: (row, nav) => {
+          if (!row.relatedInvoiceUuid) return;
+          const qs = new URLSearchParams({
+            uuid: String(row.relatedInvoiceUuid),
+            start: filters.fechaInicioRecepcion,
+            end: filters.fechaFinalRecepcion,
+          });
+          nav(`/fiscal/facturas?${qs.toString()}`);
+        },
+        isDisabled: (row) => !row.relatedInvoiceUuid,
       },
-      isDisabled: (row) => !row.relatedInvoiceUuid,
     },
     {
-      title: "Cancelar nota de crédito",
-      icon: trashIcon,
-      onClick: (_row) => { openCancelConfirm(_row); },
-      isDisabled: (row) => row.status !== CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status !== CREDIT_NOTE_RECHAZO_CONTABLE,
-    }
+      gate: APP_EVENT.CREDIT_NOTES.CANCEL,
+      action: {
+        title: "Cancelar nota de crédito",
+        icon: trashIcon,
+        onClick: (_row) => { openCancelConfirm(_row); },
+        isDisabled: (row) => row.status !== CREDIT_NOTE_PROCESS_SENDED && row.status !== CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status !== CREDIT_NOTE_RECHAZO_CONTABLE,
+      },
+    },
   ];
+  const rowActions: RowAction<CreditNote>[] = rowActionDescriptors
+    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .map(({ action }) => action);
 
 
   const filterFields: FilterField[] = [
@@ -241,14 +252,18 @@ export default function CreditsGrid() {
         description="Visualiza las notas de crédito registradas."
         actions={
           <div className="fiscal-flex fiscal-gap-sm fiscal-flex-wrap fiscal-justify-end">
-            <ExportCsvButton
-              disabled={!canExportCsv}
-              variant="outline"
-              onClick={() => gridRef.current?.exportCsv()}
-            />
-            <GenericButton onClick={() => navigate("/fiscal/publicar-nota-credito")} >
-              Agregar Nota de Crédito
-            </GenericButton>
+            <PermissionGate appEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_CSV}>
+              <ExportCsvButton
+                disabled={!canExportCsv}
+                variant="outline"
+                onClick={() => gridRef.current?.exportCsv()}
+              />
+            </PermissionGate>
+            <PermissionGate appEvent={APP_EVENT.CREDIT_NOTES.PUBLISH}>
+              <GenericButton onClick={() => navigate("/fiscal/publicar-nota-credito")} >
+                Agregar Nota de Crédito
+              </GenericButton>
+            </PermissionGate>
           </div>
         }
       />
@@ -293,6 +308,8 @@ export default function CreditsGrid() {
         onSearch={handleSearch}
         onFiltersChange={handleFiltersChange}
         onClear={handleFiltersClear}
+        searchAppEvent={APP_EVENT.CREDIT_NOTES.SEARCH}
+        clearAppEvent={APP_EVENT.CREDIT_NOTES.CLEAR_FILTERS}
         onHydrated={(f) => {
           setFiltersReady(true);
 
@@ -343,6 +360,8 @@ export default function CreditsGrid() {
           csvFilename={`Notas de Crédito ${formatDate(new Date().toString(), true)}`}
           enableXml
           enablePdf
+          xmlAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_XML}
+          pdfAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
           getFilename={getXmlFileNameFromRow}
           rowActions={rowActions}

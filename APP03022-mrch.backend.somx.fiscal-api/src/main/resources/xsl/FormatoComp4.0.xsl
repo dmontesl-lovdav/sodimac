@@ -259,7 +259,9 @@
 													<fo:table-cell display-align="center">
 														<fo:block font-size="6pt">
 															<xsl:value-of select="@Serie" />
-															-
+															<xsl:if test="string-length(@Serie) &gt; 0 and string-length(@Folio) &gt; 0">
+																<xsl:text> - </xsl:text>
+															</xsl:if>
 															<xsl:value-of select="@Folio" />
 														</fo:block>
 													</fo:table-cell>

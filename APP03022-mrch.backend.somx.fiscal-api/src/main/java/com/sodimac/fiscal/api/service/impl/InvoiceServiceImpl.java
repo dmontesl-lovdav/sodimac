@@ -2395,34 +2395,42 @@ public class InvoiceServiceImpl implements InvoiceService {
      * Construye el nombre del archivo XML para el ZIP.
      */
     private String buildXmlFileName(InvoiceEntity invoice) {
-        StringBuilder fileName = new StringBuilder();
-
-        if (invoice.getSeries() != null && !invoice.getSeries().isEmpty()) {
-            fileName.append(invoice.getSeries()).append("-");
-        }
-        if (invoice.getFolio() != null && !invoice.getFolio().isEmpty()) {
-            fileName.append(invoice.getFolio()).append("_");
-        }
-        fileName.append(invoice.getFiscalUuid() != null ? invoice.getFiscalUuid() : invoice.getInvoiceUuid());
-        fileName.append(".xml");
-
-        return sanitizeFileName(fileName.toString());
+        return buildDocumentFileName(invoice, ".xml");
     }
 
     /**
      * Construye el nombre del archivo PDF para el ZIP.
      */
     private String buildPdfFileName(InvoiceEntity invoice) {
-        StringBuilder fileName = new StringBuilder();
+        return buildDocumentFileName(invoice, ".pdf");
+    }
 
-        if (invoice.getSeries() != null && !invoice.getSeries().isEmpty()) {
-            fileName.append(invoice.getSeries()).append("-");
+    /**
+     * Construye el nombre de archivo de un documento: {@code Serie-Folio_UUID.ext}. El separador
+     * {@code "-"} solo se agrega si hay serie Y folio; si falta alguno no se deja separador colgante
+     * (evita nombres como "CV-uuid" o "-uuid" cuando no hay folio). Cae al UUID si no hay serie/folio.
+     */
+    private String buildDocumentFileName(InvoiceEntity invoice, String extension) {
+        String series = invoice.getSeries();
+        String folio = invoice.getFolio();
+        boolean hasSeries = series != null && !series.isEmpty();
+        boolean hasFolio = folio != null && !folio.isEmpty();
+
+        StringBuilder fileName = new StringBuilder();
+        if (hasSeries) {
+            fileName.append(series);
         }
-        if (invoice.getFolio() != null && !invoice.getFolio().isEmpty()) {
-            fileName.append(invoice.getFolio()).append("_");
+        if (hasSeries && hasFolio) {
+            fileName.append("-");
+        }
+        if (hasFolio) {
+            fileName.append(folio);
+        }
+        if (fileName.length() > 0) {
+            fileName.append("_");
         }
         fileName.append(invoice.getFiscalUuid() != null ? invoice.getFiscalUuid() : invoice.getInvoiceUuid());
-        fileName.append(".pdf");
+        fileName.append(extension);
 
         return sanitizeFileName(fileName.toString());
     }

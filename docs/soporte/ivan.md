@@ -20,6 +20,24 @@ para validarlo local; el código y el proceso son de Robert. Ver [[project_rober
 
 ---
 
+## 2026-07-03 | Fila 122 RESUELTA + aviso: tren PUT manual de NC desactualizado
+
+**Fila 122 HECHA** (`9b7143e`): el estatus de la NC acompaña a la factura — Recibido Parcial (2)
+mientras no cuadra, En proceso de envío (3) al cuadrar, Cancelada (11) en la cascada. Va con
+**migración** de NC existentes (`invoice.status +2` para NC) y **re-seed** de `CatEstatusNotaCredito`
+a la numeración nueva E/F. Probado local + UAT. Scripts:
+`migration/QA-122_reseed_CatEstatusNotaCredito_EF.sql` y `QA-122_migracion_estatus_nc_+2.sql`.
+
+**Aviso (flujo no contemplado, NO se tocó)**: el **tren de estatus del PUT manual** de NC está
+**desactualizado**. Vive en `shared_catalogs.status_train` (option_id=2, lo lee util-api) + el enum
+`CreditNoteStatus` (fallback local). Usa una numeración **distinta** al catálogo (venía desalineado
+desde antes). El flujo **automático** (registro/netear/cuadrar/cascada de fila 104/122) NO lo usa, así
+que fila 122 cierra bien; pero el **cambio manual de estatus** de NC (PUT) quedaría inconsistente.
+**Hay que revisar/alinear ese tren a E/F por separado** (necesita el flujo contable downstream de NC
+que defina Ivan). Detalle: [docs/analisis/QA-104-NC-recalculo-tolerancia-estatus3.md](../analisis/QA-104-NC-recalculo-tolerancia-estatus3.md).
+
+---
+
 ## 2026-07-02 | Fila 122: estatus de la NC acompaña a la factura (extensión 104)
 
 **Pedido (matriz v9, fila 122, Alto, David, Fiscal/NC)**: hoy (fila 104) la NC se registra en status 1

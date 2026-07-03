@@ -32,9 +32,15 @@ SELECT COUNT(*) AS con_uuid     FROM OrdenCompraProveedor_Clean WHERE ISNULL(Uui
 
 -- 3) Swap de nombres (ventana, sin sesiones activas sobre la tabla)
 BEGIN TRAN;
-  EXEC sp_rename 'OrdenCompraProveedor',       'OrdenCompraProveedor_OLD_20260625';
+  EXEC sp_rename 'OrdenCompraProveedor',       'OrdenCompraProveedor_OLD_20260703';
   EXEC sp_rename 'OrdenCompraProveedor_Clean', 'OrdenCompraProveedor';
 COMMIT;
 
--- 4) Conservar _OLD hasta validar todo en caliente; luego:
--- DROP TABLE OrdenCompraProveedor_OLD_20260625;
+-- ROLLBACK del swap (si algo sale mal en caliente): deshacer los renames
+-- BEGIN TRAN;
+--   EXEC sp_rename 'OrdenCompraProveedor',               'OrdenCompraProveedor_Clean';
+--   EXEC sp_rename 'OrdenCompraProveedor_OLD_20260703',  'OrdenCompraProveedor';
+-- COMMIT;
+
+-- 4) Conservar _OLD hasta validar todo en caliente varios dias; SOLO despues:
+-- DROP TABLE OrdenCompraProveedor_OLD_20260703;

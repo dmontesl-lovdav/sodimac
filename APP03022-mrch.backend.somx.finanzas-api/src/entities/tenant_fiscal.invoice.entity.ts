@@ -9,6 +9,11 @@ export class Invoice {
     @PrimaryGeneratedColumn('uuid', { name: 'invoice_uuid' })
     invoiceUuid!: string;
 
+    // Folio fiscal (UUID SAT). Necesario para exponerlo en el nodo addenda del GET /purchase-orders
+    // El invoice_uuid es la PK interna; el folio fiscal es el UUID del SAT.
+    @Column({ name: 'fiscal_uuid', type: 'uuid', nullable: true })
+    fiscalUuid?: string;
+
     @Column({ name: 'document_type', type: 'varchar', length: 1, nullable: false, unique: true })
     documentType!: string;
 

@@ -177,9 +177,14 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
                     reception.color = statusResult.color;
                 }
                 
+                // Folio fiscal (UUID SAT) de la recepción. Dos orígenes:
+                // - addenda manual (finanzas): addendum_manual.invoice_uuid Es el folio fiscal.
+                // - addenda fiscal: tenant_fiscal.addendum.invoice_uuid es la PK
+                //   interna, el folio fiscal vive en invoice.fiscal_uuid (por eso .invoice.fiscalUuid,
+                //   NO .invoiceUuid, que devolvía la PK interna = uuid equivocado).
                 reception.invoiceUuid =
                     reception.addendumManual?.invoiceId ??
-                    reception.listAddendum?.[0]?.invoiceUuid ??
+                    reception.listAddendum?.[0]?.invoice?.fiscalUuid ??
                     "";
 
             });

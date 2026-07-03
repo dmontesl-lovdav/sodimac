@@ -4,6 +4,30 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-03 | PUT /invoices 500: idUsuarioActualizacion debe ser numérico (no UUID)
+
+**Reporte**: `PUT https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices` (cancelar NC) daba **500**
+con body `{"uuid":"cf5a9aa1-...","numeroProveedor":250117,"estatus":0,"idUsuarioActualizacion":"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d"}`.
+
+**Causa**: `idUsuarioActualizacion` en el back es **Long**; el front manda un **UUID**. `getUserIdFromStore()`
+(fiscal.spa `src/utils/getUserIdFromStore.ts`) regresa el **`sub` del JWT (UUID)**. Jackson no convierte
+UUID→Long → `InvalidFormatException` → el ControllerAdvisor lo mapea a 500. (El fallback `?? "1"` sí
+funciona porque "1" parsea a Long.)
+
+**Decisión (David)**: **NO adaptar el back al UUID.** El `idUsuarioActualizacion` se guarda en
+`updated_by`/`created_by` (bigint) + bitácora, que son **numéricos**. El front debe mandar el **id
+numérico** del usuario, no el `sub`. Ajustar `getUserIdFromStore()` para priorizar un claim numérico
+(`idUsuario`/`userId`) en vez de `sub`. **Mismo caso** en `InvoiceClient.ts:34/:42` y
+`complement/AddComplement.tsx:75` (todos mandan `getUserIdFromStore()`).
+
+**Origen back**: `InvoiceUpdateRequest.idUsuarioActualizacion` (Long) → `invoice.setUpdatedBy(...)` +
+`.intValue()`. Confirmado reproduciendo local (copia UAT): 500 con UUID, OK con numérico.
+
+**Pendiente back (no bloqueante)**: agregar handler de `HttpMessageNotReadableException` en
+`ControllerAdvisor` para que un body con tipo malo dé **400** legible en vez de 500.
+
+---
+
 ## 2026-06-25 | Estructura de respuesta /register (éxito, PDF fallido, NC) + manejo en front
 
 Fer pidió: (1) confirmar que el aviso de NC (monto mayor) siempre sale igual, (2) si `message`

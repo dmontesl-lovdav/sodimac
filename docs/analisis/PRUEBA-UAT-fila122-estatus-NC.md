@@ -109,17 +109,21 @@ DO $$ DECLARE r RECORD; BEGIN
 UPDATE tenant_fiscal.invoice SET status=2 WHERE fiscal_uuid='31343515-7304-4d3e-a109-6a2102c69185';
 ```
 
-## Estatus de la prueba
+## Estatus de la prueba — VALIDADO UAT 2026-07-03 ✅
 | Paso | Escenario | Esperado | Estatus |
 |---|---|---|---|
-| 0 | Prep (factura a 2) | factura I = 2 | ⬜ pendiente |
-| 1.A | NC-A (2000) | factura 2, NC-A **2** | ⬜ pendiente |
-| 1.B | NC-B (1980) | factura **3**, NC-A/B **3** | ⬜ pendiente |
-| 2.A | NC-C sin confirmar | **WRN7034** 400, no registra | ⬜ pendiente |
-| 2.B | NC-C confirmando | factura **1**, NC **11**, recep **0** | ⬜ pendiente |
-| Labels | search por UUID | statusName E/F correcto | ⬜ pendiente |
+| 1.A | NC-A (2000) | factura 2, NC-A **2** | ✅ OK |
+| 1.B | NC-B (1980) | factura **3**, NC-A/B **3** | ✅ OK |
+| 2.A | NC-C sin confirmar | **WRN7034** 400, no registra | ✅ OK |
+| 2.B | NC-C confirmando | factura **1**, NC **11**, recep **0** | ✅ OK |
+
+Todo el flujo fila 104/122 con catálogo E/F quedó validado en UAT con datos reales. El mensaje
+WRN7034 salió desde `core_utils.cat_message` (sembrado). Deploy completo: jar + catálogo E/F +
+migración +2 + mensajes.
 
 ### Contexto del deploy (2026-07-03)
 - BD UAT: catálogo `CatEstatusNotaCredito` E/F (1-12) ✔, migración +2 NC ✔, mensajes en
-  `core_utils.cat_message` (WRN7030-7034, BUS3103) ✔ — validados en copia local de UAT.
-- Jar fila 122: **en despliegue**. La prueba corre cuando termine.
+  `core_utils.cat_message` (WRN7030-7034, BUS3103) ✔.
+- Jar fila 122: desplegado ✔.
+- Pendiente aparte (avisado a Ivan): tren del PUT manual de NC (`shared_catalogs.status_train`
+  option_id=2 + enum `CreditNoteStatus`) sigue desalineado — revisar por separado.

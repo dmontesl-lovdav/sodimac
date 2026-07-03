@@ -1024,8 +1024,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                     && statusFactura == InvoiceStatus.RECHAZO_COMERCIAL.getCodigo();
             invoice.setXmlContent(esRechazoComercial ? null : xmlContent);
             // v1.0: el estatus de la factura lo determina la evaluación de tolerancia
-            // (3 Recibida / 2 Recibido Parcial / 1 Rechazo Comercial). NC mantiene 1 hasta alinear CreditNoteStatus.
-            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA ? statusFactura : 1);
+            // (3 Recibida / 2 Recibido Parcial / 1 Rechazo Comercial). La NC nace en 3 (En proceso de
+            // envío, catálogo NC nuevo E/F); reevaluarFacturaTrasNc la ajusta a 2/3/11 según el neto.
+            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA ? statusFactura : NC_EN_PROCESO_ENVIO);
             invoice.setIssuerUuid(issuer.getIssuerUuid());
             invoice.setReceiverUuid(receiver.getReceiverUuid());
 
@@ -1166,6 +1167,25 @@ public class InvoiceServiceImpl implements InvoiceService {
      *   <li>neto &gt; recepción y fuera de tolerancia -> sigue en 2 (faltan más NCs).</li>
      * </ul>
      */
+    // Estatus de NC según catálogo CatEstatusNotaCredito NUEVO (modelo E/F, alineado con factura):
+    // 2 = Recibido Parcial, 3 = En proceso de envío, 11 = Cancelada. Fila 122 / decisión Ivan jul-2026.
+    private static final int NC_RECIBIDO_PARCIAL = 2;
+    private static final int NC_EN_PROCESO_ENVIO = 3;
+    private static final int NC_CANCELADA = 11;
+
+    /**
+     * Setea el estatus de TODAS las NCs vinculadas a una factura (la NC acompaña el estado de la
+     * factura, fila 122).
+     */
+    private void setEstatusNcsDeFactura(UUID facturaUuid, int nuevoStatus) {
+        for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(facturaUuid)) {
+            invoiceRepository.findById(rel.getInvoiceUuid()).ifPresent(ncRel -> {
+                ncRel.setStatus(nuevoStatus);
+                invoiceRepository.save(ncRel);
+            });
+        }
+    }
+
     private void reevaluarFacturaTrasNc(InvoiceEntity nc, boolean confirmarCancelacionNc,
             String idTransaccion, String serviceName) {
         List<RelatedCfdiEntity> relacionesNc = relatedCfdiRepository.findByInvoiceUuid(nc.getInvoiceUuid());
@@ -1206,12 +1226,13 @@ public class InvoiceServiceImpl implements InvoiceService {
                     factura.getInvoiceUuid(), factura.getSubtotal(), sumaNc, neto, receptionAmount, diff, tolerance);
 
             if (diff.compareTo(tolerance) <= 0) {
-                // Neto en tolerancia -> factura a 3 (En proceso de envío).
+                // Neto en tolerancia -> factura Y NCs a 3 (En proceso de envío). Fila 122.
                 factura.setStatus(InvoiceStatus.RECIBIDA.getCodigo());
                 invoiceRepository.save(factura);
-                log.info("Factura {} -> estatus 3 (neto en tolerancia tras NC)", factura.getInvoiceUuid());
+                setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_EN_PROCESO_ENVIO);
+                log.info("Factura {} y sus NCs -> estatus 3 (neto en tolerancia tras NC)", factura.getInvoiceUuid());
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                        "system", false, "Factura a 3 (En proceso de envío): neto (factura - NCs) en tolerancia",
+                        "system", false, "Factura y NCs a 3 (En proceso de envío): neto (factura - NCs) en tolerancia",
                         "factura=" + factura.getInvoiceUuid() + ", neto=" + neto.toPlainString()
                                 + ", recepcion=" + receptionAmount.toPlainString(), null, null);
             } else if (neto.compareTo(receptionAmount) < 0) {
@@ -1224,8 +1245,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
                 ejecutarCascadaRechazoNc(factura, reception, neto, receptionAmount, tolerance, idTransaccion, serviceName);
             } else {
-                // neto > recepción fuera de tolerancia -> aún falta NC; se queda en 2 (Recibido Parcial).
-                log.info("Factura {} sigue en Recibido Parcial (neto {} aún mayor a recepción {})",
+                // neto > recepción fuera de tolerancia -> aún falta NC: factura Y NCs quedan en
+                // 2 (Recibido Parcial). Fila 122 (la NC acompaña a la factura).
+                setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_RECIBIDO_PARCIAL);
+                log.info("Factura {} y sus NCs siguen en Recibido Parcial (neto {} aún mayor a recepción {})",
                         factura.getInvoiceUuid(), neto, receptionAmount);
             }
         }
@@ -1234,13 +1257,12 @@ public class InvoiceServiceImpl implements InvoiceService {
     /**
      * Cascada de rechazo cuando el neto (factura - NCs) queda por debajo de la recepción fuera de
      * tolerancia (fila 104): factura -> 1 (Rechazo Comercial) con motivo en bitácora, NCs vinculadas
-     * -> 9 (Cancelada, catálogo CatEstatusNotaCredito), recepción -> 0 (Disponible) para que el
-     * proveedor pueda volver a subir su factura.
+     * -> 11 (Cancelada, catálogo CatEstatusNotaCredito nuevo E/F), recepción -> 0 (Disponible) para
+     * que el proveedor pueda volver a subir su factura.
      */
     private void ejecutarCascadaRechazoNc(InvoiceEntity factura, ReceptionEntity reception,
             BigDecimal neto, BigDecimal receptionAmount, BigDecimal tolerance,
             String idTransaccion, String serviceName) {
-        final int NC_CANCELADA = 9;                              // CatEstatusNotaCredito 9 = Cancelada
         final BigDecimal RECEPCION_DISPONIBLE = BigDecimal.ZERO; // CatEstatusRecepcion 0 = Disponible
 
         String motivo = "Neto (factura - NCs)=" + neto.toPlainString() + " menor a recepción="
@@ -1254,13 +1276,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 "system", true, "Factura a Rechazo Comercial: neto (factura - NCs) menor a la recepción fuera de tolerancia",
                 motivo, null, null);
 
-        // 2. NCs vinculadas -> 9 Cancelada.
-        for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(factura.getInvoiceUuid())) {
-            invoiceRepository.findById(rel.getInvoiceUuid()).ifPresent(ncRel -> {
-                ncRel.setStatus(NC_CANCELADA);
-                invoiceRepository.save(ncRel);
-            });
-        }
+        // 2. NCs vinculadas -> 11 Cancelada.
+        setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_CANCELADA);
 
         // 3. Recepción -> 0 Disponible (el proveedor podrá volver a subir su factura).
         reception.setStatus(RECEPCION_DISPONIBLE);

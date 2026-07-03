@@ -21,7 +21,7 @@ BEGIN
 
     -- 0) Dedup defensivo de la temp (por si acumulo filas entre corridas previas)
     ;WITH t AS (
-      SELECT *,
+      SELECT NumeroProveedor, OrdenCompra, Recepcion, FechaRecepcion, Estatus, FechaRegistro,
              ROW_NUMBER() OVER (
                PARTITION BY NumeroProveedor, OrdenCompra, Recepcion, FechaRecepcion, Estatus
                ORDER BY FechaRegistro DESC) AS rn

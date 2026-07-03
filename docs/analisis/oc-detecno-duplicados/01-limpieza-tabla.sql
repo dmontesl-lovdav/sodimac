@@ -16,7 +16,9 @@ SELECT IdOrdenCompra, NumeroProveedor, OrdenCompra, Recepcion, Sucursal, NoGuia,
        MotivoCancelacion, FechaRegistro, Uuid
 INTO OrdenCompraProveedor_Clean
 FROM (
-  SELECT *,
+  SELECT IdOrdenCompra, NumeroProveedor, OrdenCompra, Recepcion, Sucursal, NoGuia,
+         ImporteSinImpuesto, FechaRecepcion, Estatus, Origen, FechaMovimiento,
+         MotivoCancelacion, FechaRegistro, Uuid,
          ROW_NUMBER() OVER (
            PARTITION BY NumeroProveedor, OrdenCompra, Recepcion, FechaRecepcion, Estatus
            ORDER BY CASE WHEN ISNULL(Uuid,'') <> '' THEN 0 ELSE 1 END,

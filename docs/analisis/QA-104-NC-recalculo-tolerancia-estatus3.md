@@ -220,3 +220,31 @@ El requerimiento usa nombres de estatus de **factura**, pero la NC tiene catálo
 Mismo `reevaluarFacturaTrasNc` (PASO 9.7): además de mover la factura, setear el status de las NCs
 vinculadas (2 mientras falta / 3 al cuadrar). El alta de NC (`saveInvoiceToDatabase`, status
 hardcodeado 1) cambia al valor que confirme Ivan.
+
+## Fila 122 — HECHO (`9b7143e`, validado local 2026-07-02)
+Confirmado por Ivan: catálogo NC **columna E/F definitiva** (renumerado, alinea con factura). Mapeo:
+NC pendiente = **2 (Recibido Parcial)**, cuadrada = **3 (En proceso de envío)**, cancelada = **11**.
+
+Implementado en `reevaluarFacturaTrasNc` + helper `setEstatusNcsDeFactura` (setea TODAS las NCs de la
+factura). Alta de NC ahora nace en **3** (antes 1). Cascada fila 104: NC **9 → 11**. Validado local:
+pendiente (factura 2 / NC 2), cuadra (factura 3 / NCs 3), sobre-corrige (factura 1 / NC 11 / recep 0).
+
+### Pendiente coordinado (al final, decisión Ivan) — re-seed catálogo + migración de datos
+El código YA usa la numeración nueva (2/3/11). Falta alinear la BD:
+
+**A) Re-seed `CatEstatusNotaCredito`** a E/F (value → descripción):
+1 Rechazo Comercial · 2 Recibida Parcial · 3 En proceso de envío · 4 Pendiente de contabilizar ·
+5 En proceso de descarga · 6 Desglose de nota de crédito · 7 Error en el desglose · 8 Contabilizada ·
+9 Descontada · 10 Rechazo contable · 11 Cancelada · 12 Borrada. (Agregar values 11 y 12; actualizar
+descripciones 1-10 al nuevo mapeo.)
+
+**B) Migración de datos** (NC existentes con numeración vieja → nueva, +2):
+```sql
+-- old 1..10 -> new 3..12 (En proceso envío 1->3 ... Cancelada 9->11, Borrada 10->12)
+UPDATE tenant_fiscal.invoice SET status = status + 2 WHERE document_type='E' AND status BETWEEN 1 AND 10;
+```
+**⚠️ ORDEN CRÍTICO:** correr la migración (B) **ANTES** de desplegar este código, o **junto** con el
+deploy. Si el código nuevo ya registró NCs con valores nuevos (2/3/11) y luego se corre el +2, esas
+NCs se corromperían. Ivan dijo que la migración "no es estrictamente necesaria" (poco volumen); si se
+hace, coordinar con el deploy. El enum `CreditNoteStatus` (máquina de transiciones del PUT estatus)
+sigue desalineado del catálogo — realinear es tarea aparte (necesita el tren NC completo de Ivan).

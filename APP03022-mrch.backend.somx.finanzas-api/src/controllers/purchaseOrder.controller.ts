@@ -76,30 +76,16 @@ type ReceptionExtended = Reception & {
     supplier?: Supplier | undefined;
     vendorName?: string;
     color?: string;
+    invoiceUuid?: string
 };
 
 
 // GET /
 export async function list(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     try {
-        console.log("[purchaseOrder.list] START");
-        console.log("[purchaseOrder.list] method:", request.method);
-        console.log("[purchaseOrder.list] originalUrl:", request.originalUrl);
-        console.log("[purchaseOrder.list] query:", JSON.stringify(request.query, null, 2));
-        console.log("[purchaseOrder.list] body:", JSON.stringify(request.body, null, 2));
-        console.log("[purchaseOrder.list] authToken exists:", Boolean(request.authToken));
-        console.log("[purchaseOrder.list] CATALOGS_API_URL_BFF:", process.env.CATALOGS_API_URL_BFF);
-
         const supplierList = await svcAxios.GetSuppliers(request.authToken ?? '');
 
-        console.log("[purchaseOrder.list] supplierList isArray:", Array.isArray(supplierList));
-        console.log("[purchaseOrder.list] supplierList length:", Array.isArray(supplierList) ? supplierList.length : "not-array");
-        console.log("[purchaseOrder.list] supplierList sample:", JSON.stringify(Array.isArray(supplierList) ? supplierList[0] : supplierList, null, 2));
-
         const dto: ListPurchaseOrderQueryDto = ListPurchaseOrderQuerySchema.parse(request.query);
-
-        console.log("[purchaseOrder.list] dto parsed:", JSON.stringify(dto, null, 2));
-
         const purchaseOrderQuery = await datasource.manager
             .createQueryBuilder(PurchaseOrder, 'purchaseOrder')
             .leftJoinAndSelect('purchaseOrder.receptions', 'reception', ' reception.status != 8 ')
@@ -112,6 +98,7 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
                 "addendum",
                 'addendum.receptionNumber = reception.receptionNumber',
             )
+            .leftJoinAndSelect('reception.addendumManual', 'addendumManual')
             .leftJoinAndSelect('addendum.invoice', 'invoice');
 
         purchaseOrderQuery.andWhere(
@@ -152,21 +139,13 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             skip,
         });
 
-        console.log("[purchaseOrder.list] SQL:", purchaseOrderQuery.getSql());
-        console.log("[purchaseOrder.list] params:", purchaseOrderQuery.getParameters());
-
         const totalCount = await purchaseOrderQuery.getCount();
-
-        console.log("[purchaseOrder.list] totalCount:", totalCount);
 
         const resultTmp = await purchaseOrderQuery
             .skip(skip)
             .take(parseInt(dto.pageSize))
             .getMany();
         const result = resultTmp as PurchaseOrderExtended[];
-
-        console.log("[purchaseOrder.list] result length:", result.length);
-        console.log("[purchaseOrder.list] first result:", JSON.stringify(result[0] ?? null, null, 2));
 
         const _numberOfElements = result.length;
         const _totalItems = Number(totalCount?.valueOf() == null ? 0 : Number(totalCount?.valueOf()));
@@ -180,12 +159,6 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
         }
         const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , request.authToken ?? '');
         result.forEach((item, index) => {
-            console.log("[purchaseOrder.list] mapping supplier item:", {
-                index,
-                purchaseOrderId: item.purchaseOrderId,
-                supplierNumber: item.supplierNumber,
-            });
-
             const foundSupplier: Supplier | undefined = supplierList.find(
                 (supplier) =>
                     Number(supplier.supplierNumber) === Number(item.supplierNumber)
@@ -203,6 +176,12 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
                 if(statusResult){
                     reception.color = statusResult.color;
                 }
+                
+                reception.invoiceUuid =
+                    reception.addendumManual?.invoiceId ??
+                    reception.listAddendum?.[0]?.invoiceUuid ??
+                    "";
+
             });
         });
 
@@ -225,18 +204,12 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             pageSize: responsePageableDTO.pageSize,
         });
 
-        console.log("[purchaseOrder.list] END OK");
-
         return response.json({
             ...ResponseHandler.responseBuilder("", responsePageableDTO, 0, StatusCodes.OK, true, ""),
             trace_id: getTraceId(),
         });
 
     } catch (e) {
-        console.error("[purchaseOrder.list] ERROR:", e);
-        console.error("[purchaseOrder.list] ERROR query:", JSON.stringify(request.query, null, 2));
-        console.error("[purchaseOrder.list] ERROR body:", JSON.stringify(request.body, null, 2));
-        console.error("[purchaseOrder.list] ERROR CATALOGS_API_URL_BFF:", process.env.CATALOGS_API_URL_BFF);
         let err = "";
         if (e instanceof Error) {
             err= e.message + e.cause + e.stack;
@@ -249,8 +222,6 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             constants.CatalogException.CATALOGS_API_EXCEPTION_DETAILS_KEY_EXC001,
             request.authToken ?? ''
         );
-
-        console.error("[purchaseOrder.list] CatMsgExc:", JSON.stringify(CatMsgExc, null, 2));
 
         response.status(400).json(
             ResponseHandler.responseBuilder(

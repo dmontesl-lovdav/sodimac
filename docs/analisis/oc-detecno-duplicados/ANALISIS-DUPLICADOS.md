@@ -186,6 +186,21 @@ Pendiente = lado BD (este documento): limpieza + indice + reescritura SP.
 
 ---
 
+## DESENLACE (2026-07-07) — RESUELTO
+
+- El rollback del incidente revirtio TODO el bloat: la tabla paso de 53.4M a
+  **283,696 filas reales** (solo 2 duplicados). Los 53M eran in-flight de la
+  transaccion runaway, NO acumulacion commiteada. Correccion importante al analisis.
+- Ventana PROD ejecutada: limpieza (283,696->283,694) + indice unico clustered
+  `UX_OrdenCompraProveedor_Negocio` (IGNORE_DUP_KEY) + SP reescrito.
+- Prueba de humo en PROD: SP idempotente (EXEC x2 no duplica).
+- Backfill enero: **5,852 ordenes en 5 bloques, ~54 segundos** (antes colgaba horas).
+- Validacion final: total 283,694 + 5,852 = **289,546 exacto, 0 duplicados**.
+- Respaldos: `OrdenCompraProveedor_OLD_20260703`, `OrdenCompraProveedor_BKP_20260703`,
+  DDL en git. Borrar tras validar en caliente varios dias.
+- Pendiente menor: usar JAR 889b0c5 (SP 1 vez al final) para el diario;
+  poner `descarga.periodo.enabled=false` y reactivar el batch programado.
+
 ## Archivos de referencia
 - `vw_ordencompraproveedor.sql` — definicion vista (capturada 2026-06-25).
 - `uspRegistroOrdenCompraProveedor.sql` — SP original con el bug (no re-desplegar tal cual).

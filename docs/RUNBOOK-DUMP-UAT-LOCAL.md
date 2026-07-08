@@ -1,10 +1,26 @@
-# Runbook — Dump BD UAT Sodimac → PC personal (Docker local)
+# Runbook — Export BDs Sodimac → PC personal (Docker local)
 
-> Procedimiento validado 2026-06-17. Copia la BD real `b2b_portal` de UAT a la PC personal
-> para pruebas con datos reales. La PC Sodimac NO tiene Claude — el dump se genera ahí y el
-> archivo `.sql` viaja a la PC personal. La restauración corre en la PC personal.
+> Procedimiento para traer BDs reales de Sodimac a la PC personal (Claude bloqueado en Sodimac).
+> Patrón común: binario portable en carpeta compartida → PC Sodimac extrae/exporta → archivo
+> viaja por USB/share → se restaura/publica en Docker local.
+
+**2 bases cubiertas:**
+
+| # | BD origen | Motor | Herramienta portable | Sección |
+|---|---|---|---|---|
+| 1 | `b2b_portal` (UAT) | PostgreSQL 18.3 | `pg_dump` (PG18 zip EDB) | [Parte A](#parte-a--postgresql-b2b_portal-uat) |
+| 2 | `SODIMAC_SAP_DEV` (DEV) | SQL Server | `SqlPackage` (dacpac) | [Parte B](#parte-b--sql-server-sodimac_sap_dev-dev) |
+
+Los binarios portable NO viajan por el mirror (`sesiones/` gitignored) → mover por USB/share.
 
 Relacionado: [BASE-DE-DATOS.md](BASE-DE-DATOS.md), [SINCRONIZACION-MIRROR-SODIMAC.md](SINCRONIZACION-MIRROR-SODIMAC.md).
+
+---
+
+# Parte A — PostgreSQL `b2b_portal` (UAT)
+
+> Validado 2026-06-17. Copia la BD real `b2b_portal` de UAT con datos. Dump `.sql` (~15-19 MB)
+> se genera en PC Sodimac y viaja por mirror (`sesiones/db/` se versiona) o USB.
 
 ---
 
@@ -124,9 +140,80 @@ Resultado esperado (2026-06-17): **128 tablas, ~19,319 filas, 0 errores**.
 
 ---
 
-## Notas
+## Notas (Parte A)
 
 - `core_security` y `shared_communication` son esquemas presentes en UAT pero **no listados en CLAUDE.md**.
 - `public` tiene 36 tablas pero está vacío — modelo migrado a esquemas por tenant.
 - El dump PG18 trae meta-comandos `\restrict`/`\unrestrict` (psql 18). Con psql 16/`ON_ERROR_STOP=0`
   son inocuos (dan error pero continúa); con cliente v18 se ejecutan limpios.
+
+---
+
+# Parte B — SQL Server `SODIMAC_SAP_DEV` (DEV)
+
+> Iniciado 2026-07-07. Trae **solo el esquema** (sin datos) de la BD real del autofacturador
+> (modelo viejo, ~70 tablas). Motivo: inventariar relaciones reales (ej. `Addenda` y su posible
+> tabla intermedia). No confundir con el modelo FBC nuevo de 8 tablas que vive en el
+> `sodimac-mssql` local (`docs/db/sap_dev/sap-dev-dll.sql`).
+
+Origen: SQL Server DEV `10.138.153.10:1433`, DB `SODIMAC_SAP_DEV`, user `SodimacDevUsr` / `Pa55wordDev`.
+
+## 0. Pre-requisito — SqlPackage portable
+
+pg_dump no existe para SQL Server. `mssql-scripter` requiere Python/pip (bloqueado en Sodimac).
+Portable self-contained sin admin = **SqlPackage** (Microsoft, .NET incluido). Exporta esquema
+como `.dacpac` (por diseño = solo schema).
+
+1. PC personal — descargar zip (~46 MB) a `sesiones/` (gitignored):
+   - URL: `https://aka.ms/sqlpackage-windows` (redirige a `sqlpackage-win-x64-<ver>.zip`, validado 170.4.83.3)
+2. Mover zip a PC Sodimac por USB / share.
+3. PC Sodimac — descomprimir:
+   ```powershell
+   Expand-Archive <ruta-zip> -DestinationPath C:\software\sqlpackage -Force
+   ```
+   Queda `C:\software\sqlpackage\SqlPackage.exe`.
+
+## 1. Extraer esquema (PC Sodimac, CMD una línea)
+
+```cmd
+C:\software\sqlpackage\SqlPackage.exe /Action:Extract /SourceServerName:10.138.153.10 /SourceDatabaseName:SODIMAC_SAP_DEV /SourceUser:SodimacDevUsr /SourcePassword:Pa55wordDev /SourceTrustServerCertificate:True /p:ExtractAllTableData=False /TargetFile:C:\Users\g_dco018\SODIMAC_SAP_DEV-schema.dacpac
+```
+
+- `Extract` por defecto = solo esquema. `ExtractAllTableData=False` explícito (0 filas).
+- `SourceTrustServerCertificate:True` obligatorio (SqlPackage moderno fuerza encrypt).
+- Genera 1 `.dacpac` con TODO el modelo (tablas + PK/FK/vistas/procs). Las FKs reales viajan → sirve para ver relaciones (`Addenda`, etc).
+- CMD: una sola línea (sin backticks). Si molesta el largo, cortar con `^`.
+
+## 2. Copiar `.dacpac` a PC personal
+
+→ `C:\workspace-sodimac\sesiones\db\SODIMAC_SAP_DEV-schema.dacpac` (USB/share).
+
+## 3. Publicar en Docker local (PC personal)
+
+El mismo zip SqlPackage se extrae también en la PC personal para publicar contra el container.
+**Publicar en DB NUEVA** (`SODIMAC_SAP_DEV_FULL`) para NO pisar el modelo FBC de 8 tablas del
+`SODIMAC_SAP_DEV` local (Publish sincroniza esquema y puede dropear objetos).
+
+```bash
+C:/software/sqlpackage/SqlPackage.exe /Action:Publish \
+  /SourceFile:C:/workspace-sodimac/sesiones/db/SODIMAC_SAP_DEV-schema.dacpac \
+  /TargetServerName:localhost,1433 /TargetDatabaseName:SODIMAC_SAP_DEV_FULL \
+  /TargetUser:SA /TargetPassword:'Sodimac2026#Dev' /TargetTrustServerCertificate:True
+```
+
+Publish crea la DB si no existe. Sin datos (el dacpac no los trae).
+
+## Notas (Parte B)
+
+- **Publicado y verificado 2026-07-07**: 70 tablas en `SODIMAC_SAP_DEV_FULL` (container `sodimac-mssql`, host **puerto 1434**).
+- **`Addenda` NO tiene tabla intermedia** (0 FKs en cualquier dirección). Relación por valor confirmada
+  en proc `uspRegistroOrdenCompraProveedor`: `Comprobante A INNER JOIN Addenda B ON A.Uuid = B.Uuid WHERE B.Tipo = 1`.
+  Es decir `Addenda.Uuid` = `Comprobante.Uuid` (folio fiscal), `Addenda.Tipo` filtra tipo de addenda.
+  La usan 5 SPs (`sp_genera_poliza_ap*`, `uspRegistroOrdenCompraProveedor`). Mismo patrón que
+  `addendum_manual` FBC (join por UUID, no PK). `CREATE TABLE Addenda` suelto basta local (sin deps).
+- Trampas al publicar/consultar desde Git Bash: (1) container mssql host **1434** no 1433 → `/TargetServerName:localhost,1434`;
+  (2) MSYS mangea `/opt/...` y `/Action:...` → prefijar `MSYS_NO_PATHCONV=1`; (3) el `.dacpac` trae LOGIN de
+  dominio Windows inexistente local → `/p:ExcludeObjectTypes="Logins;Users;RoleMembership;Permissions;ServerRoleMembership;Credentials"`.
+- `.dacpac` = solo esquema. Para datos de una tabla puntual → `bcp ... out/in -n` (data-only).
+- No mezclar modelos: `SODIMAC_SAP_DEV` local = FBC nuevo (8 tablas); `SODIMAC_SAP_DEV_FULL` =
+  autofacturador viejo (~70 tablas, solo esquema).

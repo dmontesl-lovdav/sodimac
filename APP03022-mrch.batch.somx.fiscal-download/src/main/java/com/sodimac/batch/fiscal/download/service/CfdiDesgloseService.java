@@ -33,6 +33,7 @@ public class CfdiDesgloseService {
     // private final TrasladoRepository trasladoRepository;
     // private final RetencionRepository retencionRepository;
     private final DetalleImpuestoRepository detalleImpuestoRepository;
+    private final AddendaRepository addendaRepository;
 
     public CfdiDesgloseService(ComprobanteRepository comprobanteRepository,
                                 EmisorRepository emisorRepository,
@@ -42,7 +43,8 @@ public class CfdiDesgloseService {
                                 // ImpuestosRepository impuestosRepository,
                                 // TrasladoRepository trasladoRepository,
                                 // RetencionRepository retencionRepository,
-                                DetalleImpuestoRepository detalleImpuestoRepository) {
+                                DetalleImpuestoRepository detalleImpuestoRepository,
+                                AddendaRepository addendaRepository) {
         this.comprobanteRepository = comprobanteRepository;
         this.emisorRepository = emisorRepository;
         this.receptorRepository = receptorRepository;
@@ -51,6 +53,7 @@ public class CfdiDesgloseService {
         // this.trasladoRepository = trasladoRepository;
         // this.retencionRepository = retencionRepository;
         this.detalleImpuestoRepository = detalleImpuestoRepository;
+        this.addendaRepository = addendaRepository;
     }
 
     private static final String NS_CFDI = "http://www.sat.gob.mx/cfd/4";
@@ -101,6 +104,10 @@ public class CfdiDesgloseService {
         for (int i = 0; i < conceptoNodes.getLength(); i++) {
             extractConcepto((Element) conceptoNodes.item(i), idComp);
         }
+
+        // 4.1 Addenda (dentro de cfdi:Addenda). Se liga por fiscal_uuid (Uuid), NO por id_comprobante.
+        // 3 variantes según el nodo: Tipo 1 mercancía, Tipo 2 transporte, Tipo 3 NC.
+        extractAddenda(doc, comprobante.getFiscalUuid());
 
         // 5. Impuestos (nivel comprobante)
         // STM-719: comentado - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac
@@ -246,6 +253,109 @@ public class CfdiDesgloseService {
     //             decimal(attr(node, "Importe")));
     //     retencionRepository.save(retencion);
     // }
+
+    // ── Persistencia de Addenda (Addenda_Sodimac_Detecno, Tipo=1) ──
+
+    /**
+     * Extrae la addenda del CFDI (dentro de {@code cfdi:Addenda}) y la guarda en la tabla destino
+     * Addenda, ligada por fiscal_uuid. Idempotente: si ya existe, no reescribe. Despacha según el
+     * nodo presente:
+     * - {@code Addenda_Sodimac_Detecno} → Tipo 1 (mercancía).
+     * - {@code Addenda_Transportistas_Sodimac_Detecno} → Tipo 2 (transporte/CartaPorte).
+     * - NC (Tipo 3): pendiente confirmar nombre de nodo real; ver {@link #extractAddendaNc}.
+     */
+    private void extractAddenda(Document doc, String fiscalUuid) {
+        if (fiscalUuid == null || fiscalUuid.isEmpty()) {
+            return;
+        }
+        if (addendaRepository.existsById(fiscalUuid)) {
+            log.warn("Addenda ya existe en destino: {}", fiscalUuid);
+            return;
+        }
+
+        // Tipo 1: mercancía
+        NodeList detecno = doc.getElementsByTagName("Addenda_Sodimac_Detecno");
+        if (detecno.getLength() > 0) {
+            Element a = (Element) detecno.item(0);
+            AddendaEntity addenda = AddendaMapper.toEntity(
+                    fiscalUuid,
+                    addendaChild(a, "Proveedor"),
+                    addendaChild(a, "NoOC"),
+                    addendaChild(a, "NoRecepcion"),
+                    addendaChild(a, "Folio"),
+                    addendaChild(a, "UUID"),
+                    addendaChild(a, "RFC"),
+                    1);
+            addendaRepository.save(addenda);
+            log.info("Addenda Tipo 1 (mercancía) guardada: uuid={} proveedor={} noOC={} noRecepcion={}",
+                    fiscalUuid, addenda.getExtra1(), addenda.getExtra2(), addenda.getExtra3());
+            return;
+        }
+
+        // Tipo 2: transporte / CartaPorte
+        NodeList transp = doc.getElementsByTagName("Addenda_Transportistas_Sodimac_Detecno");
+        if (transp.getLength() > 0) {
+            Element a = (Element) transp.item(0);
+            AddendaEntity addenda = AddendaMapper.toEntity(
+                    fiscalUuid,
+                    addendaChild(a, "IdProveedor"),   // Extra1
+                    null,                              // Extra2
+                    null,                              // Extra3
+                    addendaChild(a, "Version"),        // Extra4 (1.0)
+                    addendaChild(a, "IdGuiaEntrega"),  // Extra5
+                    addendaChild(a, "IdViaje"),        // Extra6
+                    2);
+            addendaRepository.save(addenda);
+            log.info("Addenda Tipo 2 (transporte) guardada: uuid={} idProveedor={} idGuia={} idViaje={}",
+                    fiscalUuid, addenda.getExtra1(), addenda.getExtra5(), addenda.getExtra6());
+            return;
+        }
+
+        // Tipo 3: NC — pendiente nombre de nodo real (ver extractAddendaNc).
+        if (extractAddendaNc(doc, fiscalUuid)) {
+            return;
+        }
+
+        log.debug("Sin nodo de addenda reconocido para uuid={}", fiscalUuid);
+    }
+
+    /**
+     * Addenda de Nota de Crédito (Tipo 3). Nodo {@code Addenda_NotaCredito_Sodimac_Detecno} con
+     * campos Version, IdProveedor, TipoNC. Mapeo real (SODIMAC_SAP_DEV.dbo.Addenda):
+     * Extra1=IdProveedor, Extra4=Version (1.0), Extra6=TipoNC ("Ajuste de recepción" / "Otro").
+     *
+     * @return true si guardó una addenda de NC; false si no aplica.
+     */
+    private boolean extractAddendaNc(Document doc, String fiscalUuid) {
+        NodeList nc = doc.getElementsByTagName("Addenda_NotaCredito_Sodimac_Detecno");
+        if (nc.getLength() == 0) {
+            return false;
+        }
+        Element a = (Element) nc.item(0);
+        AddendaEntity addenda = AddendaMapper.toEntity(
+                fiscalUuid,
+                addendaChild(a, "IdProveedor"),   // Extra1
+                null,                              // Extra2
+                null,                              // Extra3
+                addendaChild(a, "Version"),        // Extra4 (1.0)
+                null,                              // Extra5
+                addendaChild(a, "TipoNC"),         // Extra6 (ej. "Ajuste de recepción")
+                3);
+        addendaRepository.save(addenda);
+        log.info("Addenda Tipo 3 (NC) guardada: uuid={} idProveedor={} tipoNC={}",
+                fiscalUuid, addenda.getExtra1(), addenda.getExtra6());
+        return true;
+    }
+
+    /** Lee el texto del primer hijo con ese nombre dentro del nodo addenda (sin namespace). */
+    private String addendaChild(Element parent, String name) {
+        NodeList nl = parent.getElementsByTagName(name);
+        if (nl.getLength() == 0) {
+            return null;
+        }
+        String txt = nl.item(0).getTextContent();
+        return (txt == null || txt.trim().isEmpty()) ? null : txt.trim();
+    }
 
     // ── Validacion de Addenda ───────────────────────────────────
 

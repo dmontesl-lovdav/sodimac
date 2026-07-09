@@ -4,6 +4,26 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-09 | Tipo NC en search + máscara $ en msg tolerancia (matriz v11)
+
+**Pregunta Fer**: "al consultar las NC, ¿puedo saber desde el endpoint de search qué tipo de NC es?"
+(para columna "Tipo NC" = Ajuste por Recepción / Descuento Comercial + CSV). Y 2 issues de la
+matriz reasignados a David (mensaje del back): usar máscara `$000,000.00` en los montos de los
+mensajes de tolerancia (diferencia y confirmación).
+
+**Respuesta / fix (back, fiscal-api, commit `c7a07e0`):**
+- **Search NC**: el response ya traía `tipoNotaCredito` (código 1/2). Se agregó
+  **`tipoNotaCreditoDescripcion`** (catálogo `CatTipoNotaCredito`, ES). Fer arma la columna + CSV
+  con ese campo. No cambia nada más del contrato.
+- **Máscara `$#,##0.00`** (helper `maskMoney`, es-MX): WRN7030/7031 ahora mandan los montos
+  formateados (`$41,098.18`); WRN7034 pasó de texto estático a mostrar montos (neto factura-NCs y
+  monto de la recepción) con máscara. WRN7030/7031 **no** cambian de texto (placeholders iguales);
+  WRN7034 sí → seed `core_utils.cat_message` en UAT (`migration/QA-mascara-tolerancia-WRN7034.sql`).
+
+Validado local: search NC (tipo 1 y 2) y WRN7034 con `$6,340.00` / `$11,214.00`. Ver [[project_reception_number_no_unico]] (mismo día, otro fix).
+
+---
+
 ## 2026-07-09 | ERR003 al publicar NC — resuelto en back, sin cambio de front
 
 **Reporte QA**: publicar NC daba **ERR003 "Query did not return a unique result"**.

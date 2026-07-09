@@ -160,6 +160,9 @@ public class InvoiceSearchResponse {
     @Schema(description = "Tipo de nota de crédito (solo NC): 1=Ajuste por Recepción, 2=Descuento Comercial")
     private String tipoNotaCredito;
 
+    @Schema(description = "Descripción del tipo de NC (catálogo CatTipoNotaCredito): Ajuste por Recepción / Descuento Comercial. Solo NC")
+    private String tipoNotaCreditoDescripcion;
+
     // ========== XML CONTENT (STM-771) ==========
 
     @Schema(description = "Contenido XML completo del documento fiscal (CFDI)")

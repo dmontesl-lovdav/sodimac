@@ -840,7 +840,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                         "subtotal=" + subtotal.toPlainString() + ", recepcion=" + receptionAmount.toPlainString()
                                 + ", tolerancia=" + tolerance.toPlainString() + " (" + modo + ")", null, null);
                 String warning = messageCatalog.getMessage(FiscalMessageCode.WRN7031,
-                        subtotal.toPlainString(), receptionAmount.toPlainString(), tolerance.toPlainString());
+                        maskMoney(subtotal), maskMoney(receptionAmount), maskMoney(tolerance));
                 return new ToleranceResult(InvoiceStatus.RECHAZO_COMERCIAL.getCodigo(), warning);
             }
             // Factura MAYOR a recepción -> 2 Recibido Parcial (requiere NC).
@@ -851,12 +851,23 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "subtotal=" + subtotal.toPlainString() + ", recepcion=" + receptionAmount.toPlainString()
                             + ", tolerancia=" + tolerance.toPlainString() + " (" + modo + ")", null, null);
             String warning = messageCatalog.getMessage(FiscalMessageCode.WRN7030,
-                    subtotal.toPlainString(), receptionAmount.toPlainString(), tolerance.toPlainString());
+                    maskMoney(subtotal), maskMoney(receptionAmount), maskMoney(tolerance));
             return new ToleranceResult(InvoiceStatus.RECIBIDO_PARCIAL.getCodigo(), warning);
         }
 
         log.info("Tolerancia validada correctamente [{}]. Diferencia: {} pesos", modo, diff);
         return ToleranceResult.recibida();
+    }
+
+    /**
+     * Formatea un monto con máscara de valor económico ($#,##0.00, ej. $41,098.18) para los
+     * mensajes al usuario (tolerancia factura vs recepción). QA jul-2026 (Fer/Fernando).
+     */
+    private static String maskMoney(BigDecimal value) {
+        if (value == null) {
+            return "";
+        }
+        return java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("es", "MX")).format(value);
     }
 
     /**
@@ -1131,6 +1142,21 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
+     * Descripción del tipo de NC (catálogo CatTipoNotaCredito, lang ES): 1=Ajuste por Recepción,
+     * 2=Descuento Comercial. Se toma de la addenda. Solo aplica a NC; null si no hay valor. Fer
+     * jul-2026 (columna "Tipo NC" en consulta de NC + CSV).
+     */
+    private String resolveTipoNotaCreditoDescripcion(AddendumEntity addendum) {
+        if (addendum == null || addendum.getTipoNotaCredito() == null
+                || addendum.getTipoNotaCredito().isBlank()) {
+            return null;
+        }
+        // lang_id 1 = ES (mismo criterio que resolveStatusName / tipoProveedorDescripcion).
+        return addendumRepository.findCatalogDescription(
+                "CatTipoNotaCredito", addendum.getTipoNotaCredito().trim(), 1);
+    }
+
+    /**
      * Marca la recepción asociada como Consumida (CatEstatusRecepcion = 1). Se invoca al publicar
      * una factura que cuadra con la recepción (dentro de tolerancia o mayor). No falla el registro
      * si la recepción no existe o el id no es válido (solo log). QA filas 54-57 (2026-06-22).
@@ -1241,7 +1267,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if (!confirmarCancelacionNc) {
                     log.warn("NC dejaría la factura {} en rechazo (neto {} < recepción {}); falta confirmación -> WRN7034",
                             factura.getInvoiceUuid(), neto, receptionAmount);
-                    messageCatalog.throwException(FiscalMessageCode.WRN7034);
+                    messageCatalog.throwExceptionWithParams(FiscalMessageCode.WRN7034,
+                            maskMoney(neto), maskMoney(receptionAmount));
                 }
                 ejecutarCascadaRechazoNc(factura, reception, neto, receptionAmount, tolerance, idTransaccion, serviceName);
             } else {
@@ -2010,6 +2037,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .tipoProveedorDescripcion(tipoProveedorDescripcion)
                 .guiaEntrega(addendum != null ? addendum.getShippingGuideNumber() : null)
                 .tipoNotaCredito(addendum != null ? addendum.getTipoNotaCredito() : null)
+                // Descripción del tipo de NC desde el catálogo CatTipoNotaCredito (lang ES). Fer jul-2026.
+                .tipoNotaCreditoDescripcion(resolveTipoNotaCreditoDescripcion(addendum))
                 // ========== XML CONTENT (STM-771) ==========
                 .xmlContent(invoice.getXmlContent())
                 // ========== NOTAS DE CRÉDITO RELACIONADAS (STM-1168) ==========

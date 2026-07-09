@@ -4,6 +4,29 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-09 | ERR003 al publicar NC — recepción por número no único (fix raíz)
+
+**Problema (QA, matriz v11)**: publicar NC daba **ERR003 "Query did not return a unique result: 2
+results were returned"**.
+
+**Causa**: `reception_number` NO es único (mismo número para OCs distintas; en UAT había 1,2,3,16,17
+repetidos por siembra QA). Al recalcular tolerancia de la factura relacionada (fila 104/122),
+`resolveReceptionDeFactura` buscaba la recepción con `findByReceptionNumber` (resultado único) → 2
+filas → `NonUniqueResultException` → ERR003. Además, aun sin fallar, podía tomar la recepción de
+**otra OC** (monto distinto) y recalcular mal en silencio.
+
+**Solución (opción B, fix de raíz — NO parche de datos)**: resolver la recepción por
+`reception_number` **+ la OC** (`purchase_order_number` que la factura ya guarda en su addenda), vía
+join `reception`+`purchase_order` por `order_number`. Esa combinación **sí es única**. Fallback por
+número (ordenado, sin excepción) si el addendum no trae OC.
+
+- **fiscal-api**: `ReceptionRepository` (2 queries nativas) + `InvoiceServiceImpl.resolveReceptionDeFactura`. Commit `34b0b2a`.
+- **Sin cambio de esquema ni limpieza de datos** — los `reception_number` repetidos ya no afectan.
+- Descartada la opción A (limpiar duplicados): riesgosa, la data ambigua podía dejar facturas
+  apuntando a la recepción equivocada. Ver [[project_reception_number_no_unico]].
+
+---
+
 ## 2026-07-02 | Ownership: extracción de descuentos comerciales = Robert (no David)
 
 **Pregunta Ivan**: ¿el proceso de extracción de descuentos comerciales lo trae David o Robert?

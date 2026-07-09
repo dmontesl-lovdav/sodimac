@@ -4,6 +4,18 @@ _Consultas mas recientes primero_
 
 ---
 
+## 2026-07-09 | ERR003 al publicar NC — resuelto en back, sin cambio de front
+
+**Reporte QA**: publicar NC daba **ERR003 "Query did not return a unique result"**.
+
+**Causa (back)**: `reception_number` duplicado en UAT; el recálculo de tolerancia resolvía la
+recepción solo por número → 2 filas → error.
+
+**Fix**: 100% back (fiscal-api) — resuelve la recepción por número + OC. **No cambia el contrato**:
+mismo endpoint, misma request/response. **Fer no ajusta nada.** Ya en develop/uat (`34b0b2a`).
+
+---
+
 ## 2026-07-03 | PUT /invoices 500: idUsuarioActualizacion debe ser numérico (no UUID)
 
 **Reporte**: `PUT https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices` (cancelar NC) daba **500**

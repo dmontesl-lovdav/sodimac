@@ -1296,7 +1296,24 @@ public class InvoiceServiceImpl implements InvoiceService {
                 || addOpt.get().getReceptionNumber().isBlank()) {
             return null;
         }
-        return receptionRepository.findByReceptionNumber(addOpt.get().getReceptionNumber().trim()).orElse(null);
+        AddendumEntity addendum = addOpt.get();
+        String receptionNumber = addendum.getReceptionNumber().trim();
+        String orderNumber = addendum.getPurchaseOrderNumber();
+
+        // reception_number no es único; se desambigua por la OC (order_number del addendum). Si el
+        // addendum trae la OC, se resuelve por número + OC; si no, se cae al número (más reciente).
+        if (orderNumber != null && !orderNumber.isBlank()) {
+            List<ReceptionEntity> porNumeroYoc =
+                    receptionRepository.findByReceptionNumberAndOrderNumber(receptionNumber, orderNumber.trim());
+            if (!porNumeroYoc.isEmpty()) {
+                return porNumeroYoc.get(0);
+            }
+            log.warn("No se encontró recepción por número {} + OC {}; se intenta solo por número",
+                    receptionNumber, orderNumber);
+        }
+
+        List<ReceptionEntity> porNumero = receptionRepository.findByReceptionNumberOrdered(receptionNumber);
+        return porNumero.isEmpty() ? null : porNumero.get(0);
     }
 
     /**

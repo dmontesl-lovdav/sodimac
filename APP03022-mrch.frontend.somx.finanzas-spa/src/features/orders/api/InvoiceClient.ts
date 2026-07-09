@@ -24,14 +24,12 @@ export const InvoiceClient = {
         return fiscalApi.request<any>("fiscal/xml/process/file", "post", form);
     },
 
-    async getCreditNotesByUuid(uuid: string): Promise<any> {
-        return fiscalApi.request<any>(`fiscal/xml/process/file`, "get");
-    },
-
-    async getInvoicesByUuid(uuid: string): Promise<any> {
-        return fiscalApi.request<any>(`fiscal/search`, "post", {
-            invoiceUuid: uuid,
-
+    async getCreditNotesByInvoiceUuid(uuid: string, start: string, end: string): Promise<any> {
+        return fiscalApi.request<any>(`invoices/search`, "post", {
+            relatedInvoiceUuid: uuid,
+            tipoDocumento: "E",
+            fechaInicioRecepcion: start,
+            fechaFinalRecepcion: end,
         });
     },
 

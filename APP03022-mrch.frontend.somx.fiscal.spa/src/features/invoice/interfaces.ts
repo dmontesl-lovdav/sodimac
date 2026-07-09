@@ -16,7 +16,7 @@ export interface InvoiceFilters {
   tipoDocumento: string;
   page: number,
   size: number,
-  estatus?: number | undefined;
+  estatus?: number;
   serie: string;
   uuid: string;
   folio: string;

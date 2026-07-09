@@ -1,4 +1,5 @@
 .fiscal-attachment-main {
+  width: 100%;
 }
 
 .fiscal-attachment-action {
@@ -40,6 +41,7 @@
 }
 
 .fiscal-attachment-caption-text {
+  text-align: center;
 }
 
 .fiscal-attachment-caption-footer {
@@ -51,6 +53,7 @@
 }
 
 .fiscal-attachment-files {
+  margin-top: 8px;
 }
 
 .fiscal-attachment-file-container {

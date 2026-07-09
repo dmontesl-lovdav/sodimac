@@ -81,6 +81,8 @@ type DataGridProps<T, F = any> = {
   emptyFiltersMessage?: string;
   /** Si es false, no consulta hasta que el usuario pulse Buscar. Por defecto false. */
   fetchEnabled?: boolean;
+  /** Incrementar en cada búsqueda explícita para re-consultar aunque los filtros no cambien. */
+  searchToken?: number;
 };
 
 /** ------------------------------------------------------------
@@ -214,6 +216,50 @@ export function exportDataGridToCsv<T>(
   exportToCSV(headers, rowsForCsv, csvFilename);
 }
 
+function buildXmlRowAction<T>(
+  getXmlContent: ((row: T) => any) | undefined,
+  getFilename: ((row: T) => string) | undefined,
+  setXmlErrorMsg: (msg: string | undefined) => void,
+): GenericRowAction<T> {
+  const xmlGetter: (row: T) => any = getXmlContent ?? ((row: any) => row?.xmlContent);
+  const nameGetter: (row: T) => string = getFilename ?? ((row: T) => `${getStandardFilename(row)}.xml`);
+  return {
+    title: "Exportar XML",
+    icon: xmlIconUrl,
+    onClick: (row: T) => {
+      xmlGetter(row)
+        .then((xml: string | null | undefined) => {
+          if (!xml?.trim()) { setXmlErrorMsg("Error al obtener el XML"); return; }
+          downloadXML(xml, nameGetter(row));
+        })
+        .catch((err: unknown) => {
+          console.error(err);
+          const payload = parseFetchError(err) ?? { message: "Error al obtener el XML" };
+          setXmlErrorMsg([payload.errorCode, payload.message].filter(Boolean).join(" - "));
+        });
+    },
+  };
+}
+
+function buildPdfRowAction<T>(
+  getPdfUrl: ((row: T) => string | null | undefined) | undefined,
+  setPdfErrorMsg: (msg: string | undefined) => void,
+): GenericRowAction<T> {
+  const pdfUrlGetter: (row: T) => string | null | undefined = getPdfUrl ?? ((row: any) => {
+    const baseUrl = process.env.API_BASE_URL ?? "";
+    const fiscalUuid = row?.invoiceUuid;
+    if (!fiscalUuid) return null;
+    return `${baseUrl}/invoices/${fiscalUuid}/pdf`;
+  });
+  return {
+    title: "Descargar PDF",
+    icon: pdfIconUrl,
+    onClick: (row: T) => {
+      fetchAndDownloadPdf(pdfUrlGetter(row), `${getStandardFilename(row)}.pdf`, setPdfErrorMsg);
+    },
+  };
+}
+
 function DataGridInner<T, F = any>(
   {
     rows: externalRows,
@@ -258,14 +304,16 @@ function DataGridInner<T, F = any>(
   const canXml = !xmlAppEvent || sec.hasEvent(xmlAppEvent.app, xmlAppEvent.event);
   const canPdf = !pdfAppEvent || sec.hasEvent(pdfAppEvent.app, pdfAppEvent.event);
 
-  // Si se pasa fetchFn, usar paginación automática
-  const paginatedData = fetchFn && filters ? usePaginatedData<T, F>({
-    fetchFn,
-    initialFilters: filters,
+  const pagedEnabled = Boolean(fetchFn) && filters != null;
+  const paginatedDataResult = usePaginatedData<T, F>({
+    fetchFn: fetchFn ?? (() => Promise.resolve({ content: [], totalElements: 0, totalPages: 0, page: 0, size: 0 })),
+    initialFilters: (filters ?? {}) as F,
     initialPage,
     initialSize,
-    fetchEnabled,
-  } as UsePaginatedDataOptions<T, F>) : null;
+    fetchEnabled: pagedEnabled && fetchEnabled,
+    searchToken: 0,
+  } as UsePaginatedDataOptions<T, F>);
+  const paginatedData = pagedEnabled ? paginatedDataResult : null;
 
   const rows = paginatedData ? paginatedData.rows : (externalRows || []);
   const loading = paginatedData ? paginatedData.loading : (externalLoading || false);
@@ -394,60 +442,10 @@ function DataGridInner<T, F = any>(
   /** -------- acciones por fila internas (XML y PDF) -------- */
   const internalRowActions: GenericRowAction<T>[] = useMemo(() => {
     const actions: GenericRowAction<T>[] = [];
-
-    if (enableXml && canXml) {
-      const xmlGetter: (row: T) => string | null | undefined | Promise<string | null | undefined> =
-        getXmlContent ??
-        ((row: any) => row?.xmlContent); // auto-detección por convención
-
-      const nameGetter: (row: T) => string =
-        getFilename ?? ((row: T) => `${getStandardFilename(row)}.xml`);
-
-      actions.push({
-        title: "Exportar XML",
-        icon: xmlIconUrl,
-        onClick: async (row: T) => {
-          try {
-            const xml = await xmlGetter(row);
-            if (!xml?.trim()) {
-              setXmlErrorMsg("Error al obtener el XML");
-              return;
-            }
-            downloadXML(xml, nameGetter(row));
-          } catch (err) {
-            console.error(err);
-            const payload = parseFetchError(err) ?? { message: "Error al obtener el XML" };
-            setXmlErrorMsg([payload.errorCode, payload.message].filter(Boolean).join(" - "));
-          }
-        },
-      });
-    }
-
-    if (enablePdf && canPdf) {
-      const pdfUrlGetter: (row: T) => string | null | undefined =
-        getPdfUrl ??
-        ((row: any) => {
-          const baseUrl = process.env.API_BASE_URL || "";
-          const fiscalUuid = row?.invoiceUuid;
-          if (!fiscalUuid) return null;
-          return `${baseUrl}/invoices/${fiscalUuid}/pdf`;
-        });
-
-      const pdfNameGetter: (row: T) => string = (row: T) => getStandardFilename(row)+".pdf";
-
-      actions.push({
-        title: "Descargar PDF",
-        icon: pdfIconUrl,
-        onClick: async (row: T) => {
-          const url = pdfUrlGetter(row);
-          const fname = pdfNameGetter(row);
-          await fetchAndDownloadPdf(url, fname, setPdfErrorMsg);
-        },
-      });
-    }
-
+    if (enableXml && canXml) actions.push(buildXmlRowAction(getXmlContent, getFilename, setXmlErrorMsg));
+    if (enablePdf && canPdf) actions.push(buildPdfRowAction(getPdfUrl, setPdfErrorMsg));
     return actions;
-  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl, getRowId]);
+  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl]);
 
   const allRowActions = useMemo(
     () => [...(customRowActions ?? []), ...internalRowActions],
@@ -514,12 +512,12 @@ function DataGridInner<T, F = any>(
     />
   );
 
-  const tableEmptyLabel = loading
-    ? "Cargando..."
-    : fetchError
-      ? [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") ||
-        "Error al obtener los datos"
-      : effectiveEmptyLabel;
+  let tableEmptyLabel = effectiveEmptyLabel;
+  if (loading) {
+    tableEmptyLabel = "Cargando...";
+  } else if (fetchError) {
+    tableEmptyLabel = [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") || "Error al obtener los datos";
+  }
 
   const showOutcomeAlert = emptySearchAlertOpen && !filtersEmpty && !loading && rows.length === 0;
   const outcomeTitle = fetchError ? "Error" : "Sin resultados obtenidos";

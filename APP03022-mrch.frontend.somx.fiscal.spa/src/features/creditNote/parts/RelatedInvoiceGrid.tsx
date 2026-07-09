@@ -37,9 +37,6 @@ export default function RelatedInvoiceGrid({ invoice, loading, onViewInvoice }: 
             <th>Tipo Proveedor</th>
             <th>Número Proveedor</th>
             <th>RFC</th>
-            <th>Nombre Proveedor</th>
-            <th>Fecha Recepción</th>
-            <th>Estado</th>
             <th>Acción</th>
           </tr>
         </thead>
@@ -53,10 +50,7 @@ export default function RelatedInvoiceGrid({ invoice, loading, onViewInvoice }: 
             <td>{invoice.tipoProveedorDescripcion ?? "--"}</td>
             <td>{invoice.numeroProveedor ?? "--"}</td>
             <td>{invoice.emisorRfc ?? "--"}</td>
-            <td>{invoice.supplierName ?? invoice.emisorName ?? "--"}</td>
-            <td>{invoice.createdAt ? formatDate(invoice.createdAt) : "N/D"}</td>
-            <td>{invoice.statusName ?? "--"}</td>
-            <td>
+             <td>
               <button
                 type="button"
                 className="pcn-action-btn"

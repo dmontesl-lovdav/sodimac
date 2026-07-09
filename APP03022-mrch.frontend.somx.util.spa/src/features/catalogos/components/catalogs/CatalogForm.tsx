@@ -320,6 +320,61 @@ const styles = {
   },
 };
 
+const formatExcelDateValue = (val: any): string => {
+  if (!val) return '';
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(val).trim();
+};
+
+const isEmptyExcelRow = (row: any): boolean =>
+  !row || row.every((c: any) => c === '' || c === null || c === undefined);
+
+const excelRowToElement = (row: any) => ({
+  tipoCatalogo: String(row[0] ?? '').trim(),
+  elemento: String(row[1] ?? '').trim(),
+  valor: String(row[2] ?? '').trim(),
+  fechaInicioVigencia: formatExcelDateValue(row[3]),
+  fechaFinVigencia: formatExcelDateValue(row[4]),
+  idPadre: String(row[5] ?? '').trim(),
+  valorConversion: row[6] != null ? String(row[6]).trim() : '',
+});
+
+const readExcelRows = (file: File): Promise<any[][]> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        resolve(rows);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Error reading file'));
+    reader.readAsArrayBuffer(file);
+  });
+
+const mapValidationApiErrors = (apiErrors: any[]): ValidationError[] =>
+  apiErrors.map((err: any) => ({
+    row: err.row,
+    cell: err.cell,
+    column: err.column,
+    description: err.message,
+  }));
+
+const areCatalogFormsEqual = (a: CatalogFormData, b: CatalogFormData): boolean =>
+  a.name === b.name &&
+  a.description === b.description &&
+  a.type === b.type;
+
 export default function CatalogForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -387,14 +442,7 @@ export default function CatalogForm() {
     }
   }, [isEditMode, id, navigate]);
 
-  const hasChanges = () => {
-    return (
-      formData.name !== originalData.name ||
-      formData.description !== originalData.description ||
-      formData.type !== originalData.type ||
-      uploadedFile !== null
-    );
-  };
+  const hasChanges = () => !areCatalogFormsEqual(formData, originalData) || uploadedFile !== null;
 
   const isStep1Complete = formData.name.trim() !== '' && formData.type !== '' && formData.code.trim() !== '' && formData.prefix.trim() !== '';
 
@@ -514,55 +562,120 @@ export default function CatalogForm() {
     fechaInicioVigencia: string; fechaFinVigencia: string;
     idPadre: string; valorConversion: string;
   }>> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const rows = await readExcelRows(file);
+    if (rows.length < 2) return [];
+    return rows.slice(1).filter((r) => !isEmptyExcelRow(r)).map(excelRowToElement);
+  };
 
-          if (rows.length < 2) { resolve([]); return; }
-
-          const elements: Array<{
-            tipoCatalogo: string; elemento: string; valor: string;
-            fechaInicioVigencia: string; fechaFinVigencia: string;
-            idPadre: string; valorConversion: string;
-          }> = [];
-
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.every((c: any) => c === '' || c === null || c === undefined)) continue;
-
-            const formatDate = (val: any): string => {
-              if (!val) return '';
-              if (val instanceof Date) {
-                const y = val.getFullYear();
-                const m = String(val.getMonth() + 1).padStart(2, '0');
-                const d = String(val.getDate()).padStart(2, '0');
-                return `${y}-${m}-${d}`;
-              }
-              return String(val).trim();
-            };
-
-            elements.push({
-              tipoCatalogo: String(row[0] ?? '').trim(),
-              elemento: String(row[1] ?? '').trim(),
-              valor: String(row[2] ?? '').trim(),
-              fechaInicioVigencia: formatDate(row[3]),
-              fechaFinVigencia: formatDate(row[4]),
-              idPadre: String(row[5] ?? '').trim(),
-              valorConversion: row[6] != null ? String(row[6]).trim() : '',
-            });
-          }
-
-          resolve(elements);
-        } catch (err) { reject(err); }
-      };
-      reader.onerror = () => reject(new Error('Error reading file'));
-      reader.readAsArrayBuffer(file);
+  const applyLayoutErrors = (errors: ValidationError[]) => {
+    setValidationErrors(errors);
+    showErrorList({
+      title: 'Errores en la plantilla',
+      items: errors.map((e) => e.description),
     });
+    setShowValidationErrors(false);
+  };
+
+  const runLayoutValidation = async (): Promise<boolean> => {
+    try {
+      const errors = await validateFileWithBackend();
+      if (errors.length > 0) {
+        applyLayoutErrors(errors);
+        return false;
+      }
+      return true;
+    } catch (error: any) {
+      const apiErrors = error?.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        applyLayoutErrors(mapValidationApiErrors(apiErrors));
+        return false;
+      }
+      console.error('Error validating file:', error);
+      const backendMsg =
+        error?.response?.data?.error ??
+        error?.response?.data?.message ??
+        'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
+      showError(backendMsg, 'Error al validar');
+      return false;
+    }
+  };
+
+  const importElementsAfterCreate = async (createdCatalogId: number, file: File) => {
+    const elements = await parseExcelElements(file);
+    let createdCount = 0;
+    let conversionCount = 0;
+    for (const elem of elements) {
+      const createDto: CatalogElementCreateDto = {
+        element: elem.elemento,
+        value: elem.valor || undefined,
+        validFrom: elem.fechaInicioVigencia,
+        validTo: elem.fechaFinVigencia || undefined,
+        parentElementId: elem.idPadre ? Number(elem.idPadre) : undefined,
+        externalKey: elem.valorConversion || undefined,
+      };
+      await catalogElementService.create(createdCatalogId, createDto);
+      createdCount++;
+      if (elem.valorConversion) conversionCount++;
+    }
+    return { createdCount, conversionCount };
+  };
+
+  const showCreateSuccess = (createdCount: number, conversionCount: number) => {
+    const base = `El catálogo "${formData.name}" se ha registrado exitosamente.`;
+    if (createdCount === 0) {
+      showSuccess(base, 'Catálogo creado', () => navigate('/util/catalogos/catalogs'));
+      return;
+    }
+    const extra = conversionCount > 0
+      ? ` Se cargaron ${createdCount} elementos, incluyendo ${conversionCount} con valor de conversión.`
+      : ` Se cargaron ${createdCount} elementos.`;
+    showSuccess(`${base}${extra}`, 'Catálogo creado', () =>
+      navigate('/util/catalogos/catalogs'),
+    );
+  };
+
+  const runUpdateCatalog = async (catalogType: string) => {
+    await catalogService.update(parseInt(id!), {
+      name: formData.name,
+      description: formData.description || undefined,
+      catalogType,
+    });
+    showSuccess(
+      `El catálogo "${formData.name}" se ha editado exitosamente.`,
+      'Catálogo actualizado',
+      () => navigate('/util/catalogos/catalogs'),
+    );
+  };
+
+  const runCreateCatalog = async (catalogType: string) => {
+    const createdCatalog = await catalogService.create({
+      code: formData.code,
+      prefix: formData.prefix,
+      name: formData.name,
+      description: formData.description || undefined,
+      catalogType,
+    });
+
+    if (!uploadedFile?.file || !createdCatalog?.id) {
+      showCreateSuccess(0, 0);
+      return;
+    }
+
+    try {
+      const { createdCount, conversionCount } = await importElementsAfterCreate(
+        createdCatalog.id,
+        uploadedFile.file,
+      );
+      showCreateSuccess(createdCount, conversionCount);
+    } catch (elemError: any) {
+      console.error('Error creating elements from layout:', elemError);
+      const msg = elemError?.response?.data?.message || 'Error al crear algunos elementos del layout.';
+      showWarning(
+        `El catálogo se creó pero hubo un error al cargar elementos: ${msg}`,
+        'Atención',
+        () => navigate('/util/catalogos/catalogs'),
+      );
+    }
   };
 
   const handleSave = async () => {
@@ -572,130 +685,18 @@ export default function CatalogForm() {
       setIsValidating(true);
       setValidationErrors([]);
       setShowValidationErrors(false);
-
-      try {
-        const errors = await validateFileWithBackend();
-
-        if (errors.length > 0) {
-          setValidationErrors(errors);
-          showErrorList({
-            title: 'Errores en la plantilla',
-            items: errors.map((err) => err.description),
-          });
-          setShowValidationErrors(false);
-          setIsValidating(false);
-          return;
-        }
-      } catch (error: any) {
-        const apiErrors = error?.response?.data?.errors;
-        if (Array.isArray(apiErrors) && apiErrors.length > 0) {
-          const mapped: ValidationError[] = apiErrors.map((err: any) => ({
-            row: err.row,
-            cell: err.cell,
-            column: err.column,
-            description: err.message,
-          }));
-          setValidationErrors(mapped);
-          showErrorList({
-            title: 'Errores en la plantilla',
-            items: mapped.map((e) => e.description),
-          });
-          setShowValidationErrors(false);
-          setIsValidating(false);
-          return;
-        }
-
-        console.error('Error validating file:', error);
-        const backendMsg =
-          error?.response?.data?.error ??
-          error?.response?.data?.message ??
-          'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
-        showError(backendMsg, 'Error al validar');
-        setIsValidating(false);
-        return;
-      }
-
+      const ok = await runLayoutValidation();
       setIsValidating(false);
+      if (!ok) return;
     }
 
     setIsSaving(true);
-
     try {
       const catalogType = formData.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO';
-
       if (isEditMode && id) {
-        await catalogService.update(parseInt(id), {
-          name: formData.name,
-          description: formData.description || undefined,
-          catalogType: catalogType,
-        });
-        showSuccess(
-          `El catálogo "${formData.name}" se ha editado exitosamente.`,
-          'Catálogo actualizado',
-          () => navigate('/util/catalogos/catalogs'),
-        );
-        setIsSaving(false);
-        return;
+        await runUpdateCatalog(catalogType);
       } else {
-        const createdCatalog = await catalogService.create({
-          code: formData.code,
-          prefix: formData.prefix,
-          name: formData.name,
-          description: formData.description || undefined,
-          catalogType: catalogType,
-        });
-
-        if (uploadedFile?.file && createdCatalog?.id) {
-          try {
-            const elements = await parseExcelElements(uploadedFile.file);
-            let createdCount = 0;
-            let conversionCount = 0;
-
-            for (const elem of elements) {
-              const createDto: CatalogElementCreateDto = {
-                element: elem.elemento,
-                value: elem.valor || undefined,
-                validFrom: elem.fechaInicioVigencia,
-                validTo: elem.fechaFinVigencia || undefined,
-                parentElementId: elem.idPadre ? Number(elem.idPadre) : undefined,
-                externalKey: elem.valorConversion || undefined,
-              };
-
-
-              await catalogElementService.create(createdCatalog.id, createDto);
-              createdCount++;
-              if (elem.valorConversion) conversionCount++;
-            }
-
-            if (conversionCount > 0) {
-              showSuccess(
-                `El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos, incluyendo ${conversionCount} con valor de conversión.`,
-                'Catálogo creado',
-                () => navigate('/util/catalogos/catalogs'),
-              );
-            } else {
-              showSuccess(
-                `El catálogo "${formData.name}" se ha registrado exitosamente. Se cargaron ${createdCount} elementos.`,
-                'Catálogo creado',
-                () => navigate('/util/catalogos/catalogs'),
-              );
-            }
-          } catch (elemError: any) {
-            console.error('Error creating elements from layout:', elemError);
-            const msg = elemError?.response?.data?.message || 'Error al crear algunos elementos del layout.';
-            showWarning(
-              `El catálogo se creó pero hubo un error al cargar elementos: ${msg}`,
-              'Atención',
-              () => navigate('/util/catalogos/catalogs'),
-            );
-          }
-        } else {
-          showSuccess(
-            `El catálogo "${formData.name}" se ha registrado exitosamente.`,
-            'Catálogo creado',
-            () => navigate('/util/catalogos/catalogs'),
-          );
-        }
+        await runCreateCatalog(catalogType);
       }
     } catch (error: any) {
       console.error('Error saving catalog:', error);

@@ -21,7 +21,7 @@ export function VerticalStepper({ children, className = '' }: VerticalStepperPro
   return (
     <div className={`fiscal-stepper ${className}`.trim()}>
       {list.map((child, index) => (
-        <div className="fiscal-stepper-row" key={index}>
+        <div className="fiscal-stepper-row" key={React.isValidElement(child) && child.key != null ? String(child.key) : index}>
           <div className="fiscal-stepper-col-icon">
             <div
               className="fiscal-stepper-icon"

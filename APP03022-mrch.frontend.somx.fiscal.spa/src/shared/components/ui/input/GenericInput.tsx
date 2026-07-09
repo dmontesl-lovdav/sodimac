@@ -1,6 +1,17 @@
 import { useEffect, useId, useState } from 'react';
 import './Input.css';
 
+export function getInputLeftPad(el: HTMLElement): number {
+  const cs = window.getComputedStyle(el);
+  const pl = parseFloat(cs.paddingLeft || '16');
+  return Number.isFinite(pl) ? pl : 16;
+}
+
+export function getEmailError(value: string, validateEmail: boolean): string {
+  if (!validateEmail || !value) return '';
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'El correo no tiene un formato válido';
+}
+
 export interface GenericInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   label?: string;
   value?: string;
@@ -43,8 +54,8 @@ export default function GenericInput({
   const counterId = `${actualId}-counter`;
   const helperId = `${actualId}-helper`;
 
-  const hasValue = typeof value === 'string' ? value.length > 0 : !!value;
-  const length = typeof value === 'string' ? value.length : 0;
+  const hasValue = value.length > 0;
+  const length = value.length;
 
   const [focused, setFocused] = useState(false);
   const [leftPad, setLeftPad] = useState(16);
@@ -53,11 +64,7 @@ export default function GenericInput({
   useEffect(() => {
     const el = document.getElementById(actualId);
     if (!el) return;
-    const update = (): void => {
-      const cs = window.getComputedStyle(el);
-      const pl = parseFloat(cs.paddingLeft || '16');
-      setLeftPad(Number.isFinite(pl) ? pl : 16);
-    };
+    const update = (): void => setLeftPad(getInputLeftPad(el));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -69,16 +76,11 @@ export default function GenericInput({
   }, [actualId]);
 
   useEffect(() => {
-    if (!validateEmail) return;
-    if (!value) {
-      setEmailError('');
-      return;
-    }
-    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    setEmailError(valid ? '' : 'El correo no tiene un formato válido');
+    setEmailError(getEmailError(value, validateEmail));
   }, [value, validateEmail]);
 
-  const effectivePlaceholder = focused || hasValue ? placeholder : '';
+  const isFloating = focused || hasValue;
+  const effectivePlaceholder = isFloating ? placeholder : '';
   const showError = !!error || !!emailError;
   const message = emailError || helperText;
 
@@ -91,7 +93,10 @@ export default function GenericInput({
 
   const rootClass = `fiscal-input-root ${className}`.trim();
   const inputClass = `fiscal-input-field ${showError ? 'fiscal-input-field-error' : ''}`.trim();
-  const labelClass = `fiscal-input-label ${focused || hasValue ? 'fiscal-input-label-floating' : 'fiscal-input-label-resting'} ${showError ? 'fiscal-input-label-error' : focused ? 'fiscal-input-label-focused' : 'fiscal-input-label-default'} ${requiredMarkClassName}`.trim();
+  const labelPositionClass = isFloating ? 'fiscal-input-label-floating' : 'fiscal-input-label-resting';
+  const focusedOrDefaultClass = focused ? 'fiscal-input-label-focused' : 'fiscal-input-label-default';
+  const labelColorClass = showError ? 'fiscal-input-label-error' : focusedOrDefaultClass;
+  const labelClass = `fiscal-input-label ${labelPositionClass} ${labelColorClass} ${requiredMarkClassName}`.trim();
 
   return (
     <div

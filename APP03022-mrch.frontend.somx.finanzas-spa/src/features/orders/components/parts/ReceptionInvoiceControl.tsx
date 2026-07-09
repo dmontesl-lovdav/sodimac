@@ -67,6 +67,7 @@ export const ReceptionInvoiceControl = forwardRef<
     const pdfInputRef = useRef<HTMLInputElement>(null);
     const fileXMLRef = useRef<File | null>(null);
     const filePDFRef = useRef<File | null>(null);
+    const publishInvoiceRef = useRef<(() => Promise<void>) | null>(null);
     const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
     const [fileXML, setFileXML] = useState<File | null>(null);
     const [filePDF, setFilePDF] = useState<File | null>(null);
@@ -80,6 +81,8 @@ export const ReceptionInvoiceControl = forwardRef<
     const [optionalPdf, setOptionalPdf] = useState<SystemParameterCheckResult>({ value: "0", isEnabled: false });
     const [isBlockedType, setIsBlockedType] = useState(false);
     const [isBlockedProvider, setIsBlockedProvider] = useState(false);
+    const [toleranceConfirmOpen, setToleranceConfirmOpen] = useState(false);
+    const [toleranceConfirmMessage, setToleranceConfirmMessage] = useState("");
     
     const checkSystemParameterValue = (parameterId: number): SystemParameterCheckResult => {
         const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
@@ -243,7 +246,7 @@ export const ReceptionInvoiceControl = forwardRef<
             tolerance = invoiceAmount * (Number(tolerancePercent.value) / 100);
         }
 
-        if (difference <= tolerance || invoiceAmount > receptionAmount) {
+        const publishInvoice = async () => {
             setIsValidInvoice(true);
             try {
                 setIsProcessing(true);
@@ -300,10 +303,24 @@ export const ReceptionInvoiceControl = forwardRef<
             } finally {
                 setIsProcessing(false);
             }
-        } else {
-            showValidationAlert(`Hay una diferencia mayor a ${formatAmount(tolerance)} entre la factura y el total a facturar`);
+        };
+
+        publishInvoiceRef.current = publishInvoice;
+
+        if (difference <= tolerance) {
+            await publishInvoice();
             return;
         }
+
+        if (invoiceAmount < receptionAmount) {
+            showValidationAlert(`El importe de la factura es inferior al valor de la recepción, considerando la tolerancia permitida de ${formatAmount(tolerance)} MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.`);
+            return;
+        }
+
+        setToleranceConfirmMessage(
+            `El importe de la factura (${formatAmount(invoiceAmount)}) es mayor al de la recepción (${formatAmount(receptionAmount)}). La diferencia de ${formatAmount(difference)} supera la tolerancia permitida de ${formatAmount(tolerance)} MXN. ¿Desea continuar?`
+        );
+        setToleranceConfirmOpen(true);
     }
 
     const handleFilePDFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -532,6 +549,19 @@ return (
       )}
     </div>
   </div>
+
+  <GenericModal
+    visible={toleranceConfirmOpen}
+    variant="confirm"
+    message={toleranceConfirmMessage}
+    confirmText="Continuar"
+    cancelText="Cancelar"
+    onConfirm={() => {
+      setToleranceConfirmOpen(false);
+      void publishInvoiceRef.current?.();
+    }}
+    onCancel={() => setToleranceConfirmOpen(false)}
+  />
 
   <GenericModal
     visible={invoiceAlert.alertVisible}

@@ -521,12 +521,32 @@ export default function ImportElementsContainer() {
     setShowExitModal(false);
   };
 
-  const parseExcelElements = async (file: File): Promise<Array<{
-    tipoCatalogo: string; elemento: string; valor: string;
-    fechaInicioVigencia: string; fechaFinVigencia: string;
-    idPadre: string; valorConversion: string;
-  }>> => {
-    return new Promise((resolve, reject) => {
+  const formatExcelDate = (val: any): string => {
+    if (!val) return '';
+    if (val instanceof Date) {
+      const y = val.getFullYear();
+      const m = String(val.getMonth() + 1).padStart(2, '0');
+      const d = String(val.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return String(val).trim();
+  };
+
+  const isEmptyRow = (row: any): boolean =>
+    !row || row.every((c: any) => c === '' || c === null || c === undefined);
+
+  const rowToElement = (row: any) => ({
+    tipoCatalogo: String(row[0] ?? '').trim(),
+    elemento: String(row[1] ?? '').trim(),
+    valor: String(row[2] ?? '').trim(),
+    fechaInicioVigencia: formatExcelDate(row[3]),
+    fechaFinVigencia: formatExcelDate(row[4]),
+    idPadre: String(row[5] ?? '').trim(),
+    valorConversion: row[6] != null ? String(row[6]).trim() : '',
+  });
+
+  const readExcelRows = (file: File): Promise<any[][]> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -534,39 +554,75 @@ export default function ImportElementsContainer() {
           const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-          if (rows.length < 2) { resolve([]); return; }
-          const elements: Array<{
-            tipoCatalogo: string; elemento: string; valor: string;
-            fechaInicioVigencia: string; fechaFinVigencia: string;
-            idPadre: string; valorConversion: string;
-          }> = [];
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.every((c: any) => c === '' || c === null || c === undefined)) continue;
-            const formatDate = (val: any): string => {
-              if (!val) return '';
-              if (val instanceof Date) {
-                const y = val.getFullYear(); const m = String(val.getMonth() + 1).padStart(2, '0'); const d = String(val.getDate()).padStart(2, '0');
-                return `${y}-${m}-${d}`;
-              }
-              return String(val).trim();
-            };
-            elements.push({
-              tipoCatalogo: String(row[0] ?? '').trim(),
-              elemento: String(row[1] ?? '').trim(),
-              valor: String(row[2] ?? '').trim(),
-              fechaInicioVigencia: formatDate(row[3]),
-              fechaFinVigencia: formatDate(row[4]),
-              idPadre: String(row[5] ?? '').trim(),
-              valorConversion: row[6] != null ? String(row[6]).trim() : '',
-            });
-          }
-          resolve(elements);
-        } catch (err) { reject(err); }
+          resolve(rows);
+        } catch (err) {
+          reject(err);
+        }
       };
       reader.onerror = () => reject(new Error('Error reading file'));
       reader.readAsArrayBuffer(file);
     });
+
+  const parseExcelElements = async (file: File): Promise<Array<{
+    tipoCatalogo: string; elemento: string; valor: string;
+    fechaInicioVigencia: string; fechaFinVigencia: string;
+    idPadre: string; valorConversion: string;
+  }>> => {
+    const rows = await readExcelRows(file);
+    if (rows.length < 2) return [];
+    return rows.slice(1).filter((r) => !isEmptyRow(r)).map(rowToElement);
+  };
+
+  const mapValidationErrors = (raw: Array<{ cell?: string; message?: string }>) =>
+    raw.map((e) => ({
+      cell: e.cell || '',
+      message: e.message || 'Error desconocido',
+    }));
+
+  const applyValidationErrors = (
+    raw: Array<{ cell?: string; message?: string }>,
+  ) => {
+    const mapped = mapValidationErrors(raw);
+    setValidationErrors(mapped);
+    setShowValidationErrors(mapped.length > 20);
+    showErrorList({
+      title: 'Errores en la plantilla',
+      items: mapped.map((e) => e.message),
+    });
+  };
+
+  const validateBeforeImport = async (): Promise<boolean> => {
+    try {
+      const result = await catalogService.validateLayout(
+        uploadedFile!.file,
+        catalog!.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO',
+        catalog!.name,
+        'IMPORTAR_ELEMENTOS',
+      );
+
+      if (!result.isValid || (result.errors && result.errors.length > 0)) {
+        applyValidationErrors(
+          (result.errors || []) as Array<{ cell?: string; message?: string }>,
+        );
+        return false;
+      }
+      return true;
+    } catch (error: any) {
+      const apiErrors = error?.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        applyValidationErrors(apiErrors);
+        return false;
+      }
+      console.error('Error validating import file:', error);
+      setValidationErrors([]);
+      setShowValidationErrors(false);
+      const backendMsg =
+        error?.response?.data?.error ??
+        error?.response?.data?.message ??
+        'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
+      showError(backendMsg, 'Error al validar');
+      return false;
+    }
   };
 
   const handleImport = async () => {
@@ -576,58 +632,9 @@ export default function ImportElementsContainer() {
     setValidationErrors([]);
     setShowValidationErrors(false);
 
-    try {
-      const result = await catalogService.validateLayout(
-        uploadedFile.file,
-        catalog.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO',
-        catalog.name,
-        'IMPORTAR_ELEMENTOS',
-      );
-
-      if (!result.isValid || (result.errors && result.errors.length > 0)) {
-        const rawErrors = (result.errors || []) as Array<{ cell?: string; message?: string }>;
-        const mapped = rawErrors.map((e) => ({
-          cell: e.cell || '',
-          message: e.message || 'Error desconocido',
-        }));
-        setValidationErrors(mapped);
-        setShowValidationErrors(mapped.length > 20);
-        showErrorList({
-          title: 'Errores en la plantilla',
-          items: mapped.map((e) => e.message),
-        });
-        setIsValidating(false);
-        return;
-      }
-    } catch (error: any) {
-      const apiErrors = error?.response?.data?.errors;
-      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
-        const mapped = apiErrors.map((e: any) => ({
-          cell: e.cell || '',
-          message: e.message || 'Error desconocido',
-        }));
-        setValidationErrors(mapped);
-        setShowValidationErrors(mapped.length > 20);
-        showErrorList({
-          title: 'Errores en la plantilla',
-          items: mapped.map((e: { message: string }) => e.message),
-        });
-        setIsValidating(false);
-        return;
-      }
-
-      console.error('Error validating import file:', error);
-      setValidationErrors([]);
-      setShowValidationErrors(false);
-      const backendMsg =
-        error?.response?.data?.error ??
-        error?.response?.data?.message ??
-        'No fue posible validar el archivo. Verifica tu conexión e inténtalo nuevamente.';
-      showError(backendMsg, 'Error al validar');
-      setIsValidating(false);
-      return;
-    }
+    const isValid = await validateBeforeImport();
     setIsValidating(false);
+    if (!isValid) return;
 
     setIsImporting(true);
     try {

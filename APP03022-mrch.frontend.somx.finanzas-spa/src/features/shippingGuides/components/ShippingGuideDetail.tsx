@@ -9,11 +9,10 @@ import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
 import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
 import { FINANCE_LIST_KEYS } from "@/shared/hooks";
-import { formatAmount, formatDate, formatDateTime } from "@/utils/utils";
+import { fetchCatalog, formatAmount, formatDate, formatDateTime } from "@/utils/utils";
 import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { shippingGuideService } from "../api/ShippingGuideClient";
-import { resolvePurchaseOrderStatusDescription } from "../purchaseOrderStatusLabels";
 import {
     getDeliveryTypeLabel,
     getNumericGuideStatus,
@@ -35,7 +34,14 @@ const EMPTY_DETAIL: ShippingGuideDetail = {
     trailerPlate: null,
     originId: 0,
     deliveryType: 0,
-    status: 0,
+    status: {
+        key: "",
+        value: "",
+        color: "",
+        externalKey: "",
+        internalStatus: 0,
+        description: "",
+    },
     comments: null,
     deliveryDate: null,
     shippingDate: null,
@@ -95,12 +101,20 @@ export default function ShippingGuideDetailView(): ReactElement {
 
     const [detail, setDetail] = useState<ShippingGuideDetail>(EMPTY_DETAIL);
     const [loading, setLoading] = useState<boolean>(false);
+    const [statusPurchaseOrder, setStatusPurchaseOrder] = useState<any[]>([]);
 
     const fetchDetail = async (id: string) => {
         setLoading(true);
         try {
             const response = await shippingGuideService.getDetail(id);
-            setDetail(response);
+            const statuses = await fetchCatalog("CatEstatusRecepcion");
+            if (response) {
+                setDetail(response);
+            }
+            if (statuses) {
+                //@ts-ignore
+                setStatusPurchaseOrder(statuses?.details ?? []);
+            }
         } catch (error) {
             financeAlert.showErrorFrom(
                 "Error",
@@ -207,12 +221,13 @@ export default function ShippingGuideDetailView(): ReactElement {
             },
             {
                 header: "Estatus",
-                render: (link) =>
-                    resolvePurchaseOrderStatusDescription(link.purchaseOrder?.status),
+                render: (link) => detail.status.value == "9" ? "Cancelada" : statusPurchaseOrder.find((status) => status.value == link.purchaseOrder?.status)?.description ?? "N/D",
             },
         ],
-        [detail.supplier?.businessName, detail.vendorNumber]
+        [detail.supplier?.businessName, detail.vendorNumber, statusPurchaseOrder]
     );
+
+    console.log(detail);
 
     const poActions = useMemo<RowAction<PurchaseOrderLinkRow>[]>(
         () => [
@@ -221,9 +236,11 @@ export default function ShippingGuideDetailView(): ReactElement {
                 icon: viewIcon,
                 onClick: (link, nav) => {
                     const orderNumber = link.purchaseOrder?.orderNumber?.trim();
+                    const startDate = link.purchaseOrder?.purchaseOrderDate;
+                    const endDate = link.purchaseOrder?.purchaseOrderDate;
                     if (orderNumber) {
                         nav(
-                            `/finanzas/recepciones?orderNumber=${encodeURIComponent(orderNumber)}`
+                            `/finanzas/recepciones?startDate=${startDate}&endDate=${endDate}&supplierNumber=${link.purchaseOrder?.supplierNumber}&orderNumber=${encodeURIComponent(orderNumber)}`
                         );
                     }
                 },

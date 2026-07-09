@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -46,6 +46,7 @@ export default function CreditsGrid() {
   const [filters, setFilters] = useState<CreditNoteFilters>(EMPTY_CREDIT_NOTE);
   const [filtersReady, setFiltersReady] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchToken, setSearchToken] = useState(0);
   const [statusCreditNotes, setStatusCreditNotes] = useState<SelectableOption<string>[]>([]);
   const [cancelConfirmRow, setCancelConfirmRow] = useState<CreditNote | null>(null);
   const [cancelConfirmMessage, setCancelConfirmMessage] = useState("");
@@ -65,14 +66,15 @@ export default function CreditsGrid() {
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
-  const customFilters = useMemo(() => {
+  const customFilters = useMemo((): Partial<CreditNoteFilters> => {
     const params = new URLSearchParams(location.search);
-    const filtersOnUrl: Partial<CreditNoteFilters> = {
+    return {
       uuid: params.get("uuid") || undefined,
+      relatedInvoiceUuid: params.get("relatedInvoiceUuid") || undefined,
       fechaInicioRecepcion: params.get("start") || undefined,
       fechaFinalRecepcion: params.get("end") || undefined,
+      idProveedor: params.get("supplierNumber") || undefined,
     };
-    return filtersOnUrl;
   }, [location.search]);
 
   const initialFilters = useMemo<CreditNoteFilters>(() => {
@@ -137,6 +139,7 @@ export default function CreditsGrid() {
     saveFiscalListFilters(FISCAL_LIST_KEYS.creditNotes.filters, newFilters);
     setFilters(newFilters);
     setHasSearched(true);
+    setSearchToken((t) => t + 1);
   };
 
   const handleFiltersChange = (newFilters: CreditNoteFilters) => {
@@ -175,14 +178,12 @@ export default function CreditsGrid() {
       action: {
         title: "Ver factura relacionada",
         icon: viewIcon,
-        onClick: (row, nav) => {
+        onClick: (row) => {
           if (!row.relatedInvoiceUuid) return;
-          const qs = new URLSearchParams({
-            uuid: String(row.relatedInvoiceUuid),
-            start: filters.fechaInicioRecepcion,
-            end: filters.fechaFinalRecepcion,
-          });
-          nav(`/fiscal/facturas?${qs.toString()}`);
+          const startDate = row.createdAt ?? "";
+          const endDate = row.createdAt ?? "";
+          const url = buildFiscalSpaUrl(`facturas?uuid=${encodeURIComponent(row.relatedInvoiceUuid)}&start=${startDate}&end=${endDate}`);
+          window.open(url, "_blank", "noopener,noreferrer");
         },
         isDisabled: (row) => !row.relatedInvoiceUuid,
       },
@@ -221,6 +222,11 @@ export default function CreditsGrid() {
     {
       key: "uuid",
       label: "UUID",
+      type: "text",
+    },
+    {
+      key: "relatedInvoiceUuid",
+      label: "UUID Factura",
       type: "text",
     },
     {
@@ -318,15 +324,24 @@ export default function CreditsGrid() {
             return;
           }
 
-          const urlUuid = customFilters.uuid?.trim();
+          const urlKey = [
+            customFilters.uuid?.trim(),
+            customFilters.relatedInvoiceUuid?.trim(),
+            customFilters.idProveedor?.trim(),
+            customFilters.fechaInicioRecepcion?.trim(),
+            customFilters.fechaFinalRecepcion?.trim(),
+          ]
+            .filter(Boolean)
+            .join("|");
+
           const canAutoSearch =
-            urlUuid &&
+            urlKey &&
             f.fechaInicioRecepcion?.trim() &&
             f.fechaFinalRecepcion?.trim() &&
-            deepLinkSearchedRef.current !== urlUuid;
+            deepLinkSearchedRef.current !== urlKey;
 
           if (canAutoSearch) {
-            deepLinkSearchedRef.current = urlUuid;
+            deepLinkSearchedRef.current = urlKey;
             handleSearch(f);
             return;
           }
@@ -344,6 +359,7 @@ export default function CreditsGrid() {
       />
       <Divider />
       {filtersReady && (
+        <div key={searchToken}>
         <DataGrid<CreditNote, CreditNoteFilters>
           ref={gridRef}
           columns={columns}
@@ -367,6 +383,7 @@ export default function CreditsGrid() {
           rowActions={rowActions}
           filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
         />
+        </div>
       )}
     </div>
   );

@@ -469,6 +469,38 @@ export default function CatalogsContainer() {
     return paginatedCatalogs.every((c) => selectedIds.includes(c.id));
   };
 
+  const buildExportSearchParams = () => {
+    const allParams: any = {
+      page: 1,
+      pageSize: totalResults || 5000,
+      sortBy: 'createdAt',
+      sortDir: 'desc',
+    };
+    if (filters.id) allParams.id = parseInt(filters.id);
+    if (filters.name) allParams.nombre = filters.name;
+    if (filters.description) allParams.descripcion = filters.description;
+    if (filters.type) allParams.tipo = filters.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO';
+    if (filters.status) allParams.estatus = filters.status === 'Activo' ? 1 : 0;
+    if (filters.code) allParams.code = filters.code;
+    if (filters.prefix) allParams.prefix = filters.prefix;
+    return allParams;
+  };
+
+  const exportColumns: ExportColumn[] = [
+    { key: 'id', label: 'ID Catálogo' },
+    { key: 'code', label: 'Código' },
+    { key: 'prefix', label: 'Prefijo' },
+    { key: 'name', label: 'Nombre Catálogo' },
+    { key: 'description', label: 'Descripción Catálogo' },
+    { key: 'type', label: 'Tipo Catálogo' },
+    { key: 'elementCount', label: 'Total Elementos' },
+    { key: 'status', label: 'Estatus' },
+    { key: 'createdBy', label: 'ID Usuario Registro' },
+    { key: 'createdAt', label: 'Fecha Registro' },
+    { key: 'updatedBy', label: 'ID Usuario Actualización' },
+    { key: 'updatedAt', label: 'Fecha Actualización' },
+  ];
+
   const handleExport = async (format: 'csv' | 'xlsx') => {
     if (catalogs.length === 0 || isExporting) return;
 
@@ -476,36 +508,7 @@ export default function CatalogsContainer() {
     setExportError(null);
 
     try {
-      const columns: ExportColumn[] = [
-        { key: 'id', label: 'ID Catálogo' },
-        { key: 'code', label: 'Código' },
-        { key: 'prefix', label: 'Prefijo' },
-        { key: 'name', label: 'Nombre Catálogo' },
-        { key: 'description', label: 'Descripción Catálogo' },
-        { key: 'type', label: 'Tipo Catálogo' },
-        { key: 'elementCount', label: 'Total Elementos' },
-        { key: 'status', label: 'Estatus' },
-        { key: 'createdBy', label: 'ID Usuario Registro' },
-        { key: 'createdAt', label: 'Fecha Registro' },
-        { key: 'updatedBy', label: 'ID Usuario Actualización' },
-        { key: 'updatedAt', label: 'Fecha Actualización' },
-      ];
-
-      const allParams: any = {
-        page: 1,
-        pageSize: totalResults || 5000,
-        sortBy: 'createdAt',
-        sortDir: 'desc',
-      };
-      if (filters.id) allParams.id = parseInt(filters.id);
-      if (filters.name) allParams.nombre = filters.name;
-      if (filters.description) allParams.descripcion = filters.description;
-      if (filters.type) allParams.tipo = filters.type === 'Primario' ? 'PRIMARIO' : 'SECUNDARIO';
-      if (filters.status) allParams.estatus = filters.status === 'Activo' ? 1 : 0;
-      if (filters.code) allParams.code = filters.code;
-      if (filters.prefix) allParams.prefix = filters.prefix;
-
-      const response = await catalogService.search(allParams);
+      const response = await catalogService.search(buildExportSearchParams());
       const fullDataset = response.items.map(apiToCatalog);
 
       const dataToExport: Catalog[] = selectedIds.length > 0
@@ -521,14 +524,14 @@ export default function CatalogsContainer() {
         return;
       }
 
-      const now = new Date();
-      const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
       const filename = `catalogos_${timestamp}`;
+      const rows = dataToExport as unknown as Record<string, unknown>[];
 
       if (format === 'csv') {
-        exportToCSV(dataToExport as unknown as Record<string, unknown>[], columns, filename);
+        exportToCSV(rows, exportColumns, filename);
       } else {
-        exportToExcel(dataToExport as unknown as Record<string, unknown>[], columns, filename);
+        exportToExcel(rows, exportColumns, filename);
       }
     } catch (error) {
       setExportError('Ocurrió un problema al exportar. Intente nuevamente.');

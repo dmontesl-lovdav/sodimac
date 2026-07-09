@@ -59,26 +59,26 @@ export default function AttachmentUploader({
         return `${d} ${['B', 'KB', 'MB', 'GB', 'TB'][e]}`;
     };
 
+    function hasValidExtension(name) {
+        const lower = name.toLowerCase();
+        return validFileExtensions.some(ext => lower.endsWith(`.${ext}`));
+    }
+
+    function computeFileError(ef) {
+        if (!hasValidExtension(ef.name)) return ERR_INVALID_TYPE;
+        if (ef.size > maxFileSize) return ERR_INVALID_SIZE;
+        if (ef.name.length > maxFilenameLength) return ERR_TOO_LONG_FILENAME;
+        return 0;
+    }
+
     function addFiles(eventFiles) {
         const current = Array.isArray(files) ? files.slice() : [];
         const existingNames = new Set(current.map(c => c.name));
 
-        outer: for (const ef of Array.from(eventFiles || [])) {
+        for (const ef of Array.from(eventFiles || [])) {
             if (!ef) continue;
-
-            if (existingNames.has(ef.name)) continue outer;
-
-            let err = ERR_INVALID_TYPE;
-            const lower = ef.name.toLowerCase();
-            for (const ext of validFileExtensions) {
-                if (lower.endsWith(`.${ext}`)) { err = 0; break; }
-            }
-
-            if (ef.size > maxFileSize) err = ERR_INVALID_SIZE;
-            if (ef.name.length > maxFilenameLength) err = ERR_TOO_LONG_FILENAME;
-
-            ef.err = err;
-
+            if (existingNames.has(ef.name)) continue;
+            ef.err = computeFileError(ef);
             existingNames.add(ef.name);
             current.push(ef);
         }

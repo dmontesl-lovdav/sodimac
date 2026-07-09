@@ -28,9 +28,10 @@ export const versionCatalogService = {
         try {
             const response = await versionCatalogService.getVersionCatalog();
 
+            const recordsNote = Array.isArray(response) ? ` Registros detectados: ${response.length}.` : "";
             return {
                 online: true,
-                message: `La conexión con el backend fiscal se encuentra activa. Servicio disponible correctamente.${Array.isArray(response) ? ` Registros detectados: ${response.length}.` : ""}`,
+                message: `La conexión con el backend fiscal se encuentra activa. Servicio disponible correctamente.${recordsNote}`,
                 count: Array.isArray(response) ? response.length : 0,
             };
         } catch (error: any) {

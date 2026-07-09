@@ -20,6 +20,10 @@ export default function CreditNoteSummary({ data }: Props) {
               <td className="pcn-cell">{data.nombreProveedor}</td>
             </tr>
             <tr>
+              <td className="pcn-cell pcn-cell-label">UUID:</td>
+              <td className="pcn-cell">{data.uuid}</td>
+            </tr>
+            <tr>
               <td className="pcn-cell pcn-cell-label">UUID Factura:</td>
               <td className="pcn-cell">{data.uuidRelacionado}</td>
             </tr>

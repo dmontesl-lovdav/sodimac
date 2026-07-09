@@ -30,12 +30,9 @@ import ShippingGuideToolbar from "./components/ShippingGuideToolbar";
 
 import {
   SHIPPING_GUIDE_STATUS_BORRADO,
+  getRegisteredShippingGuideStatusLabels,
   resolveShippingGuideStatusDescription,
 } from "./shippingGuideStatusCatalog";
-import {
-  mapShippingGuideToGridExportRow,
-  SHIPPING_GUIDE_GRID_EXPORT_HEADERS,
-} from "./shippingGuideGridExport";
 import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
 
 type RowExportFormat = "csv" | "xml";
@@ -176,7 +173,7 @@ export default function ShippingGuideContainer(): ReactElement {
   );
 
 
-  /** Reporte del grid: selección o todas las filas visibles. */
+  /** Reporte del grid: mismas columnas visibles en `ShippingGuideGrid`. */
   const exportGridReport = (format: "csv" | "xlsx") => {
     const targets = selectedGuides.length > 0 ? selectedGuides : rows;
     if (!targets.length) {
@@ -187,8 +184,40 @@ export default function ShippingGuideContainer(): ReactElement {
       return;
     }
 
-    const headers = [...SHIPPING_GUIDE_GRID_EXPORT_HEADERS];
-    const body = targets.map(mapShippingGuideToGridExportRow);
+    const headers = [
+      "Guía Embarque",
+      "Placa",
+      "Placa Remolque",
+      "Origen",
+      "Tipo Entrega",
+      "Orden Compra",
+      "Número Proveedor",
+      "Nombre Proveedor",
+      "Fecha Entrega",
+      "Fecha Envió",
+      "Fecha Registro",
+      "Estatus",
+    ];
+
+    const body = targets.map((guide) => [
+      guide.guideNumber,
+      guide.truckPlate || "N/D",
+      guide.trailerPlate || "N/D",
+      guide.originId,
+      getCatalogDisplay(guide.deliveryType),
+      guide?.orderNumber == "undefined" ? "N/D" : guide?.orderNumber,
+      guide.vendorNumber,
+      guide.supplier?.businessName || "N/D",
+      guide.deliveryDate ? formatDate(guide.deliveryDate) : "N/D",
+      guide.shippingDate ? formatDate(guide.shippingDate) : "N/D",
+      guide.createdAt ? formatDate(guide.createdAt) : "N/D",
+      resolveShippingGuideStatusDescription(
+        getShippingGuideStatusCode(guide),
+        guide.status,
+        getRegisteredShippingGuideStatusLabels() ?? undefined
+      ),
+    ]);
+
     const baseName = `guias_embarque_${formatFilenameTimestamp()}`;
 
     if (format === "csv") {

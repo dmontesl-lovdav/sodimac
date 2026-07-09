@@ -19,7 +19,7 @@ export interface RowAction<T> {
     /** Ícono (ruta a imagen/svg) */
     icon: string;
     /** Handler de click (recibe fila y nav) */
-    onClick: (row: T, nav: ReturnType<typeof useNavigate>) => void;
+    onClick: (row: T, nav: ReturnType<typeof useNavigate>) => void | Promise<void>;
     /** Deshabilitar acción por fila (opcional) */
     isDisabled?: (row: T) => boolean;
 }
@@ -61,7 +61,11 @@ export function Switch({
     className?: string;
 }) {
     return (
-        <span onClick={onClick} className={`fiscal-table-switch ${on ? 'on' : 'off'} ${className}`.trim()}>
+        <button
+            type="button"
+            onClick={onClick}
+            className={`fiscal-table-switch ${on ? 'on' : 'off'} ${className}`.trim()}
+        >
             <span className={`fiscal-table-switch-thumb ${on ? 'on' : 'off'}`}>
                 {on ? (
                     <svg viewBox="0 0 12 9" className="fiscal-table-switch-icon" fill="#002d4c">
@@ -79,7 +83,7 @@ export function Switch({
                     </svg>
                 )}
             </span>
-        </span>
+        </button>
     );
 }
 
@@ -125,8 +129,11 @@ export default function GenericTable<T>(
         (_, i) => i + 1 + pageWindowStart
     );
 
-    const alignClass = (align: Align) =>
-        align === 'center' ? 'fiscal-table-align-center' : align === 'right' ? 'fiscal-table-align-right' : 'fiscal-table-align-left';
+    function alignClass(align: Align): string {
+        if (align === 'center') return 'fiscal-table-align-center';
+        if (align === 'right') return 'fiscal-table-align-right';
+        return 'fiscal-table-align-left';
+    }
 
     return (
         <div className={`fiscal-table-container fiscal-mt-4 ${className}`.trim()}>
@@ -166,7 +173,7 @@ export default function GenericTable<T>(
                     {/* datos */}
                     {rows.map((row, index) => (
                         <tr
-                            key={index}
+                            key={(row as any)?.id ?? (row as any)?.key ?? index}
                             className="fiscal-table-row"
                         >
                             {columns.map(({ header, align = 'left', render }, index) => (

@@ -53,6 +53,8 @@ export interface UsePaginatedDataOptions<T, F> {
   onError?: (err: unknown) => void;
   /** Si es false, no consulta hasta que el usuario dispare búsqueda (p. ej. clic en Buscar). */
   fetchEnabled?: boolean;
+  /** Incrementar en cada búsqueda explícita para re-consultar aunque los filtros no cambien. */
+  searchToken?: number;
 }
 
 export function usePaginatedData<T, F = Record<string, unknown>>({
@@ -62,6 +64,7 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
   initialSize = 10,
   onError,
   fetchEnabled = false,
+  searchToken,
 }: UsePaginatedDataOptions<T, F>) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<ApiErrorPayload | null>(null);
@@ -81,6 +84,7 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
 
   const previousFiltersRef = useRef<string>(getFiltersWithoutPagination(initialFilters));
   const prevFetchEnabledRef = useRef(false);
+  const prevSearchTokenRef = useRef<number | undefined>(searchToken);
 
   const fetchData = useCallback(
     async (currentFilters: F, currentPage: number, currentSize: number) => {
@@ -166,6 +170,7 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
   useEffect(() => {
     if (!fetchEnabled) {
       prevFetchEnabledRef.current = false;
+      prevSearchTokenRef.current = searchToken;
       return;
     }
 
@@ -174,16 +179,19 @@ export function usePaginatedData<T, F = Record<string, unknown>>({
 
     const currentFiltersStr = getFiltersWithoutPagination(initialFilters);
     const filtersChanged = currentFiltersStr !== previousFiltersRef.current;
+    const searchTriggered =
+      searchToken !== undefined && searchToken !== prevSearchTokenRef.current;
 
-    if (enabledJustNow || filtersChanged) {
+    if (enabledJustNow || filtersChanged || searchTriggered) {
       previousFiltersRef.current = currentFiltersStr;
+      prevSearchTokenRef.current = searchToken;
       setFilters(initialFilters);
       setPage(initialPage);
       const newSize = initialSize ?? size;
       setSize(newSize);
       fetchDataRef.current(initialFilters, initialPage, newSize);
     }
-  }, [initialFilters, initialPage, initialSize, fetchEnabled, size]);
+  }, [initialFilters, initialPage, initialSize, fetchEnabled, size, searchToken]);
 
   return {
     loading,

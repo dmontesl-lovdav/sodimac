@@ -4,13 +4,14 @@ export const CREDIT_NOTE_RECHAZO_CONTABLE = 11;
 export const CREDIT_NOTE_PROCESS_SENDED = 1;
 
 export interface CreditNoteFilters {
+  relatedInvoiceUuid: string;
   rfcEmisor: string;
   fechaInicioRecepcion: string;
   fechaFinalRecepcion: string;
   tipoDocumento: string;
   page: number,
   size: number,
-  estatus?: string | undefined;
+  estatus?: string;
   serie: string;
   uuid: string;
   folio: string;
@@ -18,6 +19,7 @@ export interface CreditNoteFilters {
 }
 
 export const EMPTY_CREDIT_NOTE: CreditNoteFilters = {
+  relatedInvoiceUuid: "",
   rfcEmisor: "",
   fechaInicioRecepcion: "",
   fechaFinalRecepcion: "",

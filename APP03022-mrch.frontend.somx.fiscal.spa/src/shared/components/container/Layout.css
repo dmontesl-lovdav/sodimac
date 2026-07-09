@@ -1,4 +1,6 @@
 .fiscal-layout-outer {
+  display: flex;
+  flex-direction: column;
 }
 
 .fiscal-layout-inner {

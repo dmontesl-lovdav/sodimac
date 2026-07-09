@@ -99,6 +99,9 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
   const [rangeErrorModal, setRangeErrorModal] = useState<boolean>(false);
   const hasLoadedRef = useRef(false);
   const lastUrlOrderNumberRef = useRef<string | null>(null);
+  const lastUrlSupplierNumberRef = useRef<string | null>(null);
+  const lastUrlStartDateRef = useRef<string | null>(null);
+  const lastUrlEndDateRef = useRef<string | null>(null);
   const onSearchRef = useRef(onSearch);
   onSearchRef.current = onSearch;
 
@@ -153,9 +156,18 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
     }
 
     const urlOrderNumber = searchParams.get("orderNumber")?.trim() ?? "";
+    const urlSupplierNumber = searchParams.get("supplierNumber")?.trim() ?? "";
+    const urlStartDate = searchParams.get("startDate")?.trim() ?? "";
+    const urlEndDate = searchParams.get("endDate")?.trim() ?? "";
+    const hasUrlDateRange = Boolean(urlStartDate && urlEndDate);
+    const hasDeepLinkParams =
+      Boolean(urlOrderNumber || urlSupplierNumber || hasUrlDateRange);
 
-    if (!urlOrderNumber) {
+    if (!hasDeepLinkParams) {
       lastUrlOrderNumberRef.current = null;
+      lastUrlSupplierNumberRef.current = null;
+      lastUrlStartDateRef.current = null;
+      lastUrlEndDateRef.current = null;
       if (hasLoadedRef.current) return;
 
       const saved = readFinanceListFilters<OrdersFilters>(FILTERS_KEY);
@@ -186,13 +198,28 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       return;
     }
 
-    if (lastUrlOrderNumberRef.current === urlOrderNumber) return;
+    if (
+      lastUrlOrderNumberRef.current === urlOrderNumber &&
+      lastUrlSupplierNumberRef.current === urlSupplierNumber &&
+      lastUrlStartDateRef.current === urlStartDate &&
+      lastUrlEndDateRef.current === urlEndDate
+    ) return;
     lastUrlOrderNumberRef.current = urlOrderNumber;
+    lastUrlSupplierNumberRef.current = urlSupplierNumber;
+    lastUrlStartDateRef.current = urlStartDate;
+    lastUrlEndDateRef.current = urlEndDate;
 
     clearFinanceListSession(FINANCE_LIST_KEYS.receptions);
 
-    const linkRange = orderNumberDeepLinkRange();
-    setProvider("");
+    const [parsedStart, parsedEnd] = parseFinanceListDateRange(
+      urlStartDate,
+      urlEndDate
+    );
+    const linkRange: [Date | null, Date | null] =
+      parsedStart && parsedEnd
+        ? [parsedStart, parsedEnd]
+        : orderNumberDeepLinkRange();
+    setProvider(urlSupplierNumber);
     setProviderType("");
     setReceptionNumber("");
     setStatus("");
@@ -201,7 +228,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
 
     const filterData = buildOrdersFilterPayload({
       dateRange: linkRange,
-      provider: "",
+      provider: urlSupplierNumber,
       providerType: "",
       orderNumber: urlOrderNumber,
       receptionNumber: "",
@@ -247,6 +274,9 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
 
   const handleClear = (): void => {
     lastUrlOrderNumberRef.current = null;
+    lastUrlSupplierNumberRef.current = null;
+    lastUrlStartDateRef.current = null;
+    lastUrlEndDateRef.current = null;
     setProvider("");
     setProviderType("");
     setOrderNumber("");

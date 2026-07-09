@@ -43,17 +43,17 @@ const ReceptionEditStatusForm = forwardRef<
 ) {
     const [status, setStatus] = useState(reception.status);
     const [reason, setReason] = useState(reception.comment ?? "");
-    const [uuid, setUuid] = useState(reception.receptionId ?? "");
+    const [uuid, setUuid] = useState(reception.invoiceUuid ?? "");
+
+    console.log(reception);
 
     useEffect(() => {
-        setStatus(reception.status);
-    }, [reception.receptionId, reception.status]);
-
-    useEffect(() => {
-        if (status !== 2) {
-            setUuid("");
+        if(reception.status !== undefined) {
+            setStatus(reception.status);
+            setReason(reception.status == 0 ? "":reception.comment ?? "");
+            setUuid(reception.invoiceUuid ?? "");
         }
-    }, [status]);
+    }, [reception]);
 
     const checkInformation = useCallback(() => {
         if (reason.trim() === "") {
@@ -87,6 +87,7 @@ const ReceptionEditStatusForm = forwardRef<
                         }
                         placeholder="Estado"
                         disablePlaceholder={true}
+                        disabled={reception.status != 0}
                         options={ReceptionStatusEditOptions}
                     />
                 </div>
@@ -102,12 +103,13 @@ const ReceptionEditStatusForm = forwardRef<
                     />
                 </div>
 
-                {status === 2 && (
+                {status == 2 && (
                     <div className="rc-row">
                         <GenericInput
                             label="UUID"
                             placeholder="Proporciona el UUID para complementar"
                             value={uuid}
+                            disabled={reception.status != 0}
                             onChange={(event: ChangeEvent<HTMLInputElement>) =>
                                 setUuid(event.target.value)
                             }
@@ -176,6 +178,14 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                     );
                     return;
                 }
+                if (status == 2 && !uuid.trim().match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
+                        financeAlert.showWarning(
+                            "Datos incorrectos",
+                            "El UUID no es válido."
+                        );
+                        return;
+                }
+
                 const payload = {
                     supplierNumber,
                     orderNumber,
@@ -186,16 +196,21 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         ? { uuid: uuid.trim() }
                         : {}),
                 };
-                await client.updateReceptionManual(payload);
+                const response = await client.updateReceptionManual(payload);
+                //console.log(response);
+                financeAlert.showSuccess("Estado actualizado", (response as any).data.message ?? "El estado de la recepción se guardó correctamente.");
+                
                 const refreshed = await client.getReceptionByUuid(
                     String(params.uuid ?? reception.receptionId)
                 );
                 setReception(refreshed.data);
-                financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");
+                //financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");*/
             }
 
         } catch (err) {
-            financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");
+            const error = (err as any).response.data.detailError;
+            financeAlert.showError("Error", error);
+            console.error(err);
         } finally {
             setLoading(false);
         }

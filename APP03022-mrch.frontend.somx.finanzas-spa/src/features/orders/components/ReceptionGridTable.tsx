@@ -31,6 +31,19 @@ const getAdendumReferences = (reception: Reception) => {
     return reception.listAddendum[0].invoice;
 };
 
+const getInvoiceUuid = (reception: Reception) => {
+    const inv = getAdendumReferences(reception);
+    return (
+        inv?.fiscalUuid ??
+        inv?.fiscal_uuid ??
+        reception.invoiceUuid ??
+        reception.order?.invoiceUuid ??
+        inv?.invoiceUuid ??
+        inv?.invoice_uuid ??
+        "--"
+    );
+};
+
 const resolveColor=(color: string) => {
 const colorMap: Record<string, string> = {
     "amarillo": "warning",
@@ -142,10 +155,7 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
         },
         {
             header: "UUID",
-            render: (r: Reception) => {
-                const inv = getAdendumReferences(r);
-                return inv?.invoiceUuid ?? inv?.invoice_uuid ?? "--";
-            },
+            render: (r: Reception) => getInvoiceUuid(r),
         },
         {
             header: "Fecha Recepción",

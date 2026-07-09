@@ -62,8 +62,7 @@ export interface SecurityContextResult {
 }
 
 export function useSecurityContext(): SecurityContextResult {
-    const authState = useAppSelector((s) => s.authentication);
-    void authState;
+    useAppSelector((s) => s.authentication);
     const userKey = getCurrentUserKey();
     const cached = userKey ? getCached(userKey) : null;
     const cachedData = cached?.data ?? null;

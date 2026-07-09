@@ -6,6 +6,43 @@ import { Pagination } from '@shared/components/ui/pagination';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
 
+const EXPORT_COLUMNS = [
+  { key: 'idElemento', label: 'ID Elemento' },
+  { key: 'elemento', label: 'Elemento' },
+  { key: 'valor', label: 'Valor' },
+  { key: 'fechaInicioVigencia', label: 'Fecha Inicio Vigencia' },
+  { key: 'fechaFinVigencia', label: 'Fecha Fin Vigencia' },
+  { key: 'estatus', label: 'Estatus' },
+  { key: 'catalogoOrigen', label: 'Catálogo Origen' },
+  { key: 'idUsuarioRegistro', label: 'ID Usuario Registro' },
+  { key: 'fechaRegistro', label: 'Fecha Registro' },
+  { key: 'idUsuarioActualizacion', label: 'ID Usuario Actualización' },
+  { key: 'fechaActualizacion', label: 'Fecha Actualización' },
+];
+
+const toEsMxDate = (raw: unknown): string =>
+  raw ? new Date(raw as string).toLocaleDateString('es-MX') : '';
+
+const mapConversionForExport = (c: any) => ({
+  idElemento: c.idElemento || '',
+  elemento: c.elemento || '',
+  valor: c.valor || '',
+  fechaInicioVigencia: toEsMxDate(c.fechaInicioVigencia),
+  fechaFinVigencia: toEsMxDate(c.fechaFinVigencia),
+  estatus: c.estatus || '',
+  catalogoOrigen: c.catalogoOrigen || '',
+  idUsuarioRegistro: c.idUsuarioRegistro || '',
+  fechaRegistro: toEsMxDate(c.fechaRegistro),
+  idUsuarioActualizacion: c.idUsuarioActualizacion || '',
+  fechaActualizacion: toEsMxDate(c.fechaActualizacion),
+});
+
+const buildExportTimestamp = (): string => {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+};
+
 export default function ConversionsContainer() {
   const navigate = useNavigate();
   const { elementId } = useParams<{ elementId: string }>();
@@ -113,75 +150,49 @@ export default function ConversionsContainer() {
     }
   };
 
+  const buildConversionSearchParams = () => {
+    const params: any = {
+      idElementoOrigen: parseInt(elementId!),
+      page: 1,
+      pageSize: totalResults || 1000,
+      sortBy: 'createdAt',
+      sortDir: 'desc',
+    };
+    if (filters.idElemento) params.idElemento = parseInt(filters.idElemento);
+    if (filters.elemento) params.elemento = filters.elemento;
+    if (filters.valor) params.valorElemento = filters.valor;
+    if (filters.catalogoOrigen) params.catalogoOrigen = filters.catalogoOrigen;
+    if (filters.estatus) params.estatus = filters.estatus === 'Activo' ? 1 : 0;
+    return params;
+  };
+
+  const fetchExportDataset = async () => {
+    const res = await conversionService.search(buildConversionSearchParams());
+    const items = res.items || [];
+    return selectedIds.size > 0
+      ? items.filter((c: any) => selectedIds.has(c.idConversion))
+      : items;
+  };
+
   const handleExport = async (format: 'xlsx' | 'csv') => {
     if (isExporting || !elementId) return;
     setIsExporting(true);
     setExportError(null);
 
     try {
-      let dataToExport: any[] = [];
-
-      if (selectedIds.size > 0) {
-        const allParams: any = { idElementoOrigen: parseInt(elementId), page: 1, pageSize: totalResults || 1000, sortBy: 'createdAt', sortDir: 'desc' };
-        if (filters.idElemento) allParams.idElemento = parseInt(filters.idElemento);
-        if (filters.elemento) allParams.elemento = filters.elemento;
-        if (filters.valor) allParams.valorElemento = filters.valor;
-        if (filters.catalogoOrigen) allParams.catalogoOrigen = filters.catalogoOrigen;
-        if (filters.estatus) allParams.estatus = filters.estatus === 'Activo' ? 1 : 0;
-        const res = await conversionService.search(allParams);
-        dataToExport = (res.items || []).filter((c: any) => selectedIds.has(c.idConversion));
-      } else {
-        const allParams: any = { idElementoOrigen: parseInt(elementId), page: 1, pageSize: totalResults || 1000, sortBy: 'createdAt', sortDir: 'desc' };
-        if (filters.idElemento) allParams.idElemento = parseInt(filters.idElemento);
-        if (filters.elemento) allParams.elemento = filters.elemento;
-        if (filters.valor) allParams.valorElemento = filters.valor;
-        if (filters.catalogoOrigen) allParams.catalogoOrigen = filters.catalogoOrigen;
-        if (filters.estatus) allParams.estatus = filters.estatus === 'Activo' ? 1 : 0;
-        const res = await conversionService.search(allParams);
-        dataToExport = res.items || [];
-      }
-
-      const columns = [
-        { key: 'idElemento', label: 'ID Elemento' },
-        { key: 'elemento', label: 'Elemento' },
-        { key: 'valor', label: 'Valor' },
-        { key: 'fechaInicioVigencia', label: 'Fecha Inicio Vigencia' },
-        { key: 'fechaFinVigencia', label: 'Fecha Fin Vigencia' },
-        { key: 'estatus', label: 'Estatus' },
-        { key: 'catalogoOrigen', label: 'Catálogo Origen' },
-        { key: 'idUsuarioRegistro', label: 'ID Usuario Registro' },
-        { key: 'fechaRegistro', label: 'Fecha Registro' },
-        { key: 'idUsuarioActualizacion', label: 'ID Usuario Actualización' },
-        { key: 'fechaActualizacion', label: 'Fecha Actualización' },
-      ];
-
-      const now = new Date();
-      const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
-      const filename = `conversiones_${ts}`;
-
-      const exportData = dataToExport.map((c: any) => ({
-        idElemento: c.idElemento || '',
-        elemento: c.elemento || '',
-        valor: c.valor || '',
-        fechaInicioVigencia: c.fechaInicioVigencia ? new Date(c.fechaInicioVigencia).toLocaleDateString('es-MX') : '',
-        fechaFinVigencia: c.fechaFinVigencia ? new Date(c.fechaFinVigencia).toLocaleDateString('es-MX') : '',
-        estatus: c.estatus || '',
-        catalogoOrigen: c.catalogoOrigen || '',
-        idUsuarioRegistro: c.idUsuarioRegistro || '',
-        fechaRegistro: c.fechaRegistro ? new Date(c.fechaRegistro).toLocaleDateString('es-MX') : '',
-        idUsuarioActualizacion: c.idUsuarioActualizacion || '',
-        fechaActualizacion: c.fechaActualizacion ? new Date(c.fechaActualizacion).toLocaleDateString('es-MX') : '',
-      }));
+      const dataToExport = await fetchExportDataset();
+      const exportData = dataToExport.map(mapConversionForExport);
 
       if (exportData.length === 0) {
         setExportError('No hay datos para exportar.');
         return;
       }
 
+      const filename = `conversiones_${buildExportTimestamp()}`;
       if (format === 'xlsx') {
-        exportToExcel(exportData, columns, filename);
+        exportToExcel(exportData, EXPORT_COLUMNS, filename);
       } else {
-        exportToCSV(exportData, columns, filename);
+        exportToCSV(exportData, EXPORT_COLUMNS, filename);
       }
     } catch (error: any) {
       if (error?.response?.status === 403) {

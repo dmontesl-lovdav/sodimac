@@ -79,6 +79,41 @@ const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   </svg>
 );
 
+const buildUpdateSuccessMessage = (
+  elementName: string,
+  relationChangeType: 'add' | 'change' | 'delete' | 'none',
+  externalKeyAdded: boolean,
+  externalKeyModified: boolean,
+  externalKeyRemoved: boolean,
+): string => {
+  if (relationChangeType === 'add') return `El elemento '${elementName}' se ha actualizado y relacionado exitosamente.`;
+  if (relationChangeType === 'change') return `La relación del elemento '${elementName}' se ha actualizado exitosamente.`;
+  if (relationChangeType === 'delete') return `La relación del elemento '${elementName}' se ha eliminado exitosamente.`;
+  if (externalKeyAdded) return `El elemento '${elementName}' se ha actualizado y ahora tiene valor de conversión.`;
+  if (externalKeyModified) return `El elemento '${elementName}' y su valor de conversión se han actualizado exitosamente.`;
+  if (externalKeyRemoved) return `El elemento '${elementName}' se ha actualizado. El valor de conversión ha sido eliminado.`;
+  return `El elemento '${elementName}' se ha actualizado exitosamente.`;
+};
+
+const buildCreateSuccessMessage = (
+  elementName: string,
+  hasRelation: boolean,
+  hasExternalKey: boolean,
+): string => {
+  if (hasExternalKey) return `El elemento '${elementName}' se ha creado exitosamente con su valor de conversión.`;
+  if (hasRelation) return `El elemento '${elementName}' se ha creado y relacionado exitosamente.`;
+  return `El elemento '${elementName}' se ha creado exitosamente.`;
+};
+
+const areFormsEqual = (a: FormData, b: FormData): boolean =>
+  a.elementName === b.elementName &&
+  a.startDate === b.startDate &&
+  a.endDate === b.endDate &&
+  a.value === b.value &&
+  a.externalKey === b.externalKey &&
+  a.parentCatalogId === b.parentCatalogId &&
+  a.parentElementId === b.parentElementId;
+
 export default function ElementForm() {
   const navigate = useNavigate();
   const { id, elementId } = useParams<{ id: string; elementId?: string }>();
@@ -117,15 +152,7 @@ export default function ElementForm() {
   const isStep1Complete = formData.elementName.trim() !== '' && formData.startDate !== '';
   const isPrimaryCatalog = catalogType === 'PRIMARIO' || catalogType === 'HIERARCHICAL';
 
-  const hasChanges = () => {
-    return formData.elementName !== originalData.elementName ||
-      formData.startDate !== originalData.startDate ||
-      formData.endDate !== originalData.endDate ||
-      formData.value !== originalData.value ||
-      formData.externalKey !== originalData.externalKey ||
-      formData.parentCatalogId !== originalData.parentCatalogId ||
-      formData.parentElementId !== originalData.parentElementId;
-  };
+  const hasChanges = () => !areFormsEqual(formData, originalData);
 
   const showToast = useCallback(
     (type: 'success' | 'error', text: string, onAccept?: () => void) => {
@@ -258,64 +285,63 @@ export default function ElementForm() {
     return 'none';
   };
 
+  const runUpdate = async () => {
+    const updateData: CatalogElementUpdateDto = {
+      element: formData.elementName,
+      value: formData.value || undefined,
+      externalKey: formData.externalKey || '',
+      validFrom: formData.startDate,
+      validTo: formData.endDate || undefined,
+      parentCatalogId: formData.parentCatalogId ? Number(formData.parentCatalogId) : undefined,
+      parentElementId: formData.parentElementId ? Number(formData.parentElementId) : undefined,
+      status: elementStatus,
+    };
+    if (!formData.parentCatalogId) {
+      updateData.parentCatalogId = null as any;
+      updateData.parentElementId = null as any;
+    }
+    await catalogElementService.update(catalogId, Number(elementId), updateData);
+
+    const relationChangeType = detectRelationChange();
+    const externalKeyAdded = !originalData.externalKey && !!formData.externalKey;
+    const externalKeyModified =
+      !!originalData.externalKey && !!formData.externalKey &&
+      originalData.externalKey !== formData.externalKey;
+    const externalKeyRemoved = !!originalData.externalKey && !formData.externalKey;
+    const msg = buildUpdateSuccessMessage(
+      formData.elementName,
+      relationChangeType,
+      externalKeyAdded,
+      externalKeyModified,
+      externalKeyRemoved,
+    );
+    showToast('success', msg, () => navigate(`/util/catalogos/catalogs/${id}/elementos`));
+  };
+
+  const runCreate = async () => {
+    const createData: CatalogElementCreateDto = {
+      element: formData.elementName,
+      value: formData.value || undefined,
+      externalKey: formData.externalKey || undefined,
+      validFrom: formData.startDate,
+      validTo: formData.endDate || undefined,
+      parentCatalogId: formData.parentCatalogId ? Number(formData.parentCatalogId) : undefined,
+      parentElementId: formData.parentElementId ? Number(formData.parentElementId) : undefined,
+    };
+    await catalogElementService.create(catalogId, createData);
+
+    const hasRelation = !!(formData.parentCatalogId && formData.parentElementId);
+    const hasExternalKey = !!formData.externalKey;
+    const msg = buildCreateSuccessMessage(formData.elementName, hasRelation, hasExternalKey);
+    showToast('success', msg, () => navigate(`/util/catalogos/catalogs/${id}/elementos`));
+  };
+
   const executeSave = async () => {
     try {
-      const relationChangeType = detectRelationChange();
-
-      const externalKeyChanged = formData.externalKey !== originalData.externalKey;
-      const externalKeyAdded = !originalData.externalKey && formData.externalKey;
-      const externalKeyModified = originalData.externalKey && formData.externalKey && originalData.externalKey !== formData.externalKey;
-      const externalKeyRemoved = originalData.externalKey && !formData.externalKey;
-
       if (isEditMode && elementId) {
-        const updateData: CatalogElementUpdateDto = {
-          element: formData.elementName,
-          value: formData.value || undefined,
-          externalKey: formData.externalKey || '',
-          validFrom: formData.startDate,
-          validTo: formData.endDate || undefined,
-          parentCatalogId: formData.parentCatalogId ? Number(formData.parentCatalogId) : undefined,
-          parentElementId: formData.parentElementId ? Number(formData.parentElementId) : undefined,
-          status: elementStatus,
-        };
-        if (!formData.parentCatalogId) {
-          updateData.parentCatalogId = null as any;
-          updateData.parentElementId = null as any;
-        }
-        await catalogElementService.update(catalogId, Number(elementId), updateData);
-
-        let msg: string;
-        if (relationChangeType === 'add') msg = `El elemento '${formData.elementName}' se ha actualizado y relacionado exitosamente.`;
-        else if (relationChangeType === 'change') msg = `La relación del elemento '${formData.elementName}' se ha actualizado exitosamente.`;
-        else if (relationChangeType === 'delete') msg = `La relación del elemento '${formData.elementName}' se ha eliminado exitosamente.`;
-        else if (externalKeyAdded) msg = `El elemento '${formData.elementName}' se ha actualizado y ahora tiene valor de conversión.`;
-        else if (externalKeyModified) msg = `El elemento '${formData.elementName}' y su valor de conversión se han actualizado exitosamente.`;
-        else if (externalKeyRemoved) msg = `El elemento '${formData.elementName}' se ha actualizado. El valor de conversión ha sido eliminado.`;
-        else msg = `El elemento '${formData.elementName}' se ha actualizado exitosamente.`;
-        showToast('success', msg, () =>
-          navigate(`/util/catalogos/catalogs/${id}/elementos`),
-        );
+        await runUpdate();
       } else {
-        const createData: CatalogElementCreateDto = {
-          element: formData.elementName,
-          value: formData.value || undefined,
-          externalKey: formData.externalKey || undefined,
-          validFrom: formData.startDate,
-          validTo: formData.endDate || undefined,
-          parentCatalogId: formData.parentCatalogId ? Number(formData.parentCatalogId) : undefined,
-          parentElementId: formData.parentElementId ? Number(formData.parentElementId) : undefined,
-        };
-        await catalogElementService.create(catalogId, createData);
-
-        const hasRelation = formData.parentCatalogId && formData.parentElementId;
-        const hasExternalKey = !!formData.externalKey;
-        let msg: string;
-        if (hasExternalKey) msg = `El elemento '${formData.elementName}' se ha creado exitosamente con su valor de conversión.`;
-        else if (hasRelation) msg = `El elemento '${formData.elementName}' se ha creado y relacionado exitosamente.`;
-        else msg = `El elemento '${formData.elementName}' se ha creado exitosamente.`;
-        showToast('success', msg, () =>
-          navigate(`/util/catalogos/catalogs/${id}/elementos`),
-        );
+        await runCreate();
       }
     } catch (error: any) {
       const backendMsg = error?.response?.data?.message || error?.response?.data?.error || 'Ocurrió un error al guardar. Intente nuevamente.';

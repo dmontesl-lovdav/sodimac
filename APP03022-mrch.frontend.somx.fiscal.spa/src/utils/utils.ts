@@ -272,15 +272,18 @@ export function mapCatalogResponseToFilterOptions(
   data: unknown
 ): SelectableOption<string>[] | null {
   const raw = data as Record<string, unknown> | null | undefined;
-  const rows: unknown[] = Array.isArray(data)
-    ? data
-    : Array.isArray(raw?.details)
-      ? (raw.details as unknown[])
-      : Array.isArray(raw?.content)
-        ? (raw.content as unknown[])
-        : Array.isArray(raw?.items)
-          ? (raw.items as unknown[])
-          : [];
+  let rows: unknown[];
+  if (Array.isArray(data)) {
+    rows = data;
+  } else if (Array.isArray(raw?.details)) {
+    rows = raw.details as unknown[];
+  } else if (Array.isArray(raw?.content)) {
+    rows = raw.content as unknown[];
+  } else if (Array.isArray(raw?.items)) {
+    rows = raw.items as unknown[];
+  } else {
+    rows = [];
+  }
 
   if (!rows.length) return null;
 
@@ -347,8 +350,8 @@ export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "T
   const rows: CatalogDetail[] = Array.isArray(data)
     ? data
     : Array.isArray(raw?.details)
-      ? (raw.details as unknown[])
-      : [];
+    ? (raw.details as unknown[])
+    : [];
   const mapped = rows
     .map((row) => ({
       label: row.description,
@@ -378,8 +381,6 @@ export async function fetchSystemParameters(): Promise<SystemParametersResponse 
 }
 
 export const getStandardFilename = (r: any) => {
-  const serie = r?.series || "";
-  const folio = r?.folio || "";
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -387,8 +388,28 @@ export const getStandardFilename = (r: any) => {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const timestamp = `${year}${month}${day}.${hours}${minutes}`;
-  return `${serie}-${folio}-${timestamp}`;
+  const parts = [r?.series, r?.folio, timestamp].filter(Boolean);
+  return parts.join("-");
 };
+
+export function buildFiscalSpaUrl(route: string, params?: URLSearchParams): string {
+  const base = (process.env.FBC_HOME+"fiscal#/fiscal/");
+  const cleanRoute = route.replace(/^\//, "");
+  const qs = params?.toString();
+  const suffix = qs ? `?${qs}` : "";
+
+  if (!base) {
+      return `/${cleanRoute}${suffix}`;
+  }
+
+  if (base.includes("#")) {
+      const [origin, hashPath = ""] = base.split("#");
+      const hashBase = hashPath.replace(/\/$/, "");
+      return `${origin}#${hashBase}/${cleanRoute}${suffix}`;
+  }
+
+  return `${base.replace(/\/$/, "")}/${cleanRoute}${suffix}`;
+}
 
 /** Nombre de archivo XML a partir del UUID del registro del grid (p. ej. `2635eeba-....xml`). */
 export function getXmlFileNameFromRow(row: {
@@ -396,10 +417,8 @@ export function getXmlFileNameFromRow(row: {
   fiscalUuid?: string | null;
   paymentsUuid?: string | null;
 }): string {
-  const uuid =
-    row.fiscalUuid?.trim()
-    row.invoiceUuid?.trim() ||
-    "";
+  const uuid = [row.fiscalUuid?.trim(), row.invoiceUuid?.trim(), row.paymentsUuid?.trim()]
+    .find(v => v) ?? "";
   return uuid ? `${uuid}.xml` : "documento.xml";
 }
 

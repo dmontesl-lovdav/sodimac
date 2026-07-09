@@ -167,7 +167,10 @@ export default function GenericSelectFloating({
 
   const rootClass = `fiscal-select-floating-root ${fullWidth ? 'fiscal-select-floating-root-fullWidth' : 'fiscal-select-floating-root-fixed'} ${className}`.trim();
   const buttonClass = `fiscal-select-floating-button ${open ? 'fiscal-select-floating-button-open' : ''} ${error ? 'fiscal-select-floating-button-error' : ''}`.trim();
-  const labelClass = `fiscal-select-floating-label ${hasValue || open ? 'fiscal-select-floating-label-floating' : 'fiscal-select-floating-label-resting'} ${error ? 'fiscal-select-floating-label-error' : open ? 'fiscal-select-floating-label-focused' : 'fiscal-select-floating-label-default'}`.trim();
+  const labelPositionClass = hasValue || open ? 'fiscal-select-floating-label-floating' : 'fiscal-select-floating-label-resting';
+  const openOrDefaultClass = open ? 'fiscal-select-floating-label-focused' : 'fiscal-select-floating-label-default';
+  const labelColorClass = error ? 'fiscal-select-floating-label-error' : openOrDefaultClass;
+  const labelClass = `fiscal-select-floating-label ${labelPositionClass} ${labelColorClass}`.trim();
 
   return (
     <div
@@ -225,10 +228,12 @@ export default function GenericSelectFloating({
                 id={`${id}-opt-${idx}`}
                 data-idx={idx}
                 role="option"
+                tabIndex={0}
                 aria-selected={selected}
                 onMouseEnter={() => setFocusIndex(idx)}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectValue(it.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectValue(it.value); } }}
                 className={`fiscal-select-floating-option ${focused ? 'fiscal-select-floating-option-focus' : ''} ${selected ? 'fiscal-select-floating-option-selected' : ''}`.trim()}
               >
                 {it.label}

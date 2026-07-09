@@ -299,6 +299,7 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
                 "addendum",      //Alias of entity
                 'addendum.receptionNumber = receipts.receptionNumber', // conditions of JOin
             )
+            .leftJoinAndSelect('receipts.addendumManual', 'addendumManual')
             .leftJoinAndSelect('addendum.invoice', 'invoice')
             .where('receipts.reception_id = CAST(:receptionId AS uuid)', { receptionId: uuid })
             .getOne();
@@ -306,11 +307,16 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
         if (row == null) {
             return response.json({ ...ResponseHandler.responseBuilder("", request.params.uuid, 0, StatusCodes.NOT_FOUND, true, ""), trace_id: getTraceId() });
         }
-
+        const rowExtended = row as ReceptionExtended;
         const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , request.authToken ?? '');
         const result = CatEstatusRecepcion.find(ite => ite.value === row.status?.toString());
+                // Folio fiscal (UUID SAT) de la recepción. Dos orígenes:
+        // - addenda manual (finanzas): addendum_manual.invoice_uuid Es el folio fiscal.
+        // - addenda fiscal: tenant_fiscal.addendum.invoice_uuid es la PK
+        //   interna, el folio fiscal vive en invoice.fiscal_uuid (por eso .invoice.fiscalUuid,
+        //   NO .invoiceUuid, que devolvía la PK interna = uuid equivocado).
         if(result){
-            (row as any).color = result.color;
+            rowExtended.color = result.color;
         }
 
         const order = await getPurchaseOrdersRepo()
@@ -320,12 +326,13 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
 
         const foundSupplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(order?.supplierNumber ?? 0, request.authToken ?? '');
         (order as any).supplier = foundSupplier;
-
+        rowExtended.supplier = foundSupplier;
+        rowExtended.vendorName = foundSupplier?.businessName ?? "";
         const data = {
-            ...row,
-            supplier: foundSupplier,
-            vendorName: foundSupplier?.businessName ?? "",
-            order: order
+            ...rowExtended,
+            order: order,
+            invoiceUuid: rowExtended.addendumManual?.invoiceId ??
+                         rowExtended.listAddendum?.[0]?.invoice?.fiscalUuid ?? ""
         };
 
         return response.json({ ...ResponseHandler.responseBuilder("", data, 0, StatusCodes.OK, true, ""), trace_id: getTraceId() });

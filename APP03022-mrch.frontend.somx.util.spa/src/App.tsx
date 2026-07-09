@@ -178,13 +178,16 @@ const App: React.FC = () => {
 const isLocalStandalone =
   typeof document !== 'undefined' && !!document.getElementById('root');
 
-let bootstrap: any = async () => { };
-let mount: any = async () => { };
-let unmount: any = async () => { };
-
-if (!isLocalStandalone) {
+const singleSpaLifecycles: {
+  bootstrap: any;
+  mount: any;
+  unmount: any;
+} = (() => {
+  if (isLocalStandalone) {
+    const noop = async () => { };
+    return { bootstrap: noop, mount: noop, unmount: noop };
+  }
   const singleSpaReact = require('single-spa-react').default;
-
   const lifecycles = singleSpaReact({
     React,
     ReactDOMClient,
@@ -194,11 +197,14 @@ if (!isLocalStandalone) {
       return <div>Error loading util module</div>;
     },
   });
+  return {
+    bootstrap: lifecycles.bootstrap,
+    mount: lifecycles.mount,
+    unmount: lifecycles.unmount,
+  };
+})();
 
-  bootstrap = lifecycles.bootstrap;
-  mount = lifecycles.mount;
-  unmount = lifecycles.unmount;
-}
+const { bootstrap, mount, unmount } = singleSpaLifecycles;
 
 export { bootstrap, mount, unmount };
 export default App;

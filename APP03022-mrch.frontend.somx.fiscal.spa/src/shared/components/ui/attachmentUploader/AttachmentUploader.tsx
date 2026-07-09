@@ -17,9 +17,14 @@ export interface AttachmentUploaderProps {
   className?: string;
 }
 
-const ERR_INVALID_TYPE = 1;
-const ERR_INVALID_SIZE = 2;
-const ERR_TOO_LONG_FILENAME = 3;
+import { getFileError, ERR_INVALID_TYPE, ERR_INVALID_SIZE, ERR_TOO_LONG_FILENAME } from "./attachmentHelpers";
+
+function buildErr(err?: number): React.ReactNode {
+  if (err === ERR_INVALID_TYPE) return <div className="fiscal-attachment-file-err-caption">Documento no soportado.</div>;
+  if (err === ERR_INVALID_SIZE) return <div className="fiscal-attachment-file-err-caption">Documento excede el tamaño máximo permitido.</div>;
+  if (err === ERR_TOO_LONG_FILENAME) return <div className="fiscal-attachment-file-err-caption">Nombre del archivo muy largo.</div>;
+  return null;
+}
 
 export default function AttachmentUploader({
   files,
@@ -75,26 +80,13 @@ export default function AttachmentUploader({
   };
 
   function addFiles(eventFiles: FileList | null): void {
+    if (!eventFiles) return;
     const current = Array.isArray(files) ? files.slice() : [];
     const existingNames = new Set(current.map((c) => c.name));
 
-    if (!eventFiles) return;
     for (const ef of Array.from(eventFiles)) {
-      if (!ef) continue;
-      if (existingNames.has(ef.name)) continue;
-
-      let err = ERR_INVALID_TYPE;
-      const lower = ef.name.toLowerCase();
-      for (const ext of validFileExtensions) {
-        if (lower.endsWith(`.${ext}`)) {
-          err = 0;
-          break;
-        }
-      }
-      if (ef.size > maxFileSize) err = ERR_INVALID_SIZE;
-      if (ef.name.length > maxFilenameLength) err = ERR_TOO_LONG_FILENAME;
-
-      (ef as AttachmentFile).err = err;
+      if (!ef || existingNames.has(ef.name)) continue;
+      (ef as AttachmentFile).err = getFileError(ef, validFileExtensions, maxFileSize, maxFilenameLength);
       existingNames.add(ef.name);
       current.push(ef as AttachmentFile);
     }
@@ -122,15 +114,6 @@ export default function AttachmentUploader({
     URL.revokeObjectURL(url);
   };
 
-  const buildErr = (err?: number): React.ReactNode =>
-    err === ERR_INVALID_TYPE ? (
-      <div className="fiscal-attachment-file-err-caption">Documento no soportado.</div>
-    ) : err === ERR_INVALID_SIZE ? (
-      <div className="fiscal-attachment-file-err-caption">Documento excede el tamaño máximo permitido.</div>
-    ) : err === ERR_TOO_LONG_FILENAME ? (
-      <div className="fiscal-attachment-file-err-caption">Nombre del archivo muy largo.</div>
-    ) : null;
-
   const acceptAttr = validFileExtensions.map((ext) => `.${ext}`).join(',');
   const list = files ?? [];
   const actionDisabled = !multiple && list.length > 0;
@@ -139,11 +122,13 @@ export default function AttachmentUploader({
 
   return (
     <div className={rootClass}>
-      <div
+      <button
+        type="button"
         className={actionClass}
         onDragOver={(e) => e.preventDefault()}
         onDrop={dropFiles}
         onClick={() => manualInputFile.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') manualInputFile.current?.click(); }}
       >
         <input
           ref={manualInputFile}
@@ -165,7 +150,7 @@ export default function AttachmentUploader({
           <div>Formatos soportados: {validFileExtensions.join(', ').toUpperCase()}.</div>
           <div>Peso máximo por archivo: {formatSize(maxFileSize)}.</div>
         </div>
-      </div>
+      </button>
 
       <div className="fiscal-attachment-files">
         {list.map((f) => (
@@ -180,17 +165,21 @@ export default function AttachmentUploader({
               <>
                 <div
                   className="fiscal-attachment-file-view"
-                  onClick={() => setPreviewFile(f)}
-                  title="Ver"
                   role="button"
+                  tabIndex={0}
+                  onClick={() => setPreviewFile(f)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewFile(f); }}
+                  title="Ver"
                 >
                   <img src={view} alt="Ver" />
                 </div>
                 <div
                   className="fiscal-attachment-file-download"
-                  onClick={() => downloadFile(f)}
-                  title="Descargar"
                   role="button"
+                  tabIndex={0}
+                  onClick={() => downloadFile(f)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') downloadFile(f); }}
+                  title="Descargar"
                 >
                   <img src={download} alt="Descargar" />
                 </div>
@@ -199,9 +188,11 @@ export default function AttachmentUploader({
 
             <div
               className="fiscal-attachment-file-delete"
-              onClick={() => removeFile(f.name)}
-              title="Eliminar"
               role="button"
+              tabIndex={0}
+              onClick={() => removeFile(f.name)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') removeFile(f.name); }}
+              title="Eliminar"
             >
               <img src={trash} alt="Borrar" />
             </div>
@@ -212,13 +203,17 @@ export default function AttachmentUploader({
       </div>
 
       {previewFile ? (
-        <div className="fiscal-attachment-modal-overlay" onClick={closePreview}>
-          <div className="fiscal-attachment-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fiscal-attachment-modal-overlay"
+          onClick={closePreview}
+          onKeyDown={(e) => { if (e.key === 'Escape') closePreview(); }}
+        >
+          <dialog open className="fiscal-attachment-modal" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="fiscal-attachment-modal-close" onClick={closePreview}>
               ×
             </button>
             <canvas ref={previewCanvas} className="fiscal-attachment-modal-canvas" />
-          </div>
+          </dialog>
         </div>
       ) : null}
     </div>

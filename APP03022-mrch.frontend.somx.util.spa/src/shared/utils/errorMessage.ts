@@ -37,6 +37,40 @@ const looksTechnical = (msg: string): boolean => {
   );
 };
 
+const extractBackendMessage = (data: unknown): string => {
+  if (typeof data !== 'object' || data === null) return '';
+  const d = data as { message?: unknown; error?: unknown; detail?: unknown };
+  if (typeof d.message === 'string' && d.message) return d.message;
+  if (typeof d.error === 'string' && d.error) return d.error;
+  if (typeof d.detail === 'string' && d.detail) return d.detail;
+  return '';
+};
+
+const extractAxiosErrorMessage = (
+  error: import('axios').AxiosError,
+  fallback: string,
+): string => {
+  const backendMsg = extractBackendMessage(error.response?.data);
+  if (backendMsg && !looksTechnical(backendMsg)) return backendMsg;
+
+  const status = error.response?.status;
+  if (status && STATUS_FRIENDLY[status]) return STATUS_FRIENDLY[status];
+
+  if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+    return 'No fue posible conectar con el servicio. Verifica tu conexión e inténtalo nuevamente.';
+  }
+  return fallback;
+};
+
+const extractObjectMessage = (error: unknown): string | null => {
+  if (typeof error !== 'object' || error === null) return null;
+  if (!('message' in error)) return null;
+  const raw = (error as { message: unknown }).message;
+  if (typeof raw !== 'string') return null;
+  if (looksTechnical(raw)) return null;
+  return raw;
+};
+
 export const extractApiErrorMessage = (
   error: unknown,
   options: FriendlyMessageOptions = {},
@@ -44,46 +78,13 @@ export const extractApiErrorMessage = (
   const fallback = options.fallback ?? DEFAULT_FALLBACK;
 
   if (axios.isAxiosError(error)) {
-    const status = error.response?.status;
-    const data = error.response?.data as
-      | { message?: string; error?: string; detail?: string; errors?: unknown }
-      | undefined;
-
-    const backendMsg =
-      (typeof data?.message === 'string' && data.message) ||
-      (typeof data?.error === 'string' && data.error) ||
-      (typeof data?.detail === 'string' && data.detail) ||
-      '';
-
-    if (backendMsg && !looksTechnical(backendMsg)) {
-      return backendMsg;
-    }
-
-    if (status && STATUS_FRIENDLY[status]) {
-      return STATUS_FRIENDLY[status];
-    }
-
-    if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
-      return 'No fue posible conectar con el servicio. Verifica tu conexión e inténtalo nuevamente.';
-    }
-
-    return fallback;
+    return extractAxiosErrorMessage(error, fallback);
   }
 
   if (error instanceof Error) {
-    if (!looksTechnical(error.message)) return error.message;
-    return fallback;
+    return looksTechnical(error.message) ? fallback : error.message;
   }
 
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as { message: unknown }).message === 'string'
-  ) {
-    const msg = (error as { message: string }).message;
-    if (!looksTechnical(msg)) return msg;
-  }
-
-  return fallback;
+  const objMsg = extractObjectMessage(error);
+  return objMsg ?? fallback;
 };

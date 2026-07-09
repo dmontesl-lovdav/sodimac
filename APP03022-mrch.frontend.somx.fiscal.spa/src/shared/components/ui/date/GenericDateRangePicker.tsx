@@ -15,8 +15,7 @@ import './styles/GenericDateRangePicker.css';
 
 export type DateRange = [Date | null, Date | null];
 
-type Size = 'sm' | 'md' | 'lg';
-
+export type Size = 'sm' | 'md' | 'lg';
 export type DatePickerSize = Size;
 
 export type GenericDateRangePickerProps = {

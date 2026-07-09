@@ -425,6 +425,55 @@ const ElementsIcon = () => (
   </svg>
 );
 
+const toDdMmYyyy = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const datePart = iso.split('T')[0];
+  if (!datePart) return '';
+  return datePart.split('-').reverse().join('-');
+};
+
+const mapApiElementToLocal = (apiElement: any): CatalogElement => ({
+  id: String(apiElement.id).padStart(4, '0'),
+  key: apiElement.key || apiElement.element || '',
+  element: apiElement.element || apiElement.nombre || '',
+  value: apiElement.value || apiElement.valor || '',
+  startDate: toDdMmYyyy(apiElement.validFrom),
+  endDate: toDdMmYyyy(apiElement.validTo),
+  status: apiElement.status === 1 ? 'Activo' : 'Inactivo',
+  parentCatalogId: apiElement.parentCatalogId ? String(apiElement.parentCatalogId) : null,
+  parentCatalogName: apiElement.parentCatalogName || null,
+  parentElementId: apiElement.parentElementId ? String(apiElement.parentElementId) : null,
+  parentElementName: apiElement.parentElementName || null,
+  createdBy: apiElement.createdBy || 'system',
+  createdAt: toDdMmYyyy(apiElement.createdAt),
+  updatedBy: apiElement.updatedBy || null,
+  updatedAt: apiElement.updatedAt ? toDdMmYyyy(apiElement.updatedAt) : null,
+});
+
+const buildSearchParams = (
+  filters: {
+    idElement: string;
+    key: string;
+    element: string;
+    value: string;
+    parentCatalogId: string;
+    parentElementId: string;
+    status: string;
+  },
+  page: number,
+  pageSize: number,
+): CatalogElementSearchParams => {
+  const searchParams: CatalogElementSearchParams = { page, pageSize };
+  if (filters.idElement) searchParams.idElemento = parseInt(filters.idElement);
+  if (filters.key) searchParams.clave = filters.key;
+  if (filters.element) searchParams.elemento = filters.element;
+  if (filters.value) searchParams.valor = filters.value;
+  if (filters.parentCatalogId) searchParams.idCatalogoPadre = parseInt(filters.parentCatalogId);
+  if (filters.parentElementId) searchParams.idElementoPadre = parseInt(filters.parentElementId);
+  if (filters.status) searchParams.estatus = filters.status === 'Activo' ? 1 : 0;
+  return searchParams;
+};
+
 export default function CatalogElementsContainer() {
   const navigate = useNavigate();
   const { showError, ModalNode } = useModalNotification();
@@ -458,24 +507,6 @@ export default function CatalogElementsContainer() {
   const [filterParentElements, setFilterParentElements] = useState<Array<{ id: string; name: string }>>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  const mapApiElementToLocal = (apiElement: any): CatalogElement => ({
-    id: String(apiElement.id).padStart(4, '0'),
-    key: apiElement.key || apiElement.element || '',
-    element: apiElement.element || apiElement.nombre || '',
-    value: apiElement.value || apiElement.valor || '',
-    startDate: apiElement.validFrom ? apiElement.validFrom.split('T')[0].split('-').reverse().join('-') : '',
-    endDate: apiElement.validTo ? apiElement.validTo.split('T')[0].split('-').reverse().join('-') : '',
-    status: apiElement.status === 1 ? 'Activo' : 'Inactivo',
-    parentCatalogId: apiElement.parentCatalogId ? String(apiElement.parentCatalogId) : null,
-    parentCatalogName: apiElement.parentCatalogName || null,
-    parentElementId: apiElement.parentElementId ? String(apiElement.parentElementId) : null,
-    parentElementName: apiElement.parentElementName || null,
-    createdBy: apiElement.createdBy || 'system',
-    createdAt: apiElement.createdAt ? apiElement.createdAt.split('T')[0].split('-').reverse().join('-') : '',
-    updatedBy: apiElement.updatedBy || null,
-    updatedAt: apiElement.updatedAt ? apiElement.updatedAt.split('T')[0].split('-').reverse().join('-') : null,
-  });
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -538,18 +569,7 @@ export default function CatalogElementsContainer() {
     setIsSearching(true);
     try {
       const effectivePageSize = overridePageSize ?? itemsPerPage;
-      const searchParams: CatalogElementSearchParams = {
-        page: page,
-        pageSize: effectivePageSize,
-      };
-
-      if (filters.idElement) searchParams.idElemento = parseInt(filters.idElement);
-      if (filters.key) searchParams.clave = filters.key;
-      if (filters.element) searchParams.elemento = filters.element;
-      if (filters.value) searchParams.valor = filters.value;
-      if (filters.parentCatalogId) searchParams.idCatalogoPadre = parseInt(filters.parentCatalogId);
-      if (filters.parentElementId) searchParams.idElementoPadre = parseInt(filters.parentElementId);
-      if (filters.status) searchParams.estatus = filters.status === 'Activo' ? 1 : 0;
+      const searchParams = buildSearchParams(filters, page, effectivePageSize);
 
       const response = await catalogElementService.search(parseInt(id), searchParams);
       
@@ -676,28 +696,13 @@ export default function CatalogElementsContainer() {
     setShowExportMenu(false);
 
     try {
-      let dataToExport: CatalogElement[] = [];
-
-      const searchParams: CatalogElementSearchParams = {
-        page: 1,
-        pageSize: totalElements || 1000,
-      };
-      if (filters.idElement) searchParams.idElemento = parseInt(filters.idElement);
-      if (filters.key) searchParams.clave = filters.key;
-      if (filters.element) searchParams.elemento = filters.element;
-      if (filters.value) searchParams.valor = filters.value;
-      if (filters.parentCatalogId) searchParams.idCatalogoPadre = parseInt(filters.parentCatalogId);
-      if (filters.parentElementId) searchParams.idElementoPadre = parseInt(filters.parentElementId);
-      if (filters.status) searchParams.estatus = filters.status === 'Activo' ? 1 : 0;
-
+      const searchParams = buildSearchParams(filters, 1, totalElements || 1000);
       const response = await catalogElementService.search(parseInt(id), searchParams);
       const allElements = response.items.map(mapApiElementToLocal);
 
-      if (selectedIds.size > 0) {
-        dataToExport = allElements.filter((el) => selectedIds.has(el.id));
-      } else {
-        dataToExport = allElements;
-      }
+      const dataToExport = selectedIds.size > 0
+        ? allElements.filter((el) => selectedIds.has(el.id))
+        : allElements;
 
       const columns = [
         { key: 'id', label: 'ID Elemento' },

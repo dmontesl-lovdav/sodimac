@@ -93,7 +93,8 @@ export default function GenericModal({
           </svg>
           <p className="fiscal-modal-loading-text">{message}</p>
         </div>
-      ) : variant === 'confirm' ? (
+      ) : null}
+      {variant === 'confirm' ? (
         <div className="fiscal-modal-alert-container">
           <div className="fiscal-modal-icon-container fiscal-modal-icon-container-info">
             <InfoIcon className="fiscal-modal-icon fiscal-modal-icon-info" />
@@ -109,7 +110,8 @@ export default function GenericModal({
             </button>
           </div>
         </div>
-      ) : (
+      ) : null}
+      {variant !== 'loading' && variant !== 'confirm' ? (
         <div className="fiscal-modal-alert-container">
           <div className={iconContainerClass}>
             {severity === 'success' && <SuccessIcon className={iconClass} />}
@@ -127,7 +129,7 @@ export default function GenericModal({
             {buttonText}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

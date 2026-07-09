@@ -12,6 +12,7 @@ export interface CatalogDetail {
   validFrom: string | null;
   validTo: string | null;
   attributes: Record<string, unknown> | null;
+  details: any[];
 }
 
 export type SelectableOption<T = string> = {
@@ -43,25 +44,26 @@ export function parseDisplayDate(
   const s = String(value).trim();
   if (!s) return null;
 
+  // dd/mm/yyyy o dd-mm-yyyy
   const slash = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (slash) {
     return new Date(Number(slash[3]), Number(slash[2]) - 1, Number(slash[1]));
   }
 
-  const isoDate = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoDate) {
-    const hasTime = s.includes("T") || /\d{2}:\d{2}/.test(s);
-    if (!hasTime) {
-      return new Date(
-        Number(isoDate[1]),
-        Number(isoDate[2]) - 1,
-        Number(isoDate[3])
-      );
-    }
+  // yyyy-mm-dd con o sin hora — siempre parseo manual para ignorar timezone
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (iso) {
+    return new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4] ?? 0),
+      Number(iso[5] ?? 0),
+      Number(iso[6] ?? 0),
+    );
   }
 
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return null;
 }
 
 /** Fecha para grids y detalle: `dd/mm/yyyy`. Con `includeHour`: `dd/mm/yyyy HH:mm`. */
@@ -471,41 +473,6 @@ export type CatalogDetailRow = {
   description?: string;
 };
 
-/** Extrae `details` de respuestas tipo `{ code, details: [...] }`. */
-export function parseCatalogDetailsResponse(
-  data: unknown
-): CatalogDetailRow[] {
-  const root = data as { details?: unknown[] } | unknown[] | null;
-  const rows = Array.isArray(root)
-    ? root
-    : Array.isArray(root?.details)
-      ? root.details
-      : [];
-
-  return rows
-    .map((rowUnknown) => {
-      const row = rowUnknown as Record<string, unknown>;
-      return {
-        key: row.key != null ? String(row.key) : undefined,
-        internalStatus:
-          row.internalStatus != null
-            ? Number(row.internalStatus)
-            : undefined,
-        externalKey:
-          row.externalKey != null ? String(row.externalKey) : null,
-        value: row.value != null ? String(row.value) : undefined,
-        description:
-          row.description != null ? String(row.description) : undefined,
-      };
-    })
-    .filter(
-      (row) =>
-        row.description != null ||
-        row.internalStatus != null ||
-        row.value != null
-    );
-}
-
 export function resolveCatalogDetailLabel(
   id: number | string | undefined | null,
   catalog: CatalogDetailRow[]
@@ -534,8 +501,9 @@ export async function fetchCatalogDetailMessage(
   const data = await fetchCatalog(`${normalizedCatalog}/details`);
   if (!data) return fallback;
 
-  const found = parseCatalogDetailsResponse(data).find(
-    (row) => row.key === detailKey
+  //@ts-ignore
+  const found = (data as any)?.details?.find(
+    (row: any) => row.key === detailKey
   );
   const description = found?.description?.trim() || found?.value?.trim();
   return description || fallback;
@@ -620,8 +588,6 @@ export async function fetchCatTipoRebateCatalog(): Promise<
 }
 
 export const getStandardFilename = (r: any) => {
-  const serie = r?.series || "";
-  const folio = r?.folio || "";
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -629,7 +595,8 @@ export const getStandardFilename = (r: any) => {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const timestamp = `${year}${month}${day}.${hours}${minutes}`;
-  return `${serie}-${folio}-${timestamp}`;
+  const parts = [r?.series, r?.folio, timestamp].filter(Boolean);
+  return parts.join("-");
 }
 
 export const MONTHS: { value: number; label: string }[] = [

@@ -242,7 +242,7 @@ export function useFinanceListRefetchOnReturn<T>(
         const saved = readFinanceListFilters<T>(keys.filters);
         if (!saved) return;
         firedRef.current = true;
-        void refetchRef.current(saved);
+        Promise.resolve(refetchRef.current(saved)).catch(() => {});
     }, [returningFromDetail, keys.filters]);
 }
 

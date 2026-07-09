@@ -53,7 +53,7 @@ function resolveToken(): string | null {
     if (typeof storeToken === 'string' && storeToken.trim()) return storeToken;
     const envToken =
         process.env.REACT_APP_AUTH_DEFAULT_TOKEN || process.env.AUTH_DEFAULT_TOKEN;
-    return envToken && envToken.trim() ? envToken : null;
+    return envToken?.trim() ? envToken : null;
 }
 
 export const securityService = {

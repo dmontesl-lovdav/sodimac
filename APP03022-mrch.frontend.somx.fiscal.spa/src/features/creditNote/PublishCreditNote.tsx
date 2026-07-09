@@ -1,19 +1,20 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { TraceFolioPayload } from "@/services/TraceabilityClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { GenericButton, GenericModal } from "@/shared/components/ui";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
-import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, SystemParameter } from "@/utils/utils";
+import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, buildFiscalSpaUrl, SystemParameter } from "@/utils/utils";
 import "@/shared/components/ui/alerts/Alerts.css";
 import type { Invoice } from "../invoice/interfaces";
 import { createCreditNotePublishClient } from "./api/CreditNotePublishClient";
 import { BREADCRUMB, MAX_BYTES, MAX_MB } from "./parts/constants";
 import { parsePublishQuery, isCommercialDiscountFlow } from "./parts/publishQuery";
-import { parseValidatedXml, getXmlValidationMessage } from "./parts/parseValidatedXml";
+import { parseValidatedXml } from "./parts/parseValidatedXml";
+import { resolveXmlValidationCommand } from "./utils/resolveXmlValidationCommand";
 import { buildPublishFormData } from "./parts/buildPublishFormData";
 import { useRelatedInvoice } from "./parts/useRelatedInvoice";
 import RelatedInvoiceGrid from "./parts/RelatedInvoiceGrid";
@@ -25,6 +26,29 @@ import "./PublishCreditNote.css";
 
 const PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT = 12;
 const PARAM_OPTIONAL_PDF_CREDIT_NOTE = 11;
+
+function checkSystemParameterValue(
+  systemParameters: SystemParameter[] | null,
+  parameterId: number
+): { value: string; isEnabled: boolean } {
+  const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
+  if (!parameter) return { value: "", isEnabled: false };
+  return { value: String(parameter.value), isEnabled: parameter.status == "1" };
+}
+
+function getXmlFileError(file: File, maxBytes: number, maxMb: number): string | null {
+  if (file.size > maxBytes) return `El archivo no debe exceder ${maxMb} MB.`;
+  if (!file.name.toLowerCase().endsWith(".xml")) return "El archivo XML es requerido y debe tener extensión .xml.";
+  return null;
+}
+
+function resolveLoadingMessage(isUploading: boolean, isValidating: boolean, loadingInvoice: boolean): string {
+  if (isUploading) return "Procesando nota de crédito…";
+  if (isValidating) return "Validando nota de crédito…";
+  if (loadingInvoice) return "Cargando factura relacionada…";
+  return "Cargando información…";
+}
+
 
 export default function PublishCreditNote() {
   const traceFolioPayload = useMemo<TraceFolioPayload>(
@@ -51,13 +75,13 @@ export default function PublishCreditNote() {
 
 function PublishCreditNoteContent() {
   const location = useLocation();
-  const navigate = useNavigate();
   const publishClient = useMemo(() => createCreditNotePublishClient(), []);
   const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
   const isDiscountFlow = isCommercialDiscountFlow(query);
 
   const xmlInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const formSessionRef = useRef(0);
 
   const [relatedInvoiceUuid, setRelatedInvoiceUuid] = useState("");
   const { invoice: relatedInvoice, loading: loadingInvoice } =
@@ -70,51 +94,41 @@ function PublishCreditNoteContent() {
   const [isValidCreditNote, setIsValidCreditNote] = useState(false);
   const [dataMsg, setDataMsg] = useState("");
   const [isFinished, setIsFinished] = useState(false);
+  const [publishFailed, setPublishFailed] = useState(false);
   const [registeredFiscalUuid, setRegisteredFiscalUuid] = useState("");
   const [finishModal, setFinishModal] = useState<FinishModalState | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-
-  const { traceId, addLog, headerActions, noTraceWarning } = useTraceFolio();
-  const hasTraceId = Boolean(traceId);
-  const uploadsLocked = isFinished || !hasTraceId;
-
   const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
+  const [paramsLoading, setParamsLoading] = useState(true);
   const [optionalPdf, setOptionalPdf] = useState({ value: "0", isEnabled: false });
 
-
-  const checkSystemParameterValue = (parameterId: number): { value: string; isEnabled: boolean } => {
-    const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
-    if (!parameter) {
-        return { value: "", isEnabled: false };
-    }
-
-    return {
-        value: String(parameter.value),
-        isEnabled: parameter.status == "1",
-    };
-};
+  const { traceId, addLog, headerActions, noTraceWarning, traceLoading } = useTraceFolio();
+  const hasTraceId = Boolean(traceId);
+  const isPageLoading = traceLoading || paramsLoading;
+  const uploadsLocked = isFinished || !hasTraceId || isPageLoading;
 
   useEffect(() => {
-    const fetchSystemParametersData = async () => {
-      const response = await fetchSystemParameters();
-      setSystemParameters(response?.data ?? null);
-    };
-    fetchSystemParametersData();
+    void fetchSystemParameters()
+      .then((response) => setSystemParameters(response?.data ?? null))
+      .finally(() => setParamsLoading(false));
   }, []);
 
   useEffect(() => {
-    setOptionalPdf(checkSystemParameterValue((isDiscountFlow ? PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT : PARAM_OPTIONAL_PDF_CREDIT_NOTE)));
+    const paramId = isDiscountFlow ? PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT : PARAM_OPTIONAL_PDF_CREDIT_NOTE;
+    setOptionalPdf(checkSystemParameterValue(systemParameters, paramId));
   }, [systemParameters, isDiscountFlow]);
 
   const canPublish =
     hasTraceId &&
+    !isPageLoading &&
     Boolean(xmlFile) &&
     Boolean(creditNoteData) &&
     isValidCreditNote &&
     !isUploading &&
     !isFinished &&
+    !publishFailed &&
     (isDiscountFlow ? Boolean(query.supplierNumber.trim()) : Boolean(relatedInvoice));
 
   const showAlert = useCallback((message: string) => {
@@ -128,7 +142,7 @@ function PublishCreditNoteContent() {
   };
 
   const handleClearForm = useCallback(() => {
-    if (isFinished) return;
+    formSessionRef.current += 1;
     resetFileInputs();
     setXmlFile(null);
     setPdfFile(null);
@@ -137,24 +151,28 @@ function PublishCreditNoteContent() {
     setIsValidCreditNote(false);
     setDataMsg("");
     setIsValidating(false);
-  }, [isFinished]);
+    setRegisteredFiscalUuid("");
+    setIsFinished(false);
+    setPublishFailed(false);
+    setAlertVisible(false);
+    setAlertMessage("");
+    setFinishModal(null);
+  }, []);
 
-  const handleViewInvoice = useCallback(
-    (invoice: Invoice) => {
-      const uuid = invoice.fiscalUuid ?? invoice.invoiceUuid;
-      if (!uuid) return;
-      const end = formatLocalDateStr(new Date());
-      const start = new Date();
-      start.setMonth(start.getMonth() - 6);
-      navigate(
-        `/fiscal/facturas?uuid=${encodeURIComponent(uuid)}&start=${formatLocalDateStr(start)}&end=${end}`
-      );
-    },
-    [navigate]
-  );
+  const handleViewInvoice = useCallback((invoice: Invoice) => {
+    const uuid = invoice.fiscalUuid ?? invoice.invoiceUuid;
+    if (!uuid) return;
+    const end = formatLocalDateStr(new Date(invoice.createdAt ?? ""));
+    const start = new Date(invoice.createdAt ?? "");
+    const url = buildFiscalSpaUrl(`facturas?uuid=${encodeURIComponent(uuid)}&start=${formatLocalDateStr(start)}&end=${end}`);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isFinished) return;
+
+    const session = formSessionRef.current;
+    const isActive = () => session === formSessionRef.current;
 
     setDataMsg("");
     setCreditNoteData(null);
@@ -163,31 +181,24 @@ function PublishCreditNoteContent() {
 
     const selectedFile = e.target.files?.[0] ?? null;
     if (!selectedFile) {
-      setXmlFile(null);
-      setIsValidating(false);
+      if (isActive()) { setXmlFile(null); setIsValidating(false); }
       return;
     }
 
-    if (selectedFile.size > MAX_BYTES) {
-      showAlert(`El archivo no debe exceder ${MAX_MB} MB.`);
+    const fileError = getXmlFileError(selectedFile, MAX_BYTES, MAX_MB);
+    if (fileError) {
+      showAlert(fileError);
       resetFileInputs();
-      setXmlFile(null);
-      setIsValidating(false);
+      if (isActive()) { setXmlFile(null); setIsValidating(false); }
       return;
     }
 
-    if (!selectedFile.name.toLowerCase().endsWith(".xml")) {
-      showAlert("El archivo XML es requerido y debe tener extensión .xml.");
-      resetFileInputs();
-      setXmlFile(null);
-      setIsValidating(false);
-      return;
-    }
-
-    setXmlFile(selectedFile);
+    if (isActive()) setXmlFile(selectedFile);
 
     try {
       const data = await publishClient.validateXml(selectedFile);
+      if (!isActive()) return;
+
       const parsed = parseValidatedXml(data);
       if (!parsed) {
         showAlert("No fue posible leer la información del XML.");
@@ -196,39 +207,22 @@ function PublishCreditNoteContent() {
       }
 
       setCreditNoteData(parsed);
-
-      if (parsed.tipoDeComprobante !== "E") {
-        setIsValidCreditNote(false);
-        setDataMsg("");
-        showAlert(
-          "El archivo XML no corresponde a una nota de crédito válida. Por favor, valida el documento antes de continuar."
-        );
-        return;
-      }
-
-      const validation = getXmlValidationMessage(data);
-      setIsValidCreditNote(validation.ok);
-
-      if (validation.ok) {
-        setDataMsg(validation.message);
-        setRelatedInvoiceUuid(parsed.uuidRelacionado);
-        if (!parsed.uuidRelacionado.trim()) {
-          showAlert("No se encontró la factura relacionada, verifique el archivo de la nota de crédito.");
-        }
-      } else {
-        setDataMsg("");
-        showAlert(validation.message);
-      }
+      const cmd = resolveXmlValidationCommand(data, parsed);
+      setIsValidCreditNote(cmd.isValid);
+      setDataMsg(cmd.dataMsg);
+      setRelatedInvoiceUuid(cmd.relatedInvoiceUuid);
+      if (cmd.alert) showAlert(cmd.alert);
     } catch (error: unknown) {
+      if (!isActive()) return;
       showAlert(getErrorMessage(error, "No fue posible validar el archivo XML."));
       setIsValidCreditNote(false);
     } finally {
-      setIsValidating(false);
+      if (isActive()) setIsValidating(false);
     }
   };
 
   const handlePublish = useCallback(async () => {
-    if (!xmlFile || !traceId || !creditNoteData || isFinished) return;
+    if (!xmlFile || !traceId || !creditNoteData || isFinished || publishFailed) return;
     if (!optionalPdf.isEnabled) {
       showAlert("El archivo PDF es requerido para publicar la nota de crédito.");
       return;
@@ -242,6 +236,7 @@ function PublishCreditNoteContent() {
     }
 
     setIsUploading(true);
+    setPublishFailed(false);
 
     try {
       const formData = buildPublishFormData({
@@ -253,9 +248,9 @@ function PublishCreditNoteContent() {
       });
 
       const response = await publishClient.publishCreditNote(formData);
-      setIsFinished(true);
 
       if (isPublishSuccessful(response)) {
+        setIsFinished(true);
         const fiscalUuid = String(response.fiscalUuid).trim();
         setRegisteredFiscalUuid(fiscalUuid);
         setFinishModal(buildFinishModal(response));
@@ -272,6 +267,7 @@ function PublishCreditNoteContent() {
       }
 
       setFinishModal(buildFinishModal(response));
+      setPublishFailed(true);
       addLog(
         response.message || `Transacción ${traceId}`,
         "CREDIT_NOTE",
@@ -280,7 +276,7 @@ function PublishCreditNoteContent() {
         response
       );
     } catch (error: unknown) {
-      setIsFinished(true);
+      setPublishFailed(true);
       const message = getErrorMessage(error, "Error al publicar la nota de crédito");
       setFinishModal({ severity: "error", title: "Error", message });
       addLog(message, "CREDIT_NOTE", "PUBLISH_CREDIT_NOTE", "ERROR", error);
@@ -293,6 +289,7 @@ function PublishCreditNoteContent() {
     traceId,
     creditNoteData,
     isFinished,
+    publishFailed,
     query,
     relatedInvoice,
     publishClient,
@@ -303,9 +300,14 @@ function PublishCreditNoteContent() {
   const uploadLabelClass = (extraDisabled = false) =>
     `pcn-upload-label${uploadsLocked || extraDisabled ? " pcn-upload-label--disabled" : ""}`;
 
+  const showLoadingModal = isPageLoading || isValidating || loadingInvoice || isUploading;
+  const loadingMessage = resolveLoadingMessage(isUploading, isValidating, loadingInvoice);
+
   return (
     <div>
-      {isUploading && <GenericModal visible variant="loading" message="Procesando…" />}
+      {showLoadingModal && (
+        <GenericModal visible variant="loading" message={loadingMessage} />
+      )}
 
       <GenericModal
         visible={!!finishModal}
@@ -397,9 +399,10 @@ function PublishCreditNoteContent() {
               </label>
             </div>
 
-            {registeredFiscalUuid ? (
-              <PublishResultNotice fiscalUuid={registeredFiscalUuid} />
-            ) : dataMsg.trim() !== "" ? (
+            {registeredFiscalUuid
+              ? <PublishResultNotice fiscalUuid={registeredFiscalUuid} />
+              : null}
+            {!registeredFiscalUuid && dataMsg.trim() !== "" ? (
               <p
                 className={`pcn-notice pcn-notice--${isValidCreditNote ? "success" : "error"}`}
                 role="status"

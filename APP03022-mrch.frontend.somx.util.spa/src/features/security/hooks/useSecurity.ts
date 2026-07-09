@@ -202,9 +202,9 @@ export const useCreateUserAttribute = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateUserAttributePayload) => securityService.createUserAttribute(payload),
-    onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: securityKeys.all });
-      void queryClient.invalidateQueries({
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: securityKeys.all });
+      await queryClient.invalidateQueries({
         queryKey: [...securityKeys.all, 'user-attributes', variables.userId],
       });
     },

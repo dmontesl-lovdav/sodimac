@@ -35,50 +35,59 @@ export default function EditConversionForm() {
   }, []);
 
   useEffect(() => {
-    if (conversionId) {
-      setIsLoading(true);
-      conversionService.getById(parseInt(conversionId))
-        .then((conv: any) => {
-          const targetCatId = conv.idCatalogoOrigen || '';
-          const targetElemId = String(conv.idElemento || conv.idElementoDestino || '');
+    if (!conversionId) return;
 
-          catalogService.search({ page: 1, pageSize: 100, estatus: 1 })
-            .then(catRes => {
-              const cats = catRes.items || [];
-              setCatalogs(cats);
-              const matchedCat = cats.find((c: any) => c.name === conv.catalogoOrigen);
-              const catId = matchedCat ? String(matchedCat.id) : String(targetCatId);
+    const loadElementsAndSelected = async (
+      catId: string,
+      targetElemId: string,
+      matchedCatName: string,
+    ) => {
+      try {
+        const elemRes = await catalogElementService.search(parseInt(catId), { page: 1, pageSize: 100, estatus: 1 });
+        const items = elemRes.items || [];
+        setElements(items);
+        const elem = items.find((e: any) => String(e.id) === targetElemId);
+        if (!elem) return;
+        setSelectedElement({
+          id: elem.id,
+          nombre: elem.element || elem.key || '',
+          catalogoOrigen: matchedCatName,
+          estatus: elem.status === 1 ? 'Activo' : 'Inactivo',
+          fechaInicioVigencia: elem.validFrom || '-',
+          fechaFinVigencia: elem.validTo || '-',
+          valor: elem.value || '-',
+        });
+      } catch {
+        /* noop */
+      }
+    };
 
-              setSelectedCatalogId(catId);
-              setOriginalCatalogId(catId);
-              setSelectedElementId(targetElemId);
-              setOriginalElementId(targetElemId);
+    const loadCatalogsAndInit = async (conv: any) => {
+      const targetCatId = conv.idCatalogoOrigen || '';
+      const targetElemId = String(conv.idElemento || conv.idElementoDestino || '');
+      try {
+        const catRes = await catalogService.search({ page: 1, pageSize: 100, estatus: 1 });
+        const cats = catRes.items || [];
+        setCatalogs(cats);
+        const matchedCat = cats.find((c: any) => c.name === conv.catalogoOrigen);
+        const catId = matchedCat ? String(matchedCat.id) : String(targetCatId);
+        setSelectedCatalogId(catId);
+        setOriginalCatalogId(catId);
+        setSelectedElementId(targetElemId);
+        setOriginalElementId(targetElemId);
+        if (catId) {
+          await loadElementsAndSelected(catId, targetElemId, matchedCat?.name || conv.catalogoOrigen || '');
+        }
+      } catch {
+        /* noop */
+      }
+    };
 
-              if (catId) {
-                catalogElementService.search(parseInt(catId), { page: 1, pageSize: 100, estatus: 1 })
-                  .then(elemRes => {
-                    setElements(elemRes.items || []);
-                    const elem = (elemRes.items || []).find((e: any) => String(e.id) === targetElemId);
-                    if (elem) {
-                      setSelectedElement({
-                        id: elem.id,
-                        nombre: elem.element || elem.key || '',
-                        catalogoOrigen: matchedCat?.name || conv.catalogoOrigen || '',
-                        estatus: elem.status === 1 ? 'Activo' : 'Inactivo',
-                        fechaInicioVigencia: elem.validFrom || '-',
-                        fechaFinVigencia: elem.validTo || '-',
-                        valor: elem.value || '-',
-                      });
-                    }
-                  })
-                  .catch(() => {});
-              }
-            })
-            .catch(() => {});
-        })
-        .catch(() => setMessage({ text: 'Error al cargar la conversión.', type: 'error' }))
-        .finally(() => setIsLoading(false));
-    }
+    setIsLoading(true);
+    conversionService.getById(parseInt(conversionId))
+      .then(loadCatalogsAndInit)
+      .catch(() => setMessage({ text: 'Error al cargar la conversión.', type: 'error' }))
+      .finally(() => setIsLoading(false));
   }, [conversionId]);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage, getStandardFilename } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -16,8 +16,6 @@ import {
   InvoiceFilters,
   EMPTY_INVOICE,
   INVOICE_STATUS_RECHAZO_CONTABLE,
-  INVOICE_PENDIENTE_ADDENDA,
-  INVOICE_RECIBIDO_PARCIAL,
   type Invoice,
   INVOICE_WRONG_DATA,
   INVOICE_ERROR_DATA,
@@ -65,42 +63,48 @@ const columns: DataGridColumn<Invoice>[] = [
 
 const MSG_REPROCESO_DEFAULT = "¿Desea volver a procesar esta factura para intentar contabilizarla nuevamente? Esta acción reemplazará el intento anterior.";
 
+const hasReceptionDates = (f: InvoiceFilters) =>
+  Boolean(f.fechaInicioRecepcion?.trim() && f.fechaFinalRecepcion?.trim());
+
+const EMPTY_GRID_RESULT = {
+  content: [] as Invoice[],
+  totalElements: 0,
+  totalPages: 0,
+  page: 0,
+};
+
 export default function InvoicesGrid() {
   const location = useLocation();
   const navigate = useNavigate();
   const returningFromDetail = useFiscalListScreenSession(FISCAL_LIST_KEYS.invoices);
 
-  const customFilters = useMemo(() => {
+  const customFilters = useMemo((): Partial<InvoiceFilters> => {
     const params = new URLSearchParams(location.search);
-    const filtersOnUrl: Partial<InvoiceFilters> = {
+    return {
       uuid: params.get("uuid") || undefined,
       fechaInicioRecepcion: params.get("start") || undefined,
       fechaFinalRecepcion: params.get("end") || undefined,
+      idProveedor: params.get("supplierNumber") || undefined,
     };
-    return filtersOnUrl;
   }, [location.search]);
 
-  const initialFilters = useMemo<InvoiceFilters>(() => {
-    return {
-      ...EMPTY_INVOICE,
-      ...customFilters,
-    };
-  }, [customFilters]);
+  const initialFilters = useMemo<InvoiceFilters>(
+    () => ({ ...EMPTY_INVOICE, ...customFilters }),
+    [customFilters]
+  );
 
   const [filters, setFilters] = useState<InvoiceFilters>(EMPTY_INVOICE);
   const [filtersReady, setFiltersReady] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchToken, setSearchToken] = useState(0);
   const [statusInvoices, setStatusInvoices] = useState<{ label: string; value: string }[]>([]);
-  const [providerTypeOptions, setProviderTypeOptions] = useState<
-    { label: string; value: string }[]
-  >([]);
+  const [providerTypeOptions, setProviderTypeOptions] = useState<{ label: string; value: string }[]>([]);
   const [reprocessConfirmOpen, setReprocessConfirmOpen] = useState(false);
   const [reprocessConfirmRow, setReprocessConfirmRow] = useState<Invoice | null>(null);
   const [reprocessConfirmMessage, setReprocessConfirmMessage] = useState(MSG_REPROCESO_DEFAULT);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [cancelConfirmRow, setCancelConfirmRow] = useState<Invoice | null>(null);
   const [cancelConfirmMessage, setCancelConfirmMessage] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [processLoading, setProcessLoading] = useState(false);
   const client = createInvoicesClient<{
@@ -115,48 +119,41 @@ export default function InvoicesGrid() {
   const { hasEvent } = useSecurityContext();
 
   useEffect(() => {
-    const loadCatalogs = async () => {
-      const [statusCatalog, tipoProveedorCatalog ] = await Promise.all([
+    void (async () => {
+      const [statusCatalog, tipoProveedorCatalog] = await Promise.all([
         fetchCatalogDetails("CatEstatusFactura"),
-        fetchCatalogDetails("CatTipoProveedor")
+        fetchCatalogDetails("CatTipoProveedor"),
       ]);
-      
+
       if (statusCatalog) {
-        setStatusInvoices(
-          fetchCatalogAsSelectableOptions(statusCatalog, "Todos los estados")
-        );
+        setStatusInvoices(fetchCatalogAsSelectableOptions(statusCatalog, "Todos los estados"));
       }
-
       if (tipoProveedorCatalog) {
-        setProviderTypeOptions(
-          fetchCatalogAsSelectableOptions(tipoProveedorCatalog, "Todos los tipos")
-        );
+        setProviderTypeOptions(fetchCatalogAsSelectableOptions(tipoProveedorCatalog, "Todos los tipos"));
       }
-    };
-
-    loadCatalogs();
+    })();
   }, []);
 
-  const handleGetXmlContent = useCallback(async (row: Invoice) => {
-    const { data } = await client.getXmlDocument(row.xmlContent);
-    return data;
-  }, [client]);
-
-  const handleFetch = useCallback(async (f: InvoiceFilters) => {
-    const result = await client.getInvoices(f);
-    return result;
-  }, [client]);
-
-  const handleSearch = (newFilters: InvoiceFilters) => {
+  const triggerSearch = useCallback((newFilters: InvoiceFilters) => {
     saveFiscalListFilters(FISCAL_LIST_KEYS.invoices.filters, newFilters);
     setFilters(newFilters);
     setHasSearched(true);
-  };
+    setSearchToken((t) => t + 1);
+  }, []);
 
-  const handleFiltersChange = (newFilters: InvoiceFilters) => {
-    setFilters(newFilters);
-    setHasSearched(false);
-  };
+  useFiscalListRefetchOnReturn<InvoiceFilters>(
+    FISCAL_LIST_KEYS.invoices,
+    returningFromDetail,
+    triggerSearch
+  );
+
+  const fetchFnOrEmpty = useCallback(
+    async (f: InvoiceFilters) =>
+      hasReceptionDates(f)
+        ? client.getInvoices(f)
+        : { content: [] as Invoice[], totalElements: 0, totalPages: 0, page: 0 },
+    [client]
+  );
 
   const handleFiltersClear = useCallback((cleared: InvoiceFilters) => {
     deepLinkSearchedRef.current = null;
@@ -165,23 +162,6 @@ export default function InvoicesGrid() {
       navigate({ pathname: location.pathname, search: "" }, { replace: true });
     }
   }, [location.pathname, location.search, navigate]);
-
-  /** Con uuid en la URL se busca por UUID (no vacío). Sin uuid, vacío = faltan fechas de recepción. */
-  const areFiltersEmpty = (f: InvoiceFilters) => (!f?.fechaInicioRecepcion?.trim() || !f?.fechaFinalRecepcion?.trim());
-
-  const fetchFnOrEmpty = useCallback(
-    async (f: InvoiceFilters) =>
-      areFiltersEmpty(f)
-        ? { content: [] as Invoice[], totalElements: 0, totalPages: 0, page: 0 }
-        : handleFetch(f),
-    [handleFetch, areFiltersEmpty]
-  );
-
-  useFiscalListRefetchOnReturn<InvoiceFilters>(
-    FISCAL_LIST_KEYS.invoices,
-    returningFromDetail,
-    handleSearch
-  );
 
   const openReprocessConfirm = async (row: Invoice) => {
     setReprocessConfirmRow(row);
@@ -197,7 +177,7 @@ export default function InvoicesGrid() {
     if (msg) setCancelConfirmMessage(msg);
   };
 
-    const handleCancelConfirm = async () => {
+  const handleCancelConfirm = async () => {
     if (!cancelConfirmRow) return;
     setCancelConfirmOpen(false);
     const row = cancelConfirmRow;
@@ -205,17 +185,16 @@ export default function InvoicesGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      if(row.numeroProveedor=="" || row.numeroProveedor==null) {
+      if (!row.numeroProveedor) {
         setErrorMsg("No se puede cancelar la factura sin número de proveedor");
         return;
       }
-      await client.cancelInvoice(row.fiscalUuid || "", row.numeroProveedor ?? "");
-      setRefreshKey((k: number) => k + 1);
+      await client.cancelInvoice(row.fiscalUuid || "", row.numeroProveedor);
+      setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al cancelar la factura"));
     } finally {
       setProcessLoading(false);
-      
     }
   };
 
@@ -227,17 +206,16 @@ export default function InvoicesGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      if(row.numeroProveedor=="" || row.numeroProveedor==null) {
+      if (!row.numeroProveedor) {
         setErrorMsg("No se puede reprocesar la factura sin número de proveedor");
         return;
       }
-      await client.reprocessInvoice(row.invoiceUuid || "", row.numeroProveedor ?? "");
-      setRefreshKey((k: number) => k + 1);
+      await client.reprocessInvoice(row.invoiceUuid || "", row.numeroProveedor);
+      setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al reprocesar la factura"));
     } finally {
       setProcessLoading(false);
-      
     }
   };
 
@@ -247,16 +225,16 @@ export default function InvoicesGrid() {
       action: {
         title: "Ver notas de crédito relacionadas",
         icon: viewIcon,
-        onClick: (_row, _nav) => {
-          const ncUuid = _row.notasCreditoRelacionadas[0]?.fiscalUuid;
-          if (!ncUuid) return;
-          const qs = new URLSearchParams({
-            uuid: ncUuid,
-            start: filters.fechaInicioRecepcion,
-            end: filters.fechaFinalRecepcion,
-          });
-          _nav(`/fiscal/notas-credito?${qs.toString()}`);
-        },
+         onClick: (_row, _nav) => {
+            const ncUuid = _row.invoiceUuid;
+            if (!ncUuid) return;
+            const qs = new URLSearchParams({
+              relatedInvoiceUuid: ncUuid,
+              start: filters.fechaInicioRecepcion,
+              end: filters.fechaFinalRecepcion,
+            });
+            _nav(`/fiscal/notas-credito?${qs.toString()}`);
+          },
         isDisabled: (row) => row.notasCreditoRelacionadas.length === 0,
       },
     },
@@ -274,8 +252,11 @@ export default function InvoicesGrid() {
       action: {
         title: "Cancelar factura",
         icon: deleteIcon,
-        onClick: (_row) => { openCancelConfirm(_row); },
-        isDisabled: (row) => row.status !== INVOICE_PROCESS_SENDED && row.status !== INVOICE_WRONG_DATA && row.status !== INVOICE_ERROR_DATA,
+       onClick: (_row) => { openCancelConfirm(_row); },
+          isDisabled: (row) =>
+            row.status !== INVOICE_PROCESS_SENDED &&
+            row.status !== INVOICE_WRONG_DATA &&
+            row.status !== INVOICE_ERROR_DATA,
       },
     },
   ];
@@ -285,44 +266,13 @@ export default function InvoicesGrid() {
 
   const filterFields: FilterField[] = useMemo(
     () => [
-      {
-        key: "idProveedor",
-        label: "Nombre Proveedor",
-        type: "providerSelect",
-      },
-      {
-        key: "serie",
-        label: "Serie",
-        type: "text",
-      },
-      {
-        key: "folio",
-        label: "Folio",
-        type: "text",
-      },
-      {
-        key: "uuid",
-        label: "UUID",
-        type: "text",
-      },
-      {
-        key: "tipoProveedor",
-        label: "Tipo Proveedor",
-        type: "selectFloating",
-        options: providerTypeOptions,
-      },
-      {
-        key: "estatus",
-        label: "Estado",
-        type: "selectFloating",
-        options: statusInvoices,
-      },
-      {
-        key: "fechaRecepcion",
-        label: "Fecha búsqueda",
-        type: "dateRange",
-        required: true,
-      },
+      { key: "idProveedor", label: "Nombre Proveedor", type: "providerSelect" },
+      { key: "serie", label: "Serie", type: "text" },
+      { key: "folio", label: "Folio", type: "text" },
+      { key: "uuid", label: "UUID", type: "text" },
+      { key: "tipoProveedor", label: "Tipo Proveedor", type: "selectFloating", options: providerTypeOptions },
+      { key: "estatus", label: "Estado", type: "selectFloating", options: statusInvoices },
+      { key: "fechaRecepcion", label: "Fecha búsqueda", type: "dateRange", required: true },
     ],
     [providerTypeOptions, statusInvoices]
   );
@@ -349,7 +299,7 @@ export default function InvoicesGrid() {
         message={reprocessConfirmMessage}
         confirmText="Aceptar"
         cancelText="Cancelar"
-        onConfirm={() => { handleReprocessConfirm(); }}
+        onConfirm={handleReprocessConfirm}
         onCancel={() => {
           setReprocessConfirmOpen(false);
           setReprocessConfirmRow(null);
@@ -362,7 +312,7 @@ export default function InvoicesGrid() {
         message={cancelConfirmMessage}
         confirmText="Aceptar"
         cancelText="Cancelar"
-        onConfirm={() => { handleCancelConfirm(); }}
+        onConfirm={handleCancelConfirm}
         onCancel={() => {
           setCancelConfirmOpen(false);
           setCancelConfirmRow(null);
@@ -370,13 +320,9 @@ export default function InvoicesGrid() {
       />
 
       {processLoading && (
-        <GenericModal
-          visible
-          variant="loading"
-          message="Procesando factura..."
-        />
+        <GenericModal visible variant="loading" message="Procesando factura..." />
       )}
-      
+
       <GenericModal
         visible={!!errorMsg}
         variant="alert"
@@ -387,14 +333,17 @@ export default function InvoicesGrid() {
         onClose={() => setErrorMsg(null)}
         onConfirm={() => setErrorMsg(null)}
       />
-      
+
       <ReusableFiltersBar<InvoiceFilters>
         key={customFilters.uuid ? `invoice-${customFilters.uuid}` : "invoice-default"}
         fields={filterFields}
         initialFilters={initialFilters}
         resetFiltersOnClear={EMPTY_INVOICE}
-        onSearch={handleSearch}
-        onFiltersChange={handleFiltersChange}
+        onSearch={triggerSearch}
+        onFiltersChange={(f) => {
+          setFilters(f);
+          setHasSearched(false);
+        }}
         onClear={handleFiltersClear}
         searchAppEvent={APP_EVENT.INVOICES.SEARCH}
         clearAppEvent={APP_EVENT.INVOICES.CLEAR_FILTERS}
@@ -408,21 +357,21 @@ export default function InvoicesGrid() {
 
           const urlKey = [
             customFilters.uuid?.trim(),
+            customFilters.idProveedor?.trim(),
             customFilters.fechaInicioRecepcion?.trim(),
             customFilters.fechaFinalRecepcion?.trim(),
           ]
             .filter(Boolean)
             .join("|");
 
-          const canAutoSearch =
+          if (
             urlKey &&
             f.fechaInicioRecepcion?.trim() &&
             f.fechaFinalRecepcion?.trim() &&
-            deepLinkSearchedRef.current !== urlKey;
-
-          if (canAutoSearch) {
+            deepLinkSearchedRef.current !== urlKey
+          ) {
             deepLinkSearchedRef.current = urlKey;
-            handleSearch(f);
+            triggerSearch(f);
             return;
           }
 
@@ -430,16 +379,15 @@ export default function InvoicesGrid() {
         }}
         sessionFiltersKey={FISCAL_LIST_KEYS.invoices.filters}
         restoreSavedFilters={returningFromDetail}
-        validateFilters={(f) => {
-          if (!f.fechaInicioRecepcion || !f.fechaFinalRecepcion) {
-            return "Las fechas de recepción son obligatorias";
-          }
-          return null;
-        }}
+        validateFilters={(f) =>
+          !f.fechaInicioRecepcion || !f.fechaFinalRecepcion
+            ? "Las fechas de recepción son obligatorias"
+            : null
+        }
       />
       <Divider />
       {filtersReady && (
-        <div key={refreshKey}>
+        <div key={searchToken}>
           <DataGrid<Invoice, InvoiceFilters>
             ref={gridRef}
             columns={columns}
@@ -459,9 +407,9 @@ export default function InvoicesGrid() {
             enablePdf
             xmlAppEvent={APP_EVENT.INVOICES.DOWNLOAD_XML}
             pdfAppEvent={APP_EVENT.INVOICES.DOWNLOAD_PDF}
-            getXmlContent={handleGetXmlContent}
-            getFilename={getXmlFileNameFromRow}
-            filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
+            getXmlContent={async (row) => (await client.getXmlDocument(row.xmlContent)).data}
+            getFilename={(row) => getStandardFilename(row)}
+            filtersEmpty={!hasSearched || !hasReceptionDates(filters)}
           />
         </div>
       )}

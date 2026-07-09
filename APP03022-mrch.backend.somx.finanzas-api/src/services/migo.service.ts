@@ -422,16 +422,7 @@ async function promoteMigoReceptionsToNormalReceptions(
         for (const [, rows] of groups) {
             const first = rows[0]!;
             const receptionNumber = String(first.nroRecepcion);
-
             const schema = resolveSchema(manager);
-            const existsRows = await manager.query(
-                `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 LIMIT 1`,
-                [receptionNumber],
-            );
-            if (Array.isArray(existsRows) && existsRows.length > 0) {
-                stats.receptionsSkipped++;
-                continue;
-            }
 
             const totalAmount = rows.reduce(
                 (acc, r) => acc + (Number(r.importeSinImpuestoDet) || 0),
@@ -476,6 +467,23 @@ async function promoteMigoReceptionsToNormalReceptions(
                 logger.warn(
                     `[MIGO] No se pudo resolver PurchaseOrder OC=${first.nroOc}: ${(err as Error).message}`,
                 );
+            }
+
+            const existsRows = purchaseOrderId
+                ? await manager.query(
+                    `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid = $2 LIMIT 1`,
+                    [receptionNumber, purchaseOrderId],
+                )
+                : await manager.query(
+                    `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid IS NULL LIMIT 1`,
+                    [receptionNumber],
+                );
+            if (Array.isArray(existsRows) && existsRows.length > 0) {
+                logger.info(
+                    `[MIGO] Recepción ${receptionNumber} ya publicada para OC=${first.nroOc} (purchase_order_uuid=${purchaseOrderId ?? 'NULL'}). Saltando.`,
+                );
+                stats.receptionsSkipped++;
+                continue;
             }
 
             const receptionInsert: Parameters<typeof rawInsertReception>[1] = {

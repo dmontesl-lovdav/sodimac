@@ -1,7 +1,7 @@
 export interface ThreeWayMatchRecord {
     id: string;
 
-    numeroProveedor: number;
+    numeroProveedor: string | number;
 
     ordenCompra: string;
     fechaOrdenCompra: string;

@@ -7,9 +7,6 @@ export interface GenericTraceProps {
 
 export function GenericTrace({ traceId, uuid }: GenericTraceProps): ReactElement {
   if (!traceId) return <p style={{ color: "red" }}>Sin folio de trazabilidad</p>;
-  const finanzasUrl = process.env.FINANZAS_URL ?? "";
-  const bitacoraUrl = `${finanzasUrl}#/auditoria/bitacora-actividades/tren`;
-  const href =`${bitacoraUrl}/${uuid}`;
 
   return (
     <div className="fiscal-header-trace">

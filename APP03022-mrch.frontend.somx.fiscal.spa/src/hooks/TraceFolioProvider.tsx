@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { GenericTrace } from "@/shared/components/ui/misc";
 import { AuditLogPayload, createTraceabilityClient, TraceFolio, TraceFolioPayload } from "@/services/TraceabilityClient";
 import GenericButton from "@/shared/components/ui/button/GenericButton";
@@ -188,7 +188,7 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
     );
   })();
 
-  const value: TraceFolioContextValue = {
+  const value: TraceFolioContextValue = useMemo(() => ({
     traceId,
     traceError,
     traceLoading,
@@ -196,7 +196,7 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
     headerActions,
     noTraceWarning,
     traceFooter,
-  };
+  }), [traceId, traceError, traceLoading, addLog, headerActions, noTraceWarning, traceFooter]);
 
   return (
     <TraceFolioContext.Provider value={value}>

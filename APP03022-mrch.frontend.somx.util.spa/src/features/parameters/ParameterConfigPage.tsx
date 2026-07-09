@@ -28,6 +28,84 @@ const INITIAL_FILTERS: ParameterFilters = {
   includeHistory: false,
 };
 
+const hasExpired = (p: Parameter): boolean => {
+  if (!p.endDate) return false;
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const endDateStr = p.endDate.split('T')[0];
+  return (endDateStr ?? '') < todayStr;
+};
+
+const formatDateForExport = (value: string | null | undefined): string => {
+  if (!value) return '-';
+  const parts = value.split('T')[0]?.split('-');
+  if (!parts || parts.length !== 3) return value;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+};
+
+const buildApiParams = (
+  filters: ParameterFilters,
+  currentPage: number,
+  pageSize: number,
+): ParameterListParams => {
+  const needsLargeLimit = filters.includeHistory &&
+    (filters.parameterId || filters.parameterName);
+  const params: ParameterListParams = {
+    page: needsLargeLimit ? 1 : currentPage,
+    limit: needsLargeLimit ? 5000 : pageSize,
+    includeHistory: filters.includeHistory,
+  };
+  if (filters.module) params.idModule = Number(filters.module);
+  if (filters.parameterType) params.idType = Number(filters.parameterType);
+  if (filters.parameterName && !filters.includeHistory) {
+    params.name = filters.parameterName;
+  }
+  if (filters.status !== '') params.status = Number(filters.status);
+  return params;
+};
+
+const applyClientFilters = (
+  items: Parameter[],
+  filters: ParameterFilters,
+): Parameter[] => {
+  let result = items;
+  if (filters.parameterId) {
+    const searchId = filters.parameterId.toLowerCase();
+    result = result.filter(p => p.id.toLowerCase().includes(searchId) || p.idParameter.toString().includes(searchId));
+  }
+  if (filters.parameterName) {
+    const searchName = filters.parameterName.toLowerCase();
+    result = result.filter(p => p.name.toLowerCase().includes(searchName));
+  }
+  if (!filters.includeHistory) {
+    result = result.filter(p => !hasExpired(p));
+  }
+  if (filters.status !== '') {
+    result = result.filter(p => p.status === Number(filters.status));
+  }
+  return [...result].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+};
+
+const fetchAllForExport = async (
+  filters: ParameterFilters,
+  selectedIds: Set<string>,
+): Promise<Parameter[]> => {
+  const exportParams: ParameterListParams = { page: 1, limit: 5000, includeHistory: true };
+  if (filters.module) exportParams.idModule = Number(filters.module);
+  if (filters.parameterType) exportParams.idType = Number(filters.parameterType);
+  if (filters.status !== '') exportParams.status = Number(filters.status);
+  const allData = await parameterService.list(exportParams);
+  let data = allData.data;
+  if (filters.parameterId) data = data.filter(p => p.id.toLowerCase().includes(filters.parameterId.toLowerCase()));
+  if (filters.parameterName) data = data.filter(p => p.name.toLowerCase().includes(filters.parameterName.toLowerCase()));
+  if (selectedIds.size > 0) data = data.filter(item => selectedIds.has(item.id));
+  return data;
+};
+
 export const ParameterConfigPage = () => {
   const [filters, setFilters] = useState<ParameterFilters>(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<ParameterFilters>(INITIAL_FILTERS);
@@ -55,64 +133,14 @@ export const ParameterConfigPage = () => {
 
   const apiParams: ParameterListParams = useMemo(() => {
     if (!hasSearched) return {};
-    const needsLargeLimit = appliedFilters.includeHistory &&
-      (appliedFilters.parameterId || appliedFilters.parameterName);
-
-    const params: ParameterListParams = {
-      page: needsLargeLimit ? 1 : currentPage,
-      limit: needsLargeLimit ? 5000 : pageSize,
-      includeHistory: appliedFilters.includeHistory,
-    };
-
-    if (appliedFilters.module) params.idModule = Number(appliedFilters.module);
-    if (appliedFilters.parameterType) params.idType = Number(appliedFilters.parameterType);
-    if (appliedFilters.parameterName && !appliedFilters.includeHistory) {
-      params.name = appliedFilters.parameterName;
-    }
-    if (appliedFilters.status !== '') params.status = Number(appliedFilters.status);
-
-    return params;
+    return buildApiParams(appliedFilters, currentPage, pageSize);
   }, [hasSearched, currentPage, pageSize, appliedFilters]);
 
   const { data: parametersData, isLoading: isLoadingParameters, error: parametersError, refetch: refetchParameters } = useParameters(apiParams, hasSearched);
 
-  const hasExpired = (p: Parameter): boolean => {
-    if (!p.endDate) return false;
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const endDateStr = p.endDate.split('T')[0];
-    return (endDateStr ?? '') < todayStr;
-  };
-
   const filteredItems: Parameter[] = useMemo(() => {
     if (!hasSearched || !parametersData?.data) return [];
-    let items = parametersData.data;
-
-    if (appliedFilters.parameterId) {
-      const searchId = appliedFilters.parameterId.toLowerCase();
-      items = items.filter(p => p.id.toLowerCase().includes(searchId) || p.idParameter.toString().includes(searchId));
-    }
-
-    if (appliedFilters.parameterName) {
-      const searchName = appliedFilters.parameterName.toLowerCase();
-      items = items.filter(p => p.name.toLowerCase().includes(searchName));
-    }
-
-    if (!appliedFilters.includeHistory) {
-      items = items.filter(p => !hasExpired(p));
-    }
-
-    if (appliedFilters.status !== '') {
-      items = items.filter(p => p.status === Number(appliedFilters.status));
-    }
-
-    items = [...items].sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
-
-    return items;
+    return applyClientFilters(parametersData.data, appliedFilters);
   }, [hasSearched, parametersData, appliedFilters]);
 
   const latestVersionIds: Set<string> = useMemo(() => {
@@ -215,13 +243,6 @@ export const ParameterConfigPage = () => {
     window.location.href = '/herramientas-utilerias';
   };
 
-  const formatDateForExport = (value: string | null | undefined): string => {
-    if (!value) return '-';
-    const parts = value.split('T')[0]?.split('-');
-    if (!parts || parts.length !== 3) return value;
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  };
-
   const exportData = (dataToExport: Parameter[], format: 'csv' | 'xlsx') => {
     if (dataToExport.length === 0) {
       showError('No hay datos para exportar con los filtros aplicados.', 'Exportación');
@@ -271,15 +292,7 @@ export const ParameterConfigPage = () => {
     if (appliedFilters.includeHistory && totalPages > 1) {
       setIsExporting(true);
       try {
-        const exportParams: ParameterListParams = { page: 1, limit: 5000, includeHistory: true };
-        if (appliedFilters.module) exportParams.idModule = Number(appliedFilters.module);
-        if (appliedFilters.parameterType) exportParams.idType = Number(appliedFilters.parameterType);
-        if (appliedFilters.status !== '') exportParams.status = Number(appliedFilters.status);
-        const allData = await parameterService.list(exportParams);
-        let data = allData.data;
-        if (appliedFilters.parameterId) data = data.filter(p => p.id.toLowerCase().includes(appliedFilters.parameterId.toLowerCase()));
-        if (appliedFilters.parameterName) data = data.filter(p => p.name.toLowerCase().includes(appliedFilters.parameterName.toLowerCase()));
-        if (selectedIds.size > 0) data = data.filter(item => selectedIds.has(item.id));
+        const data = await fetchAllForExport(appliedFilters, selectedIds);
         exportData(data, format);
       } catch (err) {
         console.error('Error al exportar parámetros:', err);
@@ -294,8 +307,9 @@ export const ParameterConfigPage = () => {
       }
       return;
     }
-    let data = filteredItems;
-    if (selectedIds.size > 0) data = filteredItems.filter(item => selectedIds.has(item.id));
+    const data = selectedIds.size > 0
+      ? filteredItems.filter(item => selectedIds.has(item.id))
+      : filteredItems;
     exportData(data, format);
   };
 

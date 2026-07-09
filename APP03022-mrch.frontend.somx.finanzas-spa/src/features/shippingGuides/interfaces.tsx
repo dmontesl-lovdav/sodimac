@@ -40,12 +40,12 @@ export interface ShippingGuideFilter {
 }
 
 export interface ShippingGuideCatalogItem {
-    key: string;
-    value: string;
-    color: string;
-    externalKey: string;
-    internalStatus: number;
-    description: string;
+    key?: string;
+    value?: string;
+    color?: string;
+    externalKey?: string;
+    internalStatus?: number;
+    description?: string;
 }
 
 export interface ShippingGuideSupplierType {
@@ -149,7 +149,7 @@ export interface ShippingGuideDetail {
     trailerPlate?: string | null;
     originId: number;
     deliveryType: number | ShippingGuideCatalogItem;
-    status: number | ShippingGuideCatalogItem;
+    status: ShippingGuideCatalogItem;
     comments?: string | null;
     deliveryDate?: string | null;
     shippingDate?: string | null;

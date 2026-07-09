@@ -17,7 +17,7 @@ export class Addendum {
     @PrimaryGeneratedColumn('uuid', { name: 'addendum_uuid' })
     addendumUuid!: string;
 
-    @Column({ name: 'invoice_uuid', type: 'varchar', nullable: false, unique: true })
+    @Column({ name: 'invoice_uuid', type: 'uuid', nullable: false, unique: true })
     invoiceUuid!: string;
 
     @Column({ name: 'supplier_number', type: 'int' })
@@ -25,6 +25,12 @@ export class Addendum {
 
     @Column({ name: 'reception_number', type: 'varchar', nullable: false, unique: true })
     receptionNumber!: string;
+
+    @Column({ name: 'purchase_order_number', type: 'varchar', length: 50, nullable: true })
+    purchaseOrderNumber?: string;
+
+    @Column({ name: 'shipping_guide_number', type: 'varchar', length: 50, nullable: true })
+    shippingGuideNumber?: string;
 
     @Column({ name: 'created_by', type: 'bigint', nullable: true })
     createdBy?: number;
@@ -42,10 +48,19 @@ export class Addendum {
         () => Reception,
         (reception) => reception.addendums
     )
-    @JoinColumn({ name: 'reception_number' })
-    reception?: any;
+    @JoinColumn({
+        name: 'reception_number',
+        referencedColumnName: 'receptionNumber'
+    })
+    reception?: Reception;
 
-    @ManyToOne(() => Invoice)
-    @JoinColumn({ name: 'invoice_uuid' })
-    invoice?: any;
+    @ManyToOne(
+        () => Invoice,
+        (invoice) => invoice.addendums
+    )
+    @JoinColumn({
+        name: 'invoice_uuid',
+        referencedColumnName: 'invoiceUuid'
+    })
+    invoice?: Invoice;
 }

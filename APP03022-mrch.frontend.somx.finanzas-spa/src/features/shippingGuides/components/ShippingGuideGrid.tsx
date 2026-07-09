@@ -13,9 +13,6 @@ import { useNavigate } from "react-router-dom";
 import {
   fetchCatalog,
   formatDate,
-  parseCatalogDetailsResponse,
-  resolveCatalogDetailLabel,
-  type CatalogDetailRow,
 } from "@/utils/utils";
 import { ShippingGuide } from "../interfaces";
 import {
@@ -157,13 +154,8 @@ export function ShippingGuideGrid({
     {
       header: "Orden Compra",
       render: (guide) => {
-        const order = guide.orderNumber || "N/D";
-        if (guide.purchaseOrderStatus == null) return <>{order}</>;
-        return (
-          <span className="sg-oc-cell">
-            <span className="sg-oc-number">{order}</span>
-          </span>
-        );
+        const order = guide?.orderNumber == "undefined" ? "N/D" : guide?.orderNumber;
+        return <>{order}</>;
       },
     },
     {

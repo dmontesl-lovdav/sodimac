@@ -58,9 +58,22 @@ function filterByProviderType(
     return receptions;
   }
   const q = String(providerType).trim().toLowerCase();
-  console.log("providerType", providerType);
-  console.log("receptions", receptions);
   return receptions.filter((r) => r.supplier?.supplierType?.id === Number(q));
+}
+
+function resolveReceptionInvoiceUuid(rec: {
+  invoiceUuid?: string;
+  listAddendum?: { invoice?: { fiscalUuid?: string; fiscal_uuid?: string; invoiceUuid?: string; invoice_uuid?: string } }[];
+}): string {
+  const inv = rec.listAddendum?.[0]?.invoice;
+  return (
+    rec.invoiceUuid?.trim() ||
+    inv?.fiscalUuid?.trim() ||
+    inv?.fiscal_uuid?.trim() ||
+    inv?.invoiceUuid?.trim() ||
+    inv?.invoice_uuid?.trim() ||
+    ""
+  );
 }
 
 export default function ReceptionContainer(): ReactElement {
@@ -87,8 +100,10 @@ export default function ReceptionContainer(): ReactElement {
 
       receptionList.forEach((rec: any) => {
         const skus: ReceptionSKU[] = rec.receptionSkus ?? [];
+        const invoiceUuid = resolveReceptionInvoiceUuid(rec);
 
         const order: Order = {
+          invoiceUuid,
           purchaseOrderId: item.purchaseOrderId,
           orderNumber: item.orderNumber,
           shippingGuideNumber: mergeShippingNumbers(item.shippingGuidePurchaseOrders),
@@ -103,6 +118,7 @@ export default function ReceptionContainer(): ReactElement {
         };
 
         const reception: Reception = {
+          invoiceUuid,
           receptionDate: rec.receptionDate,
           orderNumber: item.orderNumber,
           receptionSkus: skus,
@@ -254,8 +270,7 @@ export default function ReceptionContainer(): ReactElement {
         : "--";
       const serie = inv?.series ?? "--";
       const folio = inv?.folio ?? "--";
-      const uuid =
-        inv?.invoiceUuid ?? inv?.invoice_uuid ?? "--";
+      const uuid = resolveReceptionInvoiceUuid(r) || "--";
       const statusLabel = resolveReceptionStatusDisplay(r.status).label;
       return [
         r.receptionNumber || r.receptionId || "",

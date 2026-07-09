@@ -58,6 +58,7 @@ export const ProviderOptions = [
 export type TableItem = Item & { id: string | number };
 
 export const EMPTY_ORDER: Order = {
+    invoiceUuid: "",
     shippingGuideNumber: "",
     purchaseOrderId: "",
     orderNumber: "",
@@ -89,6 +90,7 @@ export const EMPTY_SHIPPING: ShippingGuide = {
 }
 
 export const EMPTY_RECEPTION: Reception = {
+    invoiceUuid: "",
     receptionId: "0",
     purchaseOrderId: "",
     orderNumber: "",
@@ -163,6 +165,7 @@ interface Supplier {
 
 
 export interface Reception {
+    invoiceUuid: string;
     receptionDate: string;
     orderNumber: string;
     receptionSkus: ReceptionSKU[],
@@ -183,6 +186,7 @@ export interface Reception {
     amount: number,
     status: number,
     comment: string,
+    manualUuid?: string,
     receivedAt?: string,
     createdBy?: string,
     createdAt?: string,
@@ -191,6 +195,7 @@ export interface Reception {
 }
 
 export interface Order {
+    invoiceUuid: string;
     shippingGuideNumber: string,
     supplier?: Supplier,
     purchaseOrderId: string,
@@ -238,10 +243,12 @@ export interface Addendum {
 }
 
 export interface Invoice {
+  fiscalUuid: string;
   createdAt: any;
   invoice_uuid?: string;
   /** Alias camelCase usado en algunas respuestas/adendas. */
   invoiceUuid?: string;
+  emisorRfc?: string;
   fiscal_uuid?: string;
   place_of_issue?: string;
   payment_method?: string;

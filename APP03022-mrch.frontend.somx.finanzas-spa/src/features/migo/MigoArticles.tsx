@@ -178,6 +178,14 @@ export default function MigoArticles(): ReactElement {
                             <div className="migo-summary-value">{headerData.sucursal}</div>
                         </div>
                         <div>
+                            <div className="migo-summary-label">Número de Proveedor</div>
+                            <div className="migo-summary-value">{headerData.numeroProveedor ?? '-'}</div>
+                        </div>
+                        <div>
+                            <div className="migo-summary-label">Nombre de Proveedor</div>
+                            <div className="migo-summary-value">{headerData.vendorName ?? '-'}</div>
+                        </div>
+                        <div>
                             <div className="migo-summary-label">Nro. Guía</div>
                             <div className="migo-summary-value">{headerData.nroGuia ?? '-'}</div>
                         </div>
@@ -202,14 +210,6 @@ export default function MigoArticles(): ReactElement {
                                         : headerData.importeSinImpuesto,
                                 )}
                             </div>
-                        </div>
-                        <div>
-                            <div className="migo-summary-label">Número de Proveedor</div>
-                            <div className="migo-summary-value">{headerData.numeroProveedor ?? '-'}</div>
-                        </div>
-                        <div>
-                            <div className="migo-summary-label">Nombre de Proveedor</div>
-                            <div className="migo-summary-value">{headerData.vendorName ?? '-'}</div>
                         </div>
                     </div>
                 )}

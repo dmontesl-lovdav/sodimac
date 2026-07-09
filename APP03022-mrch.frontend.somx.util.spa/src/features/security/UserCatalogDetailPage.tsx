@@ -12,6 +12,75 @@ import type { PermissionEventMatrixRow, UserCatalogSearchFilters } from './types
 import './styles/SecurityCommon.css';
 import './styles/UserCatalogDetailPage.css';
 
+type AppEvent = { processId: number; moduleProcessId: number; name: string; description: string; assigned: boolean };
+type AppRow = { id: number; name: string; description: string; events?: AppEvent[] };
+
+function dedupeEventsByProcessId(events: AppEvent[] | undefined): AppEvent[] {
+  const map = (events ?? []).reduce((acc, ev) => {
+    const prev = acc.get(ev.processId);
+    if (!prev || (!prev.assigned && ev.assigned)) acc.set(ev.processId, ev);
+    return acc;
+  }, new Map<number, AppEvent>());
+  return Array.from(map.values());
+}
+
+function EventsSubtable({ events }: { events: AppEvent[] }) {
+  if (events.length === 0) {
+    return (
+      <tr>
+        <td colSpan={4} style={{ textAlign: 'center' }}>
+          <div style={{ padding: '1.5rem', color: '#6b7280' }}>Sin eventos.</div>
+        </td>
+      </tr>
+    );
+  }
+  return (
+    <>
+      {events.map((ev) => (
+        <tr key={`${ev.moduleProcessId}-${ev.processId}`}>
+          <td>{ev.processId}</td>
+          <td>{ev.name}</td>
+          <td>{ev.description}</td>
+          <td className="user-catalog-detail__check">{ev.assigned ? '✓' : 'X'}</td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function AppRowWithEvents({ row }: { row: AppRow }) {
+  const events = dedupeEventsByProcessId(row.events);
+  return (
+    <Fragment key={row.id}>
+      <tr>
+        <td>{row.id}</td>
+        <td>{row.name}</td>
+        <td>{row.description}</td>
+      </tr>
+      <tr className="user-catalog-detail__app-nested-row">
+        <td colSpan={3}>
+          <div className="user-catalog-detail__app-nested">
+            <p className="user-catalog-detail__app-nested-title">Eventos del aplicativo</p>
+            <table className="security-table user-catalog-detail__nested-events-table">
+              <thead>
+                <tr>
+                  <th>Id evento</th>
+                  <th>Nombre</th>
+                  <th>Clave</th>
+                  <th className="user-catalog-detail__check">Asignado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <EventsSubtable events={events} />
+              </tbody>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </Fragment>
+  );
+}
+
 export function UserCatalogDetailPage() {
   const { userId: userIdParam } = useParams<{ userId: string }>();
   const userId = Number(userIdParam);
@@ -223,63 +292,9 @@ export function UserCatalogDetailPage() {
                         </td>
                       </tr>
                     ) : null}
-                    {appsSection?.items.map((row) => {
-                      const events = Array.from(
-                        (row.events ?? []).reduce((acc, ev) => {
-                          const prev = acc.get(ev.processId);
-                          if (!prev || (!prev.assigned && ev.assigned)) acc.set(ev.processId, ev);
-                          return acc;
-                        }, new Map<number, NonNullable<typeof row.events>[number]>()).values(),
-                      );
-                      return (
-                        <Fragment key={row.id}>
-                          <tr>
-                            <td>{row.id}</td>
-                            <td>{row.name}</td>
-                            <td>{row.description}</td>
-                          </tr>
-                          <tr className="user-catalog-detail__app-nested-row">
-                            <td colSpan={3}>
-                              <div className="user-catalog-detail__app-nested">
-                                <p className="user-catalog-detail__app-nested-title">Eventos del aplicativo</p>
-                                <table className="security-table user-catalog-detail__nested-events-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Id evento</th>
-                                      <th>Nombre</th>
-                                      <th>Clave</th>
-                                      <th className="user-catalog-detail__check">Asignado</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {events.length === 0 ? (
-                                      <tr>
-                                        <td colSpan={4} style={{ textAlign: 'center' }}>
-                                          <div style={{ padding: '1.5rem', color: '#6b7280' }}>
-                                            Sin eventos.
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    ) : (
-                                      events.map((ev) => (
-                                        <tr key={`${row.id}-${ev.moduleProcessId}-${ev.processId}`}>
-                                          <td>{ev.processId}</td>
-                                          <td>{ev.name}</td>
-                                          <td>{ev.description}</td>
-                                          <td className="user-catalog-detail__check">
-                                            {ev.assigned ? '✓' : 'X'}
-                                          </td>
-                                        </tr>
-                                      ))
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        </Fragment>
-                      );
-                    })}
+                    {appsSection?.items.map((row) => (
+                      <AppRowWithEvents key={row.id} row={row as AppRow} />
+                    ))}
                   </tbody>
                   </table>
                 </div>

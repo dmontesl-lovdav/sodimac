@@ -6,8 +6,16 @@ import * as logs from "@/repositories/twmLogs.repo.js";
 import { Reception } from "@/entities/Reception.entity.js";
 import { ThreeWayMatch } from "@/entities/ThreeWayMatch.entity.js";
 import { TwmStatus } from "@/types/twmStatus.js";
-import { SapDocument } from "@/entities/SapDocument.entity.js";
 import { FinanzasPayment } from "@/entities/FinanzasPayment.entities.js";
+
+type SapDocumentRaw = {
+    documentNumber?: string | null;
+    referenceNumber?: string | null;
+    vendorNumber?: string | number | null;
+    docSap?: string | null;
+    createdAt?: Date | string | null;
+    amount?: string | number | null;
+};
 
 export async function runThreeWayMatch(
     fechaBase: Date,
@@ -83,7 +91,6 @@ export async function runThreeWayMatch(
 
             p1_total++;
             p1_monto += Number(record.montoRecepcion ?? 0);
-
         }
 
         await runner.manager.save("tenant_finance.twm_cifras_control", {
@@ -106,12 +113,19 @@ export async function runThreeWayMatch(
         for (const base of bases) {
             const addendum = await runner.manager
                 .createQueryBuilder()
-                .select("a")
+                .select("a.invoice_uuid", "invoiceUuid")
+                .addSelect("a.reception_number", "receptionNumber")
+                .addSelect("a.purchase_order_number", "purchaseOrderNumber")
                 .from("tenant_fiscal.addendum", "a")
-                .where("a.reception_number = :rec", { rec: base.recepcion })
+                .where("a.reception_number::text = :rec", {
+                    rec: String(base.recepcion),
+                })
+                .andWhere("a.purchase_order_number::text = :oc", {
+                    oc: String(base.ordenCompra),
+                })
                 .getRawOne();
 
-            if (!addendum) {
+            if (!addendum?.invoiceUuid) {
                 await runner.manager.update(
                     ThreeWayMatch,
                     { id: base.id },
@@ -124,6 +138,7 @@ export async function runThreeWayMatch(
                     "TWM_SIN_FACTURA",
                     {
                         recepcion: base.recepcion,
+                        oc: base.ordenCompra,
                         proveedor: base.numeroProveedor,
                     }
                 );
@@ -135,9 +150,20 @@ export async function runThreeWayMatch(
 
             const invoice = await runner.manager
                 .createQueryBuilder()
-                .select("i")
+                .select("i.invoice_uuid", "invoiceUuid")
+                .addSelect("i.fiscal_uuid", "fiscalUuid")
+                .addSelect("i.series", "series")
+                .addSelect("i.folio", "folio")
+                .addSelect("i.certification_date", "certificationDate")
+                .addSelect("i.subtotal", "subtotal")
+                .addSelect("i.total", "total")
                 .from("tenant_fiscal.invoice", "i")
-                .where("i.invoice_uuid = :uuid", { uuid: addendum.invoice_uuid })
+                .where(
+                    `(i.invoice_uuid::text = :uuid OR i.fiscal_uuid::text = :uuid)`,
+                    {
+                        uuid: String(addendum.invoiceUuid),
+                    }
+                )
                 .getRawOne();
 
             if (!invoice) {
@@ -147,26 +173,41 @@ export async function runThreeWayMatch(
                     { estatus: TwmStatus.SIN_FACTURA }
                 );
 
+                await logs.log(
+                    ejecucion.id,
+                    "WARN",
+                    "TWM_FACTURA_NO_ENCONTRADA",
+                    {
+                        recepcion: base.recepcion,
+                        oc: base.ordenCompra,
+                        proveedor: base.numeroProveedor,
+                        uuidAddendum: addendum.invoiceUuid,
+                    }
+                );
+
                 p2_sinFactura++;
 
                 continue;
             }
 
+            const uuidReporte = invoice.fiscalUuid ?? invoice.invoiceUuid;
+            const montoFacturaReporte = invoice.subtotal ?? invoice.total ?? null;
+
             await runner.manager.update(
                 ThreeWayMatch,
                 { id: base.id },
                 {
-                    serie: invoice.series,
-                    folio: invoice.folio,
-                    uuid: invoice.invoice_uuid,
-                    fechaTimbrado: invoice.certification_date ?? null,
-                    montoFactura: invoice.total ?? null,
+                    serie: invoice.series ?? null,
+                    folio: invoice.folio ?? null,
+                    uuid: uuidReporte,
+                    fechaTimbrado: invoice.certificationDate ?? null,
+                    montoFactura: montoFacturaReporte,
                     estatus: TwmStatus.CON_FACTURA,
                 }
             );
 
             p2_conFactura++;
-            p2_montoFactura += Number(invoice.total ?? 0);
+            p2_montoFactura += Number(montoFacturaReporte ?? 0);
 
             await logs.log(
                 ejecucion.id,
@@ -174,10 +215,12 @@ export async function runThreeWayMatch(
                 "TWM_CON_FACTURA",
                 {
                     recepcion: base.recepcion,
-                    uuid: invoice.invoice_uuid,
+                    oc: base.ordenCompra,
+                    uuidAddendum: addendum.invoiceUuid,
+                    uuidFacturaInterno: invoice.invoiceUuid,
+                    uuidReporte,
                 }
             );
-
         }
 
         await runner.manager.save("tenant_finance.twm_cifras_control", {
@@ -191,6 +234,13 @@ export async function runThreeWayMatch(
 
         // ===============================
         // PASO 3 – Factura contabilizada
+        // NOTA:
+        // No usamos SapDocument entity aquí porque el entity no coincide con BD.
+        // BD real:
+        // - sap_document_uuid
+        // - reference_number
+        // - vendor_number
+        // - doc_sap
         // ===============================
 
         const conFactura = await runner.manager.find(ThreeWayMatch, {
@@ -198,37 +248,53 @@ export async function runThreeWayMatch(
         });
 
         for (const item of conFactura) {
-            const sapDoc = await runner.manager.findOne(SapDocument, {
-                where: {
-                    supplierNumber: Number(item.numeroProveedor),
-                    documentReference: item.ordenCompra,
-                },
-            });
+            const sapDoc = await runner.manager
+                .createQueryBuilder()
+                .select("s.document_number", "documentNumber")
+                .addSelect("s.reference_number", "referenceNumber")
+                .addSelect("s.vendor_number", "vendorNumber")
+                .addSelect("s.doc_sap", "docSap")
+                .addSelect("s.created_at", "createdAt")
+                .addSelect("s.amount", "amount")
+                .from("tenant_finance.sap_document", "s")
+                .where("s.vendor_number = :vendorNumber", {
+                    vendorNumber: Number(item.numeroProveedor),
+                })
+                .andWhere("s.reference_number::text = :referenceNumber", {
+                    referenceNumber: String(item.ordenCompra),
+                })
+                .getRawOne<SapDocumentRaw>();
 
             if (!sapDoc) {
                 // Mantener estatus = 3
                 continue;
             }
 
-            item.documentoSap = sapDoc.documentNumber ?? null;
-            item.fechaContable = sapDoc.createdAt ?? null;
-            item.montoContable = sapDoc.amount ?? null;
+            item.documentoSap = sapDoc.docSap ?? sapDoc.documentNumber ?? null;
+            item.fechaContable = sapDoc.createdAt
+                ? new Date(sapDoc.createdAt)
+                : null;
+            item.montoContable =
+                sapDoc.amount !== null && sapDoc.amount !== undefined
+                    ? Number(sapDoc.amount)
+                    : null;
             item.estatus = TwmStatus.CONTABILIZADA;
 
             await runner.manager.save(item);
+
             await logs.log(
                 ejecucion.id,
                 "INFO",
                 "TWM_CONTABILIZADA",
                 {
                     proveedor: item.numeroProveedor,
+                    oc: item.ordenCompra,
                     documentoSap: item.documentoSap,
                 }
             );
 
             p3_total++;
             p3_monto += Number(item.montoContable ?? 0);
-
         }
 
         await runner.manager.save("tenant_finance.twm_cifras_control", {
@@ -249,7 +315,6 @@ export async function runThreeWayMatch(
         });
 
         for (const item of contabilizadas) {
-
             if (!item.documentoSap) continue;
 
             const pago = await runner.manager.findOne(FinanzasPayment, {
@@ -260,7 +325,6 @@ export async function runThreeWayMatch(
             });
 
             if (!pago) {
-
                 await logs.log(
                     ejecucion.id,
                     "INFO",
@@ -295,7 +359,6 @@ export async function runThreeWayMatch(
 
             p4_total++;
             p4_monto += Number(item.montoPago ?? 0);
-
         }
 
         const resumen = await runner.manager

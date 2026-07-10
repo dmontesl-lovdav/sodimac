@@ -52,6 +52,7 @@ export interface ThreeWayMatchFiltersProps {
         supplier?: string;
         po?: string;
         reception?: string;
+        supplierType?: string;
     }) => void;
     onClear: () => void;
 }

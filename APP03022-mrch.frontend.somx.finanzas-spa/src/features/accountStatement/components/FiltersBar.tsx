@@ -7,7 +7,7 @@ import {
 } from '@/shared/hooks';
 import { GenericButton, GenericModal, GenericSelect, GenericSelectSearchable } from '@shared/components/ui';
 import type { AccountStatementFilters } from '../interfaces';
-import { MONTHS } from '@/utils/utils';
+import { fetchCatalog, MONTHS } from '@/utils/utils';
 import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import '../styles/AccountStatementFilters.css';
@@ -63,23 +63,39 @@ export default function FiltersBar({
     const years = useMemo(() => yearOptions(), []);
     const [providerId, setProviderId] = useState<string>('');
     const [year, setYear] = useState(() => getDefaultYear());
+    const [providerType, setProviderType] = useState<string>('');
+    const [providerTypes, setProviderTypes] = useState<any[]>([]);
     const [month, setMonth] = useState<number | 'all'>(() =>
         getDefaultMonth(getDefaultYear())
     );
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const hydratedRef = useRef(false);
-
+    useEffect(() => {
+        (async () => {
+            const types = await fetchCatalog("CatTipoProveedor");
+            if(types) {
+                //@ts-ignore
+                const mapped = types.details?.map((item: any) => ({
+                    label: item.description,
+                    value: item.value,
+                }));
+                setProviderTypes([{ label: "Todos los tipos", value: "" }, ...mapped ?? []]);
+            }
+        })();
+    }, []);
     const applyFilterDefaults = useCallback(() => {
         const defY = getDefaultYear();
         setProviderId('');
         setYear(defY);
         setMonth(getDefaultMonth(defY));
+        setProviderType('');
+        setProviderTypes([]);
     }, []);
 
     useFinanceListDefaultsOnUrlReset(
         FINANCE_LIST_KEYS.accountStatement.moduleKey,
-        applyFilterDefaults
+        applyFilterDefaults,
     );
 
 
@@ -94,6 +110,7 @@ export default function FiltersBar({
         if (saved.providerId != null) setProviderId(String(saved.providerId));
         if (saved.year != null) setYear(Number(saved.year));
         if (saved.month != null) setMonth(saved.month);
+        if (saved.providerType != null) setProviderType(saved.providerType);
     }, []);
 
     const yearSelectOptions = useMemo(
@@ -146,6 +163,7 @@ export default function FiltersBar({
         }
 
         const payload: AccountStatementFilters = {
+            providerType: providerType+"",
             providerId:
                 isAdmin && providerId.trim() !== ''
                     ? providerId.trim()
@@ -191,6 +209,7 @@ export default function FiltersBar({
             <div className="al-filters">
                 <div className="al-row finz-filter-row">
                     {isAdmin && (
+                        <>
                         <div className="as-field">
                             <GenericSelectSearchable
                                 value={providerId}
@@ -202,6 +221,18 @@ export default function FiltersBar({
                                 widthClass="gs-width-provider"
                             />
                         </div>
+                        <div className="as-field">
+                            <GenericSelectSearchable
+                                value={providerType}
+                                onChange={(e: { target: { value: string } }) =>
+                                    setProviderType(e.target.value)
+                                }
+                                options={providerTypes}
+                                placeholder="Tipo Proveedor"
+                                widthClass="gs-width-provider"
+                            />
+                        </div>
+                        </>
                     )}
 
                     <div className="as-field">

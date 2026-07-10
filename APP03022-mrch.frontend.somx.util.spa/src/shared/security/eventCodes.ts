@@ -32,7 +32,6 @@ export const EVENT_KEYS = {
     },
 } as const;
 
-export type EventKey = string;
 
 export const APP_EVENT = {
     SUPPLIERS_CATALOG: {
@@ -57,6 +56,6 @@ export const APP_EVENT = {
         LINK_INVOICE:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_INVOICE },
         LINK_CREDIT_NOTE:    { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_CREDIT_NOTE },
     },
-} as const satisfies Record<string, Record<string, { app: AppKey; event: EventKey }>>;
+} as const satisfies Record<string, Record<string, { app: AppKey; event: string }>>;
 
-export type AppEvent = { app: AppKey; event: EventKey };
+export type AppEvent = { app: AppKey; event: string };

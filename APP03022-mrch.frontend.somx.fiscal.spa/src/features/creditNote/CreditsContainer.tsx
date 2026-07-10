@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -33,6 +33,7 @@ const columns: DataGridColumn<CreditNote>[] = [
   { header: "Total", accessor: r => r.total != null ? formatAmount(r.total) : "--", exportAccessor: r => r.total },
   { header: "UUID", accessor: r => r.invoiceUuid ?? "--", exportAccessor: r => r.invoiceUuid },
   { header: "UUID Factura", accessor: r => r.relatedInvoiceUuid ?? "--", exportAccessor: r => r.relatedInvoiceUuid + "" },
+  { header: "Tipo Nota de Crédito", accessor: r => r.tipoNotaCreditoDescripcion ?? "--", exportAccessor: r => r.tipoNotaCreditoDescripcion },
   { header: "Tipo Proveedor", accessor: r => r.tipoProveedorDescripcion ?? "--", exportAccessor: r => r.tipoProveedorDescripcion },
   { header: "Número Proveedor", accessor: r => r.numeroProveedor ?? "--", exportAccessor: r => r.numeroProveedor },
   { header: "Nombre Proveedor", accessor: r => r.supplierName ?? "--", exportAccessor: r => r.supplierName },
@@ -66,6 +67,7 @@ export default function CreditsGrid() {
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
+  const [tipoNotaCreditoOptions, setTipoNotaCreditoOptions] = useState<SelectableOption<string>[]>([]);
   const customFilters = useMemo((): Partial<CreditNoteFilters> => {
     const params = new URLSearchParams(location.search);
     return {
@@ -98,8 +100,15 @@ export default function CreditsGrid() {
         setProviderTypeOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
       }
     }
+    const fetchTipoNotaCredito = async () => {
+      const options = await fetchCatalogDetails("CatTipoNotaCredito");
+      if (options) {
+        setTipoNotaCreditoOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
+      }
+    }
     fetchStatus();
     fetchProviderType();
+    fetchTipoNotaCredito();
   }, []);
 
   const handleGetXmlContent = useCallback(async (row: CreditNote) => {
@@ -178,12 +187,16 @@ export default function CreditsGrid() {
       action: {
         title: "Ver factura relacionada",
         icon: viewIcon,
-        onClick: (row) => {
+        onClick: (row, nav) => {
           if (!row.relatedInvoiceUuid) return;
           const startDate = row.createdAt ?? "";
           const endDate = row.createdAt ?? "";
-          const url = buildFiscalSpaUrl(`facturas?uuid=${encodeURIComponent(row.relatedInvoiceUuid)}&start=${startDate}&end=${endDate}`);
-          window.open(url, "_blank", "noopener,noreferrer");
+          const qs = new URLSearchParams({
+            uuid: String(row.relatedInvoiceUuid),
+            start: startDate,
+            end: endDate,
+          });
+          nav(`/fiscal/facturas?${qs.toString()}`);
         },
         isDisabled: (row) => !row.relatedInvoiceUuid,
       },

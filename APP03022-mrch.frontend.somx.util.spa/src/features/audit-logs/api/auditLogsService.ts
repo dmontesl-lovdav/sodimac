@@ -46,7 +46,8 @@ export function createAuditLogsService(api: ApiClient) {
                     : params.fechaFin,
         });
 
-        return api.request(`audit-logs${query ? `?${query}` : ""}`, "get");
+        const suffix = query ? `?${query}` : "";
+        return api.request(`audit-logs${suffix}`, "get");
     }
 
     async function getAuditLogDetail(id: string) {
@@ -76,8 +77,9 @@ export function createAuditLogsService(api: ApiClient) {
                     : params.fechaFin,
         });
 
+        const suffix = query ? `?${query}` : "";
         return api.requestBinary(
-            `audit-logs/export/csv${query ? `?${query}` : ""}`,
+            `audit-logs/export/csv${suffix}`,
             "get",
             null,
             "audit-logs.csv"

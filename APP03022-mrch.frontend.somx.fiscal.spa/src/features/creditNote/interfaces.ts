@@ -33,6 +33,7 @@ export const EMPTY_CREDIT_NOTE: CreditNoteFilters = {
 }
 
 export interface CreditNote {
+  tipoNotaCreditoDescripcion: string;
   relatedInvoiceUuid: string | number | boolean;
   invoiceUuid: string;
   fiscalUuid: string | null;

@@ -456,12 +456,12 @@ export default function CatalogsContainer() {
     }
   };
 
-  const handleSelectOne = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds([...selectedIds, id]);
-    } else {
-      setSelectedIds(selectedIds.filter((i) => i !== id));
-    }
+  const selectOne = (id: string) => {
+    setSelectedIds([...selectedIds, id]);
+  };
+
+  const unselectOne = (id: string) => {
+    setSelectedIds(selectedIds.filter((i) => i !== id));
   };
 
   const isAllCurrentPageSelected = () => {
@@ -700,18 +700,25 @@ export default function CatalogsContainer() {
             </PermissionGate>
           </div>
 
-          {!hasSearched ? (
-            <div style={styles.emptyState}>
-              <img src={lobbyIcon} alt="Buscar catálogos" style={styles.emptyImage} />
-              <p style={styles.emptyText}>
-                Utiliza el filtro para realizar una búsqueda de catálogos
-              </p>
-            </div>
-          ) : catalogs.length === 0 ? (
-            <div style={styles.noResults}>
-              <p>No se encontraron catálogos coincidentes con los criterios de búsqueda ingresados.</p>
-            </div>
-          ) : (
+          {(() => {
+            if (!hasSearched) {
+              return (
+                <div style={styles.emptyState}>
+                  <img src={lobbyIcon} alt="Buscar catálogos" style={styles.emptyImage} />
+                  <p style={styles.emptyText}>
+                    Utiliza el filtro para realizar una búsqueda de catálogos
+                  </p>
+                </div>
+              );
+            }
+            if (catalogs.length === 0) {
+              return (
+                <div style={styles.noResults}>
+                  <p>No se encontraron catálogos coincidentes con los criterios de búsqueda ingresados.</p>
+                </div>
+              );
+            }
+            return (
             <>
               <div style={styles.resultsHeader}>
                 <div>
@@ -760,7 +767,7 @@ export default function CatalogsContainer() {
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(catalog.id)}
-                            onChange={(e) => handleSelectOne(catalog.id, e.target.checked)}
+                            onChange={(e) => (e.target.checked ? selectOne(catalog.id) : unselectOne(catalog.id))}
                           />
                         </td>
                         <td style={styles.td}>{catalog.displayId}</td>
@@ -842,7 +849,8 @@ export default function CatalogsContainer() {
                 </button>
               </div>
             </>
-          )}
+            );
+          })()}
 
           {!hasSearched && (
             <div style={{ ...styles.footer, justifyContent: 'flex-end' }}>

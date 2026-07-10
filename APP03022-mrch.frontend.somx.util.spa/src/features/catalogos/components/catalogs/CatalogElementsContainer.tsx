@@ -474,32 +474,50 @@ const buildSearchParams = (
   return searchParams;
 };
 
+const mapCatalogResponse = (response: CatalogResponse): CatalogData => ({
+  id: String(response.id).padStart(4, '0'),
+  name: response.name,
+  description: response.description || '',
+  type: response.catalogType === 'PRIMARIO' ? 'Primario' : 'Secundario',
+  status: response.status === 1 ? 'Activo' : 'Inactivo',
+  createdBy: response.createdBy || 'system',
+  createdAt: response.createdAt ? response.createdAt.split('T')[0] ?? '' : '',
+  updatedBy: response.updatedBy || null,
+  updatedAt: response.updatedAt ? response.updatedAt.split('T')[0] ?? null : null,
+});
+
+const EMPTY_FILTERS = {
+  idElement: '',
+  key: '',
+  element: '',
+  value: '',
+  parentCatalogId: '',
+  parentElementId: '',
+  status: '',
+};
+
+function ParentDisplay({ isPrimario, value }: { isPrimario: boolean; value: string | null | undefined }) {
+  if (isPrimario) return <span style={{ color: '#CCCCCC' }}>(No aplica)</span>;
+  if (value) return <span>{value}</span>;
+  return <span style={{ color: '#999999' }}>(Sin relación)</span>;
+}
+
 export default function CatalogElementsContainer() {
   const navigate = useNavigate();
   const { showError, ModalNode } = useModalNotification();
   const { id } = useParams<{ id: string }>();
 
   const [catalog, setCatalog] = useState<CatalogData | null>(null);
-  const [elements, setElements] = useState<CatalogElement[]>([]);
   const [filteredElements, setFilteredElements] = useState<CatalogElement[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
 
-  const [filters, setFilters] = useState({
-    idElement: '',
-    key: '',
-    element: '',
-    value: '',
-    parentCatalogId: '',
-    parentElementId: '',
-    status: '',
-  });
+  const [filters, setFilters] = useState({ ...EMPTY_FILTERS });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -509,34 +527,25 @@ export default function CatalogElementsContainer() {
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
+    const loadParentCatalogs = async () => {
+      try {
+        const primaryCatalogs = await catalogService.getPrimaryCatalogs();
+        setParentCatalogs(primaryCatalogs.map((c: CatalogSimple) => ({
+          id: String(c.id),
+          name: c.name,
+        })));
+      } catch (e) {
+        console.warn('Could not load parent catalogs:', e);
+      }
+    };
+
     const fetchCatalog = async () => {
       if (!id) return;
-      
       setIsLoading(true);
       try {
         const response: CatalogResponse = await catalogService.getById(parseInt(id));
-        const catalogData: CatalogData = {
-          id: String(response.id).padStart(4, '0'),
-          name: response.name,
-          description: response.description || '',
-          type: response.catalogType === 'PRIMARIO' ? 'Primario' : 'Secundario',
-          status: response.status === 1 ? 'Activo' : 'Inactivo',
-          createdBy: response.createdBy || 'system',
-          createdAt: response.createdAt ? response.createdAt.split('T')[0] : '',
-          updatedBy: response.updatedBy || null,
-          updatedAt: response.updatedAt ? response.updatedAt.split('T')[0] : null,
-        };
-        setCatalog(catalogData);
-
-        try {
-          const primaryCatalogs = await catalogService.getPrimaryCatalogs();
-          setParentCatalogs(primaryCatalogs.map((c: CatalogSimple) => ({
-            id: String(c.id),
-            name: c.name,
-          })));
-        } catch (e) {
-          console.warn('Could not load parent catalogs:', e);
-        }
+        setCatalog(mapCatalogResponse(response));
+        await loadParentCatalogs();
       } catch (error) {
         console.error('Error fetching catalog:', error);
         setCatalog(null);
@@ -544,7 +553,7 @@ export default function CatalogElementsContainer() {
         setIsLoading(false);
       }
     };
-    
+
     fetchCatalog();
   }, [id]);
 
@@ -575,7 +584,6 @@ export default function CatalogElementsContainer() {
       
       const mappedElements = response.items.map(mapApiElementToLocal);
       setFilteredElements(mappedElements);
-      setElements(mappedElements);
       setTotalElements(response.total);
       setTotalPages(response.totalPages);
       setShowResults(true);
@@ -602,18 +610,9 @@ export default function CatalogElementsContainer() {
   };
 
   const handleClear = () => {
-    setFilters({
-      idElement: '',
-      key: '',
-      element: '',
-      value: '',
-      parentCatalogId: '',
-      parentElementId: '',
-      status: '',
-    });
+    setFilters({ ...EMPTY_FILTERS });
     setFilterParentElements([]);
     setFilteredElements([]);
-    setElements([]);
     setShowResults(false);
     setSelectedIds(new Set());
     setCurrentPage(1);
@@ -633,13 +632,6 @@ export default function CatalogElementsContainer() {
       await catalogElementService.changeStatus(parseInt(elementId), newStatus, 'system');
 
       const newStatusText = newStatus === 1 ? 'Activo' : 'Inactivo';
-      setElements((prev) =>
-        prev.map((el) =>
-          el.id === elementId
-            ? { ...el, status: newStatusText as 'Activo' | 'Inactivo' }
-            : el
-        )
-      );
       setFilteredElements((prev) =>
         prev.map((el) =>
           el.id === elementId
@@ -693,7 +685,6 @@ export default function CatalogElementsContainer() {
 
     setIsExporting(true);
     setExportError(null);
-    setShowExportMenu(false);
 
     try {
       const searchParams = buildSearchParams(filters, 1, totalElements || 1000);
@@ -963,15 +954,22 @@ export default function CatalogElementsContainer() {
           </div>
         </div>
 
-        {!showResults ? (
-          <div style={styles.emptyState}>
-            Utiliza el filtro para realizar una búsqueda de elementos.
-          </div>
-        ) : filteredElements.length === 0 ? (
-          <div style={styles.emptyState}>
-            No se encontraron elementos coincidentes con los criterios de búsqueda ingresados.
-          </div>
-        ) : (
+        {(() => {
+          if (!showResults) {
+            return (
+              <div style={styles.emptyState}>
+                Utiliza el filtro para realizar una búsqueda de elementos.
+              </div>
+            );
+          }
+          if (filteredElements.length === 0) {
+            return (
+              <div style={styles.emptyState}>
+                No se encontraron elementos coincidentes con los criterios de búsqueda ingresados.
+              </div>
+            );
+          }
+          return (
           <>
             <div style={styles.resultsHeader}>
               <div>
@@ -1072,22 +1070,10 @@ export default function CatalogElementsContainer() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        {catalog?.type === 'Primario' ? (
-                          <span style={{ color: '#CCCCCC' }}>(No aplica)</span>
-                        ) : el.parentCatalogName ? (
-                          <span>{el.parentCatalogName}</span>
-                        ) : (
-                          <span style={{ color: '#999999' }}>(Sin relación)</span>
-                        )}
+                        <ParentDisplay isPrimario={catalog?.type === 'Primario'} value={el.parentCatalogName} />
                       </td>
                       <td style={styles.td}>
-                        {catalog?.type === 'Primario' ? (
-                          <span style={{ color: '#CCCCCC' }}>(No aplica)</span>
-                        ) : el.parentElementName ? (
-                          <span>{el.parentElementName}</span>
-                        ) : (
-                          <span style={{ color: '#999999' }}>(Sin relación)</span>
-                        )}
+                        <ParentDisplay isPrimario={catalog?.type === 'Primario'} value={el.parentElementName} />
                       </td>
                       <td style={styles.td}>{el.createdBy}</td>
                       <td style={styles.td}>{el.createdAt}</td>
@@ -1155,7 +1141,8 @@ export default function CatalogElementsContainer() {
               }}
             />
           </>
-        )}
+          );
+        })()}
 
         <div style={{ ...styles.footer, justifyContent: 'flex-end' }}>
           {exportError && (

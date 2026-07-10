@@ -16,6 +16,10 @@ export default function CreditNoteSummary({ data }: Props) {
               <td className="pcn-cell">{data.rfcEmisor}</td>
             </tr>
             <tr>
+              <td className="pcn-cell pcn-cell-label">Número Proveedor:</td>
+              <td className="pcn-cell">{data.numeroProveedor}</td>
+            </tr>
+            <tr>
               <td className="pcn-cell pcn-cell-label">Nombre Proveedor:</td>
               <td className="pcn-cell">{data.nombreProveedor}</td>
             </tr>

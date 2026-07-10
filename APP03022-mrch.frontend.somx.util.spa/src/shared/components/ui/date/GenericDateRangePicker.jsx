@@ -10,6 +10,44 @@ const SIZE_CLASSES = {
     lg: 'dr-lg',
 };
 
+const RangeInput = forwardRef(({ value, onChange: _onChange, onClick, placeholder, sizeClass, inputClassName, inputProps, hasValue, onClear, onOpen }, ref) => (
+    <div className="dr-container">
+        <input
+            ref={ref}
+            value={value ?? ''}
+            onChange={_onChange}
+            onClick={onClick}
+            placeholder={placeholder}
+            className={`dr-input ${sizeClass} ${inputClassName}`}
+            {...inputProps}
+        />
+        {hasValue && (
+            <button
+                type="button"
+                className="dr-clear-btn"
+                onClick={onClear}
+                aria-label="Limpiar rango"
+                title="Limpiar"
+            >
+                ✕
+            </button>
+        )}
+        {!hasValue && (
+            <button
+                type="button"
+                className="dr-btn"
+                onClick={onOpen}
+                aria-label="Abrir calendario"
+                title="Abrir calendario"
+            >
+                📅
+            </button>
+        )}
+    </div>
+));
+
+RangeInput.displayName = 'RangeInput';
+
 export default function GenericDateRangePicker({
     value = [null, null],
     onChange,
@@ -72,45 +110,6 @@ export default function GenericDateRangePicker({
 
     const hasValue = Boolean(internalRange?.[0] || internalRange?.[1]);
 
-    const RangeInput = forwardRef(({ value, onChange: _onChange, onClick }, ref) => (
-        <div className="dr-container">
-            <input
-                ref={ref}
-                value={value ?? ''}
-                onChange={_onChange}
-                onClick={onClick}
-                placeholder={placeholder}
-                className={`dr-input ${SIZE_CLASSES[size]} ${inputClassName}`}
-                {...inputProps}
-            />
-
-            {hasValue && (
-                <button
-                    type="button"
-                    className="dr-clear-btn"
-                    onClick={clearRange}
-                    aria-label="Limpiar rango"
-                    title="Limpiar"
-                >
-                    ✕
-                </button>
-            )}
-
-            {!hasValue && (
-                <button
-                    type="button"
-                    className="dr-btn"
-                    onClick={openCalendar}
-                    aria-label="Abrir calendario"
-                    title="Abrir calendario"
-                >
-                    📅
-                </button>
-            )}
-        </div>
-    ));
-
-    RangeInput.displayName = 'RangeInput';
 
     return (
         <div className={`dr-wrapper ${className}`}>
@@ -128,7 +127,17 @@ export default function GenericDateRangePicker({
                 popperClassName={`dr-popper ${popperClassName ?? ''}`}
                 shouldCloseOnSelect={false}
                 disabledKeyboardNavigation={false}
-                customInput={<RangeInput />}
+                customInput={
+                    <RangeInput
+                        placeholder={placeholder}
+                        sizeClass={SIZE_CLASSES[size]}
+                        inputClassName={inputClassName}
+                        inputProps={inputProps}
+                        hasValue={hasValue}
+                        onClear={clearRange}
+                        onOpen={openCalendar}
+                    />
+                }
                 renderCustomHeader={({
                     date,
                     decreaseMonth,

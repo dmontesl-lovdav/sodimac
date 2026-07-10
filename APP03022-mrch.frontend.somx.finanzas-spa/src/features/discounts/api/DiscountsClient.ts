@@ -1,61 +1,196 @@
-import { createApiClient } from "@/services/ApiClient";
-import { Rebate } from "../interfaces";
-import type { RebateFilters } from "../interfaces";
-import { normalizeRebateRow } from "./normalizeRebate";
+import {
+  createApiClient,
+} from "@/services/ApiClient";
+
+import type {
+  Rebate,
+  RebateFilters,
+} from "../interfaces";
+
+import {
+  normalizeRebateRow,
+} from "./normalizeRebate";
 
 const api = createApiClient();
 
 const DEFAULT_ROUTE = "rebates";
 
-function isNotFound(err: unknown): boolean {
-  const e = err as { response?: { status?: number } };
-  return e?.response?.status === 404;
+function isNotFound(
+  error: unknown
+): boolean {
+  const normalizedError =
+    error as {
+      response?: {
+        status?: number;
+      };
+    };
+
+  return (
+    normalizedError
+      ?.response
+      ?.status === 404
+  );
 }
 
 export const DiscountsClient = {
-  async get(criteria: RebateFilters): Promise<Rebate[]> {
-    const params = new URLSearchParams();
+  async get(
+    criteria: RebateFilters
+  ): Promise<Rebate[]> {
+    const params =
+      new URLSearchParams();
 
-    if (criteria.status != null && criteria.status !== ("" as unknown as number)) {
-      params.set("status", String(criteria.status));
+    if (
+      criteria.status != null &&
+      Number.isFinite(
+        Number(criteria.status)
+      )
+    ) {
+      params.set(
+        "status",
+        String(criteria.status)
+      );
     }
-    if (criteria.supplierNumber != null && !Number.isNaN(Number(criteria.supplierNumber))) {
-      params.set("vendorNumber", String(criteria.supplierNumber));
+
+    if (
+      criteria.supplierNumber != null &&
+      Number.isFinite(
+        Number(
+          criteria.supplierNumber
+        )
+      )
+    ) {
+      params.set(
+        "vendorNumber",
+        String(
+          criteria.supplierNumber
+        )
+      );
     }
-    if (criteria.documentNumber?.trim()) {
-      params.set("documentNumber", criteria.documentNumber.trim());
+
+    if (
+      criteria.supplierType != null &&
+      Number.isFinite(
+        Number(
+          criteria.supplierType
+        )
+      )
+    ) {
+      params.set(
+        "supplierType",
+        String(
+          criteria.supplierType
+        )
+      );
     }
-    if (criteria.source != null && !Number.isNaN(Number(criteria.source))) {
-      params.set("source", String(criteria.source));
+
+    if (
+      criteria.documentNumber
+        ?.trim()
+    ) {
+      params.set(
+        "documentNumber",
+        criteria.documentNumber.trim()
+      );
+    }
+
+    if (
+      criteria.sapDocument
+        ?.trim()
+    ) {
+      params.set(
+        "sapDocument",
+        criteria.sapDocument.trim()
+      );
+    }
+
+    if (
+      criteria.source != null &&
+      Number.isFinite(
+        Number(criteria.source)
+      )
+    ) {
+      params.set(
+        "source",
+        String(criteria.source)
+      );
     }
 
     if (criteria.from) {
-      params.set("from", new Date(criteria.from).toISOString());
+      params.set(
+        "from",
+        new Date(
+          criteria.from
+        ).toISOString()
+      );
     }
+
     if (criteria.to) {
-      params.set("to", new Date(criteria.to).toISOString());
+      params.set(
+        "to",
+        new Date(
+          criteria.to
+        ).toISOString()
+      );
     }
 
-    const limit = criteria.pageSize ?? 100;
-    const pageIdx = Math.max(0, (criteria.pageNumber ?? 1) - 1);
-    params.set("limit", String(limit));
-    params.set("page", String(pageIdx));
+    const limit =
+      criteria.pageSize ?? 100;
 
-    const query = params.toString();
+    /*
+     * La UI maneja páginas desde 1,
+     * mientras que el backend las
+     * maneja desde 0.
+     */
+    const pageIndex =
+      Math.max(
+        0,
+        (
+          criteria.pageNumber ??
+          1
+        ) - 1
+      );
+
+    params.set(
+      "limit",
+      String(limit)
+    );
+
+    params.set(
+      "page",
+      String(pageIndex)
+    );
+
+    const query =
+      params.toString();
 
     try {
-      const rows = await api.request<Rebate[]>(
-        query ? `${DEFAULT_ROUTE}?${query}` : DEFAULT_ROUTE,
-        "get"
-      );
-      return Array.isArray(rows)
-        ? rows.map((row) =>
-            normalizeRebateRow(row as Record<string, unknown>)
+      const rows =
+        await api.request<Rebate[]>(
+          query
+            ? `${DEFAULT_ROUTE}?${query}`
+            : DEFAULT_ROUTE,
+          "get"
+        );
+
+      if (!Array.isArray(rows)) {
+        return [];
+      }
+
+      return rows.map(
+        (row) =>
+          normalizeRebateRow(
+            row as unknown as Record<
+              string,
+              unknown
+            >
           )
-        : [];
-    } catch (err) {
-      if (isNotFound(err)) return [];
-      throw err;
+      );
+    } catch (error) {
+      if (isNotFound(error)) {
+        return [];
+      }
+
+      throw error;
     }
   },
 };

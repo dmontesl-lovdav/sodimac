@@ -85,29 +85,35 @@ export function downloadJson(filename: string, data: any) {
     URL.revokeObjectURL(url);
 }
 
+function kindFromStatus(statusCode: number): 'success' | 'error' {
+    return statusCode >= 200 && statusCode < 300 ? 'success' : 'error';
+}
+
+function kindFromTipo(tipo: string): 'error' | 'alerta' | 'info' {
+    if (tipo === 'ERROR') return 'error';
+    if (tipo === 'ALERTA') return 'alerta';
+    return 'info';
+}
+
+function computeOkBadge(
+    statusCode: unknown,
+    kind: 'success' | 'error' | 'alerta' | 'info',
+): string | null {
+    if (typeof statusCode === 'number') {
+        return statusCode >= 200 && statusCode < 300 ? '200 OK' : 'Error';
+    }
+    return kind === 'error' ? 'Error' : null;
+}
+
 export function resolveKind(r: AuditLogRecord) {
     const tipo = getTipo(r);
     const statusCode = r.details?.statusCode;
 
-    const kind =
-        typeof statusCode === 'number'
-            ? statusCode >= 200 && statusCode < 300
-                ? 'success'
-                : 'error'
-            : tipo === 'ERROR'
-                ? 'error'
-                : tipo === 'ALERTA'
-                    ? 'alerta'
-                    : 'info';
+    const kind = typeof statusCode === 'number'
+        ? kindFromStatus(statusCode)
+        : kindFromTipo(tipo);
 
-    const okBadge =
-        typeof statusCode === 'number'
-            ? statusCode >= 200 && statusCode < 300
-                ? '200 OK'
-                : 'Error'
-            : kind === 'error'
-                ? 'Error'
-                : null;
+    const okBadge = computeOkBadge(statusCode, kind);
 
     return { kind, okBadge, statusCode };
 }

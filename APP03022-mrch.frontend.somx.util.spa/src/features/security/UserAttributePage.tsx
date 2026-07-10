@@ -37,6 +37,39 @@ type UserAttributeListRestore = {
   };
 };
 
+const findExistingAttributeValueId = (
+  attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
+  attributeTypeId: number,
+): number | undefined =>
+  attributes.find((item) => item.attributeTypeId === attributeTypeId)?.attributeValueId;
+
+const resolveChosenAttributeValue = (
+  attributeTypeId: number,
+  prev: Record<number, string>,
+  attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
+  optionsMap: Record<number, AttributeValueOption[]>,
+): number | undefined => {
+  const existing = findExistingAttributeValueId(attributes, attributeTypeId);
+  if (existing) return existing;
+  const prevValue = prev[attributeTypeId];
+  if (prevValue) return Number(prevValue);
+  return optionsMap[attributeTypeId]?.[0]?.id;
+};
+
+const buildSelectedValueMap = (
+  attributeTypeIds: number[],
+  prev: Record<number, string>,
+  attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
+  optionsMap: Record<number, AttributeValueOption[]>,
+): Record<number, string> => {
+  const next: Record<number, string> = {};
+  for (const attributeTypeId of attributeTypeIds) {
+    const chosen = resolveChosenAttributeValue(attributeTypeId, prev, attributes, optionsMap);
+    if (chosen) next[attributeTypeId] = String(chosen);
+  }
+  return next;
+};
+
 export function UserAttributePage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -178,25 +211,9 @@ export function UserAttributePage() {
         }
         setValueOptionsByType(optionsMap);
 
-        const resolveChosenValue = (
-          attributeTypeId: number,
-          prev: Record<number, string>,
-        ): number | undefined => {
-          const existing = attributes.find((item) => item.attributeTypeId === attributeTypeId)?.attributeValueId;
-          if (existing) return existing;
-          const prevValue = prev[attributeTypeId];
-          if (prevValue) return Number(prevValue);
-          return optionsMap[attributeTypeId]?.[0]?.id;
-        };
-
-        setSelectedValueByType((prev) => {
-          const next: Record<number, string> = {};
-          for (const attributeTypeId of attributeTypeIds) {
-            const chosen = resolveChosenValue(attributeTypeId, prev);
-            if (chosen) next[attributeTypeId] = String(chosen);
-          }
-          return next;
-        });
+        setSelectedValueByType((prev) =>
+          buildSelectedValueMap(attributeTypeIds, prev, attributes, optionsMap),
+        );
       } catch {
         if (!cancelled) {
           showAlert({

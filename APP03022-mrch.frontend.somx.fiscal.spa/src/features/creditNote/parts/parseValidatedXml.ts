@@ -1,6 +1,6 @@
 import type { CreditNoteXmlData } from "./types";
 
-export function parseValidatedXml(data: unknown): CreditNoteXmlData | null {
+export function parseValidatedXml(data: unknown, providers: any): CreditNoteXmlData | null {
   if (!data || typeof data !== "object") return null;
 
   const root = data as Record<string, unknown>;
@@ -10,9 +10,11 @@ export function parseValidatedXml(data: unknown): CreditNoteXmlData | null {
   const timbre = root.timbreFiscalDigital as Record<string, unknown> | undefined;
   if (!emisor || !comprobante || !timbre) return null;
 
+  const supplierNumber = providers?.find((p: any) => p.rfc == emisor.rfc)?.idProveedor;
   return {
     rfcEmisor: String(emisor.rfc ?? ""),
     nombreProveedor: String(emisor.nombre ?? ""),
+    numeroProveedor: String(supplierNumber ?? ""),
     serie: String(comprobante.serie ?? ""),
     folio: String(comprobante.folio ?? ""),
     monto: String(comprobante.subTotal ?? comprobante.total ?? ""),

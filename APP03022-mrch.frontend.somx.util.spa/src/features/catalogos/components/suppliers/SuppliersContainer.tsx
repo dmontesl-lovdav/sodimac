@@ -400,7 +400,6 @@ const ExportFileIcon = () => (
 const SuppliersContainer = () => {
   const navigate = useNavigate();
   const { showError, showConfirm, ModalNode } = useModalNotification();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [supplierTypes, setSupplierTypes] = useState<SupplierType[]>([]);
   const [loading, setLoading] = useState(false);
@@ -461,7 +460,6 @@ const SuppliersContainer = () => {
     setError(null);
     try {
       const suppliersData = await supplierService.getAll();
-      setSuppliers(suppliersData);
       return suppliersData;
     } catch (err) {
       console.error('Error al cargar proveedores:', err);
@@ -486,7 +484,6 @@ const SuppliersContainer = () => {
   const handleClearFilters = () => {
     setFilters({ supplierNumber: '', businessName: '', rfc: '', typeId: '', status: '' });
     setFilteredSuppliers([]);
-    setSuppliers([]);
     setHasSearched(false);
     setCurrentPage(1);
   };
@@ -521,9 +518,12 @@ const SuppliersContainer = () => {
     }
   };
 
-  const handleSelectOne = (id: number, checked: boolean) => {
-    if (checked) setSelectedIds([...selectedIds, id]);
-    else setSelectedIds(selectedIds.filter((i) => i !== id));
+  const selectOne = (id: number) => {
+    setSelectedIds([...selectedIds, id]);
+  };
+
+  const unselectOne = (id: number) => {
+    setSelectedIds(selectedIds.filter((i) => i !== id));
   };
 
   const handleToggleStatus = async (supplier: Supplier) => {
@@ -740,19 +740,29 @@ const SuppliersContainer = () => {
             </div>
           </div>
 
-          {loading ? (
-            <div style={styles.loading}>
-              <div style={styles.spinner}></div>
-            </div>
-          ) : !hasSearched ? (
-            <div style={styles.noResults}>
-              Aplica los filtros y presiona Buscar para consultar los proveedores.
-            </div>
-          ) : filteredSuppliers.length === 0 ? (
-            <div style={styles.noResults}>
-              No se encontraron proveedores con los criterios de búsqueda ingresados.
-            </div>
-          ) : (
+          {(() => {
+            if (loading) {
+              return (
+                <div style={styles.loading}>
+                  <div style={styles.spinner}></div>
+                </div>
+              );
+            }
+            if (!hasSearched) {
+              return (
+                <div style={styles.noResults}>
+                  Aplica los filtros y presiona Buscar para consultar los proveedores.
+                </div>
+              );
+            }
+            if (filteredSuppliers.length === 0) {
+              return (
+                <div style={styles.noResults}>
+                  No se encontraron proveedores con los criterios de búsqueda ingresados.
+                </div>
+              );
+            }
+            return (
             <>
               <div style={styles.tableWrapper}>
                 <table style={styles.table}>
@@ -778,7 +788,7 @@ const SuppliersContainer = () => {
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(supplier.id)}
-                            onChange={(e) => handleSelectOne(supplier.id, e.target.checked)}
+                            onChange={(e) => (e.target.checked ? selectOne(supplier.id) : unselectOne(supplier.id))}
                           />
                         </td>
                         <td style={styles.td}>{supplier.id}</td>
@@ -876,7 +886,8 @@ const SuppliersContainer = () => {
                 }}
               />
             </>
-          )}
+            );
+          })()}
         </section>
       </main>
       {ModalNode}

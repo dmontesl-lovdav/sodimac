@@ -27,7 +27,7 @@ interface FormErrors {
 
 const EXTERNAL_KEY_REGEX = /^[a-zA-Z0-9._-]*$/;
 
-const INVALID_CHARS = /[!?¡¿:;.,@#%^&*(){}<>\/'"\\]/;
+const INVALID_CHARS = /[!?¡¿:;.,@#%^&*(){}<>/'"\\]/;
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#ffffff', padding: '1.5rem 2rem' },
@@ -114,24 +114,39 @@ const areFormsEqual = (a: FormData, b: FormData): boolean =>
   a.parentCatalogId === b.parentCatalogId &&
   a.parentElementId === b.parentElementId;
 
+const EMPTY_ELEMENT_FORM: FormData = {
+  elementName: '',
+  startDate: '',
+  endDate: '',
+  value: '',
+  externalKey: '',
+  parentCatalogId: '',
+  parentElementId: '',
+};
+
+const mapElementToFormData = (element: any): FormData => ({
+  elementName: element.element || '',
+  startDate: element.validFrom || '',
+  endDate: element.validTo || '',
+  value: element.value || '',
+  externalKey: element.externalKey || '',
+  parentCatalogId: element.parentCatalogId ? String(element.parentCatalogId) : '',
+  parentElementId: element.parentElementId ? String(element.parentElementId) : '',
+});
+
 export default function ElementForm() {
   const navigate = useNavigate();
   const { id, elementId } = useParams<{ id: string; elementId?: string }>();
   const catalogId = Number(id);
   const isEditMode = !!elementId;
 
-  const [catalogName, setCatalogName] = useState('');
   const [catalogType, setCatalogType] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<number[]>([1]);
 
-  const [formData, setFormData] = useState<FormData>({
-    elementName: '', startDate: '', endDate: '', value: '', externalKey: '', parentCatalogId: '', parentElementId: '',
-  });
-  const [originalData, setOriginalData] = useState<FormData>({
-    elementName: '', startDate: '', endDate: '', value: '', externalKey: '', parentCatalogId: '', parentElementId: '',
-  });
+  const [formData, setFormData] = useState<FormData>({ ...EMPTY_ELEMENT_FORM });
+  const [originalData, setOriginalData] = useState<FormData>({ ...EMPTY_ELEMENT_FORM });
   const [originalParentCatalogName, setOriginalParentCatalogName] = useState('');
   const [originalParentElementName, setOriginalParentElementName] = useState('');
 
@@ -166,39 +181,31 @@ export default function ElementForm() {
   );
 
   useEffect(() => {
+    const loadEditingElement = async () => {
+      const element = await catalogElementService.getById(catalogId, Number(elementId));
+      const data = mapElementToFormData(element);
+      setFormData(data);
+      setOriginalData(data);
+      setElementStatus(element.status);
+      setOriginalStatus(element.status);
+      setOriginalParentCatalogName(element.parentCatalogName || '');
+      setOriginalParentElementName(element.parentElementName || '');
+      if (element.parentCatalogId) {
+        const elems = await catalogElementService.getActiveElements(element.parentCatalogId);
+        setParentElements(elems);
+      }
+      setExpandedSteps([1, 2, 3]);
+    };
+
     const loadData = async () => {
       setIsLoading(true);
       try {
         const catalogDetail = await catalogElementService.getCatalogDetail(catalogId);
-        setCatalogName(catalogDetail.name);
         setCatalogType(catalogDetail.catalogType || '');
-
         const primaries = await catalogService.getPrimaryCatalogs();
         setParentCatalogs(primaries);
-
         if (isEditMode && elementId) {
-          const element = await catalogElementService.getById(catalogId, Number(elementId));
-          const data: FormData = {
-            elementName: element.element || '',
-            startDate: element.validFrom || '',
-            endDate: element.validTo || '',
-            value: element.value || '',
-            externalKey: element.externalKey || '',
-            parentCatalogId: element.parentCatalogId ? String(element.parentCatalogId) : '',
-            parentElementId: element.parentElementId ? String(element.parentElementId) : '',
-          };
-          setFormData(data);
-          setOriginalData(data);
-          setElementStatus(element.status);
-          setOriginalStatus(element.status);
-          setOriginalParentCatalogName(element.parentCatalogName || '');
-          setOriginalParentElementName(element.parentElementName || '');
-
-          if (element.parentCatalogId) {
-            const elems = await catalogElementService.getActiveElements(element.parentCatalogId);
-            setParentElements(elems);
-          }
-          setExpandedSteps([1, 2, 3]);
+          await loadEditingElement();
         }
       } catch (err) {
         console.error('Error loading data:', err);

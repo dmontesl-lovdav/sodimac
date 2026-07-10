@@ -1,25 +1,23 @@
-export default function TrainIcon({
-    kind,
-}: {
-    kind: 'success' | 'error' | 'info' | 'alerta';
-}) {
-    const glyph =
-        kind === 'success' ? '✓' : kind === 'error' ? '✕' : kind === 'alerta' ? '!' : 'i';
+type TrainKind = 'success' | 'error' | 'info' | 'alerta';
 
+const GLYPH_BY_KIND: Record<TrainKind, string> = {
+    success: '✓',
+    error: '✕',
+    alerta: '!',
+    info: 'i',
+};
+
+const CLASS_BY_KIND: Record<TrainKind, string> = {
+    success: 'alt-node alt-node-success',
+    error: 'alt-node alt-node-error',
+    alerta: 'alt-node alt-node-alerta',
+    info: 'alt-node alt-node-info',
+};
+
+export default function TrainIcon({ kind }: { kind: TrainKind }) {
     return (
-        <span
-            className={
-                kind === 'success'
-                    ? 'alt-node alt-node-success'
-                    : kind === 'error'
-                        ? 'alt-node alt-node-error'
-                        : kind === 'alerta'
-                            ? 'alt-node alt-node-alerta'
-                            : 'alt-node alt-node-info'
-            }
-            aria-hidden="true"
-        >
-            <span className="alt-nodeInner">{glyph}</span>
+        <span className={CLASS_BY_KIND[kind]} aria-hidden="true">
+            <span className="alt-nodeInner">{GLYPH_BY_KIND[kind]}</span>
         </span>
     );
 }

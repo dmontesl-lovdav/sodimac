@@ -132,30 +132,27 @@ export const ParameterGrid: FC<ParameterGridProps> = ({
       align: 'center' as const,
       render: (row: Parameter) => {
         const enabled = canChangeStatus(row);
+        const isActive = getEffectiveStatus(row) === 1;
+        const getTitle = () => {
+          if (!enabled) return 'No se puede modificar el estatus de esta versión';
+          return isActive ? 'Desactivar parámetro' : 'Activar parámetro';
+        };
         return (
           <label
             className={`switch ${!enabled ? 'switch--disabled' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              if (enabled) onStatusChange?.(row);
-            }}
             style={{
               opacity: enabled ? 1 : 0.5,
               cursor: enabled ? 'pointer' : 'not-allowed',
             }}
-            title={
-              enabled
-                ? getEffectiveStatus(row) === 1
-                  ? 'Desactivar parámetro'
-                  : 'Activar parámetro'
-                : 'No se puede modificar el estatus de esta versión'
-            }
+            title={getTitle()}
           >
             <input
               type="checkbox"
-              checked={getEffectiveStatus(row) === 1}
-              readOnly
+              checked={isActive}
               disabled={!enabled}
+              onChange={() => {
+                if (enabled) onStatusChange?.(row);
+              }}
             />
             <span className="switch__slider" />
           </label>

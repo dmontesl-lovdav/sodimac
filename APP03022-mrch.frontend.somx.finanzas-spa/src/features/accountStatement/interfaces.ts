@@ -19,6 +19,7 @@ export interface AccountStatementRecord {
 }
 
 export interface AccountStatementFilters {
+    providerType: string;
     providerId?: string;
     year: number;
     month: number | 'all';

@@ -7,7 +7,7 @@ import { GenericButton, GenericModal } from "@/shared/components/ui";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
-import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, buildFiscalSpaUrl, SystemParameter } from "@/utils/utils";
+import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, buildFiscalSpaUrl, SystemParameter, fetchProvidersAsCatalog } from "@/utils/utils";
 import "@/shared/components/ui/alerts/Alerts.css";
 import type { Invoice } from "../invoice/interfaces";
 import { createCreditNotePublishClient } from "./api/CreditNotePublishClient";
@@ -109,8 +109,17 @@ function PublishCreditNoteContent() {
   const isPageLoading = traceLoading || paramsLoading;
   const uploadsLocked = isFinished || !hasTraceId || isPageLoading;
 
+  const [providers, setProviders] = useState<any>(null);
   useEffect(() => {
-    void fetchSystemParameters()
+    const fetchProvidersList = async () => {
+      const providers = await fetchProvidersAsCatalog("rfc", true);
+      setProviders(providers);
+    };
+    fetchProvidersList();
+  }, []);
+
+  useEffect(() => {
+    fetchSystemParameters()
       .then((response) => setSystemParameters(response?.data ?? null))
       .finally(() => setParamsLoading(false));
   }, []);
@@ -197,15 +206,15 @@ function PublishCreditNoteContent() {
 
     try {
       const data = await publishClient.validateXml(selectedFile);
+
       if (!isActive()) return;
 
-      const parsed = parseValidatedXml(data);
+      const parsed = parseValidatedXml(data, providers);
       if (!parsed) {
         showAlert("No fue posible leer la información del XML.");
         setIsValidCreditNote(false);
         return;
       }
-
       setCreditNoteData(parsed);
       const cmd = resolveXmlValidationCommand(data, parsed);
       setIsValidCreditNote(cmd.isValid);

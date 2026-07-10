@@ -29,9 +29,9 @@ export default function GenericModal({
 
     const sev = palette[severity] ?? palette.info;
 
-    return (
-        <div className="gm-overlay">
-            {variant === 'loading' ? (
+    const renderContent = () => {
+        if (variant === 'loading') {
+            return (
                 <div className="gm-box gm-loading">
                     <svg className="gm-spinner" viewBox="0 0 24 24">
                         <circle className="gm-spinner-track" cx="12" cy="12" r="10" />
@@ -39,18 +39,16 @@ export default function GenericModal({
                     </svg>
                     <p className="gm-msg">{message}</p>
                 </div>
-            ) : variant === 'confirm' ? (
+            );
+        }
+        if (variant === 'confirm') {
+            return (
                 <div className="gm-box gm-content">
                     <div className={`gm-icon-circle ${sev.bg}`}>
                         {React.createElement(sev.icon, { className: `gm-icon ${sev.color}` })}
                     </div>
-
                     {title && <h3 className="gm-title">{title}</h3>}
-
-                    <p className="gm-text">
-                        {message || messageConfirm}
-                    </p>
-
+                    <p className="gm-text">{message || messageConfirm}</p>
                     <div className="gm-actions">
                         <button onClick={onCancel} className="gm-btn gm-btn-cancel">
                             {cancelText}
@@ -60,33 +58,36 @@ export default function GenericModal({
                         </button>
                     </div>
                 </div>
-            ) : (
-                <div className={`gm-box gm-content ${Array.isArray(items) && items.length > 0 ? 'gm-content-wide' : ''}`}>
-                    <div className={`gm-icon-circle ${palette[severity].bg}`}>
-                        {React.createElement(palette[severity].icon, {
-                            className: `gm-icon ${palette[severity].color}`,
-                        })}
-                    </div>
-
-                    {title && <h3 className="gm-title">{title}</h3>}
-
-                    {message && <p className="gm-text">{message}</p>}
-
-                    {Array.isArray(items) && items.length > 0 && (
-                        <ul className="gm-items">
-                            {items.map((it, idx) => (
-                                <li key={idx} className="gm-items-item">
-                                    {it}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-
-                    <button onClick={onClose} className="gm-btn gm-btn-confirm gm-btn-full">
-                        {buttonText}
-                    </button>
+            );
+        }
+        return (
+            <div className={`gm-box gm-content ${Array.isArray(items) && items.length > 0 ? 'gm-content-wide' : ''}`}>
+                <div className={`gm-icon-circle ${palette[severity].bg}`}>
+                    {React.createElement(palette[severity].icon, {
+                        className: `gm-icon ${palette[severity].color}`,
+                    })}
                 </div>
-            )}
+                {title && <h3 className="gm-title">{title}</h3>}
+                {message && <p className="gm-text">{message}</p>}
+                {Array.isArray(items) && items.length > 0 && (
+                    <ul className="gm-items">
+                        {items.map((it) => (
+                            <li key={typeof it === 'string' ? it : JSON.stringify(it)} className="gm-items-item">
+                                {it}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                <button onClick={onClose} className="gm-btn gm-btn-confirm gm-btn-full">
+                    {buttonText}
+                </button>
+            </div>
+        );
+    };
+
+    return (
+        <div className="gm-overlay">
+            {renderContent()}
         </div>
     );
 }

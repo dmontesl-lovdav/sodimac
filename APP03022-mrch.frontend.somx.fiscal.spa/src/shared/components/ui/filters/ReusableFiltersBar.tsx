@@ -71,7 +71,9 @@ function normalizeFiltersForSubmit<F extends Record<string, any>>(
 }
 
 function selectFilterValue(value: unknown): string {
-  return normalizeProviderFilterValue(value);
+  if (value == null || value === "") return "";
+  if (String(value) === " ") return " ";
+  return String(value);
 }
 
 function mapSelectOptions(
@@ -382,7 +384,7 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
       }
     }
 
-    setFilters(normalizedFilters);
+    setFilters(filters);
     setDateRanges((prev) => {
       const next = { ...prev };
       for (const field of fields) {

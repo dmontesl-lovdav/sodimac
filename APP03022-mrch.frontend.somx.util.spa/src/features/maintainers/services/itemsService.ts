@@ -36,9 +36,12 @@ class ItemsService {
             const response = await this.getItems();
 
             if (response?.success) {
+                const countSuffix = typeof response.count === 'number'
+                    ? ` Registros detectados: ${response.count}.`
+                    : '';
                 return {
                     online: true,
-                    message: `La conexión con el backend se encuentra activa. Servicio disponible correctamente.${typeof response.count === 'number' ? ` Registros detectados: ${response.count}.` : ''}`,
+                    message: `La conexión con el backend se encuentra activa. Servicio disponible correctamente.${countSuffix}`,
                     count: response.count,
                 };
             }

@@ -131,6 +131,11 @@ const styles = {
   },
 };
 
+const getSupplierSubmitLabel = (saving: boolean, isEditing: boolean): string => {
+  if (saving) return 'Guardando...';
+  return isEditing ? 'Actualizar' : 'Crear';
+};
+
 const SupplierForm = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -463,7 +468,7 @@ const SupplierForm = () => {
               style={{ ...styles.btnPrimary, opacity: saving ? 0.65 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}
               disabled={saving}
             >
-              {saving ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              {getSupplierSubmitLabel(saving, isEditing)}
             </button>
           </div>
         </form>

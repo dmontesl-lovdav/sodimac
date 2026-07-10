@@ -127,17 +127,37 @@ export function createApiClient(options?: {
             },
         });
 
-        const blob = new Blob([res.data]);
-
         const dispositionHeader =
             (res.headers as Record<string, string> | undefined)?.["content-disposition"] ??
             (res.headers as Record<string, string> | undefined)?.["Content-Disposition"];
-        const serverFilename = parseFilenameFromContentDisposition(dispositionHeader);
+
+        const serverFilename =
+            parseFilenameFromContentDisposition(dispositionHeader);
+
+        const finalFilename =
+            serverFilename || filename || "file.bin";
+
+        const contentType =
+            (res.headers as Record<string, string> | undefined)?.["content-type"] ??
+            res.data?.type ??
+            "";
+
+        const isCsv =
+            finalFilename.toLowerCase().endsWith(".csv") ||
+            path.toLowerCase().includes("/csv") ||
+            contentType.toLowerCase().includes("text/csv");
+
+        const blob = isCsv
+            ? new Blob(["\uFEFF", res.data], {
+                type: "text/csv;charset=utf-8",
+            })
+            : new Blob([res.data], {
+                type: contentType || "application/octet-stream",
+            });
 
         const anchor = document.createElement("a");
         anchor.href = window.URL.createObjectURL(blob);
-        anchor.download = serverFilename || filename || "file.bin";
-
+        anchor.download = finalFilename;
         document.body.appendChild(anchor);
         anchor.click();
 

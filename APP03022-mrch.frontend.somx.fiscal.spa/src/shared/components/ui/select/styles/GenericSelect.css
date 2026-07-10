@@ -58,3 +58,25 @@
 .generic-select option[value=""] {
     color: #9ca3af;
 }
+
+/* Reset de botones internos (opciones, limpiar) */
+.generic-select-container button,
+.generic-select-searchable button {
+    margin: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    box-shadow: none;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.generic-select-container button:focus-visible,
+.generic-select-searchable button:focus-visible {
+    outline: 2px solid rgba(2, 132, 199, 0.35);
+    outline-offset: -2px;
+}

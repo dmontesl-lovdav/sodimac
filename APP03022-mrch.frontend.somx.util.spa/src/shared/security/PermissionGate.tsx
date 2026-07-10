@@ -26,8 +26,6 @@ export function PermissionGate({
 }: PermissionGateProps) {
     const sec = useSecurityContext();
 
-    // return <>{children}</>;
-
     if (sec.isLoading) {
         return hideWhileLoading ? <>{fallback}</> : <>{children}</>;
     }

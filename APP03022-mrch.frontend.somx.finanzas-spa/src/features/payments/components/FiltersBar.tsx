@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import type { ProvidersOptions } from "@/features/orders/interfaces";
-import { fetchProvidersAsCatalog } from "@/utils/utils";
+import { fetchCatalog, fetchProvidersAsCatalog, mapCatalogResponseToFilterOptions } from "@/utils/utils";
 import {
   FINANCE_LIST_KEYS,
   financeListTodayDateRange,
@@ -30,6 +30,7 @@ export interface PaymentFiltersValues {
     paymentYear?: string;
     startDate: string;
     endDate: string;
+    providerType?: string;
 }
 
 interface FiltersBarProps {
@@ -53,9 +54,9 @@ export default function FiltersBar({
     const [providers, setProviders] = useState<ProvidersOptions[]>([]);
     const [paymentReference, setPaymentReference] = useState<string>("");
     const [paymentYear, setPaymentYear] = useState<string>("");
-
+    const [providerType, setProviderType] = useState<string>("");
     const [dateRange, setDateRange] = useState<DateRange>([null, null]);
-
+    const [providerTypes, setProviderTypes] = useState<any[]>([]);
     const [alertModal, setAlertModal] = useState<{
         visible: boolean;
         title: string;
@@ -78,6 +79,7 @@ export default function FiltersBar({
         setProviderId("");
         setPaymentReference("");
         setPaymentYear("");
+        setProviderType("");
     }, []);
 
     useFinanceListDefaultsOnUrlReset(
@@ -99,6 +101,7 @@ export default function FiltersBar({
                 setProviderId(saved.providerId || "");
                 setPaymentReference(saved.paymentReference || "");
                 setPaymentYear(saved.paymentYear || "");
+                setProviderType(saved.providerType || "");
                 return;
             }
 
@@ -115,7 +118,17 @@ export default function FiltersBar({
 
         (async () => {
             const list = await fetchProvidersAsCatalog();
+            const types = await fetchCatalog("CatTipoProveedor");
             if (list) setProviders(list);
+
+            if(types) {
+                //@ts-ignore
+                const mapped = types.details?.map((item: any) => ({
+                    label: item.description,
+                    value: item.value,
+                }));
+                setProviderTypes([{ label: "Todos los tipos", value: "" }, ...mapped ?? []]);
+            }
         })();
     }, [isAdmin]);
 
@@ -196,6 +209,7 @@ export default function FiltersBar({
             paymentYear: paymentYear || undefined,
             startDate: formatDateStr(start),
             endDate: formatDateStr(end),
+            providerType: providerType || undefined,
         };
 
         saveFinanceListFilters(FILTERS_KEY, payload);
@@ -206,6 +220,7 @@ export default function FiltersBar({
         setProviderId("");
         setPaymentReference("");
         setPaymentYear("");
+        setProviderType("");
         setDateRange([null, null]);
         closeAlertModal();
         onClear?.();
@@ -216,6 +231,7 @@ export default function FiltersBar({
             <div className="pay-filters">
                 <div className="pay-filter-bar finz-filter-row">
                     {isAdmin && (
+                        <>
                         <div className="pay-field">
                             <GenericSelectSearchable
                                 value={providerId}
@@ -227,6 +243,19 @@ export default function FiltersBar({
                                 widthClass="gs-width-provider"
                             />
                         </div>
+                        <div className="pay-field">
+                            <GenericSelectSearchable
+                                value={providerId}
+                                onChange={(e: { target: { value: string } }) =>
+                                    setProviderType(e.target.value)
+                                }
+                                options={providerTypes}
+                                placeholder="Tipo Proveedor"
+                                widthClass="gs-width-provider"
+                            />
+                        </div>
+                        </>
+
                     )}
 
                     <div className="pay-field">

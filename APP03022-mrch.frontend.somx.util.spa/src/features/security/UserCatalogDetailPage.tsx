@@ -81,6 +81,109 @@ function AppRowWithEvents({ row }: { row: AppRow }) {
   );
 }
 
+const MATRIX_COLUMNS = [
+  {
+    header: 'Permiso',
+    render: (row: PermissionEventMatrixRow) => (
+      <>
+        {row.permissionName}
+        <br />
+        <small style={{ color: '#666' }}>{row.permissionKey}</small>
+      </>
+    ),
+  },
+  {
+    header: 'Rol',
+    render: (row: PermissionEventMatrixRow) => row.roleName,
+  },
+  {
+    header: 'Aplicativo',
+    render: (row: PermissionEventMatrixRow) => row.moduleName,
+  },
+  {
+    header: 'Evento',
+    render: (row: PermissionEventMatrixRow) => (
+      <>
+        {row.processName}
+        <br />
+        <small style={{ color: '#666' }}>{row.processKey}</small>
+      </>
+    ),
+  },
+  {
+    header: 'Vigente',
+    align: 'center' as const,
+    render: (row: PermissionEventMatrixRow) => (row.effective ? '✓' : 'X'),
+  },
+];
+
+const ROLE_COLUMNS = [
+  { key: 'id', label: 'Id Rol' },
+  { key: 'name', label: 'Nombre' },
+  { key: 'description', label: 'Clave' },
+];
+
+const ATTRIBUTE_COLUMNS = [
+  { key: 'id', label: 'Id' },
+  { key: 'name', label: 'Nombre' },
+  { key: 'description', label: 'Clave' },
+];
+
+function UserSummaryCard({ header, userLookupKey }: { header: any; userLookupKey: string }) {
+  return (
+    <div className="user-catalog-detail__card">
+      <span className="user-catalog-detail__badge">Resumen</span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem 2rem' }}>
+        <div>
+          <div><strong>Id Usuario:</strong> {header.id}</div>
+          <div><strong>Usuario:</strong> {header.username}</div>
+          <div><strong>Nombre:</strong> {header.fullName}</div>
+        </div>
+        <div>
+          <div><strong>Email:</strong> {header.email ?? '—'}</div>
+          <div><strong>Creación:</strong> {header.createdAt?.split('T')[0]}</div>
+          <div><strong>Modificación:</strong> {header.modifiedAt?.split('T')[0]}</div>
+        </div>
+        <div>
+          <div>
+            <strong>Estatus:</strong>{' '}
+            <span className={`security-status ${header.status === 1 ? 'active' : 'inactive'}`}>
+              {header.status === 1 ? 'Activo' : 'Inactivo'}
+            </span>
+          </div>
+          <div style={{ marginTop: '0.35rem' }}>
+            <strong>Contexto:</strong> <code>{userLookupKey}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UserProfileCard({ profile, multipleProfilesDetected }: { profile: any; multipleProfilesDetected: boolean }) {
+  return (
+    <div className="user-catalog-detail__card">
+      <span className="user-catalog-detail__badge">Perfil</span>
+      {multipleProfilesDetected ? (
+        <div className="user-catalog-detail__warn">
+          Se detectaron varios perfiles en datos; revise la configuración. Se muestra el primero como
+          referencia.
+        </div>
+      ) : null}
+      {profile ? (
+        <>
+          <p className="user-catalog-detail__profile-value">{profile.name}</p>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#555' }}>
+            Id {profile.id} · {profile.description}
+          </p>
+        </>
+      ) : (
+        <p className="security-empty">Sin perfil configurado.</p>
+      )}
+    </div>
+  );
+}
+
 export function UserCatalogDetailPage() {
   const { userId: userIdParam } = useParams<{ userId: string }>();
   const userId = Number(userIdParam);
@@ -133,41 +236,6 @@ export function UserCatalogDetailPage() {
   const totalAppPages = appsSection ? Math.max(1, Math.ceil(appsSection.total / appsSection.pageSize)) : 1;
   const matrix = d?.permissionEventMatrix;
   const totalMatrixPages = matrix ? Math.max(1, Math.ceil(matrix.total / matrix.pageSize)) : 1;
-  const matrixColumns = [
-    {
-      header: 'Permiso',
-      render: (row: PermissionEventMatrixRow) => (
-        <>
-          {row.permissionName}
-          <br />
-          <small style={{ color: '#666' }}>{row.permissionKey}</small>
-        </>
-      ),
-    },
-    {
-      header: 'Rol',
-      render: (row: PermissionEventMatrixRow) => row.roleName,
-    },
-    {
-      header: 'Aplicativo',
-      render: (row: PermissionEventMatrixRow) => row.moduleName,
-    },
-    {
-      header: 'Evento',
-      render: (row: PermissionEventMatrixRow) => (
-        <>
-          {row.processName}
-          <br />
-          <small style={{ color: '#666' }}>{row.processKey}</small>
-        </>
-      ),
-    },
-    {
-      header: 'Vigente',
-      align: 'center' as const,
-      render: (row: PermissionEventMatrixRow) => (row.effective ? '✓' : 'X'),
-    },
-  ];
 
   if (!userId || Number.isNaN(userId)) {
     return <div className="security-layout security-box">Identificador de usuario no válido.</div>;
@@ -198,75 +266,15 @@ export function UserCatalogDetailPage() {
         {d ? (
           <>
             <div className="user-catalog-detail__summary-profile-row">
-              <div className="user-catalog-detail__card">
-                <span className="user-catalog-detail__badge">Resumen</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem 2rem' }}>
-                  <div>
-                    <div>
-                      <strong>Id Usuario:</strong> {d.header.id}
-                    </div>
-                    <div>
-                      <strong>Usuario:</strong> {d.header.username}
-                    </div>
-                    <div>
-                      <strong>Nombre:</strong> {d.header.fullName}
-                    </div>
-                  </div>
-                  <div>
-                    <div>
-                      <strong>Email:</strong> {d.header.email ?? '—'}
-                    </div>
-                    <div>
-                      <strong>Creación:</strong> {d.header.createdAt?.split('T')[0]}
-                    </div>
-                    <div>
-                      <strong>Modificación:</strong> {d.header.modifiedAt?.split('T')[0]}
-                    </div>
-                  </div>
-                  <div>
-                    <div>
-                      <strong>Estatus:</strong>{' '}
-                      <span className={`security-status ${d.header.status === 1 ? 'active' : 'inactive'}`}>
-                        {d.header.status === 1 ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </div>
-                    <div style={{ marginTop: '0.35rem' }}>
-                      <strong>Contexto:</strong> <code>{d.userLookupKey}</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="user-catalog-detail__card">
-                <span className="user-catalog-detail__badge">Perfil</span>
-                
-                {d.multipleProfilesDetected ? (
-                  <div className="user-catalog-detail__warn">
-                    Se detectaron varios perfiles en datos; revise la configuración. Se muestra el primero como
-                    referencia.
-                  </div>
-                ) : null}
-                {d.profile ? (
-                  <>
-                    <p className="user-catalog-detail__profile-value">{d.profile.name}</p>
-                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#555' }}>
-                      Id {d.profile.id} · {d.profile.description}
-                    </p>
-                  </>
-                ) : (
-                  <p className="security-empty">Sin perfil configurado.</p>
-                )}
-              </div>
+              <UserSummaryCard header={d.header} userLookupKey={d.userLookupKey} />
+              <UserProfileCard profile={d.profile} multipleProfilesDetected={d.multipleProfilesDetected} />
             </div>
 
             <div className="user-catalog-detail">
               <div className="user-catalog-detail__span-full">
                 <CatalogDetailSection
                   title="Roles"
-                  columns={[
-                    { key: 'id', label: 'Id Rol' },
-                    { key: 'name', label: 'Nombre' },
-                    { key: 'description', label: 'Clave' },
-                  ]}
+                  columns={ROLE_COLUMNS}
                   section={d.roles}
                   onPageChange={setRolesPage}
                 />
@@ -319,7 +327,7 @@ export function UserCatalogDetailPage() {
                 <div className="user-catalog-detail__matrix-wrap">
                   <GenericTable
                     rows={matrix?.items ?? []}
-                    columns={matrixColumns}
+                    columns={MATRIX_COLUMNS}
                     emptyLabel="Sin filas: se requieren permisos por rol y eventos por aplicativo para formar la matriz."
                     perPage={matrix?.pageSize ?? matrixPageSize}
                     page={matrix?.page ?? 1}
@@ -339,11 +347,7 @@ export function UserCatalogDetailPage() {
             <div className="user-catalog-detail__span-full">
               <CatalogDetailSection
                 title="Atributos"
-                columns={[
-                  { key: 'id', label: 'Id' },
-                  { key: 'name', label: 'Nombre' },
-                  { key: 'description', label: 'Clave' },
-                ]}
+                columns={ATTRIBUTE_COLUMNS}
                 section={d.attributes}
                 onPageChange={setAttributesPage}
               />

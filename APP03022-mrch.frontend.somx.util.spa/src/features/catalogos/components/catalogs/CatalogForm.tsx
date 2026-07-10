@@ -375,6 +375,104 @@ const areCatalogFormsEqual = (a: CatalogFormData, b: CatalogFormData): boolean =
   a.description === b.description &&
   a.type === b.type;
 
+const mapApiCatalogToForm = (catalog: any): CatalogFormData => {
+  let typeDisplay = catalog.catalogType;
+  if (catalog.catalogType === 'PRIMARIO') typeDisplay = 'Primario';
+  else if (catalog.catalogType === 'SECUNDARIO') typeDisplay = 'Secundario';
+  return {
+    code: catalog.code || '',
+    prefix: catalog.prefix || '',
+    name: catalog.name,
+    description: catalog.description || '',
+    type: typeDisplay,
+  };
+};
+
+const validateCatalogFormValues = (
+  formData: CatalogFormData,
+  isEditMode: boolean,
+): Record<string, string> => {
+  const newErrors: Record<string, string> = {};
+  if (!isEditMode && !formData.code.trim()) newErrors.code = 'Introduce un código de catálogo.';
+  if (!isEditMode && !formData.prefix.trim()) newErrors.prefix = 'Introduce un prefijo.';
+  if (!formData.name.trim()) newErrors.name = 'Introduce un nombre de catálogo.';
+  if (!formData.type) newErrors.type = 'Seleccione un tipo de catálogo.';
+  return newErrors;
+};
+
+const buildDownloadFileName = (name: string): string => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateStr = `${day}${month}${year}`;
+  const catalogName = name.replace(/\s+/g, '_').toLowerCase() || 'plantilla';
+  return `${catalogName}_${dateStr}.xlsx`;
+};
+
+const buildTemplateWorkbook = (isPrimario: boolean) => {
+  const headers = ['tipoCatalogo', 'elemento', 'valor', 'fechaInicioVigencia', 'fechaFinVigencia', 'idPadre', 'valorConversion'];
+  const exampleRow = isPrimario
+    ? ['primario', 'México', 'MEX', '2025-01-01', '2025-12-31', '', 'MX']
+    : ['secundario', 'Jalisco', 'JAL', '2025-01-01', '', '151', '21'];
+  const wsData = [headers, exampleRow];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Layout');
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+};
+
+const buildLocalErrorReport = (
+  fileName: string,
+  errors: ValidationError[],
+): string => {
+  let content = `REPORTE DE ERRORES DE VALIDACIÓN\n`;
+  content += `Archivo: ${fileName}\n`;
+  content += `Fecha: ${new Date().toLocaleString()}\n`;
+  content += `Total de errores: ${errors.length}\n`;
+  content += `${'='.repeat(60)}\n\n`;
+  errors.forEach((error, index) => {
+    content += `Error ${index + 1}:\n`;
+    content += `  Fila: ${error.row}\n`;
+    content += `  Celda: ${error.cell}\n`;
+    content += `  Columna: ${error.column}\n`;
+    content += `  Descripción: ${error.description}\n`;
+    if (error.code) content += `  Código: ${error.code}\n`;
+    content += `\n`;
+  });
+  return content;
+};
+
+const validateUploadedFile = (file: File): string | null => {
+  const validExtensions = ['csv', 'xls', 'xlsx'];
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  const maxSize = 4 * 1024 * 1024;
+  const isValidExtension = extension && validExtensions.includes(extension);
+  const isValidSize = file.size <= maxSize;
+  if (!isValidExtension || !isValidSize) {
+    return 'Este documento no es compatible. Por favor, elimínelo y cargue otro archivo.';
+  }
+  return null;
+};
+
+const EMPTY_CATALOG_FORM: CatalogFormData = {
+  code: '',
+  prefix: '',
+  name: '',
+  description: '',
+  type: '',
+};
+
+const getSaveButtonLabel = (state: {
+  isValidating: boolean;
+  isSaving: boolean;
+  isEditMode: boolean;
+}): string => {
+  if (state.isValidating) return 'Validando archivo...';
+  if (state.isSaving) return 'Guardando...';
+  return state.isEditMode ? 'Guardar' : 'Guardar Catálogo';
+};
+
 export default function CatalogForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -383,21 +481,8 @@ export default function CatalogForm() {
 
   const isEditMode = !!id;
 
-  const [formData, setFormData] = useState<CatalogFormData>({
-    code: '',
-    prefix: '',
-    name: '',
-    description: '',
-    type: '',
-  });
-
-  const [originalData, setOriginalData] = useState<CatalogFormData>({
-    code: '',
-    prefix: '',
-    name: '',
-    description: '',
-    type: '',
-  });
+  const [formData, setFormData] = useState<CatalogFormData>({ ...EMPTY_CATALOG_FORM });
+  const [originalData, setOriginalData] = useState<CatalogFormData>({ ...EMPTY_CATALOG_FORM });
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -406,7 +491,6 @@ export default function CatalogForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showTypeChangeModal, setShowTypeChangeModal] = useState(false);
   const [pendingTypeChange, setPendingTypeChange] = useState<string | null>(null);
@@ -414,32 +498,23 @@ export default function CatalogForm() {
   const ERROR_THRESHOLD = 20;
 
   useEffect(() => {
-    if (isEditMode && id) {
-      setIsLoading(true);
-      catalogService.getById(parseInt(id))
-        .then((catalog) => {
-          const typeDisplay = catalog.catalogType === 'PRIMARIO' ? 'Primario' : 
-                             catalog.catalogType === 'SECUNDARIO' ? 'Secundario' : catalog.catalogType;
-          const data = {
-            code: catalog.code || '',
-            prefix: catalog.prefix || '',
-            name: catalog.name,
-            description: catalog.description || '',
-            type: typeDisplay,
-          };
-          setFormData(data);
-          setOriginalData(data);
-        })
-        .catch((error) => {
-          console.error('Error loading catalog:', error);
-          showError('No se pudo cargar el catálogo. Verifique que existe.', 'Error al cargar', () =>
-            navigate('/util/catalogos/catalogs'),
-          );
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
+    if (!isEditMode || !id) return;
+    setIsLoading(true);
+    catalogService.getById(parseInt(id))
+      .then((catalog) => {
+        const data = mapApiCatalogToForm(catalog);
+        setFormData(data);
+        setOriginalData(data);
+      })
+      .catch((error) => {
+        console.error('Error loading catalog:', error);
+        showError('No se pudo cargar el catálogo. Verifique que existe.', 'Error al cargar', () =>
+          navigate('/util/catalogos/catalogs'),
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [isEditMode, id, navigate]);
 
   const hasChanges = () => !areCatalogFormsEqual(formData, originalData) || uploadedFile !== null;
@@ -458,15 +533,10 @@ export default function CatalogForm() {
   }, [isStep1Complete, isEditMode]);
 
   const toggleStep = (step: number) => {
-    if (step === 1) {
-      setExpandedSteps((prev) =>
-        prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
-      );
-    } else if (isStep1Complete) {
-      setExpandedSteps((prev) =>
-        prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
-      );
-    }
+    if (step !== 1 && !isStep1Complete) return;
+    setExpandedSteps((prev) =>
+      prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
   };
 
   const handleInputChange = (field: keyof CatalogFormData, value: string) => {
@@ -499,34 +569,17 @@ export default function CatalogForm() {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!isEditMode && !formData.code.trim()) {
-      newErrors.code = 'Introduce un código de catálogo.';
-    }
-
-    if (!isEditMode && !formData.prefix.trim()) {
-      newErrors.prefix = 'Introduce un prefijo.';
-    }
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Introduce un nombre de catálogo.';
-    }
-
-    if (!formData.type) {
-      newErrors.type = 'Seleccione un tipo de catálogo.';
-    }
-
+    const newErrors = validateCatalogFormValues(formData, isEditMode);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleClear = () => {
-    setFormData({ code: '', prefix: '', name: '', description: '', type: '' });
+    setFormData({ ...EMPTY_CATALOG_FORM });
     setErrors({});
     setUploadedFile(null);
     setValidationErrors([]);
-    setShowValidationErrors(false);
+
     setExpandedSteps([1]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -573,7 +626,7 @@ export default function CatalogForm() {
       title: 'Errores en la plantilla',
       items: errors.map((e) => e.description),
     });
-    setShowValidationErrors(false);
+
   };
 
   const runLayoutValidation = async (): Promise<boolean> => {
@@ -684,7 +737,7 @@ export default function CatalogForm() {
     if (uploadedFile && !uploadedFile.error) {
       setIsValidating(true);
       setValidationErrors([]);
-      setShowValidationErrors(false);
+
       const ok = await runLayoutValidation();
       setIsValidating(false);
       if (!ok) return;
@@ -712,27 +765,9 @@ export default function CatalogForm() {
   };
 
   const handleDownloadTemplate = () => {
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const dateStr = `${day}${month}${year}`;
-    const catalogName = formData.name.replace(/\s+/g, '_').toLowerCase() || 'plantilla';
-    const downloadFileName = `${catalogName}_${dateStr}.xlsx`;
-
-    const isPrimario = formData.type === 'Primario';
-    const headers = ['tipoCatalogo', 'elemento', 'valor', 'fechaInicioVigencia', 'fechaFinVigencia', 'idPadre', 'valorConversion'];
-    const exampleRow = isPrimario
-      ? ['primario', 'México', 'MEX', '2025-01-01', '2025-12-31', '', 'MX']
-      : ['secundario', 'Jalisco', 'JAL', '2025-01-01', '', '151', '21'];
-
-    const wsData = [headers, exampleRow];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Layout');
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const excelBuffer = buildTemplateWorkbook(formData.type === 'Primario');
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(blob, downloadFileName);
+    saveAs(blob, buildDownloadFileName(formData.name));
   };
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -753,28 +788,12 @@ export default function CatalogForm() {
   };
 
   const processFile = (file: File) => {
-    const validExtensions = ['csv', 'xls', 'xlsx'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    const maxSize = 4 * 1024 * 1024;
-
-    const isValidExtension = extension && validExtensions.includes(extension);
-    const isValidSize = file.size <= maxSize;
-
-    if (!isValidExtension || !isValidSize) {
-      setUploadedFile({
-        file,
-        name: file.name,
-        size: file.size,
-        error: 'Este documento no es compatible. Por favor, elimínelo y cargue otro archivo.',
-      });
+    const error = validateUploadedFile(file);
+    if (error) {
+      setUploadedFile({ file, name: file.name, size: file.size, error });
       return;
     }
-
-    setUploadedFile({
-      file,
-      name: file.name,
-      size: file.size,
-    });
+    setUploadedFile({ file, name: file.name, size: file.size });
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -786,7 +805,7 @@ export default function CatalogForm() {
   const removeFile = () => {
     setUploadedFile(null);
     setValidationErrors([]);
-    setShowValidationErrors(false);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -820,50 +839,35 @@ export default function CatalogForm() {
     }));
   };
 
+  const tryDownloadBackendReport = async (): Promise<boolean> => {
+    if (!backendReportId) return false;
+    try {
+      const response = await fetch(`http://localhost:8083/catalogos/validation-reports/${backendReportId}`);
+      if (!response.ok) return false;
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reporte_errores_${backendReportId}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      return true;
+    } catch (e) {
+      console.warn('Error descargando reporte del backend, generando localmente:', e);
+      return false;
+    }
+  };
+
   const downloadErrorReport = async () => {
     if (validationErrors.length === 0) return;
+    const downloadedFromBackend = await tryDownloadBackendReport();
+    if (downloadedFromBackend) return;
 
-    if (backendReportId) {
-      try {
-        const response = await fetch(`http://localhost:8083/catalogos/validation-reports/${backendReportId}`);
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `reporte_errores_${backendReportId}.txt`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          return;
-        }
-      } catch (e) {
-        console.warn('Error descargando reporte del backend, generando localmente:', e);
-      }
-    }
-
-    let reportContent = `REPORTE DE ERRORES DE VALIDACIÓN\n`;
-    reportContent += `Archivo: ${uploadedFile?.name || 'N/A'}\n`;
-    reportContent += `Fecha: ${new Date().toLocaleString()}\n`;
-    reportContent += `Total de errores: ${validationErrors.length}\n`;
-    reportContent += `${'='.repeat(60)}\n\n`;
-
-    validationErrors.forEach((error, index) => {
-      reportContent += `Error ${index + 1}:\n`;
-      reportContent += `  Fila: ${error.row}\n`;
-      reportContent += `  Celda: ${error.cell}\n`;
-      reportContent += `  Columna: ${error.column}\n`;
-      reportContent += `  Descripción: ${error.description}\n`;
-      if (error.code) {
-        reportContent += `  Código: ${error.code}\n`;
-      }
-      reportContent += `\n`;
-    });
-
+    const reportContent = buildLocalErrorReport(uploadedFile?.name || 'N/A', validationErrors);
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const now = new Date();
-    const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
     saveAs(blob, `reporte_errores_${timestamp}.txt`);
   };
 
@@ -1304,13 +1308,7 @@ export default function CatalogForm() {
               onClick={handleSave}
               disabled={isSaving || isValidating}
             >
-              {isValidating
-                ? 'Validando archivo...'
-                : isSaving
-                ? 'Guardando...'
-                : isEditMode
-                ? 'Guardar'
-                : 'Guardar Catálogo'}
+              {getSaveButtonLabel({ isValidating, isSaving, isEditMode })}
             </button>
           </div>
         </div>

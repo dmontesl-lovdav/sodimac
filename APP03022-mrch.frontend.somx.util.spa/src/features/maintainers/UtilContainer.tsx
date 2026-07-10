@@ -138,7 +138,8 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
                     <h1 className="maintainers-title">Auditoría y trazabilidad de eventos del módulo financiero y fiscal</h1>
 
                     <section className="cards-grid">
-                        {finalCards.map((it, idx) => {
+                        {finalCards.map((it) => {
+                            const cardKey = it.title;
                             const cardClasses = ['card', it.disabled ? 'disabled' : ''].join(' ').trim();
 
                             const inner = (
@@ -153,7 +154,7 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
 
                             if (it.disabled) {
                                 return (
-                                    <div key={idx} className={cardClasses} title="Deshabilitado">
+                                    <div key={cardKey} className={cardClasses} title="Deshabilitado">
                                         {inner}
                                     </div>
                                 );
@@ -162,7 +163,7 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
                             if (it.action) {
                                 return (
                                     <div
-                                        key={idx}
+                                        key={cardKey}
                                         className={cardClasses}
                                         onClick={() => handleCardClick(it)}
                                         onKeyDown={(e) => {
@@ -179,7 +180,7 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
                             }
 
                             return (
-                                <Link key={idx} to={it.link || '#'} className={cardClasses}>
+                                <Link key={cardKey} to={it.link || '#'} className={cardClasses}>
                                     {inner}
                                 </Link>
                             );

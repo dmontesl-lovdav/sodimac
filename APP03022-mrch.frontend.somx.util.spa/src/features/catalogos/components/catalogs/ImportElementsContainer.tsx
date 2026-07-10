@@ -339,6 +339,12 @@ const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   </svg>
 );
 
+const getImportButtonLabel = (isValidating: boolean, isImporting: boolean): string => {
+  if (isValidating) return 'Validando...';
+  if (isImporting) return 'Importando...';
+  return 'Importar Elementos';
+};
+
 export default function ImportElementsContainer() {
   const navigate = useNavigate();
   const { showSuccess, showError, showErrorList, ModalNode } = useModalNotification();
@@ -912,7 +918,7 @@ export default function ImportElementsContainer() {
               onClick={handleImport}
               disabled={!uploadedFile || !!uploadedFile.error || isImporting || isValidating}
             >
-              {isValidating ? 'Validando...' : isImporting ? 'Importando...' : 'Importar Elementos'}
+              {getImportButtonLabel(isValidating, isImporting)}
             </button>
           </div>
         </div>

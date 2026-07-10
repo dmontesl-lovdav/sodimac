@@ -7,6 +7,14 @@ type Option = {
   label: string;
 };
 
+function findSelectedOption(value: string, options: Option[]): Option | undefined {
+  return options.find((o) => String(o.value) === String(value));
+}
+
+function isOptionSelected(opt: Option, value: string): boolean {
+  return String(opt.value) === String(value);
+}
+
 type Props = {
   value: string;
   onChange: (e: { target: { value: string } }) => void;
@@ -47,12 +55,8 @@ export default function GenericSelectSearchable({
   }, []);
 
   useEffect(() => {
-    if (!value) {
-      setQuery("");
-    } else {
-      const found = options.find((o) => String(o.value) === String(value));
-      if (found) setQuery(found.label);
-    }
+    const found = findSelectedOption(value, options);
+    setQuery(found ? found.label : "");
   }, [value, options]);
 
   const handleSelect = (opt: Option) => {
@@ -107,7 +111,7 @@ export default function GenericSelectSearchable({
               key={opt.value}
               type="button"
               className="gss-option"
-              aria-selected={opt.value === value}
+              aria-selected={isOptionSelected(opt, value)}
               onClick={() => handleSelect(opt)}
             >
               {opt.label}

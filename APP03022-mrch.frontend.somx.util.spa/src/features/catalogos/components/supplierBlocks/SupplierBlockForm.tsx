@@ -135,6 +135,11 @@ const styles = {
   },
 };
 
+const getSubmitLabel = (saving: boolean, isEditing: boolean): string => {
+  if (saving) return 'Guardando...';
+  return isEditing ? 'Actualizar' : 'Crear Bloqueo';
+};
+
 const SupplierBlockForm = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -404,7 +409,7 @@ const SupplierBlockForm = () => {
               }}
               disabled={saving || !supplierInfo}
             >
-              {saving ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Bloqueo'}
+              {getSubmitLabel(saving, isEditing)}
             </button>
           </div>
         </form>

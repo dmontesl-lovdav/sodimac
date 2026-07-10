@@ -106,6 +106,61 @@ const fetchAllForExport = async (
   return data;
 };
 
+const computeLatestVersionIds = (data: Parameter[] | undefined): Set<string> => {
+  if (!data) return new Set();
+  const latestByName = new Map<string, Parameter>();
+  data.forEach((p) => {
+    const existing = latestByName.get(p.name);
+    if (!existing || parseFloat(p.version) > parseFloat(existing.version)) {
+      latestByName.set(p.name, p);
+    }
+  });
+  return new Set(Array.from(latestByName.values()).map((p) => p.id));
+};
+
+const buildExportFilename = (format: 'csv' | 'xlsx'): string => {
+  const now = new Date();
+  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  return `parametros_${timestamp}.${format}`;
+};
+
+const formatParameterForExport = (
+  item: Parameter,
+  catalogData: { modules: any[]; parameterTypes: any[]; statuses: any[] },
+) => ({
+  'ID Parámetro': item.id,
+  'Nombre Parámetro': item.name,
+  'Descripción': item.description || '',
+  'Módulo': item.module,
+  'Tipo Parámetro': catalogData.parameterTypes.find((c) => c.value === item.parameterType)?.label || item.parameterType,
+  'Valor': item.value,
+  'Versión': parseFloat(String(item.version)).toFixed(1),
+  'Fecha Inicio Vigencia': formatDateForExport(item.startDate),
+  'Fecha Fin Vigencia': formatDateForExport(item.endDate),
+  'Estatus': catalogData.statuses.find((c) => String(c.value) === String(item.status))?.label || String(item.status),
+  'Usuario Registro': item.createdBy || '',
+  'Fecha Registro': formatDateForExport(item.createdAt),
+  'Usuario Modificación': item.updatedBy || '-',
+  'Fecha Modificación': item.updatedAt ? formatDateForExport(item.updatedAt) : '-',
+});
+
+const writeParametersWorkbook = (
+  formattedData: Record<string, unknown>[],
+  format: 'csv' | 'xlsx',
+  filename: string,
+) => {
+  const worksheet = XLSX.utils.json_to_sheet(formattedData);
+  if (format === 'csv') {
+    const blob = new Blob([XLSX.utils.sheet_to_csv(worksheet)], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, filename);
+    return;
+  }
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Parámetros');
+  const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  saveAs(new Blob([buffer], { type: 'application/octet-stream' }), filename);
+};
+
 export const ParameterConfigPage = () => {
   const [filters, setFilters] = useState<ParameterFilters>(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<ParameterFilters>(INITIAL_FILTERS);
@@ -143,17 +198,10 @@ export const ParameterConfigPage = () => {
     return applyClientFilters(parametersData.data, appliedFilters);
   }, [hasSearched, parametersData, appliedFilters]);
 
-  const latestVersionIds: Set<string> = useMemo(() => {
-    if (!parametersData?.data) return new Set();
-    const latestByName: Map<string, Parameter> = new Map();
-    parametersData.data.forEach(p => {
-      const existing = latestByName.get(p.name);
-      if (!existing || parseFloat(p.version) > parseFloat(existing.version)) {
-        latestByName.set(p.name, p);
-      }
-    });
-    return new Set(Array.from(latestByName.values()).map(p => p.id));
-  }, [parametersData]);
+  const latestVersionIds: Set<string> = useMemo(
+    () => computeLatestVersionIds(parametersData?.data),
+    [parametersData],
+  );
 
   const needsFrontendPagination = !appliedFilters.includeHistory || appliedFilters.parameterId || appliedFilters.parameterName;
   const totalItems = needsFrontendPagination ? filteredItems.length : (parametersData?.total ?? filteredItems.length);
@@ -252,39 +300,9 @@ export const ParameterConfigPage = () => {
       showError('El máximo de registros a exportar es de 5,000. Aplica filtros para reducir el resultado.', 'Exportación');
       return;
     }
-
-    const now = new Date();
-    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-    const filename = `parametros_${timestamp}.${format}`;
     const catalogData = catalogs ?? { modules: [], parameterTypes: [], statuses: [] };
-
-    const formattedData = dataToExport.map(item => ({
-      'ID Parámetro': item.id,
-      'Nombre Parámetro': item.name,
-      'Descripción': item.description || '',
-      'Módulo': item.module,
-      'Tipo Parámetro': catalogData.parameterTypes.find(c => c.value === item.parameterType)?.label || item.parameterType,
-      'Valor': item.value,
-      'Versión': parseFloat(String(item.version)).toFixed(1),
-      'Fecha Inicio Vigencia': formatDateForExport(item.startDate),
-      'Fecha Fin Vigencia': formatDateForExport(item.endDate),
-      'Estatus': catalogData.statuses.find(c => String(c.value) === String(item.status))?.label || String(item.status),
-      'Usuario Registro': item.createdBy || '',
-      'Fecha Registro': formatDateForExport(item.createdAt),
-      'Usuario Modificación': item.updatedBy || '-',
-      'Fecha Modificación': item.updatedAt ? formatDateForExport(item.updatedAt) : '-',
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(formattedData);
-    if (format === 'csv') {
-      const blob = new Blob([XLSX.utils.sheet_to_csv(worksheet)], { type: 'text/csv;charset=utf-8' });
-      saveAs(blob, filename);
-    } else {
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Parámetros');
-      const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      saveAs(new Blob([buffer], { type: 'application/octet-stream' }), filename);
-    }
+    const formattedData = dataToExport.map((item) => formatParameterForExport(item, catalogData));
+    writeParametersWorkbook(formattedData, format, buildExportFilename(format));
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -314,7 +332,12 @@ export const ParameterConfigPage = () => {
   };
 
   const catalogData = catalogs ?? { modules: [], parameterTypes: [], statuses: [] };
-  const catalogsErrorMessage = catalogsError instanceof Error ? catalogsError.message : catalogsError ? 'Error al cargar catálogos' : null;
+  const getCatalogsErrorMessage = (): string | null => {
+    if (catalogsError instanceof Error) return catalogsError.message;
+    if (catalogsError) return 'Error al cargar catálogos';
+    return null;
+  };
+  const catalogsErrorMessage = getCatalogsErrorMessage();
 
   return (
     <div className="param-layout">
@@ -329,14 +352,27 @@ export const ParameterConfigPage = () => {
       />
 
       <div className="param-box">
-        {isEditing && editingParameter ? (
-          <ParameterEditForm
-            parameter={editingParameter}
-            onSuccess={handleEditSuccess}
-            onCancel={() => { setIsEditing(false); setEditingParameter(null); }}
-            catalogs={catalogData}
-          />
-        ) : !isCreating ? (
+        {(() => {
+          if (isEditing && editingParameter) {
+            return (
+              <ParameterEditForm
+                parameter={editingParameter}
+                onSuccess={handleEditSuccess}
+                onCancel={() => { setIsEditing(false); setEditingParameter(null); }}
+                catalogs={catalogData}
+              />
+            );
+          }
+          if (isCreating) {
+            return (
+              <ParameterCreateForm
+                onSuccess={handleCreateSuccess}
+                onCancel={() => setIsCreating(false)}
+                catalogs={catalogData}
+              />
+            );
+          }
+          return (
           <>
             <div className="param-header">
               <div>
@@ -364,20 +400,25 @@ export const ParameterConfigPage = () => {
               error={catalogsErrorMessage}
             />
 
-            {hasSearched ? (
-              isLoadingParameters ? (
-                <GenericModal visible variant="loading" message="Cargando parámetros..." />
-              ) : parametersError ? (
-                <GenericModal
-                  visible
-                  variant="alert"
-                  severity="error"
-                  title="Error"
-                  message={parametersError instanceof Error ? parametersError.message : 'Error desconocido'}
-                  buttonText="Aceptar"
-                  onClose={() => {}}
-                />
-              ) : (
+            {(() => {
+              if (!hasSearched) return <EmptyState />;
+              if (isLoadingParameters) {
+                return <GenericModal visible variant="loading" message="Cargando parámetros..." />;
+              }
+              if (parametersError) {
+                return (
+                  <GenericModal
+                    visible
+                    variant="alert"
+                    severity="error"
+                    title="Error"
+                    message={parametersError instanceof Error ? parametersError.message : 'Error desconocido'}
+                    buttonText="Aceptar"
+                    onClose={() => {}}
+                  />
+                );
+              }
+              return (
                 <ParameterGrid
                   items={pageItems}
                   totalItems={totalItems}
@@ -394,10 +435,8 @@ export const ParameterConfigPage = () => {
                   onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
                   onPageChange={setCurrentPage}
                 />
-              )
-            ) : (
-              <EmptyState />
-            )}
+              );
+            })()}
 
             <div className="param-footer">
               <div style={{ flex: 1 }} />
@@ -425,13 +464,8 @@ export const ParameterConfigPage = () => {
               </div>
             </div>
           </>
-        ) : (
-          <ParameterCreateForm
-            onSuccess={handleCreateSuccess}
-            onCancel={() => setIsCreating(false)}
-            catalogs={catalogData}
-          />
-        )}
+          );
+        })()}
       </div>
 
       <GenericModal

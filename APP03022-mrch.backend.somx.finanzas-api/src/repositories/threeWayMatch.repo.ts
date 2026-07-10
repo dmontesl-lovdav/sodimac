@@ -9,25 +9,62 @@ type ThreeWayMatchWithSupplierName = ThreeWayMatch & {
     nombreProveedor?: string | null;
 };
 
+type FindWithFiltersParams = {
+    tipoFecha:
+    | "fechaRecepcion"
+    | "fechaTimbrado"
+    | "fechaOrdenCompra"
+    | "fechaPago";
+
+    fechaInicio: Date;
+    fechaFin: Date;
+
+    numeroProveedor?: string;
+    tipoProveedor?: number;
+    ordenCompra?: string;
+    recepcion?: string;
+
+    allowedVendors?: string[] | null;
+
+    page?: number;
+    limit?: number;
+};
+
 export function deleteNotPaid(fechaBase: Date) {
     return repo()
         .createQueryBuilder()
         .delete()
         .where("estatus <> 5")
-        .andWhere("fechaRecepcion <= :fechaBase", { fechaBase })
+        .andWhere("fechaRecepcion <= :fechaBase", {
+            fechaBase,
+        })
         .execute();
 }
 
-export function insertBase(rows: Partial<ThreeWayMatch>[]) {
+export function insertBase(
+    rows: Partial<ThreeWayMatch>[]
+) {
     return repo().insert(rows);
 }
 
-export function updateById(id: string, patch: Partial<ThreeWayMatch>) {
-    return repo().update({ id }, patch);
+export function updateById(
+    id: string,
+    patch: Partial<ThreeWayMatch>
+) {
+    return repo().update(
+        {
+            id,
+        },
+        patch
+    );
 }
 
 export function findByStatus(status: number) {
-    return repo().find({ where: { estatus: status } });
+    return repo().find({
+        where: {
+            estatus: status,
+        },
+    });
 }
 
 async function findSupplierNames(
@@ -62,10 +99,12 @@ async function findSupplierNames(
         [normalizedVendorNumbers]
     );
 
-    for (const row of supplierRows as Array<{
-        numeroProveedor: string;
-        nombreProveedor: string;
-    }>) {
+    for (
+        const row of supplierRows as Array<{
+            numeroProveedor: string;
+            nombreProveedor: string;
+        }>
+    ) {
         supplierNameMap.set(
             String(row.numeroProveedor).trim(),
             row.nombreProveedor
@@ -86,7 +125,11 @@ async function enrichWithSupplierNames(
         new Set(
             data
                 .map((item) => item.numeroProveedor)
-                .filter((value) => value !== null && value !== undefined)
+                .filter(
+                    (value) =>
+                        value !== null &&
+                        value !== undefined
+                )
                 .map((value) => String(value).trim())
                 .filter((value) => value !== "")
         )
@@ -99,43 +142,36 @@ async function enrichWithSupplierNames(
         }));
     }
 
-    const supplierNameMap = await findSupplierNames(vendorNumbers);
+    const supplierNameMap =
+        await findSupplierNames(vendorNumbers);
 
     return data.map((item) => ({
         ...item,
         nombreProveedor:
-            supplierNameMap.get(String(item.numeroProveedor).trim()) ?? null,
+            supplierNameMap.get(
+                String(item.numeroProveedor).trim()
+            ) ?? null,
     }));
 }
 
 /**
- * Nuevo método para pantalla Three Way Match
+ * Consulta paginada para pantalla,
+ * CSV y Excel de Three Way Match.
  */
-export async function findWithFilters(params: {
-    tipoFecha: "fechaRecepcion" |
-    "fechaTimbrado" |
-    "fechaOrdenCompra" |
-    "fechaPago";
-    fechaInicio: Date;
-    fechaFin: Date;
-    numeroProveedor?: string;
-    ordenCompra?: string;
-    recepcion?: string;
-    allowedVendors?: string[] | null;
-    page?: number;
-    limit?: number;
-}) {
-
+export async function findWithFilters(
+    params: FindWithFiltersParams
+) {
     const {
         tipoFecha,
         fechaInicio,
         fechaFin,
         numeroProveedor,
+        tipoProveedor,
         ordenCompra,
         recepcion,
         allowedVendors = null,
         page = 1,
-        limit = 20
+        limit = 20,
     } = params;
 
     const qb = repo().createQueryBuilder("t");
@@ -143,7 +179,10 @@ export async function findWithFilters(params: {
     // ========================
     // Filtro dinámico por fecha
     // ========================
-    const columnMap: Record<string, string> = {
+    const columnMap: Record<
+        FindWithFiltersParams["tipoFecha"],
+        string
+    > = {
         fechaRecepcion: "t.fechaRecepcion",
         fechaTimbrado: "t.fechaTimbrado",
         fechaOrdenCompra: "t.fechaOrdenCompra",
@@ -153,42 +192,93 @@ export async function findWithFilters(params: {
     const column = columnMap[tipoFecha];
 
     if (!column) {
-        throw new Error(`Invalid tipoFecha: ${tipoFecha}`);
+        throw new Error(
+            `Invalid tipoFecha: ${tipoFecha}`
+        );
     }
 
-    qb.where(`${column} BETWEEN :inicio AND :fin`, {
-        inicio: fechaInicio,
-        fin: fechaFin,
-    });
+    qb.where(
+        `${column} BETWEEN :inicio AND :fin`,
+        {
+            inicio: fechaInicio,
+            fin: fechaFin,
+        }
+    );
 
     // ========================
-    // Filtro de seguridad — vendors permitidos del BFF (STM-321)
+    // Seguridad: proveedores
+    // permitidos por el BFF
     // ========================
-    if (allowedVendors !== null && allowedVendors.length > 0) {
-        qb.andWhere("CAST(t.numeroProveedor AS TEXT) IN (:...allowedVendors)", {
-            allowedVendors,
-        });
+    if (
+        allowedVendors !== null &&
+        allowedVendors.length > 0
+    ) {
+        qb.andWhere(
+            `"t"."vendor_number" IN (:...allowedVendors)`,
+            {
+                allowedVendors: allowedVendors
+                    .map((value) => String(value).trim())
+                    .filter((value) => value !== ""),
+            }
+        );
     }
 
     // ========================
-    // Filtros opcionales
+    // Número de proveedor
     // ========================
-    if (numeroProveedor) {
-        qb.andWhere("CAST(t.numeroProveedor AS TEXT) = :numeroProveedor", {
-            numeroProveedor: String(numeroProveedor),
-        });
+    if (numeroProveedor?.trim()) {
+        qb.andWhere(
+            `"t"."vendor_number" = :numeroProveedor`,
+            {
+                numeroProveedor:
+                    String(numeroProveedor).trim(),
+            }
+        );
     }
 
-    if (ordenCompra) {
-        qb.andWhere("t.ordenCompra = :ordenCompra", {
-            ordenCompra,
-        });
+    // ========================
+    // Tipo de proveedor
+    // ========================
+    if (tipoProveedor !== undefined) {
+        qb.andWhere(
+            `
+                EXISTS (
+                    SELECT 1
+                    FROM shared_catalogs.supplier supplier
+                    WHERE supplier.supplier_number::text =
+                          "t"."vendor_number"
+                      AND supplier.supplier_type_id =
+                          :tipoProveedor
+                )
+            `,
+            {
+                tipoProveedor,
+            }
+        );
     }
 
-    if (recepcion) {
-        qb.andWhere("t.recepcion = :recepcion", {
-            recepcion,
-        });
+    // ========================
+    // Orden de compra
+    // ========================
+    if (ordenCompra?.trim()) {
+        qb.andWhere(
+            "t.ordenCompra = :ordenCompra",
+            {
+                ordenCompra: ordenCompra.trim(),
+            }
+        );
+    }
+
+    // ========================
+    // Recepción
+    // ========================
+    if (recepcion?.trim()) {
+        qb.andWhere(
+            "t.recepcion = :recepcion",
+            {
+                recepcion: recepcion.trim(),
+            }
+        );
     }
 
     // ========================
@@ -200,9 +290,11 @@ export async function findWithFilters(params: {
         .take(limit)
         .orderBy(column, "DESC");
 
-    const [data, total] = await qb.getManyAndCount();
+    const [data, total] =
+        await qb.getManyAndCount();
 
-    const enrichedData = await enrichWithSupplierNames(data);
+    const enrichedData =
+        await enrichWithSupplierNames(data);
 
     return {
         data: enrichedData,

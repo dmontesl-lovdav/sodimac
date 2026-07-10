@@ -11,7 +11,7 @@ export function VerticalStepper({ children }) {
     return (
         <div className="vs-wrapper">
             {children.map((child, index) => (
-                <div className="vs-row" key={index}>
+                <div className="vs-row" key={`step-${index + 1}`}>
                     <div className="vs-left">
                         <div
                             className="vs-number"

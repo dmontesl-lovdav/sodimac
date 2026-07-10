@@ -382,7 +382,6 @@ const ExportFileIcon = () => (
 const SupplierBlocksContainer = () => {
   const navigate = useNavigate();
   const { showError, ModalNode } = useModalNotification();
-  const [blocks, setBlocks] = useState<SupplierBlock[]>([]);
   const [filteredBlocks, setFilteredBlocks] = useState<SupplierBlock[]>([]);
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -419,7 +418,6 @@ const SupplierBlocksContainer = () => {
     setError(null);
     try {
       const data = await supplierBlockService.getAll();
-      setBlocks(data);
       return data;
     } catch (err) {
       console.error('Error al cargar bloqueos:', err);
@@ -444,7 +442,6 @@ const SupplierBlocksContainer = () => {
   const handleClearFilters = () => {
     setFilters({ supplierNumber: '', status: '', currentlyBlocked: '' });
     setFilteredBlocks([]);
-    setBlocks([]);
     setHasSearched(false);
     setCurrentPage(1);
   };
@@ -639,19 +636,29 @@ const SupplierBlocksContainer = () => {
             </span>
           </div>
 
-          {loading ? (
-            <div style={styles.loading}>
-              <div style={styles.spinner}></div>
-            </div>
-          ) : !hasSearched ? (
-            <div style={styles.noResults}>
-              Aplica los filtros y presiona Buscar para consultar los bloqueos.
-            </div>
-          ) : filteredBlocks.length === 0 ? (
-            <div style={styles.noResults}>
-              No se encontraron bloqueos con los criterios de búsqueda ingresados.
-            </div>
-          ) : (
+          {(() => {
+            if (loading) {
+              return (
+                <div style={styles.loading}>
+                  <div style={styles.spinner}></div>
+                </div>
+              );
+            }
+            if (!hasSearched) {
+              return (
+                <div style={styles.noResults}>
+                  Aplica los filtros y presiona Buscar para consultar los bloqueos.
+                </div>
+              );
+            }
+            if (filteredBlocks.length === 0) {
+              return (
+                <div style={styles.noResults}>
+                  No se encontraron bloqueos con los criterios de búsqueda ingresados.
+                </div>
+              );
+            }
+            return (
             <>
               <div style={styles.tableWrapper}>
                 <table style={styles.table}>
@@ -760,7 +767,8 @@ const SupplierBlocksContainer = () => {
                 }}
               />
             </>
-          )}
+            );
+          })()}
         </section>
       </main>
       {ModalNode}

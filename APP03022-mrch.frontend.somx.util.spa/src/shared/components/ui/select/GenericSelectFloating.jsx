@@ -1,6 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './styles/GenericSelectFloating.css';
 
+const getLabelStateClass = (error, open) => {
+    if (error) return 'gs-label-error';
+    return open ? 'gs-label-open' : '';
+};
+
 export default function GenericSelectFloating({
     label,
     value,
@@ -162,7 +167,11 @@ export default function GenericSelectFloating({
 
     const baseNavy = '#0f2a3d';
     const idleGray = '#94a3b8';
-    const caretColor = disabled ? '#cbd5e1' : (open ? baseNavy : idleGray);
+    const getCaretColor = () => {
+        if (disabled) return '#cbd5e1';
+        return open ? baseNavy : idleGray;
+    };
+    const caretColor = getCaretColor();
 
     const caretStyle = open
         ? { borderBottom: `6px solid ${caretColor}` }
@@ -202,7 +211,7 @@ export default function GenericSelectFloating({
                 id={labelId}
                 className={`gs-label 
                     ${hasValue || open ? 'gs-label-floating' : ''} 
-                    ${error ? 'gs-label-error' : open ? 'gs-label-open' : ''}`}
+                    ${getLabelStateClass(error, open)}`}
                 style={{ left: `${leftPad}px` }}
                 title={label}
             >

@@ -1,4 +1,5 @@
 export type CreditNoteXmlData = {
+  numeroProveedor: string;
   rfcEmisor: string;
   nombreProveedor: string;
   serie: string;

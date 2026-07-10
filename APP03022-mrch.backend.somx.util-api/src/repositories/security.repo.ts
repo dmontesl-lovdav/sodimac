@@ -1080,7 +1080,6 @@ export async function findModuleProcessAssignment(
             'mp.catalog_detail_process_id = proc.id AND mp.catalog_detail_module_id = :moduleId AND mp.status = 1',
             { moduleId },
         )
-        .where('(proc.parent_element_id = :moduleId OR proc.parent_element_id IS NULL)', { moduleId })
         .select('proc.id', 'id')
         .addSelect(dictionaryLabelExpr('proc', langId), 'title')
         .addSelect(`''`, 'subtitle')
@@ -1093,20 +1092,17 @@ export async function findModuleProcessAssignment(
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
-        .where('(proc.parent_element_id = :moduleId OR proc.parent_element_id IS NULL)', { moduleId })
-        .andWhere(
+        .where(
             `NOT EXISTS (
                 SELECT 1 FROM core_security.module_process mp
                 WHERE mp.catalog_detail_module_id = :moduleId AND mp.catalog_detail_process_id = proc.id AND mp.status = 1
             )`,
             { moduleId },
         )
+        .andWhere('proc.status = 1')
         .select('proc.id', 'id')
         .addSelect(dictionaryLabelExpr('proc', langId), 'title')
         .addSelect(`''`, 'subtitle')
-        // STM-15xx: GROUP BY simétrico a `assigned` como defensiva contra
-        // `catalog_detail` con `parent_element_id IS NULL` que aparecerían
-        // repetidos si algún día se cambiara el modelo.
         .groupBy('proc.id')
         .addGroupBy(dictionaryLabelExpr('proc', langId))
         .orderBy(dictionaryLabelExpr('proc', langId), 'ASC')
@@ -1841,10 +1837,6 @@ export async function listModuleProcessesWithUserAssignment(
         .where('mp.catalog_detail_module_id = :moduleId', { moduleId: moduleCatalogId })
         .andWhere('mp.status = 1')
         .andWhere('cp.status = 1')
-        .andWhere(
-            '(cp.parent_element_id = :moduleId OR cp.parent_element_id IS NULL)',
-            { moduleId: moduleCatalogId },
-        )
         .select('MIN(mp.module_process_id)', 'moduleProcessId')
         .addSelect('cp.id', 'processId')
         .addSelect(catalogRefLabelExpr('cp', langId), 'name')

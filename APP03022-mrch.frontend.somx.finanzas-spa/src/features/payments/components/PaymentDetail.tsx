@@ -241,20 +241,20 @@ export default function PaymentDetail() {
     };
 
     const documentColumns = [
-        { header: 'Número documento', render: (doc: PaymentDocument) => doc.documentNumber },
-        { header: 'Referencia documento', render: (doc: PaymentDocument) => doc.reference || '-' },
+        { header: 'Número Documento', render: (doc: PaymentDocument) => doc.documentNumber },
+        { header: 'Referencia Documento', render: (doc: PaymentDocument) => doc.reference || '-' },
         { header: 'Moneda', render: (doc: PaymentDocument) => doc.currency },
         {
             header: 'Importe',
             render: (doc: PaymentDocument) => formatAmount(doc.amount),
             align: 'right' as const
         },
-        { header: 'Tipo de documento', render: (doc: PaymentDocument) => doc.documentType },
-        { header: 'Documento SAP', render: (doc: PaymentDocument) => doc.sapDocument || '-' },
-        { header: 'Fecha de pago', render: (doc: PaymentDocument) => doc.paymentDate || doc.documentDate || '-' },
+        { header: 'Tipo Documento', render: (doc: PaymentDocument) => doc.documentType },
+        { header: 'Referencia Pago', render: (doc: PaymentDocument) => doc.sapDocument || '-' },
+        { header: 'Fecha Pago', render: (doc: PaymentDocument) => doc.paymentDate || doc.documentDate || '-' },
         { header: 'Estatus', render: (doc: PaymentDocument) => doc.status },
-        { header: 'Fecha de registro', render: (doc: PaymentDocument) => doc.createdAt || '-' },
-        { header: 'Fecha de actualización', render: (doc: PaymentDocument) => doc.updatedAt || '-' },
+        { header: 'Fecha Registro', render: (doc: PaymentDocument) => doc.createdAt || '-' },
+        { header: 'Fecha de Actualización', render: (doc: PaymentDocument) => doc.updatedAt || '-' },
         {
             header: 'Factura / NC',
             render: (doc: PaymentDocument) => (

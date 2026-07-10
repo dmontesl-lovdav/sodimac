@@ -103,17 +103,20 @@ export default function AttachmentUploader({
         URL.revokeObjectURL(url);
     };
 
-    const buildErr = err =>
-        err === ERR_INVALID_TYPE ? <div className="file-err-caption">Documento no soportado.</div> :
-            err === ERR_INVALID_SIZE ? <div className="file-err-caption">Documento excede el tamaño máximo permitido.</div> :
-                err === ERR_TOO_LONG_FILENAME ? <div className="file-err-caption">Nombre del archivo muy largo.</div> : null;
+    const buildErr = err => {
+        if (err === ERR_INVALID_TYPE) return <div className="file-err-caption">Documento no soportado.</div>;
+        if (err === ERR_INVALID_SIZE) return <div className="file-err-caption">Documento excede el tamaño máximo permitido.</div>;
+        if (err === ERR_TOO_LONG_FILENAME) return <div className="file-err-caption">Nombre del archivo muy largo.</div>;
+        return null;
+    };
 
     const acceptAttr = validFileExtensions.map(ext => `.${ext}`).join(',');
+    const hasFiles = Boolean(files?.length);
 
     return (
         <div className="main">
             <div
-                className={!multiple && (files?.length ? true : false) ? 'action grayscale' : 'action'}
+                className={!multiple && hasFiles ? 'action grayscale' : 'action'}
                 onDragOver={e => e.preventDefault()}
                 onDrop={dropFiles}
                 onClick={() => manualInputFile.current?.click()}

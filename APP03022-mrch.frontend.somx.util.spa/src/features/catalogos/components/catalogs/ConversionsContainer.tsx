@@ -292,8 +292,14 @@ export default function ConversionsContainer() {
         <button style={{ ...S.btn, ...S.outlineBtn }} onClick={() => performSearch(1)}>Buscar</button>
       </div>
 
-      {isLoading ? <p style={{ textAlign: 'center', color: '#64748b' }}>Cargando...</p> :
-       conversions.length === 0 ? <p style={{ textAlign: 'center', color: '#64748b', padding: '3rem' }}>No se encontraron conversiones coincidentes con los criterios de búsqueda ingresados.</p> : (
+      {(() => {
+        if (isLoading) {
+          return <p style={{ textAlign: 'center', color: '#64748b' }}>Cargando...</p>;
+        }
+        if (conversions.length === 0) {
+          return <p style={{ textAlign: 'center', color: '#64748b', padding: '3rem' }}>No se encontraron conversiones coincidentes con los criterios de búsqueda ingresados.</p>;
+        }
+        return (
         <>
           <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>{totalResults} Elementos encontrados</div>
           <div style={{ overflowX: 'auto' }}>
@@ -349,7 +355,8 @@ export default function ConversionsContainer() {
             }}
           />
         </>
-      )}
+        );
+      })()}
 
       <div style={S.footer}>
         {exportError && (

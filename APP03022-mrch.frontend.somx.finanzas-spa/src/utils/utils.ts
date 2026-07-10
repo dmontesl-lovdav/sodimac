@@ -336,7 +336,7 @@ export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "T
     .map((row) => ({
       label: row.description,
       value: String(row[field as keyof CatalogDetail] ?? ""),
-    })).filter((row)=>!row.label.toLowerCase().includes("borrado"))
+    })).filter((row) => !row.label.toLowerCase().includes("borrado"))
     .sort((a, b) => Number(a.value) - Number(b.value));
   return [
     { label: labelSet, value: " " },
@@ -371,7 +371,7 @@ export function resolveSupplierCatalogOptionValue(
 }
 
 export async function fetchProviders(): Promise<any[] | null> {
-  const catalogs_api = process.env.CATALOGS_API_URL+"/suppliers";
+  const catalogs_api = process.env.CATALOGS_API_URL + "/suppliers";
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
@@ -394,7 +394,7 @@ export async function fetchProviders(): Promise<any[] | null> {
 export async function fetchProvidersAsCatalog(
   valueField?: string
 ): Promise<Array<{ label: string; value: string }> | null> {
-  const catalogs_api = process.env.CATALOGS_API_URL+"/suppliers";
+  const catalogs_api = process.env.CATALOGS_API_URL + "/suppliers";
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
@@ -533,11 +533,11 @@ export function mapCatalogResponseToFilterOptions(
       const row = rowUnknown as Record<string, unknown>;
       const value = String(
         row.internalStatus ??
-          row.internalKey ??
-          row.id ??
-          row.value ??
-          row.key ??
-          ""
+        row.internalKey ??
+        row.id ??
+        row.value ??
+        row.key ??
+        ""
       );
       const label = String(
         row.description ?? row.label ?? row.name ?? row.value ?? value
@@ -600,16 +600,38 @@ export const getStandardFilename = (r: any) => {
 }
 
 export const MONTHS: { value: number; label: string }[] = [
-    { value: 1, label: 'Enero' },
-    { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' },
-    { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' },
-    { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' },
-    { value: 12, label: 'Diciembre' },
+  { value: 1, label: 'Enero' },
+  { value: 2, label: 'Febrero' },
+  { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Mayo' },
+  { value: 6, label: 'Junio' },
+  { value: 7, label: 'Julio' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Septiembre' },
+  { value: 10, label: 'Octubre' },
+  { value: 11, label: 'Noviembre' },
+  { value: 12, label: 'Diciembre' },
 ];
+
+/**
+ * Catálogo de tipos de proveedor para filtros.
+ */
+export async function fetchSupplierTypesAsCatalog(): Promise<
+  Array<{ label: string; value: string }> | null
+> {
+  const data = await fetchCatalogDetails("CatTipoProveedor");
+
+  if (!data) return null;
+
+  const options = fetchCatalogAsSelectableOptions(
+    data,
+    "Todos los tipos",
+    "internalStatus"
+  );
+
+  return options.map((option) => ({
+    ...option,
+    value: option.value.trim(),
+  }));
+}

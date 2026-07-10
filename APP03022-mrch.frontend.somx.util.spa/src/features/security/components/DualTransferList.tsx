@@ -153,7 +153,7 @@ export function DualTransferList({
                   })}
                 />
                 <div>
-                  <strong>{item.tags && item.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}</strong>
+                  <strong>{item.tags?.map((tag) => <span key={tag} className="tag">{tag}</span>)}</strong>
                   {item.title}
                   {renderAssignedItemExtra?.(item)}
                 </div>
@@ -196,7 +196,7 @@ export function DualTransferList({
                   })}
                 />
                 <div>
-                  <strong>{item.tags && item.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}</strong>
+                  <strong>{item.tags?.map((tag) => <span key={tag} className="tag">{tag}</span>)}</strong>
                   {item.title}
                   {renderAvailableItemExtra?.(item)}
                 </div>

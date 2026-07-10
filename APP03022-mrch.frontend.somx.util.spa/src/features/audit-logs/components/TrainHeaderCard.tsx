@@ -11,6 +11,12 @@ type Header = {
     estadoFinal: { label: string; kind: 'success' | 'error' | 'info' };
 };
 
+const pillClassByKind = (kind: 'success' | 'error' | 'info'): string => {
+    if (kind === 'success') return 'alt-pill alt-pill-success';
+    if (kind === 'error') return 'alt-pill alt-pill-error';
+    return 'alt-pill alt-pill-info';
+};
+
 export default function TrainHeaderCard({ header }: { header: Header | null }) {
     return (
         <div className="alt-section">
@@ -59,15 +65,7 @@ export default function TrainHeaderCard({ header }: { header: Header | null }) {
                         <div className="alt-headerItem alt-headerItem-fbc alt-headerItemLast">
                             <div className="alt-label">Estado Final</div>
                             <div className="alt-value">
-                                <span
-                                    className={
-                                        header.estadoFinal.kind === 'success'
-                                            ? 'alt-pill alt-pill-success'
-                                            : header.estadoFinal.kind === 'error'
-                                                ? 'alt-pill alt-pill-error'
-                                                : 'alt-pill alt-pill-info'
-                                    }
-                                >
+                                <span className={pillClassByKind(header.estadoFinal.kind)}>
                                     {header.estadoFinal.label}
                                 </span>
                             </div>

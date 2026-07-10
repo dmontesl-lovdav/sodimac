@@ -13,6 +13,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
@@ -98,7 +100,7 @@ public class NCValidationServiceImpl implements NCValidationService {
      */
     private Document parseXML(MultipartFile xmlFile) {
         try (InputStream inputStream = xmlFile.getInputStream()) {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
             factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
             return builder.parse(inputStream);

@@ -11,6 +11,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
@@ -262,7 +264,7 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
      * Parsea el contenido XML a un Document.
      */
     private Document parseXml(String xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
         factory.setNamespaceAware(true);
         factory.setIgnoringElementContentWhitespace(true);
 

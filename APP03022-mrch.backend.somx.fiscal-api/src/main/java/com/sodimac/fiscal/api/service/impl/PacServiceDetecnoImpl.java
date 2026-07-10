@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -256,7 +258,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 			// writer.write(System.lineSeparator());
 		}
 
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		InputSource is = new InputSource(new StringReader(writer.toString()));
 		Document doc = builder.parse(is);
@@ -266,7 +268,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 
 	private String convertDocumentToString(Document doc) throws TransformerConfigurationException, TransformerException {
 			// Create a TransformerFactory
-			TransformerFactory tf = TransformerFactory.newInstance();
+			TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
 			// Create a Transformer
 			Transformer transformer;
 				transformer = tf.newTransformer();
@@ -287,7 +289,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 	}
 
 	private String convertDomToXmlString(Document document) throws TransformerConfigurationException, TransformerException  {
-		TransformerFactory transfac = TransformerFactory.newInstance();
+		TransformerFactory transfac = XmlSecureFactory.newTransformerFactory();
 		Transformer trans = transfac.newTransformer();
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		trans.setOutputProperty(OutputKeys.INDENT, "yes"); // For pretty-printing

@@ -22,11 +22,13 @@ import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.w3c.dom.*;
 
 import com.sodimac.fiscal.api.pdf.PaymentPdfService;
 import com.sodimac.fiscal.api.util.QrCodeGenerator;
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
 
 @Service
 @Slf4j
@@ -38,7 +40,7 @@ public class PaymentPdfServiceImpl implements PaymentPdfService {
     @Value("${pdf.watermark.text:Documento informativo. No sustituye al XML oficial}")
     private String watermarkText;
 
-    private volatile Path tempXslDir;
+    private final AtomicReference<Path> tempXslDir = new AtomicReference<>();
 
     public PaymentPdfServiceImpl(ResourceLoader resourceLoader, MessageCatalogService messageCatalog) {
         this.resourceLoader = resourceLoader;
@@ -70,7 +72,7 @@ public class PaymentPdfServiceImpl implements PaymentPdfService {
             FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
             Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, out);
 
-            TransformerFactory tf = TransformerFactory.newInstance();
+            TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
 
             try (InputStream xslIs = Files.newInputStream(xslFile);
                  InputStream xmlIs = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
@@ -105,16 +107,18 @@ public class PaymentPdfServiceImpl implements PaymentPdfService {
     // ======== Helpers ========
 
     private Path ensureTempXslDir() throws Exception {
-        if (tempXslDir != null) return tempXslDir;
+        Path existing = tempXslDir.get();
+        if (existing != null) return existing;
         synchronized (this) {
-            if (tempXslDir != null) return tempXslDir;
+            existing = tempXslDir.get();
+            if (existing != null) return existing;
             Path dir = Files.createTempDirectory("xsl-fiscal-");
             // Copiamos los recursos del complemento
             copyResource("classpath:/xsl/FormatoComp4.0.xsl", dir, "FormatoComp4.0.xsl");
             copyResource("classpath:/xsl/no_logo.jpg", dir, "no_logo.jpg");
             copyResource("classpath:/xsl/no_logo.jpg", dir, "no_logo.jpg"); // opcional
             log.info("XSL e imágenes (complemento) copiadas a {}", dir);
-            tempXslDir = dir;
+            tempXslDir.set(dir);
             return dir;
         }
     }
@@ -132,7 +136,7 @@ public class PaymentPdfServiceImpl implements PaymentPdfService {
     private void addPaymentParams(String xml, Transformer t, Path xslDir) {
         try {
             // Documento con namespaces
-            DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory f = XmlSecureFactory.newDocumentBuilderFactory();
             f.setNamespaceAware(true);
             Document doc = f.newDocumentBuilder()
                     .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));

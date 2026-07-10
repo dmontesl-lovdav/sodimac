@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,25 +29,25 @@ public class UtilsFile {
 		String path = file.getPath();
 		String name = file.getName();
 		File aFile = new File(path);
-		FileInputStream fis = new FileInputStream(aFile);
-		ZipEntry zipEntry = new ZipEntry(name);
-		zipStream.putNextEntry(zipEntry);
+		try (FileInputStream fis = new FileInputStream(aFile)) {
+			ZipEntry zipEntry = new ZipEntry(name);
+			zipStream.putNextEntry(zipEntry);
 
-		byte[] bytes = new byte[1024 * 20];
-		int length;
-		while ((length = fis.read(bytes)) >= 0) {
-			zipStream.write(bytes, 0, length);
+			byte[] bytes = new byte[1024 * 20];
+			int length;
+			while ((length = fis.read(bytes)) >= 0) {
+				zipStream.write(bytes, 0, length);
+			}
+
+			zipStream.closeEntry();
 		}
-
-		zipStream.closeEntry();
-		fis.close();
 	}
 	
 	public static Document ObtenerDocumentXml (String xml) {
 		Document document = null;
 		
 		try {
-	        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilderFactory documentBuilderFactory = XmlSecureFactory.newDocumentBuilderFactory();
 	        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 	        InputSource is = new InputSource(new StringReader(xml));
 	        document = documentBuilder.parse(is);
@@ -62,7 +63,7 @@ public class UtilsFile {
 	    DOMSource domSource = new DOMSource(doc);
 	    StringWriter writer = new StringWriter();
 	    StreamResult result = new StreamResult(writer);
-	    TransformerFactory tf = TransformerFactory.newInstance();
+	    TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
 	    Transformer transformer = tf.newTransformer();
 	    transformer.transform(domSource, result);
 	    return writer.toString();
@@ -71,10 +72,14 @@ public class UtilsFile {
 	public static boolean EliminarArchivo (String path) {
 		File archivo = new File(path);
 		if (archivo.exists()) {
-			archivo.delete();
-			return true;
+			try {
+				Files.delete(archivo.toPath());
+				return true;
+			} catch (IOException e) {
+				return false;
+			}
 		}
-		
+
 		return false;
 	}
 	

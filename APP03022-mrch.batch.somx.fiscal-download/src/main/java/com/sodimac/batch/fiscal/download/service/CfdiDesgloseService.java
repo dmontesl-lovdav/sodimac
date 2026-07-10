@@ -277,12 +277,20 @@ public class CfdiDesgloseService {
         NodeList detecno = doc.getElementsByTagName("Addenda_Sodimac_Detecno");
         if (detecno.getLength() > 0) {
             Element a = (Element) detecno.item(0);
+            // Extra4 = Serie + Folio del comprobante (spec Ivan). Si la Serie viene vacía queda solo el folio.
+            Element root = doc.getDocumentElement();
+            String serie = attr(root, "Serie");
+            String folio = attr(root, "Folio");
+            String serieFolio = (serie == null ? "" : serie) + (folio == null ? "" : folio);
+            if (serieFolio.isEmpty()) {
+                serieFolio = addendaChild(a, "Folio"); // fallback al Folio del nodo addenda
+            }
             AddendaEntity addenda = AddendaMapper.toEntity(
                     fiscalUuid,
                     addendaChild(a, "Proveedor"),
                     addendaChild(a, "NoOC"),
                     addendaChild(a, "NoRecepcion"),
-                    addendaChild(a, "Folio"),
+                    serieFolio,
                     addendaChild(a, "UUID"),
                     addendaChild(a, "RFC"),
                     1);

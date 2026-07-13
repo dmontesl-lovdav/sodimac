@@ -136,6 +136,8 @@ paths:
   /accounts-payable/{uuid}:
     $ref: "./paths/accounts-payable.yaml#/accounts-payable-by-uuid"
 
+  /account-statement/batch:
+    $ref: "./paths/account-statement.yaml#/account-statement-batch"
   /account-statement:
     $ref: "./paths/account-statement.yaml#/account-statement"
   /account-statement/{uuid}/report-data:
@@ -303,6 +305,16 @@ definitions:
     $ref: "./definitions/account-statement.yaml#/AccountStatementReportCatalogsDto"
   AccountStatementStatusCatalogItemDto:
     $ref: "./definitions/account-statement.yaml#/AccountStatementStatusCatalogItemDto"
+  BatchAccountStatementBodyDto:
+    $ref: "./definitions/account-statement.yaml#/BatchAccountStatementBodyDto"
+  BatchAccountStatementResultDto:
+    $ref: "./definitions/account-statement.yaml#/BatchAccountStatementResultDto"
+  BatchAccountStatementDetailItemDto:
+    $ref: "./definitions/account-statement.yaml#/BatchAccountStatementDetailItemDto"
+  BatchAccountStatementErrorItemDto:
+    $ref: "./definitions/account-statement.yaml#/BatchAccountStatementErrorItemDto"
+  AccountStatementDeleteResponseDto:
+    $ref: "./definitions/account-statement.yaml#/AccountStatementDeleteResponseDto"
 
   FiscalPaymentDto:
     $ref: "./definitions/fiscal-payments.yaml#/FiscalPaymentDto"

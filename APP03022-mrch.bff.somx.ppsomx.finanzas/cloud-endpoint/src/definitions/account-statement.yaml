@@ -1,3 +1,90 @@
+BatchAccountStatementBodyDto:
+  type: object
+  description: >
+    Parámetros opcionales para la generación en batch de estados de cuenta.
+    Las tablas auxiliares de tenant_finance se usan automáticamente.
+  properties:
+    supplierNumber:
+      type: integer
+      format: int64
+      description: Número de proveedor. Si se omite se procesan todos los proveedores del catálogo.
+      x-nullable: true
+    year:
+      type: integer
+      minimum: 2020
+      description: Año. Por defecto el año actual.
+      x-nullable: true
+    month:
+      type: integer
+      minimum: 1
+      maximum: 12
+      description: Mes (1-12). Por defecto el mes actual.
+      x-nullable: true
+
+BatchAccountStatementDetailItemDto:
+  type: object
+  properties:
+    vendorNumber:
+      type: integer
+      format: int64
+    accountStatementUuid:
+      type: string
+      format: uuid
+    status:
+      type: string
+      enum: [created, skipped]
+  required:
+    - vendorNumber
+    - accountStatementUuid
+    - status
+
+BatchAccountStatementErrorItemDto:
+  type: object
+  properties:
+    vendorNumber:
+      type: integer
+      format: int64
+    reason:
+      type: string
+  required:
+    - vendorNumber
+    - reason
+
+BatchAccountStatementResultDto:
+  type: object
+  properties:
+    created:
+      type: integer
+      description: Number of new account statement records created.
+    skipped:
+      type: integer
+      description: Number of suppliers skipped because a record already existed.
+    errors:
+      type: array
+      items:
+        $ref: "#/BatchAccountStatementErrorItemDto"
+    details:
+      type: array
+      items:
+        $ref: "#/BatchAccountStatementDetailItemDto"
+  required:
+    - created
+    - skipped
+    - errors
+    - details
+
+AccountStatementDeleteResponseDto:
+  type: object
+  properties:
+    success:
+      type: boolean
+    accountStatementUuid:
+      type: string
+      format: uuid
+  required:
+    - success
+    - accountStatementUuid
+
 AccountStatementListItemDto:
   type: object
   properties:

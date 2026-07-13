@@ -1,16 +1,15 @@
 import { getDataSource } from '@/config/typeorm-datasource.js';
 import * as r from '@/repositories/accountStatement.repo.js';
-import * as poRepo from '@/repositories/purchaseOrder.repo.js';
-import * as recRepo from '@/repositories/reception.repo.js';
-import * as rebateRepo from '@/repositories/rebate.repo.js';
-import * as fpRepo from '@/repositories/fiscalPayment.repo.js';
-import { Invoice } from '@/entities/tenant_fiscal.invoice.entity.js';
-import { Addendum } from '@/entities/tenant_fiscal.addendum.entity.js';
-import type { PurchaseOrder } from '@/entities/PurchaseOrder.entity.js';
-import type { Reception } from '@/entities/Reception.entity.js';
-import type { Rebate } from '@/entities/Rebate.entity.js';
-import type { FiscalPayment } from '@/entities/FiscalPayment.entity.js';
 import { Catalogs } from '@/utils/mockups.js';
+
+// ─── Tablas auxiliares (mismas que en el batch service) ───────────────────────
+const T_PO       = 'tenant_finance.account_statement_purchase_order';
+const T_REC      = 'tenant_finance.account_statement_reception';
+const T_DISCOUNT = 'tenant_finance.account_statement_discount';
+const T_INVOICE  = 'tenant_finance.account_statement_invoice';
+const T_CREDIT   = 'tenant_finance.account_statement_credit_note';
+const T_PAYMENT  = 'tenant_finance.account_statement_payment';
+// ─────────────────────────────────────────────────────────────────────────────
 
 const ISSUER = {
     name: 'Comercializadora SDMHC S.A. de C.V. (SODIMAC MÉXICO)',
@@ -21,7 +20,7 @@ const ISSUER = {
     email: 'analista@sodimac.com.mx',
 };
 
-function parseNum(v: string | number | null | undefined): number {
+function parseNum(v: unknown): number {
     if (v == null) return 0;
     if (typeof v === 'number') return v;
     const n = parseFloat(String(v).replace(/,/g, ''));
@@ -34,24 +33,7 @@ function toIso(value: Date | string | null | undefined): string | null {
     return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function serializeEntity<T extends object>(entity: T): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(entity)) as Record<string, unknown>;
-}
-
-async function findInvoicesByVendorAndPeriod(
-    vendorNumber: number,
-    start: Date,
-    end: Date
-) {
-    return getDataSource()
-        .getRepository(Invoice)
-        .createQueryBuilder('i')
-        .innerJoin(Addendum, 'a', 'a.invoiceUuid = i.invoiceUuid')
-        .where('a.supplierNumber = :vendor', { vendor: vendorNumber })
-        .andWhere('i.issueDate BETWEEN :start AND :end', { start, end })
-        .orderBy('i.issueDate', 'ASC')
-        .getMany();
-}
+// ─── Tipo del payload ─────────────────────────────────────────────────────────
 
 export type AccountStatementReportPayload = {
     meta: {
@@ -95,20 +77,100 @@ export type AccountStatementReportPayload = {
         };
     };
     purchaseOrders: Record<string, unknown>[];
-    receptions: Record<string, unknown>[];
-    payments: Record<string, unknown>[];
-    rebates: Record<string, unknown>[];
-    facturas: Record<string, unknown>[];
-    notasCredito: Record<string, unknown>[];
+    receptions:     Record<string, unknown>[];
+    payments:       Record<string, unknown>[];
+    rebates:        Record<string, unknown>[];
+    facturas:       Record<string, unknown>[];
+    notasCredito:   Record<string, unknown>[];
     catalogs: {
-        invoiceStatus: typeof Catalogs.CatEstatusFactura;
-        paymentStatus: typeof Catalogs.CatEstatusPago;
+        invoiceStatus:    typeof Catalogs.CatEstatusFactura;
+        paymentStatus:    typeof Catalogs.CatEstatusPago;
         creditNoteStatus: typeof Catalogs.CatEstatusNotaCredito;
     };
 };
 
+// ─── Transformers aux-row → PDF-compatible object ─────────────────────────────
+// El PDF service accede a propiedades en camelCase de las entidades originales.
+// Aquí mapeamos las columnas de las tablas auxiliares a esos mismos nombres.
+
+type Row = Record<string, unknown>;
+
+function toPurchaseOrderShape(row: Row): Row {
+    return {
+        purchaseOrderId:   String(row['order_number'] ?? ''),   // clave de enlace con reception
+        orderNumber:       String(row['order_number'] ?? ''),
+        purchaseOrderDate: row['document_date'] ?? null,
+        amount:            row['amount'],
+        status:            row['status'],
+    };
+}
+
+function toReceptionShape(row: Row): Row {
+    return {
+        receptionId:     row['account_statement_reception_uuid'],
+        purchaseOrderId: String(row['order_number'] ?? ''),      // misma clave de enlace que PO
+        receptionNumber: String(row['reception_number'] ?? ''),
+        receptionDate:   row['reception_date'] ?? null,
+        amount:          row['amount'],
+        status:          row['status'],
+    };
+}
+
+function toPaymentShape(row: Row): Row {
+    return {
+        fiscalPaymentUuid: row['account_statement_payment_uuid'],
+        documentNumber:    row['document_number'],
+        referenceNumber:   row['reference_number'],
+        paymentDate:       row['payment_date'],
+        createdAt:         row['created_at'],
+        currency:          row['currency'] ?? 'MXN',
+        amount:            row['amount'],
+        status:            row['status'],
+    };
+}
+
+function toRebateShape(row: Row): Row {
+    return {
+        rebateId:        row['account_statement_discount_uuid'],
+        documentNumber:  row['document_number'],
+        referenceNumber: row['reference_number'],
+        postingDate:     row['discount_date'],
+        amount:          row['amount'],
+        status:          row['status'],
+    };
+}
+
+function toInvoiceShape(row: Row): Row {
+    return {
+        invoiceUuid:        row['account_statement_invoice_uuid'],
+        folio:              row['folio'],
+        series:             row['series'],
+        issueDate:          row['stamp_date'],
+        certificationDate:  row['accounting_date'],
+        total:              row['amount'],
+        status:             row['invoice_status'],
+        documentType:       'I',
+    };
+}
+
+function toCreditNoteShape(row: Row): Row {
+    return {
+        invoiceUuid:       row['account_statement_credit_note_uuid'],
+        folio:             row['folio'],
+        series:            row['series'],
+        issueDate:         row['issue_date'],
+        certificationDate: row['accounting_date'],
+        total:             row['amount'],
+        status:            row['status'],
+        documentType:      'E',
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Arma el JSON completo del estado de cuenta (misma fuente de datos que el PDF legacy).
+ * Construye el payload completo del estado de cuenta leyendo las tablas
+ * auxiliares de tenant_finance (snapshot generado por el batch).
  */
 export async function buildAccountStatementReportData(
     uuid: string
@@ -116,87 +178,61 @@ export async function buildAccountStatementReportData(
     const row = await r.findById(uuid);
     if (!row) return null;
 
-    const vendorNumber = Number(row.vendorNumber);
-    const startDate = row.periodStart
-        ? new Date(row.periodStart)
-        : new Date(row.year, row.month - 1, 1);
-    const endDate = row.periodEnd
-        ? new Date(row.periodEnd)
-        : new Date(row.year, row.month, 0, 23, 59, 59);
+    const ds = getDataSource();
 
-    const [purchaseOrders, receptions, rebates, payments, invoices] =
+    const [poRows, recRows, discountRows, paymentRows, invoiceRows, creditRows] =
         await Promise.all([
-            poRepo.findByVendorAndDateRange(vendorNumber, startDate, endDate),
-            recRepo.findByVendorAndDateRange(vendorNumber, startDate, endDate),
-            rebateRepo.findByVendorAndPostingDateRange(
-                vendorNumber,
-                startDate,
-                endDate
-            ),
-            fpRepo.findByVendorAndPaymentDateRange(
-                vendorNumber,
-                startDate,
-                endDate
-            ),
-            findInvoicesByVendorAndPeriod(vendorNumber, startDate, endDate),
+            ds.query(`SELECT * FROM ${T_PO}       WHERE account_statement_uuid = $1`, [uuid]),
+            ds.query(`SELECT * FROM ${T_REC}      WHERE account_statement_uuid = $1`, [uuid]),
+            ds.query(`SELECT * FROM ${T_DISCOUNT} WHERE account_statement_uuid = $1`, [uuid]),
+            ds.query(`SELECT * FROM ${T_PAYMENT}  WHERE account_statement_uuid = $1`, [uuid]),
+            ds.query(`SELECT * FROM ${T_INVOICE}  WHERE account_statement_uuid = $1`, [uuid]),
+            ds.query(`SELECT * FROM ${T_CREDIT}   WHERE account_statement_uuid = $1`, [uuid]),
         ]);
 
-    const facturas = invoices.filter((inv: Invoice) => inv.documentType === 'I');
-    const notasCredito = invoices.filter(
-        (inv: Invoice) => inv.documentType === 'E'
-    );
+    const purchaseOrders = (poRows       as Row[]).map(toPurchaseOrderShape);
+    const receptions     = (recRows      as Row[]).map(toReceptionShape);
+    const payments       = (paymentRows  as Row[]).map(toPaymentShape);
+    const rebates        = (discountRows as Row[]).map(toRebateShape);
+    const facturas       = (invoiceRows  as Row[]).map(toInvoiceShape);
+    const notasCredito   = (creditRows   as Row[]).map(toCreditNoteShape);
 
-    const totalOC = purchaseOrders.reduce(
-        (s: number, po: PurchaseOrder) => s + (Number(po.amount) || 0),
-        0
-    );
-    const totalFacturasPendientes = facturas.reduce(
-        (s: number, i: Invoice) => s + (Number(i.total) || 0),
-        0
-    );
-    const totalFacturasPagadas = payments.reduce(
-        (s: number, p: FiscalPayment) => s + parseNum(p.amount),
-        0
-    );
-    const totalDescuentos = rebates.reduce(
-        (s: number, b: Rebate) => s + (Number(b.amount) || 0),
-        0
-    );
-    const totalNotasCredito = notasCredito.reduce(
-        (s: number, i: Invoice) => s + (Number(i.total) || 0),
-        0
-    );
-    const saldoPendiente = parseNum(row.finalBalance);
+    const vendorNumber = Number(row.vendorNumber);
+    const periodStart  = row.periodStart ? new Date(row.periodStart) : new Date(row.year, row.month - 1, 1);
+    const periodEnd    = row.periodEnd   ? new Date(row.periodEnd)   : new Date(row.year, row.month, 0, 23, 59, 59);
+
+    const totalOC                 = purchaseOrders.reduce((s, po) => s + parseNum(po['amount']), 0);
+    const totalFacturasPendientes = facturas.reduce((s, i) => s + parseNum(i['total']), 0);
+    const totalFacturasPagadas    = payments.reduce((s, p) => s + parseNum(p['amount']), 0);
+    const totalDescuentos         = rebates.reduce((s, b) => s + parseNum(b['amount']), 0);
+    const totalNotasCredito       = notasCredito.reduce((s, c) => s + parseNum(c['total']), 0);
+    const saldoPendiente          = parseNum(row.finalBalance);
 
     return {
         meta: {
             accountStatementUuid: row.accountStatementUuid,
             vendorNumber,
-            year: row.year,
-            month: row.month,
-            version: row.version,
-            initialBalance:
-                row.initialBalance != null
-                    ? parseNum(row.initialBalance)
-                    : null,
-            finalBalance:
-                row.finalBalance != null ? parseNum(row.finalBalance) : null,
+            year:           row.year,
+            month:          row.month,
+            version:        row.version,
+            initialBalance: row.initialBalance != null ? parseNum(row.initialBalance) : null,
+            finalBalance:   row.finalBalance   != null ? parseNum(row.finalBalance)   : null,
         },
         issuer: ISSUER,
         vendor: {
             vendorNumber,
-            vendorName: `Proveedor ${vendorNumber}`,
-            providerRfc: 'N/A',
-            providerCp: '',
+            vendorName:      `Proveedor ${vendorNumber}`,
+            providerRfc:     'N/A',
+            providerCp:      '',
             providerAddress: '',
             providerContact: '',
-            providerEmail: '',
+            providerEmail:   '',
         },
         dates: {
-            issueDate: toIso(row.issuedAt),
-            periodStart: toIso(startDate),
-            periodEnd: toIso(endDate),
-            generatedAt: new Date().toISOString(),
+            issueDate:    toIso(row.issuedAt),
+            periodStart:  toIso(periodStart),
+            periodEnd:    toIso(periodEnd),
+            generatedAt:  new Date().toISOString(),
         },
         totals: {
             totalOC,
@@ -207,21 +243,21 @@ export async function buildAccountStatementReportData(
             saldoPendiente,
             counts: {
                 purchaseOrders: purchaseOrders.length,
-                facturas: facturas.length,
-                payments: payments.length,
-                rebates: rebates.length,
-                notasCredito: notasCredito.length,
+                facturas:       facturas.length,
+                payments:       payments.length,
+                rebates:        rebates.length,
+                notasCredito:   notasCredito.length,
             },
         },
-        purchaseOrders: purchaseOrders.map(serializeEntity),
-        receptions: receptions.map(serializeEntity),
-        payments: payments.map(serializeEntity),
-        rebates: rebates.map(serializeEntity),
-        facturas: facturas.map(serializeEntity),
-        notasCredito: notasCredito.map(serializeEntity),
+        purchaseOrders,
+        receptions,
+        payments,
+        rebates,
+        facturas,
+        notasCredito,
         catalogs: {
-            invoiceStatus: Catalogs.CatEstatusFactura,
-            paymentStatus: Catalogs.CatEstatusPago,
+            invoiceStatus:    Catalogs.CatEstatusFactura,
+            paymentStatus:    Catalogs.CatEstatusPago,
             creditNoteStatus: Catalogs.CatEstatusNotaCredito,
         },
     };

@@ -11,3 +11,11 @@ export const ListAccountStatementQuerySchema = z.object({
 });
 
 export type ListAccountStatementQuery = z.infer<typeof ListAccountStatementQuerySchema>;
+
+export const BatchAccountStatementBodySchema = z.object({
+    supplierNumber: z.coerce.number().int().positive().optional(),
+    year:           z.coerce.number().int().min(2020).optional(),
+    month:          z.coerce.number().int().min(1).max(12).optional(),
+});
+
+export type BatchAccountStatementBody = z.infer<typeof BatchAccountStatementBodySchema>;

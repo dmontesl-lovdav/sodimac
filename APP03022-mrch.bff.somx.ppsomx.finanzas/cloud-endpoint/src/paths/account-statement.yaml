@@ -1,3 +1,43 @@
+account-statement-batch:
+  post:
+    tags:
+      - account-statement
+    summary: Batch generate account statements
+    description: >
+      Generates account statement records for one or all suppliers for a given year/month.
+      If a record already exists (status > 0) it is skipped silently.
+      Defaults to all suppliers, current year and current month when parameters are omitted.
+    operationId: batchGenerateAccountStatements
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: false
+        schema:
+          $ref: "../definitions/account-statement.yaml#/BatchAccountStatementBodyDto"
+    responses:
+      "200":
+        description: Batch result
+        schema:
+          $ref: "../definitions/account-statement.yaml#/BatchAccountStatementResultDto"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
 account-statement:
   get:
     tags:
@@ -214,6 +254,41 @@ account-statement-by-uuid:
         description: Found
         schema:
           $ref: "../definitions/account-statement.yaml#/AccountStatementDetailDto"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  delete:
+    tags:
+      - account-statement
+    summary: Soft-delete account statement by UUID
+    description: >
+      Marca como eliminado (status = 0) el estado de cuenta y todos sus registros
+      en las 6 tablas auxiliares de tenant_finance (borrado lógico, sin eliminar filas físicas).
+    operationId: softDeleteAccountStatement
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+    responses:
+      "200":
+        description: Deleted
+        schema:
+          $ref: "../definitions/account-statement.yaml#/AccountStatementDeleteResponseDto"
       "404":
         description: Not found
         schema:

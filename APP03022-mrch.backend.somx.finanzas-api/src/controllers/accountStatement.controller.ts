@@ -1,8 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as svc from '@/services/accountStatement.service.js';
+import * as batchSvc from '@/services/accountStatementBatch.service.js';
 import {
     ListAccountStatementQuerySchema,
     UuidParamSchema,
+    BatchAccountStatementBodySchema,
 } from '@/schemas/accountStatement.schema.js';
 
 const WRN7029 = { success: false, code: 'WRN7029', message: 'El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador' };
@@ -91,6 +93,27 @@ export async function getPdf(req: Request, res: Response, next: NextFunction) {
         res.setHeader('Content-Length', pdfBuffer.length.toString());
 
         return res.send(pdfBuffer);
+    } catch (e) {
+        next(e);
+    }
+}
+
+export async function batch(req: Request, res: Response, next: NextFunction) {
+    try {
+        const body = BatchAccountStatementBodySchema.parse(req.body);
+        const result = await batchSvc.batchGenerate(body);
+        res.status(200).json(result);
+    } catch (e) {
+        next(e);
+    }
+}
+
+export async function softDelete(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { uuid } = UuidParamSchema.parse(req.params);
+        const result = await batchSvc.softDeleteWithChildren(uuid);
+        if (!result.deleted) return res.status(404).json({ message: 'Not found' });
+        res.status(200).json({ success: true, accountStatementUuid: uuid });
     } catch (e) {
         next(e);
     }

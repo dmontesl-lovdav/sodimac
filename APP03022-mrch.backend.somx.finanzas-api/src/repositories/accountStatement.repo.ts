@@ -1,5 +1,6 @@
 import { getDataSource } from '@/config/typeorm-datasource.js';
 import { AccountStatement } from '@/entities/AccountStatement.entity.js';
+import { Supplier } from '@/entities/tenant_catalogs.cat_supplier.entity.js';
 
 export function repo() {
     return getDataSource().getRepository(AccountStatement);
@@ -62,4 +63,41 @@ export async function updateReviewStatus(
         { status, reviewedAt, updatedAt: new Date() }
     );
     return findById(uuid);
+}
+
+export async function findExistingActive(
+    vendorNumber: number,
+    year: number,
+    month: number
+): Promise<AccountStatement | null> {
+    return repo()
+        .createQueryBuilder('a')
+        .where('a.vendor_number = :vendorNumber', { vendorNumber })
+        .andWhere('a.year = :year', { year })
+        .andWhere('a.month = :month', { month })
+        .andWhere('a.status > 0')
+        .getOne();
+}
+
+export async function createStatement(
+    data: Partial<AccountStatement>
+): Promise<AccountStatement> {
+    const entity = repo().create(data);
+    return repo().save(entity);
+}
+
+export async function softDelete(uuid: string): Promise<void> {
+    await repo().update(
+        { accountStatementUuid: uuid },
+        { status: 0, updatedAt: new Date() }
+    );
+}
+
+export async function findAllVendorNumbers(): Promise<number[]> {
+    const suppliers = await getDataSource()
+        .getRepository(Supplier)
+        .find({ select: { supplierNumber: true } });
+    return suppliers
+        .map(s => Number(s.supplierNumber))
+        .filter(n => Number.isFinite(n) && n > 0);
 }

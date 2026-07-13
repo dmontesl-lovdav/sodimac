@@ -2,7 +2,7 @@
     {
         "rule":  "java:S100",
         "name":  "Method names should comply with a naming convention",
-        "count":  7,
+        "count":  6,
         "htmlDesc":  null,
         "howToFix":  null
     },
@@ -16,7 +16,7 @@
     {
         "rule":  "java:S1068",
         "name":  "Unused \"private\" fields should be removed",
-        "count":  265,
+        "count":  4,
         "htmlDesc":  null,
         "howToFix":  null
     },
@@ -40,13 +40,6 @@
         "count":  10,
         "htmlDesc":  null,
         "howToFix":  "\u003cp\u003eTo fix this issue, make sure to throw specific exceptions that are relevant to the context in which they arise. It is recommended to either:\u003c/p\u003e\n\u003cul\u003e\n  \u003cli\u003e Raise a specific exception from the Java standard library when one matches. For example an \u003ccode\u003eIllegalArgumentException\u003c/code\u003e should be\n  thrown when a method receives an invalid argument. \u003c/li\u003e\n  \u003cli\u003e Create a custom exception class deriving from \u003ccode\u003eException\u003c/code\u003e or one of its subclasses. \u003c/li\u003e\n\u003c/ul\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nvoid checkValue(int value) throws Throwable { // Noncompliant: signature is too broad\n    if (value == 42) {\n        throw new RuntimeException(\"Value is 42\"); // Noncompliant: This will be difficult for consumers to handle\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nvoid checkValue(int value) {\n    if (value == 42) {\n        throw new IllegalArgumentException(\"Value is 42\"); // Compliant\n    }\n}\n\u003c/pre\u003e"
-    },
-    {
-        "rule":  "java:S1124",
-        "name":  "Modifiers should be declared in the correct order",
-        "count":  42,
-        "htmlDesc":  null,
-        "howToFix":  null
     },
     {
         "rule":  "java:S1128",
@@ -119,16 +112,9 @@
         "howToFix":  "\u003cp\u003eHaving unused function parameters in your code can lead to confusion and misunderstanding of a developerâs intention. They reduce code readability\nand introduce the potential for errors. To avoid these problems, developers should remove unused parameters from function declarations.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nvoid doSomething(int a, int b) { // Noncompliant, \"b\" is unused\n  compute(a);\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nvoid doSomething(int a) {\n  compute(a);\n}\n\u003c/pre\u003e\n\u003cp\u003eExamples of exceptions:\u003c/p\u003e\n\u003cpre\u003e\n@Override\nvoid doSomething(int a, int b) {     // no issue reported on b\n  compute(a);\n}\n\npublic void foo(String s) {\n  // designed to be extended but noop in standard case\n}\n\nprotected void bar(String s) {\n  //open-closed principle\n}\n\npublic void qix(String s) {\n  throw new UnsupportedOperationException(\"This method should be implemented in subclasses\");\n}\n\n/**\n * @param s This string may be used for further computation in overriding classes\n */\nprotected void foobar(int a, String s) { // no issue, method is overridable and unused parameter has proper javadoc\n  compute(a);\n}\n\u003c/pre\u003e"
     },
     {
-        "rule":  "java:S1186",
-        "name":  "Methods should not be empty",
-        "count":  null,
-        "htmlDesc":  null,
-        "howToFix":  "\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic void shouldNotBeEmpty() {  // Noncompliant - method is empty\n}\n\npublic void notImplemented() {  // Noncompliant - method is empty\n}\n\n@Override\npublic void emptyOnPurpose() {  // Noncompliant - method is empty\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\npublic void doSomething() {\n  doSomething();\n}\n\npublic void notImplemented() {\n  throw new UnsupportedOperationException(\"notImplemented() cannot be performed because ...\");\n}\n\n@Override\npublic void emptyOnPurpose() {\n  // comment explaining why the method is empty\n}\n\u003c/pre\u003e"
-    },
-    {
         "rule":  "java:S1192",
         "name":  "String literals should not be duplicated",
-        "count":  68,
+        "count":  64,
         "htmlDesc":  null,
         "howToFix":  "\u003cp\u003eUse constants to replace the duplicated string literals. Constants can be referenced from many places, but only need to be updated in a single\nplace.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eWith the default threshold of 3:\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic void run() {\n  prepare(\"action1\");                              // Noncompliant - \"action1\" is duplicated 3 times\n  execute(\"action1\");\n  release(\"action1\");\n}\n\n@SuppressWarning(\"all\")                            // Compliant - annotations are excluded\nprivate void method1() { /* ... */ }\n@SuppressWarning(\"all\")\nprivate void method2() { /* ... */ }\n\npublic String printInQuotes(String a, String b) {\n  return \"\u0027\" + a + \"\u0027\" + b + \"\u0027\";               // Compliant - literal \"\u0027\" has less than 5 characters and is excluded\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nprivate static final String ACTION_1 = \"action1\";  // Compliant\n\npublic void run() {\n  prepare(ACTION_1);                               // Compliant\n  execute(ACTION_1);\n  release(ACTION_1);\n}\n\u003c/pre\u003e"
     },
@@ -189,13 +175,6 @@
         "howToFix":  "\u003cp\u003eUse the try-with-resources syntax by moving the \u003ccode\u003eClosable\u003c/code\u003e variable declarations after the \u003ccode\u003etry\u003c/code\u003e keyword surrounded by\nparentheses and separated by \u003ccode\u003e;\u003c/code\u003e:\u003c/p\u003e\n\u003cpre\u003e\ntry (/* resources declarations */) {\n  // resources usage ...\n}\n\u003c/pre\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nFileReader fr = null;\nBufferedReader br = null;\n\ntry { // Noncompliant, the FileReader and BufferedReader are instantiated without try-with-resources\n  fr = new FileReader(fileName);\n  br = new BufferedReader(fr);\n  return br.readLine();\n} catch (...) {\n  ...\n} finally {\n\n  if (br != null) { // br has to be closed manually\n    try {\n      br.close();\n    } catch(IOException e){...}\n  }\n\n  if (fr != null ) { // fr has to be closed manually\n    try {\n      br.close();\n    } catch(IOException e){...}\n  }\n\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\ntry ( // Compliant, all resources are instantiated within a try-with-resources statement and hence automatically closed after use\n    FileReader fr = new FileReader(fileName);\n    BufferedReader br = new BufferedReader(fr)\n  ) {\n  return br.readLine();\n}\ncatch (...) {}\n\u003c/pre\u003e"
     },
     {
-        "rule":  "java:S2293",
-        "name":  "The diamond operator (\"\u003c\u003e\") should be used",
-        "count":  39,
-        "htmlDesc":  null,
-        "howToFix":  "\u003cp\u003eThe type argument should be omitted in the initialization if it is already present in the declaration of a field or variable.\u003c/p\u003e\n\u003cp\u003eFor instance, a field with type \u003ccode\u003eList\u0026lt;String\u0026gt;\u003c/code\u003e can be initialized with \u003ccode\u003eArrayList\u0026lt;\u0026gt;()\u003c/code\u003e, as the compiler will\ninfer that \u003ccode\u003eArrayList\u0026lt;String\u0026gt;()\u003c/code\u003e is the actually desired call.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nList\u0026lt;String\u0026gt; strings = new ArrayList\u0026lt;String\u0026gt;();                       // Noncompliant, the compiler can infer the type argument of the constructor invocation\nMap\u0026lt;String,List\u0026lt;Integer\u0026gt;\u0026gt; map = new HashMap\u0026lt;String,List\u0026lt;Integer\u0026gt;\u0026gt;();  // Noncompliant, the compiler can also infer complex type arguments\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nList\u0026lt;String\u0026gt; strings = new ArrayList\u0026lt;\u0026gt;();        // Compliant, the compiler will infer the type argument\nMap\u0026lt;String,List\u0026lt;Integer\u0026gt;\u0026gt; map = new HashMap\u0026lt;\u0026gt;(); // Compliant, the compiler will infer the type argument\n\u003c/pre\u003e\n\u003ch2\u003eReferences\u003c/h2\u003e\n\u003cul\u003e\n  \u003cli\u003e \u003ca href=\"https://docs.oracle.com/javase/tutorial/java/generics/genTypeInference.html\"\u003eThe Javaâ¢ Tutorials\u003c/a\u003e - Type Inference (Generics) \u003c/li\u003e\n\u003c/ul\u003e"
-    },
-    {
         "rule":  "java:S2589",
         "name":  "Boolean expressions should not be gratuitous",
         "count":  null,
@@ -227,13 +206,6 @@
         "rule":  "java:S4144",
         "name":  "Methods should not have identical implementations",
         "count":  null,
-        "htmlDesc":  null,
-        "howToFix":  null
-    },
-    {
-        "rule":  "java:S6395",
-        "name":  "Non-capturing groups without quantifier should not be used",
-        "count":  2,
         "htmlDesc":  null,
         "howToFix":  null
     },

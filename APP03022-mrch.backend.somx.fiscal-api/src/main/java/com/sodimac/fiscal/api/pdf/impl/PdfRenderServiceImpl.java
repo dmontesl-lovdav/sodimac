@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 
 import com.sodimac.fiscal.api.pdf.PdfRenderService;
 import com.sodimac.fiscal.api.util.QrCodeGenerator;
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,7 +50,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
     private String watermarkText;
 
     // Directorio temporal donde copiamos XSL + PNG una sola vez
-    private volatile Path tempXslDir;
+    private final AtomicReference<Path> tempXslDir = new AtomicReference<>();
 
     public PdfRenderServiceImpl(ResourceLoader resourceLoader, MessageCatalogService messageCatalog) {
         this.resourceLoader = resourceLoader;
@@ -68,7 +70,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
             }
 
             // 1) Parsear el XML a Document (similar a UtilsFile.ObtenerDocumentXml)
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
             factory.setNamespaceAware(true); // importante para cfdi: y tfd:
             DocumentBuilder builder = factory.newDocumentBuilder();
 
@@ -153,7 +155,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
             FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
             Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, out);
 
-            TransformerFactory tf = TransformerFactory.newInstance();
+            TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
 
             try (InputStream xslIs = Files.newInputStream(xslFile);
                     InputStream xmlIs = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
@@ -190,12 +192,14 @@ public class PdfRenderServiceImpl implements PdfRenderService {
      * directorio temporal.
      */
     private Path ensureTempXslDir() throws Exception {
-        if (tempXslDir != null) {
-            return tempXslDir;
+        Path existing = tempXslDir.get();
+        if (existing != null) {
+            return existing;
         }
         synchronized (this) {
-            if (tempXslDir != null) {
-                return tempXslDir;
+            existing = tempXslDir.get();
+            if (existing != null) {
+                return existing;
             }
             Path dir = Files.createTempDirectory("xsl-fiscal-");
             copyResourceToDir("classpath:/xsl/Formato4.0.xsl", dir, "Formato4.0.xsl");
@@ -203,7 +207,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
             Path imagePath = dir.resolve("no_logo.jpg");
             log.info("XSL e imagen copiadas a {}", dir);
             log.warn(">>> Logo exists? {}", Files.exists(imagePath));
-            tempXslDir = dir;
+            tempXslDir.set(dir);
             return dir;
         }
     }

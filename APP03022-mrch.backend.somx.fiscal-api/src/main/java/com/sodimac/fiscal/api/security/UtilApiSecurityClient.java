@@ -87,6 +87,10 @@ public class UtilApiSecurityClient {
             SecurityAttributes result = new SecurityAttributes(vendors, types, groups);
             cache.put(sub, new CachedContext(result, now + CACHE_TTL_MS));
             return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("util-api fetch interrupted for sub={}: {}", sub, e.getMessage());
+            return SecurityAttributes.empty();
         } catch (Exception e) {
             log.warn("util-api fetch error for sub={}: {}", sub, e.getMessage());
             return SecurityAttributes.empty();

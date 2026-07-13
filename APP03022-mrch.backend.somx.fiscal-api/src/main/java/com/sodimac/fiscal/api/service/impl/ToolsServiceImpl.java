@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -82,7 +84,7 @@ public class ToolsServiceImpl implements ToolsService {
 			// writer.write(System.lineSeparator());
 		}
 
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		InputSource is = new InputSource(new StringReader(writer.toString()));
 		Document doc = builder.parse(is);
@@ -92,7 +94,7 @@ public class ToolsServiceImpl implements ToolsService {
 
 
 	private String convertDomToXmlString(Document document) throws Exception {
-		TransformerFactory transfac = TransformerFactory.newInstance();
+		TransformerFactory transfac = XmlSecureFactory.newTransformerFactory();
 		Transformer trans = transfac.newTransformer();
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		trans.setOutputProperty(OutputKeys.INDENT, "yes"); // For pretty-printing

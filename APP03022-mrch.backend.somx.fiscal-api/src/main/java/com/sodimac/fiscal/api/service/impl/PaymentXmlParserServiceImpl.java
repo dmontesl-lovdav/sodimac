@@ -28,6 +28,7 @@ import com.sodimac.fiscal.api.model.dto.invoicexml.TimbreFiscalDigitalDto;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
 import com.sodimac.fiscal.api.service.PaymentXmlParserService;
+import com.sodimac.fiscal.api.util.XmlSecureFactory;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -183,7 +184,7 @@ public class PaymentXmlParserServiceImpl implements PaymentXmlParserService {
     @Override
     public Document xmlStringToDocument(String xmlContent) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
             factory.setNamespaceAware(true);
             factory.setIgnoringElementContentWhitespace(true);
 
@@ -352,7 +353,7 @@ public class PaymentXmlParserServiceImpl implements PaymentXmlParserService {
 
     private String nodeToString(Element node) {
         try {
-            javax.xml.transform.TransformerFactory tf = javax.xml.transform.TransformerFactory.newInstance();
+            javax.xml.transform.TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
             javax.xml.transform.Transformer transformer = tf.newTransformer();
             transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes");
             java.io.StringWriter writer = new java.io.StringWriter();

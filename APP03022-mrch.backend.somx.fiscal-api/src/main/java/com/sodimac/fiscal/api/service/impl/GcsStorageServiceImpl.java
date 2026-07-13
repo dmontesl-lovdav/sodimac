@@ -39,7 +39,7 @@ public class GcsStorageServiceImpl implements GcsStorageService {
         if (storage == null) {
             throw new IllegalStateException("GCS no configurado — fiscal.storage.gcs.bucket es obligatorio para subir PDFs");
         }
-        String normalizedPrefix = prefix.replaceAll("(?:^/+)|(?:/+$)", "");
+        String normalizedPrefix = prefix.replaceAll("^/+", "").replaceAll("/+$", "");
         String objectName = (normalizedPrefix.isBlank() ? "" : normalizedPrefix + "/") + invoiceUuid + ".pdf";
 
         BlobId blobId = BlobId.of(bucket, objectName);

@@ -1,0 +1,184 @@
+﻿[
+    {
+        "rule":  "java:S100",
+        "name":  "Method names should comply with a naming convention",
+        "count":  6,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S106",
+        "name":  "Standard outputs should not be used directly to log anything",
+        "count":  5,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1068",
+        "name":  "Unused \"private\" fields should be removed",
+        "count":  4,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S107",
+        "name":  "Methods should not have too many parameters",
+        "count":  10,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1118",
+        "name":  "Utility classes should not have public constructors",
+        "count":  3,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eTo prevent the class from being instantiated, you should define a non-public constructor. This will prevent the compiler from implicitly generating\na public parameterless constructor.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nclass StringUtils { // Noncompliant\n\n  public static String concatenate(String s1, String s2) {\n    return s1 + s2;\n  }\n\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nclass StringUtils { // Compliant\n\n  private StringUtils() {\n    throw new IllegalStateException(\"Utility class\");\n  }\n\n  public static String concatenate(String s1, String s2) {\n    return s1 + s2;\n  }\n\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S112",
+        "name":  "Generic exceptions should never be thrown",
+        "count":  10,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eTo fix this issue, make sure to throw specific exceptions that are relevant to the context in which they arise. It is recommended to either:\u003c/p\u003e\n\u003cul\u003e\n  \u003cli\u003e Raise a specific exception from the Java standard library when one matches. For example an \u003ccode\u003eIllegalArgumentException\u003c/code\u003e should be\n  thrown when a method receives an invalid argument. \u003c/li\u003e\n  \u003cli\u003e Create a custom exception class deriving from \u003ccode\u003eException\u003c/code\u003e or one of its subclasses. \u003c/li\u003e\n\u003c/ul\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nvoid checkValue(int value) throws Throwable { // Noncompliant: signature is too broad\n    if (value == 42) {\n        throw new RuntimeException(\"Value is 42\"); // Noncompliant: This will be difficult for consumers to handle\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nvoid checkValue(int value) {\n    if (value == 42) {\n        throw new IllegalArgumentException(\"Value is 42\"); // Compliant\n    }\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S1130",
+        "name":  "Exceptions in \"throws\" clauses should not be superfluous",
+        "count":  10,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1133",
+        "name":  "Deprecated code should be removed",
+        "count":  9,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1135",
+        "name":  "Track uses of \"TODO\" tags",
+        "count":  12,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1141",
+        "name":  "Try-catch blocks should not be nested",
+        "count":  6,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1144",
+        "name":  "Unused \"private\" methods should be removed",
+        "count":  8,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S116",
+        "name":  "Field names should comply with a naming convention",
+        "count":  6,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S117",
+        "name":  "Local variable and method parameter names should comply with a naming convention",
+        "count":  13,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eFirst, familiarize yourself with the particular naming convention of the project in question. Then, update the name to match the convention, as\nwell as all usages of the name. For many IDEs, you can use built-in renaming and refactoring features to update all usages at once.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eWith the default regular expression \u003ccode\u003e^[a-z][a-zA-Z0-9]*$\u003c/code\u003e:\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic class MyClass {\n    public void doSomething(int myParam) {\n      int LOCAL;    // Noncompliant\n      // ...\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\npublic class MyClass {\n    public void doSomething(int my_param) {\n      int local;\n      // ...\n    }\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S1172",
+        "name":  "Unused method parameters should be removed",
+        "count":  4,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eHaving unused function parameters in your code can lead to confusion and misunderstanding of a developerâs intention. They reduce code readability\nand introduce the potential for errors. To avoid these problems, developers should remove unused parameters from function declarations.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nvoid doSomething(int a, int b) { // Noncompliant, \"b\" is unused\n  compute(a);\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nvoid doSomething(int a) {\n  compute(a);\n}\n\u003c/pre\u003e\n\u003cp\u003eExamples of exceptions:\u003c/p\u003e\n\u003cpre\u003e\n@Override\nvoid doSomething(int a, int b) {     // no issue reported on b\n  compute(a);\n}\n\npublic void foo(String s) {\n  // designed to be extended but noop in standard case\n}\n\nprotected void bar(String s) {\n  //open-closed principle\n}\n\npublic void qix(String s) {\n  throw new UnsupportedOperationException(\"This method should be implemented in subclasses\");\n}\n\n/**\n * @param s This string may be used for further computation in overriding classes\n */\nprotected void foobar(int a, String s) { // no issue, method is overridable and unused parameter has proper javadoc\n  compute(a);\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S1192",
+        "name":  "String literals should not be duplicated",
+        "count":  64,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eUse constants to replace the duplicated string literals. Constants can be referenced from many places, but only need to be updated in a single\nplace.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eWith the default threshold of 3:\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic void run() {\n  prepare(\"action1\");                              // Noncompliant - \"action1\" is duplicated 3 times\n  execute(\"action1\");\n  release(\"action1\");\n}\n\n@SuppressWarning(\"all\")                            // Compliant - annotations are excluded\nprivate void method1() { /* ... */ }\n@SuppressWarning(\"all\")\nprivate void method2() { /* ... */ }\n\npublic String printInQuotes(String a, String b) {\n  return \"\u0027\" + a + \"\u0027\" + b + \"\u0027\";               // Compliant - literal \"\u0027\" has less than 5 characters and is excluded\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nprivate static final String ACTION_1 = \"action1\";  // Compliant\n\npublic void run() {\n  prepare(ACTION_1);                               // Compliant\n  execute(ACTION_1);\n  release(ACTION_1);\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S125",
+        "name":  "Sections of code should not be commented out",
+        "count":  2,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S135",
+        "name":  "Loops should not contain more than a single \"break\" or \"continue\" statement",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S1481",
+        "name":  "Unused local variables should be removed",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eThe fix for this issue is straightforward. Once you ensure the unused variable is not part of an incomplete implementation leading to bugs, you\njust need to remove it.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic int numberOfMinutes(int hours) {\n  int seconds = 0;   // Noncompliant - seconds is unused\n  return hours * 60;\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\npublic int numberOfMinutes(int hours) {\n  return hours * 60;\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S1854",
+        "name":  "Unused assignments should be removed",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eRemove the unnecesarry assignment, then test the code to make sure that the right-hand side of a given assignment had no side effects (e.g. a\nmethod that writes certain data to a file and returns the number of written bytes).\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nint foo(int y) {\n  int x = 100; // Noncompliant: dead store\n  x = 150;     // Noncompliant: dead store\n  x = 200;\n  return x + y;\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nint foo(int y) {\n  int x = 200; // Compliant: no unnecessary assignment\n  return x + y;\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S1874",
+        "name":  "\"@Deprecated\" code should not be used",
+        "count":  62,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S2093",
+        "name":  "Try-with-resources should be used",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eUse the try-with-resources syntax by moving the \u003ccode\u003eClosable\u003c/code\u003e variable declarations after the \u003ccode\u003etry\u003c/code\u003e keyword surrounded by\nparentheses and separated by \u003ccode\u003e;\u003c/code\u003e:\u003c/p\u003e\n\u003cpre\u003e\ntry (/* resources declarations */) {\n  // resources usage ...\n}\n\u003c/pre\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nFileReader fr = null;\nBufferedReader br = null;\n\ntry { // Noncompliant, the FileReader and BufferedReader are instantiated without try-with-resources\n  fr = new FileReader(fileName);\n  br = new BufferedReader(fr);\n  return br.readLine();\n} catch (...) {\n  ...\n} finally {\n\n  if (br != null) { // br has to be closed manually\n    try {\n      br.close();\n    } catch(IOException e){...}\n  }\n\n  if (fr != null ) { // fr has to be closed manually\n    try {\n      br.close();\n    } catch(IOException e){...}\n  }\n\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\ntry ( // Compliant, all resources are instantiated within a try-with-resources statement and hence automatically closed after use\n    FileReader fr = new FileReader(fileName);\n    BufferedReader br = new BufferedReader(fr)\n  ) {\n  return br.readLine();\n}\ncatch (...) {}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S2589",
+        "name":  "Boolean expressions should not be gratuitous",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eGratuitous boolean expressions are suspicious and should be carefully removed from the code.\u003c/p\u003e\n\u003cp\u003eFirst, the boolean expression in question should be closely inspected for logical errors. If a mistake was made, it can be corrected so the\ncondition is no longer gratuitous.\u003c/p\u003e\n\u003cp\u003eIf it becomes apparent that the condition is actually unnecessary, it can be removed. The associated control flow construct (e.g., the\n\u003ccode\u003eif\u003c/code\u003e-statement containing the condition) will be adapted or even removed, leaving only the necessary branches.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic class MyClass {\n    public void doThings(boolean b, boolean c) {\n        a = true;\n        if (a) {                // Noncompliant\n          doSomething();\n        }\n\n        if (b \u0026amp;\u0026amp; a) {           // Noncompliant; \"a\" is always \"true\"\n          doSomething();\n        }\n\n        if (c || !a) {          // Noncompliant; \"!a\" is always \"false\"\n          doSomething();\n        }\n\n        if (c || (!c \u0026amp;\u0026amp; b)) {   // Noncompliant; c || (!c \u0026amp;\u0026amp; b) is equal to c || b\n          doSomething();\n        }\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\npublic class MyClass {\n    public void doThings(boolean b, boolean c) {\n        a = true;\n        if (foo(a)) {\n          doSomething();\n        }\n\n        if (b) {\n          doSomething();\n        }\n\n        if (c) {\n          doSomething();\n        }\n\n        if (c || b) {\n          doSomething();\n        }\n    }\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S3740",
+        "name":  "Raw types should not be used",
+        "count":  6,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eFor any usage of parameterized types, bind the type parameters with type arguments. For example, when a function returns a list of strings, the\nreturn type is \u003ccode\u003eList\u0026lt;String\u0026gt;\u003c/code\u003e, where the type parameter \u003ccode\u003eE\u003c/code\u003e in interface \u003ccode\u003eList\u0026lt;E\u0026gt;\u003c/code\u003e is bound with the\nargument \u003ccode\u003eString\u003c/code\u003e.\u003c/p\u003e\n\u003cp\u003eIf the concrete binding is unknown, you still should not use the type raw. Use a wildcard type argument instead, with optional lower or upper\nbound, such as in \u003ccode\u003eList\u0026lt;?\u0026gt;\u003c/code\u003e for a list whose element type is unknown, or \u003ccode\u003eList\u0026lt;? extends Number\u0026gt;\u003c/code\u003e for a list whose\nelement type is \u003ccode\u003eNumber\u003c/code\u003e or a subtype of it.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\n// List is supposed to store integers only\nList integers = new ArrayList\u0026lt;\u0026gt;();\n\n// Yet, we can add strings, because we did not give\n// this information to the compiler\nintegers.add(\"Hello World!\");\n\n// Type is checked during runtime and will throw a ClassCastException\nInteger a = (Integer) integers.get(0);\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\n// List is supposed to store integers, and we let the compiler know\nList\u0026lt;Integer\u0026gt; integers = new ArrayList\u0026lt;\u0026gt;();\n\n// Now we can add only integers.\n// Adding a string results in a compile time error.\nintegers.add(42);\n\n// No cast required anymore, and no possible ClassCastException\nInteger a = integers.get(0);\n\u003c/pre\u003e\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"2\" data-diff-type=\"noncompliant\"\u003e\nString getStringFromForcedList(Object object) {\n  // Cast expression and instanceof can check runtime type only.\n  // The solution is _not_ to skip the type argument in that case.\n  return object instanceof List stringList ? (String) stringList.getFirst(): \"\";\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"2\" data-diff-type=\"compliant\"\u003e\nString getStringFromForcedList(Object object) {\n  // The solution is to use a wildcard type argument in that case.\n  return object instanceof List\u0026lt;?\u0026gt; stringList ? (String) stringList.getFirst(): \"\";\n}\n\u003c/pre\u003e\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"3\" data-diff-type=\"noncompliant\"\u003e\nString getStringFromForcedList(Object object) {\n  return object instanceof List stringList ? (String) stringList.getFirst(): \"\";\n}\n\nString returnString() {\n  Object object = List.of(\"Hello\");\n  return getStringFromForcedList(object);\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"3\" data-diff-type=\"compliant\"\u003e\nObject getObjectFromForcedList(Object object) {\n  // You may also choose not to make assumptions about type arguments you cannot infer.\n  return object instanceof List\u0026lt;?\u0026gt; list ? list.getFirst(): \"\";\n}\n\nString returnString(Object object) {\n  // Instead, delegate the decision to use-site, which may have more information.\n  Object object = List.of(\"Hello\");\n  return (String) getObjectFromForcedList(object);\n}\n\u003c/pre\u003e"
+    },
+    {
+        "rule":  "java:S3776",
+        "name":  "Cognitive Complexity of methods should not be too high",
+        "count":  14,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eReducing cognitive complexity can be challenging.\u003cbr\u003e Here are a few suggestions:\u003c/p\u003e\n\u003cul\u003e\n  \u003cli\u003e \u003cstrong\u003eExtract complex conditions in a new function.\u003c/strong\u003e\u003cbr\u003e Mixed operators in condition will increase complexity. Extracting the\n  condition in a new function with an appropriate name will reduce cognitive load. \u003c/li\u003e\n  \u003cli\u003e \u003cstrong\u003eBreak down large functions.\u003c/strong\u003e\u003cbr\u003e Large functions can be hard to understand and maintain. If a function is doing too many\n  things, consider breaking it down into smaller, more manageable functions. Each function should have a single responsibility. \u003c/li\u003e\n  \u003cli\u003e \u003cstrong\u003eAvoid deep nesting by returning early.\u003c/strong\u003e\u003cbr\u003e To avoid the nesting of conditions, process exceptional cases first and return\n  early. \u003c/li\u003e\n\u003c/ul\u003e\n\n\u003cp\u003e\u003cstrong\u003eExtraction of a complex condition in a new function.\u003c/strong\u003e\u003c/p\u003e\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eThe code is using a complex condition and has a cognitive cost of 3.\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\ndouble calculateFinalPrice(User user, Cart cart) {\n  double total = calculateTotal(cart);\n  if (user.hasMembership()                            // +1 (if)\n    \u0026amp;\u0026amp; user.ordersCount() \u0026gt; 10                        // +1 (more than one condition)\n    \u0026amp;\u0026amp; user.isAccountActive()\n    \u0026amp;\u0026amp; !user.hasDiscount()\n    || user.ordersCount() == 1) {                    // +1 (change of operator in condition)\n    total = applyDiscount(user, total);\n  }\n  return total;\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cp\u003eEven if the cognitive complexity of the whole program did not change, it is easier for a reader to understand the code of the\n\u003ccode\u003ecalculateFinalPrice\u003c/code\u003e function, which now only has a cognitive cost of 1.\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\ndouble calculateFinalPrice(User user, Cart cart) {\n  double total = calculateTotal(cart);\n  if (isEligibleForDiscount(user)) {                  // +1 (if)\n    total = applyDiscount(user, total);\n  }\n  return total;\n}\n\nboolean isEligibleForDiscount(User user) {\n  return user.hasMembership()\n    \u0026amp;\u0026amp; user.ordersCount() \u0026gt; 10                        // +1 (more than one condition)\n    \u0026amp;\u0026amp; user.isAccountActive()\n    \u0026amp;\u0026amp; !user.hasDiscount()\n    || user.ordersCount() == 1;                       // +1 (change of operator in condition)\n}\n\u003c/pre\u003e\n\u003cp\u003e\u003cstrong\u003eBreak down large functions.\u003c/strong\u003e\u003c/p\u003e\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eFor example, consider a function that calculates the total price of a shopping cart, including sales tax and shipping.\u003cbr\u003e \u003cem\u003eNote:\u003c/em\u003e The code\nis simplified here, to illustrate the purpose. Please imagine there is more happening in the \u003ccode\u003efor\u003c/code\u003e loops.\u003c/p\u003e\n\u003cpre data-diff-id=\"2\" data-diff-type=\"noncompliant\"\u003e\ndouble calculateTotal(Cart cart) {\n  double total = 0;\n  for (Item item : cart.items()) {       // +1 (for)\n    total += item.price;\n  }\n\n  // calculateSalesTax\n  for (Item item : cart.items()) {       // +1 (for)\n    total += 0.2 * item.price;\n  }\n\n  //calculateShipping\n  total += 5 * cart.items().size();\n\n  return total;\n}\n\u003c/pre\u003e\n\u003cp\u003eThis function could be refactored into smaller functions: The complexity is spread over multiple functions and the complex\n\u003ccode\u003ecalculateTotal\u003c/code\u003e has now a complexity score of zero.\u003c/p\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"2\" data-diff-type=\"compliant\"\u003e\ndouble calculateTotal(Cart cart) {\n  double total = 0;\n  total = calculateSubtotal(cart, total);\n  total += calculateSalesTax(cart, total);\n  total += calculateShipping(cart, total);\n\n  return total;\n}\n\ndouble calculateShipping(Cart cart, double total) {\n  total += 5 * cart.items().size();\n  return total;\n}\n\ndouble calculateSalesTax(Cart cart, double total) {\n  for (Item item : cart.items()) {       // +1 (for)\n    total += 0.2 * item.price;\n  }\n  return total;\n}\n\ndouble calculateSubtotal(Cart cart, double total) {\n  for (Item item : cart.items()) {       // +1 (for)\n    total += item.price;\n  }\n  return total;\n}\n\u003c/pre\u003e\n\u003cp\u003e\u003cstrong\u003eAvoid deep nesting by returning early.\u003c/strong\u003e\u003c/p\u003e\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eThe below code has a cognitive complexity of 6.\u003c/p\u003e\n\u003cpre data-diff-id=\"3\" data-diff-type=\"noncompliant\"\u003e\ndouble calculateDiscount(double price, User user) {\n  if (isEligibleForDiscount(user)) {      // +1 ( if )\n    if (user.hasMembership()) {           // +2 ( nested if )\n      return price * 0.9;\n    } else if (user.ordersCount() == 1) { // +1 ( else )\n      return price * 0.95;\n    } else {                              // +1 ( else )\n      return price;\n    }\n  } else {                                // +1 ( else )\n    return price;\n  }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cp\u003eChecking for the edge case first flattens the \u003ccode\u003eif\u003c/code\u003e statements and reduces the cognitive complexity to 3.\u003c/p\u003e\n\u003cpre data-diff-id=\"3\" data-diff-type=\"compliant\"\u003e\ndouble calculateDiscount(double price, User user) {\n  if (!isEligibleForDiscount(user)) {     // +1 ( if )\n    return price;\n  }\n  if (user.hasMembership()) {             // +1\n    return price * 0.9;\n  }\n  if (user.ordersCount() == 1) {          // +1 ( if )\n    return price * 0.95;\n  }\n  return price;\n}\n\u003c/pre\u003e\n\u003ch3\u003ePitfalls\u003c/h3\u003e\n\u003cp\u003eAs this code is complex, ensure that you have unit tests that cover the code before refactoring.\u003c/p\u003e"
+    },
+    {
+        "rule":  "java:S4144",
+        "name":  "Methods should not have identical implementations",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  null
+    },
+    {
+        "rule":  "java:S6541",
+        "name":  "Methods should not perform too many tasks (aka Brain method)",
+        "count":  3,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eThe common approach is to identify fragments of the methodâs code that deal with a specific responsibility and extract them to a new method. This\nwill make each method more readable, easy to understand and maintain, easier to test, and more prone to be reused.\u003cbr\u003e In this paper, the authors\ndescribe a systematic procedure to refactor this type of code smell: \u003ca href=\"https://dl.acm.org/doi/10.1145/3191314\"\u003e\"Assessing the Refactoring of\nBrain Methods\"\u003c/a\u003e.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre\u003e\nvoid farmDailyRoutine() {\n    Crops southEastCrops = getCrops(1, -1);\n    Crops eastCrops = getCrops(1, 0);\n    WaterContainer waterContainer = new WaterContainer();\n    List\u0026lt;Bottle\u0026gt; bottles = new ArrayList\u0026lt;\u0026gt;();\n    for(int i = 0; i \u0026lt; 10; i++) {\n        var bottle = new Bottle();\n        bottle.addWater(10L);\n        bottle.putCap();\n        bottle.shake(2);\n        bottles.add(bottle);\n    }\n    waterContainer.store(bottles);\n\n    Truck t1 = new Truck(Truck.Type.TRANSPORT);\n    t1.load(waterContainer);\n    if(Weather.current != Weather.RAINY) {\n        WaterContainer extraWaterContainer = new WaterContainer();\n        List\u0026lt;Bottle\u0026gt; extraBottles = new ArrayList\u0026lt;\u0026gt;();\n        if(southEastCrops.isDry()) {\n            for(LandSlot ls : southEastCrops.lands()) {\n                Bottle b = new Bottle();\n                b.addWater(10L);\n                b.putCap();\n                extraBottles.add(b);\n            }\n        } else {\n            extraBottles.add(new Bottle());\n        }\n        if(eastCrops.isDry()) {\n            for(LandSlot ls : southEastCrops.lands()) {\n                Bottle b = new Bottle();\n                b.addWater(10L);\n                b.putCap();\n                extraBottles.add(b);\n            }\n        } else {\n            extraBottles.add(new Bottle());\n        }\n        extraWaterContainer.store(extraBottles);\n        t1.load(extraWaterContainer);\n    } else {\n        WaterContainer extraWaterContainer = WaterSource.clone(waterContainer);\n        t1.load(extraWaterContainer)\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre\u003e\nvoid farmDailyRoutine() { // Compliant: Simpler method, making use of extracted and distributed logic\n    Crops southEastCrops = getCrops(1, -1);\n    Crops eastCrops = getCrops(1, 0);\n    WaterContainer waterContainer = new WaterContainer();\n    List\u0026lt;Bottle\u0026gt; bottles = getWaterBottles(10, 10L, true);\n    waterContainer.store(bottles);\n\n    Truck t1 = new Truck(Truck.Type.TRANSPORT);\n    t1.load(waterContainer);\n    if(Weather.current != Weather.RAINY) {\n        WaterContainer extraWaterContainer = new WaterContainer();\n        fillContainerForCrops(extraWaterContainer, southEastCrops);\n        fillContainerForCrops(extraWaterContainer, eastCrops);\n        t1.load(extraWaterContainer);\n    } else {\n        WaterContainer extraWaterContainer = WaterSource.clone(waterContainer);\n        t1.load(extraWaterContainer)\n    }\n}\n\nprivate fillContainerForCrops(WaterContainer wc, Crops crops) { // Compliant: extracted readable and reusable method\n    if(crops.isDry()) {\n        wc.store(getWaterBottles(crops.lands().size(), 10L, false));\n    } else {\n        wc.store(Collections.singleton(new Bottle()));\n    }\n}\n\nprivate List\u0026lt;Bottle\u0026gt; getWaterBottles(int qt, long liquid, boolean shake){ // Compliant: extracted readable and reusable method\n    List\u0026lt;Bottle\u0026gt; bottles = new ArrayList\u0026lt;\u0026gt;();\n    for(int i = 0; i \u0026lt; qt; i++) {\n        Bottle b = new Bottle();\n        b.addWater(liquid);\n        b.putCap();\n        if(shake) {\n            b.shake();\n        }\n        bottles.add(b);\n    }\n    return bottles;\n}\n\u003c/pre\u003e\n\u003ch3\u003eHow does this work?\u003c/h3\u003e\n\u003cp\u003eIn this case, the method \u003ccode\u003efarmDailyRoutine\u003c/code\u003e was taking care of performing many different tasks, with nested conditions and loops, it was\nlong and had plenty of local variables. By separating its logic into multiple single-responsibility methods, it is reusing parts of its original\nduplicated code and each of the new methods is now readable and easy to understand. They are now also easier to cover with tests, and many other parts\nof the owner class could benefit from using these methods.\u003c/p\u003e"
+    }
+]

@@ -218,7 +218,6 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
 
             // === PASO 9: VALIDAR CON SAT VÍA MULTIPAC ===
             // TODO: Implementar validación SAT mediante multipac (Detecno) cuando esté disponible
-            // ResponseEntity<Object> satValidationResponse = validateWithSat(xmlContent, request);
             log.info("Paso 9: Validacion SAT omitida (pendiente de implementar via multipac)");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_SAT.getCode(), SERVICE_NAME,
                     String.valueOf(request.getIdUsuario()), false, "Validacion SAT omitida (pendiente de implementar via multipac)",

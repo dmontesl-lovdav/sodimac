@@ -57,9 +57,7 @@ public class ToolsServiceImpl implements ToolsService {
 		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
 		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
 
-		XmlFIscalDto fiscalDto = new XmlFIscalDto(UUID, Rfc, versionCFDI);
-
-		return fiscalDto;
+		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
 	}
 	
 	public Document getDocument(MultipartFile file) throws IOException, SAXException, ParserConfigurationException {
@@ -68,7 +66,6 @@ public class ToolsServiceImpl implements ToolsService {
 				BufferedReader reader = new BufferedReader(
 						new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
 			content = readBufferedReaderToDocument(reader);
-			inputStream.close();
 		}
 		return content;
 	}
@@ -81,15 +78,12 @@ public class ToolsServiceImpl implements ToolsService {
 			writer.write(line);
 			// Optionally add a newline if the original content had them and you want to
 			// preserve structure
-			// writer.write(System.lineSeparator());
 		}
 
 		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		InputSource is = new InputSource(new StringReader(writer.toString()));
-		Document doc = builder.parse(is);
-
-		return doc;
+		return builder.parse(is);
 	}
 
 
@@ -113,9 +107,7 @@ public class ToolsServiceImpl implements ToolsService {
 	}
 	
 	public UUID getRandomUUID() {
-        UUID uuid = UUID.randomUUID();
-
-        return uuid;
+        return UUID.randomUUID();
 	}
 
 }

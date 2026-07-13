@@ -9,5 +9,5 @@ import com.sodimac.fiscal.api.model.dto.XmlFIscalDto;
 
 public interface PacService {
 
-	ResponseEntity<Object> validaXml(Document xml, String requestData, PacCatalogDto pac,  String strXmlJson, XmlFIscalDto xmlFIscalDto) ; //throws IOException, SAXException, ParserConfigurationException, Exception;
+	ResponseEntity<Object> validaXml(Document xml, String requestData, PacCatalogDto pac,  String strXmlJson, XmlFIscalDto xmlFIscalDto) ;
 }

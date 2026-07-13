@@ -78,20 +78,18 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
     }
     
 	private XmlFIscalDto getVauleFromXmlFile(String strXmlJson) throws JsonMappingException, JsonProcessingException  {
-		//String str = convertXmlStringToJson(convertDomToXmlString(xml));
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode rootNode = mapper.readTree(strXmlJson);
 		String versionCFDI = rootNode.get("Version").toString();
 		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
 		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
 
-		XmlFIscalDto fiscalDto = new XmlFIscalDto(UUID, Rfc, versionCFDI);
 
-		return fiscalDto;
+		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
 	}
 
 	public ResponseEntity<Object> validaXml(Document xml, String requestData, PacCatalogDto pac, String strXmlJson, XmlFIscalDto xmlFIscalDto) 
-			{ //throws IOException, SAXException, ParserConfigurationException, TransformerException, PropertyException, JAXBException 	{
+			{
 
 		ValidarXML request = new ValidarXML();
 		ValidarXML.XmlPassed xmlPassed = new ValidarXML.XmlPassed();
@@ -156,19 +154,16 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		LocalDateTime recordEndDate = null;
 		ResponseValidationDetecnoDto responseDTO = null;
 
-//		try {
 			
 				recordStartDate = LocalDateTime.now();
 				validarXMLResponse = (ValidarXMLResponse) getWebServiceTemplate().marshalSendAndReceive(pac.getUrl(), request, null);
 				recordEndDate = LocalDateTime.now();
 				responseData = ConvertJaxbXmlObjToString(validarXMLResponse);
 
-				//bitacora.setFechaFinRegistro(LocalDateTime.now().toString());
 	
 				responseDTO = buildResponse(validarXMLResponse);
 				response = ResponseHandler.responseBuilder("OK", HttpStatus.OK, responseDTO, 0, null);
-				// GuardarBitacora(validarXMLResponse, xml, bitacora);				
-		LogDto logdto = GuardarLogFiscal(xmlFIscalDto,pac,recordStartDate,recordEndDate, responseDTO, requestData, responseData);
+		GuardarLogFiscal(xmlFIscalDto,pac,recordStartDate,recordEndDate, responseDTO, requestData, responseData);
 		return response;
 	}
 
@@ -202,23 +197,10 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		String status = validarXMLResponse.getValidarXMLResult().getValue().getStatus().getValue();
 		String validate = validarXMLResponse.getValidarXMLResult().getValue().getValidate().getValue();
 
-		ResponseValidationDetecnoDto responseDTO = new ResponseValidationDetecnoDto(creditoActual, creditoDisponible, creditoFinal, creditoInicio,
+		return new ResponseValidationDetecnoDto(creditoActual, creditoDisponible, creditoFinal, creditoInicio,
 				errorCode, errorDesc, errorMessage, errorModule, errorType, status, validate);
-
-		return responseDTO;
 	}
 
-//	private void GuardarBitacora(ValidarXMLResponse response, Document xml, BitacoraDTO bitacora) throws Exception {
-//
-//		String status = response.getValidarXMLResult().getValue().getStatus().getValue();
-//		String errorCode = response.getValidarXMLResult().getValue().getErrorCode().getValue();
-//
-//		String str = convertXmlStringToJson(convertDomToXmlString(xml));
-//		ObjectMapper mapper = new ObjectMapper();
-//		JsonNode rootNode = mapper.readTree(str);
-//		String version = rootNode.get("Version").toString();
-//
-//	}
 
 	private LogDto GuardarLogFiscal(XmlFIscalDto xmlFIscalDto, PacCatalogDto pac, LocalDateTime recordStartDate
 									,LocalDateTime recordEndDate, ResponseValidationDetecnoDto responseDTO
@@ -242,7 +224,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 				BufferedReader reader = new BufferedReader(
 						new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
 			content = readBufferedReaderToDocument(reader);
-			inputStream.close();
 		}
 		return content;
 	}
@@ -255,7 +236,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 			writer.write(line);
 			// Optionally add a newline if the original content had them and you want to
 			// preserve structure
-			// writer.write(System.lineSeparator());
 		}
 
 		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
@@ -263,7 +243,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		InputSource is = new InputSource(new StringReader(writer.toString()));
 		Document doc = builder.parse(is);
 
-		return doc;
+		return builder.parse(is);
 	}
 
 	private String convertDocumentToString(Document doc) throws TransformerConfigurationException, TransformerException {
@@ -274,11 +254,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 				transformer = tf.newTransformer();
 
 			// Optional: Set output properties for formatting (indentation, XML declaration)
-			// transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
-			// transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",
-			// "2");
-			// transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION,
-			// "no");
 
 			// Create a StringWriter to store the XML output
 			StringWriter writer = new StringWriter();

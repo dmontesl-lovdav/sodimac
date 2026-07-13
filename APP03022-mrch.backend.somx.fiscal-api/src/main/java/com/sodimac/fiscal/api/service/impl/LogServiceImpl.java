@@ -32,7 +32,6 @@ public class LogServiceImpl implements LogService {
     
     @Override
     public LogDto save(LogDto logDto) {
-        //log.debug("Saving LogFiscal Object" + logDto.toString());
         LogEntity logEntity = logMapper.toEntity(logDto);
         LogEntity entity = logRepository.save(logEntity);
         return logMapper.toDto(entity);

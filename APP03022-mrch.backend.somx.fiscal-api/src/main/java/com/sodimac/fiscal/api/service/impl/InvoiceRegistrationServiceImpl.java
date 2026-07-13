@@ -134,9 +134,6 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
 
             // === PASO 8: VALIDAR CON SAT (OPCIONAL - COMENTADO POR AHORA) ===
             // TODO: Implementar validación SAT mediante PAC cuando esté disponible
-            // log.info("Paso 8: Validando documento con SAT via PAC");
-            // validateWithSat(xmlContent, invoiceDto);
-            // log.info("Validacion SAT completada exitosamente");
 
             // === PASO 9: PERSISTIR EN BASE DE DATOS ===
             log.info("Paso 8: Persistiendo documento en base de datos");

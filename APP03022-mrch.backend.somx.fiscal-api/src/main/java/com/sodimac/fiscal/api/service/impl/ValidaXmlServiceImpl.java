@@ -115,7 +115,6 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 		  	if(pac != null) {
 	
 			  	if(pac.getName().contains(DETECNO)) {
-			  		//response = validaXml(file, pac);
 			  		response = pacServiceDetecnoImpl.validaXml(xml, requestData, pac, strXmlJson, xmlFIscalDto);
 			  	}
 			  	if(pac.getName().contains(CARBAJAL)) {
@@ -180,7 +179,6 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 				BufferedReader reader = new BufferedReader(
 						new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
 			content = readBufferedReaderToDocument(reader);
-			inputStream.close();
 		}
 		return content;
 	}
@@ -193,15 +191,12 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 			writer.write(line);
 			// Optionally add a newline if the original content had them and you want to
 			// preserve structure
-			// writer.write(System.lineSeparator());
 		}
 
 		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		InputSource is = new InputSource(new StringReader(writer.toString()));
-		Document doc = builder.parse(is);
-
-		return doc;
+		return builder.parse(is);
 	}
 	
 	private String convertDomToXmlString(Document document) throws TransformerConfigurationException, TransformerException  {
@@ -224,16 +219,13 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 	}
 	
 	private XmlFIscalDto getVauleFromXmlFile(String strXmlJson) throws JsonMappingException, JsonProcessingException  {
-		//String str = convertXmlStringToJson(convertDomToXmlString(xml));
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode rootNode = mapper.readTree(strXmlJson);
 		String versionCFDI = rootNode.get("Version").toString();
 		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
 		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
 
-		XmlFIscalDto fiscalDto = new XmlFIscalDto(UUID, Rfc, versionCFDI);
-
-		return fiscalDto;
+		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
 	}
 
 	private LogDto GuardarLogFiscal(PacCatalogDto pac, LocalDateTime recordStartDate
@@ -266,7 +258,7 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
   				
   				).collect(Collectors.toList());
   		
-  		if(pacListTmp.size() > 0) {
+  		if(!pacListTmp.isEmpty()) {
   			pac = pacListTmp.get(0);   //Obtiene el Pac que cumple con las condicioens anteriores
   		} else { //En caso contrario intenta con el siguiente PAC
   			int prioridadAdded = prioridad + 1;

@@ -474,7 +474,7 @@ public class InvoiceSearchControllerIntegrationTest {
         searchRequest.setSerie("B");
 
         // When: Se hace POST al endpoint de búsqueda
-        MvcResult result = mockMvc.perform(post("/api/invoices/search")
+        mockMvc.perform(post("/api/invoices/search")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(searchRequest)))
                 .andExpect(status().isOk())

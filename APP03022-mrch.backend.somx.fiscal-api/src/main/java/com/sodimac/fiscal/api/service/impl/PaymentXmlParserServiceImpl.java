@@ -150,36 +150,6 @@ public class PaymentXmlParserServiceImpl implements PaymentXmlParserService {
         }
     }
 
-    /*@Override
-    public boolean validateXmlStructure(String xmlContent) {
-        log.debug("Validando estructura XML contra XSD Pagos 2.0");
-
-        try {
-            SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-
-            // Cargar XSD desde resources
-            InputStream xsdStream = getClass().getResourceAsStream("/xsd/Pagos20.xsd");
-            if (xsdStream == null) {
-                log.warn("No se encontró el archivo XSD Pagos20.xsd, omitiendo validación");
-                return true;
-            }
-
-            Schema schema = schemaFactory.newSchema(new StreamSource(xsdStream));
-            Validator validator = schema.newValidator();
-
-            validator.validate(new StreamSource(new StringReader(xmlContent)));
-
-            log.debug("XML válido según XSD Pagos 2.0");
-            return true;
-
-        } catch (SAXException e) {
-            log.error("XML no cumple con el esquema XSD: {}", e.getMessage());
-            return false;
-        } catch (IOException e) {
-            log.error("Error leyendo XML para validación: {}", e.getMessage());
-            return false;
-        }
-    }*/
 
     @Override
     public Document xmlStringToDocument(String xmlContent) {

@@ -304,9 +304,6 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 8: VALIDAR CON SAT (OPCIONAL - COMENTADO POR AHORA) ===
             // TODO: Implementar validación SAT mediante PAC cuando esté disponible
             // log.info("Paso 8: Validando documento con SAT via PAC");
-            // validateWithSat(xmlContent, invoiceDto);
-            // log.info("Validacion SAT completada exitosamente");
-            log.info("Paso 8: Validacion SAT omitida (pendiente de implementar via PAC)");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_SAT.getCode(), SERVICE_NAME,
                     "system", false, "Validacion SAT omitida (pendiente de implementar via PAC)",
                     "Este paso se habilitara cuando se integre el servicio PAC", null, null);
@@ -467,7 +464,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         final String SERVICE_NAME_UPDATE = "InvoiceService.updateInvoice";
         String traceId = UUID.randomUUID().toString();
         long startTimeMs = System.currentTimeMillis();
-        LocalDateTime startTime = LocalDateTime.now();
         String requestDataJson = buildRequestDataJson(request);
         UUID invoiceUuid = null;  // Se asigna cuando se encuentra la factura (para log con FK correcta)
 

@@ -27,6 +27,7 @@ export async function search(query: ListAccountStatementQuery, allowedVendors: s
     const pageSize = query.pageSize ?? 10;
     const { rows, total } = await r.findByFilters({
         vendorNumber: query.vendorNumber,
+        supplierType: query.supplierType,
         year: query.year,
         month: month ?? 'all',
         allowedVendors,
@@ -34,10 +35,15 @@ export async function search(query: ListAccountStatementQuery, allowedVendors: s
         offset: (page - 1) * pageSize,
     });
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    const items = rows.map((row) => ({
+    const items = rows.map(({ statement: row, vendorName, supplierTypeId, supplierTypeCode, supplierTypeDescription }) => ({
         accountStatementUuid: row.accountStatementUuid,
         vendorNumber: Number(row.vendorNumber),
-        vendorName: '',
+        vendorName,
+        supplierType: {
+            id: supplierTypeId ?? 0,
+            code: supplierTypeCode ?? '',
+            description: supplierTypeDescription ?? '',
+        },
         year: row.year,
         month: row.month,
         status: row.status,

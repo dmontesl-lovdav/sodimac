@@ -4,6 +4,7 @@ export const UuidParamSchema = z.object({ uuid: z.string().uuid() });
 
 export const ListAccountStatementQuerySchema = z.object({
     vendorNumber: z.coerce.number().int().optional(),
+    supplierType: z.coerce.number().int().optional(),
     year: z.coerce.number().int().min(2026),
     month: z.union([z.literal('all'), z.coerce.number().int().min(1).max(12)]).optional(),
     page: z.coerce.number().int().min(1).default(1),

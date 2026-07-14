@@ -290,6 +290,45 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /account-statement/batch:
+    post:
+      tags:
+        - account-statement
+      summary: Batch generate account statements
+      description: >
+        Genera estados de cuenta para uno o todos los proveedores en el
+        año/mes indicado. Si ya existe un registro activo (status > 0) lo
+        omite. Las tablas auxiliares de tenant_finance se usan automáticamente.
+      operationId: batchGenerateAccountStatements
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: false
+          schema:
+            $ref: '#/definitions/BatchAccountStatementBodyDto'
+      responses:
+        '200':
+          description: Batch result
+          schema:
+            $ref: '#/definitions/BatchAccountStatementResultDto'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /account-statement:
     get:
       tags:
@@ -304,6 +343,11 @@ paths:
           required: false
           type: integer
           format: int64
+        - in: query
+          name: supplierType
+          required: false
+          type: integer
+          description: Filtra por tipo de proveedor (shared_catalogs.supplier_type.id).
         - in: query
           name: year
           required: true
@@ -499,6 +543,41 @@ paths:
           description: Found
           schema:
             $ref: '#/definitions/AccountStatementDetailDto'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - account-statement
+      summary: Soft-delete account statement by UUID
+      description: >
+        Marca como eliminado (status = 0) el estado de cuenta y todos sus
+        registros en las 6 tablas auxiliares de tenant_finance (borrado lógico).
+      operationId: softDeleteAccountStatement
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Deleted
+          schema:
+            $ref: '#/definitions/AccountStatementDeleteResponseDto'
         '401':
           description: Unauthorized
           schema:
@@ -3464,6 +3543,98 @@ definitions:
         type: string
       updatedBy:
         type: integer
+  BatchAccountStatementBodyDto:
+    type: object
+    description: >
+      Parámetros opcionales para la generación en batch de estados de cuenta.
+      Las tablas auxiliares de tenant_finance se usan automáticamente.
+    properties:
+      supplierNumber:
+        type: integer
+        format: int64
+        x-nullable: true
+      year:
+        type: integer
+        minimum: 2020
+        x-nullable: true
+      month:
+        type: integer
+        minimum: 1
+        maximum: 12
+        x-nullable: true
+  BatchAccountStatementDetailItemDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      accountStatementUuid:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum:
+          - created
+          - skipped
+    required:
+      - vendorNumber
+      - accountStatementUuid
+      - status
+  BatchAccountStatementErrorItemDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      reason:
+        type: string
+    required:
+      - vendorNumber
+      - reason
+  BatchAccountStatementResultDto:
+    type: object
+    properties:
+      created:
+        type: integer
+      skipped:
+        type: integer
+      errors:
+        type: array
+        items:
+          $ref: '#/definitions/BatchAccountStatementErrorItemDto'
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/BatchAccountStatementDetailItemDto'
+    required:
+      - created
+      - skipped
+      - errors
+      - details
+  AccountStatementDeleteResponseDto:
+    type: object
+    properties:
+      success:
+        type: boolean
+      accountStatementUuid:
+        type: string
+        format: uuid
+    required:
+      - success
+      - accountStatementUuid
+  AccountStatementSupplierTypeDto:
+    type: object
+    properties:
+      id:
+        type: integer
+      code:
+        type: string
+      description:
+        type: string
+    required:
+      - id
+      - code
+      - description
   AccountStatementListItemDto:
     type: object
     properties:
@@ -3475,6 +3646,8 @@ definitions:
         format: int64
       vendorName:
         type: string
+      supplierType:
+        $ref: '#/definitions/AccountStatementSupplierTypeDto'
       year:
         type: integer
       month:
@@ -3495,6 +3668,7 @@ definitions:
       - accountStatementUuid
       - vendorNumber
       - vendorName
+      - supplierType
       - year
       - month
       - status

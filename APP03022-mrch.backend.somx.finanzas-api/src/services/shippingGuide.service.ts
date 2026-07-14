@@ -168,6 +168,11 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
             );
 
             const SGPO = item.shippingGuidePurchaseOrders as ShippingGuidePurchaseOrder[];
+            const po = SGPO[0]?.purchaseOrder;
+            const reception = SGUtils.resolveReceptionForGuide(
+                po?.receptions,
+                item.guideNumber
+            );
 
             return {
                 ...item,
@@ -176,8 +181,8 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
                 tipoProveedor: foundTipoProveedor,
                 deliveryType: foundTipoEntrega,
                 OrigenCartaPorte: foundOriginCP,
-                orderNumber: String(SGPO[0]?.purchaseOrder?.orderNumber),
-                purchaseOrderStatus: SGPO[0]?.purchaseOrder?.status ?? null,
+                orderNumber: String(po?.orderNumber),
+                purchaseOrderStatus: reception?.status ?? po?.status ?? null,
             };
         });
     });

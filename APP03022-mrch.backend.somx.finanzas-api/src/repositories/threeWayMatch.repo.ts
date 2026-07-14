@@ -242,17 +242,17 @@ export async function findWithFilters(
     if (tipoProveedor !== undefined) {
         qb.andWhere(
             `
-                EXISTS (
-                    SELECT 1
-                    FROM shared_catalogs.supplier supplier
-                    WHERE supplier.supplier_number::text =
-                          "t"."vendor_number"
-                      AND supplier.supplier_type_id =
-                          :tipoProveedor
-                )
-            `,
+            EXISTS (
+                SELECT 1
+                FROM shared_catalogs.supplier supplier
+                WHERE CAST(supplier.supplier_number AS TEXT) =
+                      CAST("t"."vendor_number" AS TEXT)
+                  AND CAST(supplier.supplier_type_id AS TEXT) =
+                      CAST(:tipoProveedor AS TEXT)
+            )
+        `,
             {
-                tipoProveedor,
+                tipoProveedor: String(tipoProveedor).trim(),
             }
         );
     }

@@ -1,6 +1,8 @@
 import { getDataSource } from '@/config/typeorm-datasource.js';
 import { AccountStatement } from '@/entities/AccountStatement.entity.js';
 import { Supplier } from '@/entities/tenant_catalogs.cat_supplier.entity.js';
+import { SharedSupplier } from '@/entities/SharedSupplier.entity.js';
+import { SharedSupplierType } from '@/entities/SharedSupplierType.entity.js';
 
 export function repo() {
     return getDataSource().getRepository(AccountStatement);
@@ -8,6 +10,7 @@ export function repo() {
 
 export interface FindByFiltersOptions {
     vendorNumber?: number | undefined;
+    supplierType?: number | undefined;
     year: number;
     month: number | 'all';
     allowedVendors?: string[] | null;
@@ -15,10 +18,26 @@ export interface FindByFiltersOptions {
     offset: number;
 }
 
-export async function findByFilters(options: FindByFiltersOptions): Promise<{ rows: AccountStatement[]; total: number }> {
+export interface AccountStatementListRow {
+    statement: AccountStatement;
+    vendorName: string;
+    supplierTypeId: number | null;
+    supplierTypeCode: string | null;
+    supplierTypeDescription: string | null;
+}
+
+export async function findByFilters(options: FindByFiltersOptions): Promise<{ rows: AccountStatementListRow[]; total: number }> {
     const qb = repo()
         .createQueryBuilder('a')
-        .where('a.year = :year', { year: options.year });
+        .leftJoin(
+            SharedSupplier,
+            's',
+            's.supplier_number::text = CAST(a.vendor_number AS TEXT)'
+        )
+        .leftJoin(SharedSupplierType, 'st', 'st.id = s.supplier_type_id')
+        .addSelect(['s.businessName', 's.supplierTypeId', 'st.code', 'st.description'])
+        .where('a.year = :year', { year: options.year })
+        .andWhere('a.status > 0');
 
     if (options.allowedVendors && options.allowedVendors.length > 0) {
         qb.andWhere('CAST(a.vendor_number AS TEXT) IN (:...allowedVendors)', { allowedVendors: options.allowedVendors });
@@ -26,18 +45,32 @@ export async function findByFilters(options: FindByFiltersOptions): Promise<{ ro
     if (options.vendorNumber) {
         qb.andWhere('a.vendor_number = :vendorNumber', { vendorNumber: options.vendorNumber });
     }
+    if (options.supplierType !== undefined) {
+        qb.andWhere('s.supplier_type_id = :supplierType', { supplierType: options.supplierType });
+    }
     if (options.month && options.month !== 'all') {
         qb.andWhere('a.month = :month', { month: options.month });
     }
 
     const total = await qb.getCount();
-    const rows = await qb
+    const { entities, raw } = await qb
         .orderBy('a.year', 'DESC')
         .addOrderBy('a.month', 'DESC')
         .addOrderBy('a.version', 'DESC')
         .skip(options.offset)
         .take(options.limit)
-        .getMany();
+        .getRawAndEntities();
+
+    const rows: AccountStatementListRow[] = entities.map((statement, index) => {
+        const row = raw[index] as Record<string, unknown>;
+        return {
+            statement,
+            vendorName: String(row['s_business_name'] ?? ''),
+            supplierTypeId: row['s_supplier_type_id'] != null ? Number(row['s_supplier_type_id']) : null,
+            supplierTypeCode: row['st_code'] != null ? String(row['st_code']) : null,
+            supplierTypeDescription: row['st_description'] != null ? String(row['st_description']) : null,
+        };
+    });
 
     return { rows, total };
 }

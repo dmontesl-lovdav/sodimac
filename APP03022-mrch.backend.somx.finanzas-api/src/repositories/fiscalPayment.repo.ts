@@ -11,7 +11,7 @@ export async function findAll(filter: FindOptionsWhere<FiscalPayment>, limit = 1
 export async function findByVendorAndPaymentDateRange(vendorNumber: number, start: Date, end: Date): Promise<FiscalPayment[]> {
     return repo().find({
         where: {
-            //vendorNumber,
+            vendorNumber,
             paymentDate: Between(start, end) as any,
         },
         order: { paymentDate: 'DESC' },

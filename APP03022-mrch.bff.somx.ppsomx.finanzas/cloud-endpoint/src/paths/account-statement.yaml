@@ -53,6 +53,11 @@ account-statement:
         type: integer
         format: int64
       - in: query
+        name: supplierType
+        required: false
+        type: integer
+        description: Filtra por tipo de proveedor (shared_catalogs.supplier_type.id).
+      - in: query
         name: year
         required: true
         type: integer

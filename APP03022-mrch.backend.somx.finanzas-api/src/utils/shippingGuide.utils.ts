@@ -14,6 +14,7 @@ import 'dotenv/config';
 
 import { logger } from "@/utils/logger.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
+import { Reception } from "@/entities/Reception.entity.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { logActivity, getTraceId } from '@/middlewares/logger.js';
 import { ShippingGuideFile } from '@/entities/ShippingGuideFile.entity.js';
@@ -142,6 +143,22 @@ export async function validateShippingGuide(dto: CreateShippingGuideDto
     return shippingGuide;
 }
 
+/** Recepción activa ligada a la guía (misma lógica que purchase-orders: status de recepción, no de PO). */
+export function resolveReceptionForGuide(
+    receptions: Reception[] | undefined,
+    guideNumber?: string
+): Reception | undefined {
+    const active = (receptions ?? []).filter((r) => Number(r.status) !== 8);
+    const normalizedGuide = guideNumber?.trim();
+    if (normalizedGuide) {
+        const byGuide = active.find(
+            (r) => r.guideNumber?.trim() === normalizedGuide
+        );
+        if (byGuide) return byGuide;
+    }
+    return active[0];
+}
+
 /** Evita referencias circulares (guía ↔ vínculos OC) al serializar el detalle. */
 export function mapShippingGuideToDetailPayload(
     item: ShippingGuide,
@@ -178,17 +195,11 @@ export function mapShippingGuideToDetailPayload(
               )
             : undefined;
 
-        const receptionDates = (po?.receptions ?? [])
-            .map((r) => r.receptionDate)
-            .filter((d): d is Date => d != null);
-
-            const receptionDate =
-                receptionDates.length > 0
-                    ? receptionDates.reduce((earliest, d) =>
-                        d < earliest ? d : earliest,
-                    receptionDates[0]!)
-                    : undefined;
-
+        const reception = resolveReceptionForGuide(
+            po?.receptions,
+            item.guideNumber
+        );
+        const receptionDate = reception?.receptionDate ?? null;
 
         return {
             shippingGuidePurchaseOrderId: link.shippingGuidePurchaseOrderId,
@@ -207,9 +218,9 @@ export function mapShippingGuideToDetailPayload(
                           poSupplier?.businessName ?? null,
                       originId: po.originId,
                       amount: po.amount,
-                      status: po.status,
+                      status: reception?.status ?? po.status,
                       purchaseOrderDate: po.purchaseOrderDate,
-                      receptionDate: receptionDate ?? null,
+                      receptionDate,
                       createdBy: po.createdBy,
                       createdAt: po.createdAt,
                       updatedBy: po.updatedBy,

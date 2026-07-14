@@ -85,6 +85,20 @@ AccountStatementDeleteResponseDto:
     - success
     - accountStatementUuid
 
+AccountStatementSupplierTypeDto:
+  type: object
+  properties:
+    id:
+      type: integer
+    code:
+      type: string
+    description:
+      type: string
+  required:
+    - id
+    - code
+    - description
+
 AccountStatementListItemDto:
   type: object
   properties:
@@ -96,6 +110,8 @@ AccountStatementListItemDto:
       format: int64
     vendorName:
       type: string
+    supplierType:
+      $ref: "#/AccountStatementSupplierTypeDto"
     year:
       type: integer
     month:
@@ -116,6 +132,7 @@ AccountStatementListItemDto:
     - accountStatementUuid
     - vendorNumber
     - vendorName
+    - supplierType
     - year
     - month
     - status

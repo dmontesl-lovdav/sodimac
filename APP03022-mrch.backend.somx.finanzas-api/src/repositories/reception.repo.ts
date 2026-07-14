@@ -67,8 +67,8 @@ export async function findByVendorAndDateRange(vendorNumber: number, start: Date
     return datasource.manager
         .createQueryBuilder(Reception, 'r')
         .leftJoinAndSelect('r.purchaseOrder', 'po')
-        //.where('po.supplierNumber = :vendorNumber', { vendorNumber })
-        .where('r.receptionDate BETWEEN :start AND :end', { start, end })
+        .where('po.supplierNumber = :vendorNumber', { vendorNumber })
+        .andWhere('r.receptionDate BETWEEN :start AND :end', { start, end })
         .andWhere('r.status != 8')
         .orderBy('r.receptionDate', 'ASC')
         .take(500)

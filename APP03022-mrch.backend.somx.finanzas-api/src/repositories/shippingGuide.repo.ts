@@ -22,7 +22,19 @@ export async function findByAll(filter: FindOptionsWhere<ShippingGuide>) {
 
 export async function findAllPaginated(filter: FindOptionsWhere<ShippingGuide>, pageSize: number, pageNumber: number) {
     const skip = (pageNumber - 1) * pageSize; // Calculate the offset
-    let [result, total] = await repo().findAndCount({ where: filter, take: pageSize, skip: skip, order: { createdAt: "DESC" } });
+    let [result, total] = await repo().findAndCount({
+        where: filter,
+        take: pageSize,
+        skip: skip,
+        order: { createdAt: "DESC" },
+        relations: {
+            shippingGuidePurchaseOrders: {
+                purchaseOrder: {
+                    receptions: true,
+                },
+            },
+        },
+    });
     logger.info("✅ shippingGuide List  → data={}", result); 
     return [result, total, result.length];
 }
@@ -31,7 +43,14 @@ export async function findAllPaginated(filter: FindOptionsWhere<ShippingGuide>, 
 
 export async function findById(id: string) {
     const entityFinded = await repo().findOne({
-        where: { shippingGuideId: id }
+        where: { shippingGuideId: id },
+        relations: {
+            shippingGuidePurchaseOrders: {
+                purchaseOrder: {
+                    receptions: true,
+                },
+            },
+        },
     });
     logger.info("✅ shippingGuide finded  → data={}", entityFinded);
     return entityFinded;

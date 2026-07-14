@@ -4,8 +4,6 @@ import * as recRepo from '@/repositories/reception.repo.js';
 import * as rebateRepo from '@/repositories/rebate.repo.js';
 import * as fpRepo from '@/repositories/fiscalPayment.repo.js';
 import { getDataSource } from '@/config/typeorm-datasource.js';
-import { Invoice } from '@/entities/tenant_fiscal.invoice.entity.js';
-import { Addendum } from '@/entities/tenant_fiscal.addendum.entity.js';
 import type { PurchaseOrder } from '@/entities/PurchaseOrder.entity.js';
 import type { Reception } from '@/entities/Reception.entity.js';
 import type { Rebate } from '@/entities/Rebate.entity.js';
@@ -23,9 +21,28 @@ const T_PAYMENT  = 'tenant_finance.account_statement_payment';
 
 const STATUS_GENERATED = 1;
 
+// ─── Tipos internos ───────────────────────────────────────────────────────────
+
+interface InvoiceRow {
+    invoice_uuid:       string;
+    fiscal_uuid:        string | null;
+    document_type:      string;
+    total:              string | number;
+    currency:           string;
+    exchange_rate:      string | number;
+    folio:              string | null;
+    series:             string | null;
+    issue_date:         Date | string | null;
+    certification_date: Date | string | null;
+    accounting_date:    Date | string | null;
+    status:             number | null;
+    /** fiscal_uuid de la factura original (solo para notas de crédito) */
+    related_fiscal_uuid: string | null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function parseNum(v: string | number | null | undefined): number {
+function parseNum(v: unknown): number {
     if (v == null) return 0;
     if (typeof v === 'number') return v;
     const n = parseFloat(String(v).replace(/,/g, ''));
@@ -67,11 +84,10 @@ function mapPurchaseOrder(po: PurchaseOrder, uuid: string): Record<string, unkno
 }
 
 function mapReception(rec: Reception, uuid: string): Record<string, unknown> {
-    const orderNumber = rec.purchaseOrder?.orderNumber ?? null;
     return {
         account_statement_uuid: uuid,
         reception_number:       Number(rec.receptionNumber) || 0,
-        order_number:           Number(orderNumber) || 0,
+        order_number:           Number(rec.purchaseOrder?.orderNumber) || 0,
         document_date:          rec.purchaseOrder?.purchaseOrderDate ?? null,
         reception_date:         rec.receptionDate ?? null,
         due_date:               null,
@@ -123,61 +139,90 @@ function mapPayment(fp: FiscalPayment, uuid: string): Record<string, unknown> {
     };
 }
 
-function mapInvoice(inv: Invoice, uuid: string): Record<string, unknown> {
+function mapInvoice(row: InvoiceRow, uuid: string): Record<string, unknown> {
     return {
         account_statement_uuid: uuid,
         invoice_type:           'PENDING',
-        series:                 inv.series ?? null,
-        folio:                  inv.folio ?? null,
-        uuid:                   inv.fiscalUuid ? String(inv.fiscalUuid) : null,
-        stamp_date:             inv.issueDate ?? null,
-        accounting_date:        inv.certificationDate ?? null,
+        series:                 row.series ?? null,
+        folio:                  row.folio ?? null,
+        // fiscal_uuid del SAT (no el UUID interno del registro)
+        uuid:                   row.fiscal_uuid ? String(row.fiscal_uuid) : null,
+        stamp_date:             row.issue_date ?? null,
+        accounting_date:        row.accounting_date ?? null,
         payment_date:           null,
-        currency:               'MXN',
-        amount:                 parseNum(inv.total),
-        exchange_rate:          1,
+        currency:               row.currency ?? 'MXN',
+        amount:                 parseNum(row.total),
+        exchange_rate:          parseNum(row.exchange_rate) || 1,
         base_currency:          'MXN',
-        base_amount:            parseNum(inv.total),
-        invoice_status:         inv.status != null ? String(inv.status) : null,
+        base_amount:            parseNum(row.total),
+        invoice_status:         row.status != null ? String(row.status) : null,
         payment_id:             null,
         created_at:             new Date(),
     };
 }
 
-function mapCreditNote(inv: Invoice, uuid: string): Record<string, unknown> {
+function mapCreditNote(row: InvoiceRow, uuid: string): Record<string, unknown> {
     return {
         account_statement_uuid: uuid,
-        document_number:        null,
-        series:                 inv.series ?? null,
-        folio:                  inv.folio ?? null,
-        uuid:                   inv.fiscalUuid ? String(inv.fiscalUuid) : null,
-        issue_date:             inv.issueDate ?? null,
-        accounting_date:        inv.certificationDate ?? null,
-        currency:               'MXN',
-        amount:                 parseNum(inv.total),
-        exchange_rate:          1,
+        // fiscal_uuid de la factura original relacionada (via related_cfdi)
+        document_number:        row.related_fiscal_uuid ?? null,
+        series:                 row.series ?? null,
+        folio:                  row.folio ?? null,
+        // fiscal_uuid de la propia nota de crédito
+        uuid:                   row.fiscal_uuid ? String(row.fiscal_uuid) : null,
+        issue_date:             row.issue_date ?? null,
+        accounting_date:        row.accounting_date ?? null,
+        currency:               row.currency ?? 'MXN',
+        amount:                 parseNum(row.total),
+        exchange_rate:          parseNum(row.exchange_rate) || 1,
         base_currency:          'MXN',
-        base_amount:            parseNum(inv.total),
-        status:                 inv.status != null ? String(inv.status) : null,
+        base_amount:            parseNum(row.total),
+        status:                 row.status != null ? String(row.status) : null,
         created_at:             new Date(),
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Query enriquecida de facturas y notas de crédito ─────────────────────────
 
-async function findInvoicesByVendorAndPeriod(
+/**
+ * Obtiene facturas (type='I') y notas de crédito (type='E') del proveedor
+ * en el período, incluyendo el fiscal_uuid de la factura original relacionada
+ * para las NCs (via tenant_fiscal.related_cfdi).
+ */
+async function findInvoicesAndCreditNotes(
     vendorNumber: number,
     start: Date,
     end: Date
-): Promise<Invoice[]> {
-    return getDataSource()
-        .getRepository(Invoice)
-        .createQueryBuilder('i')
-        .innerJoin(Addendum, 'a', 'a.invoiceUuid = i.invoiceUuid')
-        .where('a.supplierNumber = :vendor', { vendor: vendorNumber })
-        .andWhere('i.issueDate BETWEEN :start AND :end', { start, end })
-        .orderBy('i.issueDate', 'ASC')
-        .getMany();
+): Promise<InvoiceRow[]> {
+    const rows = await getDataSource().query(
+        `SELECT
+            i.invoice_uuid,
+            i.fiscal_uuid,
+            i.document_type,
+            i.total,
+            i.currency,
+            i.exchange_rate,
+            i.folio,
+            i.series,
+            i.issue_date,
+            i.certification_date,
+            i.accounting_date,
+            i.status,
+            ri.fiscal_uuid AS related_fiscal_uuid
+         FROM tenant_fiscal.invoice i
+         INNER JOIN tenant_fiscal.addendum a
+                 ON a.invoice_uuid = i.invoice_uuid
+         LEFT JOIN tenant_fiscal.related_cfdi rc
+                ON rc.invoice_uuid = i.invoice_uuid
+         LEFT JOIN tenant_fiscal.invoice ri
+                ON ri.invoice_uuid = rc.related_invoice_uuid
+         WHERE a.supplier_number = $1
+           AND i.document_type IN ('I', 'E')
+           AND i.issue_date BETWEEN $2 AND $3
+         ORDER BY i.document_type DESC, i.issue_date ASC`,
+        [vendorNumber, start, end]
+    );
+    return rows as InvoiceRow[];
 }
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
@@ -192,7 +237,8 @@ export interface BatchResult {
 /**
  * Genera estados de cuenta en batch.
  * - Ignora si ya existe un registro activo (status > 0) para vendor+year+month.
- * - Crea el header y copia los datos fuente en las 6 tablas auxiliares.
+ * - Crea el header y copia los datos fuente en las 6 tablas auxiliares,
+ *   filtrando correctamente por proveedor y usando UUIDs fiscales (SAT).
  */
 export async function batchGenerate(body: BatchAccountStatementBody): Promise<BatchResult> {
     const now   = new Date();
@@ -237,25 +283,25 @@ export async function batchGenerate(body: BatchAccountStatementBody): Promise<Ba
 
             const statementUuid = statement.accountStatementUuid;
 
-            const [purchaseOrders, receptions, rebates, payments, invoices] =
+            const [purchaseOrders, receptions, rebates, payments, invoiceRows] =
                 await Promise.all([
                     poRepo.findByVendorAndDateRange(vendorNumber, periodStart, periodEnd),
                     recRepo.findByVendorAndDateRange(vendorNumber, periodStart, periodEnd),
                     rebateRepo.findByVendorAndPostingDateRange(vendorNumber, periodStart, periodEnd),
                     fpRepo.findByVendorAndPaymentDateRange(vendorNumber, periodStart, periodEnd),
-                    findInvoicesByVendorAndPeriod(vendorNumber, periodStart, periodEnd),
+                    findInvoicesAndCreditNotes(vendorNumber, periodStart, periodEnd),
                 ]);
 
-            const facturas    = invoices.filter(i => i.documentType === 'I');
-            const notasCredito = invoices.filter(i => i.documentType === 'E');
+            const facturas     = invoiceRows.filter(i => i.document_type === 'I');
+            const notasCredito = invoiceRows.filter(i => i.document_type === 'E');
 
             await Promise.all([
-                rawInsert(T_PO,       purchaseOrders.map(po  => mapPurchaseOrder(po,  statementUuid))),
-                rawInsert(T_REC,      receptions.map(rec     => mapReception(rec,     statementUuid))),
-                rawInsert(T_DISCOUNT, rebates.map(rb         => mapDiscount(rb,       statementUuid))),
-                rawInsert(T_PAYMENT,  payments.map(fp        => mapPayment(fp,        statementUuid))),
-                rawInsert(T_INVOICE,  facturas.map(inv       => mapInvoice(inv,       statementUuid))),
-                rawInsert(T_CREDIT,   notasCredito.map(inv   => mapCreditNote(inv,    statementUuid))),
+                rawInsert(T_PO,       purchaseOrders.map(po  => mapPurchaseOrder(po,        statementUuid))),
+                rawInsert(T_REC,      receptions.map(rec     => mapReception(rec,            statementUuid))),
+                rawInsert(T_DISCOUNT, rebates.map(rb         => mapDiscount(rb,              statementUuid))),
+                rawInsert(T_PAYMENT,  payments.map(fp        => mapPayment(fp,               statementUuid))),
+                rawInsert(T_INVOICE,  facturas.map(inv       => mapInvoice(inv,              statementUuid))),
+                rawInsert(T_CREDIT,   notasCredito.map(inv   => mapCreditNote(inv,           statementUuid))),
             ]);
 
             result.created++;

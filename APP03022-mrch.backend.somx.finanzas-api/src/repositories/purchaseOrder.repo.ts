@@ -5,13 +5,13 @@ import { Between, In, type FindOptionsWhere } from "typeorm";
 export const repo = () => datasource.getRepository(PurchaseOrder);
 
 export async function findByVendorAndDateRange(vendorNumber: number, start: Date, end: Date): Promise<PurchaseOrder[]> {
-    return repo().find({
-        where: {
-            //supplierNumber: vendorNumber,
-            purchaseOrderDate: Between(start, end),
-        },
-        order: { purchaseOrderDate: 'ASC' },
-    });
+    // Se usa query builder para garantizar la comparación correcta con bigint
+    return repo()
+        .createQueryBuilder('po')
+        .where('po.supplierNumber = :vendorNumber', { vendorNumber })
+        .andWhere('po.purchaseOrderDate BETWEEN :start AND :end', { start, end })
+        .orderBy('po.purchaseOrderDate', 'ASC')
+        .getMany();
 }
 
 export async function createOne(data: Partial<PurchaseOrder>) {

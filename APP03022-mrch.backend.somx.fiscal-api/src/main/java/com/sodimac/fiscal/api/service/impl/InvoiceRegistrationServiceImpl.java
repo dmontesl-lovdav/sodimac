@@ -49,6 +49,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationService {
 
+    private static final String SEP_LINE = "========================================";
+
     // Services
     private final CfdiXmlProcessorService cfdiProcessor;
     private final AddendaValidationService addendaValidator;
@@ -66,9 +68,9 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
     @Override
     @Transactional
     public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile) {
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO REGISTRO FACTURA/NOTA DE CREDITO");
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("Archivo: {}", xmlFile.getOriginalFilename());
         log.info("Tamano del archivo: {} bytes", xmlFile.getSize());
 
@@ -156,9 +158,9 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
                     invoiceDto
             );
 
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("REGISTRO COMPLETADO EXITOSAMENTE");
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("Codigo de respuesta: {}", response.getCode());
             log.info("Invoice UUID: {}", response.getInvoiceUuid());
             log.info("Fiscal UUID: {}", response.getFiscalUuid());
@@ -169,16 +171,16 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
 
         } catch (FiscalException e) {
             log.error("Error de validacion de negocio: [{}] {}", e.getCode(), e.getMessage());
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("REGISTRO FALLIDO - ERROR DE NEGOCIO");
-            log.error("========================================");
+            log.error(SEP_LINE);
             return InvoiceRegistrationResponse.error(e.getCode(), e.getMessage());
 
         } catch (Exception e) {
             log.error("Error inesperado durante el registro", e);
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("REGISTRO FALLIDO - ERROR TECNICO");
-            log.error("========================================");
+            log.error(SEP_LINE);
             return InvoiceRegistrationResponse.error(
                     FiscalMessageCode.ERR003.getCode(),
                     "Error inesperado: " + e.getMessage()

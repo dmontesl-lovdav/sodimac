@@ -62,6 +62,8 @@ import java.util.Map;
 @Tag(name = "Procesador XML Fiscal", description = "APIs para procesar documentos fiscales XML del SAT mexicano")
 public class FiscalXmlProcessorController {
 
+    private static final String K_MESSAGE = "message";
+
     // SERVICIOS BFF: Cada uno con responsabilidad única
     private final FiscalXmlTransformerService xmlTransformerService;    // Transformación XML -> JSON
     private final XmlDocumentTypeDetector xmlDocumentTypeDetector;      // Detección de tipo de documento
@@ -199,9 +201,9 @@ public class FiscalXmlProcessorController {
 
             if (isValid) {
                 response.put("documentType", tipoDocumento);
-                response.put("message", "Documento fiscal válido");
+                response.put(K_MESSAGE, "Documento fiscal válido");
             } else {
-                response.put("message", "Documento fiscal inválido o no soportado");
+                response.put(K_MESSAGE, "Documento fiscal inválido o no soportado");
             }
 
             return ResponseEntity.ok(response);
@@ -213,7 +215,7 @@ public class FiscalXmlProcessorController {
             errorResponse.put("success", true);
             errorResponse.put("isValid", false);
             errorResponse.put("error", e.getMessage());
-            errorResponse.put("message", "Error en la validación del documento");
+            errorResponse.put(K_MESSAGE, "Error en la validación del documento");
 
             return ResponseEntity.ok(errorResponse);
         }

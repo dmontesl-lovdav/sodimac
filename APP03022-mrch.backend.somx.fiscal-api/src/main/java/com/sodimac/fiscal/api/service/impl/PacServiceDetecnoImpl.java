@@ -65,6 +65,8 @@ import jakarta.xml.bind.PropertyException;
 @Service
 @Qualifier("pacServiceDetecnoImpl")
 public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements PacService {
+
+    private static final String ERR_SUFFIX = ". ERROR: ";
 	
 	
 	private static final Logger logger = LoggerFactory.getLogger(PacServiceDetecnoImpl.class);
@@ -110,30 +112,30 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 				} catch (TransformerConfigurationException e) {
 					e.printStackTrace();
 					error = true;
-					errorMsg = "ERROR: TransformerConfigurationException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: TransformerConfigurationException " + ERR_SUFFIX + e.getMessage();
 				} catch (TransformerException e) {
 					error = true;
-					errorMsg = "ERROR: TransformerException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: TransformerException " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				} catch (PropertyException e) {
 					error = true;
-					errorMsg = "ERROR: PropertyException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: PropertyException " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				} catch (JAXBException e) {
 					error = true;
-					errorMsg = "ERROR: JAXBException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: JAXBException " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				} catch (JsonProcessingException e) {
 					error = true;
-					errorMsg = "ERROR: JsonProcessingException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: JsonProcessingException " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				} catch (IOException e) {
 					error = true;
-					errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				} catch (Exception e) {
 					error = true;
-					errorMsg = "ERROR: Exception " + ". ERROR: " + e.getMessage();
+					errorMsg = "ERROR: Exception " + ERR_SUFFIX + e.getMessage();
 					e.printStackTrace();
 				}
 

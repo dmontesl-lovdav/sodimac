@@ -63,6 +63,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PaymentRegistrationServiceImpl implements PaymentRegistrationService {
 
+    private static final String SEP_LINE = "========================================";
+
     private final PaymentXmlParserService xmlParserService;
     private final PaymentValidationService validationService;
     private final PacService pacService;
@@ -121,9 +123,9 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         final String SERVICE_NAME = "PaymentRegistrationService.registerPayment";
         long startTime = System.currentTimeMillis();
 
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO REGISTRO COMPLEMENTO DE PAGO");
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("Archivo: {}, idTransaccion: {}", request.getXmlFile().getOriginalFilename(), idTransaccion);
         log.info("Proveedor: {}, Usuario: {}", request.getIdProveedor(), request.getIdUsuario());
 
@@ -248,9 +250,9 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     "Archivo: " + fileName + ", Status: SUCCESS", null, null);
 
             long duration = System.currentTimeMillis() - startTime;
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("COMPLEMENTO DE PAGO REGISTRADO EXITOSAMENTE");
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("UUID: {}", response.getPaymentsUuid());
             log.info("Duracion: {} ms", duration);
 
@@ -269,9 +271,9 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
             log.error("Error registrando complemento de pago: {}", e.getMessage(), e);
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("REGISTRO FALLIDO - ERROR");
-            log.error("========================================");
+            log.error(SEP_LINE);
 
             // Registrar error en bitácora (STM-272)
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_ERROR.getCode(), SERVICE_NAME,

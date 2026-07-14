@@ -73,6 +73,25 @@ import java.util.zip.ZipOutputStream;
 @Transactional
 public class InvoiceServiceImpl implements InvoiceService {
 
+    private static final String SEP_LINE = "========================================";
+    private static final String K_SYSTEM = "system";
+    private static final String LBL_CODIGO = "Codigo: ";
+    private static final String LBL_FOLIO_SEP = ", Folio: ";
+    private static final String LBL_SERIE = "Serie: ";
+    private static final String LBL_RFC = "RFC: ";
+    private static final String K_INVOICE_UUID = "invoiceUuid";
+    private static final String LOG_UUID = "UUID: {}";
+    private static final String LOG_DOC_NO_ENCONTRADO = "Documento no encontrado. UUID: {}";
+    private static final String LBL_UUID = "UUID: ";
+    private static final String K_REQUEST = "request";
+    private static final String LBL_RECEPCION = ", recepcion=";
+    private static final String LBL_ESTATUS = "Estatus: ";
+    private static final String K_SERIE = "Serie";
+    private static final String K_FOLIO = "Folio";
+    private static final String K_FECHA_EMISION = "Fecha Emision";
+    private static final String K_SUBTOTAL = "Subtotal";
+    private static final String K_TOTAL = "Total";
+
     // Mappers
     private final InvoiceMapper invoiceMapper;
 
@@ -125,15 +144,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO REGISTRO FACTURA/NOTA DE CREDITO");
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("Archivo: {}, idTransaccion: {}", xmlFile.getOriginalFilename(), idTransaccion);
         log.info("Tamano del archivo: {} bytes", xmlFile.getSize());
 
         // Registrar request en bitácora (STM-704)
         auditoriaApiService.logActivity(idTransaccion, AuditAction.REGISTRO_REQUEST.getCode(), SERVICE_NAME,
-                "system", false, "Inicio de registro de factura/NC",
+                K_SYSTEM, false, "Inicio de registro de factura/NC",
                 "Archivo: " + xmlFile.getOriginalFilename() + ", Tamano: " + xmlFile.getSize() + " bytes",
                 Map.of("fileName", xmlFile.getOriginalFilename(), "fileSize", xmlFile.getSize()), null);
 
@@ -147,7 +166,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             xmlContent = readXmlFile(xmlFile);
             log.debug("Archivo XML leido correctamente. Longitud: {} caracteres", xmlContent.length());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.LEER_ARCHIVO_XML.getCode(), SERVICE_NAME,
-                    "system", false, "Archivo XML leido correctamente",
+                    K_SYSTEM, false, "Archivo XML leido correctamente",
                     "Longitud: " + xmlContent.length() + " caracteres", null, null);
 
             // === PASO 2: DETECTAR TIPO DE DOCUMENTO ===
@@ -170,14 +189,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             if (tipoDocumento != TipoDocumentoFiscal.FACTURA && tipoDocumento != TipoDocumentoFiscal.NOTA_CREDITO) {
                 log.error("Tipo de documento no permitido: {}", tipoDocumento.getCodigo());
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.DETECTAR_TIPO_DOCUMENTO.getCode(), SERVICE_NAME,
-                        "system", true, "Tipo de documento no permitido: " + tipoDocumento.getCodigo(),
+                        K_SYSTEM, true, "Tipo de documento no permitido: " + tipoDocumento.getCodigo(),
                         "Solo se permiten tipos I (Factura) y E (Nota de Credito)", null, null);
                 // QA junio-2026: mensaje claro cuando el XML no es una factura/NC válida (BUS060, ex-BUS057 de Ivan)
                 messageCatalog.throwException(FiscalMessageCode.BUS060);
             }
             auditoriaApiService.logActivity(idTransaccion, AuditAction.DETECTAR_TIPO_DOCUMENTO.getCode(), SERVICE_NAME,
-                    "system", false, "Tipo de documento detectado: " + tipoDocumento.getDescripcion(),
-                    "Codigo: " + tipoDocumento.getCodigo(), null, null);
+                    K_SYSTEM, false, "Tipo de documento detectado: " + tipoDocumento.getDescripcion(),
+                    LBL_CODIGO + tipoDocumento.getCodigo(), null, null);
 
             // === PASO 3: PROCESAR Y PARSEAR XML CFDI ===
             log.info("Paso 3: Procesando y validando estructura del XML CFDI");
@@ -185,8 +204,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("XML procesado exitosamente. Serie: {}, Folio: {}, Total: {}",
                     invoiceDto.getSerie(), invoiceDto.getFolio(), invoiceDto.getTotal());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PROCESAR_XML_CFDI.getCode(), SERVICE_NAME,
-                    "system", false, "XML CFDI procesado exitosamente",
-                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio() + ", Total: " + invoiceDto.getTotal(),
+                    K_SYSTEM, false, "XML CFDI procesado exitosamente",
+                    LBL_SERIE + invoiceDto.getSerie() + LBL_FOLIO_SEP + invoiceDto.getFolio() + ", Total: " + invoiceDto.getTotal(),
                     Map.of("serie", String.valueOf(invoiceDto.getSerie()),
                             "folio", String.valueOf(invoiceDto.getFolio()),
                             "rfcEmisor", String.valueOf(invoiceDto.getEmisorRfc()),
@@ -197,15 +216,15 @@ public class InvoiceServiceImpl implements InvoiceService {
             validateSeriesAndFolio(invoiceDto, tipoDocumento);
             log.info("Serie y folio validados correctamente");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_SERIE_FOLIO.getCode(), SERVICE_NAME,
-                    "system", false, "Serie y folio validados correctamente",
-                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio(), null, null);
+                    K_SYSTEM, false, "Serie y folio validados correctamente",
+                    LBL_SERIE + invoiceDto.getSerie() + LBL_FOLIO_SEP + invoiceDto.getFolio(), null, null);
 
             // === PASO 4: VALIDAR VERSION CFDI VIGENTE ===
             log.info("Paso 4: Validando version CFDI vigente");
             validateCfdiVersion(invoiceDto, tipoDocumento);
             log.info("Version CFDI {} validada correctamente", invoiceDto.getVersion());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_VERSION_CFDI.getCode(), SERVICE_NAME,
-                    "system", false, "Version CFDI validada correctamente",
+                    K_SYSTEM, false, "Version CFDI validada correctamente",
                     "Version: " + invoiceDto.getVersion(), null, null);
 
             // === PASO 5: VALIDAR RFC RECEPTOR AUTORIZADO ===
@@ -213,8 +232,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             validateAuthorizedReceiver(invoiceDto.getReceptorRfc());
             log.info("RFC receptor {} autorizado y vigente", invoiceDto.getReceptorRfc());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_RFC_RECEPTOR.getCode(), SERVICE_NAME,
-                    "system", false, "RFC receptor autorizado y vigente",
-                    "RFC: " + invoiceDto.getReceptorRfc(), null, null);
+                    K_SYSTEM, false, "RFC receptor autorizado y vigente",
+                    LBL_RFC + invoiceDto.getReceptorRfc(), null, null);
 
             // === PASO 6: OBTENER EMISOR Y VALIDAR DUPLICIDAD (STM-395/STM-397) ===
             log.info("Paso 6: Obteniendo emisor para validaciones de duplicidad");
@@ -225,8 +244,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             );
             log.debug("Emisor obtenido. UUID: {}", issuer.getIssuerUuid());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.OBTENER_EMISOR.getCode(), SERVICE_NAME,
-                    "system", false, "Emisor obtenido correctamente",
-                    "RFC: " + invoiceDto.getEmisorRfc() + ", Issuer UUID: " + issuer.getIssuerUuid(), null, null);
+                    K_SYSTEM, false, "Emisor obtenido correctamente",
+                    LBL_RFC + invoiceDto.getEmisorRfc() + ", Issuer UUID: " + issuer.getIssuerUuid(), null, null);
 
             // === PASO 6.1: VALIDAR DUPLICADO POR SERIE+FOLIO (STM-395/STM-397) ===
             log.info("Paso 6.1: Validando duplicado por serie+folio del proveedor");
@@ -234,8 +253,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                     issuer.getIssuerUuid(), tipoDocumento);
             log.info("No existe documento duplicado por serie+folio");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_SERIE_FOLIO.getCode(), SERVICE_NAME,
-                    "system", false, "No existe documento duplicado por serie+folio",
-                    "Serie: " + invoiceDto.getSerie() + ", Folio: " + invoiceDto.getFolio(), null, null);
+                    K_SYSTEM, false, "No existe documento duplicado por serie+folio",
+                    LBL_SERIE + invoiceDto.getSerie() + LBL_FOLIO_SEP + invoiceDto.getFolio(), null, null);
 
             // === PASO 6.2: EXTRAER UUID FISCAL Y VALIDAR DUPLICADO (STM-395/STM-397) ===
             log.info("Paso 6.2: Extrayendo UUID fiscal y validando duplicado por UUID");
@@ -245,7 +264,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             validateNoDuplicateByUuid(fiscalUuid, issuer.getIssuerUuid(), tipoDocumento);
             log.info("Documento no duplicado. UUID unico: {}", fiscalUuid);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
-                    "system", false, "Documento no duplicado, UUID unico",
+                    K_SYSTEM, false, "Documento no duplicado, UUID unico",
                     "UUID fiscal: " + fiscalUuid, null, null);
 
             // === PASO 6.2.1: VALIDAR QUE EL FOLIO FISCAL NO ESTÉ YA CARGADO COMO ADDENDA MANUAL ===
@@ -255,7 +274,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             if (addendumRepository.existsAddendaManualByFolioFiscal(fiscalUuid)) {
                 log.warn("Folio fiscal {} ya registrado manualmente en addenda manual", fiscalUuid);
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
-                        "system", true, "Factura ya registrada manualmente (addenda manual)",
+                        K_SYSTEM, true, "Factura ya registrada manualmente (addenda manual)",
                         "UUID fiscal: " + fiscalUuid, null, null);
                 messageCatalog.throwException(FiscalMessageCode.WRN7032);
             }
@@ -268,7 +287,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if (supplierBlockApiService.isSupplierTypeBlocked(supplierNumber)) {
                     log.warn("Publicación bloqueada por tipo de proveedor. supplierNumber={}", supplierNumber);
                     auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
-                            "system", true, "Publicación bloqueada por tipo de proveedor (BUS2028)",
+                            K_SYSTEM, true, "Publicación bloqueada por tipo de proveedor (BUS2028)",
                             "supplierNumber: " + supplierNumber, null, null);
                     messageCatalog.throwException(FiscalMessageCode.BUS2028);
                 }
@@ -278,7 +297,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if (supplierBlockApiService.isSupplierBlocked(supplierNumber)) {
                     log.warn("Publicación bloqueada por proveedor. supplierNumber={}", supplierNumber);
                     auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), SERVICE_NAME,
-                            "system", true, "Publicación bloqueada por proveedor (BUS2029)",
+                            K_SYSTEM, true, "Publicación bloqueada por proveedor (BUS2029)",
                             "supplierNumber: " + supplierNumber, null, null);
                     messageCatalog.throwException(FiscalMessageCode.BUS2029);
                 }
@@ -298,14 +317,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                 toleranceResult = validateImporteTolerance(invoiceDto, receptionId, idTransaccion, SERVICE_NAME);
             }
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), SERVICE_NAME,
-                    "system", false, "Validación de tolerancia completada",
+                    K_SYSTEM, false, "Validación de tolerancia completada",
                     "receptionId: " + receptionId, null, null);
 
             // === PASO 8: VALIDAR CON SAT (OPCIONAL - COMENTADO POR AHORA) ===
             // TODO: Implementar validación SAT mediante PAC cuando esté disponible
             // log.info("Paso 8: Validando documento con SAT via PAC");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_SAT.getCode(), SERVICE_NAME,
-                    "system", false, "Validacion SAT omitida (pendiente de implementar via PAC)",
+                    K_SYSTEM, false, "Validacion SAT omitida (pendiente de implementar via PAC)",
                     "Este paso se habilitara cuando se integre el servicio PAC", null, null);
 
             // === PASO 9: PERSISTIR EN BASE DE DATOS ===
@@ -363,9 +382,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PERSISTIR_DOCUMENTO.getCode(), SERVICE_NAME,
-                    "system", false, "Documento persistido exitosamente en base de datos",
+                    K_SYSTEM, false, "Documento persistido exitosamente en base de datos",
                     "Invoice UUID: " + savedInvoice.getInvoiceUuid(),
-                    Map.of("invoiceUuid", savedInvoice.getInvoiceUuid().toString(),
+                    Map.of(K_INVOICE_UUID, savedInvoice.getInvoiceUuid().toString(),
                             "fiscalUuid", fiscalUuid.toString()), null);
 
             // === PASO 10: CONSTRUIR RESPUESTA ===
@@ -389,9 +408,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("REGISTRO COMPLETADO EXITOSAMENTE");
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("Codigo de respuesta: {}", response.getCode());
             log.info("Invoice UUID: {}", response.getInvoiceUuid());
             log.info("Fiscal UUID: {}", response.getFiscalUuid());
@@ -399,10 +418,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // Registrar response exitoso en bitácora (STM-704)
             auditoriaApiService.logActivity(idTransaccion, AuditAction.REGISTRO_RESPONSE.getCode(), SERVICE_NAME,
-                    "system", false, "Registro completado exitosamente",
-                    "Codigo: " + response.getCode() + ", Invoice UUID: " + response.getInvoiceUuid(),
+                    K_SYSTEM, false, "Registro completado exitosamente",
+                    LBL_CODIGO + response.getCode() + ", Invoice UUID: " + response.getInvoiceUuid(),
                     Map.of("code", response.getCode(),
-                            "invoiceUuid", String.valueOf(response.getInvoiceUuid()),
+                            K_INVOICE_UUID, String.valueOf(response.getInvoiceUuid()),
                             "fiscalUuid", String.valueOf(response.getFiscalUuid()),
                             "hasAddenda", response.isHasAddenda(),
                             "pendingAddenda", response.isPendingAddenda()), duration);
@@ -415,14 +434,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             // commitearía la transacción dejando datos parciales (ej. NC persistida con relación inválida).
             markRollbackOnly();
             log.error("Error de validacion de negocio: [{}] {}", e.getCode(), e.getMessage());
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("REGISTRO FALLIDO - ERROR DE NEGOCIO");
-            log.error("========================================");
+            log.error(SEP_LINE);
 
             // Registrar error de negocio en bitácora (STM-704)
             auditoriaApiService.logActivity(idTransaccion, AuditAction.REGISTRO_ERROR_NEGOCIO.getCode(), SERVICE_NAME,
-                    "system", true, "Error de validacion: " + e.getMessage(),
-                    "Codigo: " + e.getCode() + ", Mensaje: " + e.getMessage(),
+                    K_SYSTEM, true, "Error de validacion: " + e.getMessage(),
+                    LBL_CODIGO + e.getCode() + ", Mensaje: " + e.getMessage(),
                     Map.of("errorCode", e.getCode(), "errorMessage", e.getMessage()), duration);
 
             return InvoiceRegistrationResponse.error(e.getCode(), e.getMessage());
@@ -431,13 +450,13 @@ public class InvoiceServiceImpl implements InvoiceService {
             long duration = System.currentTimeMillis() - startTime;
             markRollbackOnly();
             log.error("Error inesperado durante el registro", e);
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("REGISTRO FALLIDO - ERROR TECNICO");
-            log.error("========================================");
+            log.error(SEP_LINE);
 
             // Registrar error técnico en bitácora (STM-704)
             auditoriaApiService.logActivity(idTransaccion, AuditAction.REGISTRO_ERROR_TECNICO.getCode(), SERVICE_NAME,
-                    "system", true, "Error inesperado durante el registro",
+                    K_SYSTEM, true, "Error inesperado durante el registro",
                     e.getClass().getName() + ": " + e.getMessage(), null, duration);
 
             return InvoiceRegistrationResponse.error(
@@ -452,10 +471,10 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public InvoiceUpdateResponse updateInvoice(InvoiceUpdateRequest request) {
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO ACTUALIZACION FACTURA/NOTA DE CREDITO");
-        log.info("========================================");
-        log.info("UUID: {}", request.getUuid());
+        log.info(SEP_LINE);
+        log.info(LOG_UUID, request.getUuid());
         log.info("Numero Proveedor: {}", request.getNumeroProveedor());
         log.info("Nuevo Estatus: {}", request.getEstatus());
         log.info("Usuario Actualizacion: {}", request.getIdUsuarioActualizacion());
@@ -472,8 +491,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("Paso 1: Buscando documento por UUID");
             InvoiceEntity invoice = invoiceRepository.findByFiscalUuid(request.getUuid())
                     .orElseThrow(() -> {
-                        log.error("Documento no encontrado. UUID: {}", request.getUuid());
-                        return new FiscalException(FiscalMessageCode.BUS046, "UUID: " + request.getUuid());
+                        log.error(LOG_DOC_NO_ENCONTRADO, request.getUuid());
+                        return new FiscalException(FiscalMessageCode.BUS046, LBL_UUID + request.getUuid());
                     });
             invoiceUuid = invoice.getInvoiceUuid();  // Capturar invoiceUuid para la bitácora
             log.info("Documento encontrado. Invoice UUID: {}, Tipo: {}",
@@ -530,17 +549,17 @@ public class InvoiceServiceImpl implements InvoiceService {
             auditoriaApiService.logActivity(traceId, AuditAction.UPDATE_RESPONSE.getCode(), SERVICE_NAME_UPDATE,
                     String.valueOf(request.getIdUsuarioActualizacion()), false,
                     "Actualizacion completada exitosamente",
-                    "Codigo: " + response.getCode() + ", Estatus: " + currentStatusCode + " -> " + newStatusCode,
-                    Map.of("invoiceUuid", invoiceUuid.toString(),
+                    LBL_CODIGO + response.getCode() + ", Estatus: " + currentStatusCode + " -> " + newStatusCode,
+                    Map.of(K_INVOICE_UUID, invoiceUuid.toString(),
                             "uuid", request.getUuid(),
                             "estatusAnterior", currentStatusCode,
                             "estatusNuevo", newStatusCode,
-                            "request", requestDataJson,
+                            K_REQUEST, requestDataJson,
                             "response", buildResponseDataJson(response)), durationMs);
 
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("ACTUALIZACION COMPLETADA EXITOSAMENTE");
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("Codigo de respuesta: {}", response.getCode());
             log.info("Estatus anterior: {}, Estatus nuevo: {}", currentStatusCode, newStatusCode);
 
@@ -548,26 +567,26 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         } catch (FiscalException e) {
             log.error("Error de validacion de negocio: [{}] {}", e.getCode(), e.getMessage());
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("ACTUALIZACION FALLIDA - ERROR DE NEGOCIO");
-            log.error("========================================");
+            log.error(SEP_LINE);
 
             // Registrar error en bitácora (auditoria-api)
             long durationMs = System.currentTimeMillis() - startTimeMs;
             auditoriaApiService.logActivity(traceId, AuditAction.UPDATE_ERROR_NEGOCIO.getCode(), SERVICE_NAME_UPDATE,
                     String.valueOf(request.getIdUsuarioActualizacion()), true,
                     "Error de validacion: " + e.getMessage(),
-                    "Codigo: " + e.getCode(),
+                    LBL_CODIGO + e.getCode(),
                     Map.of("errorCode", e.getCode(), "errorMessage", e.getMessage(),
-                            "uuid", request.getUuid(), "request", requestDataJson), durationMs);
+                            "uuid", request.getUuid(), K_REQUEST, requestDataJson), durationMs);
 
             return InvoiceUpdateResponse.error(e.getCode(), e.getMessage());
 
         } catch (Exception e) {
             log.error("Error inesperado durante la actualizacion", e);
-            log.error("========================================");
+            log.error(SEP_LINE);
             log.error("ACTUALIZACION FALLIDA - ERROR TECNICO");
-            log.error("========================================");
+            log.error(SEP_LINE);
 
             // Registrar error en bitácora (auditoria-api)
             long durationMs = System.currentTimeMillis() - startTimeMs;
@@ -575,7 +594,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     String.valueOf(request.getIdUsuarioActualizacion()), true,
                     "Error inesperado durante la actualizacion",
                     e.getClass().getName() + ": " + e.getMessage(),
-                    Map.of("uuid", request.getUuid(), "request", requestDataJson), durationMs);
+                    Map.of("uuid", request.getUuid(), K_REQUEST, requestDataJson), durationMs);
 
             return InvoiceUpdateResponse.error(
                     FiscalMessageCode.ERR003.getCode(),
@@ -659,7 +678,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         // (decisión Ivan 2026-06-23). Si el RFC no está autorizado/activo -> BUS008.
         if (!addendumRepository.existsRfcReceptorAutorizado(rfcReceptor)) {
             log.error("RFC receptor {} no autorizado o inactivo", rfcReceptor);
-            messageCatalog.throwException(FiscalMessageCode.BUS008, "RFC: " + rfcReceptor);
+            messageCatalog.throwException(FiscalMessageCode.BUS008, LBL_RFC + rfcReceptor);
         }
 
         log.debug("RFC receptor {} autorizado en CatRfcReceptor", rfcReceptor);
@@ -721,7 +740,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (formaPago == null || formaPago.isBlank() || !formasValidas.contains(formaPago.trim())) {
             log.warn("Forma de pago NC no válida. formaPago={} validas={}", formaPago, formasValidas);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,
-                    "system", true, "Forma de pago de NC no configurada como válida (BUS058)",
+                    K_SYSTEM, true, "Forma de pago de NC no configurada como válida (BUS058)",
                     "formaPago: " + formaPago, null, null);
             messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS058, formaPago);
         }
@@ -733,7 +752,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (usoCfdi == null || usoCfdi.isBlank() || !usosValidos.contains(usoCfdi.trim())) {
             log.warn("Uso CFDI NC no válido. usoCfdi={} validos={}", usoCfdi, usosValidos);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,
-                    "system", true, "Uso CFDI de NC no configurado como válido (BUS059)",
+                    K_SYSTEM, true, "Uso CFDI de NC no configurado como válido (BUS059)",
                     "usoCFDI: " + usoCfdi, null, null);
             messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS059, usoCfdi);
         }
@@ -832,8 +851,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 log.warn("Subtotal {} menor a recepción {} fuera de tolerancia {} ({}). Se registrará como Rechazo Comercial.",
                         subtotal, receptionAmount, tolerance, modo);
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                        "system", false, "Fuera de tolerancia (factura < recepción) -> Rechazo Comercial",
-                        "subtotal=" + subtotal.toPlainString() + ", recepcion=" + receptionAmount.toPlainString()
+                        K_SYSTEM, false, "Fuera de tolerancia (factura < recepción) -> Rechazo Comercial",
+                        "subtotal=" + subtotal.toPlainString() + LBL_RECEPCION + receptionAmount.toPlainString()
                                 + ", tolerancia=" + tolerance.toPlainString() + " (" + modo + ")", null, null);
                 String warning = messageCatalog.getMessage(FiscalMessageCode.WRN7031,
                         maskMoney(subtotal), maskMoney(receptionAmount), maskMoney(tolerance));
@@ -843,8 +862,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.warn("Subtotal {} mayor a recepción {} fuera de tolerancia {} ({}). Se registrará como Recibido Parcial.",
                     subtotal, receptionAmount, tolerance, modo);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                    "system", false, "Fuera de tolerancia (factura > recepción) -> Recibido Parcial (pendiente NC)",
-                    "subtotal=" + subtotal.toPlainString() + ", recepcion=" + receptionAmount.toPlainString()
+                    K_SYSTEM, false, "Fuera de tolerancia (factura > recepción) -> Recibido Parcial (pendiente NC)",
+                    "subtotal=" + subtotal.toPlainString() + LBL_RECEPCION + receptionAmount.toPlainString()
                             + ", tolerancia=" + tolerance.toPlainString() + " (" + modo + ")", null, null);
             String warning = messageCatalog.getMessage(FiscalMessageCode.WRN7030,
                     maskMoney(subtotal), maskMoney(receptionAmount), maskMoney(tolerance));
@@ -1170,7 +1189,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 receptionRepository.save(reception);
                 log.info("Recepción {} marcada como Consumida (status=1)", uuid);
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                        "system", false, "Recepción marcada como Consumida",
+                        K_SYSTEM, false, "Recepción marcada como Consumida",
                         "receptionId: " + uuid, null, null);
             }, () -> log.warn("Recepción {} no encontrada: no se actualiza estatus", uuid));
         } catch (IllegalArgumentException e) {
@@ -1254,9 +1273,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                 setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_EN_PROCESO_ENVIO);
                 log.info("Factura {} y sus NCs -> estatus 3 (neto en tolerancia tras NC)", factura.getInvoiceUuid());
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                        "system", false, "Factura y NCs a 3 (En proceso de envío): neto (factura - NCs) en tolerancia",
+                        K_SYSTEM, false, "Factura y NCs a 3 (En proceso de envío): neto (factura - NCs) en tolerancia",
                         "factura=" + factura.getInvoiceUuid() + ", neto=" + neto.toPlainString()
-                                + ", recepcion=" + receptionAmount.toPlainString(), null, null);
+                                + LBL_RECEPCION + receptionAmount.toPlainString(), null, null);
             } else if (neto.compareTo(receptionAmount) < 0) {
                 // Neto por debajo de la recepción y fuera de tolerancia -> cascada de rechazo.
                 // Requiere confirmación (front muestra WRN7034). Sin confirmar -> rollback de la NC.
@@ -1296,7 +1315,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepository.save(factura);
         log.warn("Cascada rechazo factura {}: {}", factura.getInvoiceUuid(), motivo);
         auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                "system", true, "Factura a Rechazo Comercial: neto (factura - NCs) menor a la recepción fuera de tolerancia",
+                K_SYSTEM, true, "Factura a Rechazo Comercial: neto (factura - NCs) menor a la recepción fuera de tolerancia",
                 motivo, null, null);
 
         // 2. NCs vinculadas -> 11 Cancelada.
@@ -1449,7 +1468,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 uuidRelacionado = UUID.fromString(uuidRelacionadoStr);
             } catch (IllegalArgumentException e) {
                 log.error("UUID de CFDI relacionado no válido: {}", uuidRelacionadoStr);
-                messageCatalog.throwException(FiscalMessageCode.BUS043, "UUID: " + uuidRelacionadoStr);
+                messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionadoStr);
                 return; // Nunca alcanza aquí
             }
 
@@ -1458,7 +1477,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             if (facturaOpt.isEmpty()) {
                 log.error("Factura relacionada no encontrada en BD. UUID: {}", uuidRelacionado);
-                messageCatalog.throwException(FiscalMessageCode.BUS043, "UUID: " + uuidRelacionado);
+                messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionado);
             }
 
             InvoiceEntity facturaRelacionada = facturaOpt.get();
@@ -1470,7 +1489,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 log.error("El CFDI relacionado no es una Factura. Tipo: {}",
                         facturaRelacionada.getDocumentType());
                 messageCatalog.throwException(FiscalMessageCode.BUS044,
-                        "UUID: " + uuidRelacionado + ", Tipo: " + facturaRelacionada.getDocumentType());
+                        LBL_UUID + uuidRelacionado + ", Tipo: " + facturaRelacionada.getDocumentType());
             }
 
             // 2.3.1 Validar que el monto de la NC no sea mayor al de la factura relacionada (QA junio-2026, BUS061)
@@ -1595,7 +1614,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.error("El documento no pertenece al proveedor. Supplier en addenda: {}, Supplier en request: {}",
                     addendum.getSupplierNumber(), numeroProveedorRequest);
             messageCatalog.throwException(FiscalMessageCode.BUS047,
-                    "UUID: " + invoice.getFiscalUuid() + ", Proveedor solicitado: " + numeroProveedorRequest);
+                    LBL_UUID + invoice.getFiscalUuid() + ", Proveedor solicitado: " + numeroProveedorRequest);
         }
 
         log.info("Validacion de proveedor exitosa. Supplier Number: {}", addendum.getSupplierNumber());
@@ -1622,7 +1641,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
             } catch (IllegalArgumentException e) {
                 messageCatalog.throwException(FiscalMessageCode.BUS049,
-                        "Estatus: " + newStatusCode + ", Tipo: Factura (I)");
+                        LBL_ESTATUS + newStatusCode + ", Tipo: Factura (I)");
             }
 
         } else if ("E".equals(documentType)) {
@@ -1644,7 +1663,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
             } catch (IllegalArgumentException e) {
                 messageCatalog.throwException(FiscalMessageCode.BUS049,
-                        "Estatus: " + newStatusCode + ", Tipo: Nota de Crédito (E)");
+                        LBL_ESTATUS + newStatusCode + ", Tipo: Nota de Crédito (E)");
             }
 
         } else {
@@ -1668,7 +1687,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
         } catch (IllegalArgumentException e) {
             messageCatalog.throwException(FiscalMessageCode.BUS049,
-                    "Estatus: " + estatus + ", Tipo: " + ("I".equals(documentType) ? "Factura (I)" : "Nota de Crédito (E)"));
+                    LBL_ESTATUS + estatus + ", Tipo: " + ("I".equals(documentType) ? "Factura (I)" : "Nota de Crédito (E)"));
         }
     }
 
@@ -1850,9 +1869,9 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional(readOnly = true)
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest) {
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO BUSQUEDA DE FACTURAS/NOTAS DE CREDITO");
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("RFC Emisor: {}", searchRequest.getRfcEmisor());
         log.info("Fecha Inicio: {}", searchRequest.getFechaInicioRecepcion());
         log.info("Fecha Final: {}", searchRequest.getFechaFinalRecepcion());
@@ -1860,7 +1879,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("RFC Receptor: {}", searchRequest.getRfcReceptor());
         log.info("Serie: {}", searchRequest.getSerie());
         log.info("Folio: {}", searchRequest.getFolio());
-        log.info("UUID: {}", searchRequest.getUuid());
+        log.info(LOG_UUID, searchRequest.getUuid());
         log.info("Estatus: {}", searchRequest.getEstatus());
         log.info("No. Orden Compra: {}", searchRequest.getNoOrdenCompra());
         log.info("No. Recepcion: {}", searchRequest.getNoRecepcion());
@@ -1912,9 +1931,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("Paso 4: Mapeando resultados a InvoiceSearchResponse (incluyendo Addenda)");
         Page<InvoiceSearchResponse> responsePage = invoicePage.map(this::mapToSearchResponse);
 
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("BUSQUEDA COMPLETADA EXITOSAMENTE");
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("Total elementos: {}", responsePage.getTotalElements());
         log.info("Elementos en pagina: {}", responsePage.getNumberOfElements());
         log.info("Total paginas: {}", responsePage.getTotalPages());
@@ -2523,15 +2542,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         return String.join(",",
                 "UUID Fiscal",
                 "Tipo Documento",
-                "Serie",
-                "Folio",
-                "Fecha Emision",
+                K_SERIE,
+                K_FOLIO,
+                K_FECHA_EMISION,
                 "RFC Emisor",
                 "Nombre Emisor",
                 "RFC Receptor",
                 "Nombre Receptor",
-                "Subtotal",
-                "Total",
+                K_SUBTOTAL,
+                K_TOTAL,
                 "Moneda",
                 "Metodo Pago",
                 "Estatus",
@@ -2639,9 +2658,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         // Headers
         String[] headers = {
-            "Serie", "Folio", "Subtotal", "Total", "Orden de Compra", "Recepcion",
+            K_SERIE, K_FOLIO, K_SUBTOTAL, K_TOTAL, "Orden de Compra", "Recepcion",
             "UUID", "# NC Relacionadas", "ID Proveedor", "Nombre Proveedor",
-            "Fecha Emision", "Fecha Recepcion", "Fecha Envio Contabilizar"
+            K_FECHA_EMISION, "Fecha Recepcion", "Fecha Envio Contabilizar"
         };
 
         Row headerRow = sheet.createRow(0);
@@ -2701,8 +2720,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         // Headers
         String[] headers = {
-            "Serie", "Folio", "Subtotal", "Total", "Motivo", "UUID",
-            "Fecha Emision", "Fecha Recepcion", "Fecha Envio Contabilizar",
+            K_SERIE, K_FOLIO, K_SUBTOTAL, K_TOTAL, "Motivo", "UUID",
+            K_FECHA_EMISION, "Fecha Recepcion", "Fecha Envio Contabilizar",
             "Serie Factura", "Folio Factura", "UUID Factura"
         };
 
@@ -2860,7 +2879,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.warn("Complemento de pago encontrado pero sin contenido XML. UUID: {}", fiscalUuid);
         }
 
-        log.error("Documento no encontrado. UUID: {}", fiscalUuid);
+        log.error(LOG_DOC_NO_ENCONTRADO, fiscalUuid);
         throw new FiscalException(FiscalMessageCode.ERR001, "Documento no encontrado con UUID: " + fiscalUuid);
     }
 
@@ -2956,10 +2975,10 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public InvoiceStatusUpdateResponse updateInvoiceStatus(String uuid, InvoiceStatusUpdateRequest request) {
-        log.info("========================================");
+        log.info(SEP_LINE);
         log.info("INICIO ACTUALIZACIÓN ESTATUS (STM-410)");
-        log.info("========================================");
-        log.info("UUID: {}", uuid);
+        log.info(SEP_LINE);
+        log.info(LOG_UUID, uuid);
         log.info("Transición: {} -> {}", request.getEstatusOrigen(), request.getEstatusDestino());
 
         try {
@@ -2974,7 +2993,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             Optional<InvoiceEntity> invoiceOpt = invoiceRepository.findByFiscalUuid(fiscalUuid);
             if (invoiceOpt.isEmpty()) {
-                log.error("Documento no encontrado. UUID: {}", uuid);
+                log.error(LOG_DOC_NO_ENCONTRADO, uuid);
                 return InvoiceStatusUpdateResponse.error("BUS3101", "Documento no encontrado: " + uuid);
             }
 
@@ -3071,11 +3090,11 @@ public class InvoiceServiceImpl implements InvoiceService {
             // Obtener nombre del estatus
             String estatusNuevoNombre = getStatusName(invoice.getDocumentType(), request.getEstatusDestino());
 
-            log.info("========================================");
+            log.info(SEP_LINE);
             log.info("ACTUALIZACIÓN ESTATUS COMPLETADA");
-            log.info("UUID: {}", uuid);
+            log.info(LOG_UUID, uuid);
             log.info("Estatus: {} -> {} ({})", estatusAnterior, request.getEstatusDestino(), estatusNuevoNombre);
-            log.info("========================================");
+            log.info(SEP_LINE);
 
             return InvoiceStatusUpdateResponse.success(
                     "BUS3010",

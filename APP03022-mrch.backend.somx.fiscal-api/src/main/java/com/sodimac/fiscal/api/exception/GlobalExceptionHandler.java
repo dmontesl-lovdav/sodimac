@@ -32,6 +32,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
+    private static final String K_TIMESTAMP = "timestamp";
+    private static final String K_STATUS = "status";
+    private static final String K_ERROR = "error";
+    private static final String K_MESSAGE = "message";
+
     private final MessageCatalogService messageCatalog;
 
     /**
@@ -67,11 +72,11 @@ public class GlobalExceptionHandler {
 
         // Construir respuesta estructurada
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Validation Error");
+        response.put(K_TIMESTAMP, LocalDateTime.now());
+        response.put(K_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(K_ERROR, "Validation Error");
         response.put("code", FiscalMessageCode.ERR035.getCode());
-        response.put("message", message);
+        response.put(K_MESSAGE, message);
         response.put("errors", fieldErrors);
         response.put("path", request.getDescription(false).replace("uri=", ""));
 
@@ -99,11 +104,11 @@ public class GlobalExceptionHandler {
                 ex.getCode(), ex.getMessage());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Business Error");
+        response.put(K_TIMESTAMP, LocalDateTime.now());
+        response.put(K_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(K_ERROR, "Business Error");
         response.put("code", ex.getCode());
-        response.put("message", ex.getMessage());
+        response.put(K_MESSAGE, ex.getMessage());
         response.put("path", request.getDescription(false).replace("uri=", ""));
 
         return ResponseEntity
@@ -132,11 +137,11 @@ public class GlobalExceptionHandler {
         String message = messageCatalog.getMessage(FiscalMessageCode.ERR036);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("error", "Internal Server Error");
+        response.put(K_TIMESTAMP, LocalDateTime.now());
+        response.put(K_STATUS, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        response.put(K_ERROR, "Internal Server Error");
         response.put("code", FiscalMessageCode.ERR036.getCode());
-        response.put("message", message);
+        response.put(K_MESSAGE, message);
         response.put("path", request.getDescription(false).replace("uri=", ""));
 
         // En desarrollo, incluir stack trace
@@ -167,11 +172,11 @@ public class GlobalExceptionHandler {
         log.warn("Argumento ilegal: {}", ex.getMessage());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Invalid Argument");
+        response.put(K_TIMESTAMP, LocalDateTime.now());
+        response.put(K_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(K_ERROR, "Invalid Argument");
         response.put("code", FiscalMessageCode.ERR003.getCode());
-        response.put("message", ex.getMessage());
+        response.put(K_MESSAGE, ex.getMessage());
         response.put("path", request.getDescription(false).replace("uri=", ""));
 
         return ResponseEntity

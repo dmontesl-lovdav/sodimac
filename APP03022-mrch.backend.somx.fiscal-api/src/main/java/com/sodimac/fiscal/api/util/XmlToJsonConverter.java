@@ -35,6 +35,33 @@ import java.util.Map;
 @Component
 public class XmlToJsonConverter {
 
+    private static final String K_VERSION = "Version";
+    private static final String K_FOLIO = "Folio";
+    private static final String K_MONEDA = "Moneda";
+    private static final String K_NOMBRE = "Nombre";
+    private static final String K_CONCEPTOS = "Conceptos";
+    private static final String K_CANTIDAD = "Cantidad";
+    private static final String K_CLAVEUNIDAD = "ClaveUnidad";
+    private static final String K_DESCRIPCION = "Descripcion";
+    private static final String K_IMPORTE = "Importe";
+    private static final String K_IMPUESTOS = "Impuestos";
+    private static final String K_TRASLADOS = "Traslados";
+    private static final String K_TRASLADO = "Traslado";
+    private static final String K_IMPUESTO = "Impuesto";
+    private static final String K_TIPOFACTOR = "TipoFactor";
+    private static final String K_TASAOCUOTA = "TasaOCuota";
+    private static final String K_RETENCIONES = "Retenciones";
+    private static final String K_RETENCION = "Retencion";
+    private static final String K_BOVEDAFISCAL = "BOVEDAFISCAL";
+    private static final String K_ADDENDAK = "AddendaK";
+    private static final String K_ADDENDA_SODIMAC_DETECNO = "Addenda_Sodimac_Detecno";
+    private static final String K_IMPORTELETRA = "ImporteLetra";
+    private static final String K_CONTRATO = "contrato";
+    private static final String K_COMPLEMENTO = "Complemento";
+    private static final String K_UBICACIONES = "Ubicaciones";
+    private static final String K_REMOLQUES = "Remolques";
+    private static final String K_FIGURATRANSPORTE = "FiguraTransporte";
+
     private final XmlMapper xmlMapper;
     private final ObjectMapper jsonMapper;
 
@@ -126,14 +153,14 @@ public class XmlToJsonConverter {
             InvoiceXmlDto info = new InvoiceXmlDto();
 
             // Extraer datos del comprobante principal
-            if (jsonNode.has("Version")) {
-                info.setVersion(jsonNode.get("Version").asText());
+            if (jsonNode.has(K_VERSION)) {
+                info.setVersion(jsonNode.get(K_VERSION).asText());
             }
             if (jsonNode.has("Serie")) {
                 info.setSerie(jsonNode.get("Serie").asText());
             }
-            if (jsonNode.has("Folio")) {
-                info.setFolio(jsonNode.get("Folio").asText());
+            if (jsonNode.has(K_FOLIO)) {
+                info.setFolio(jsonNode.get(K_FOLIO).asText());
             }
             if (jsonNode.has("Fecha")) {
                 info.setFecha(jsonNode.get("Fecha").asText());
@@ -156,8 +183,8 @@ public class XmlToJsonConverter {
             if (jsonNode.has("CondicionesDePago")) {
                 info.setCondicionesDePago(jsonNode.get("CondicionesDePago").asText());
             }
-            if (jsonNode.has("Moneda")) {
-                info.setMoneda(jsonNode.get("Moneda").asText());
+            if (jsonNode.has(K_MONEDA)) {
+                info.setMoneda(jsonNode.get(K_MONEDA).asText());
             }
             if (jsonNode.has("TipoCambio")) {
                 info.setTipoCambio(jsonNode.get("TipoCambio").asText());
@@ -188,8 +215,8 @@ public class XmlToJsonConverter {
                 if (emisorNode.has("Rfc")) {
                     emisor.setRfc(emisorNode.get("Rfc").asText());
                 }
-                if (emisorNode.has("Nombre")) {
-                    emisor.setNombre(emisorNode.get("Nombre").asText());
+                if (emisorNode.has(K_NOMBRE)) {
+                    emisor.setNombre(emisorNode.get(K_NOMBRE).asText());
                 }
                 if (emisorNode.has("RegimenFiscal")) {
                     emisor.setRegimenFiscal(emisorNode.get("RegimenFiscal").asText());
@@ -204,8 +231,8 @@ public class XmlToJsonConverter {
                 if (receptorNode.has("Rfc")) {
                     receptor.setRfc(receptorNode.get("Rfc").asText());
                 }
-                if (receptorNode.has("Nombre")) {
-                    receptor.setNombre(receptorNode.get("Nombre").asText());
+                if (receptorNode.has(K_NOMBRE)) {
+                    receptor.setNombre(receptorNode.get(K_NOMBRE).asText());
                 }
                 if (receptorNode.has("DomicilioFiscalReceptor")) {
                     receptor.setDomicilioFiscalReceptor(receptorNode.get("DomicilioFiscalReceptor").asText());
@@ -249,8 +276,8 @@ public class XmlToJsonConverter {
     private List<ConceptoDto> extractConceptos(JsonNode jsonNode) {
         List<ConceptoDto> conceptos = new ArrayList<>();
 
-        if (jsonNode.has("Conceptos") && jsonNode.get("Conceptos").has("Concepto")) {
-            JsonNode conceptosNode = jsonNode.get("Conceptos").get("Concepto");
+        if (jsonNode.has(K_CONCEPTOS) && jsonNode.get(K_CONCEPTOS).has("Concepto")) {
+            JsonNode conceptosNode = jsonNode.get(K_CONCEPTOS).get("Concepto");
 
             // Si es un array de conceptos
             if (conceptosNode.isArray()) {
@@ -280,31 +307,31 @@ public class XmlToJsonConverter {
         if (conceptoNode.has("NoIdentificacion")) {
             concepto.setNoIdentificacion(conceptoNode.get("NoIdentificacion").asText());
         }
-        if (conceptoNode.has("Cantidad")) {
-            concepto.setCantidad(conceptoNode.get("Cantidad").asText());
+        if (conceptoNode.has(K_CANTIDAD)) {
+            concepto.setCantidad(conceptoNode.get(K_CANTIDAD).asText());
         }
-        if (conceptoNode.has("ClaveUnidad")) {
-            concepto.setClaveUnidad(conceptoNode.get("ClaveUnidad").asText());
+        if (conceptoNode.has(K_CLAVEUNIDAD)) {
+            concepto.setClaveUnidad(conceptoNode.get(K_CLAVEUNIDAD).asText());
         }
         if (conceptoNode.has("Unidad")) {
             concepto.setUnidad(conceptoNode.get("Unidad").asText());
         }
-        if (conceptoNode.has("Descripcion")) {
-            concepto.setDescripcion(conceptoNode.get("Descripcion").asText());
+        if (conceptoNode.has(K_DESCRIPCION)) {
+            concepto.setDescripcion(conceptoNode.get(K_DESCRIPCION).asText());
         }
         if (conceptoNode.has("ValorUnitario")) {
             concepto.setValorUnitario(conceptoNode.get("ValorUnitario").asText());
         }
-        if (conceptoNode.has("Importe")) {
-            concepto.setImporte(conceptoNode.get("Importe").asText());
+        if (conceptoNode.has(K_IMPORTE)) {
+            concepto.setImporte(conceptoNode.get(K_IMPORTE).asText());
         }
         if (conceptoNode.has("ObjetoImp")) {
             concepto.setObjetoImp(conceptoNode.get("ObjetoImp").asText());
         }
 
         // Extraer impuestos
-        if (conceptoNode.has("Impuestos")) {
-            JsonNode impuestosNode = conceptoNode.get("Impuestos");
+        if (conceptoNode.has(K_IMPUESTOS)) {
+            JsonNode impuestosNode = conceptoNode.get(K_IMPUESTOS);
             concepto.setTraslados(extractTraslados(impuestosNode));
             concepto.setRetenciones(extractRetenciones(impuestosNode));
         }
@@ -320,8 +347,8 @@ public class XmlToJsonConverter {
     private List<TrasladoDto> extractTraslados(JsonNode impuestosNode) {
         List<TrasladoDto> traslados = new ArrayList<>();
 
-        if (impuestosNode.has("Traslados") && impuestosNode.get("Traslados").has("Traslado")) {
-            JsonNode trasladosNode = impuestosNode.get("Traslados").get("Traslado");
+        if (impuestosNode.has(K_TRASLADOS) && impuestosNode.get(K_TRASLADOS).has(K_TRASLADO)) {
+            JsonNode trasladosNode = impuestosNode.get(K_TRASLADOS).get(K_TRASLADO);
 
             if (trasladosNode.isArray()) {
                 for (JsonNode trasladoNode : trasladosNode) {
@@ -346,17 +373,17 @@ public class XmlToJsonConverter {
         if (trasladoNode.has("Base")) {
             traslado.setBase(trasladoNode.get("Base").asText());
         }
-        if (trasladoNode.has("Impuesto")) {
-            traslado.setImpuesto(trasladoNode.get("Impuesto").asText());
+        if (trasladoNode.has(K_IMPUESTO)) {
+            traslado.setImpuesto(trasladoNode.get(K_IMPUESTO).asText());
         }
-        if (trasladoNode.has("TipoFactor")) {
-            traslado.setTipoFactor(trasladoNode.get("TipoFactor").asText());
+        if (trasladoNode.has(K_TIPOFACTOR)) {
+            traslado.setTipoFactor(trasladoNode.get(K_TIPOFACTOR).asText());
         }
-        if (trasladoNode.has("TasaOCuota")) {
-            traslado.setTasaOCuota(trasladoNode.get("TasaOCuota").asText());
+        if (trasladoNode.has(K_TASAOCUOTA)) {
+            traslado.setTasaOCuota(trasladoNode.get(K_TASAOCUOTA).asText());
         }
-        if (trasladoNode.has("Importe")) {
-            traslado.setImporte(trasladoNode.get("Importe").asText());
+        if (trasladoNode.has(K_IMPORTE)) {
+            traslado.setImporte(trasladoNode.get(K_IMPORTE).asText());
         }
 
         return traslado;
@@ -370,8 +397,8 @@ public class XmlToJsonConverter {
     private List<RetencionDto> extractRetenciones(JsonNode impuestosNode) {
         List<RetencionDto> retenciones = new ArrayList<>();
 
-        if (impuestosNode.has("Retenciones") && impuestosNode.get("Retenciones").has("Retencion")) {
-            JsonNode retencionesNode = impuestosNode.get("Retenciones").get("Retencion");
+        if (impuestosNode.has(K_RETENCIONES) && impuestosNode.get(K_RETENCIONES).has(K_RETENCION)) {
+            JsonNode retencionesNode = impuestosNode.get(K_RETENCIONES).get(K_RETENCION);
 
             if (retencionesNode.isArray()) {
                 for (JsonNode retencionNode : retencionesNode) {
@@ -396,17 +423,17 @@ public class XmlToJsonConverter {
         if (retencionNode.has("Base")) {
             retencion.setBase(retencionNode.get("Base").asText());
         }
-        if (retencionNode.has("Impuesto")) {
-            retencion.setImpuesto(retencionNode.get("Impuesto").asText());
+        if (retencionNode.has(K_IMPUESTO)) {
+            retencion.setImpuesto(retencionNode.get(K_IMPUESTO).asText());
         }
-        if (retencionNode.has("TipoFactor")) {
-            retencion.setTipoFactor(retencionNode.get("TipoFactor").asText());
+        if (retencionNode.has(K_TIPOFACTOR)) {
+            retencion.setTipoFactor(retencionNode.get(K_TIPOFACTOR).asText());
         }
-        if (retencionNode.has("TasaOCuota")) {
-            retencion.setTasaOCuota(retencionNode.get("TasaOCuota").asText());
+        if (retencionNode.has(K_TASAOCUOTA)) {
+            retencion.setTasaOCuota(retencionNode.get(K_TASAOCUOTA).asText());
         }
-        if (retencionNode.has("Importe")) {
-            retencion.setImporte(retencionNode.get("Importe").asText());
+        if (retencionNode.has(K_IMPORTE)) {
+            retencion.setImporte(retencionNode.get(K_IMPORTE).asText());
         }
 
         return retencion;
@@ -424,18 +451,18 @@ public class XmlToJsonConverter {
             JsonNode addendaNode = jsonNode.get("Addenda");
 
             // Extraer BOVEDAFISCAL si existe
-            if (addendaNode.has("BOVEDAFISCAL")) {
-                addendas.add(extractBovedaFiscal(addendaNode.get("BOVEDAFISCAL")));
+            if (addendaNode.has(K_BOVEDAFISCAL)) {
+                addendas.add(extractBovedaFiscal(addendaNode.get(K_BOVEDAFISCAL)));
             }
 
             // Extraer AddendaK si existe
-            if (addendaNode.has("AddendaK")) {
-                addendas.add(extractAddendaK(addendaNode.get("AddendaK")));
+            if (addendaNode.has(K_ADDENDAK)) {
+                addendas.add(extractAddendaK(addendaNode.get(K_ADDENDAK)));
             }
 
             // Extraer Addenda_Sodimac_Detecno si existe
-            if (addendaNode.has("Addenda_Sodimac_Detecno")) {
-                addendas.add(extractAddendaSodimac(addendaNode.get("Addenda_Sodimac_Detecno")));
+            if (addendaNode.has(K_ADDENDA_SODIMAC_DETECNO)) {
+                addendas.add(extractAddendaSodimac(addendaNode.get(K_ADDENDA_SODIMAC_DETECNO)));
             }
         }
 
@@ -449,13 +476,13 @@ public class XmlToJsonConverter {
      */
     private AddendaDto extractBovedaFiscal(JsonNode bovedaNode) {
         AddendaDto addenda = new AddendaDto();
-        addenda.setTipoAddenda("BOVEDAFISCAL");
+        addenda.setTipoAddenda(K_BOVEDAFISCAL);
         addenda.setNamespace("http://kontender.mx/namespace/boveda");
 
         Map<String, Object> contenido = new HashMap<>();
 
-        if (bovedaNode.has("ImporteLetra") && bovedaNode.get("ImporteLetra").has("importe")) {
-            addenda.setImporteLetra(bovedaNode.get("ImporteLetra").get("importe").asText());
+        if (bovedaNode.has(K_IMPORTELETRA) && bovedaNode.get(K_IMPORTELETRA).has("importe")) {
+            addenda.setImporteLetra(bovedaNode.get(K_IMPORTELETRA).get("importe").asText());
             contenido.put("importeLetra", addenda.getImporteLetra());
         }
 
@@ -478,8 +505,8 @@ public class XmlToJsonConverter {
             if (generalesNode.has("noPedido")) {
                 addenda.setNumeroPedido(generalesNode.get("noPedido").asText());
             }
-            if (generalesNode.has("contrato")) {
-                addenda.setContrato(generalesNode.get("contrato").asText());
+            if (generalesNode.has(K_CONTRATO)) {
+                addenda.setContrato(generalesNode.get(K_CONTRATO).asText());
             }
             if (generalesNode.has("ordenCompra")) {
                 addenda.setOrdenCompra(generalesNode.get("ordenCompra").asText());
@@ -498,7 +525,7 @@ public class XmlToJsonConverter {
      */
     private AddendaDto extractAddendaK(JsonNode addendaKNode) {
         AddendaDto addenda = new AddendaDto();
-        addenda.setTipoAddenda("AddendaK");
+        addenda.setTipoAddenda(K_ADDENDAK);
         addenda.setNamespace("http://kontender.mx/namespace");
 
         Map<String, Object> contenido = new HashMap<>();
@@ -511,8 +538,8 @@ public class XmlToJsonConverter {
             if (kgralNode.has("npedido")) {
                 addenda.setNumeroPedido(kgralNode.get("npedido").asText());
             }
-            if (kgralNode.has("contrato")) {
-                addenda.setContrato(kgralNode.get("contrato").asText());
+            if (kgralNode.has(K_CONTRATO)) {
+                addenda.setContrato(kgralNode.get(K_CONTRATO).asText());
             }
             if (kgralNode.has("nocompra")) {
                 addenda.setOrdenCompra(kgralNode.get("nocompra").asText());
@@ -539,15 +566,15 @@ public class XmlToJsonConverter {
      */
     private AddendaDto extractAddendaSodimac(JsonNode sodimacNode) {
         AddendaDto addenda = new AddendaDto();
-        addenda.setTipoAddenda("Addenda_Sodimac_Detecno");
+        addenda.setTipoAddenda(K_ADDENDA_SODIMAC_DETECNO);
 
         Map<String, Object> contenido = new HashMap<>();
 
         if (sodimacNode.has("NoOC")) {
             addenda.setOrdenCompra(sodimacNode.get("NoOC").asText());
         }
-        if (sodimacNode.has("Folio")) {
-            addenda.setNumeroFactura(sodimacNode.get("Folio").asText());
+        if (sodimacNode.has(K_FOLIO)) {
+            addenda.setNumeroFactura(sodimacNode.get(K_FOLIO).asText());
         }
         if (sodimacNode.has("Proveedor")) {
             addenda.setNumeroCliente(sodimacNode.get("Proveedor").asText());
@@ -565,8 +592,8 @@ public class XmlToJsonConverter {
      * @return CartaPorteDto
      */
     private CartaPorteDto extractCartaPorte(JsonNode jsonNode) {
-        if (jsonNode.has("Complemento") && jsonNode.get("Complemento").has("CartaPorte")) {
-            JsonNode cartaPorteNode = jsonNode.get("Complemento").get("CartaPorte");
+        if (jsonNode.has(K_COMPLEMENTO) && jsonNode.get(K_COMPLEMENTO).has("CartaPorte")) {
+            JsonNode cartaPorteNode = jsonNode.get(K_COMPLEMENTO).get("CartaPorte");
             return extractCartaPorteData(cartaPorteNode);
         }
         return null;
@@ -580,8 +607,8 @@ public class XmlToJsonConverter {
     private CartaPorteDto extractCartaPorteData(JsonNode cartaPorteNode) {
         CartaPorteDto cartaPorte = new CartaPorteDto();
 
-        if (cartaPorteNode.has("Version")) {
-            cartaPorte.setVersion(cartaPorteNode.get("Version").asText());
+        if (cartaPorteNode.has(K_VERSION)) {
+            cartaPorte.setVersion(cartaPorteNode.get(K_VERSION).asText());
         }
         if (cartaPorteNode.has("TranspInternac")) {
             cartaPorte.setTranspInternac(cartaPorteNode.get("TranspInternac").asText());
@@ -613,8 +640,8 @@ public class XmlToJsonConverter {
     private List<UbicacionDto> extractUbicaciones(JsonNode cartaPorteNode) {
         List<UbicacionDto> ubicaciones = new ArrayList<>();
 
-        if (cartaPorteNode.has("Ubicaciones") && cartaPorteNode.get("Ubicaciones").has("Ubicacion")) {
-            JsonNode ubicacionesNode = cartaPorteNode.get("Ubicaciones").get("Ubicacion");
+        if (cartaPorteNode.has(K_UBICACIONES) && cartaPorteNode.get(K_UBICACIONES).has("Ubicacion")) {
+            JsonNode ubicacionesNode = cartaPorteNode.get(K_UBICACIONES).get("Ubicacion");
 
             if (ubicacionesNode.isArray()) {
                 for (JsonNode ubicacionNode : ubicacionesNode) {
@@ -755,20 +782,20 @@ public class XmlToJsonConverter {
         if (mercanciaNode.has("BienesTransp")) {
             mercancia.setBienesTransp(mercanciaNode.get("BienesTransp").asText());
         }
-        if (mercanciaNode.has("Descripcion")) {
-            mercancia.setDescripcion(mercanciaNode.get("Descripcion").asText());
+        if (mercanciaNode.has(K_DESCRIPCION)) {
+            mercancia.setDescripcion(mercanciaNode.get(K_DESCRIPCION).asText());
         }
-        if (mercanciaNode.has("Cantidad")) {
-            mercancia.setCantidad(mercanciaNode.get("Cantidad").asText());
+        if (mercanciaNode.has(K_CANTIDAD)) {
+            mercancia.setCantidad(mercanciaNode.get(K_CANTIDAD).asText());
         }
-        if (mercanciaNode.has("ClaveUnidad")) {
-            mercancia.setClaveUnidad(mercanciaNode.get("ClaveUnidad").asText());
+        if (mercanciaNode.has(K_CLAVEUNIDAD)) {
+            mercancia.setClaveUnidad(mercanciaNode.get(K_CLAVEUNIDAD).asText());
         }
         if (mercanciaNode.has("ValorMercancia")) {
             mercancia.setValorMercancia(mercanciaNode.get("ValorMercancia").asText());
         }
-        if (mercanciaNode.has("Moneda")) {
-            mercancia.setMoneda(mercanciaNode.get("Moneda").asText());
+        if (mercanciaNode.has(K_MONEDA)) {
+            mercancia.setMoneda(mercanciaNode.get(K_MONEDA).asText());
         }
 
         return mercancia;
@@ -802,9 +829,9 @@ public class XmlToJsonConverter {
         }
 
         // Extraer remolques
-        if (autotransporteNode.has("Remolques") && autotransporteNode.get("Remolques").has("Remolque")) {
+        if (autotransporteNode.has(K_REMOLQUES) && autotransporteNode.get(K_REMOLQUES).has("Remolque")) {
             List<RemolqueDto> remolques = new ArrayList<>();
-            JsonNode remolquesNode = autotransporteNode.get("Remolques").get("Remolque");
+            JsonNode remolquesNode = autotransporteNode.get(K_REMOLQUES).get("Remolque");
 
             if (remolquesNode.isArray()) {
                 for (JsonNode remolqueNode : remolquesNode) {
@@ -902,8 +929,8 @@ public class XmlToJsonConverter {
     private List<FiguraTransporteDto> extractFigurasTransporte(JsonNode cartaPorteNode) {
         List<FiguraTransporteDto> figuras = new ArrayList<>();
 
-        if (cartaPorteNode.has("FiguraTransporte") && cartaPorteNode.get("FiguraTransporte").has("TiposFigura")) {
-            JsonNode figurasNode = cartaPorteNode.get("FiguraTransporte").get("TiposFigura");
+        if (cartaPorteNode.has(K_FIGURATRANSPORTE) && cartaPorteNode.get(K_FIGURATRANSPORTE).has("TiposFigura")) {
+            JsonNode figurasNode = cartaPorteNode.get(K_FIGURATRANSPORTE).get("TiposFigura");
 
             if (figurasNode.isArray()) {
                 for (JsonNode figuraNode : figurasNode) {
@@ -950,7 +977,7 @@ public class XmlToJsonConverter {
         TimbreFiscalDigitalDto timbre = new TimbreFiscalDigitalDto();
 
         try {
-            JsonNode complementoNode = jsonNode.path("Complemento");
+            JsonNode complementoNode = jsonNode.path(K_COMPLEMENTO);
             if (complementoNode.isMissingNode()) {
                 return null;
             }
@@ -960,8 +987,8 @@ public class XmlToJsonConverter {
                 return null;
             }
 
-            if (tfdNode.has("Version")) {
-                timbre.setVersion(tfdNode.get("Version").asText());
+            if (tfdNode.has(K_VERSION)) {
+                timbre.setVersion(tfdNode.get(K_VERSION).asText());
             }
             if (tfdNode.has("UUID")) {
                 timbre.setUuid(tfdNode.get("UUID").asText());
@@ -998,7 +1025,7 @@ public class XmlToJsonConverter {
         ImpuestosFacturaDto impuestos = new ImpuestosFacturaDto();
 
         try {
-            JsonNode impuestosNode = jsonNode.path("Impuestos");
+            JsonNode impuestosNode = jsonNode.path(K_IMPUESTOS);
             if (impuestosNode.isMissingNode()) {
                 return null;
             }
@@ -1011,12 +1038,12 @@ public class XmlToJsonConverter {
             }
 
             // Extraer retenciones consolidadas
-            if (impuestosNode.has("Retenciones")) {
+            if (impuestosNode.has(K_RETENCIONES)) {
                 List<RetencionDto> retenciones = new ArrayList<>();
-                JsonNode retencionesNode = impuestosNode.get("Retenciones");
+                JsonNode retencionesNode = impuestosNode.get(K_RETENCIONES);
 
-                if (retencionesNode.has("Retencion")) {
-                    JsonNode retencionNode = retencionesNode.get("Retencion");
+                if (retencionesNode.has(K_RETENCION)) {
+                    JsonNode retencionNode = retencionesNode.get(K_RETENCION);
                     if (retencionNode.isArray()) {
                         for (JsonNode ret : retencionNode) {
                             retenciones.add(extractRetencion(ret));
@@ -1029,12 +1056,12 @@ public class XmlToJsonConverter {
             }
 
             // Extraer traslados consolidados
-            if (impuestosNode.has("Traslados")) {
+            if (impuestosNode.has(K_TRASLADOS)) {
                 List<TrasladoDto> traslados = new ArrayList<>();
-                JsonNode trasladosNode = impuestosNode.get("Traslados");
+                JsonNode trasladosNode = impuestosNode.get(K_TRASLADOS);
 
-                if (trasladosNode.has("Traslado")) {
-                    JsonNode trasladoNode = trasladosNode.get("Traslado");
+                if (trasladosNode.has(K_TRASLADO)) {
+                    JsonNode trasladoNode = trasladosNode.get(K_TRASLADO);
                     if (trasladoNode.isArray()) {
                         for (JsonNode tras : trasladoNode) {
                             traslados.add(extractTraslado(tras));

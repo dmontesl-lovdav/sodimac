@@ -27,6 +27,9 @@ import java.util.UUID;
  */
 public class InvoiceSpecification {
 
+    private static final String K_CREATED_AT = "createdAt";
+    private static final String K_INVOICE_UUID = "invoiceUuid";
+
     /**
      * Construye la Specification completa a partir del request de búsqueda.
      *
@@ -69,11 +72,11 @@ public class InvoiceSpecification {
             if (searchRequest.getUuid() == null) {
                 if (searchRequest.getFechaInicioRecepcion() != null) {
                     LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
-                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startOfDay));
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(K_CREATED_AT), startOfDay));
                 }
                 if (searchRequest.getFechaFinalRecepcion() != null) {
                     LocalDateTime endOfDay = searchRequest.getFechaFinalRecepcion().atTime(23, 59, 59);
-                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endOfDay));
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(K_CREATED_AT), endOfDay));
                 }
             }
 
@@ -103,12 +106,12 @@ public class InvoiceSpecification {
             if (searchRequest.getIdProveedor() != null) {
                 Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
                 Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
-                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                addendumSubquery.select(addendumRoot.get(K_INVOICE_UUID))
                         .where(criteriaBuilder.equal(
                                 addendumRoot.get("supplierNumber"),
                                 searchRequest.getIdProveedor()
                         ));
-                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+                predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
             // 7. Serie (Opcional)
@@ -155,48 +158,48 @@ public class InvoiceSpecification {
             if (searchRequest.getNoOrdenCompra() != null && !searchRequest.getNoOrdenCompra().isBlank()) {
                 Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
                 Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
-                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                addendumSubquery.select(addendumRoot.get(K_INVOICE_UUID))
                         .where(criteriaBuilder.equal(
                                 addendumRoot.get("purchaseOrderNumber"),
                                 searchRequest.getNoOrdenCompra()
                         ));
-                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+                predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
             // 12. Numero de Recepcion (Opcional) - STM-338
             if (searchRequest.getNoRecepcion() != null && !searchRequest.getNoRecepcion().isBlank()) {
                 Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
                 Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
-                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                addendumSubquery.select(addendumRoot.get(K_INVOICE_UUID))
                         .where(criteriaBuilder.equal(
                                 addendumRoot.get("receptionNumber"),
                                 searchRequest.getNoRecepcion()
                         ));
-                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+                predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
             // 12.1 Tipo de Proveedor (Opcional) - filtra por addendum.supplier_type (id 1-4). Issue Fer #4.
             if (searchRequest.getTipoProveedor() != null && !searchRequest.getTipoProveedor().isBlank()) {
                 Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
                 Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
-                addendumSubquery.select(addendumRoot.get("invoiceUuid"))
+                addendumSubquery.select(addendumRoot.get(K_INVOICE_UUID))
                         .where(criteriaBuilder.equal(
                                 addendumRoot.get("supplierType"),
                                 searchRequest.getTipoProveedor()
                         ));
-                predicates.add(root.get("invoiceUuid").in(addendumSubquery));
+                predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
             // 13. NCs relacionadas a una factura específica (Opcional) - STM-335
             if (searchRequest.getRelatedInvoiceUuid() != null) {
                 Subquery<UUID> relatedCfdiSubquery = query.subquery(UUID.class);
                 Root<RelatedCfdiEntity> relatedCfdiRoot = relatedCfdiSubquery.from(RelatedCfdiEntity.class);
-                relatedCfdiSubquery.select(relatedCfdiRoot.get("invoiceUuid"))
+                relatedCfdiSubquery.select(relatedCfdiRoot.get(K_INVOICE_UUID))
                         .where(criteriaBuilder.equal(
                                 relatedCfdiRoot.get("relatedInvoiceUuid"),
                                 searchRequest.getRelatedInvoiceUuid()
                         ));
-                predicates.add(root.get("invoiceUuid").in(relatedCfdiSubquery));
+                predicates.add(root.get(K_INVOICE_UUID).in(relatedCfdiSubquery));
             }
 
             // Filtro de seguridad STM-323: supplier permitidos del BFF (x-user-vendors)
@@ -208,9 +211,9 @@ public class InvoiceSpecification {
                 if (!vendorNumbers.isEmpty()) {
                     Subquery<UUID> secSubquery = query.subquery(UUID.class);
                     Root<AddendumEntity> secRoot = secSubquery.from(AddendumEntity.class);
-                    secSubquery.select(secRoot.get("invoiceUuid"))
+                    secSubquery.select(secRoot.get(K_INVOICE_UUID))
                             .where(secRoot.get("supplierNumber").in(vendorNumbers));
-                    predicates.add(root.get("invoiceUuid").in(secSubquery));
+                    predicates.add(root.get(K_INVOICE_UUID).in(secSubquery));
                 }
             }
 
@@ -266,12 +269,12 @@ public class InvoiceSpecification {
                 return criteriaBuilder.conjunction();
             }
             if (from != null && to != null) {
-                return criteriaBuilder.between(root.get("createdAt"), from, to);
+                return criteriaBuilder.between(root.get(K_CREATED_AT), from, to);
             }
             if (from != null) {
-                return criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), from);
+                return criteriaBuilder.greaterThanOrEqualTo(root.get(K_CREATED_AT), from);
             }
-            return criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), to);
+            return criteriaBuilder.lessThanOrEqualTo(root.get(K_CREATED_AT), to);
         };
     }
 }

@@ -68,6 +68,10 @@ import java.util.List;
 @Tag(name = "Invoices", description = "Gestión de facturas y comprobantes fiscales digitales")
 public class InvoiceController {
 
+    private static final String K_ATTACHMENT = "attachment";
+    private static final String FMT_TIMESTAMP = "yyyyMMdd_HHmmss";
+    private static final String K_FACTURAS = "Facturas";
+
     // INYECCIÓN DE SERVICIOS BFF
     private final InvoiceService invoiceService;
     private final NCValidationService ncValidationService;
@@ -534,7 +538,7 @@ public class InvoiceController {
 
         if (download) {
             String filename = uuid + ".xml";
-            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentDispositionFormData(K_ATTACHMENT, filename);
         }
 
         log.info("XML obtenido exitosamente. UUID: {}, Tamano: {} bytes", uuid, xmlContent.length());
@@ -562,7 +566,7 @@ public class InvoiceController {
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentLength(pdfBytes.length);
         if (download) {
-            headers.setContentDispositionFormData("attachment", uuid + ".pdf");
+            headers.setContentDispositionFormData(K_ATTACHMENT, uuid + ".pdf");
         }
 
         log.info("PDF obtenido exitosamente. UUID: {}, Tamaño: {} bytes", uuid, pdfBytes.length);
@@ -615,7 +619,7 @@ public class InvoiceController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/zip"));
-        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentDispositionFormData(K_ATTACHMENT, filename);
         headers.setContentLength(zipContent.length);
 
         log.info("Descarga masiva XML completada. Archivo: {}, Tamano: {} bytes", filename, zipContent.length);
@@ -667,7 +671,7 @@ public class InvoiceController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/zip"));
-        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentDispositionFormData(K_ATTACHMENT, filename);
         headers.setContentLength(zipContent.length);
 
         log.info("Descarga masiva PDF completada. Archivo: {}, Tamano: {} bytes", filename, zipContent.length);
@@ -720,7 +724,7 @@ public class InvoiceController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
-        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentDispositionFormData(K_ATTACHMENT, filename);
         headers.setContentLength(csvContent.length);
 
         log.info("Exportacion CSV completada. Archivo: {}, Tamano: {} bytes", filename, csvContent.length);
@@ -736,7 +740,7 @@ public class InvoiceController {
      * FUNCIONALIDAD:
      * - Usa los mismos filtros que /search
      * - Genera archivo XLSX con 2 hojas:
-     *   - Hoja 1 "Facturas": Lista de facturas encontradas
+     *   - Hoja 1 K_FACTURAS: Lista de facturas encontradas
      *   - Hoja 2 "Notas de Credito": NC relacionadas a las facturas
      * - Exporta hasta 10,000 registros
      *
@@ -784,7 +788,7 @@ public class InvoiceController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentDispositionFormData(K_ATTACHMENT, filename);
         headers.setContentLength(xlsxContent.length);
 
         log.info("Exportacion XLSX completada. Archivo: {}, Tamano: {} bytes", filename, xlsxContent.length);
@@ -922,8 +926,8 @@ public class InvoiceController {
      * Construye el nombre del archivo ZIP para descarga.
      */
     private String buildZipFileName(String type, String documentType) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String docTypeName = "E".equals(documentType) ? "NC" : "Facturas";
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern(FMT_TIMESTAMP));
+        String docTypeName = "E".equals(documentType) ? "NC" : K_FACTURAS;
         return String.format("%s_%s_%s.zip", docTypeName, type.toUpperCase(), timestamp);
     }
 
@@ -931,8 +935,8 @@ public class InvoiceController {
      * Construye el nombre del archivo CSV para exportacion.
      */
     private String buildCsvFileName(String documentType) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String docTypeName = "E".equals(documentType) ? "NotasCredito" : "Facturas";
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern(FMT_TIMESTAMP));
+        String docTypeName = "E".equals(documentType) ? "NotasCredito" : K_FACTURAS;
         return String.format("Exportacion_%s_%s.csv", docTypeName, timestamp);
     }
 
@@ -940,8 +944,8 @@ public class InvoiceController {
      * Construye el nombre del archivo XLSX para exportacion.
      */
     private String buildXlsxFileName(String documentType) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String docTypeName = "E".equals(documentType) ? "NotasCredito" : "Facturas";
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern(FMT_TIMESTAMP));
+        String docTypeName = "E".equals(documentType) ? "NotasCredito" : K_FACTURAS;
         return String.format("Exportacion_%s_%s.xlsx", docTypeName, timestamp);
     }
 

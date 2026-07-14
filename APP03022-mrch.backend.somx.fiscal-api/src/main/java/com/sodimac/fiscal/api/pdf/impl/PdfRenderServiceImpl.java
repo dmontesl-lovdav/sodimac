@@ -43,6 +43,8 @@ import org.w3c.dom.Node;
 @Slf4j
 public class PdfRenderServiceImpl implements PdfRenderService {
 
+    private static final String NO_LOGO_JPG = "no_logo.jpg";
+
     private final ResourceLoader resourceLoader;
     private final MessageCatalogService messageCatalog;
 
@@ -127,7 +129,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
         } catch (Exception e) {
             log.error("Error generando QR para el PDF", e);
             // Fallback: deja el ícono si falla
-            transformer.setParameter("qrCodeFileName", "no_logo.jpg");
+            transformer.setParameter("qrCodeFileName", NO_LOGO_JPG);
         }
     }
 
@@ -203,8 +205,8 @@ public class PdfRenderServiceImpl implements PdfRenderService {
             }
             Path dir = Files.createTempDirectory("xsl-fiscal-");
             copyResourceToDir("classpath:/xsl/Formato4.0.xsl", dir, "Formato4.0.xsl");
-            copyResourceToDir("classpath:/xsl/no_logo.jpg", dir, "no_logo.jpg");
-            Path imagePath = dir.resolve("no_logo.jpg");
+            copyResourceToDir("classpath:/xsl/no_logo.jpg", dir, NO_LOGO_JPG);
+            Path imagePath = dir.resolve(NO_LOGO_JPG);
             log.info("XSL e imagen copiadas a {}", dir);
             log.warn(">>> Logo exists? {}", Files.exists(imagePath));
             tempXslDir.set(dir);

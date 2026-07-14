@@ -24,6 +24,8 @@ import com.sodimac.fiscal.api.exception.GenericException;
 @Aspect
 public class GroupValidator {
 
+    private static final String K_FORBIDDEN = "FORBIDDEN";
+
     private static final Logger logger = LoggerFactory.getLogger(GroupValidator.class);
     //
     private final String roleOperador;
@@ -50,7 +52,7 @@ public class GroupValidator {
             }
             if (session == null) {
                 logger.warn("NO SESSION IS ATTACHED TO THIS JOINT");
-                throw new GenericException("FORBIDDEN", HttpStatus.FORBIDDEN.value());
+                throw new GenericException(K_FORBIDDEN, HttpStatus.FORBIDDEN.value());
             }
         } catch (Exception e) {
             logger.warn("CAN'T RETRIEVE JOINT OBJECTS: {} - CAUSE: {}", e.getMessage(), e.getCause());
@@ -59,7 +61,7 @@ public class GroupValidator {
 
         if (session.getGroups() == null || session.getGroups().isEmpty()) {
             logger.warn("THIS SESSION HAS NO GROUPS");
-            throw new GenericException("FORBIDDEN", HttpStatus.FORBIDDEN.value());
+            throw new GenericException(K_FORBIDDEN, HttpStatus.FORBIDDEN.value());
         }
 
         boolean isOperador = session.getGroups().stream()
@@ -69,7 +71,7 @@ public class GroupValidator {
 
         if (!isOperador && !isProveedor) {
             logger.warn("THIS SESSION HAS NO EXPECTED GROUPS. SESSION GROUPS ARE: {}", StringUtils.join(session.getGroups(),","));
-            throw new GenericException("FORBIDDEN", HttpStatus.FORBIDDEN.value());
+            throw new GenericException(K_FORBIDDEN, HttpStatus.FORBIDDEN.value());
         }
 
         session.setOperator(isOperador);

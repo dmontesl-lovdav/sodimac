@@ -45,6 +45,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
 
+    private static final String K_ISSUER = "issuer";
+    private static final String K_RECEIVER = "receiver";
+    private static final String K_PAYMENTS_UUID = "paymentsUuid";
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -59,8 +63,8 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         Root<PaymentsEntity> root = query.from(PaymentsEntity.class);
 
         // Joins para issuer y receiver (fetch para evitar N+1)
-        Fetch<PaymentsEntity, IssuerEntity> issuerFetch = root.fetch("issuer", JoinType.LEFT);
-        Fetch<PaymentsEntity, ReceiverEntity> receiverFetch = root.fetch("receiver", JoinType.LEFT);
+        Fetch<PaymentsEntity, IssuerEntity> issuerFetch = root.fetch(K_ISSUER, JoinType.LEFT);
+        Fetch<PaymentsEntity, ReceiverEntity> receiverFetch = root.fetch(K_RECEIVER, JoinType.LEFT);
 
         // Construir predicados dinámicamente
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest,
@@ -111,7 +115,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
 
         // Filtro por UUID
         if (searchRequest.getPaymentsUuid() != null) {
-            predicates.add(cb.equal(root.get("paymentsUuid"), searchRequest.getPaymentsUuid()));
+            predicates.add(cb.equal(root.get(K_PAYMENTS_UUID), searchRequest.getPaymentsUuid()));
         }
 
         // Filtro por folio
@@ -159,8 +163,8 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         Root<PaymentsEntity> root = countQuery.from(PaymentsEntity.class);
 
         // Joins necesarios para filtros de RFC
-        Join<PaymentsEntity, IssuerEntity> issuerJoin = root.join("issuer", JoinType.LEFT);
-        Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.LEFT);
+        Join<PaymentsEntity, IssuerEntity> issuerJoin = root.join(K_ISSUER, JoinType.LEFT);
+        Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join(K_RECEIVER, JoinType.LEFT);
 
         // Construir los mismos predicados
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
@@ -186,8 +190,8 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         CriteriaQuery<PaymentsEntity> query = cb.createQuery(PaymentsEntity.class);
         Root<PaymentsEntity> root = query.from(PaymentsEntity.class);
 
-        Fetch<PaymentsEntity, IssuerEntity> issuerFetch = root.fetch("issuer", JoinType.LEFT);
-        Fetch<PaymentsEntity, ReceiverEntity> receiverFetch = root.fetch("receiver", JoinType.LEFT);
+        Fetch<PaymentsEntity, IssuerEntity> issuerFetch = root.fetch(K_ISSUER, JoinType.LEFT);
+        Fetch<PaymentsEntity, ReceiverEntity> receiverFetch = root.fetch(K_RECEIVER, JoinType.LEFT);
 
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest,
                 (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
@@ -226,12 +230,12 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         if (tipoProveedor == null || tipoProveedor.isBlank()) return;
         Subquery<UUID> sub = query.subquery(UUID.class);
         Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
-        sub.select(addRoot.get("paymentsUuid"))
+        sub.select(addRoot.get(K_PAYMENTS_UUID))
            .where(cb.and(
-               cb.isNotNull(addRoot.get("paymentsUuid")),
+               cb.isNotNull(addRoot.get(K_PAYMENTS_UUID)),
                cb.equal(addRoot.get("supplierType"), tipoProveedor)
            ));
-        predicates.add(root.get("paymentsUuid").in(sub));
+        predicates.add(root.get(K_PAYMENTS_UUID).in(sub));
     }
 
     private void addVendorPredicate(CriteriaBuilder cb, CriteriaQuery<?> query,
@@ -244,12 +248,12 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
             .collect(java.util.stream.Collectors.toList());
         Subquery<UUID> sub = query.subquery(UUID.class);
         Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
-        sub.select(addRoot.get("paymentsUuid"))
+        sub.select(addRoot.get(K_PAYMENTS_UUID))
            .where(cb.and(
-               cb.isNotNull(addRoot.get("paymentsUuid")),
+               cb.isNotNull(addRoot.get(K_PAYMENTS_UUID)),
                addRoot.get("supplierNumber").in(vendorNumbers)
            ));
-        predicates.add(root.get("paymentsUuid").in(sub));
+        predicates.add(root.get(K_PAYMENTS_UUID).in(sub));
     }
 
     private long countPaymentsWithVendors(PaymentSearchRequest searchRequest, List<String> allowedVendors) {
@@ -257,8 +261,8 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<PaymentsEntity> root = countQuery.from(PaymentsEntity.class);
 
-        Join<PaymentsEntity, IssuerEntity> issuerJoin = root.join("issuer", JoinType.LEFT);
-        Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join("receiver", JoinType.LEFT);
+        Join<PaymentsEntity, IssuerEntity> issuerJoin = root.join(K_ISSUER, JoinType.LEFT);
+        Join<PaymentsEntity, ReceiverEntity> receiverJoin = root.join(K_RECEIVER, JoinType.LEFT);
 
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
         addTipoProveedorPredicate(cb, countQuery, root, searchRequest.getTipoProveedor(), predicates);

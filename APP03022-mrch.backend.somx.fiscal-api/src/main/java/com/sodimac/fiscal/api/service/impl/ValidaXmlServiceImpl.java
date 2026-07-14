@@ -60,6 +60,9 @@ import com.sodimac.fiscal.api.service.ValidarXmlService;
 @Service
 public class ValidaXmlServiceImpl  implements ValidarXmlService {
 
+    private static final String MSG_END_UNSUCCESS = "End request unsuccessfully";
+    private static final String ERR_SUFFIX = ". ERROR: ";
+
 	private static final Logger logger = LoggerFactory.getLogger(ValidaXmlServiceImpl.class);
 	
     private final String DETECNO;
@@ -130,39 +133,39 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		} catch (IOException e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		} catch (SAXException e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		} catch (Exception e) {
 			e.printStackTrace();
  			error = true;
- 			logger.info("End request unsuccessfully");
- 			logger.error("ERROR: IOException " + ". ERROR: " + e.getMessage());
- 			errorMsg = "ERROR: IOException " + ". ERROR: " + e.getMessage();
+ 			logger.info(MSG_END_UNSUCCESS);
+ 			logger.error("ERROR: IOException " + ERR_SUFFIX + e.getMessage());
+ 			errorMsg = "ERROR: IOException " + ERR_SUFFIX + e.getMessage();
 		}
 	
 	

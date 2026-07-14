@@ -1,12 +1,5 @@
 ﻿[
     {
-        "rule":  "java:S100",
-        "name":  "Method names should comply with a naming convention",
-        "count":  6,
-        "htmlDesc":  null,
-        "howToFix":  null
-    },
-    {
         "rule":  "java:S106",
         "name":  "Standard outputs should not be used directly to log anything",
         "count":  5,
@@ -79,16 +72,9 @@
     {
         "rule":  "java:S116",
         "name":  "Field names should comply with a naming convention",
-        "count":  6,
+        "count":  null,
         "htmlDesc":  null,
         "howToFix":  null
-    },
-    {
-        "rule":  "java:S117",
-        "name":  "Local variable and method parameter names should comply with a naming convention",
-        "count":  13,
-        "htmlDesc":  null,
-        "howToFix":  "\u003cp\u003eFirst, familiarize yourself with the particular naming convention of the project in question. Then, update the name to match the convention, as\nwell as all usages of the name. For many IDEs, you can use built-in renaming and refactoring features to update all usages at once.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cp\u003eWith the default regular expression \u003ccode\u003e^[a-z][a-zA-Z0-9]*$\u003c/code\u003e:\u003c/p\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\npublic class MyClass {\n    public void doSomething(int myParam) {\n      int LOCAL;    // Noncompliant\n      // ...\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\npublic class MyClass {\n    public void doSomething(int my_param) {\n      int local;\n      // ...\n    }\n}\n\u003c/pre\u003e"
     },
     {
         "rule":  "java:S1172",

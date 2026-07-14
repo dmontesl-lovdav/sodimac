@@ -2,7 +2,6 @@ package com.sodimac.fiscal.api.util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -24,7 +23,7 @@ import org.xml.sax.InputSource;
 
 public class UtilsFile {
 	
-	public static void writeToZipFile(File file, ZipOutputStream zipStream) throws FileNotFoundException, IOException {
+	public static void writeToZipFile(File file, ZipOutputStream zipStream) throws IOException {
 
 		String path = file.getPath();
 		String name = file.getName();

@@ -248,7 +248,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		return builder.parse(is);
 	}
 
-	private String convertDocumentToString(Document doc) throws TransformerConfigurationException, TransformerException {
+	private String convertDocumentToString(Document doc) throws TransformerException {
 			// Create a TransformerFactory
 			TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
 			// Create a Transformer
@@ -265,7 +265,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 			return writer.toString();
 	}
 
-	private String convertDomToXmlString(Document document) throws TransformerConfigurationException, TransformerException  {
+	private String convertDomToXmlString(Document document) throws TransformerException  {
 		TransformerFactory transfac = XmlSecureFactory.newTransformerFactory();
 		Transformer trans = transfac.newTransformer();
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");

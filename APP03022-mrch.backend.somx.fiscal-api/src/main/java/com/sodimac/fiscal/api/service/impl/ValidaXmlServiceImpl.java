@@ -21,7 +21,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -202,7 +201,7 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 		return builder.parse(is);
 	}
 	
-	private String convertDomToXmlString(Document document) throws TransformerConfigurationException, TransformerException  {
+	private String convertDomToXmlString(Document document) throws TransformerException  {
 		TransformerFactory transfac = XmlSecureFactory.newTransformerFactory();
 		Transformer trans = transfac.newTransformer();
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");

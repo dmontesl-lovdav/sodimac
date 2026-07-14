@@ -54,10 +54,10 @@ public class ToolsServiceImpl implements ToolsService {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode rootNode = mapper.readTree(str);
 		String versionCFDI = rootNode.get("Version").toString();
-		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
-		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
+		String uuid = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
+		String rfc = rootNode.get("Emisor").get("Rfc").toString();
 
-		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
+		return new XmlFIscalDto(uuid, rfc, versionCFDI);
 	}
 	
 	public Document getDocument(MultipartFile file) throws IOException, SAXException, ParserConfigurationException {

@@ -2,36 +2,35 @@ package com.sodimac.fiscal.api.model.dto;
 
 public class XmlFIscalDto {
 
-	private String UUID;
-	private String Rfc;
-	private String VersionCFDI;
-	
+	private String uuid;
+	private String rfc;
+	private String versionCFDI;
+
 	public XmlFIscalDto () {}
-	
-	public XmlFIscalDto (String UUID, String Rfc, String VersionCFDI ) {
-		this.UUID = UUID;
-		this.Rfc = Rfc;
-		this.VersionCFDI = VersionCFDI;
+
+	public XmlFIscalDto (String uuid, String rfc, String versionCFDI ) {
+		this.uuid = uuid;
+		this.rfc = rfc;
+		this.versionCFDI = versionCFDI;
 	}
-	
+
 	public String getUUID() {
-		return UUID;
+		return uuid;
 	}
-	public void setUUID(String uUID) {
-		UUID = uUID;
+	public void setUUID(String uuid) {
+		this.uuid = uuid;
 	}
 	public String getRfc() {
-		return Rfc;
+		return rfc;
 	}
 	public void setRfc(String rfc) {
-		Rfc = rfc;
+		this.rfc = rfc;
 	}
 	public String getVersionCFDI() {
-		return VersionCFDI;
+		return versionCFDI;
 	}
 	public void setVersionCFDI(String versionCFDI) {
-		VersionCFDI = versionCFDI;
+		this.versionCFDI = versionCFDI;
 	}
-	
-	
+
 }

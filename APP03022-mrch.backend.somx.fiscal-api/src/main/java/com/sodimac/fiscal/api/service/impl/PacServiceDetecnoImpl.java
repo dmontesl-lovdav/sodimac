@@ -83,11 +83,11 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode rootNode = mapper.readTree(strXmlJson);
 		String versionCFDI = rootNode.get("Version").toString();
-		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
-		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
+		String uuid = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
+		String rfc = rootNode.get("Emisor").get("Rfc").toString();
 
 
-		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
+		return new XmlFIscalDto(uuid, rfc, versionCFDI);
 	}
 
 	public ResponseEntity<Object> validaXml(Document xml, String requestData, PacCatalogDto pac, String strXmlJson, XmlFIscalDto xmlFIscalDto) 
@@ -140,7 +140,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 				}
 
 		if (error) {
-			LogDto logdto = GuardarLogFiscal(xmlFIscalDto,pac,null,null, null, requestData, null);
+			LogDto logdto = guardarLogFiscal(xmlFIscalDto,pac,null,null, null, requestData, null);
 			response = ResponseHandler.responseBuilderError(errorMsg, HttpStatus.BAD_REQUEST, request.getXmlPassed().getValue(), null, logdto.getLogId().toString());
 		}
 		return response;
@@ -160,16 +160,16 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 				recordStartDate = LocalDateTime.now();
 				validarXMLResponse = (ValidarXMLResponse) getWebServiceTemplate().marshalSendAndReceive(pac.getUrl(), request, null);
 				recordEndDate = LocalDateTime.now();
-				responseData = ConvertJaxbXmlObjToString(validarXMLResponse);
+				responseData = convertJaxbXmlObjToString(validarXMLResponse);
 
 	
 				responseDTO = buildResponse(validarXMLResponse);
 				response = ResponseHandler.responseBuilder("OK", HttpStatus.OK, responseDTO, 0, null);
-		GuardarLogFiscal(xmlFIscalDto,pac,recordStartDate,recordEndDate, responseDTO, requestData, responseData);
+		guardarLogFiscal(xmlFIscalDto,pac,recordStartDate,recordEndDate, responseDTO, requestData, responseData);
 		return response;
 	}
 
-	private String ConvertJaxbXmlObjToString(ValidarXMLResponse validarXMLResponse)  throws JAXBException, PropertyException {
+	private String convertJaxbXmlObjToString(ValidarXMLResponse validarXMLResponse)  throws JAXBException, PropertyException {
 		JAXBContext jaxbContext;
 		StringWriter sw = new StringWriter();
 
@@ -204,7 +204,7 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 	}
 
 
-	private LogDto GuardarLogFiscal(XmlFIscalDto xmlFIscalDto, PacCatalogDto pac, LocalDateTime recordStartDate
+	private LogDto guardarLogFiscal(XmlFIscalDto xmlFIscalDto, PacCatalogDto pac, LocalDateTime recordStartDate
 									,LocalDateTime recordEndDate, ResponseValidationDetecnoDto responseDTO
 									,String requestData, String responseData) {
 

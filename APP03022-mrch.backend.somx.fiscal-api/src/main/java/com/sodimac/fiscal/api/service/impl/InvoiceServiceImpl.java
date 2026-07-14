@@ -1177,7 +1177,7 @@ public class InvoiceServiceImpl implements InvoiceService {
      * si la recepción no existe o el id no es válido (solo log). QA filas 54-57 (2026-06-22).
      */
     private void marcarRecepcionConsumida(String receptionId, String idTransaccion, String serviceName) {
-        final java.math.BigDecimal CONSUMIDA = java.math.BigDecimal.valueOf(1);
+        final java.math.BigDecimal consumida = java.math.BigDecimal.valueOf(1);
         if (receptionId == null || receptionId.isBlank()) {
             log.debug("Sin receptionId: no se actualiza estatus de recepción");
             return;
@@ -1185,7 +1185,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         try {
             UUID uuid = UUID.fromString(receptionId.trim());
             receptionRepository.findById(uuid).ifPresentOrElse(reception -> {
-                reception.setStatus(CONSUMIDA);
+                reception.setStatus(consumida);
                 receptionRepository.save(reception);
                 log.info("Recepción {} marcada como Consumida (status=1)", uuid);
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
@@ -1305,7 +1305,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private void ejecutarCascadaRechazoNc(InvoiceEntity factura, ReceptionEntity reception,
             BigDecimal neto, BigDecimal receptionAmount, BigDecimal tolerance,
             String idTransaccion, String serviceName) {
-        final BigDecimal RECEPCION_DISPONIBLE = BigDecimal.ZERO; // CatEstatusRecepcion 0 = Disponible
+        final BigDecimal recepcionDisponible = BigDecimal.ZERO; // CatEstatusRecepcion 0 = Disponible
 
         String motivo = "Neto (factura - NCs)=" + neto.toPlainString() + " menor a recepción="
                 + receptionAmount.toPlainString() + " fuera de tolerancia=" + tolerance.toPlainString();
@@ -1322,7 +1322,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_CANCELADA);
 
         // 3. Recepción -> 0 Disponible (el proveedor podrá volver a subir su factura).
-        reception.setStatus(RECEPCION_DISPONIBLE);
+        reception.setStatus(recepcionDisponible);
         receptionRepository.save(reception);
         log.info("Cascada rechazo completa. Factura {} -> 1, NCs -> 9, recepción {} -> 0 (Disponible)",
                 factura.getInvoiceUuid(), reception.getReceptionId());

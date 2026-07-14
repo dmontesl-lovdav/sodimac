@@ -64,9 +64,9 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 
 	private static final Logger logger = LoggerFactory.getLogger(ValidaXmlServiceImpl.class);
 	
-    private final String DETECNO;
+    private final String detecno;
     
-    private final String CARBAJAL;
+    private final String carbajal;
     
     private int maxPrioridadPac;
     
@@ -90,11 +90,11 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
     
 
 
-    public ValidaXmlServiceImpl(@Value("${pac.detecno.name}") String DETECNO 
-    						, @Value("${pac.carbajal.name}") String CARBAJAL
+    public ValidaXmlServiceImpl(@Value("${pac.detecno.name}") String detecno 
+    						, @Value("${pac.carbajal.name}") String carbajal
     						,@Autowired PacCatalogService pacCatalogService) {
-        this.DETECNO = DETECNO;
-		this.CARBAJAL = CARBAJAL;
+        this.detecno = detecno;
+		this.carbajal = carbajal;
 		this.pacCatalogService = pacCatalogService;
 		setMaxPrioridadPac();
     }
@@ -116,10 +116,10 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 			xmlFIscalDto = getVauleFromXmlFile(strXmlJson);
 		  	if(pac != null) {
 	
-			  	if(pac.getName().contains(DETECNO)) {
+			  	if(pac.getName().contains(detecno)) {
 			  		response = pacServiceDetecnoImpl.validaXml(xml, requestData, pac, strXmlJson, xmlFIscalDto);
 			  	}
-			  	if(pac.getName().contains(CARBAJAL)) {
+			  	if(pac.getName().contains(carbajal)) {
 			  		response = pacServiceCabajalImpl.validaXml(xml, requestData, pac, strXmlJson, xmlFIscalDto);
 			  	}
 			  	
@@ -169,7 +169,7 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 	
 	
 		if (error) {
-			LogDto logdto = GuardarLogFiscal(pac,null,null, errorMsg, requestData, null);
+			LogDto logdto = guardarLogFiscal(pac,null,null, errorMsg, requestData, null);
 			response = ResponseHandler.responseBuilderError(errorMsg, HttpStatus.BAD_REQUEST, null, null, logdto.getLogId().toString());
 		}
 		  	return response;
@@ -224,13 +224,13 @@ public class ValidaXmlServiceImpl  implements ValidarXmlService {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode rootNode = mapper.readTree(strXmlJson);
 		String versionCFDI = rootNode.get("Version").toString();
-		String UUID = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
-		String Rfc = rootNode.get("Emisor").get("Rfc").toString();
+		String uuid = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
+		String rfc = rootNode.get("Emisor").get("Rfc").toString();
 
-		return new XmlFIscalDto(UUID, Rfc, versionCFDI);
+		return new XmlFIscalDto(uuid, rfc, versionCFDI);
 	}
 
-	private LogDto GuardarLogFiscal(PacCatalogDto pac, LocalDateTime recordStartDate
+	private LogDto guardarLogFiscal(PacCatalogDto pac, LocalDateTime recordStartDate
 			,LocalDateTime recordEndDate, String errorMsg
 			,String requestData, String responseData) {
 

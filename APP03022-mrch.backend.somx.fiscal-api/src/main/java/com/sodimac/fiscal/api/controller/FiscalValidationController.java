@@ -58,7 +58,7 @@ public class FiscalValidationController {
 	private ValidarXmlService validarXmlService;
 	
 	@GetMapping("/get")
-	public String GetTest() {
+	public String getTest() {
 		
 		return "Conectado";
 	}

@@ -71,7 +71,7 @@ public class PdfRenderServiceImpl implements PdfRenderService {
                 cleanedXml = cleanedXml.substring(firstLt);
             }
 
-            // 1) Parsear el XML a Document (similar a UtilsFile.ObtenerDocumentXml)
+            // 1) Parsear el XML a Document (similar a UtilsFile.obtenerDocumentXml)
             DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
             factory.setNamespaceAware(true); // importante para cfdi: y tfd:
             DocumentBuilder builder = factory.newDocumentBuilder();

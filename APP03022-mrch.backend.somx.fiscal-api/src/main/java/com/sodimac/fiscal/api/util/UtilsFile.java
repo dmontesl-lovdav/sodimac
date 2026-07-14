@@ -42,7 +42,7 @@ public class UtilsFile {
 		}
 	}
 	
-	public static Document ObtenerDocumentXml (String xml) {
+	public static Document obtenerDocumentXml (String xml) {
 		Document document = null;
 		
 		try {
@@ -68,7 +68,7 @@ public class UtilsFile {
 	    return writer.toString();
 	}	
 	
-	public static boolean EliminarArchivo (String path) {
+	public static boolean eliminarArchivo (String path) {
 		File archivo = new File(path);
 		if (archivo.exists()) {
 			try {

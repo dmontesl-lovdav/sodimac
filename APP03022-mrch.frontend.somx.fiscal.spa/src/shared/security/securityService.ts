@@ -36,6 +36,12 @@ interface ApiEnvelope<T> {
     message?: string;
 }
 
+function stripTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charAt(end - 1) === '/') end--;
+    return value.slice(0, end);
+}
+
 function resolveBaseUrl(): string {
     const explicit =
         process.env.UTIL_SECURITY_API_URL ||
@@ -43,7 +49,7 @@ function resolveBaseUrl(): string {
         process.env.CATALOGS_API_URL ||
         process.env.REACT_APP_CATALOGS_API_URL ||
         '';
-    return explicit.replace(/\/+$/, '');
+    return stripTrailingSlashes(explicit);
 }
 
 function resolveToken(): string | null {

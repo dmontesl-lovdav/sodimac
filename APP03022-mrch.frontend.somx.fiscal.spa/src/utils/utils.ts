@@ -66,13 +66,31 @@ export function formatDate(date: string, includeHour:boolean=false){
     });
 }
 
+/** Separador de miles sin regex con backtracking (evita S5852 / ReDoS). */
+export function insertThousandsSeparators(intPart: string): string {
+    const negative = intPart.startsWith("-");
+    const digits = negative ? intPart.slice(1) : intPart;
+    let out = "";
+    for (let i = 0; i < digits.length; i++) {
+        if (i > 0 && (digits.length - i) % 3 === 0) out += ",";
+        out += digits[i];
+    }
+    return negative ? `-${out}` : out;
+}
+
+export function stripTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charAt(end - 1) === "/") end--;
+    return value.slice(0, end);
+}
+
 export function formatAmount(amount: number){
     const num = Number(amount);
     if (isNaN(num)) {
         return "$0.00";
     }
     const parts = num.toFixed(2).split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    parts[0] = insertThousandsSeparators(parts[0]);
     return `$${parts.join(".")}`;
 
 }
@@ -164,7 +182,7 @@ export function toCurrency(val: unknown, def = "$0.00"): string {
   const n = toNumber(val, NaN);
   if (isNaN(n)) return def;
   const parts = n.toFixed(2).split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  parts[0] = insertThousandsSeparators(parts[0]);
   return `$${parts.join(".")}`;
 }
 
@@ -347,11 +365,12 @@ export async function fetchProvidersAsCatalog(valueField = "rfc", fullList: bool
 
 export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "Todos"): SelectableOption<string>[] {
   const raw = data as Record<string, unknown> | null | undefined;
-  const rows: CatalogDetail[] = Array.isArray(data)
-    ? data
-    : Array.isArray(raw?.details)
-    ? (raw.details as unknown[])
-    : [];
+  let rows: CatalogDetail[] = [];
+  if (Array.isArray(data)) {
+    rows = data;
+  } else if (Array.isArray(raw?.details)) {
+    rows = raw.details as unknown[] as CatalogDetail[];
+  }
   const mapped = rows
     .map((row) => ({
       label: row.description,

@@ -62,4 +62,14 @@ describe("versionCatalogService.checkConnection", () => {
     expect(result.online).toBe(false);
     expect(result.message).toContain("conexión");
   });
+
+  it("omite nota de registros cuando la respuesta no es array", async () => {
+    jest
+      .spyOn(versionCatalogService, "getVersionCatalog")
+      .mockResolvedValue({ not: "array" } as any);
+    const result = await versionCatalogService.checkConnection();
+    expect(result.online).toBe(true);
+    expect(result.count).toBe(0);
+    expect(result.message).not.toContain("Registros detectados");
+  });
 });

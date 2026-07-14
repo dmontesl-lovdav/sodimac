@@ -23,6 +23,10 @@ export interface GenericSelectFloatingProps {
   [key: string]: unknown;
 }
 
+export function hasFloatingSelectValue(value: string | number | null | undefined): boolean {
+  return value !== '' && value !== undefined && value !== null;
+}
+
 export default function GenericSelectFloating({
   label,
   value,
@@ -53,7 +57,7 @@ export default function GenericSelectFloating({
   const currentIndex = Math.max(0, items.findIndex((i) => i.value === String(value)));
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(currentIndex);
-  const hasValue = value !== '' && value !== undefined && value !== null;
+  const hasValue = hasFloatingSelectValue(value);
   const [leftPad, setLeftPad] = useState(16);
 
   useEffect(() => {

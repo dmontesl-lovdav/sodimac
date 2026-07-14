@@ -2,23 +2,23 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./styles/GenericSelectSearchable.css";
 import "./styles/GenericSelect.css";
 
-type Option = {
+export type SelectSearchableOption = {
   value: string;
   label: string;
 };
 
-function findSelectedOption(value: string, options: Option[]): Option | undefined {
+export function findSelectedOption(value: string, options: SelectSearchableOption[]): SelectSearchableOption | undefined {
   return options.find((o) => String(o.value) === String(value));
 }
 
-function isOptionSelected(opt: Option, value: string): boolean {
+export function isOptionSelected(opt: SelectSearchableOption, value: string): boolean {
   return String(opt.value) === String(value);
 }
 
 type Props = {
   value: string;
   onChange: (e: { target: { value: string } }) => void;
-  options: Option[];
+  options: SelectSearchableOption[];
   placeholder?: string;
   widthClass?: string;
   containerClassName?: string;
@@ -36,7 +36,7 @@ export default function GenericSelectSearchable({
   const [query, setQuery] = useState<string>("");
   const ref = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo<Option[]>(() => {
+  const filtered = useMemo<SelectSearchableOption[]>(() => {
     if (!query) return options;
     return options.filter((o) =>
       o.label.toLowerCase().includes(query.toLowerCase())
@@ -59,7 +59,7 @@ export default function GenericSelectSearchable({
     setQuery(found ? found.label : "");
   }, [value, options]);
 
-  const handleSelect = (opt: Option) => {
+  const handleSelect = (opt: SelectSearchableOption) => {
     onChange({ target: { value: opt.value } });
     setQuery(opt.label);
     setOpen(false);

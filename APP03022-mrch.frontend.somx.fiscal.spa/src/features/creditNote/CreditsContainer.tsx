@@ -26,6 +26,10 @@ const breadcrumb: BreadcrumbItem[] = [
   { label: "Notas de Crédito" },
 ];
 
+export function areCreditNoteFiltersEmpty(f: CreditNoteFilters): boolean {
+  return !f?.fechaInicioRecepcion?.trim() || !f?.fechaFinalRecepcion?.trim();
+}
+
 const columns: DataGridColumn<CreditNote>[] = [
   { header: "Serie", accessor: r => r.series ?? "--", exportAccessor: r => r.series },
   { header: "Folio", accessor: r => r.folio ?? "--", exportAccessor: r => r.folio },
@@ -67,7 +71,6 @@ export default function CreditsGrid() {
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
-  const [tipoNotaCreditoOptions, setTipoNotaCreditoOptions] = useState<SelectableOption<string>[]>([]);
   const customFilters = useMemo((): Partial<CreditNoteFilters> => {
     const params = new URLSearchParams(location.search);
     return {
@@ -100,15 +103,8 @@ export default function CreditsGrid() {
         setProviderTypeOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
       }
     }
-    const fetchTipoNotaCredito = async () => {
-      const options = await fetchCatalogDetails("CatTipoNotaCredito");
-      if (options) {
-        setTipoNotaCreditoOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
-      }
-    }
     fetchStatus();
     fetchProviderType();
-    fetchTipoNotaCredito();
   }, []);
 
   const handleGetXmlContent = useCallback(async (row: CreditNote) => {
@@ -164,15 +160,12 @@ export default function CreditsGrid() {
     }
   }, [location.pathname, location.search, navigate]);
 
-  const areFiltersEmpty = (f: CreditNoteFilters) =>
-    !f?.fechaInicioRecepcion?.trim() || !f?.fechaFinalRecepcion?.trim();
-
   const fetchFnOrEmpty = useCallback(
     async (f: CreditNoteFilters) =>
-      areFiltersEmpty(f)
+      areCreditNoteFiltersEmpty(f)
         ? { content: [] as CreditNote[], totalElements: 0, totalPages: 0, page: 0 }
         : handleFetch(f),
-    [handleFetch, areFiltersEmpty]
+    [handleFetch]
   );
 
   useFiscalListRefetchOnReturn<CreditNoteFilters>(
@@ -207,7 +200,7 @@ export default function CreditsGrid() {
         title: "Cancelar nota de crédito",
         icon: trashIcon,
         onClick: (_row) => { openCancelConfirm(_row); },
-        isDisabled: (row) => row.status !== CREDIT_NOTE_PROCESS_SENDED && row.status !== CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status !== CREDIT_NOTE_RECHAZO_CONTABLE,
+        isDisabled: (row) => row.status != CREDIT_NOTE_PROCESS_SENDED && row.status != CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status != CREDIT_NOTE_RECHAZO_CONTABLE,
       },
     },
   ];
@@ -394,7 +387,7 @@ export default function CreditsGrid() {
           getXmlContent={handleGetXmlContent}
           getFilename={getXmlFileNameFromRow}
           rowActions={rowActions}
-          filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
+          filtersEmpty={!hasSearched || areCreditNoteFiltersEmpty(filters)}
         />
         </div>
       )}

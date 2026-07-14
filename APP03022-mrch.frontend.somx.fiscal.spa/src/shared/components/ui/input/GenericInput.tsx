@@ -7,9 +7,22 @@ export function getInputLeftPad(el: HTMLElement): number {
   return Number.isFinite(pl) ? pl : 16;
 }
 
+/** Validación de correo sin regex con backtracking (evita S5852 / ReDoS). */
+export function isValidEmailFormat(value: string): boolean {
+  if (!value || value.includes(' ') || value.includes('\t')) return false;
+  const at = value.indexOf('@');
+  if (at <= 0 || at !== value.lastIndexOf('@')) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  if (!local || !domain) return false;
+  const dot = domain.lastIndexOf('.');
+  if (dot <= 0 || dot >= domain.length - 1) return false;
+  return !domain.includes('@');
+}
+
 export function getEmailError(value: string, validateEmail: boolean): string {
   if (!validateEmail || !value) return '';
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'El correo no tiene un formato válido';
+  return isValidEmailFormat(value) ? '' : 'El correo no tiene un formato válido';
 }
 
 export interface GenericInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {

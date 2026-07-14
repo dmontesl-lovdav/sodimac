@@ -46,6 +46,8 @@ function renderCrumb(item: DisplayCrumb, isLast: boolean): React.ReactNode {
   return <Link to={item.to} className="fiscal-breadcrumb-link">{item.label}</Link>;
 }
 
+export { renderCrumb };
+
 export default function Breadcrumb({ items = [], className = '' }: BreadcrumbProps): React.ReactElement {
   const navClass = `fiscal-breadcrumb ${className}`.trim();
   const displayItems = buildDisplayItems(items);

@@ -9,6 +9,8 @@ import {
   toNumber,
   toCurrency,
   mapCatalogResponseToFilterOptions,
+  insertThousandsSeparators,
+  stripTrailingSlashes,
   fetchCatalogAsSelectableOptions,
   getXmlFileNameFromRow,
   formatBytes,
@@ -22,6 +24,16 @@ import {
 describe("formatAmount", () => {
   it("formatea número positivo con dos decimales y separador de miles", () => {
     expect(formatAmount(1234567.89)).toBe("$1,234,567.89");
+  });
+
+  it("insertThousandsSeparators agrega comas", () => {
+    expect(insertThousandsSeparators("1234567")).toBe("1,234,567");
+    expect(insertThousandsSeparators("-500")).toBe("-500");
+  });
+
+  it("stripTrailingSlashes elimina solo barras finales", () => {
+    expect(stripTrailingSlashes("https://a.com///")).toBe("https://a.com");
+    expect(stripTrailingSlashes("https://a.com")).toBe("https://a.com");
   });
 
   it("formatea cero correctamente", () => {
@@ -369,6 +381,16 @@ describe("fetchCatalogAsSelectableOptions", () => {
     const data = { details: [{ description: "Activo", value: "10" }] };
     const result = fetchCatalogAsSelectableOptions(data);
     expect(result[1]).toEqual({ label: "Activo", value: "10" });
+  });
+
+  it("usa lista vacía cuando el objeto no tiene details array", () => {
+    const result = fetchCatalogAsSelectableOptions({ foo: 1 });
+    expect(result).toEqual([{ label: "Todos", value: " " }]);
+  });
+
+  it("usa lista vacía para null", () => {
+    const result = fetchCatalogAsSelectableOptions(null);
+    expect(result).toEqual([{ label: "Todos", value: " " }]);
   });
 
   it("ordena las opciones numéricamente por value", () => {

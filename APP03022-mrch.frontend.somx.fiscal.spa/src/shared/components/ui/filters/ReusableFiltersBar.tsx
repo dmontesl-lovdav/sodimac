@@ -36,16 +36,16 @@ export interface FilterField {
   containerClassName?: string;
 }
 
-function normalizeProviderFilterValue(value: unknown): string {
+export function normalizeProviderFilterValue(value: unknown): string {
   const raw = value == null ? "" : String(value).trim();
   return raw === "" || raw === " " ? "" : raw;
 }
 
-function normalizeListboxFilterValue(value: unknown): string {
+export function normalizeListboxFilterValue(value: unknown): string {
   return normalizeProviderFilterValue(value);
 }
 
-function normalizeFiltersForSubmit<F extends Record<string, any>>(
+export function normalizeFiltersForSubmit<F extends Record<string, any>>(
   filters: F,
   fields: FilterField[]
 ): F {
@@ -70,13 +70,13 @@ function normalizeFiltersForSubmit<F extends Record<string, any>>(
   return next;
 }
 
-function selectFilterValue(value: unknown): string {
+export function selectFilterValue(value: unknown): string {
   if (value == null || value === "") return "";
   if (String(value) === " ") return " ";
   return String(value);
 }
 
-function mapSelectOptions(
+export function mapSelectOptions(
   options: SelectableOption<string | number>[] = []
 ): { value: string; label: string }[] {
   return options.map((opt) => ({
@@ -85,7 +85,7 @@ function mapSelectOptions(
   }));
 }
 
-function resolveFieldWrapperClass(field: FilterField): string {
+export function resolveFieldWrapperClass(field: FilterField): string {
   if (field.type === "dateRange") return "rc-field-dates";
   if (field.containerClassName) return field.containerClassName;
   if (
@@ -103,18 +103,18 @@ function resolveFieldWrapperClass(field: FilterField): string {
   return "";
 }
 
-function resolveSelectPlaceholder(field: FilterField): string {
+export function resolveSelectPlaceholder(field: FilterField): string {
   if (field.type === "providerSelect") {
     return field.placeholder || "Nombre Proveedor";
   }
   return field.placeholder || field.label;
 }
 
-function resolveTextPlaceholder(field: FilterField): string {
+export function resolveTextPlaceholder(field: FilterField): string {
   return field.placeholder || field.label;
 }
 
-function resolveDatePlaceholder(field: FilterField): string {
+export function resolveDatePlaceholder(field: FilterField): string {
   if (field.placeholder) return field.placeholder;
   if (field.key === "fechaRecepcion") return "Fecha de recepción";
   if (field.key === "fechaPago") return "Fecha de pago";
@@ -122,7 +122,7 @@ function resolveDatePlaceholder(field: FilterField): string {
   return field.label || "Fecha desde – hasta";
 }
 
-function resolveDateFilterKeys(fieldKey: string): {
+export function resolveDateFilterKeys(fieldKey: string): {
   startKey: string;
   endKey: string;
 } {
@@ -141,7 +141,7 @@ function resolveDateFilterKeys(fieldKey: string): {
   return { startKey: `${fieldKey}Inicio`, endKey: `${fieldKey}Fin` };
 }
 
-function buildDateRangeFromFilterValues(
+export function buildDateRangeFromFilterValues(
   filters: Record<string, unknown>,
   fieldKey: string
 ): DateRange {
@@ -152,7 +152,7 @@ function buildDateRangeFromFilterValues(
   return fiscalFilterTodayDateRange();
 }
 
-function applyDefaultDateFilters<F extends Record<string, any>>(
+export function applyDefaultDateFilters<F extends Record<string, any>>(
   filters: F,
   fields: FilterField[]
 ): { filters: F; ranges: Record<string, DateRange> } {
@@ -186,7 +186,7 @@ function applyDefaultDateFilters<F extends Record<string, any>>(
   return { filters: next, ranges };
 }
 
-function hydrateFilterState<F extends Record<string, any>>(
+export function hydrateFilterState<F extends Record<string, any>>(
   initialFilters: F,
   fields: FilterField[],
   options?: {
@@ -384,7 +384,7 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
       }
     }
 
-    setFilters(filters);
+    setFilters(normalizedFilters);
     setDateRanges((prev) => {
       const next = { ...prev };
       for (const field of fields) {

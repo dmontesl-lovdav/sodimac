@@ -63,10 +63,11 @@ const columns: DataGridColumn<Invoice>[] = [
 
 const MSG_REPROCESO_DEFAULT = "¿Desea volver a procesar esta factura para intentar contabilizarla nuevamente? Esta acción reemplazará el intento anterior.";
 
-const hasReceptionDates = (f: InvoiceFilters) =>
-  Boolean(f.fechaInicioRecepcion?.trim() && f.fechaFinalRecepcion?.trim());
+export function hasReceptionDates(f: InvoiceFilters): boolean {
+  return Boolean(f.fechaInicioRecepcion?.trim() && f.fechaFinalRecepcion?.trim());
+}
 
-const EMPTY_GRID_RESULT = {
+export const EMPTY_GRID_RESULT = {
   content: [] as Invoice[],
   totalElements: 0,
   totalPages: 0,
@@ -149,9 +150,7 @@ export default function InvoicesGrid() {
 
   const fetchFnOrEmpty = useCallback(
     async (f: InvoiceFilters) =>
-      hasReceptionDates(f)
-        ? client.getInvoices(f)
-        : { content: [] as Invoice[], totalElements: 0, totalPages: 0, page: 0 },
+      hasReceptionDates(f) ? client.getInvoices(f) : EMPTY_GRID_RESULT,
     [client]
   );
 
@@ -254,9 +253,9 @@ export default function InvoicesGrid() {
         icon: deleteIcon,
        onClick: (_row) => { openCancelConfirm(_row); },
           isDisabled: (row) =>
-            row.status !== INVOICE_PROCESS_SENDED &&
-            row.status !== INVOICE_WRONG_DATA &&
-            row.status !== INVOICE_ERROR_DATA,
+            row.status != INVOICE_PROCESS_SENDED &&
+            row.status != INVOICE_WRONG_DATA &&
+            row.status != INVOICE_ERROR_DATA,
       },
     },
   ];

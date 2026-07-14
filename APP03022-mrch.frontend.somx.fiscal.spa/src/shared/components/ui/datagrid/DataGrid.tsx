@@ -89,7 +89,7 @@ type DataGridProps<T, F = any> = {
  * Parsea el XML de error que devuelve el API cuando falla el PDF.
  * Ejemplo: <FiscalErrorResponse><errorCode>ERR001</errorCode>...</FiscalErrorResponse>
  * ------------------------------------------------------------ */
-function parseFiscalXmlError(xmlText: string): string {
+export function parseFiscalXmlError(xmlText: string): string {
   try {
     const doc = new DOMParser().parseFromString(xmlText, "application/xml");
     const errorCode   = doc.querySelector("errorCode")?.textContent?.trim();
@@ -151,7 +151,7 @@ async function fetchAndDownloadPdf(
 /** ------------------------------------------------------------
  * Helper interno: descargar XML (sin depender de props).
  * ------------------------------------------------------------ */
-function downloadXML(xmlContent?: string | null, filename: string = "archivo.xml") {
+export function downloadDataGridXml(xmlContent?: string | null, filename: string = "archivo.xml") {
   const xml = (xmlContent ?? "").trim();
   if (!xml) {
     console.warn("downloadXML: xmlContent vacío o nulo.");
@@ -182,11 +182,11 @@ function downloadXML(xmlContent?: string | null, filename: string = "archivo.xml
 /** ------------------------------------------------------------
  * Helpers internos para CSV desde columnas
  * ------------------------------------------------------------ */
-function headerToString(header: string | React.ReactNode, fallback = ""): string {
+export function headerToString(header: string | React.ReactNode, fallback = ""): string {
   return typeof header === "string" ? header : fallback;
 }
 
-function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null | undefined {
+export function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null | undefined {
   if (typeof col.exportAccessor === "function") return col.exportAccessor(row);
   if (typeof col.accessor === "function") return col.accessor(row) as any;
   if (typeof col.render === "function") return col.render(row) as any;
@@ -194,8 +194,46 @@ function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null
 }
 
 export type DataGridHandle = {
-  exportCsv: () => void;
+  exportCsv: () => void | Promise<void>;
 };
+
+/** Extrae `content` de respuestas paginadas (directas o envueltas en `.data`). */
+export function extractPaginatedContent<T>(result: unknown): T[] {
+  const raw = result as {
+    content?: T[];
+    data?: { content?: T[] };
+  } | null;
+  const content = raw?.content ?? raw?.data?.content ?? [];
+  return Array.isArray(content) ? content : [];
+}
+
+/**
+ * Sin selección → todas las filas del result set (multipágina vía fetchFn).
+ * Con selección → solo las seleccionadas.
+ */
+export async function resolveCsvExportRows<T, F = any>(opts: {
+  selectedRows: T[];
+  currentRows: T[];
+  totalItems: number;
+  fetchFn?: (filters: F & { page: number; size: number }) => Promise<any>;
+  filters?: F | null;
+  pageSize: number;
+}): Promise<T[]> {
+  const { selectedRows, currentRows, totalItems, fetchFn, filters, pageSize } = opts;
+  if (selectedRows.length > 0) return selectedRows;
+  if (!fetchFn || filters == null || totalItems <= currentRows.length) {
+    return currentRows;
+  }
+
+  const size = Math.max(1, pageSize || 10);
+  const pages = Math.max(1, Math.ceil(totalItems / size));
+  const all: T[] = [];
+  for (let p = 0; p < pages; p++) {
+    const result = await fetchFn({ ...(filters as F), page: p, size });
+    all.push(...extractPaginatedContent<T>(result));
+  }
+  return all;
+}
 
 export function exportDataGridToCsv<T>(
   columns: DataGridColumn<T>[],
@@ -230,7 +268,7 @@ function buildXmlRowAction<T>(
       xmlGetter(row)
         .then((xml: string | null | undefined) => {
           if (!xml?.trim()) { setXmlErrorMsg("Error al obtener el XML"); return; }
-          downloadXML(xml, nameGetter(row));
+          downloadDataGridXml(xml, nameGetter(row));
         })
         .catch((err: unknown) => {
           console.error(err);
@@ -373,11 +411,44 @@ function DataGridInner<T, F = any>(
     [rows, selectedIds, getRowId]
   );
 
-  const runCsvExport = useCallback(() => {
-    if (!enableCsv || rows.length === 0) return;
-    const data = selectedRows.length ? selectedRows : rows;
-    exportDataGridToCsv(columns, data, csvFilename);
-  }, [enableCsv, rows, selectedRows, columns, csvFilename]);
+  const runCsvExport = useCallback(async () => {
+    if (!enableCsv || (rows.length === 0 && totalItems === 0)) return;
+
+    if (selectedRows.length > 0) {
+      exportDataGridToCsv(columns, selectedRows, csvFilename);
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const activeFilters = (paginatedData?.filters ?? filters) as F | undefined;
+      const data = await resolveCsvExportRows<T, F>({
+        selectedRows,
+        currentRows: rows,
+        totalItems,
+        fetchFn,
+        filters: activeFilters ?? null,
+        pageSize: perPage,
+      });
+      if (data.length === 0) return;
+      exportDataGridToCsv(columns, data, csvFilename);
+    } catch (err) {
+      console.error("Error al exportar CSV:", err);
+    } finally {
+      setProcessing(false);
+    }
+  }, [
+    enableCsv,
+    rows,
+    totalItems,
+    selectedRows,
+    columns,
+    csvFilename,
+    paginatedData?.filters,
+    filters,
+    fetchFn,
+    perPage,
+  ]);
 
   useImperativeHandle(ref, () => ({
     exportCsv: runCsvExport,
@@ -459,20 +530,26 @@ function DataGridInner<T, F = any>(
     const csvAction: BulkAction<T> = {
       label: "Exportar a CSV",
       value: "csv",
-      run: (selected, all) => {
-        const data = selected.length ? selected : all;
-        exportDataGridToCsv(columns, data, csvFilename);
+      run: async () => {
+        await runCsvExport();
       },
     };
 
     return [csvAction];
-  }, [enableCsv, hideCsvToolbar, columns, csvFilename]);
+  }, [enableCsv, hideCsvToolbar, runCsvExport]);
 
   /** -------- botones de acción masiva -------- */
   const onBulkClick = async (action: BulkAction<T>) => {
+    // CSV gestiona su propio estado de "procesando" (puede refetch multipágina).
+    if (action.value === "csv") {
+      await Promise.resolve(action.run(selectedRows, rows));
+      return;
+    }
     try {
       setProcessing(true);
-      await Promise.resolve(action.run(selectedRows.length ? selectedRows : rows, rows));
+      await Promise.resolve(
+        action.run(selectedRows.length ? selectedRows : rows, rows)
+      );
     } finally {
       setProcessing(false);
     }

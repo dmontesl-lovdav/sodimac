@@ -13,6 +13,11 @@ interface CacheEntry {
 const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, CacheEntry>();
 
+/** Limpia la caché de seguridad (solo para tests). */
+export function clearSecurityContextCache(): void {
+    cache.clear();
+}
+
 function getCached(userKey: string): CacheEntry | null {
     const entry = cache.get(userKey);
     if (!entry) return null;

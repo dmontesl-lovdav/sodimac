@@ -34,8 +34,12 @@ export function createApiClient(options?: {
 
     const timeoutMs = options?.timeoutMs ?? 15000;
 
+    let baseEnd = baseUrl.length;
+    while (baseEnd > 0 && baseUrl.charAt(baseEnd - 1) === "/") baseEnd--;
+    const normalizedBase = baseUrl.slice(0, baseEnd);
+
     const instance: AxiosInstance = axios.create({
-        baseURL: baseUrl.replace(/\/+$/, ""),
+        baseURL: normalizedBase,
         timeout: timeoutMs,
     });
 

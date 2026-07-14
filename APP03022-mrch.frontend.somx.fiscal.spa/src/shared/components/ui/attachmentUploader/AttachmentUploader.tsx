@@ -19,11 +19,18 @@ export interface AttachmentUploaderProps {
 
 import { getFileError, ERR_INVALID_TYPE, ERR_INVALID_SIZE, ERR_TOO_LONG_FILENAME } from "./attachmentHelpers";
 
-function buildErr(err?: number): React.ReactNode {
+export function buildErr(err?: number): React.ReactNode {
   if (err === ERR_INVALID_TYPE) return <div className="fiscal-attachment-file-err-caption">Documento no soportado.</div>;
   if (err === ERR_INVALID_SIZE) return <div className="fiscal-attachment-file-err-caption">Documento excede el tamaño máximo permitido.</div>;
   if (err === ERR_TOO_LONG_FILENAME) return <div className="fiscal-attachment-file-err-caption">Nombre del archivo muy largo.</div>;
   return null;
+}
+
+export function formatAttachmentSize(b: number): string {
+  if (!b && b !== 0) return '';
+  const e = Math.floor(Math.log(Math.max(b, 1)) / Math.log(1024));
+  const d = (b / 1024 ** e).toFixed(e ? 2 : 0);
+  return `${d} ${['B', 'KB', 'MB', 'GB', 'TB'][e]}`;
 }
 
 export default function AttachmentUploader({
@@ -71,13 +78,6 @@ export default function AttachmentUploader({
       }
     })();
   }, [previewFile]);
-
-  const formatSize = (b: number): string => {
-    if (!b && b !== 0) return '';
-    const e = Math.floor(Math.log(Math.max(b, 1)) / Math.log(1024));
-    const d = (b / 1024 ** e).toFixed(e ? 2 : 0);
-    return `${d} ${['B', 'KB', 'MB', 'GB', 'TB'][e]}`;
-  };
 
   function addFiles(eventFiles: FileList | null): void {
     if (!eventFiles) return;
@@ -148,7 +148,7 @@ export default function AttachmentUploader({
         </div>
         <div className="fiscal-attachment-caption-footer">
           <div>Formatos soportados: {validFileExtensions.join(', ').toUpperCase()}.</div>
-          <div>Peso máximo por archivo: {formatSize(maxFileSize)}.</div>
+          <div>Peso máximo por archivo: {formatAttachmentSize(maxFileSize)}.</div>
         </div>
       </button>
 
@@ -159,7 +159,7 @@ export default function AttachmentUploader({
             className={`fiscal-attachment-file-container ${f.err ? 'fiscal-attachment-file-err' : ''}`}
           >
             <div className="fiscal-attachment-file-name">{f.name}</div>
-            <div className="fiscal-attachment-file-size">{formatSize(f.size)}</div>
+            <div className="fiscal-attachment-file-size">{formatAttachmentSize(f.size)}</div>
 
             {!f.err ? (
               <>

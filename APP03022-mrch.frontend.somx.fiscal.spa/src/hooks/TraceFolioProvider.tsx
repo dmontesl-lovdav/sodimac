@@ -28,81 +28,81 @@ interface TraceFolioProviderProps {
 }
 
 
+export function getNestedValue(value: unknown, keys: string[]): unknown {
+  let current = value;
+  for (const key of keys) {
+    if (!current || typeof current !== "object" || !(key in current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+export function pickFirstString(candidates: unknown[]): string {
+  for (const item of candidates) {
+    if (typeof item === "string" && item.trim()) return item.trim();
+  }
+  return "";
+}
+
+export function pickFirstStringOrNumber(candidates: unknown[]): string {
+  for (const item of candidates) {
+    if (typeof item === "string" || typeof item === "number") {
+      const value = String(item).trim();
+      if (value) return value;
+    }
+  }
+  return "";
+}
+
+export function extractErrorInfo(value: unknown): { idError: string; mensaje: string; idMensaje?: string } {
+  const fallback = { idError: "1", mensaje: "Timeout error" };
+  const responseData = getNestedValue(value, ["response", "data"]);
+  const source = responseData ?? value;
+
+  if (!source || typeof source !== "object") return fallback;
+
+  const record = source as Record<string, unknown>;
+  const idError = pickFirstStringOrNumber([record.idError, record.errorCode, record.code, record.codigo]);
+  const mensaje = pickFirstString([record.mensaje, record.message, record.detail, record.details]);
+  const idMensaje = pickFirstStringOrNumber([record.idMensaje, record.error, record.title, record.name]);
+
+  return {
+    idError: idError || fallback.idError,
+    mensaje: mensaje || fallback.mensaje,
+    ...(idMensaje ? { idMensaje } : {}),
+  };
+}
+
+export function toLogString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value == null) return "";
+  const responseData = getNestedValue(value, ["response", "data"]);
+  if (responseData != null) {
+    try {
+      return JSON.stringify(responseData);
+    } catch {
+      return String(responseData);
+    }
+  }
+  if (value instanceof Error) {
+    return JSON.stringify({
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+    });
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
 export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioProviderProps) {
   const traceClient = useRef(createTraceabilityClient()).current;
   const [traceFolio, setTraceFolio] = useState<TraceFolio | null>(null);
   const [traceError, setTraceError] = useState<string | null>(null);
   const [traceLoading, setTraceLoading] = useState(true);
-
-  const getNestedValue = useCallback((value: unknown, keys: string[]): unknown => {
-    let current = value;
-    for (const key of keys) {
-      if (!current || typeof current !== "object" || !(key in current)) return undefined;
-      current = (current as Record<string, unknown>)[key];
-    }
-    return current;
-  }, []);
-
-  const pickFirstString = useCallback((candidates: unknown[]): string => {
-    for (const item of candidates) {
-      if (typeof item === "string" && item.trim()) return item.trim();
-    }
-    return "";
-  }, []);
-
-  const pickFirstStringOrNumber = useCallback((candidates: unknown[]): string => {
-    for (const item of candidates) {
-      if (typeof item === "string" || typeof item === "number") {
-        const value = String(item).trim();
-        if (value) return value;
-      }
-    }
-    return "";
-  }, []);
-
-  const extractErrorInfo = useCallback((value: unknown): { idError: string; mensaje: string; idMensaje?: string } => {
-    const fallback = { idError: "1", mensaje: "Timeout error" };
-    const responseData = getNestedValue(value, ["response", "data"]);
-    const source = responseData ?? value;
-
-    if (!source || typeof source !== "object") return fallback;
-
-    const record = source as Record<string, unknown>;
-    const idError = pickFirstStringOrNumber([record.idError, record.errorCode, record.code, record.codigo]);
-    const mensaje = pickFirstString([record.mensaje, record.message, record.detail, record.details]);
-    const idMensaje = pickFirstStringOrNumber([record.idMensaje, record.error, record.title, record.name]);
-
-    return {
-      idError: idError || fallback.idError,
-      mensaje: mensaje || fallback.mensaje,
-      ...(idMensaje ? { idMensaje } : {}),
-    };
-  }, [getNestedValue, pickFirstString, pickFirstStringOrNumber]);
-
-  const toLogString = useCallback((value: unknown): string => {
-    if (typeof value === "string") return value;
-    if (value == null) return "";
-    const responseData = getNestedValue(value, ["response", "data"]);
-    if (responseData != null) {
-      try {
-        return JSON.stringify(responseData);
-      } catch {
-        return String(responseData);
-      }
-    }
-    if (value instanceof Error) {
-      return JSON.stringify({
-        name: value.name,
-        message: value.message,
-        stack: value.stack,
-      });
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }, [getNestedValue]);
 
   useEffect(() => {
     if(!traceFolioPayload) {
@@ -147,7 +147,7 @@ export function TraceFolioProvider({ children, traceFolioPayload }: TraceFolioPr
 
       traceClient.createAuditLog(payload);
     },
-    [traceFolio?.data?.folioVisible, traceFolio?.trace_id, traceClient, toLogString, extractErrorInfo]
+    [traceFolio?.data?.folioVisible, traceFolio?.trace_id, traceClient]
   );
 
   const traceId = traceFolio?.trace_id ?? null;

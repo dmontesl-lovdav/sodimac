@@ -27,7 +27,7 @@ import "./PublishCreditNote.css";
 const PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT = 12;
 const PARAM_OPTIONAL_PDF_CREDIT_NOTE = 11;
 
-function checkSystemParameterValue(
+export function checkSystemParameterValue(
   systemParameters: SystemParameter[] | null,
   parameterId: number
 ): { value: string; isEnabled: boolean } {
@@ -36,13 +36,13 @@ function checkSystemParameterValue(
   return { value: String(parameter.value), isEnabled: parameter.status == "1" };
 }
 
-function getXmlFileError(file: File, maxBytes: number, maxMb: number): string | null {
+export function getXmlFileError(file: File, maxBytes: number, maxMb: number): string | null {
   if (file.size > maxBytes) return `El archivo no debe exceder ${maxMb} MB.`;
   if (!file.name.toLowerCase().endsWith(".xml")) return "El archivo XML es requerido y debe tener extensión .xml.";
   return null;
 }
 
-function resolveLoadingMessage(isUploading: boolean, isValidating: boolean, loadingInvoice: boolean): string {
+export function resolveLoadingMessage(isUploading: boolean, isValidating: boolean, loadingInvoice: boolean): string {
   if (isUploading) return "Procesando nota de crédito…";
   if (isValidating) return "Validando nota de crédito…";
   if (loadingInvoice) return "Cargando factura relacionada…";

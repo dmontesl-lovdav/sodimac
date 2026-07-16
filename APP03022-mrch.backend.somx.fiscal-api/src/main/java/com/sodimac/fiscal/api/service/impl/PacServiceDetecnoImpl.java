@@ -1,49 +1,25 @@
 package com.sodimac.fiscal.api.service.impl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.sodimac.fiscal.api.util.XmlSecureFactory;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.ws.client.WebServiceIOException;
 import org.springframework.ws.client.core.support.WebServiceGatewaySupport;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.sodimac.fiscal.api.detecno.wsdl.ObjectFactory;
 import com.sodimac.fiscal.api.detecno.wsdl.ValidarXML;
 import com.sodimac.fiscal.api.detecno.wsdl.ValidarXMLResponse;
@@ -54,7 +30,6 @@ import com.sodimac.fiscal.api.model.dto.XmlFIscalDto;
 import com.sodimac.fiscal.api.response.ResponseHandler;
 import com.sodimac.fiscal.api.service.LogService;
 import com.sodimac.fiscal.api.service.PacService;
-import com.sodimac.fiscal.api.service.ToolsService;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -69,7 +44,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
     private static final String ERR_SUFFIX = ". ERROR: ";
 	
 	
-	private static final Logger logger = LoggerFactory.getLogger(PacServiceDetecnoImpl.class);
 	
 	@Autowired
 	private LogService logService;
@@ -79,17 +53,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
     	this.setUnmarshaller(marshallerDetecno);
     }
     
-	private XmlFIscalDto getVauleFromXmlFile(String strXmlJson) throws JsonMappingException, JsonProcessingException  {
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode rootNode = mapper.readTree(strXmlJson);
-		String versionCFDI = rootNode.get("Version").toString();
-		String uuid = rootNode.get("Complemento").get("TimbreFiscalDigital").get("UUID").toString();
-		String rfc = rootNode.get("Emisor").get("Rfc").toString();
-
-
-		return new XmlFIscalDto(uuid, rfc, versionCFDI);
-	}
-
 	public ResponseEntity<Object> validaXml(Document xml, String requestData, PacCatalogDto pac, String strXmlJson, XmlFIscalDto xmlFIscalDto) 
 			{
 
@@ -217,71 +180,6 @@ public class PacServiceDetecnoImpl extends WebServiceGatewaySupport implements P
 		
 		logdto = logService.save(logdto);
 		return logdto;
-	}
-
-
-	private Document getDocument(MultipartFile file) throws IOException, SAXException, ParserConfigurationException {
-		Document content;
-		try (InputStream inputStream = file.getInputStream();
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-			content = readBufferedReaderToDocument(reader);
-		}
-		return content;
-	}
-
-	private Document readBufferedReaderToDocument(BufferedReader reader)
-			throws IOException, SAXException, ParserConfigurationException {
-		StringWriter writer = new StringWriter();
-		String line;
-		while ((line = reader.readLine()) != null) {
-			writer.write(line);
-			// Optionally add a newline if the original content had them and you want to
-			// preserve structure
-		}
-
-		DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		InputSource is = new InputSource(new StringReader(writer.toString()));
-		Document doc = builder.parse(is);
-
-		return builder.parse(is);
-	}
-
-	private String convertDocumentToString(Document doc) throws TransformerException {
-			// Create a TransformerFactory
-			TransformerFactory tf = XmlSecureFactory.newTransformerFactory();
-			// Create a Transformer
-			Transformer transformer;
-				transformer = tf.newTransformer();
-
-			// Optional: Set output properties for formatting (indentation, XML declaration)
-
-			// Create a StringWriter to store the XML output
-			StringWriter writer = new StringWriter();
-			// Perform the transformation from DOMSource to StreamResult
-			transformer.transform(new DOMSource(doc), new StreamResult(writer));
-			// Get the resulting string
-			return writer.toString();
-	}
-
-	private String convertDomToXmlString(Document document) throws TransformerException  {
-		TransformerFactory transfac = XmlSecureFactory.newTransformerFactory();
-		Transformer trans = transfac.newTransformer();
-		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-		trans.setOutputProperty(OutputKeys.INDENT, "yes"); // For pretty-printing
-		StringWriter sw = new StringWriter();
-		StreamResult result = new StreamResult(sw);
-		DOMSource source = new DOMSource(document);
-		trans.transform(source, result);
-		return sw.toString();
-	}
-
-	private String convertXmlStringToJson(String xmlString) throws IOException, JsonProcessingException {
-		XmlMapper xmlMapper = new XmlMapper();
-		JsonNode node = xmlMapper.readTree(xmlString.getBytes());
-		ObjectMapper jsonMapper = new ObjectMapper();
-		return jsonMapper.writeValueAsString(node);
 	}
 
 }

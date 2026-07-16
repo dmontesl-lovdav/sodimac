@@ -97,7 +97,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     // Services
     private final CfdiXmlProcessorService cfdiProcessor;
-    private final AddendaValidationService addendaValidator;
     private final XmlDocumentTypeDetector documentTypeDetector;
     private final IssuerService issuerService;
     private final ReceiverService receiverService;
@@ -108,7 +107,6 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final UtilsApiService utilsApiService;
     private final StatusTrainApiService statusTrainApiService;
     private final SupplierBlockApiService supplierBlockApiService;
-    private final ActivityLogService activityLogService;
     private final AuditoriaApiService auditoriaApiService;
     private final FinanzasApiService finanzasApiService;
 
@@ -118,7 +116,6 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final AddendumRepository addendumRepository;
     private final ReceptionRepository receptionRepository;
     private final VersionCatalogRepository versionCatalogRepository;
-    private final LogRepository logRepository;
     private final RelatedCfdiRepository relatedCfdiRepository;
     private final InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
     private final CatParameterRepository catParameterRepository;
@@ -2174,52 +2171,6 @@ public class InvoiceServiceImpl implements InvoiceService {
     // ========== MÉTODOS PRIVADOS - BITÁCORA (STM-339) ==========
 
     /**
-     * Registra una actividad en la bitácora (tabla log).
-     *
-     * @param operationType   Tipo de operación (UPDATE, CREATE, DELETE, etc.)
-     * @param cfdiUuid        UUID del CFDI afectado
-     * @param startTime       Hora de inicio de la operación
-     * @param statusCode      Código de resultado
-     * @param statusMessage   Mensaje de resultado
-     * @param requestData     Datos del request en formato JSON
-     * @param responseData    Datos del response en formato JSON
-     * @param userId          ID del usuario que realizó la operación
-     */
-    private void saveActivityLog(
-            String operationType,
-            UUID cfdiUuid,
-            LocalDateTime startTime,
-            String statusCode,
-            String statusMessage,
-            String requestData,
-            String responseData,
-            Long userId) {
-
-        try {
-            LogEntity logEntry = new LogEntity();
-            logEntry.setOperationType(operationType);
-            logEntry.setCfdiUuid(cfdiUuid);
-            logEntry.setTransactionDate(LocalDateTime.now());
-            logEntry.setRecordStartDate(startTime);
-            logEntry.setRecordEndDate(LocalDateTime.now());
-            logEntry.setStatusCode(statusCode);
-            logEntry.setStatusMessage(truncateMessage(statusMessage, 500));
-            logEntry.setRequestData(requestData);
-            logEntry.setResponseData(responseData);
-            logEntry.setCreatedBy(userId);
-
-            logRepository.save(logEntry);
-            log.debug("Actividad registrada en bitacora. Operation: {}, CFDI UUID: {}, Status: {}",
-                    operationType, cfdiUuid, statusCode);
-
-        } catch (Exception e) {
-            // No lanzar excepción si falla el registro de bitácora
-            // La operación principal ya fue exitosa
-            log.error("Error registrando actividad en bitacora: {}", e.getMessage());
-        }
-    }
-
-    /**
      * Construye el JSON del request para almacenar en la bitácora.
      * No incluye información sensible.
      */
@@ -2319,15 +2270,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
-    }
-
-    /**
-     * Trunca un mensaje a la longitud máxima especificada.
-     */
-    private String truncateMessage(String message, int maxLength) {
-        if (message == null) return null;
-        if (message.length() <= maxLength) return message;
-        return message.substring(0, maxLength - 3) + "...";
     }
 
     // ========== DESCARGA MASIVA (STM-396) ==========

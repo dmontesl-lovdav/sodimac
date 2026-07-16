@@ -39,7 +39,6 @@ import com.sodimac.fiscal.api.repository.PaymentsRepository;
 import com.sodimac.fiscal.api.repository.RelatedDocumentsRepository;
 import com.sodimac.fiscal.api.service.AuditoriaApiService;
 import com.sodimac.fiscal.api.service.IssuerService;
-import com.sodimac.fiscal.api.service.LogService;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
 import com.sodimac.fiscal.api.service.PacCatalogService;
 import com.sodimac.fiscal.api.service.PacService;
@@ -69,7 +68,6 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
     private final PaymentValidationService validationService;
     private final PacService pacService;
     private final PacCatalogService pacCatalogService;
-    private final LogService logService;
     private final MessageCatalogService messageCatalog;
     private final AuditoriaApiService auditoriaApiService;
 
@@ -91,7 +89,6 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             PaymentValidationService validationService,
             @Qualifier("pacServiceDetecnoImpl") PacService pacService,
             PacCatalogService pacCatalogService,
-            LogService logService,
             MessageCatalogService messageCatalog,
             AuditoriaApiService auditoriaApiService,
             PaymentFileRegistryRepository fileRegistryRepository,
@@ -105,7 +102,6 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         this.validationService = validationService;
         this.pacService = pacService;
         this.pacCatalogService = pacCatalogService;
-        this.logService = logService;
         this.messageCatalog = messageCatalog;
         this.auditoriaApiService = auditoriaApiService;
         this.fileRegistryRepository = fileRegistryRepository;

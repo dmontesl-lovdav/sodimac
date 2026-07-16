@@ -2,7 +2,6 @@ package com.sodimac.fiscal.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sodimac.fiscal.api.model.dto.InvoiceUpdateRequest;
-import com.sodimac.fiscal.api.model.dto.InvoiceUpdateResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -287,24 +286,4 @@ public class InvoiceUpdateControllerTest {
 
     // ========== HELPER METHODS ==========
 
-    /**
-     * Método helper para imprimir información del test.
-     * Útil para debugging durante la ejecución de tests.
-     */
-    private void printTestInfo(String testName, InvoiceUpdateResponse response) {
-        System.out.println("\n========================================");
-        System.out.println("TEST: " + testName);
-        System.out.println("========================================");
-        System.out.println("Success: " + response.isSuccess());
-        System.out.println("Code: " + response.getCode());
-        System.out.println("Message: " + response.getMessage());
-        if (response.getInvoiceUuid() != null) {
-            System.out.println("Invoice UUID: " + response.getInvoiceUuid());
-            System.out.println("Fiscal UUID: " + response.getFiscalUuid());
-            System.out.println("Document Type: " + response.getDocumentType());
-            System.out.println("Status: " + response.getEstatusAnterior() + " -> " + response.getEstatusNuevo());
-            System.out.println("Status Name: " + response.getEstatusNuevoNombre());
-        }
-        System.out.println("========================================\n");
-    }
 }

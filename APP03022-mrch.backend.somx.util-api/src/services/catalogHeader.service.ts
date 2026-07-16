@@ -26,14 +26,12 @@ async function loadDictionary(langId: number): Promise<Map<number, string>> {
     return map;
 }
 
-export async function findAllCatalogs(langId?: number | null): Promise<CatalogHeaderDto[]> {
-    void langId;
+export async function findAllCatalogs(_langId?: number | null): Promise<CatalogHeaderDto[]> {
     const headers = await headerRepo.findByStatus(CatalogHeader.STATUS_ACTIVE);
     return headerMapper.toDtoList(headers);
 }
 
-export async function findCatalogsByModule(module: string, langId?: number | null): Promise<CatalogHeaderDto[]> {
-    void langId;
+export async function findCatalogsByModule(module: string, _langId?: number | null): Promise<CatalogHeaderDto[]> {
     const headers = await headerRepo.findByModuleAndStatus(module, CatalogHeader.STATUS_ACTIVE);
     return headerMapper.toDtoList(headers);
 }

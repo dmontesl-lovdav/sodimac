@@ -12,7 +12,6 @@ import { useLocation, useParams } from "react-router-dom";
 import { shippingGuideService } from "../api/ShippingGuideClient";
 import {
     ShippingGuide,
-    ShippingGuideDetail,
     ShippingGuideStatusHistory,
     getNumericGuideStatus,
 } from "../interfaces";
@@ -51,6 +50,15 @@ const getGuideStatusNum = (g?: ShippingGuide): number | undefined => {
     return Number.isFinite(n) ? n : undefined;
 };
 
+const getGuideBreadcrumbLabel = (
+    guideId?: string,
+    guideNumber?: string
+): string => {
+    if (guideNumber) return `Guía ${guideNumber}`;
+    if (guideId) return "Detalle guía";
+    return "Guía";
+};
+
 const buildBreadcrumb = (
     guideId?: string,
     guideNumber?: string
@@ -58,7 +66,7 @@ const buildBreadcrumb = (
     withFinanceBreadcrumb([
         { label: "Guías de Embarque", to: "/finanzas/guias" },
         {
-            label: guideNumber ? `Guía ${guideNumber}` : guideId ? "Detalle guía" : "Guía",
+            label: getGuideBreadcrumbLabel(guideId, guideNumber),
             to: guideId ? `/finanzas/guias/${guideId}` : undefined,
         },
         { label: "Actualizar estatus" },
@@ -95,7 +103,6 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
     );
 
     const [loading, setLoading] = useState<boolean>(false);
-    const [detail, setDetail] = useState<ShippingGuideDetail | null>(null);
     const [history, setHistory] = useState<ShippingGuideStatusHistory[]>([]);
     const initialStatus = getGuideStatusNum(guideFromState);
 
@@ -122,7 +129,6 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
             setLoading(true);
             try {
                 const d = await shippingGuideService.getDetail(id);
-                setDetail(d);
                 const sn = getNumericGuideStatus(d.status);
                 setCurrentStatus(sn);
                 setTargetStatus(sn);
@@ -387,8 +393,11 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                         </tr>
                     </thead>
                     <tbody>
-                        {history.map((h, idx) => (
-                            <tr key={idx} className="gt-row">
+                        {history.map((h) => (
+                            <tr
+                                key={`${h.registeredAt}-${h.status}-${h.userId ?? ""}-${h.comment ?? ""}`}
+                                className="gt-row"
+                            >
                                 <td className="gt-td">
                                     {formatDateTime(h.registeredAt, { seconds: true })}
                                 </td>
@@ -465,12 +474,12 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
 
             <div className="sg-form-vertical" style={styles.formVertical}>
                 <div>
-                    <label
+                    <div
                         className="sg-title"
                         style={styles.fieldLabel}
                     >
                         Estatus actual
-                    </label>
+                    </div>
                     <div>
                         {statusOptions.find((s) => s.value === currentStatus)
                             ?.label || "N/D"}
@@ -479,12 +488,14 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
 
                 <div>
                     <label
+                        htmlFor="sg-status-target"
                         className="sg-title"
                         style={styles.fieldLabel}
                     >
                         Nuevo estatus
                     </label>
                     <GenericSelect
+                        id="sg-status-target"
                         value={
                             targetStatus !== undefined
                                 ? String(targetStatus)
@@ -514,12 +525,14 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
 
                 <div>
                     <label
+                        htmlFor="sg-status-reason"
                         className="sg-title"
                         style={styles.fieldLabel}
                     >
                         Motivo de cambio
                     </label>
                     <GenericSelect
+                        id="sg-status-reason"
                         value={reasonId}
                         onChange={(
                             e: ChangeEvent<HTMLSelectElement>
@@ -569,12 +582,14 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
 
                 <div>
                     <label
+                        htmlFor="sg-status-comment"
                         className="sg-title"
                         style={styles.fieldLabel}
                     >
                         Comentario (254)
                     </label>
                     <textarea
+                        id="sg-status-comment"
                         value={comment}
                         maxLength={254}
                         onChange={(e) => setComment(e.target.value)}

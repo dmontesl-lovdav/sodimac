@@ -10,16 +10,20 @@ function toQuery(params: any = {}) {
     ).toString();
 }
 
+function withQuery(path: string, query: string): string {
+    return query ? `${path}?${query}` : path;
+}
+
 export function createThreeWayMatchService(api: ApiClient) {
     async function searchThreeWayMatch(params: any = {}) {
         const query = toQuery(params);
-        return api.request(`three-way-match${query ? `?${query}` : ""}`, "get");
+        return api.request(withQuery("three-way-match", query), "get");
     }
 
     async function exportThreeWayMatchCsv(params: any = {}) {
         const query = toQuery(params);
         return api.requestBinary(
-            `three-way-match/export/csv${query ? `?${query}` : ""}`,
+            withQuery("three-way-match/export/csv", query),
             "get",
             null,
             "three-way-match.csv"
@@ -29,7 +33,7 @@ export function createThreeWayMatchService(api: ApiClient) {
     async function exportThreeWayMatchXlsx(params: any = {}) {
         const query = toQuery(params);
         return api.requestBinary(
-            `three-way-match/export/xlsx${query ? `?${query}` : ""}`,
+            withQuery("three-way-match/export/xlsx", query),
             "get",
             null,
             "three-way-match.xlsx"

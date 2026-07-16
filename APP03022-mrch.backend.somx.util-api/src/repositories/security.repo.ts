@@ -948,7 +948,7 @@ export async function findProfileModuleProcessAssignment(
 ): Promise<{ available: AssignableItemRow[]; assigned: AssignableItemRow[] }> {
     const langId = resolveLangId(langIdParam);
 
-    const assigned = await datasource
+    const assignedRaw = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
         .innerJoin(CatalogDetail, 'cm', 'cm.id = mp.catalog_detail_module_id')
@@ -973,7 +973,7 @@ export async function findProfileModuleProcessAssignment(
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
 
-    const available = await datasource
+    const availableRaw = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
         .innerJoin(CatalogDetail, 'cm', 'cm.id = mp.catalog_detail_module_id')
@@ -999,6 +999,12 @@ export async function findProfileModuleProcessAssignment(
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
+
+    const assigned = dedupeAssignableByTitle(assignedRaw);
+    const assignedTitles = new Set(assigned.map((r) => r.title));
+    const available = dedupeAssignableByTitle(availableRaw).filter(
+        (r) => !assignedTitles.has(r.title),
+    );
 
     return { available, assigned };
 }
@@ -1065,12 +1071,24 @@ export async function listApplicationEvents(filters: SecuritySearchFilter): Prom
     return toSummaryRows(await qb.getRawMany());
 }
 
+function dedupeAssignableByTitle(rows: AssignableItemRow[]): AssignableItemRow[] {
+    const byTitle = new Map<string, AssignableItemRow>();
+    for (const row of rows) {
+        const key = row.title;
+        const existing = byTitle.get(key);
+        if (!existing || Number(row.id) < Number(existing.id)) {
+            byTitle.set(key, row);
+        }
+    }
+    return [...byTitle.values()].sort((a, b) => a.title.localeCompare(b.title, 'es'));
+}
+
 export async function findModuleProcessAssignment(
     moduleId: number,
     langIdParam?: number,
 ): Promise<{ available: AssignableItemRow[]; assigned: AssignableItemRow[] }> {
     const langId = resolveLangId(langIdParam);
-    const assigned = await datasource
+    const assignedRaw = await datasource
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
@@ -1088,7 +1106,7 @@ export async function findModuleProcessAssignment(
         .orderBy(dictionaryLabelExpr('proc', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
 
-    const available = await datasource
+    const availableRaw = await datasource
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
@@ -1107,6 +1125,12 @@ export async function findModuleProcessAssignment(
         .addGroupBy(dictionaryLabelExpr('proc', langId))
         .orderBy(dictionaryLabelExpr('proc', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
+
+    const assigned = dedupeAssignableByTitle(assignedRaw);
+    const assignedTitles = new Set(assigned.map((r) => r.title));
+    const available = dedupeAssignableByTitle(availableRaw).filter(
+        (r) => !assignedTitles.has(r.title),
+    );
 
     return { available, assigned };
 }
@@ -1863,13 +1887,26 @@ export async function listModuleProcessesWithUserAssignment(
         .orderBy(catalogRefLabelExpr('cp', langId), 'ASC')
         .getRawMany<Record<string, unknown>>();
 
-    return rows.map((row) => ({
+    const mapped = rows.map((row) => ({
         moduleProcessId: Number(row.moduleProcessId),
         processId: Number(row.processId),
         name: String(row.name ?? ''),
         description: String(row.description ?? ''),
         assigned: row.assigned === true || row.assigned === 'true' || String(row.assigned) === '1',
     }));
+
+    const byName = new Map<string, UserModuleProcessEventRow>();
+    for (const item of mapped) {
+        const existing = byName.get(item.name);
+        if (
+            !existing ||
+            (item.assigned && !existing.assigned) ||
+            (item.assigned === existing.assigned && item.processId < existing.processId)
+        ) {
+            byName.set(item.name, item);
+        }
+    }
+    return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
 
 export async function findActiveApplicationById(moduleId: number): Promise<CatalogDetail | null> {

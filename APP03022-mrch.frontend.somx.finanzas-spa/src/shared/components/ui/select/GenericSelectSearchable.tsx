@@ -107,13 +107,14 @@ export default function GenericSelectSearchable({
                     )}
 
                     {filtered.map(opt => (
-                        <div
+                        <button
+                            type="button"
                             key={opt.value}
                             className="gss-option"
                             onClick={() => handleSelect(opt)}
                         >
                             {opt.label}
-                        </div>
+                        </button>
                     ))}
                 </div>
             )}

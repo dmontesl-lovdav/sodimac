@@ -6,6 +6,14 @@ spec:
   template:
     spec:
       serviceAccountName: ${WORLOAD_IDENTITY_DEV}
+      automountServiceAccountToken: false
       containers:
         - name: ${PROJECT_NAME}
-
+          resources:
+            requests:
+              cpu: 50m
+              memory: 200Mi
+              ephemeral-storage: 100Mi
+            limits:
+              memory: 400Mi
+              ephemeral-storage: 500Mi

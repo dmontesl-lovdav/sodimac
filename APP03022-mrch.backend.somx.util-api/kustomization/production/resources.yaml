@@ -5,11 +5,14 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: ${PROJECT_NAME}
           resources:
             limits:
               memory: 512Mi
+              ephemeral-storage: 500Mi
             requests:
               cpu: 100m
               memory: 256Mi
+              ephemeral-storage: 100Mi

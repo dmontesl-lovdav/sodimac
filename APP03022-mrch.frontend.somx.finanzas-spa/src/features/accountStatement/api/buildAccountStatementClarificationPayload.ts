@@ -22,16 +22,16 @@ export function buildAccountStatementReviewClarificationPayload(
             : `${record.year}`;
 
     return {
-        company: envStr('ACCOUNT_STATEMENT_CLARIFICATION_COMPANY', 'Empresa S.A.'),
-        rut: envStr('ACCOUNT_STATEMENT_CLARIFICATION_RUT', ''),
+        company: envStr('ACCOUNT_STATEMENT_CLARIFICATION_COMPANY', ''),
+        rut: envStr('ACCOUNT_STATEMENT_CLARIFICATION_RUT', '76.555.34.52'),
         businessUnit: envInt('ACCOUNT_STATEMENT_CLARIFICATION_BUSINESS_UNIT', 2),
         country: envInt('ACCOUNT_STATEMENT_CLARIFICATION_COUNTRY', 4),
         module: envInt('ACCOUNT_STATEMENT_CLARIFICATION_MODULE', 61),
-        reason: envInt('ACCOUNT_STATEMENT_CLARIFICATION_REASON', 906),
-        detail: envInt('ACCOUNT_STATEMENT_CLARIFICATION_DETAIL', 108),
+        reason: envInt('ACCOUNT_STATEMENT_CLARIFICATION_REASON', 907),
+        detail: envInt('ACCOUNT_STATEMENT_CLARIFICATION_DETAIL', 1009),
         clazz: envInt('ACCOUNT_STATEMENT_CLARIFICATION_CLAZZ', 23),
         description: `Solicitud de revisión del estado de cuenta ${period} — ${record.vendorName}`,
         nombreProveedor: record.vendorName,
-        orderId: record.accountStatementUuid,
+        orderId: "NA",
     };
 }

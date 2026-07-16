@@ -26,37 +26,27 @@ async function importAllFrom(dir: string): Promise<AnyObj[]> {
     return mods;
 }
 
-/**
- * Recorre todos los modulos en:
- *  - src/docs/components/*.ts   -> objetos ...Schemas
- *  - src/docs/paths/*.ts        -> objetos ...Paths
- * y arma una OAS3 valida.
- */
-export async function buildOpenAPISpec() {
-    const componentsMods = await importAllFrom('./components');
-    const pathsMods = await importAllFrom('./paths');
+function collectTagsFromModule(mod: AnyObj, tags: Tag[]): void {
+    const maybeTags = mod.tags;
+    if (Array.isArray(maybeTags)) tags.push(...(maybeTags as Tag[]));
+}
 
-    const schemas: AnyObj = {};
-    const paths: AnyObj = {};
-    const tags: Tag[] = [{ name: 'Health', description: 'Service health checks' }];
-
-    // merge de componentes (cualquier export que termine en "Schemas")
-    for (const m of componentsMods) {
+function mergeExportsBySuffix(
+    mods: AnyObj[],
+    suffix: string,
+    target: AnyObj,
+    tags: Tag[],
+): void {
+    for (const m of mods) {
         for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Schemas') && isPlainObject(v)) Object.assign(schemas, v);
-            if (k === 'tags' && Array.isArray(v)) tags.push(...(v as Tag[]));
+            if (k.endsWith(suffix) && isPlainObject(v)) Object.assign(target, v);
         }
+        collectTagsFromModule(m, tags);
     }
+}
 
-    // merge de paths (cualquier export que termine en "Paths")
-    for (const m of pathsMods) {
-        for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Paths') && isPlainObject(v)) Object.assign(paths, v);
-            if (k === 'tags' && Array.isArray(v)) tags.push(...(v as Tag[]));
-        }
-    }
-
-    const spec = {
+function buildSpecSkeleton(paths: AnyObj, tags: Tag[], schemas: AnyObj) {
+    return {
         openapi: '3.0.3',
         info: {
             title: process.env.SERVICE_TITLE ?? 'Utils API - Herramientas y Utilerias',
@@ -86,6 +76,24 @@ export async function buildOpenAPISpec() {
         },
         security: [],
     };
+}
 
-    return spec;
+/**
+ * Recorre todos los modulos en:
+ *  - src/docs/components/*.ts   -> objetos ...Schemas
+ *  - src/docs/paths/*.ts        -> objetos ...Paths
+ * y arma una OAS3 valida.
+ */
+export async function buildOpenAPISpec() {
+    const componentsMods = await importAllFrom('./components');
+    const pathsMods = await importAllFrom('./paths');
+
+    const schemas: AnyObj = {};
+    const paths: AnyObj = {};
+    const tags: Tag[] = [{ name: 'Health', description: 'Service health checks' }];
+
+    mergeExportsBySuffix(componentsMods, 'Schemas', schemas, tags);
+    mergeExportsBySuffix(pathsMods, 'Paths', paths, tags);
+
+    return buildSpecSkeleton(paths, tags, schemas);
 }

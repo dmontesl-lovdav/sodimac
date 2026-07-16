@@ -33,42 +33,62 @@ function toQuery(params: any = {}) {
     return sp.toString();
 }
 
+function buildListParams(filter: ShippingGuideFilter): Record<string, unknown> {
+    const params: Record<string, unknown> = {
+        pageNumber: 1,
+        pageSize: 500,
+    };
+
+    if (filter.guideNumber) params.guideNumber = filter.guideNumber;
+
+    if (filter.vendorNumber) {
+        params.vendorNumber = filter.vendorNumber;
+        params.supplierNumber = filter.vendorNumber;
+    }
+    if (filter.sourceId) {
+        params.sourceId = filter.sourceId;
+        params.origin = filter.sourceId;
+    }
+    if (filter.truckPlate) {
+        params.truckPlate = filter.truckPlate;
+        params.plate = filter.truckPlate;
+    }
+
+    if (filter.trailerPlate) params.trailerPlate = filter.trailerPlate;
+    if (filter.deliveryType) params.deliveryType = filter.deliveryType;
+    if (filter.status != null && !Number.isNaN(Number(filter.status))) {
+        params.status = filter.status;
+    }
+
+    if (filter.from) params.from = filter.from;
+    if (filter.to) params.to = filter.to;
+
+    return params;
+}
+
+function parseShippingGuideList(raw: unknown): ShippingGuide[] {
+    if (Array.isArray(raw)) return raw;
+
+    if (raw && typeof raw === "object") {
+        const o = raw as Record<string, unknown>;
+        const data = o.data as Record<string, unknown> | undefined;
+        if (Array.isArray(data?.content)) {
+            return data.content as ShippingGuide[];
+        }
+        if (Array.isArray(o.content)) {
+            return o.content as ShippingGuide[];
+        }
+    }
+
+    return [];
+}
+
 export const shippingGuideService = {
     async get(
         filter: ShippingGuideFilter,
         binary?: boolean
     ): Promise<ShippingGuide[]> {
-        // Construimos un objeto limpio con los parámetros
-        const params: any = {};
-
-        if (filter.guideNumber) params.guideNumber = filter.guideNumber;
-
-        // Mapeo doble (mantenido de tu código original por si el backend pide ambos)
-        if (filter.vendorNumber) {
-            params.vendorNumber = filter.vendorNumber;
-            params.supplierNumber = filter.vendorNumber;
-        }
-        if (filter.sourceId) {
-            params.sourceId = filter.sourceId;
-            params.origin = filter.sourceId;
-        }
-        if (filter.truckPlate) {
-            params.truckPlate = filter.truckPlate;
-            params.plate = filter.truckPlate;
-        }
-
-        if (filter.trailerPlate) params.trailerPlate = filter.trailerPlate;
-        if (filter.deliveryType) params.deliveryType = filter.deliveryType;
-        if (filter.status != null && !Number.isNaN(Number(filter.status))) {
-            params.status = filter.status;
-        }
-
-        if (filter.from) params.from = filter.from;
-        if (filter.to) params.to = filter.to;
-        params.pageNumber = 1;
-        params.pageSize = 500;
-
-        const query = toQuery(params);
+        const query = toQuery(buildListParams(filter));
         const queryString = query ? `?${query}` : "";
 
         if (binary) {
@@ -76,24 +96,8 @@ export const shippingGuideService = {
             return [];
         }
 
-        console.log(queryString);
-
         const raw = await api.request<unknown>(`${ROUTE}${queryString}`, "get");
-
-        let content: ShippingGuide[] = [];
-        if (Array.isArray(raw)) {
-            content = raw;
-        } else if (raw && typeof raw === "object") {
-            const o = raw as Record<string, unknown>;
-            const data = o.data as Record<string, unknown> | undefined;
-            if (Array.isArray(data?.content)) {
-                content = data.content as ShippingGuide[];
-            } else if (Array.isArray(o.content)) {
-                content = o.content as ShippingGuide[];
-            }
-        }
-
-        return content;
+        return parseShippingGuideList(raw);
     },
 
     async getDetail(

@@ -1,14 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: ${PROJECT_NAME}
+
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
+
       containers:
         - name: ${PROJECT_NAME}
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
           envFrom:
             - configMapRef:
                 name: ${PROJECT_NAME}-configmap
+
             - secretRef:
                 name: ${PROJECT_NAME}-secrets

@@ -6,9 +6,10 @@ import { buildAccountStatementHtml } from './accountStatementHtmlBuilder';
  * (Guardar como PDF en el navegador). Sin dependencias extra.
  */
 export function openAccountStatementPdfPreview(
-    payload: AccountStatementReportPayload
+    payload: AccountStatementReportPayload,
+    receptionStatuses: any[]
 ): void {
-    const html = buildAccountStatementHtml(payload);
+    const html = buildAccountStatementHtml(payload, receptionStatuses);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank', 'noopener,noreferrer');

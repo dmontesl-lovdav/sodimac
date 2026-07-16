@@ -7,18 +7,14 @@ import * as dictRepo from '@/repositories/dictionaryLang.repo.js';
 
 const DEFAULT_LANG_ID = 1;
 
-export async function toDto(entity: CatalogDetail | null | undefined): Promise<CatalogElementDto | null> {
-    if (!entity) return null;
+async function resolveElementName(entity: CatalogDetail): Promise<string> {
+    if (entity.dictId == null || entity.dictId <= 0) return entity.key;
+    const dict = await dictRepo.findByDictIdAndLangId(entity.dictId, DEFAULT_LANG_ID);
+    return dict?.description ?? entity.key;
+}
 
-    let elementName: string | null = entity.key;
-    if (entity.dictId != null && entity.dictId > 0) {
-        const dict = await dictRepo.findByDictIdAndLangId(entity.dictId, DEFAULT_LANG_ID);
-        if (dict) {
-            elementName = dict.description ?? entity.key;
-        }
-    }
-
-    const dto: CatalogElementDto = {
+function buildBaseDto(entity: CatalogDetail, elementName: string): CatalogElementDto {
+    return {
         id: entity.id,
         catalogId: entity.header?.id ?? entity.headerId ?? null,
         catalogCode: entity.header?.code ?? null,
@@ -37,28 +33,39 @@ export async function toDto(entity: CatalogDetail | null | undefined): Promise<C
         updatedAt: entity.updatedAt ?? null,
         externalKey: entity.externalKey ?? null,
         sortOrder: entity.sortOrder ?? null,
-        attributes: entity.attributes ?? null
+        attributes: entity.attributes ?? null,
     };
+}
 
-    if (entity.parentCatalogId != null) {
-        const parent = await headerRepo.findById(entity.parentCatalogId);
-        if (parent) {
-            dto.parentCatalogName = parent.name;
-        }
+async function resolveParentCatalogName(parentCatalogId: number | null | undefined): Promise<string | undefined> {
+    if (parentCatalogId == null) return undefined;
+    const parent = await headerRepo.findById(parentCatalogId);
+    return parent?.name;
+}
+
+async function resolveParentElementName(parentElementId: number | null | undefined): Promise<string | undefined> {
+    if (parentElementId == null) return undefined;
+    const parent = await detailRepo.findById(parentElementId);
+    if (!parent) return undefined;
+    if (parent.dictId == null || parent.dictId <= 0) return parent.key;
+    const pdict = await dictRepo.findByDictIdAndLangId(parent.dictId, DEFAULT_LANG_ID);
+    return pdict?.description ?? parent.key;
+}
+
+export async function toDto(entity: CatalogDetail | null | undefined): Promise<CatalogElementDto | null> {
+    if (!entity) return null;
+
+    const elementName = await resolveElementName(entity);
+    const dto = buildBaseDto(entity, elementName);
+
+    const parentCatalogName = await resolveParentCatalogName(entity.parentCatalogId);
+    if (parentCatalogName !== undefined) {
+        dto.parentCatalogName = parentCatalogName;
     }
 
-    if (entity.parentElementId != null) {
-        const parent = await detailRepo.findById(entity.parentElementId);
-        if (parent) {
-            let parentName: string = parent.key;
-            if (parent.dictId != null && parent.dictId > 0) {
-                const pdict = await dictRepo.findByDictIdAndLangId(parent.dictId, DEFAULT_LANG_ID);
-                if (pdict) {
-                    parentName = pdict.description ?? parent.key;
-                }
-            }
-            dto.parentElementName = parentName;
-        }
+    const parentElementName = await resolveParentElementName(entity.parentElementId);
+    if (parentElementName !== undefined) {
+        dto.parentElementName = parentElementName;
     }
 
     return dto;

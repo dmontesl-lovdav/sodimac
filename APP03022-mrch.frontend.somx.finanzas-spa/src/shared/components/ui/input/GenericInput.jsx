@@ -51,11 +51,11 @@ export default function GenericInput({
     .filter(Boolean)
     .join(' ');
 
-  const toneClass = error
-    ? 'generic-textfield-label--tone-error'
-    : focused
-      ? 'generic-textfield-label--tone-focus'
-      : 'generic-textfield-label--tone-idle';
+  const toneClass = (() => {
+    if (error) return 'generic-textfield-label--tone-error';
+    if (focused) return 'generic-textfield-label--tone-focus';
+    return 'generic-textfield-label--tone-idle';
+  })();
 
   const inputMods = [
     'generic-textfield-input',

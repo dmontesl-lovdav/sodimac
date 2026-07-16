@@ -19,6 +19,9 @@ export function getBreaker(key: string, fn: (...args: any[]) => Promise<any>, ty
     breaker.on("halfOpen", () => console.warn(`🟡 HALF → ${key}`));
     breaker.on("close", () => console.warn(`🟢 CLOSED → ${key}`));
     breaker.on("reject", () => console.warn(`⛔ REJECT → ${key}`));
+    breaker.on("failure", (err) => {
+        console.log("FAILURE:", (err as any).response?.status);
+    });
 
     breakers.set(key, breaker);
   }

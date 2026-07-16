@@ -30,13 +30,15 @@ import {
     ACCOUNT_STATEMENT_STATUS,
     withAccountStatementStatus,
 } from "./accountStatementActions";
-import { fetchProvidersAsCatalog } from "@/utils/utils";
+import { fetchCatalogAsSelectableOptions, fetchCatalogDetails, fetchProvidersAsCatalog } from "@/utils/utils";
 
 const breadcrumb = withFinanceBreadcrumb([{ label: "Estado de Cuenta" }]);
 
 export default function AccountStatementContainer() {
     const [loading, setLoading] = useState(false);
     const [rows, setRows] = useState<AccountStatementRecord[]>([]);
+
+    const [receptionStatuses, setReceptionStatuses] = useState<any[]>([]);
 
     const [page, setPage] = useState<number>(1);
     const [perPage, setPerPage] = useState<number>(25);
@@ -75,10 +77,17 @@ export default function AccountStatementContainer() {
             const list = await fetchProvidersAsCatalog("supplierNumber");
             if (list) setProviders(list);
         };
-
+        const fetchReceptionStatuses = async () => {
+            const tipoRecepcionRes = await fetchCatalogDetails("CatEstatusRecepcion");
+            if (tipoRecepcionRes) {
+                const mappedStatus = fetchCatalogAsSelectableOptions(tipoRecepcionRes, "Todos los estatus");
+                setReceptionStatuses(mappedStatus.filter((item: any) => item.value !== "8"));
+            }
+        };
+        
         fetchProviders();
+        fetchReceptionStatuses();
     }, []);
-
     const fetchData = async (
         criteria: AccountStatementFilters,
         p: number,
@@ -92,12 +101,7 @@ export default function AccountStatementContainer() {
             const result = await AccountStatementService.search(criteria, p, size);
 
             const mapped = result.items.map((item) => ({
-                ...item,
-                vendorName:
-                    providers
-                        .find((provider) => String(provider.value) === String(item.vendorNumber))
-                        ?.label.split("(")[0]
-                        ?.trim() ?? item.vendorName ?? "",
+                ...item
             }));
 
             setRows(mapped);
@@ -186,7 +190,7 @@ export default function AccountStatementContainer() {
                 row.accountStatementUuid
             );
 
-            openAccountStatementPdfPreview(reportData);
+            openAccountStatementPdfPreview(reportData, receptionStatuses);
         } catch (err) {
             setInfoModal({
                 type: "error",

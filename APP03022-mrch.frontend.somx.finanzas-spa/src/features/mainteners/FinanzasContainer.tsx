@@ -11,7 +11,7 @@ import iconReport from '@assets/icons/report.png';
 import iconDoneCheck from '@assets/icons/done-check.png';
 import iconWarning from '@assets/icons/warning.png';
 import { getHealthcheck } from './api';
-import { APP_KEYS, useSecurityContext } from '@shared/security';
+import { APP_KEYS } from '@shared/security';
 
 import './styles/FinanzasContainer.css';
 
@@ -25,6 +25,10 @@ interface FinanzasCard {
     hidden?: boolean;
     requiredApp?: string;
     requiredAnyApp?: string[];
+}
+
+function cardKey(card: FinanzasCard): string {
+    return card.link ?? card.title;
 }
 
 export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] }) {
@@ -110,7 +114,6 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
             icon: iconWarning,
             requiredApp: APP_KEYS.THREE_WAY_MATCH,
         },
-        // Auditoría migrada a util.spa — ver /util/auditoria/bitacora-actividades
         {
             title: 'Publicación de recepción MIGO',
             description: 'Consultar, publicar, autorizar o rechazar recepciones MIGO',
@@ -122,22 +125,14 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
             title: 'Healthcheck',
             description: 'Valida si el servicio de Finanzas y la conexión a base de datos están activos.',
             icon: iconDoneCheck,
-            onClick: handleHealthcheck,
+            onClick: () => {
+                handleHealthcheck().catch(() => undefined);
+            },
         },
     ];
 
-    const sec = useSecurityContext();
-    /*const finalCards = (cards ?? DEFAULT_CARDS)
-        .filter((card) => !card.hidden)
-        .filter((card) => {
-            if (!card.requiredApp && !card.requiredAnyApp) return true;
-            if (sec.isLoading) return false;
-            if (card.requiredApp && !sec.hasApp(card.requiredApp)) return false;
-            if (card.requiredAnyApp && !sec.hasAnyApp(card.requiredAnyApp)) return false;
-            return true;
-        });*/
-    /* TODO: Implement the permission gate */
-    const finalCards = DEFAULT_CARDS;
+    /* TODO: Implement the permission gate when restoring filtered cards */
+    const finalCards = cards ?? DEFAULT_CARDS;
 
     return (
         <div className="finanzas-root">
@@ -148,7 +143,8 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                     <h1 className="maintainers-title">Gestión de recepciones, pagos y descuentos</h1>
 
                     <section className="cards-grid">
-                        {finalCards.map((it, idx) => {
+                        {finalCards.map((it) => {
+                            const key = cardKey(it);
                             const cardClasses = ['card', it.disabled ? 'disabled' : ''].join(' ').trim();
 
                             const inner = (
@@ -171,7 +167,7 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                             if (it.disabled) {
                                 return (
                                     <div
-                                        key={idx}
+                                        key={key}
                                         className={cardClasses}
                                         title="Deshabilitado"
                                     >
@@ -183,7 +179,7 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                             if (it.onClick) {
                                 return (
                                     <button
-                                        key={idx}
+                                        key={key}
                                         type="button"
                                         className={cardClasses}
                                         onClick={it.onClick}
@@ -196,7 +192,7 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
 
                             return (
                                 <Link
-                                    key={idx}
+                                    key={key}
                                     to={(it.link ?? '') + '?reset=true'}
                                     className={cardClasses}
                                 >

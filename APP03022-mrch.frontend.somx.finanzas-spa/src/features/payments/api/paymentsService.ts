@@ -10,9 +10,15 @@ import { formatDate, parseDisplayDate } from '@/utils/utils';
 
 const api = createApiClient();
 
+const formatPaymentAmount = (amount: number): string =>
+    `$${amount.toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+
 class PaymentsClient {
-    private ROUTE = 'finanzas-payment';
-    private ACCOUNTS_ROUTE = 'accounts-payable';
+    private readonly ROUTE = 'finanzas-payment';
+    private readonly ACCOUNTS_ROUTE = 'accounts-payable';
 
     async searchPayments(params: PaymentSearchParams): Promise<PagedResult<PaymentRecord>> {
         const body: Record<string, any> = {
@@ -171,15 +177,9 @@ class PaymentsClient {
             'Estatus',
         ];
 
-        const formatAmount = (amount: number): string =>
-            `$${amount.toLocaleString('es-MX', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
-
         const csvRows = rows.map(item => [
             item.documentReference,
-            formatAmount(item.amount),
+            formatPaymentAmount(item.amount),
             item.currency,
             item.paymentYear,
             formatDate(item.paymentDate),
@@ -275,17 +275,11 @@ class PaymentsClient {
             'Fecha de actualización',
         ];
 
-        const formatAmount = (amount: number): string =>
-            `$${amount.toLocaleString('es-MX', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
-
         const csvRows = documents.map(doc => [
             doc.documentNumber,
             doc.reference || '',
             doc.currency,
-            formatAmount(doc.amount),
+            formatPaymentAmount(doc.amount),
             doc.documentType,
             doc.sapDocument || '',
             doc.paymentDate || '',

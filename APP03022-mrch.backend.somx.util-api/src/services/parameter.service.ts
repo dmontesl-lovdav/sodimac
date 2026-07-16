@@ -4,6 +4,7 @@ import * as parameterRepo from "@/repositories/parameter.repo.js";
 import { CatParameter } from "@/entities/CatParameter.entity.js";
 import type { FindOptionsWhere } from "typeorm";
 import { datasource } from "@/config/typeorm-datasource.js";
+import { HttpException } from "@/exceptions/HttpException.js";
 
 export interface CreateParameterDto {
     idModule: number;
@@ -119,7 +120,7 @@ export async function getByName(name: string): Promise<CatParameter | null> {
 export async function getVersions(id: number): Promise<CatParameter[]> {
     const param = await parameterRepo.findById(id);
     if (!param) {
-        throw { status: 404, message: `Parameter with id ${id} not found` };
+        throw new HttpException(404, `Parameter with id ${id} not found`);
     }
     return parameterRepo.findAllVersionsByName(param.name);
 }
@@ -131,7 +132,7 @@ export async function create(data: CreateParameterDto): Promise<CatParameter> {
     // Verificar unicidad de nombre
     const existing = await parameterRepo.findLatestVersionByName(data.name);
     if (existing) {
-        throw { status: 409, message: `Ya existe un parametro con el nombre '${data.name}'` };
+        throw new HttpException(409, `Ya existe un parametro con el nombre '${data.name}'`);
     }
 
     return parameterRepo.createOne({
@@ -149,13 +150,13 @@ export async function create(data: CreateParameterDto): Promise<CatParameter> {
 export async function update(id: number, data: UpdateParameterDto): Promise<CatParameter | null> {
     const existing = await parameterRepo.findById(id);
     if (!existing) {
-        throw { status: 404, message: `Parameter with id ${id} not found` };
+        throw new HttpException(404, `Parameter with id ${id} not found`);
     }
 
     // Verificar que sea la ultima version
     const isLatest = await parameterRepo.isLatestVersion(id);
     if (!isLatest) {
-        throw { status: 403, message: 'Solo se puede editar la ultima version del parametro' };
+        throw new HttpException(403, 'Solo se puede editar la ultima version del parametro');
     }
 
     // Actualizar solo campos permitidos (NO value)
@@ -177,13 +178,13 @@ export async function update(id: number, data: UpdateParameterDto): Promise<CatP
 export async function createVersion(id: number, data: CreateVersionDto): Promise<CatParameter> {
     const existing = await parameterRepo.findById(id);
     if (!existing) {
-        throw { status: 404, message: `Parameter with id ${id} not found` };
+        throw new HttpException(404, `Parameter with id ${id} not found`);
     }
 
     // Verificar que sea la ultima version
     const isLatest = await parameterRepo.isLatestVersion(id);
     if (!isLatest) {
-        throw { status: 403, message: 'Solo se puede versionar la ultima version del parametro' };
+        throw new HttpException(403, 'Solo se puede versionar la ultima version del parametro');
     }
 
     // Calcular siguiente version
@@ -192,7 +193,7 @@ export async function createVersion(id: number, data: CreateVersionDto): Promise
     // Verificar que no exista la nueva version
     const duplicate = await parameterRepo.findByNameAndVersion(existing.name, nextVersion);
     if (duplicate) {
-        throw { status: 409, message: `Ya existe version ${nextVersion} para este parametro` };
+        throw new HttpException(409, `Ya existe version ${nextVersion} para este parametro`);
     }
 
     // Ejecutar transaccion
@@ -261,18 +262,18 @@ export function calculateNextVersion(currentVersion: number): number {
 export async function updateStatus(id: number, data: UpdateStatusDto): Promise<CatParameter | null> {
     const existing = await parameterRepo.findById(id);
     if (!existing) {
-        throw { status: 404, message: `Parameter with id ${id} not found` };
+        throw new HttpException(404, `Parameter with id ${id} not found`);
     }
 
     // Verificar que sea la ultima version
     const isLatest = await parameterRepo.isLatestVersion(id);
     if (!isLatest) {
-        throw { status: 403, message: 'Solo se puede cambiar el estatus de la ultima version' };
+        throw new HttpException(403, 'Solo se puede cambiar el estatus de la ultima version');
     }
 
     // Validar estatus
     if (data.status !== 0 && data.status !== 1) {
-        throw { status: 400, message: 'Estatus invalido. Debe ser 0 (Inactivo) o 1 (Activo)' };
+        throw new HttpException(400, 'Estatus invalido. Debe ser 0 (Inactivo) o 1 (Activo)');
     }
 
     const patch: Partial<CatParameter> = {
@@ -290,7 +291,7 @@ export async function updateStatus(id: number, data: UpdateStatusDto): Promise<C
 export async function remove(id: number, updatedBy?: number): Promise<void> {
     const existing = await parameterRepo.findById(id);
     if (!existing) {
-        throw { status: 404, message: `Parameter with id ${id} not found` };
+        throw new HttpException(404, `Parameter with id ${id} not found`);
     }
 
     const patch: Partial<CatParameter> = {

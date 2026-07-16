@@ -30,7 +30,6 @@ const styles = {
 
 export default function DiscountsContainer() {
     const financeAlert = useFinanceAlertModal();
-    const [filters, setFilters] = useState<any>({});
     const [data, setData] = useState<DiscountRecord[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -39,7 +38,6 @@ export default function DiscountsContainer() {
         try {
             const result = await rebatesService.searchDiscounts(values);
             setData(result.items);
-            setFilters(values);
 
             if (result.items.length === 0) {
                 financeAlert.showWarning(
@@ -61,7 +59,6 @@ export default function DiscountsContainer() {
 
     const handleClear = () => {
         setData([]);
-        setFilters({});
     };
 
     return (

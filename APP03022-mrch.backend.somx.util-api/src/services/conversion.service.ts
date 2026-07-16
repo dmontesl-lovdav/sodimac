@@ -23,6 +23,10 @@ export interface ConversionSearchParams {
     sortDir: 'ASC' | 'DESC';
 }
 
+function statusLabel(status: number | null | undefined): 'Activo' | 'Inactivo' {
+    return status === 1 ? 'Activo' : 'Inactivo';
+}
+
 function toDto(c: CatalogConversion): ConversionDto {
     const src = c.sourceElement;
     const tgt = c.targetElement;
@@ -31,7 +35,7 @@ function toDto(c: CatalogConversion): ConversionDto {
         idElementoOrigen: src?.id ?? null,
         elementoOrigen: src?.key ?? null,
         valorElementoOrigen: src?.value ?? null,
-        estatusElementoOrigen: src ? (src.status === 1 ? 'Activo' : 'Inactivo') : null,
+        estatusElementoOrigen: src ? statusLabel(src.status) : null,
         catalogoElementoOrigen: src?.header?.name ?? null,
         idElemento: tgt?.id ?? null,
         elemento: tgt?.key ?? null,
@@ -39,7 +43,7 @@ function toDto(c: CatalogConversion): ConversionDto {
         catalogoOrigen: tgt?.header?.name ?? null,
         fechaInicioVigencia: c.validFrom ?? null,
         fechaFinVigencia: c.validTo ?? null,
-        estatus: c.status === 1 ? 'Activo' : 'Inactivo',
+        estatus: statusLabel(c.status),
         esPrincipal: c.isPrincipal,
         idUsuarioRegistro: c.createdBy ?? null,
         fechaRegistro: c.createdAt ?? null,

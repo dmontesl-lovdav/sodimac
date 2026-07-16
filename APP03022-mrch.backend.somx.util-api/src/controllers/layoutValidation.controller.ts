@@ -9,7 +9,7 @@ export const uploadFile = upload.single('file');
 export async function validate(req: Request, res: Response, next: NextFunction) {
     try {
         const file = (req as Request & { file?: Express.Multer.File }).file;
-        if (!file || !file.buffer || file.size === 0) {
+        if (!file?.buffer || file.size === 0) {
             return res.status(400).json({ error: 'Archivo vacío o no proporcionado' });
         }
 

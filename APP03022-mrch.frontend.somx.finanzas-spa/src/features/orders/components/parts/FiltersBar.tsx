@@ -14,8 +14,6 @@ import {
   fetchProvidersAsCatalog,
   endOfLocalDay,
   startOfLocalDay,
-  fetchCatalog,
-  mapCatalogResponseToFilterOptions,
   fetchCatalogDetails,
   fetchCatalogAsSelectableOptions,
 } from "@/utils/utils";
@@ -78,6 +76,91 @@ function buildOrdersFilterPayload(input: {
     pageNumber: 1,
     pageSize: 10,
   };
+}
+
+type UrlDeepLinkParams = {
+  orderNumber: string;
+  supplierNumber: string;
+  startDate: string;
+  endDate: string;
+};
+
+function readUrlDeepLinkParams(searchParams: URLSearchParams): UrlDeepLinkParams {
+  return {
+    orderNumber: searchParams.get("orderNumber")?.trim() ?? "",
+    supplierNumber: searchParams.get("supplierNumber")?.trim() ?? "",
+    startDate: searchParams.get("startDate")?.trim() ?? "",
+    endDate: searchParams.get("endDate")?.trim() ?? "",
+  };
+}
+
+function hasDeepLink(params: UrlDeepLinkParams): boolean {
+  return Boolean(
+    params.orderNumber ||
+      params.supplierNumber ||
+      (params.startDate && params.endDate)
+  );
+}
+
+function applySavedOrdersFilters(
+  saved: OrdersFilters,
+  setters: {
+    setDateRange: (v: [Date | null, Date | null]) => void;
+    setProvider: (v: string) => void;
+    setProviderType: (v: string) => void;
+    setOrderNumber: (v: string) => void;
+    setReceptionNumber: (v: string) => void;
+    setStatus: (v: string) => void;
+  }
+): void {
+  setters.setDateRange(
+    parseFinanceListDateRange(
+      saved.purchaseOrderDateAtInitial,
+      saved.purchaseOrderDateAtEnd
+    )
+  );
+  setters.setProvider(saved.supplierNumber ? String(saved.supplierNumber) : "");
+  setters.setProviderType(
+    saved.providerType != null && String(saved.providerType).trim() !== ""
+      ? String(saved.providerType)
+      : ""
+  );
+  setters.setOrderNumber(
+    saved.orderNumber?.trim() ? String(saved.orderNumber) : ""
+  );
+  setters.setReceptionNumber(
+    saved.receptionNumber?.trim() ? String(saved.receptionNumber) : ""
+  );
+  setters.setStatus(saved.status != null ? String(saved.status) : "");
+}
+
+function applyDeepLinkFilters(
+  urlParams: UrlDeepLinkParams,
+  onSearch: (filters: OrdersFilters) => void
+): [Date | null, Date | null] {
+  clearFinanceListSession(FINANCE_LIST_KEYS.receptions);
+
+  const [parsedStart, parsedEnd] = parseFinanceListDateRange(
+    urlParams.startDate,
+    urlParams.endDate
+  );
+  const linkRange: [Date | null, Date | null] =
+    parsedStart && parsedEnd
+      ? [parsedStart, parsedEnd]
+      : orderNumberDeepLinkRange();
+
+  const filterData = buildOrdersFilterPayload({
+    dateRange: linkRange,
+    provider: urlParams.supplierNumber,
+    providerType: "",
+    orderNumber: urlParams.orderNumber,
+    receptionNumber: "",
+    status: "",
+  });
+
+  saveFinanceListFilters(FILTERS_KEY, filterData);
+  onSearch(filterData);
+  return linkRange;
 }
 
 export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
@@ -155,15 +238,9 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       return;
     }
 
-    const urlOrderNumber = searchParams.get("orderNumber")?.trim() ?? "";
-    const urlSupplierNumber = searchParams.get("supplierNumber")?.trim() ?? "";
-    const urlStartDate = searchParams.get("startDate")?.trim() ?? "";
-    const urlEndDate = searchParams.get("endDate")?.trim() ?? "";
-    const hasUrlDateRange = Boolean(urlStartDate && urlEndDate);
-    const hasDeepLinkParams =
-      Boolean(urlOrderNumber || urlSupplierNumber || hasUrlDateRange);
+    const urlParams = readUrlDeepLinkParams(searchParams);
 
-    if (!hasDeepLinkParams) {
+    if (!hasDeepLink(urlParams)) {
       lastUrlOrderNumberRef.current = null;
       lastUrlSupplierNumberRef.current = null;
       lastUrlStartDateRef.current = null;
@@ -171,25 +248,15 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       if (hasLoadedRef.current) return;
 
       const saved = readFinanceListFilters<OrdersFilters>(FILTERS_KEY);
-
       if (saved) {
-        setDateRange(
-          parseFinanceListDateRange(
-            saved.purchaseOrderDateAtInitial,
-            saved.purchaseOrderDateAtEnd
-          )
-        );
-        setProvider(saved.supplierNumber ? String(saved.supplierNumber) : "");
-        setProviderType(
-          saved.providerType != null && String(saved.providerType).trim() !== ""
-            ? String(saved.providerType)
-            : ""
-        );
-        setOrderNumber(saved.orderNumber?.trim() ? String(saved.orderNumber) : "");
-        setReceptionNumber(
-          saved.receptionNumber?.trim() ? String(saved.receptionNumber) : ""
-        );
-        setStatus(saved.status != null ? String(saved.status) : "");
+        applySavedOrdersFilters(saved, {
+          setDateRange,
+          setProvider,
+          setProviderType,
+          setOrderNumber,
+          setReceptionNumber,
+          setStatus,
+        });
       } else {
         setDateRange(initialDefaultRange());
       }
@@ -198,47 +265,28 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       return;
     }
 
-    if (
-      lastUrlOrderNumberRef.current === urlOrderNumber &&
-      lastUrlSupplierNumberRef.current === urlSupplierNumber &&
-      lastUrlStartDateRef.current === urlStartDate &&
-      lastUrlEndDateRef.current === urlEndDate
-    ) return;
-    lastUrlOrderNumberRef.current = urlOrderNumber;
-    lastUrlSupplierNumberRef.current = urlSupplierNumber;
-    lastUrlStartDateRef.current = urlStartDate;
-    lastUrlEndDateRef.current = urlEndDate;
+    const sameAsLast =
+      lastUrlOrderNumberRef.current === urlParams.orderNumber &&
+      lastUrlSupplierNumberRef.current === urlParams.supplierNumber &&
+      lastUrlStartDateRef.current === urlParams.startDate &&
+      lastUrlEndDateRef.current === urlParams.endDate;
+    if (sameAsLast) return;
 
-    clearFinanceListSession(FINANCE_LIST_KEYS.receptions);
+    lastUrlOrderNumberRef.current = urlParams.orderNumber;
+    lastUrlSupplierNumberRef.current = urlParams.supplierNumber;
+    lastUrlStartDateRef.current = urlParams.startDate;
+    lastUrlEndDateRef.current = urlParams.endDate;
 
-    const [parsedStart, parsedEnd] = parseFinanceListDateRange(
-      urlStartDate,
-      urlEndDate
-    );
-    const linkRange: [Date | null, Date | null] =
-      parsedStart && parsedEnd
-        ? [parsedStart, parsedEnd]
-        : orderNumberDeepLinkRange();
-    setProvider(urlSupplierNumber);
+    const linkRange = applyDeepLinkFilters(urlParams, onSearchRef.current);
+    setProvider(urlParams.supplierNumber);
     setProviderType("");
     setReceptionNumber("");
     setStatus("");
-    setOrderNumber(urlOrderNumber);
+    setOrderNumber(urlParams.orderNumber);
     setDateRange(linkRange);
-
-    const filterData = buildOrdersFilterPayload({
-      dateRange: linkRange,
-      provider: urlSupplierNumber,
-      providerType: "",
-      orderNumber: urlOrderNumber,
-      receptionNumber: "",
-      status: "",
-    });
-
-    saveFinanceListFilters(FILTERS_KEY, filterData);
-    onSearchRef.current(filterData);
     hasLoadedRef.current = true;
-  }, [providers, searchParams]);
+  }, [providers, searchParams, applyFilterDefaults]);
+
 
   const validateRange = (): boolean => {
     const [d1, d2] = dateRange;

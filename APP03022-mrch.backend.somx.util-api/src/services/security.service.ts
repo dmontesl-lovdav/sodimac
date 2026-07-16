@@ -1,6 +1,7 @@
 import type { Request } from 'express';
 import { decodeJwt, jwtVerify, type JWTPayload } from 'jose';
 import * as securityRepo from '@/repositories/security.repo.js';
+import { HttpException } from '@/exceptions/HttpException.js';
 
 export type { SecurityUserDetailsResponse, SecurityUserRef } from '@/repositories/security.repo.js';
 
@@ -110,11 +111,11 @@ function accessContextCacheKey(userKey: string, idProfile?: number, langId?: num
 
 function ensureDateRange(filters: SecurityFilters) {
     if (!filters.startDate || !filters.endDate) {
-        throw { status: 400, message: 'Los campos startDate y endDate son obligatorios' };
+        throw new HttpException(400, 'Los campos startDate y endDate son obligatorios');
     }
 
     if (filters.endDate < filters.startDate) {
-        throw { status: 400, message: 'La fecha final debe ser mayor o igual a la fecha inicial.', code: 'MSG_VAL_01' };
+        throw new HttpException(400, 'La fecha final debe ser mayor o igual a la fecha inicial.', 'MSG_VAL_01');
     }
 }
 
@@ -148,7 +149,7 @@ export async function searchProfileUsers(filters: SecurityFilters) {
 export async function getProfileUserAssignment(idProfile: number) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
     return securityRepo.findProfileAssignment(idProfile);
 }
@@ -156,14 +157,14 @@ export async function getProfileUserAssignment(idProfile: number) {
 export async function saveProfileUserAssignment(idProfile: number, payload: AssignmentPayload) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const users = await securityRepo.findActiveUsersByIds(selectedIds);
 
     if (selectedIds.length !== users.length) {
-        throw { status: 400, message: 'Uno o mas usuarios no existen o estan inactivos' };
+        throw new HttpException(400, 'Uno o mas usuarios no existen o estan inactivos');
     }
 
     await securityRepo.syncProfileUsers(idProfile, selectedIds, payload.actorId);
@@ -182,7 +183,7 @@ export async function searchRoleUsers(filters: SecurityFilters) {
 export async function getRoleUserAssignment(idRole: number) {
     const role = await securityRepo.findActiveRoleById(idRole);
     if (!role) {
-        throw { status: 404, message: `No existe el rol ${idRole}` };
+        throw new HttpException(404, `No existe el rol ${idRole}`);
     }
     return securityRepo.findRoleUserAssignment(idRole);
 }
@@ -190,14 +191,14 @@ export async function getRoleUserAssignment(idRole: number) {
 export async function saveRoleUserAssignment(idRole: number, payload: AssignmentPayload) {
     const role = await securityRepo.findActiveRoleById(idRole);
     if (!role) {
-        throw { status: 404, message: `No existe el rol ${idRole}` };
+        throw new HttpException(404, `No existe el rol ${idRole}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const users = await securityRepo.findActiveUsersByIds(selectedIds);
 
     if (selectedIds.length !== users.length) {
-        throw { status: 400, message: 'Uno o mas usuarios no existen o estan inactivos' };
+        throw new HttpException(400, 'Uno o mas usuarios no existen o estan inactivos');
     }
 
     await securityRepo.syncRoleUsers(idRole, selectedIds, payload.actorId);
@@ -216,7 +217,7 @@ export async function searchRolePermissions(filters: SecurityFilters) {
 export async function getRolePermissionAssignment(idRole: number, langId?: number) {
     const role = await securityRepo.findActiveRoleById(idRole);
     if (!role) {
-        throw { status: 404, message: `No existe el rol ${idRole}` };
+        throw new HttpException(404, `No existe el rol ${idRole}`);
     }
     return securityRepo.findRolePermissionAssignment(idRole, langId);
 }
@@ -224,14 +225,14 @@ export async function getRolePermissionAssignment(idRole: number, langId?: numbe
 export async function saveRolePermissionAssignment(idRole: number, payload: AssignmentPayload) {
     const role = await securityRepo.findActiveRoleById(idRole);
     if (!role) {
-        throw { status: 404, message: `No existe el rol ${idRole}` };
+        throw new HttpException(404, `No existe el rol ${idRole}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const permissions = await securityRepo.findActivePermissionsByIds(selectedIds);
 
     if (selectedIds.length !== permissions.length) {
-        throw { status: 400, message: 'Uno o mas permisos no existen o estan inactivos' };
+        throw new HttpException(400, 'Uno o mas permisos no existen o estan inactivos');
     }
 
     await securityRepo.syncRolePermissions(idRole, selectedIds, payload.actorId);
@@ -250,7 +251,7 @@ export async function searchUserAttributes(filters: SecurityFilters) {
 export async function listUserAttributes(idUser: number, page = 1, limit = 10, langId?: number) {
     const user = await securityRepo.findActiveUserById(idUser);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${idUser}` };
+        throw new HttpException(404, `No existe el usuario ${idUser}`);
     }
 
     return securityRepo.listUserAttributes(idUser, page, limit, langId);
@@ -259,21 +260,21 @@ export async function listUserAttributes(idUser: number, page = 1, limit = 10, l
 export async function createUserAttribute(idUser: number, payload: CreateUserAttributePayload) {
     const user = await securityRepo.findActiveUserById(idUser);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${idUser}` };
+        throw new HttpException(404, `No existe el usuario ${idUser}`);
     }
 
     const attributeType = await securityRepo.findActiveAttributeTypeById(payload.attributeTypeId);
     if (!attributeType) {
-        throw { status: 404, message: `No existe el tipo de atributo ${payload.attributeTypeId}` };
+        throw new HttpException(404, `No existe el tipo de atributo ${payload.attributeTypeId}`);
     }
 
     if (!Number.isInteger(payload.attributeValueId) || Number(payload.attributeValueId) <= 0) {
-        throw { status: 400, message: 'attributeValueId debe ser un entero positivo' };
+        throw new HttpException(400, 'attributeValueId debe ser un entero positivo');
     }
 
     const attributeValue = await securityRepo.findActiveCatalogDetailById(payload.attributeValueId);
     if (!attributeValue) {
-        throw { status: 404, message: `No existe el valor de atributo ${payload.attributeValueId}` };
+        throw new HttpException(404, `No existe el valor de atributo ${payload.attributeValueId}`);
     }
 
     await securityRepo.createUserAttributes(idUser, payload.attributeTypeId, payload.attributeValueId, payload.actorId);
@@ -282,12 +283,12 @@ export async function createUserAttribute(idUser: number, payload: CreateUserAtt
 export async function removeUserAttribute(idUser: number, attributeId: number, actorId: string) {
     const user = await securityRepo.findActiveUserById(idUser);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${idUser}` };
+        throw new HttpException(404, `No existe el usuario ${idUser}`);
     }
 
     const attributeRow = await securityRepo.findActiveUserAttributeForUser(idUser, attributeId);
     if (!attributeRow) {
-        throw { status: 404, message: `No existe el atributo ${attributeId} para el usuario ${idUser}` };
+        throw new HttpException(404, `No existe el atributo ${attributeId} para el usuario ${idUser}`);
     }
 
     await securityRepo.deleteUserAttribute(idUser, attributeId, String(actorId));
@@ -300,7 +301,7 @@ export async function listAttributeTypes(langId?: number) {
 export async function listAttributeValuesByType(idAttributeType: number, langId?: number) {
     const type = await securityRepo.findActiveAttributeTypeById(idAttributeType);
     if (!type) {
-        throw { status: 404, message: `No existe el tipo de atributo ${idAttributeType}` };
+        throw new HttpException(404, `No existe el tipo de atributo ${idAttributeType}`);
     }
 
     const items = await securityRepo.getAttributeValuesByType(idAttributeType, langId);
@@ -326,7 +327,7 @@ export async function searchProfileModules(filters: SecurityFilters) {
 export async function getProfileModuleAssignment(idProfile: number, langId?: number) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
     return securityRepo.findProfileModuleAssignment(idProfile, langId);
 }
@@ -334,14 +335,14 @@ export async function getProfileModuleAssignment(idProfile: number, langId?: num
 export async function saveProfileModuleAssignment(idProfile: number, payload: AssignmentPayload) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const modules = await securityRepo.findModulesByIds(selectedIds);
 
     if (selectedIds.length !== modules.length) {
-        throw { status: 400, message: 'Uno o mas modulos no existen' };
+        throw new HttpException(400, 'Uno o mas modulos no existen');
     }
 
     await securityRepo.syncProfileModules(idProfile, selectedIds, payload.actorId);
@@ -360,7 +361,7 @@ export async function searchProfileModuleProcesses(filters: SecurityFilters) {
 export async function getProfileModuleProcessAssignment(idProfile: number, langId?: number) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
     return securityRepo.findProfileModuleProcessAssignment(idProfile, langId);
 }
@@ -368,14 +369,14 @@ export async function getProfileModuleProcessAssignment(idProfile: number, langI
 export async function saveProfileModuleProcessAssignment(idProfile: number, payload: AssignmentPayload) {
     const profile = await securityRepo.findActiveProfileById(idProfile);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${idProfile}` };
+        throw new HttpException(404, `No existe el perfil ${idProfile}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const links = await securityRepo.findActiveModuleProcessesByIds(selectedIds);
 
     if (selectedIds.length !== links.length) {
-        throw { status: 400, message: 'Uno o mas aplicativo-evento no existen o estan inactivos' };
+        throw new HttpException(400, 'Uno o mas aplicativo-evento no existen o estan inactivos');
     }
 
     await securityRepo.syncProfileModuleProcesses(idProfile, selectedIds, payload.actorId);
@@ -396,7 +397,7 @@ export async function searchApplicationEvents(filters: SecurityFilters) {
 export async function getModuleProcessAssignment(idModule: number, langId?: number) {
     const moduleRow = await securityRepo.findModuleById(idModule);
     if (!moduleRow) {
-        throw { status: 404, message: `No existe el modulo ${idModule}` };
+        throw new HttpException(404, `No existe el modulo ${idModule}`);
     }
     return securityRepo.findModuleProcessAssignment(idModule, langId);
 }
@@ -404,28 +405,60 @@ export async function getModuleProcessAssignment(idModule: number, langId?: numb
 export async function saveModuleProcessAssignment(idModule: number, payload: AssignmentPayload) {
     const moduleRow = await securityRepo.findModuleById(idModule);
     if (!moduleRow) {
-        throw { status: 404, message: `No existe el modulo ${idModule}` };
+        throw new HttpException(404, `No existe el modulo ${idModule}`);
     }
 
     const selectedIds = normalizeSelectedIds(payload.selectedIds);
     const processes = await securityRepo.findProcessesByIds(selectedIds);
 
     if (selectedIds.length !== processes.length) {
-        throw { status: 400, message: 'Uno o mas procesos no existen' };
+        throw new HttpException(400, 'Uno o mas procesos no existen');
     }
 
     await securityRepo.syncModuleProcessesForModule(idModule, selectedIds, payload.actorId);
 }
 
 /** Detalle de seguridad por usuario (core_security.user_data): preferred_username, sub, email o id. */
-export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: number, langId?: number) {
+function validateUserDetailsInputs(userKey: string, idProfile?: number): string {
     const key = String(userKey ?? '').trim();
     if (!key) {
-        throw { status: 400, message: 'userKey es obligatorio' };
+        throw new HttpException(400, 'userKey es obligatorio');
     }
     if (idProfile !== undefined && (!Number.isInteger(idProfile) || Number(idProfile) <= 0)) {
-        throw { status: 400, message: 'idPerfil debe ser entero positivo' };
+        throw new HttpException(400, 'idPerfil debe ser entero positivo');
     }
+    return key;
+}
+
+function ensureProfilesPresent(
+    profiles: Array<AccessContextProfileRef & { id: number }>,
+    idProfile: number | undefined,
+): void {
+    if (profiles.length === 0) {
+        throw new HttpException(400, 'El usuario no tiene configurado un perfil, favor de validar.', 'WRN7030');
+    }
+    const selectedProfile = idProfile === undefined ? undefined : profiles.find((p) => p.id === idProfile);
+    if (idProfile !== undefined && !selectedProfile) {
+        throw new HttpException(400, 'El usuario no tiene configurado un perfil, favor de validar.', 'WRN7030');
+    }
+}
+
+function buildEventsByAppKey(
+    rows: Array<{ profile: { id: number }; module: { catalogKey: string }; process: { catalogKey: string; label: string } }>,
+    idProfile: number | undefined,
+): Map<string, Map<string, string>> {
+    const eventsByAppKey = new Map<string, Map<string, string>>();
+    for (const row of rows) {
+        if (idProfile !== undefined && row.profile.id !== idProfile) continue;
+        const appKey = row.module.catalogKey;
+        if (!eventsByAppKey.has(appKey)) eventsByAppKey.set(appKey, new Map());
+        eventsByAppKey.get(appKey)!.set(row.process.catalogKey, row.process.label);
+    }
+    return eventsByAppKey;
+}
+
+export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: number, langId?: number) {
+    const key = validateUserDetailsInputs(userKey, idProfile);
 
     const cacheKey = accessContextCacheKey(key, idProfile, langId);
     const now = Date.now();
@@ -436,7 +469,7 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
 
     const data = await securityRepo.getSecurityUserDetailsByCatalogKey(key, langId);
     if (!data) {
-        throw { status: 404, message: `No existe usuario activo con la clave indicada '${key}'` };
+        throw new HttpException(404, `No existe usuario activo con la clave indicada '${key}'`);
     }
 
     const profiles: Array<AccessContextProfileRef & { id: number }> = data.profiles.map((p) => ({
@@ -444,41 +477,12 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
         key: p.catalogKey,
         name: p.label,
     }));
-    if (profiles.length === 0) {
-        throw {
-            status: 400,
-            code: 'WRN7030',
-            message: 'El usuario no tiene configurado un perfil, favor de validar.',
-        };
-    }
+    ensureProfilesPresent(profiles, idProfile);
 
-    const selectedProfile = idProfile === undefined ? undefined : profiles.find((p) => p.id === idProfile);
-    if (idProfile !== undefined && !selectedProfile) {
-        throw {
-            status: 400,
-            code: 'WRN7030',
-            message: 'El usuario no tiene configurado un perfil, favor de validar.',
-        };
-    }
-
-    const eventsByAppKey = new Map<string, Map<string, string>>();
-    for (const row of data.applicationModuleProcesses) {
-        if (idProfile !== undefined && row.profile.id !== idProfile) continue;
-        const appKey = row.module.catalogKey;
-        const eventKey = row.process.catalogKey;
-        const eventName = row.process.label;
-        if (!eventsByAppKey.has(appKey)) {
-            eventsByAppKey.set(appKey, new Map());
-        }
-        eventsByAppKey.get(appKey)?.set(eventKey, eventName);
-    }
+    const eventsByAppKey = buildEventsByAppKey(data.applicationModuleProcesses, idProfile);
 
     if (data.applications.length === 0) {
-        throw {
-            status: 400,
-            code: 'WRN7031',
-            message: 'El usuario no tiene configurado un aplicativo, favor de validar.',
-        };
+        throw new HttpException(400, 'El usuario no tiene configurado un aplicativo, favor de validar.', 'WRN7031');
     }
 
     const apps: AccessContextApplication[] = data.applications
@@ -654,12 +658,12 @@ export async function getUserCatalogDetail(
 ) {
     const user = await securityRepo.findActiveUserById(userId);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${userId}` };
+        throw new HttpException(404, `No existe el usuario ${userId}`);
     }
     const key = securityRepo.userDataLookupKey(user);
     const snap = await securityRepo.getSecurityUserDetailsByCatalogKey(key, opts.langId);
     if (!snap) {
-        throw { status: 404, message: `No se pudo obtener el detalle de seguridad del usuario ${userId}` };
+        throw new HttpException(404, `No se pudo obtener el detalle de seguridad del usuario ${userId}`);
     }
 
     const headerRow = await securityRepo.getUserCatalogHeaderById(userId);
@@ -824,11 +828,11 @@ function buildPermissionEventMatrixRows(
 export async function getUserApplicationEventsCatalog(userId: number, moduleId: number, langId?: number) {
     const user = await securityRepo.findActiveUserById(userId);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${userId}` };
+        throw new HttpException(404, `No existe el usuario ${userId}`);
     }
     const mod = await securityRepo.findActiveApplicationById(moduleId);
     if (!mod) {
-        throw { status: 404, message: `No existe el aplicativo ${moduleId}` };
+        throw new HttpException(404, `No existe el aplicativo ${moduleId}`);
     }
     const lang = resolveLangId(langId);
     const label =
@@ -853,19 +857,16 @@ function resolveLangId(langId?: number): number {
 export async function setUserModuleProcessAssigned(userId: number, moduleProcessId: number, assign: boolean, actorId: string) {
     const user = await securityRepo.findActiveUserById(userId);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${userId}` };
+        throw new HttpException(404, `No existe el usuario ${userId}`);
     }
     const mp = await securityRepo.findModuleProcessRow(moduleProcessId);
     if (!mp) {
-        throw { status: 404, message: `No existe el aplicativo-evento ${moduleProcessId}` };
+        throw new HttpException(404, `No existe el aplicativo-evento ${moduleProcessId}`);
     }
     const moduleCatalogId = mp.idCatalogDetailModule;
     const profiles = await securityRepo.findProfileIdsLinkingUserToModule(userId, moduleCatalogId);
     if (assign && profiles.length === 0) {
-        throw {
-            status: 400,
-            message: 'El usuario no tiene el aplicativo en ningún perfil; asigne primero el aplicativo al perfil correspondiente.',
-        };
+        throw new HttpException(400, 'El usuario no tiene el aplicativo en ningún perfil; asigne primero el aplicativo al perfil correspondiente.');
     }
     if (!assign && profiles.length === 0) {
         return;
@@ -877,11 +878,11 @@ export async function setUserModuleProcessAssigned(userId: number, moduleProcess
 export async function appendUserProfileLink(userId: number, profileId: number, actorId: string) {
     const user = await securityRepo.findActiveUserById(userId);
     if (!user) {
-        throw { status: 404, message: `No existe el usuario ${userId}` };
+        throw new HttpException(404, `No existe el usuario ${userId}`);
     }
     const profile = await securityRepo.findActiveProfileById(profileId);
     if (!profile) {
-        throw { status: 404, message: `No existe el perfil ${profileId}` };
+        throw new HttpException(404, `No existe el perfil ${profileId}`);
     }
     await securityRepo.linkProfileUserOnly(userId, profileId, actorId);
     await invalidateUserDetailsCache(securityRepo.userDataLookupKey(user));
@@ -895,7 +896,7 @@ export async function invalidateUserDetailsCache(userKey?: string, idProfile?: n
     }
 
     if (idProfile !== undefined && (!Number.isInteger(idProfile) || Number(idProfile) <= 0)) {
-        throw { status: 400, message: 'idPerfil debe ser entero positivo' };
+        throw new HttpException(400, 'idPerfil debe ser entero positivo');
     }
 
     if (idProfile === undefined) {
@@ -918,10 +919,10 @@ export async function invalidateUserDetailsCache(userKey?: string, idProfile?: n
 /** Atributos de un usuario por userKey (sub, preferred_username, email o id). Uso BFF. */
 export async function getUserAttributesByKey(userKey: string, langId?: number) {
     const key = String(userKey ?? '').trim();
-    if (!key) throw { status: 400, message: 'userKey es obligatorio' };
+    if (!key) throw new HttpException(400, 'userKey es obligatorio');
 
     const user = await securityRepo.findUserByLookupKey(key);
-    if (!user) throw { status: 404, message: `No existe usuario activo con la clave '${key}'` };
+    if (!user) throw new HttpException(404, `No existe usuario activo con la clave '${key}'`);
 
     const result = await securityRepo.listUserAttributes(user.idUserData, 1, 1000, langId);
 
@@ -973,7 +974,7 @@ function stringClaim(payload: JWTPayload, ...keys: string[]): string | null {
 export async function registerUserFromUtilitySession(req: Request): Promise<void> {
     const token = parseBearerToken(req);
     if (!token) {
-        throw { status: 401, message: 'Se requiere encabezado Authorization: Bearer <token>' };
+        throw new HttpException(401, 'Se requiere encabezado Authorization: Bearer <token>');
     }
 
     let payload: JWTPayload;
@@ -981,12 +982,12 @@ export async function registerUserFromUtilitySession(req: Request): Promise<void
         payload = await readJwtPayloadFromRequest(token);
     } catch (e) {
         console.error('[security:user-utility] JWT inválido', e);
-        throw { status: 401, message: 'Token JWT inválido o no verificable' };
+        throw new HttpException(401, 'Token JWT inválido o no verificable');
     }
 
     const sub = stringClaim(payload, 'sub');
     if (!sub) {
-        throw { status: 400, message: 'El token no contiene sub' };
+        throw new HttpException(400, 'El token no contiene sub');
     }
 
     const email = stringClaim(payload, 'email');

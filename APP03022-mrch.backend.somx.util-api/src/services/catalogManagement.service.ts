@@ -142,8 +142,7 @@ function generatePrefix(name: string): string {
     return 'CAT';
 }
 
-export async function createCatalog(dto: CatalogCreateDto, userId: string): Promise<CatalogResponseDto> {
-    void userId;
+export async function createCatalog(dto: CatalogCreateDto, _userId: string): Promise<CatalogResponseDto> {
     const normalizedType = normalizeType(dto.catalogType);
 
     const code =
@@ -180,9 +179,8 @@ export async function createCatalog(dto: CatalogCreateDto, userId: string): Prom
 export async function updateCatalog(
     id: number,
     dto: CatalogUpdateDto,
-    userId: string
+    _userId: string,
 ): Promise<CatalogResponseDto> {
-    void userId;
     const header = await headerRepo.findById(id);
     if (!header) {
         throw new GenericException(404, `Catálogo no encontrado con ID: ${id}`);

@@ -13,6 +13,7 @@ function normalizeRecord(raw: Record<string, unknown>): AccountStatementRecord {
         accountStatementUuid: String(raw.accountStatementUuid ?? ""),
         vendorNumber: String(raw.vendorNumber ?? ""),
         vendorName: String(raw.vendorName ?? ""),
+        supplierType: raw.supplierType as AccountStatementRecord["supplierType"],
         year: Number(raw.year ?? 0),
         month: Number(raw.month ?? 0),
         status:
@@ -32,6 +33,7 @@ export const AccountStatementService = {
             page,
             pageSize,
         };
+        if (filters.providerType.trim()!="") params.supplierType = filters.providerType;
         if (filters.providerId) params.vendorNumber = Number(filters.providerId);
         if (filters.month === 'all') params.month = 'all';
         else if (typeof filters.month === 'number') params.month = filters.month;
@@ -44,7 +46,7 @@ export const AccountStatementService = {
         );
 
         const items = (result?.items ?? []).map((row) =>
-            normalizeRecord(row as Record<string, unknown>)
+            normalizeRecord(row as unknown as Record<string, unknown>)
         );
 
         return {

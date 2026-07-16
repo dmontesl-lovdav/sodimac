@@ -35,8 +35,12 @@ function monthLabel(mes: number): string {
     return found ? found.label : String(mes);
 }
 
-function actionBtnClass(disabled: boolean): string {
-    return disabled ? "as-action-btn as-action-btn--disabled" : "as-action-btn";
+function enabledActionBtnClass(): string {
+    return "as-action-btn";
+}
+
+function disabledActionBtnClass(): string {
+    return "as-action-btn as-action-btn--disabled";
 }
 
 export default function AccountStatementGrid({
@@ -70,6 +74,15 @@ export default function AccountStatementGrid({
         {
             header: "Nombre Proveedor",
             render: (r: AccountStatementRecord) => r.vendorName || "--",
+        },
+        {
+            header: "Tipo Proveedor",
+            render: (r: AccountStatementRecord) => {
+                const code = r.supplierType?.code?.trim();
+                if (!code) return "--";
+                const lower = code.toLowerCase();
+                return lower.charAt(0).toUpperCase() + lower.slice(1);
+            },
         },
         {
             header: "Fecha Proceso",
@@ -113,8 +126,14 @@ export default function AccountStatementGrid({
                                         ? "Confirmar revisión"
                                         : "No disponible para este estatus"
                                 }
-                                onClick={() => canConfirm && onReview(r)}
-                                className={actionBtnClass(!canConfirm)}
+                                onClick={() => {
+                                    if (canConfirm) onReview(r);
+                                }}
+                                className={
+                                    canConfirm
+                                        ? enabledActionBtnClass()
+                                        : disabledActionBtnClass()
+                                }
                                 type="button"
                                 disabled={!canConfirm}
                             >
@@ -133,8 +152,14 @@ export default function AccountStatementGrid({
                                         ? "Rechazar"
                                         : "No disponible para este estatus"
                                 }
-                                onClick={() => canReject && onReject(r)}
-                                className={actionBtnClass(!canReject)}
+                                onClick={() => {
+                                    if (canReject) onReject(r);
+                                }}
+                                className={
+                                    canReject
+                                        ? enabledActionBtnClass()
+                                        : disabledActionBtnClass()
+                                }
                                 type="button"
                                 disabled={!canReject}
                             >

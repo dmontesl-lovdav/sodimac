@@ -11,12 +11,12 @@ export function normalizeRebateRow(raw: Record<string, unknown>): Rebate {
     );
     const supplierNumber = Number(raw.supplierNumber ?? raw.vendorNumber ?? 0);
     const vendorNumber = Number(raw.vendorNumber ?? raw.supplierNumber ?? 0);
-    const sourceRaw =
-        raw.source != null
-            ? Number(raw.source)
-            : raw.originId != null
-              ? Number(raw.originId)
-              : undefined;
+    let sourceRaw: number | undefined;
+    if (raw.source != null) {
+        sourceRaw = Number(raw.source);
+    } else if (raw.originId != null) {
+        sourceRaw = Number(raw.originId);
+    }
 
     return {
         ...(raw as unknown as Rebate),

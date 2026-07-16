@@ -21,7 +21,7 @@ interface CacheEntry {
  * Cliente para obtener mensajes desde catalogos-api con cache local
  */
 class CatalogosClient {
-    private cache: Map<string, CacheEntry> = new Map();
+    private readonly cache: Map<string, CacheEntry> = new Map();
 
     /**
      * Obtiene un mensaje desde catalogos-api

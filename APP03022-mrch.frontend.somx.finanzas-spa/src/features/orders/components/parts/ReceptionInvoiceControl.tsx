@@ -474,7 +474,7 @@ return (
             role="status"
             aria-live="polite"
           >
-            Consulta la factura en el módulo fiscal:{" "}
+            <span>Consulta la factura en el módulo fiscal: </span>
             <a
               href={buildFiscalSpaUrl(
                 "facturas",
@@ -487,7 +487,9 @@ return (
               Ver factura ({registeredFiscalUuid})
             </a>
           </p>
-        ) : dataMsg.trim() !== "" ? (
+        ) : null}
+
+        {!registeredFiscalUuid && dataMsg.trim() !== "" ? (
           <p
             className={`rc-invoice-notice rc-invoice-notice--${isValidInvoice ? "success" : "error"}`}
             role="status"
@@ -505,40 +507,40 @@ return (
               <table className="rc-summary-table">
                 <tbody>
                   <tr>
-                    <td className="rc-cell rc-cell-label">RFC Emisor:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">RFC Emisor:</th>
                     <td className="rc-cell">{invoiceData.rfcEmisor}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Nombre Proveedor:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Nombre Proveedor:</th>
                     <td className="rc-cell">{invoiceData.nombreProveedor}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">UUID:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">UUID:</th>
                     <td className="rc-cell">{invoiceData.uuid}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Serie:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Serie:</th>
                     <td className="rc-cell">{invoiceData.serie}</td>
                   </tr>
                   
                   <tr>
-                    <td className="rc-cell rc-cell-label">Folio:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Folio:</th>
                     <td className="rc-cell">{invoiceData.folio}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Importe:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Importe:</th>
                     <td className="rc-cell">{formatAmount(parseFloat(invoiceData.monto))}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Fecha Timbrado:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Fecha Timbrado:</th>
                     <td className="rc-cell">{formatDate(invoiceData.fechaTimbrado, true)}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Uso CFDI:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Uso CFDI:</th>
                     <td className="rc-cell">{invoiceData.usoCfdi}</td>
                   </tr>
                   <tr>
-                    <td className="rc-cell rc-cell-label">Tipo Comprobante:</td>
+                    <th scope="row" className="rc-cell rc-cell-label">Tipo Comprobante:</th>
                     <td className="rc-cell">{invoiceData.tipoDeComprobante}</td>
                   </tr>
                 </tbody>
@@ -558,7 +560,10 @@ return (
     cancelText="Cancelar"
     onConfirm={() => {
       setToleranceConfirmOpen(false);
-      void publishInvoiceRef.current?.();
+      const publish = publishInvoiceRef.current;
+      if (publish) {
+        publish().catch(() => {});
+      }
     }}
     onCancel={() => setToleranceConfirmOpen(false)}
   />

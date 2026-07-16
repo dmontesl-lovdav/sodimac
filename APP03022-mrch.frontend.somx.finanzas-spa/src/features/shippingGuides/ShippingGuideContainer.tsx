@@ -39,7 +39,7 @@ type RowExportFormat = "csv" | "xml";
 
 const safeGuideFileTag = (g: ShippingGuide) => {
   const raw = g.guideNumber || g.shippingGuideId || "guia";
-  return String(raw).replace(/[^\w\-]+/g, "_").slice(0, 80);
+  return String(raw).replace(/[^\w-]+/g, "_").slice(0, 80);
 };
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
@@ -440,10 +440,14 @@ export default function ShippingGuideContainer(): ReactElement {
             (
               <div style={{ textAlign: "left", marginTop: "1rem" }}>
                 <div style={{ marginBottom: "1rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
+                  <label
+                    htmlFor="sg-cancel-reason"
+                    style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}
+                  >
                     Motivo de cancelación
                   </label>
                   <select
+                    id="sg-cancel-reason"
                     style={{ width: "100%", padding: "0.5rem" }}
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
@@ -459,10 +463,14 @@ export default function ShippingGuideContainer(): ReactElement {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
+                  <label
+                    htmlFor="sg-cancel-comment"
+                    style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}
+                  >
                     Comentario (máx 254 caracteres)
                   </label>
                   <textarea
+                    id="sg-cancel-comment"
                     style={{ width: "100%", padding: "0.5rem", minHeight: "80px", resize: "none" }}
                     maxLength={254}
                     value={cancelComment}

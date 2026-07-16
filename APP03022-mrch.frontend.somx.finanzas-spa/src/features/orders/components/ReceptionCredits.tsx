@@ -41,12 +41,14 @@ const styles = {
     },
 };
 
-const buildDetail = (reception: Reception) => {
+const BuildDetail = ({ reception }: { reception: Reception }) => {
     const [invoices, setInvoices] = useState<Addendum[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
 
     useEffect(() => {
-        void fetchProviders().then((response) => setSuppliers(response ?? []));
+        fetchProviders()
+            .then((response) => setSuppliers(response ?? []))
+            .catch(() => undefined);
 
         const relatedUuid = reception.listAddendum?.[0]?.invoice?.invoiceUuid;
         if (!relatedUuid || !reception.createdAt) {
@@ -217,7 +219,7 @@ export function ReceptionDetail(): ReactElement {
                         reception={reception}
                         supplierInfo={supplierInfo}
                     />
-                    {buildDetail(reception)}
+                    <BuildDetail reception={reception} />
                 </>,
                 loading,
                 undefined,

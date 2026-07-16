@@ -160,7 +160,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
     const updateOrderStatus = async (reason: string, status: number, uuid: string) => {
 
         try {
-            if (reception && reception.receptionId) {
+            if (reception?.receptionId) {
                 setLoading(true);
                 const supplierNumber = Number(
                     reception.order?.supplierNumber ?? reception.supplierNumber ?? 0
@@ -197,14 +197,12 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         : {}),
                 };
                 const response = await client.updateReceptionManual(payload);
-                //console.log(response);
                 financeAlert.showSuccess("Estado actualizado", (response as any).data.message ?? "El estado de la recepción se guardó correctamente.");
                 
                 const refreshed = await client.getReceptionByUuid(
                     String(params.uuid ?? reception.receptionId)
                 );
                 setReception(refreshed.data);
-                //financeAlert.showSuccess("Estado actualizado", "El estado de la recepción se guardó correctamente.");*/
             }
 
         } catch (err) {
@@ -247,7 +245,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
             parseFloat(item.totalCost).toFixed(2),
         ]);
         const receptionId = String(reception.receptionNumber || reception.receptionId || "rec");
-        const baseName = `recepcion_detalle_${receptionId.replace(/[^\w\-]+/g, "_").slice(0, 80)}_${formatFilenameTimestamp()}`;
+        const baseName = `recepcion_detalle_${receptionId.replace(/[^\w-]+/g, "_").slice(0, 80)}_${formatFilenameTimestamp()}`;
         exportToCSV(headers, rows, baseName);
         setIsExporting(false);
     };

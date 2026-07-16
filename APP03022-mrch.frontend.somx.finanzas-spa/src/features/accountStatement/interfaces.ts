@@ -6,6 +6,7 @@ export type AccountStatementStatus =
     | 'Reprocesado';
 
 export interface AccountStatementRecord {
+    supplierType: any;
     accountStatementUuid: string;
     vendorNumber: string;
     vendorName: string;

@@ -1,6 +1,4 @@
 import { localHomeStore } from '../store/localStore';
-import { jwtDecode } from 'jwt-decode';
-import type { JwtPayload } from 'jwt-decode';
 
 /** Estructura mínima del estado para tomar el token (ajústala si tu store tiene más) */
 interface AppState {
@@ -8,12 +6,6 @@ interface AppState {
         token?: string;
         groups?: string[]; // opcional si luego quieres validar grupos
     };
-}
-
-/** Claims típicos de un JWT + campos que podrías usar */
-interface Claims extends JwtPayload {
-    groups?: string[];
-    [k: string]: unknown;
 }
 
 /** Helper seguro para obtener el token: defaultToken > store > null */
@@ -29,25 +21,13 @@ export function createAuthenticator(opts: {
     proveedorGroup: string;
     defaultToken?: string;
 }) {
-    const { adminGroup, proveedorGroup, defaultToken } = opts;
+    const { defaultToken } = opts;
 
-    const isAdmin = async (): Promise<boolean> => {
+    const hasValidToken = async (): Promise<boolean> => {
         const token = getToken(defaultToken);
         if (!token) throw new Error('No token');
-
-        const decoded = jwtDecode<Claims>(token);
-        // return Array.isArray(decoded.groups) && decoded.groups.includes(adminGroup);
         return true;
     };
 
-    const isProveedor = async (): Promise<boolean> => {
-        const token = getToken(defaultToken);
-        if (!token) throw new Error('No token');
-
-        const decoded = jwtDecode<Claims>(token);
-        // return Array.isArray(decoded.groups) && decoded.groups.includes(proveedorGroup);
-        return true;
-    };
-
-    return { isAdmin, isProveedor };
+    return { isAdmin: hasValidToken, isProveedor: hasValidToken };
 }

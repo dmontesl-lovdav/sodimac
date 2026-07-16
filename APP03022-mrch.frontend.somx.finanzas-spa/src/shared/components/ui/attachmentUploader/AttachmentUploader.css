@@ -81,34 +81,32 @@ div.file-err-caption {
 /* ────────── acciones por archivo ────────── */
 /* ancho icono = 24px | margen entre iconos = 16px */
 
-div.file-delete {
+.file-delete,
+.file-download,
+.file-view {
     width: 24px;
     height: 24px;
     position: absolute;
     top: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.file-delete {
     right: 16px;
     /* ←  base */
-    cursor: pointer;
 }
 
-div.file-download {
-    width: 24px;
-    height: 24px;
-    position: absolute;
-    top: 12px;
+.file-download {
     right: 56px;
     /* 16 + 24 + 16 */
-    cursor: pointer;
 }
 
-div.file-view {
-    width: 24px;
-    height: 24px;
-    position: absolute;
-    top: 12px;
+.file-view {
     right: 96px;
     /* 16 + 24 + 16 + 24 + 16 */
-    cursor: pointer;
 }
 
 /*───────────────────────────────────────────────────────────

@@ -5,8 +5,16 @@ function repo() {
     return getDataSource().getRepository(ThreeWayMatch);
 }
 
-type ThreeWayMatchWithSupplierName = ThreeWayMatch & {
+type SupplierInfo = {
+    nombreProveedor: string | null;
+    tipoProveedorId: string | null;
+    tipoProveedor: string | null;
+};
+
+type ThreeWayMatchWithSupplierInfo = ThreeWayMatch & {
     nombreProveedor?: string | null;
+    tipoProveedorId?: string | null;
+    tipoProveedor?: string | null;
 };
 
 type FindWithFiltersParams = {
@@ -67,10 +75,15 @@ export function findByStatus(status: number) {
     });
 }
 
-async function findSupplierNames(
+/**
+ * Obtiene el nombre, identificador de tipo y descripción
+ * del tipo de proveedor desde shared_catalogs.
+ */
+async function findSupplierInfo(
     vendorNumbers: string[]
-): Promise<Map<string, string>> {
-    const supplierNameMap = new Map<string, string>();
+): Promise<Map<string, SupplierInfo>> {
+    const supplierInfoMap =
+        new Map<string, SupplierInfo>();
 
     const normalizedVendorNumbers = Array.from(
         new Set(
@@ -81,7 +94,7 @@ async function findSupplierNames(
     );
 
     if (normalizedVendorNumbers.length === 0) {
-        return supplierNameMap;
+        return supplierInfoMap;
     }
 
     const ds = getDataSource();
@@ -89,12 +102,26 @@ async function findSupplierNames(
     const supplierRows = await ds.query(
         `
             SELECT
-                supplier_number::text AS "numeroProveedor",
-                business_name::text AS "nombreProveedor"
-            FROM shared_catalogs.supplier
-            WHERE supplier_number::text = ANY($1::text[])
-              AND business_name IS NOT NULL
-              AND TRIM(business_name::text) <> ''
+                supplier.supplier_number::text
+                    AS "numeroProveedor",
+
+                supplier.business_name::text
+                    AS "nombreProveedor",
+
+                supplier.supplier_type_id::text
+                    AS "tipoProveedorId",
+
+                supplier_type.description::text
+                    AS "tipoProveedor"
+
+            FROM shared_catalogs.supplier supplier
+
+            LEFT JOIN shared_catalogs.supplier_type supplier_type
+                ON supplier_type.id::text =
+                   supplier.supplier_type_id::text
+
+            WHERE supplier.supplier_number::text =
+                  ANY($1::text[])
         `,
         [normalizedVendorNumbers]
     );
@@ -102,21 +129,41 @@ async function findSupplierNames(
     for (
         const row of supplierRows as Array<{
             numeroProveedor: string;
-            nombreProveedor: string;
+            nombreProveedor: string | null;
+            tipoProveedorId: string | null;
+            tipoProveedor: string | null;
         }>
     ) {
-        supplierNameMap.set(
-            String(row.numeroProveedor).trim(),
-            row.nombreProveedor
+        const normalizedVendorNumber =
+            String(row.numeroProveedor).trim();
+
+        supplierInfoMap.set(
+            normalizedVendorNumber,
+            {
+                nombreProveedor:
+                    row.nombreProveedor?.trim() || null,
+
+                tipoProveedorId:
+                    row.tipoProveedorId != null
+                        ? String(row.tipoProveedorId).trim()
+                        : null,
+
+                tipoProveedor:
+                    row.tipoProveedor?.trim() || null,
+            }
         );
     }
 
-    return supplierNameMap;
+    return supplierInfoMap;
 }
 
-async function enrichWithSupplierNames(
+/**
+ * Enriquece los registros de Three Way Match con los
+ * datos del proveedor.
+ */
+async function enrichWithSupplierInfo(
     data: ThreeWayMatch[]
-): Promise<ThreeWayMatchWithSupplierName[]> {
+): Promise<ThreeWayMatchWithSupplierInfo[]> {
     if (data.length === 0) {
         return [];
     }
@@ -139,19 +186,34 @@ async function enrichWithSupplierNames(
         return data.map((item) => ({
             ...item,
             nombreProveedor: null,
+            tipoProveedorId: null,
+            tipoProveedor: null,
         }));
     }
 
-    const supplierNameMap =
-        await findSupplierNames(vendorNumbers);
+    const supplierInfoMap =
+        await findSupplierInfo(vendorNumbers);
 
-    return data.map((item) => ({
-        ...item,
-        nombreProveedor:
-            supplierNameMap.get(
-                String(item.numeroProveedor).trim()
-            ) ?? null,
-    }));
+    return data.map((item) => {
+        const normalizedVendorNumber =
+            String(item.numeroProveedor).trim();
+
+        const supplierInfo =
+            supplierInfoMap.get(normalizedVendorNumber);
+
+        return {
+            ...item,
+
+            nombreProveedor:
+                supplierInfo?.nombreProveedor ?? null,
+
+            tipoProveedorId:
+                supplierInfo?.tipoProveedorId ?? null,
+
+            tipoProveedor:
+                supplierInfo?.tipoProveedor ?? null,
+        };
+    });
 }
 
 /**
@@ -174,7 +236,8 @@ export async function findWithFilters(
         limit = 20,
     } = params;
 
-    const qb = repo().createQueryBuilder("t");
+    const qb =
+        repo().createQueryBuilder("t");
 
     // ========================
     // Filtro dinámico por fecha
@@ -209,16 +272,19 @@ export async function findWithFilters(
     // Seguridad: proveedores
     // permitidos por el BFF
     // ========================
-    if (
-        allowedVendors !== null &&
-        allowedVendors.length > 0
-    ) {
+    const normalizedAllowedVendors =
+        (allowedVendors ?? [])
+            .map((value) =>
+                String(value).trim()
+            )
+            .filter((value) => value !== "");
+
+    if (normalizedAllowedVendors.length > 0) {
         qb.andWhere(
             `"t"."vendor_number" IN (:...allowedVendors)`,
             {
-                allowedVendors: allowedVendors
-                    .map((value) => String(value).trim())
-                    .filter((value) => value !== ""),
+                allowedVendors:
+                    normalizedAllowedVendors,
             }
         );
     }
@@ -231,7 +297,7 @@ export async function findWithFilters(
             `"t"."vendor_number" = :numeroProveedor`,
             {
                 numeroProveedor:
-                    String(numeroProveedor).trim(),
+                    numeroProveedor.trim(),
             }
         );
     }
@@ -242,17 +308,32 @@ export async function findWithFilters(
     if (tipoProveedor !== undefined) {
         qb.andWhere(
             `
-            EXISTS (
-                SELECT 1
-                FROM shared_catalogs.supplier supplier
-                WHERE CAST(supplier.supplier_number AS TEXT) =
-                      CAST("t"."vendor_number" AS TEXT)
-                  AND CAST(supplier.supplier_type_id AS TEXT) =
-                      CAST(:tipoProveedor AS TEXT)
-            )
-        `,
+                EXISTS (
+                    SELECT 1
+                    FROM shared_catalogs.supplier supplier
+                    WHERE
+                        CAST(
+                            supplier.supplier_number
+                            AS TEXT
+                        ) =
+                        CAST(
+                            "t"."vendor_number"
+                            AS TEXT
+                        )
+                    AND
+                        CAST(
+                            supplier.supplier_type_id
+                            AS TEXT
+                        ) =
+                        CAST(
+                            :tipoProveedor
+                            AS TEXT
+                        )
+                )
+            `,
             {
-                tipoProveedor: String(tipoProveedor).trim(),
+                tipoProveedor:
+                    String(tipoProveedor).trim(),
             }
         );
     }
@@ -264,7 +345,8 @@ export async function findWithFilters(
         qb.andWhere(
             "t.ordenCompra = :ordenCompra",
             {
-                ordenCompra: ordenCompra.trim(),
+                ordenCompra:
+                    ordenCompra.trim(),
             }
         );
     }
@@ -276,7 +358,8 @@ export async function findWithFilters(
         qb.andWhere(
             "t.recepcion = :recepcion",
             {
-                recepcion: recepcion.trim(),
+                recepcion:
+                    recepcion.trim(),
             }
         );
     }
@@ -284,23 +367,28 @@ export async function findWithFilters(
     // ========================
     // Paginación
     // ========================
-    const skip = (page - 1) * limit;
+    const skip =
+        (page - 1) * limit;
 
     qb.skip(skip)
         .take(limit)
-        .orderBy(column, "DESC");
+        .orderBy(
+            column,
+            "DESC"
+        );
 
     const [data, total] =
         await qb.getManyAndCount();
 
     const enrichedData =
-        await enrichWithSupplierNames(data);
+        await enrichWithSupplierInfo(data);
 
     return {
         data: enrichedData,
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages:
+            Math.ceil(total / limit),
     };
 }

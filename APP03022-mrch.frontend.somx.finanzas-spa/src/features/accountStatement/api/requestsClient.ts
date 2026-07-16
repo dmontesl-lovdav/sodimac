@@ -27,7 +27,7 @@ export const RequestsClientService = {
     async createClarification(
         body: CreateClarificationRequestBody
     ): Promise<unknown> {
-        const api = createApiClient({ baseUrl: getRequestsApiBaseUrl() });
+        const api = createApiClient({ baseUrl: "https://uat.fbusinesscenter.com/ppsomx/backend" });
         return api.request<unknown>('requests', 'post', body);
     },
 };

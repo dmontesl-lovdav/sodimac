@@ -34,7 +34,6 @@ export default function PaymentDetail() {
     );
 
     const statePayment = (location.state as any)?.payment as PaymentRecord | undefined;
-    const stateFilters = (location.state as any)?.filters;
 
     const ref = searchParams.get('ref') || '';
     const provider = searchParams.get('provider') || '';
@@ -52,7 +51,6 @@ export default function PaymentDetail() {
     const [docTotalPages, setDocTotalPages] = useState(1);
     const [docTotalItems, setDocTotalItems] = useState(0);
 
-    const [allDocsLocal, setAllDocsLocal] = useState<PaymentDocument[]>([]);
     const [useLocalPagination, setUseLocalPagination] = useState(false);
 
     // ✅ Modal state
@@ -137,7 +135,6 @@ export default function PaymentDetail() {
         setLoading(true);
         setError('');
         setUseLocalPagination(false);
-        setAllDocsLocal([]);
 
         try {
             let resolvedPayment = payment || statePayment || null;
@@ -204,7 +201,6 @@ export default function PaymentDetail() {
             const docsAll = detail.documents || [];
 
             setUseLocalPagination(true);
-            setAllDocsLocal(docsAll);
 
             const totalItems = docsAll.length;
             const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -291,9 +287,7 @@ export default function PaymentDetail() {
                     </div>
                 </div>
 
-                {loading && (
-                    <GenericModal visible variant="loading" message="Cargando…" />
-                )}
+                <GenericModal visible={true} variant="loading" message="Cargando…" />
             </div>
         );
     }

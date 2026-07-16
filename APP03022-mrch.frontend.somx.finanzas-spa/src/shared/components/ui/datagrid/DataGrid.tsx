@@ -138,6 +138,24 @@ function getCellValue<T>(col: DataGridColumn<T>, row: T): string | number | null
   return "";
 }
 
+function mapRowToCsvCells<T>(
+  columns: DataGridColumn<T>[],
+  row: T
+): (string | number)[] {
+  return columns.map((col) => {
+    const v = getCellValue<T>(col, row);
+    return v ?? "";
+  });
+}
+
+const emptyPaginatedResponse = async <T,>() => ({
+  content: [] as T[],
+  totalElements: 0,
+  totalPages: 0,
+  page: 0,
+  size: 10,
+});
+
 export default function DataGrid<T, F extends Record<string, any> = Record<string, any>>({
   rows: externalRows,
   loading: externalLoading,
@@ -168,27 +186,25 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
   getFilename,
   rowActions: customRowActions,
 }: DataGridProps<T, F>): ReactElement {
-  const paginatedData =
-    fetchFn && filters
-      ? usePaginatedData<T, F>({
-        fetchFn,
-        initialFilters: filters,
-        initialPage,
-        initialSize,
+  const useInternalPagination = Boolean(fetchFn && filters);
+  const paginatedData = usePaginatedData<T, F>({
+    fetchFn: fetchFn ?? emptyPaginatedResponse,
+    initialFilters: (filters ?? ({} as F)),
+    initialPage,
+    initialSize,
+    enabled: useInternalPagination,
+  });
 
-      })
-      : null;
-
-  const rows = paginatedData ? paginatedData.rows : externalRows || [];
-  const loading = paginatedData ? paginatedData.loading : externalLoading || false;
-  const page = paginatedData ? paginatedData.page : externalPage || 1;
-  const perPage = paginatedData ? paginatedData.size : externalPerPage || 25;
-  const totalPages = paginatedData
+  const rows = useInternalPagination ? paginatedData.rows : externalRows || [];
+  const loading = useInternalPagination ? paginatedData.loading : externalLoading || false;
+  const page = useInternalPagination ? paginatedData.page : externalPage || 1;
+  const perPage = useInternalPagination ? paginatedData.size : externalPerPage || 25;
+  const totalPages = useInternalPagination
     ? paginatedData.totalPages
     : externalTotalPages || Math.ceil(rows.length / perPage || 1);
-  const totalItems = paginatedData ? paginatedData.totalItems : externalTotalItems || rows.length;
-  const onChangePage = paginatedData ? paginatedData.changePage : externalOnChangePage;
-  const onChangePerPage = paginatedData ? paginatedData.changePerPage : externalOnChangePerPage;
+  const totalItems = useInternalPagination ? paginatedData.totalItems : externalTotalItems || rows.length;
+  const onChangePage = useInternalPagination ? paginatedData.changePage : externalOnChangePage;
+  const onChangePerPage = useInternalPagination ? paginatedData.changePerPage : externalOnChangePerPage;
   const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
 
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
@@ -342,12 +358,7 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
 
           const headers = columns.map((col) => col.exportHeader ?? headerToString(col.header, ""));
 
-          const rowsForCsv = data.map((row) =>
-            columns.map((col) => {
-              const v = getCellValue<T>(col, row);
-              return v ?? "";
-            })
-          );
+          const rowsForCsv = data.map((row) => mapRowToCsvCells(columns, row));
 
           exportToCSV(headers, rowsForCsv, csvFilename);
         },

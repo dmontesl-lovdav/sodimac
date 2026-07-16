@@ -24,11 +24,7 @@ export async function findByHeaderIdAndStatusOrderBySortOrder(
     headerId: number,
     status: number
 ): Promise<CatalogDetail[]> {
-    return repo().find({
-        where: { headerId, status },
-        order: { sortOrder: 'ASC' },
-        relations: ['header']
-    });
+    return findByHeaderIdAndStatus(headerId, status);
 }
 
 export async function findByHeaderIdAndKey(headerId: number, key: string): Promise<CatalogDetail | null> {

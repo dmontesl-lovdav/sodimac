@@ -154,7 +154,7 @@ export function getDataSource(): DataSource {
         initializedDataSource?.isInitialized
     );
 
-    if (!initializedDataSource || !initializedDataSource.isInitialized) {
+    if (!initializedDataSource?.isInitialized) {
         throw new Error('DataSource not initialized. Call initDataSource() first.');
     }
 

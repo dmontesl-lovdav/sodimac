@@ -1,6 +1,4 @@
 
-import { useId, useMemo } from 'react';
-
 export default function GenericMarqueeBar({
   className = '',
   height = 6,
@@ -11,7 +9,6 @@ export default function GenericMarqueeBar({
   rounded = true,
   roleText = 'Loading',
 }) {
-  const id = useId(); // retained for future uniqueness if needed
   const barWidthPct = Math.max(0.05, Math.min(1, width)) * 100;
 
   return (

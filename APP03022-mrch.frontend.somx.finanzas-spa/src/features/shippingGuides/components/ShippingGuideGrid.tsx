@@ -97,6 +97,20 @@ export function ShippingGuideGrid({
     });
   };
 
+  useEffect(() => {
+    setSelectedIds([]);
+    setPage(1);
+  }, [rows]);
+
+  useEffect(() => {
+    if (!onSelectionChange || !rows) return;
+
+    const selected = rows.filter((g) =>
+      selectedIds.includes(g.shippingGuideId)
+    );
+    onSelectionChange(selected);
+  }, [rows, selectedIds, onSelectionChange]);
+
   if (!rows || !Array.isArray(rows)) {
     return (
       <SimpleLobby message="Haz click en Buscar para iniciar"></SimpleLobby>
@@ -107,22 +121,8 @@ export function ShippingGuideGrid({
     .sort((a, b) => new Date(b.shippingDate).getTime() - new Date(a.shippingDate).getTime())
     .map(row => ({ ...row, id: row.shippingGuideId }));
 
-  useEffect(() => {
-    setSelectedIds([]);
-    setPage(1);
-  }, [rows]);
-
   const totalItems = sortedRows.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-
-  useEffect(() => {
-    if (!onSelectionChange || !rows) return;
-
-    const selected = rows.filter((g) =>
-      selectedIds.includes(g.shippingGuideId)
-    );
-    onSelectionChange(selected);
-  }, [rows, selectedIds, onSelectionChange]);
 
   const columns: Column<ShippingGuide>[] = [
     {

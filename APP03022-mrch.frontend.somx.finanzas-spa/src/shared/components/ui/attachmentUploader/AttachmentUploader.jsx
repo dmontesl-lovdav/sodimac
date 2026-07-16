@@ -8,6 +8,32 @@ import view from './AttachmentUploaderView.svg';       // 👁️ ver
 import download from './AttachmentUploaderDownload.svg';   // ⬇️ descargar
 import icon from '@assets/AttachmentUploaderIcon.svg'; // ☁️ drag-&-drop
 
+const ERR_INVALID_TYPE = 1;
+const ERR_INVALID_SIZE = 2;
+const ERR_TOO_LONG_FILENAME = 3;
+
+const ERR_CAPTIONS = {
+    [ERR_INVALID_TYPE]: 'Documento no soportado.',
+    [ERR_INVALID_SIZE]: 'Documento excede el tamaño máximo permitido.',
+    [ERR_TOO_LONG_FILENAME]: 'Nombre del archivo muy largo.',
+};
+
+function getFileValidationError(file, validFileExtensions, maxFileSize, maxFilenameLength) {
+    const lower = file.name.toLowerCase();
+    const hasValidExt = validFileExtensions.some((ext) => lower.endsWith(`.${ext}`));
+    if (!hasValidExt) return ERR_INVALID_TYPE;
+    if (file.size > maxFileSize) return ERR_INVALID_SIZE;
+    if (file.name.length > maxFilenameLength) return ERR_TOO_LONG_FILENAME;
+    return 0;
+}
+
+function handleActivate(e, action) {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        action();
+    }
+}
+
 export default function AttachmentUploader({
     files,
     setFiles,
@@ -24,10 +50,6 @@ export default function AttachmentUploader({
         ['zip', 'gif', 'xls', 'xlsx', 'pdf', 'jpg', 'jpeg', 'docx', 'doc', 'png', 'xml'];
     const maxFileSize = fileSize ?? 4_194_304; // 4 MB por archivo
     const maxFilenameLength = filenameLength ?? 64;
-
-    const ERR_INVALID_TYPE = 1;
-    const ERR_INVALID_SIZE = 2;
-    const ERR_TOO_LONG_FILENAME = 3;
 
     /* ---------- modal preview (canvas) ---------- */
     const [previewFile, setPreviewFile] = useState(null);
@@ -68,25 +90,15 @@ export default function AttachmentUploader({
         const current = Array.isArray(files) ? files.slice() : [];
         const existingNames = new Set(current.map(c => c.name));
 
-        outer: for (const ef of Array.from(eventFiles || [])) {
-            if (!ef) continue;
+        for (const ef of Array.from(eventFiles || [])) {
+            if (!ef || existingNames.has(ef.name)) continue;
 
-            // evitar duplicado por nombre
-            if (existingNames.has(ef.name)) continue outer;
-
-            // validar extensión
-            let err = ERR_INVALID_TYPE;
-            const lower = ef.name.toLowerCase();
-            for (const ext of validFileExtensions) {
-                if (lower.endsWith(`.${ext}`)) { err = 0; break; }
-            }
-
-            // tamaño / nombre
-            if (ef.size > maxFileSize) err = ERR_INVALID_SIZE;
-            if (ef.name.length > maxFilenameLength) err = ERR_TOO_LONG_FILENAME;
-
-            // marcaremos error en el File (se mantiene en memoria, no se sube aún)
-            ef.err = err;
+            ef.err = getFileValidationError(
+                ef,
+                validFileExtensions,
+                maxFileSize,
+                maxFilenameLength
+            );
 
             existingNames.add(ef.name);
             current.push(ef);
@@ -114,22 +126,27 @@ export default function AttachmentUploader({
         URL.revokeObjectURL(url);
     };
 
-    const buildErr = err =>
-        err === ERR_INVALID_TYPE ? <div className="file-err-caption">Documento no soportado.</div> :
-            err === ERR_INVALID_SIZE ? <div className="file-err-caption">Documento excede el tamaño máximo permitido.</div> :
-                err === ERR_TOO_LONG_FILENAME ? <div className="file-err-caption">Nombre del archivo muy largo.</div> : null;
+    const buildErr = err => {
+        const caption = ERR_CAPTIONS[err];
+        return caption ? <div className="file-err-caption">{caption}</div> : null;
+    };
 
     const acceptAttr = validFileExtensions.map(ext => `.${ext}`).join(',');
+    const isUploadDisabled = !multiple && Boolean(files?.length);
+    const openFilePicker = () => manualInputFile.current?.click();
 
     /* ---------- UI ---------- */
     return (
         <div className="main">
             {/* drag & drop */}
             <div
-                className={!multiple && (files?.length ? true : false) ? 'action grayscale' : 'action'}
+                className={isUploadDisabled ? 'action grayscale' : 'action'}
+                role="button"
+                tabIndex={isUploadDisabled ? -1 : 0}
                 onDragOver={e => e.preventDefault()}
                 onDrop={dropFiles}
-                onClick={() => manualInputFile.current?.click()}
+                onClick={openFilePicker}
+                onKeyDown={e => handleActivate(e, openFilePicker)}
             >
                 <input
                     ref={manualInputFile}
@@ -137,7 +154,7 @@ export default function AttachmentUploader({
                     style={{ display: 'none' }}
                     accept={acceptAttr}
                     onChange={(e) => addFiles(e.target.files)}
-                    disabled={!multiple && (files?.length ? true : false)}
+                    disabled={isUploadDisabled}
                     multiple={!!multiple}
                 />
                 <div className="caption-icon"><img src={icon} alt="" /></div>
@@ -158,18 +175,36 @@ export default function AttachmentUploader({
 
                         {!f.err && (
                             <>
-                                <div className="file-view" onClick={() => setPreviewFile(f)} title="Ver">
-                                    <img src={view} alt="Ver" />
-                                </div>
-                                <div className="file-download" onClick={() => downloadFile(f)} title="Descargar">
-                                    <img src={download} alt="Descargar" />
-                                </div>
+                                <button
+                                    type="button"
+                                    className="file-view"
+                                    onClick={() => setPreviewFile(f)}
+                                    title="Ver"
+                                    aria-label="Ver"
+                                >
+                                    <img src={view} alt="" />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="file-download"
+                                    onClick={() => downloadFile(f)}
+                                    title="Descargar"
+                                    aria-label="Descargar"
+                                >
+                                    <img src={download} alt="" />
+                                </button>
                             </>
                         )}
 
-                        <div className="file-delete" onClick={() => removeFile(f.name)} title="Eliminar">
-                            <img src={trash} alt="Borrar" />
-                        </div>
+                        <button
+                            type="button"
+                            className="file-delete"
+                            onClick={() => removeFile(f.name)}
+                            title="Eliminar"
+                            aria-label="Eliminar"
+                        >
+                            <img src={trash} alt="" />
+                        </button>
 
                         {buildErr(f.err)}
                     </div>
@@ -178,8 +213,20 @@ export default function AttachmentUploader({
 
             {/* modal */}
             {previewFile && (
-                <div className="au-modal-overlay" onClick={closePreview}>
-                    <div className="au-modal" onClick={e => e.stopPropagation()}>
+                <div
+                    className="au-modal-overlay"
+                    role="button"
+                    tabIndex={0}
+                    onClick={closePreview}
+                    onKeyDown={e => handleActivate(e, closePreview)}
+                >
+                    <div
+                        className="au-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => e.stopPropagation()}
+                    >
                         <button className="au-close" onClick={closePreview}>×</button>
                         <canvas ref={previewCanvas} className="au-canvas" />
                     </div>

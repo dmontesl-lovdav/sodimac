@@ -162,6 +162,15 @@ export default function FiltersBar({
             return;
         }
 
+        let resolvedMonth: AccountStatementFilters['month'];
+        if (month === 'all') {
+            resolvedMonth = 'all';
+        } else if (typeof month === 'number') {
+            resolvedMonth = month;
+        } else {
+            resolvedMonth = Number(month);
+        }
+
         const payload: AccountStatementFilters = {
             providerType: providerType+"",
             providerId:
@@ -169,12 +178,7 @@ export default function FiltersBar({
                     ? providerId.trim()
                     : undefined,
             year,
-            month:
-                month === 'all'
-                    ? 'all'
-                    : typeof month === 'number'
-                        ? month
-                        : Number(month),
+            month: resolvedMonth,
         };
         saveFinanceListFilters(
             FINANCE_LIST_KEYS.accountStatement.filters,

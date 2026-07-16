@@ -5,6 +5,13 @@ export type CatalogStatusItem = {
     sortOrder?: number;
 };
 
+/** Catálogo de estatus de OC/recepción (`tenant_finance.status_catalog`). */
+export type PurchaseOrderStatusItem = {
+    status: number;
+    name: string;
+    description: string | null;
+};
+
 export type AccountStatementReportPayload = {
     meta: {
         accountStatementUuid: string;
@@ -59,6 +66,7 @@ export type AccountStatementReportPayload = {
     facturas: Record<string, unknown>[];
     notasCredito: Record<string, unknown>[];
     catalogs: {
+        purchaseOrderStatus?: PurchaseOrderStatusItem[];
         invoiceStatus: CatalogStatusItem[];
         paymentStatus: CatalogStatusItem[];
         creditNoteStatus: CatalogStatusItem[];

@@ -80,7 +80,6 @@ axiosClient.interceptors.response.use(
   },
   (error: unknown) => {
     console.error("❌ Axios error:", (error as any)?.response?.data || (error as any)?.message);
-
     const url = (error as any)?.config?.url;
 
     logActivity(
@@ -113,15 +112,21 @@ const axiosGetRaw = async (url: string, token?: string, params?: any) => {
       method: "GET",
       params,
       headers: {},
+      
+      validateStatus: (status) => {  //NO TOMA COMO ERROR LOS 404
+          return status < 500;
+      }
+
     };
 
     if (token) {
       config.headers!["Authorization"] = `Bearer ${token}`;
     }
 
+
     const response: AxiosResponse = await axiosClient(config);
     console.log("✅ API respondió:", response.status)
-  return response.data;
+    return response.data;
 };
 
 
@@ -206,13 +211,15 @@ export async function axiosGet<T>(
     }
 
     const type = resolveEndpointType(url);
-    const key = type; // o combinación si quieres más granular
+    //const key = type; // o combinación si quieres más granular
+    const key = url;
   try {
     
     
     // ✅ breaker por endpoint
     const breaker = getBreaker(key, axiosGetRaw, type);
 
+    
     // ✅ 2. usar breaker + retry
     const data = await breaker.fire(url, token, params);
 
@@ -385,7 +392,7 @@ export async function ValidStatus(url: string, optionId: number, sourceStatus: n
 
 function resolveEndpointType(url: string): string {
   if (url.includes("/catalog")) return "catalog";
-  if (url.includes("/supplier")) return "supplier";
+  if (url.includes("/suppliers")) return "suppliers";
   if (url.includes("/status")) return "status";
 
   return "default";

@@ -155,10 +155,22 @@ export default function GenericSelectFloating({
     // caret
     const baseNavy = '#0f2a3d';
     const idleGray = '#94a3b8';
-    const caretColor = disabled ? '#cbd5e1' : (open ? baseNavy : idleGray);
+    let caretColor = idleGray;
+    if (disabled) caretColor = '#cbd5e1';
+    else if (open) caretColor = baseNavy;
+
     const caretStyle = open
         ? { width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: `6px solid ${caretColor}` }
         : { width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${caretColor}` };
+
+    let labelTone = 'text-slate-500 peer-focus:text-sky-700';
+    if (error) labelTone = 'text-rose-600';
+    else if (open) labelTone = 'text-sky-700';
+
+    const labelPosition = hasValue || open ? 'top-1 text-xs' : 'top-[14px] text-sm';
+    const borderTone = error
+        ? 'border-rose-400 focus:border-rose-500'
+        : 'border-slate-300/70 focus:border-sky-600/80';
 
     return (
         <div className={`relative ${fullWidth ? 'w-full' : 'w-60'} ${className}`}>
@@ -183,8 +195,7 @@ export default function GenericSelectFloating({
           text-[15px] text-slate-800 leading-[1.85rem]
           pt-7 pb-2 pr-9 pl-4
           border-0 border-b
-          ${error ? 'border-rose-400 focus:border-rose-500'
-                        : 'border-slate-300/70 focus:border-sky-600/80'}
+          ${borderTone}
           focus:outline-none focus:ring-0
           transition-[border-color] duration-200
           rounded-none tracking-[0.01em]
@@ -204,10 +215,8 @@ export default function GenericSelectFloating({
                 className={`
           pointer-events-none absolute
           transition-all duration-200
-          ${hasValue || open ? 'top-1 text-xs' : 'top-[14px] text-sm'}
-          ${error ? 'text-rose-600'
-                        : open ? 'text-sky-700'
-                            : 'text-slate-500 peer-focus:text-sky-700'}
+          ${labelPosition}
+          ${labelTone}
           font-medium
         `}
                 style={{ left: `${leftPad}px` }}
@@ -249,6 +258,7 @@ export default function GenericSelectFloating({
                                 id={`${id}-opt-${idx}`}
                                 data-idx={idx}
                                 role="option"
+                                tabIndex={0}
                                 aria-selected={selected}
                                 onMouseEnter={() => setFocusIndex(idx)}
                                 onMouseDown={(e) => e.preventDefault()} // keep button focus

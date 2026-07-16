@@ -9,7 +9,9 @@ function monthsDiff(a: Date, b: Date): number {
     return ms / (1000 * 60 * 60 * 24 * 30);
 }
 
-function validateRange(q: ListThreeWayMatchQuery): void {
+function validateRange(
+    q: ListThreeWayMatchQuery
+): void {
     const months = monthsDiff(
         q.fechaInicio,
         q.fechaFin
@@ -128,9 +130,9 @@ const exportColumns = [
         width: 20,
     },
     {
-        header: "Fecha Pago",
-        key: "fechaPago",
-        width: 20,
+        header: "Tipo Proveedor",
+        key: "tipoProveedor",
+        width: 30,
     },
     {
         header: "Número Proveedor",
@@ -142,6 +144,11 @@ const exportColumns = [
         key: "nombreProveedor",
         width: 35,
     },
+    {
+        header: "Fecha Pago",
+        key: "fechaPago",
+        width: 20,
+    },
 ] as const;
 
 type ExportColumnKey =
@@ -149,6 +156,7 @@ type ExportColumnKey =
 
 type ExportFallbackKey =
     | "numeroDocumento"
+    | "tipoProveedorId"
     | "nombreProveedorSap"
     | "supplierName"
     | "vendorName"
@@ -161,7 +169,9 @@ type ExportRow = Partial<
     >
 >;
 
-function toExportRow(row: unknown): ExportRow {
+function toExportRow(
+    row: unknown
+): ExportRow {
     return row as ExportRow;
 }
 
@@ -169,6 +179,10 @@ function getExportValue(
     row: ExportRow,
     key: ExportColumnKey
 ): unknown {
+    /*
+     * La pantalla utiliza numeroDocumento como primera
+     * opción y referenciaPago como respaldo.
+     */
     if (key === "referenciaPago") {
         return (
             row.numeroDocumento ??
@@ -177,6 +191,21 @@ function getExportValue(
         );
     }
 
+    /*
+     * Utiliza la descripción del tipo de proveedor.
+     * Si no está disponible, utiliza el ID como respaldo.
+     */
+    if (key === "tipoProveedor") {
+        return (
+            row.tipoProveedor ??
+            row.tipoProveedorId ??
+            ""
+        );
+    }
+
+    /*
+     * Conserva los alias anteriores por compatibilidad.
+     */
     if (key === "nombreProveedor") {
         return (
             row.nombreProveedor ??
@@ -191,9 +220,12 @@ function getExportValue(
     return row[key] ?? "";
 }
 
-function escapeCsvValue(value: unknown): string {
+function escapeCsvValue(
+    value: unknown
+): string {
     const text =
-        value === null || value === undefined
+        value === null ||
+            value === undefined
             ? ""
             : String(value);
 
@@ -231,12 +263,13 @@ export async function exportCsv(
         )
     );
 
-    const rows = result.data.map(toExportRow);
+    const rows =
+        result.data.map(toExportRow);
 
-    const headers = exportColumns.map(
-        (column) =>
+    const headers =
+        exportColumns.map((column) =>
             escapeCsvValue(column.header)
-    );
+        );
 
     const csvLines = [
         headers.join(","),
@@ -256,8 +289,8 @@ export async function exportCsv(
     ];
 
     /*
-     * El BOM UTF-8 se agrega en requestBinary del frontend.
-     * No se agrega aquí para evitar un BOM duplicado.
+     * El BOM UTF-8 se agrega en requestBinary
+     * del frontend para evitar duplicarlo.
      */
     return csvLines.join("\n");
 }
@@ -277,18 +310,20 @@ export async function exportXlsx(
         )
     );
 
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet(
-        "ThreeWayMatch"
-    );
+    const workbook =
+        new ExcelJS.Workbook();
 
-    sheet.columns = exportColumns.map(
-        (column) => ({
+    const sheet =
+        workbook.addWorksheet(
+            "ThreeWayMatch"
+        );
+
+    sheet.columns =
+        exportColumns.map((column) => ({
             header: column.header,
             key: column.key,
             width: column.width,
-        })
-    );
+        }));
 
     result.data
         .map(toExportRow)

@@ -5,8 +5,17 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: ${PROJECT_NAME}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 200Mi
+              ephemeral-storage: 100Mi
+            limits:
+              memory: 400Mi
+              ephemeral-storage: 500Mi
           envFrom:
             - configMapRef:
                 name: ${PROJECT_NAME}-configmap

@@ -196,12 +196,10 @@ class MessageCatalogService {
 
         if (isBusinessError) {
             console.warn(`[MessageCatalog] ${logMessage}`);
+        } else if (cause) {
+            console.error(`[MessageCatalog] ${logMessage}`, cause);
         } else {
-            if (cause) {
-                console.error(`[MessageCatalog] ${logMessage}`, cause);
-            } else {
-                console.error(`[MessageCatalog] ${logMessage}`);
-            }
+            console.error(`[MessageCatalog] ${logMessage}`);
         }
     }
 

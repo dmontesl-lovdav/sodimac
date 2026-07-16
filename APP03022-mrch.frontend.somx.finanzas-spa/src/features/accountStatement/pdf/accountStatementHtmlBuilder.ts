@@ -35,6 +35,76 @@ function escapeHtml(s: string): string {
         .replace(/"/g, '&quot;');
 }
 
+/** UUID completo sin truncar; si viene vacío muestra guión. */
+function fullUuid(value: unknown): string {
+    const raw = String(value ?? '').trim();
+    return raw || '-';
+}
+
+function resolveStatusColor(color: string | null | undefined): string {
+    if (!color) return '#E5E7EB';
+    const c = color.trim().toLowerCase();
+    if (c.startsWith('#')) return color.trim();
+    const map: Record<string, string> = {
+        rojo: '#FECACA',
+        amarillo: '#FEF08A',
+        verde: '#BBF7D0',
+        azul: '#BFDBFE',
+        gris: '#E5E7EB',
+    };
+    return map[c] ?? '#E5E7EB';
+}
+
+/** Anchos relativos por encabezado; luego se normalizan a 100%. */
+const COL_WIDTH_WEIGHT: Record<string, number> = {
+    Concepto: 52,
+    Monto: 24,
+    'No. Documentos': 24,
+    Cuenta: 6,
+    Tipo: 6,
+    Ref: 5,
+    UUID: 15,
+    'F. Doc': 7,
+    Venc: 6,
+    'Venc.': 6,
+    'F. Pago': 7,
+    'F. Contab': 7,
+    'F. Rec': 7,
+    Mon: 4,
+    'Monto Or.': 8,
+    'Monto Origen': 9,
+    TC: 3,
+    'Monto Loc': 8,
+    'Monto Local': 9,
+    Estatus: 9,
+    'No. OC': 7,
+    'No. Rec.': 7,
+};
+
+function buildColgroup(headers: string[]): string {
+    const weights = headers.map((header) => COL_WIDTH_WEIGHT[header] ?? 8);
+    const total = weights.reduce((sum, w) => sum + w, 0) || 1;
+    const cols = weights
+        .map((w) => `<col style="width:${((w / total) * 100).toFixed(2)}%">`)
+        .join('');
+    return `<colgroup>${cols}</colgroup>`;
+}
+
+function cellClassForHeader(header: string): string {
+    if (header === 'UUID') return 'cell-uuid';
+    if (header === 'Estatus') return 'cell-status';
+    if (
+        header === 'Monto' ||
+        header.startsWith('Monto') ||
+        header === 'TC' ||
+        header === 'Mon'
+    ) {
+        return 'cell-num';
+    }
+    if (header.startsWith('F.') || header.startsWith('Venc')) return 'cell-date';
+    return 'cell-text';
+}
+
 type ViewModel = {
     issuer: AccountStatementReportPayload['issuer'];
     vendor: AccountStatementReportPayload['vendor'];
@@ -71,7 +141,12 @@ function toViewModel(payload: AccountStatementReportPayload): ViewModel {
         rebates: payload.rebates ?? [],
         facturas: payload.facturas ?? [],
         notasCredito: payload.notasCredito ?? [],
-        catalogs: payload.catalogs,
+        catalogs: payload.catalogs ?? {
+            purchaseOrderStatus: [],
+            invoiceStatus: [],
+            paymentStatus: [],
+            creditNoteStatus: [],
+        },
     };
 }
 
@@ -82,22 +157,37 @@ function renderStatusCell(
 ): string {
     const raw = String(status ?? '').trim();
     const numeric = Number(raw);
-    const defaultBg = '#E5E7EB';
-    const defaultText = '#111827';
 
     const statusCell = (label: string, bgColor?: string | null) =>
-        `<td style="background: ${bgColor || defaultBg}; color: ${defaultText}; font-weight: bold;">${escapeHtml(label)}</td>`;
+        `<td class="cell-status" style="background:${resolveStatusColor(bgColor)};">${escapeHtml(label)}</td>`;
+
+    // OC / recepción: catálogo por código numérico (status_catalog)
+    if (tableName === 'Purchase') {
+        const poCatalog = catalogs.purchaseOrderStatus ?? [];
+        const match = poCatalog.find(
+            (item) =>
+                Number(item.status) === numeric ||
+                String(item.status) === raw ||
+                (item.name && item.name.toLowerCase() === raw.toLowerCase()) ||
+                (item.description &&
+                    item.description.toLowerCase() === raw.toLowerCase())
+        );
+        if (match) {
+            return statusCell(match.description || match.name, null);
+        }
+        return statusCell(raw || 'N/A');
+    }
 
     let catalog: CatalogStatusItem[] = [];
     switch (tableName) {
-        case 'Purchase':
-            catalog = catalogs.paymentStatus ?? [];
-            break;
         case 'Invoice':
             catalog = catalogs.invoiceStatus ?? [];
             break;
         case 'Credit':
             catalog = catalogs.creditNoteStatus ?? [];
+            break;
+        case 'Payment':
+            catalog = catalogs.paymentStatus ?? [];
             break;
         default:
             catalog = [];
@@ -106,6 +196,7 @@ function renderStatusCell(
     const match = catalog.find(
         (item) =>
             item.key === raw ||
+            String(item.key).toLowerCase() === raw.toLowerCase() ||
             item.description.toLowerCase() === raw.toLowerCase() ||
             (Number.isFinite(numeric) && item.sortOrder === numeric)
     );
@@ -125,13 +216,14 @@ function renderStatusCell(
         case 'aplicado':
             return statusCell('Aplicado', '#D1D5DB');
         default:
-            return statusCell(raw);
+            return statusCell(raw || 'N/A');
     }
 }
 
 /** HTML del estado de cuenta (misma estructura que accountStatementPdf.service.ts en back). */
 export function buildAccountStatementHtml(
-    payload: AccountStatementReportPayload
+    payload: AccountStatementReportPayload,
+    receptionStatuses: any[]
 ): string {
     const data = toViewModel(payload);
     const h = escapeHtml;
@@ -155,7 +247,7 @@ export function buildAccountStatementHtml(
             formatCurrency(Number(po.amount) || 0),
             '1',
             formatCurrency(Number(po.amount) || 0),
-            po.status != null ? String(po.status) : 'N/A',
+            rec?.status != null ? receptionStatuses.find((s) => s.value === String(rec.status))?.label ?? 'N/A' : 'N/A',
         ];
     });
 
@@ -163,7 +255,7 @@ export function buildAccountStatementHtml(
         vn,
         'Pago',
         String(p.documentNumber ?? ''),
-        String(p.fiscalPaymentUuid ?? '').slice(0, 14) || '-',
+        fullUuid(p.fiscalPaymentUuid),
         formatDate(p.paymentDate as string),
         '-',
         formatDate(p.paymentDate as string),
@@ -172,14 +264,14 @@ export function buildAccountStatementHtml(
         formatCurrency(parseNum(p.amount)),
         '1',
         formatCurrency(parseNum(p.amount)),
-        'Pagada',
+        p.status != null ? String(p.status) : 'Pagada',
     ]);
 
     const descRows = data.rebates.map((b) => [
         vn,
         'Desc. Comercial',
         String(b.documentNumber ?? ''),
-        String(b.rebateId ?? '').slice(0, 14) || '-',
+        fullUuid(b.rebateId),
         formatDate(b.postingDate as string),
         formatDate(b.postingDate as string),
         'MXN',
@@ -193,7 +285,7 @@ export function buildAccountStatementHtml(
         vn,
         'Factura',
         String(i.folio ?? ''),
-        String(i.invoiceUuid ?? '').slice(0, 14) || '-',
+        fullUuid(i.invoiceUuid),
         formatDate(i.issueDate as string),
         '-',
         formatDate((i.certificationDate ?? i.issueDate) as string),
@@ -201,21 +293,21 @@ export function buildAccountStatementHtml(
         formatCurrency(Number(i.total) || 0),
         '1',
         formatCurrency(Number(i.total) || 0),
-        'Pendiente',
+        i.status != null ? String(i.status) : 'Pendiente',
     ]);
 
     const ncRows = data.notasCredito.map((i) => [
         vn,
         'Nota Crédito',
         String(i.folio ?? ''),
-        String(i.invoiceUuid ?? '').slice(0, 14) || '-',
+        fullUuid(i.invoiceUuid),
         formatDate(i.issueDate as string),
         formatDate((i.certificationDate ?? i.issueDate) as string),
         'MXN',
         formatCurrency(Number(i.total) || 0),
         '1',
         formatCurrency(Number(i.total) || 0),
-        'Compensada',
+        i.status != null ? String(i.status) : 'Compensada',
     ]);
 
     const renderTable = (
@@ -225,23 +317,34 @@ export function buildAccountStatementHtml(
         footerValue: string,
         tableName: string
     ) => {
-        const thead = headers.map((c) => `<th>${h(c)}</th>`).join('');
-        const statusIdx = headers.findIndex((header) => header === 'Estatus');
-        const body = rows
-            .map((row, i) => {
-                const cells = row
-                    .map((cell, idx) => {
-                        if (idx === statusIdx) {
-                            return renderStatusCell(cell, tableName, data.catalogs);
-                        }
-                        return `<td>${h(String(cell))}</td>`;
-                    })
-                    .join('');
-                return `<tr class="row-${i % 2 === 0 ? 'even' : 'odd'}">${cells}</tr>`;
-            })
+        const thead = headers
+            .map((c) => `<th class="${cellClassForHeader(c)}" style="color: white">${h(c)}</th>`)
             .join('');
+        const statusIdx = headers.findIndex((header) => header === 'Estatus');
+        const body =
+            rows.length === 0
+                ? `<tr class="row-empty"><td class="cell-empty" colspan="${headers.length}">No hay información para mostrar</td></tr>`
+                : rows
+                      .map((row, i) => {
+                          const cells = row
+                              .map((cell, idx) => {
+                                  if (idx === statusIdx) {
+                                      return renderStatusCell(
+                                          cell,
+                                          tableName,
+                                          data.catalogs
+                                      );
+                                  }
+                                  const cls = cellClassForHeader(headers[idx] ?? '');
+                                  return `<td class="${cls}">${h(String(cell))}</td>`;
+                              })
+                              .join('');
+                          return `<tr class="row-${i % 2 === 0 ? 'even' : 'odd'}">${cells}</tr>`;
+                      })
+                      .join('');
         return `
     <table class="data-table">
+      ${buildColgroup(headers)}
       <thead><tr>${thead}</tr></thead>
       <tbody>${body}</tbody>
       <tfoot><tr><td colspan="${headers.length - 1}" class="footer-label">${h(footerLabel)}</td><td class="footer-value">${h(footerValue)}</td></tr></tfoot>
@@ -290,11 +393,12 @@ documento haya llegado a sus manos de forma accidental, por favor destrúyalo.
   <title>Estado de Cuenta</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 0; }
-    .page-header { display: flex; align-items: stretch; margin-bottom: 10px; }
+    html, body { width: 100%; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 24px 16px; max-width: 100%; }
+    .page-header { display: flex; align-items: stretch; margin-bottom: 10px; width: 100%; }
     .logo-placeholder { width: 180px; min-width: 180px; height: 50px; background: #f0f0f0; border: 1px solid #9ca3af; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #6b7280; }
     .header-bar { flex: 1; background: #1470C0; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border-radius: 0 10px 10px 0; margin-left: 0; }
-    .top-block { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .top-block { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; width: 100%; }
     .issuer { max-width: 55%; }
     .issuer p { margin: 0 0 4px; line-height: 1.3; }
     .meta { width: 320px; text-align: center; }
@@ -303,24 +407,69 @@ documento haya llegado a sus manos de forma accidental, por favor destrúyalo.
     .meta-title { background: #ef1f2f; color: #fff; font-weight: bold; font-size: 12px; line-height: 1.1; padding: 8px 10px; border-radius: 0; }
     .meta-value-box { background: #ececec; color: #111; font-size: 12px; padding: 9px 10px; }
     .meta-date { color: #111; font-weight: normal; font-size: 12px; }
-    .section-title { text-align:center; background: linear-gradient(90deg, #0b66b1, #ebebeb); color: white; padding: 8px; font-weight: bold; font-size: 14px; margin: 16px 0 0px; }
-    .section-title-red { text-align:center; background: linear-gradient(90deg, #b91c1c, #ebebeb); color: white; padding: 8px; font-weight: bold; font-size: 14px; margin: 16px 0 0px;  }
-    .two-cols { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px; }
+    .section-title { text-align:center; background: linear-gradient(90deg, #0b66b1, #ebebeb); color: white; padding: 8px; font-weight: bold; font-size: 14px; margin: 16px 0 0; width: 100%; box-sizing: border-box; }
+    .section-title-red { text-align:center; background: linear-gradient(90deg, #b91c1c, #ebebeb); color: white; padding: 8px; font-weight: bold; font-size: 14px; margin: 16px 0 0; width: 100%; box-sizing: border-box; }
+    .two-cols { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px; width: 100%; }
     .two-cols .col-left { flex: 0 0 auto; }
     .two-cols .col-right { flex: 1; min-width: 0; }
     .vendor-logo-box { width: 120px; height: 100px; background: #f3f4f6; border: 1px dashed #9ca3af; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #6b7280; border-radius: 4px; }
-    .summary-with-charts { display: flex; gap: 20px; align-items: flex-start; }
-    .summary-with-charts .summary-table-wrap { flex: 1; min-width: 0; }
+    .summary-with-charts { display: flex; gap: 20px; align-items: flex-start; width: 100%; }
+    .summary-with-charts .summary-table-wrap { flex: 1; min-width: 0; width: 100%; }
     .summary-with-charts .summary-charts-wrap { flex: 0 0 280px; }
-    .disclaimer { font-size: 8px; color: #666; text-align: center; margin: 12px 0; }
-    .data-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 9px; border: 1px solid #d1d5db; border-radius: 4px; overflow: hidden; }
-    .data-table th { background: #666666; color: white; padding: 10px 8px; text-align: left; font-weight: bold; }
-    .data-table td { padding: 6px 8px; }
+    .disclaimer { font-size: 8px; color: #666; text-align: center; margin: 12px 0; width: 100%; }
+    .data-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0 0 8px;
+      font-size: 8px;
+      border: 1px solid #d1d5db;
+    }
+    .data-table th,
+    .data-table td {
+      padding: 5px 4px;
+      text-align: left;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      border: none;
+    }
+    .data-table th {
+      background: #666666;
+      color: white;
+      font-weight: bold;
+      font-size: 8px;
+      line-height: 1.2;
+    }
+    .data-table .cell-uuid {
+      word-break: break-all;
+      white-space: normal;
+      font-size: 7px;
+      line-height: 1.25;
+    }
+    .data-table .cell-status {
+      color: #111827;
+      font-weight: bold;
+      white-space: normal;
+      line-height: 1.25;
+    }
+    .data-table .cell-num { text-align: right; white-space: nowrap; }
+    .data-table .cell-date { white-space: normal; }
     .data-table tbody tr.row-even { background: #f3f4f6; }
     .data-table tbody tr.row-odd { background: #e5e7eb; }
-    .data-table tfoot tr { background: #666666; font-weight: bold; color:white; }
+    .data-table tbody tr.row-empty { background: #f9fafb; }
+    .data-table td.cell-empty {
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      padding: 14px 8px;
+      font-size: 9px;
+    }
+    .data-table tfoot tr { background: #666666; font-weight: bold; color: white; }
     .data-table tfoot .footer-value { background: #9b9b9b; }
-    .data-table tfoot td { padding: 6px 8px; }
+    .data-table tfoot td { padding: 6px 4px; }
     .chart { margin: 12px 0; }
     .chart-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 9px; }
     .chart-label { width: 120px; }
@@ -331,15 +480,16 @@ documento haya llegado a sus manos de forma accidental, por favor destrúyalo.
     .pie-item { display: flex; flex-direction: column; align-items: center; }
     .pie-ring { width: 70px; height: 70px; border-radius: 50%; background: conic-gradient(var(--pie-color) calc(var(--pie-pct) * 1%), #e5e7eb 0); }
     .pie-item span { font-size: 8px; margin-top: 4px; text-align: center; max-width: 80px; }
-    .saldo-neto-final { background: linear-gradient(135deg, #b91c1c, #dc2626); color: white; padding: 20px 24px; font-size: 22px; font-weight: bold; text-align: center; border-radius: 8px; margin-top: 16px; }
-    .footer-doc { font-size: 8px; text-align: center; margin-top: 24px; color: #666; }
+    .saldo-neto-final { background: linear-gradient(135deg, #b91c1c, #dc2626); color: white; padding: 20px 24px; font-size: 22px; font-weight: bold; text-align: center; border-radius: 8px; margin-top: 16px; width: 100%; box-sizing: border-box; }
+    .footer-doc { font-size: 8px; text-align: center; margin-top: 24px; color: #666; width: 100%; }
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10mm; width: 100%; max-width: 100%; }
       .page-break { page-break-before: always; }
+      .data-table { width: 100% !important; }
     }
   </style>
 </head>
-<body style="padding: 40px; max-width: 800px; margin: 0 auto;">
+<body>
   ${renderHeader()}
 
   <div class="top-block">
@@ -432,7 +582,7 @@ documento haya llegado a sus manos de forma accidental, por favor destrúyalo.
       fpRows,
       'TOTAL',
       formatCurrency(t.totalFacturasPagadas),
-      'Invoice'
+      'Payment'
   )}
 
   <div class="section-title">FACTURAS PENDIENTES DE PAGO</div>

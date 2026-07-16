@@ -51,7 +51,7 @@ export async function healthCheck(_req: Request, res: Response) {
         const dbCheckStart = Date.now();
         const dataSource = getDataSource();
 
-        if (dataSource && dataSource.isInitialized) {
+        if (dataSource?.isInitialized) {
             await dataSource.query('SELECT 1');
             const dbCheckEnd = Date.now();
 
@@ -102,7 +102,7 @@ export async function readinessProbe(_req: Request, res: Response) {
     try {
         const dataSource = getDataSource();
 
-        if (dataSource && dataSource.isInitialized) {
+        if (dataSource?.isInitialized) {
             await dataSource.query('SELECT 1');
             res.status(200).json({
                 status: 'UP',

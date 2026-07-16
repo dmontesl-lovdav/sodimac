@@ -32,7 +32,6 @@ export default function PaymentsContainer(): ReactElement {
     );
 
     const [loading, setLoading] = useState(false);
-    const [searchApplied, setSearchApplied] = useState(false);
     const [error, setError] = useState<string>("");
     const [messages, setMessages] = useState<Record<string, string>>({});
     const [lastFilters, setLastFilters] = useState<PaymentFiltersValues | null>(
@@ -98,7 +97,6 @@ export default function PaymentsContainer(): ReactElement {
 
         setLoading(true);
         setError("");
-        setSearchApplied(true);
         setLastFilters(filters);
         setAllFilteredPayments([]);
 
@@ -249,7 +247,6 @@ export default function PaymentsContainer(): ReactElement {
         setPayments([]);
         setAllFilteredPayments([]);
         setError("");
-        setSearchApplied(false);
         setLastFilters(null);
         setPage(1);
         setPerPage(10);

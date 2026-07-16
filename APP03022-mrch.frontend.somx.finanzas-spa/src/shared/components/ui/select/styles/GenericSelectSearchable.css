@@ -48,18 +48,6 @@ input.gss-input::placeholder {
     z-index: 2;
 }
 
-/* CARET */
-.generic-select-caret {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: #002d4c;
-    font-size: 0.9rem;
-    z-index: 1;
-}
-
 .gss-clear:hover {
     color: #111827;
 }
@@ -73,6 +61,7 @@ input.gss-input::placeholder {
     pointer-events: none;
     color: #002d4c;
     font-size: 0.9rem;
+    z-index: 1;
 }
 
 /* DROPDOWN */
@@ -93,9 +82,15 @@ input.gss-input::placeholder {
 }
 
 .gss-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
     padding: 5px 10px;
     font-size: 14px;
     cursor: pointer;
+    color: inherit;
 }
 
 .gss-option:hover {

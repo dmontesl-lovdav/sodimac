@@ -58,65 +58,70 @@ export default function GenericModal({
 
   const sev = palette[severity] ?? palette.info;
 
-  return (
-    <div className="gm-overlay">
-      {variant === 'loading' ? (
-        <div className="gm-box gm-loading">
-          <svg className="gm-spinner" viewBox="0 0 24 24">
-            <circle className="gm-spinner-track" cx="12" cy="12" r="10" />
-            <path className="gm-spinner-head" d="M22 12a10 10 0 0 1-10 10" />
-          </svg>
-          <p className="gm-msg">{message || 'Procesando…'}</p>
+  let body: React.ReactNode;
+  if (variant === 'loading') {
+    body = (
+      <div className="gm-box gm-loading">
+        <svg className="gm-spinner" viewBox="0 0 24 24">
+          <circle className="gm-spinner-track" cx="12" cy="12" r="10" />
+          <path className="gm-spinner-head" d="M22 12a10 10 0 0 1-10 10" />
+        </svg>
+        <p className="gm-msg">{message || 'Procesando…'}</p>
+      </div>
+    );
+  } else if (variant === 'confirm') {
+    body = (
+      <div className="gm-box gm-content">
+        <div className={`gm-icon-circle ${sev.bg}`}>
+          {React.createElement(sev.icon, {
+            className: `gm-icon ${sev.color}`,
+          })}
         </div>
-      ) : variant === 'confirm' ? (
-        <div className="gm-box gm-content">
-          <div className={`gm-icon-circle ${sev.bg}`}>
-            {React.createElement(sev.icon, {
-              className: `gm-icon ${sev.color}`,
-            })}
-          </div>
 
-          {title && <h3 className="gm-title">{title}</h3>}
+        {title && <h3 className="gm-title">{title}</h3>}
 
-          {/* div (no p) para permitir forms o bloques en confirmaciones */}
-          <div className="gm-text">
-            {messageConfirm != null &&
-            (typeof messageConfirm !== 'string' || messageConfirm.length > 0)
-              ? messageConfirm
-              : message}
-          </div>
-
-          <div className="gm-actions">
-            <button onClick={onCancel} className="gm-btn gm-btn-cancel">
-              {cancelText}
-            </button>
-            <button onClick={onConfirm} className="gm-btn gm-btn-confirm">
-              {confirmText}
-            </button>
-          </div>
+        {/* div (no p) para permitir forms o bloques en confirmaciones */}
+        <div className="gm-text">
+          {messageConfirm != null &&
+          (typeof messageConfirm !== 'string' || messageConfirm.length > 0)
+            ? messageConfirm
+            : message}
         </div>
-      ) : (
-        <div className="gm-box gm-content">
-          <div className={`gm-icon-circle ${sev.bg}`}>
-            {React.createElement(sev.icon, {
-              className: `gm-icon ${sev.color}`,
-            })}
-          </div>
 
-          {title && <h3 className="gm-title">{title}</h3>}
-
-          <p className="gm-text">{message}</p>
-
-          <button
-            onClick={onClose}
-            className="gm-btn gm-btn-confirm gm-btn-full"
-          >
-            {buttonText}
+        <div className="gm-actions">
+          <button onClick={onCancel} className="gm-btn gm-btn-cancel">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="gm-btn gm-btn-confirm">
+            {confirmText}
           </button>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  } else {
+    body = (
+      <div className="gm-box gm-content">
+        <div className={`gm-icon-circle ${sev.bg}`}>
+          {React.createElement(sev.icon, {
+            className: `gm-icon ${sev.color}`,
+          })}
+        </div>
+
+        {title && <h3 className="gm-title">{title}</h3>}
+
+        <p className="gm-text">{message}</p>
+
+        <button
+          onClick={onClose}
+          className="gm-btn gm-btn-confirm gm-btn-full"
+        >
+          {buttonText}
+        </button>
+      </div>
+    );
+  }
+
+  return <div className="gm-overlay">{body}</div>;
 }
 
 /* ================= ICONOS ================= */

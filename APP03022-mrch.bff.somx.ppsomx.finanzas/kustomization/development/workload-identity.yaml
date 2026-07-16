@@ -1,11 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: ${PROJECT_NAME}
+
 spec:
   template:
     spec:
       serviceAccountName: ${WORLOAD_IDENTITY_DEV}
+      automountServiceAccountToken: false
+
       containers:
         - name: ${PROJECT_NAME}
 
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "200Mi"
+              ephemeral-storage: "256Mi"
+            limits:
+              memory: "400Mi"

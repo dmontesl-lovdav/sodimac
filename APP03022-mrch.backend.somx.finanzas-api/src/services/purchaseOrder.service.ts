@@ -243,7 +243,9 @@ export async function create(req: AuthenticatedRequest, dto: CreatePurchaseOrder
     const { supplier, tipoReceptionSodimacList }
     : { supplier: Supplier | undefined; tipoReceptionSodimacList: GenericCatalogDetails[]; } 
     = await POUtils.getCatalogs(dto, token);
-
+    if(supplier == undefined){
+          throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.supplierNumber);
+    }
     POUtils.fillReceptionList(dto, supplier, receptionsSkuList, tipoReceptionSodimacList, receptionsList);
     
     //Valida si la OC ya existe en la base

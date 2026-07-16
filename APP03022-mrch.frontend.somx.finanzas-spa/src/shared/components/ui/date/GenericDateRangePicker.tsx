@@ -24,6 +24,75 @@ const SIZE_CLASSES: Record<Size, string> = {
   lg: 'dr-lg',
 };
 
+type RangeInputProps = {
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  onClick?: React.MouseEventHandler<HTMLInputElement>;
+  placeholder: string;
+  size: Size;
+  inputClassName: string;
+  inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+  hasValue: boolean;
+  onClear: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onOpen: (e: React.MouseEvent<HTMLButtonElement>) => void;
+};
+
+const RangeInput = forwardRef<HTMLInputElement, RangeInputProps>(
+  (
+    {
+      value,
+      onChange: _onChange,
+      onClick,
+      placeholder,
+      size,
+      inputClassName,
+      inputProps,
+      hasValue,
+      onClear,
+      onOpen,
+    },
+    ref
+  ) => (
+    <div className="dr-container">
+      <input
+        ref={ref}
+        value={value ?? ''}
+        onChange={_onChange}
+        onClick={onClick}
+        placeholder={placeholder}
+        className={`dr-input ${SIZE_CLASSES[size]} ${inputClassName}`}
+        {...inputProps}
+      />
+
+      {hasValue && (
+        <button
+          type="button"
+          className="dr-clear-btn"
+          onClick={onClear}
+          aria-label="Limpiar rango"
+          title="Limpiar"
+        >
+          ✕
+        </button>
+      )}
+
+      {!hasValue && (
+        <button
+          type="button"
+          className="dr-btn"
+          onClick={onOpen}
+          aria-label="Abrir calendario"
+          title="Abrir calendario"
+        >
+          📅
+        </button>
+      )}
+    </div>
+  )
+);
+
+RangeInput.displayName = 'RangeInput';
+
 export default function GenericDateRangePicker({
   value = [null, null],
   onChange,
@@ -74,55 +143,6 @@ export default function GenericDateRangePicker({
 
   const hasValue = Boolean(internalRange?.[0] || internalRange?.[1]);
 
-  const RangeInput = forwardRef<
-    HTMLInputElement,
-    {
-      value?: string;
-      onChange?: React.ChangeEventHandler<HTMLInputElement>;
-      onClick?: React.MouseEventHandler<HTMLInputElement>;
-    }
-  >(({ value, onChange: _onChange, onClick }, ref) => (
-    <div className="dr-container">
-      <input
-        ref={ref}
-        value={value ?? ''}
-        onChange={_onChange}
-        onClick={onClick}
-        placeholder={placeholder}
-        className={`dr-input ${SIZE_CLASSES[size]} ${inputClassName}`}
-        {...inputProps}
-      />
-
-      {/* X propia (100% funcional) */}
-      {hasValue && (
-        <button
-          type="button"
-          className="dr-clear-btn"
-          onClick={clearRange}
-          aria-label="Limpiar rango"
-          title="Limpiar"
-        >
-          ✕
-        </button>
-      )}
-
-      {/* Calendario */}
-      {!hasValue && (
-        <button
-          type="button"
-          className="dr-btn"
-          onClick={openCalendar}
-          aria-label="Abrir calendario"
-          title="Abrir calendario"
-        >
-          📅
-        </button>
-      )}
-    </div>
-  ));
-
-  RangeInput.displayName = 'RangeInput';
-
   return (
     <div className={`dr-wrapper ${className}`}>
       <DatePicker
@@ -140,7 +160,17 @@ export default function GenericDateRangePicker({
         popperClassName={`dr-popper ${popperClassName ?? ''}`}
         shouldCloseOnSelect={false}
         disabledKeyboardNavigation={false}
-        customInput={<RangeInput />}
+        customInput={
+          <RangeInput
+            placeholder={placeholder}
+            size={size}
+            inputClassName={inputClassName}
+            inputProps={inputProps}
+            hasValue={hasValue}
+            onClear={clearRange}
+            onOpen={openCalendar}
+          />
+        }
         renderCustomHeader={({
           date,
           decreaseMonth,

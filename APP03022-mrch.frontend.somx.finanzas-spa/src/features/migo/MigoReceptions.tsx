@@ -191,7 +191,9 @@ export default function MigoReceptions(): ReactElement {
             <div className="migo-box">
                 <div className="migo-header">
                     <div>
-                        <h3 className="migo-title">Órdenes de Compra y Recepciones</h3>
+                        <h3 className="migo-title">
+                            {'Órdenes de Compra y Recepciones'}
+                        </h3>
                         <p className="migo-description">Listado de OC y recepciones publicadas en el documento.</p>
                     </div>
                     <div className="migo-toolbar finz-toolbar-actions">
@@ -224,7 +226,7 @@ export default function MigoReceptions(): ReactElement {
                             </StatusPill>
                         </div>
                         <div>
-                            <div className="migo-summary-label">Fecha Publicación</div>
+                            <div className="migo-summary-label">{'Fecha Publicación'}</div>
                             <div className="migo-summary-value">{formatDate(doc.publishedAt)}</div>
                         </div>
                     </div>

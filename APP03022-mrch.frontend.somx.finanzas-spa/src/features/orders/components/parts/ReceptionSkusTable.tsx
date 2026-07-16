@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { GenericButton, GenericTable } from "@/shared/components/ui";
+import { GenericTable } from "@/shared/components/ui";
 import type { ReactNode, ReactElement } from "react";
-import downloadIcon from "@assets/download.svg";
 import { Reception, ReceptionSKU } from "../../interfaces";
-import { formatDate, formatAmount, exportToCSV, formatFilenameTimestamp } from "@/utils/utils";
+import { formatDate, formatAmount } from "@/utils/utils";
 import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
-import { APP_EVENT, PermissionGate } from "@shared/security";
 import "./ReceptionSkusTable.css";
 
 interface ReceptionSkuProps {
@@ -22,10 +20,6 @@ type Column<T> = {
   render: (row: T) => ReactNode;
 };
 
-function safeFileSegment(value: string): string {
-  return value.replace(/[^\w\-]+/g, "_").slice(0, 80) || "recepcion";
-}
-
 const columns: Column<ReceptionSKU>[] = [
   { header: "SKU", render: (item) => item.sku },
   { header: "Descripción", render: (item) => item.description },
@@ -36,7 +30,6 @@ const columns: Column<ReceptionSKU>[] = [
 
 const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
   const [open] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
@@ -45,46 +38,6 @@ const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * perPage;
   const pageRows = skus.slice(start, start + perPage);
-
-  const handleDownloadCSV = () => {
-    if (!skus || skus.length === 0) return;
-
-    setIsExporting(true);
-
-    const headers = [
-      "Orden Compra",
-      "Recepción",
-      "Importe",
-      "Fecha Recepción",
-      "Número Proveedor",
-      "SKU",
-      "Descripción",
-      "Cantidad",
-      "Precio Unitario",
-      "Importe",
-    ];
-
-    const rows = skus.map((item) => [
-      receipt.order?.orderNumber ?? receipt.orderNumber ?? "",
-      receipt.receptionNumber || receipt.receptionId || "",
-      String(receipt.amount ?? ""),
-      receipt.receptionDate ? formatDate(String(receipt.receptionDate)) : "",
-      String(receipt.order?.supplierNumber ?? receipt.supplierNumber ?? ""),
-      item.sku,
-      item.description,
-      parseInt(item.quantity, 10).toString(),
-      parseFloat(item.unitCost).toFixed(2),
-      parseFloat(item.totalCost).toFixed(2),
-    ]);
-
-    const baseName = `recepcion_detalle_${safeFileSegment(
-      String(receipt.receptionNumber || receipt.receptionId || "rec")
-    )}_${formatFilenameTimestamp()}`;
-
-    exportToCSV(headers, rows, baseName);
-
-    setIsExporting(false);
-  };
 
   return (
     <div className="rc-accordion">

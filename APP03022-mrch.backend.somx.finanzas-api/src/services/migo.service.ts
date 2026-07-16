@@ -159,6 +159,34 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
     const validRows = validation.parsedRows.filter(r => r.isValid);
     const invalidRows = validation.parsedRows.filter(r => !r.isValid);
 
+    const pairMap = new Map<string, { oc: number; reception: number }>();
+    for (const r of validRows) {
+        const oc = toNum(r.Nro_OC);
+        const reception = toNum(r.Nro_Recepcion);
+        pairMap.set(`${oc}::${reception}`, { oc, reception });
+    }
+    if (pairMap.size > 0) {
+        const existing = await migoRepo.findExistingReceptionPairs([...pairMap.values()]);
+        if (existing.size > 0) {
+            const dupList = [...existing]
+                .map((k) => {
+                    const [oc, reception] = k.split('::');
+                    return `OC ${oc} / Recepción ${reception}`;
+                })
+                .join('; ');
+            const message = `El documento no se puede cargar porque contiene recepciones que ya existen: ${dupList}.`;
+            logger.warn(`[MIGO] Upload rechazado por duplicados: ${dupList}`);
+            return ResponseHandler.responseBuilder(
+                message,
+                { code: 'WRN7021', duplicates: [...existing] },
+                -1,
+                StatusCodes.BAD_REQUEST,
+                false,
+                message,
+            );
+        }
+    }
+
     const receptions: Array<Record<string, any>> = validRows.map((row: ParsedRow) => {
         const rec: Record<string, any> = {
             nroOc: toNum(row.Nro_OC),

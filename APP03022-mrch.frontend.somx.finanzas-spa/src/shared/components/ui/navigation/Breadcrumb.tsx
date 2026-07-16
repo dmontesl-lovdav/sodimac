@@ -32,6 +32,55 @@ function buildDisplayItems(items: BreadcrumbItem[]): DisplayCrumb[] {
   return [{ label: 'Inicio', externalHref: getFbcHomeUrl() }, ...rest];
 }
 
+function renderCrumbContent(item: DisplayCrumb, isLast: boolean) {
+  const { label, to, onClick, externalHref } = item;
+
+  if (externalHref) {
+    return (
+      <a
+        href={externalHref}
+        className="breadcrumb-link"
+        rel="noopener noreferrer"
+      >
+        {label}
+      </a>
+    );
+  }
+
+  if (isLast) {
+    return <span className="breadcrumb-current">{label}</span>;
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="breadcrumb-link"
+        style={{
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          font: 'inherit',
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  if (to) {
+    return (
+      <Link to={to} className="breadcrumb-link">
+        {label}
+      </Link>
+    );
+  }
+
+  return <span className="breadcrumb-current">{label}</span>;
+}
+
 /**
  * El primer ítem siempre es "Inicio" y enlaza a FBC_HOME (.env).
  * El último ítem no recibe enlace porque es el paso activo.
@@ -44,46 +93,13 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
     <nav className="breadcrumb">
       {displayItems.map((item, idx) => {
         const isLast = idx === displayItems.length - 1;
-        const { label, to, onClick, externalHref } = item;
 
         return (
-          <span key={`${label}-${idx}`} className="breadcrumb-item">
+          <span key={`${item.label}-${idx}`} className="breadcrumb-item">
             {idx > 0 && (
               <span className="breadcrumb-separator">{'>'}</span>
             )}
-
-            {externalHref ? (
-              <a
-                href={externalHref}
-                className="breadcrumb-link"
-                rel="noopener noreferrer"
-              >
-                {label}
-              </a>
-            ) : isLast ? (
-              <span className="breadcrumb-current">{label}</span>
-            ) : onClick ? (
-              <button
-                type="button"
-                onClick={onClick}
-                className="breadcrumb-link"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  font: 'inherit',
-                }}
-              >
-                {label}
-              </button>
-            ) : to ? (
-              <Link to={to} className="breadcrumb-link">
-                {label}
-              </Link>
-            ) : (
-              <span className="breadcrumb-current">{label}</span>
-            )}
+            {renderCrumbContent(item, isLast)}
           </span>
         );
       })}

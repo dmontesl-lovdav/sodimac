@@ -301,7 +301,7 @@ export default function ReceptionContainer(): ReactElement {
       <div className="rc-box">
         <div className="rc-header">
           <div>
-            <Title title="Recepción" />
+            <Title title={'Recepción'}></Title>
             <p className="rc-description">
               Consulta y gestión de recepciones asociadas a órdenes de compra.
             </p>
@@ -364,7 +364,9 @@ export default function ReceptionContainer(): ReactElement {
           />
         </div>
 
-        {loading && <GenericModal visible variant="loading" message="Cargando…" />}
+        {loading && (
+          <GenericModal visible={true} variant="loading" message={'Cargando…'}></GenericModal>
+        )}
 
         <GenericModal
           visible={financeAlert.alertVisible}

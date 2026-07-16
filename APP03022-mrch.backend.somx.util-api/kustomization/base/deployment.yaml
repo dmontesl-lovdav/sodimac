@@ -19,8 +19,9 @@ spec:
         app: ${PROJECT_NAME}
     spec:
       serviceAccountName:
+      automountServiceAccountToken: false
       containers:
-      - image: foo/bar
+      - image: foo/bar:1.0.0
         name: ${PROJECT_NAME}
         ports:
         - containerPort: 8082
@@ -30,6 +31,14 @@ spec:
           runAsUser: 1000
           runAsGroup: 1000
           allowPrivilegeEscalation: false
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+            ephemeral-storage: 100Mi
+          limits:
+            memory: 400Mi
+            ephemeral-storage: 500Mi
         env:
         - name: CI_JOB_ID
           value: "${CI_JOB_ID}"

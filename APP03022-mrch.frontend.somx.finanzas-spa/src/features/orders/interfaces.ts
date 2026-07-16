@@ -1,8 +1,6 @@
 import { ShippingGuide } from "../shippingGuides/interfaces";
 import { RECEPTION_STATUS_DICTIONARY, receptionStatusDefinedIds } from "./receptionStatusDictionary";
 
-export type ReceptionStatus = number;
-
 export type ReceptionStatusOption = {
     value: number;
     type: string;
@@ -205,7 +203,7 @@ export interface Order {
     originId: number,
     amount: number,
     purchaseOrderDate: string,
-    status: ReceptionStatus,
+    status: number,
     receptions?: Reception[]
 }
 
@@ -219,15 +217,15 @@ export interface OrdersFilters {
   purchaseOrderDateAtEnd: string;
   pageNumber: number,
   pageSize: number,
-  providerType?: string | number | undefined;
-  purchaseOrderId?: string | undefined;
-  orderNumber?: string | undefined;
+  providerType?: string | number;
+  purchaseOrderId?: string;
+  orderNumber?: string;
   /** Filtro presentacional: recorte en cliente tras aplanar recepciones (si el API no filtra por recepción). */
-  receptionNumber?: string | undefined;
-  originId?: string | undefined;
-  supplierNumber?: number | undefined;
-  status?: number | undefined;
-  isStatusUpdated?: boolean | undefined;
+  receptionNumber?: string;
+  originId?: string;
+  supplierNumber?: number;
+  status?: number;
+  isStatusUpdated?: boolean;
 }
 
 export interface Addendum {

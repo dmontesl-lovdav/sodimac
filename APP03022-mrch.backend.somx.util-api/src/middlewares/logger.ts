@@ -111,7 +111,7 @@ export function activityLogger(serviceName: string) {
                 const [seconds, nanoseconds] = process.hrtime(startTime);
                 const durationMs = (seconds * 1000 + nanoseconds / 1e6);
 
-                let parsedResponse: unknown = responseBody;
+                let parsedResponse: unknown;
                 try {
                     parsedResponse = responseBody ? JSON.parse(responseBody) : null;
                 } catch {

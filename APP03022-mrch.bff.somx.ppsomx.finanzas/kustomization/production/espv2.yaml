@@ -1,27 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: ${PROJECT_NAME}
+
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
+
       containers:
-      - name: esp
-        image: gcr.io/endpoints-release/endpoints-runtime:2.52.0
-        args: [
-          "--listener_port", "8081",
-          "--backend", "127.0.0.1:8080",
-          "--service", "mrch-bff-somx-ppsomx-finanzas.endpoints.fal-corp-mrch-foundational-prd.cloud.goog",
-          "--rollout_strategy", "managed",
-          "--healthz=/healthz",
-          "--http_request_timeout_s=360",
-          "--enable_debug",
-        ]
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-        resources:
-          requests:
-            cpu: 25m
-            memory: 0.5Gi
+        - name: esp
+          image: gcr.io/endpoints-release/endpoints-runtime:2.52.0
+
+          args:
+            - "--listener_port"
+            - "8081"
+            - "--backend"
+            - "127.0.0.1:8080"
+            - "--service"
+            - "mrch-bff-somx-ppsomx-finanzas.endpoints.fal-corp-mrch-foundational-prd.cloud.goog"
+            - "--rollout_strategy"
+            - "managed"
+            - "--healthz=/healthz"
+            - "--http_request_timeout_s=360"
+            - "--enable_debug"
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "0.5Gi"
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "250m"
+              memory: "1Gi"

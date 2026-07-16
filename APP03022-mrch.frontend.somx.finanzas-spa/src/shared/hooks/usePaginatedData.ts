@@ -14,6 +14,8 @@ export interface UsePaginatedDataOptions<T, F> {
   initialPage?: number;
   initialSize?: number;
   onError?: (err: unknown) => void;
+  /** When false, skip fetches (hook still called unconditionally by the consumer). */
+  enabled?: boolean;
 }
 
 export function usePaginatedData<T, F extends Record<string, any>>({
@@ -22,6 +24,7 @@ export function usePaginatedData<T, F extends Record<string, any>>({
   initialPage = 0,
   initialSize = 10,
   onError,
+  enabled = true,
 }: UsePaginatedDataOptions<T, F>) {
   const [loading, setLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<T[]>([]);
@@ -42,6 +45,7 @@ export function usePaginatedData<T, F extends Record<string, any>>({
   const previousFiltersRef = useRef<string>(getFiltersWithoutPagination(initialFilters));
 
   const fetchData = useCallback(async (currentFilters: F, currentPage: number, currentSize: number) => {
+    if (!enabled) return;
     try {
       setLoading(true);
       const result = await fetchFn({
@@ -68,7 +72,7 @@ export function usePaginatedData<T, F extends Record<string, any>>({
     } finally {
       setLoading(false);
     }
-  }, [fetchFn, onError]);
+  }, [fetchFn, onError, enabled]);
 
   const search = useCallback((newFilters: F) => {
     setFilters(newFilters);
@@ -89,18 +93,20 @@ export function usePaginatedData<T, F extends Record<string, any>>({
 
   // Cargar datos iniciales
   useEffect(() => {
+    if (!enabled) return;
     fetchData(initialFilters, initialPage, initialSize);
     setFilters(initialFilters);
     setPage(initialPage);
     setSize(initialSize);
     previousFiltersRef.current = getFiltersWithoutPagination(initialFilters);
-  }, []); // Solo al montar
+  }, [enabled]); // Solo al montar / cuando se habilita
 
   const fetchDataRef = useRef(fetchData);
   fetchDataRef.current = fetchData;
 
   // Sincronizar filtros externos cuando cambian (detectar cambios en initialFilters)
   useEffect(() => {
+    if (!enabled) return;
     const currentFiltersStr = getFiltersWithoutPagination(initialFilters);
     
     // Solo actualizar si los filtros realmente cambiaron (ignorando page y size)
@@ -112,7 +118,7 @@ export function usePaginatedData<T, F extends Record<string, any>>({
       setSize(newSize);
       fetchDataRef.current(initialFilters, initialPage, newSize);
     }
-  }, [initialFilters, initialPage, initialSize, size]);
+  }, [initialFilters, initialPage, initialSize, size, enabled]);
 
   return {
     loading,

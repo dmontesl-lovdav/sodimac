@@ -29,24 +29,25 @@ export function resolveAccountStatementStatus(
     return null;
 }
 
-/** Confirmar / autorizar revisión — solo mientras está publicado o reprocesado. */
-export function canConfirmAccountStatement(row: AccountStatementRecord): boolean {
+const ACTIONABLE_STATUSES: ReadonlySet<number> = new Set([
+    ACCOUNT_STATEMENT_STATUS.PUBLISHED,
+    ACCOUNT_STATEMENT_STATUS.REPROCESSED,
+    ACCOUNT_STATEMENT_STATUS.GENERATED,
+]);
+
+function hasActionableStatus(row: AccountStatementRecord): boolean {
     const status = resolveAccountStatementStatus(row);
-    return (
-        status === ACCOUNT_STATEMENT_STATUS.PUBLISHED ||
-        status === ACCOUNT_STATEMENT_STATUS.REPROCESSED ||
-        status === ACCOUNT_STATEMENT_STATUS.GENERATED
-    );
+    return status != null && ACTIONABLE_STATUSES.has(status);
 }
 
-/** Rechazar / solicitar revisión — no disponible si ya fue confirmado o rechazado. */
+/** Confirmar / autorizar revisión — solo mientras está publicado, reprocesado o generado. */
+export function canConfirmAccountStatement(row: AccountStatementRecord): boolean {
+    return hasActionableStatus(row);
+}
+
+/** Rechazar / solicitar revisión — mismos estatus accionables que confirmar. */
 export function canRejectAccountStatement(row: AccountStatementRecord): boolean {
-    const status = resolveAccountStatementStatus(row);
-    return (
-        status === ACCOUNT_STATEMENT_STATUS.PUBLISHED ||
-        status === ACCOUNT_STATEMENT_STATUS.REPROCESSED ||
-        status === ACCOUNT_STATEMENT_STATUS.GENERATED
-    );
+    return hasActionableStatus(row);
 }
 
 export function withAccountStatementStatus(

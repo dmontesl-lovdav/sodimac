@@ -161,58 +161,75 @@ async function getElementNameFromDict(detail: CatalogDetail): Promise<string> {
     return detail.key;
 }
 
+interface DuplicateCheckContext {
+    isPrimaryLike: boolean;
+    hasParentRelation: boolean;
+    parentCatalogId: number | null;
+    parentElementId: number | null;
+    trimmedTarget: string;
+    excludeId: number | null;
+}
+
+function throwIfSameParent(el: CatalogDetail, ctx: DuplicateCheckContext): void {
+    if (ctx.isPrimaryLike) {
+        throw new GenericException(400, 'Ya existe un elemento con este nombre en el catálogo.');
+    }
+    if (!ctx.hasParentRelation) {
+        const existingHasNoParent = el.parentCatalogId == null && el.parentElementId == null;
+        if (existingHasNoParent) {
+            throw new GenericException(
+                400,
+                'Ya existe un elemento con este nombre sin relación padre en el catálogo.',
+            );
+        }
+        return;
+    }
+    if (
+        el.parentCatalogId === ctx.parentCatalogId &&
+        el.parentElementId === ctx.parentElementId
+    ) {
+        throw new GenericException(
+            400,
+            'Ya existe un elemento con este nombre para el elemento padre seleccionado.',
+        );
+    }
+}
+
+async function assertElementNotDuplicate(
+    el: CatalogDetail,
+    ctx: DuplicateCheckContext,
+): Promise<void> {
+    if (ctx.excludeId != null && el.id === ctx.excludeId) return;
+    const existingName = await getElementNameFromDict(el);
+    if (!existingName) return;
+    if (existingName.trim().toLowerCase() !== ctx.trimmedTarget) return;
+    throwIfSameParent(el, ctx);
+}
+
 async function checkDuplicateElementName(
     catalog: CatalogHeader,
     elementName: string,
     parentCatalogId: number | null,
     parentElementId: number | null,
-    excludeId: number | null
+    excludeId: number | null,
 ): Promise<void> {
     const trimmedTarget = elementName.trim().toLowerCase();
     if (!trimmedTarget) return;
 
     const catalogType = (catalog.catalogType ?? '').toUpperCase();
-    const isPrimaryLike =
-        catalogType === CATALOG_TYPE_PRIMARIO ||
-        catalogType === CATALOG_TYPE_HIERARCHICAL;
-    const hasParentRelation = parentCatalogId != null && parentElementId != null;
+    const ctx: DuplicateCheckContext = {
+        isPrimaryLike:
+            catalogType === CATALOG_TYPE_PRIMARIO || catalogType === CATALOG_TYPE_HIERARCHICAL,
+        hasParentRelation: parentCatalogId != null && parentElementId != null,
+        parentCatalogId,
+        parentElementId,
+        trimmedTarget,
+        excludeId,
+    };
 
     const existing = await detailRepo.findByHeaderIdOrderBySortOrder(catalog.id);
-
     for (const el of existing) {
-        if (excludeId != null && el.id === excludeId) continue;
-
-        const existingName = await getElementNameFromDict(el);
-        if (!existingName) continue;
-        if (existingName.trim().toLowerCase() !== trimmedTarget) continue;
-
-        if (isPrimaryLike) {
-            throw new GenericException(
-                400,
-                'Ya existe un elemento con este nombre en el catálogo.',
-            );
-        }
-
-        if (!hasParentRelation) {
-            const existingHasNoParent = el.parentCatalogId == null && el.parentElementId == null;
-            if (existingHasNoParent) {
-                throw new GenericException(
-                    400,
-                    'Ya existe un elemento con este nombre sin relación padre en el catálogo.',
-                );
-            }
-            continue;
-        }
-
-        if (
-            el.parentCatalogId === parentCatalogId &&
-            el.parentElementId === parentElementId
-        ) {
-            throw new GenericException(
-                400,
-                'Ya existe un elemento con este nombre para el elemento padre seleccionado.',
-            );
-        }
+        await assertElementNotDuplicate(el, ctx);
     }
 }
 
@@ -234,7 +251,7 @@ function isUniqueKeyViolation(err: unknown): boolean {
 function extractKeyNumberFromError(err: unknown, prefix: string): number | null {
     const detail = (err as { detail?: string })?.detail ?? '';
     const match = detail.match(new RegExp(`${prefix.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(\\d+)`));
-    if (!match || !match[1]) return null;
+    if (!match?.[1]) return null;
     const parsed = Number.parseInt(match[1], 10);
     return Number.isFinite(parsed) ? parsed : null;
 }
@@ -295,18 +312,9 @@ async function updateDictionaryEntry(dictId: number | null | undefined, newName:
     await dictRepo.save(entry);
 }
 
-export async function createElement(
-    catalogId: number,
+async function resolveParentIdsForCreate(
     dto: CatalogElementCreateDto,
-    userId: string
-): Promise<CatalogElementDto> {
-    const catalog = await headerRepo.findById(catalogId);
-    if (!catalog) {
-        throw new GenericException(404, `Catálogo no encontrado con ID: ${catalogId}`);
-    }
-
-    validateDates(dto.validFrom, dto.validTo);
-
+): Promise<{ parentCatId: number | null; parentElemId: number | null }> {
     let parentCatId = dto.parentCatalogId ?? null;
     const parentElemId = dto.parentElementId ?? null;
     if (parentElemId != null && parentCatId == null) {
@@ -315,43 +323,58 @@ export async function createElement(
             parentCatId = parent.header.id;
         }
     }
+    return { parentCatId, parentElemId };
+}
 
-    await validateParentRelation(catalog, parentCatId, parentElemId);
+function normalizeExternalKey(value: string | null | undefined): string | null {
+    return value?.trim() ? value : null;
+}
 
-    await checkDuplicateElementName(catalog, dto.element, parentCatId, parentElemId, null);
-
-    const dictId = await createDictionaryEntry(dto.element);
+function buildNewDetail(
+    catalog: CatalogHeader,
+    dto: CatalogElementCreateDto,
+    generatedKey: string,
+    dictId: number,
+    parentCatId: number | null,
+    parentElemId: number | null,
+    userId: string,
+): CatalogDetail {
     const detailRepoInstance = datasource.getRepository(CatalogDetail);
+    return detailRepoInstance.create({
+        header: catalog,
+        headerId: catalog.id,
+        key: generatedKey,
+        value: dto.value ?? null,
+        validFrom: dto.validFrom ?? null,
+        validTo: dto.validTo ?? null,
+        parentCatalogId: parentCatId,
+        parentElementId: parentElemId,
+        externalKey: normalizeExternalKey(dto.externalKey),
+        sortOrder: dto.sortOrder ?? 0,
+        attributes: dto.attributes ?? null,
+        status: CatalogDetail.STATUS_ACTIVE,
+        dictId,
+        createdBy: userId,
+    });
+}
 
+async function persistWithUniqueKey(
+    catalog: CatalogHeader,
+    dto: CatalogElementCreateDto,
+    dictId: number,
+    parentCatId: number | null,
+    parentElemId: number | null,
+    userId: string,
+): Promise<CatalogDetail | null> {
+    const detailRepoInstance = datasource.getRepository(CatalogDetail);
     const MAX_KEY_ATTEMPTS = 5;
-    let saved: CatalogDetail | null = null;
-    let attempt = 0;
     let startingFrom: number | undefined;
 
-    while (attempt < MAX_KEY_ATTEMPTS) {
-        attempt++;
+    for (let attempt = 1; attempt <= MAX_KEY_ATTEMPTS; attempt++) {
         const generatedKey = await generateNextKey(catalog, startingFrom);
-
-        const detail = detailRepoInstance.create({
-            header: catalog,
-            headerId: catalog.id,
-            key: generatedKey,
-            value: dto.value ?? null,
-            validFrom: dto.validFrom ?? null,
-            validTo: dto.validTo ?? null,
-            parentCatalogId: parentCatId,
-            parentElementId: parentElemId,
-            externalKey: dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null,
-            sortOrder: dto.sortOrder ?? 0,
-            attributes: dto.attributes ?? null,
-            status: CatalogDetail.STATUS_ACTIVE,
-            dictId,
-            createdBy: userId
-        });
-
+        const detail = buildNewDetail(catalog, dto, generatedKey, dictId, parentCatId, parentElemId, userId);
         try {
-            saved = await detailRepoInstance.save(detail);
-            break;
+            return await detailRepoInstance.save(detail);
         } catch (err) {
             if (!isUniqueKeyViolation(err) || attempt >= MAX_KEY_ATTEMPTS) {
                 throw err;
@@ -360,18 +383,41 @@ export async function createElement(
             startingFrom = collisionNum != null ? collisionNum + 1 : (startingFrom ?? 1) + 1;
         }
     }
+    return null;
+}
 
+async function reactivateCatalogIfInactive(catalog: CatalogHeader): Promise<void> {
+    if (catalog.status !== 0) return;
+    catalog.status = 1;
+    await headerRepo.save(catalog);
+}
+
+export async function createElement(
+    catalogId: number,
+    dto: CatalogElementCreateDto,
+    userId: string,
+): Promise<CatalogElementDto> {
+    const catalog = await headerRepo.findById(catalogId);
+    if (!catalog) {
+        throw new GenericException(404, `Catálogo no encontrado con ID: ${catalogId}`);
+    }
+
+    validateDates(dto.validFrom, dto.validTo);
+
+    const { parentCatId, parentElemId } = await resolveParentIdsForCreate(dto);
+    await validateParentRelation(catalog, parentCatId, parentElemId);
+    await checkDuplicateElementName(catalog, dto.element, parentCatId, parentElemId, null);
+
+    const dictId = await createDictionaryEntry(dto.element);
+    const saved = await persistWithUniqueKey(catalog, dto, dictId, parentCatId, parentElemId, userId);
     if (!saved) {
         throw new GenericException(
             500,
-            'No fue posible generar una clave única para el elemento después de varios intentos. Inténtalo nuevamente.'
+            'No fue posible generar una clave única para el elemento después de varios intentos. Inténtalo nuevamente.',
         );
     }
 
-    if (catalog.status === 0) {
-        catalog.status = 1;
-        await headerRepo.save(catalog);
-    }
+    await reactivateCatalogIfInactive(catalog);
 
     const result = await elementMapper.toDto(saved);
     if (!result) {
@@ -380,11 +426,69 @@ export async function createElement(
     return result;
 }
 
+function applyValueAndDates(detail: CatalogDetail, dto: CatalogElementUpdateDto): void {
+    if (dto.value != null) detail.value = dto.value;
+    if (dto.validFrom != null) detail.validFrom = dto.validFrom;
+    if (dto.validTo != null) detail.validTo = dto.validTo;
+}
+
+async function resolveEffectiveParent(
+    catalog: CatalogHeader,
+    detail: CatalogDetail,
+    dto: CatalogElementUpdateDto,
+): Promise<{ dtoTouchesParent: boolean; parentCatId: number | null; parentElemId: number | null }> {
+    const dtoTouchesParent =
+        dto.parentCatalogId !== undefined || dto.parentElementId !== undefined;
+    if (!dtoTouchesParent) {
+        return {
+            dtoTouchesParent,
+            parentCatId: detail.parentCatalogId ?? null,
+            parentElemId: detail.parentElementId ?? null,
+        };
+    }
+    let nextCatId = dto.parentCatalogId ?? null;
+    const nextElemId = dto.parentElementId ?? null;
+    if (nextElemId != null && nextCatId == null) {
+        const parent = await detailRepo.findById(nextElemId);
+        if (parent?.header) {
+            nextCatId = parent.header.id;
+        }
+    }
+    await validateParentRelation(catalog, nextCatId, nextElemId);
+    return { dtoTouchesParent, parentCatId: nextCatId, parentElemId: nextElemId };
+}
+
+async function ensureNoDuplicateOnUpdate(
+    catalog: CatalogHeader,
+    detail: CatalogDetail,
+    dto: CatalogElementUpdateDto,
+    parentCatId: number | null,
+    parentElemId: number | null,
+): Promise<void> {
+    const nameChanging = !!(dto.element && dto.element.trim() !== '');
+    const parentChanging =
+        parentCatId !== (detail.parentCatalogId ?? null) ||
+        parentElemId !== (detail.parentElementId ?? null);
+    if (!nameChanging && !parentChanging) return;
+    const effectiveName = nameChanging ? dto.element! : await getElementNameFromDict(detail);
+    if (!effectiveName || effectiveName.trim() === '') return;
+    await checkDuplicateElementName(catalog, effectiveName, parentCatId, parentElemId, detail.id);
+}
+
+function applyRemainingFields(detail: CatalogDetail, dto: CatalogElementUpdateDto): void {
+    if (dto.sortOrder != null) detail.sortOrder = dto.sortOrder;
+    if (dto.attributes != null) detail.attributes = dto.attributes;
+    if (dto.externalKey !== undefined) {
+        detail.externalKey = normalizeExternalKey(dto.externalKey);
+    }
+    if (dto.status != null) detail.status = dto.status;
+}
+
 export async function updateElement(
     catalogId: number,
     elementId: number,
     dto: CatalogElementUpdateDto,
-    userId: string
+    userId: string,
 ): Promise<CatalogElementDto> {
     const catalog = await headerRepo.findById(catalogId);
     if (!catalog) {
@@ -396,67 +500,23 @@ export async function updateElement(
         throw new GenericException(404, `Elemento no encontrado con ID: ${elementId}`);
     }
 
-    if (dto.value != null) detail.value = dto.value;
-    if (dto.validFrom != null) detail.validFrom = dto.validFrom;
-    if (dto.validTo != null) detail.validTo = dto.validTo;
-
+    applyValueAndDates(detail, dto);
     validateDates(detail.validFrom, detail.validTo);
 
-    const dtoTouchesParent =
-        dto.parentCatalogId !== undefined || dto.parentElementId !== undefined;
+    const { dtoTouchesParent, parentCatId, parentElemId } = await resolveEffectiveParent(catalog, detail, dto);
 
-    let effectiveParentCatId: number | null = detail.parentCatalogId ?? null;
-    let effectiveParentElemId: number | null = detail.parentElementId ?? null;
+    await ensureNoDuplicateOnUpdate(catalog, detail, dto, parentCatId, parentElemId);
 
-    if (dtoTouchesParent) {
-        let nextCatId = dto.parentCatalogId ?? null;
-        const nextElemId = dto.parentElementId ?? null;
-        if (nextElemId != null && nextCatId == null) {
-            const parent = await detailRepo.findById(nextElemId);
-            if (parent?.header) {
-                nextCatId = parent.header.id;
-            }
-        }
-        await validateParentRelation(catalog, nextCatId, nextElemId);
-        effectiveParentCatId = nextCatId;
-        effectiveParentElemId = nextElemId;
-    }
-
-    const nameChanging = !!(dto.element && dto.element.trim() !== '');
-    const parentChanging =
-        effectiveParentCatId !== (detail.parentCatalogId ?? null) ||
-        effectiveParentElemId !== (detail.parentElementId ?? null);
-
-    if (nameChanging || parentChanging) {
-        const effectiveName = nameChanging
-            ? dto.element!
-            : await getElementNameFromDict(detail);
-        if (effectiveName && effectiveName.trim() !== '') {
-            await checkDuplicateElementName(
-                catalog,
-                effectiveName,
-                effectiveParentCatId,
-                effectiveParentElemId,
-                elementId,
-            );
-        }
-    }
-
-    if (nameChanging) {
-        await updateDictionaryEntry(detail.dictId, dto.element!);
+    if (dto.element && dto.element.trim() !== '') {
+        await updateDictionaryEntry(detail.dictId, dto.element);
     }
 
     if (dtoTouchesParent) {
-        detail.parentCatalogId = effectiveParentCatId;
-        detail.parentElementId = effectiveParentElemId;
+        detail.parentCatalogId = parentCatId;
+        detail.parentElementId = parentElemId;
     }
 
-    if (dto.sortOrder != null) detail.sortOrder = dto.sortOrder;
-    if (dto.attributes != null) detail.attributes = dto.attributes;
-    if (dto.externalKey !== undefined) {
-        detail.externalKey = dto.externalKey && dto.externalKey.trim() !== '' ? dto.externalKey : null;
-    }
-    if (dto.status != null) detail.status = dto.status;
+    applyRemainingFields(detail, dto);
 
     detail.updatedBy = userId;
     detail.updatedAt = new Date();

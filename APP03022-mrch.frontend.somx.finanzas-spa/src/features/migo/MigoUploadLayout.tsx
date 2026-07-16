@@ -266,7 +266,9 @@ export default function MigoUploadLayout(): ReactElement {
 
                     {summary && (
                         <div style={styles.summaryResult}>
-                            <h4 style={styles.summaryTitle}>Resultado de la validación</h4>
+                            <h4 style={styles.summaryTitle}>
+                                {'Resultado de la validación'}
+                            </h4>
                             {successMsg && (
                                 <div style={styles.successBanner}>
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -282,7 +284,7 @@ export default function MigoUploadLayout(): ReactElement {
                                     <span style={styles.statValue}>{summary.totalRows}</span>
                                 </div>
                                 <div style={styles.stat}>
-                                    <span style={styles.statLabel}>Total válidos:</span>
+                                    <span style={styles.statLabel}>{'Total válidos:'}</span>
                                     <span style={{ ...styles.statValue, ...styles.statValid }}>{summary.totalValid}</span>
                                 </div>
                                 <div style={styles.stat}>
@@ -295,8 +297,8 @@ export default function MigoUploadLayout(): ReactElement {
                                 <div style={styles.errorsList}>
                                     <h4 style={styles.errorsHeader}>Detalle de registros incorrectos ({invalidRows.length})</h4>
                                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        {invalidRows.map((r, i) => (
-                                            <li key={i} style={styles.errorsItem}>
+                                        {invalidRows.map((r) => (
+                                            <li key={`invalid-row-${r.row}-${r.errors.join('|')}`} style={styles.errorsItem}>
                                                 <strong>Fila {r.row}:</strong> {r.errors.join(' | ')}
                                             </li>
                                         ))}

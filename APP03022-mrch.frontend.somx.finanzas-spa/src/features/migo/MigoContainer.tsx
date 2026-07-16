@@ -70,12 +70,12 @@ export default function MigoContainer(): ReactElement {
         const provider = paymentFromState?.providerNumber || searchParams.get('provider') || '';
         const year = paymentFromState?.paymentYear || searchParams.get('year') || '';
         const currency = paymentFromState?.currency || searchParams.get('currency') || '';
-        const rawAmount =
-            paymentFromState?.amount != null
-                ? Number(paymentFromState.amount)
-                : searchParams.get('amount') != null
-                    ? Number(searchParams.get('amount'))
-                    : null;
+        let rawAmount: number | null = null;
+        if (paymentFromState?.amount != null) {
+            rawAmount = Number(paymentFromState.amount);
+        } else if (searchParams.get('amount') != null) {
+            rawAmount = Number(searchParams.get('amount'));
+        }
         const paymentDate = paymentFromState?.paymentDate || searchParams.get('paymentDate') || '';
 
         const hasAnyValue = !!(ref || provider || year || currency || paymentDate || rawAmount != null);
@@ -420,7 +420,9 @@ export default function MigoContainer(): ReactElement {
             action: {
                 title: 'Exportar CSV',
                 icon: csvIcon,
-                onClick: (row) => handleExportCsv(row),
+                onClick: (row) => {
+                    handleExportCsv(row).catch(() => {});
+                },
             },
         },
     ];
@@ -437,7 +439,9 @@ export default function MigoContainer(): ReactElement {
             <div className="migo-box">
                 <div className="migo-header">
                     <div>
-                        <h3 className="migo-title">Publicación de Recepciones MIGO</h3>
+                        <h3 className="migo-title">
+                            {'Publicación de Recepciones MIGO'}
+                        </h3>
                         <p className="migo-description">
                             Consultar, publicar, autorizar y rechazar recepciones de mercancía de proveedores indirectos.
                         </p>
@@ -465,7 +469,7 @@ export default function MigoContainer(): ReactElement {
                             <div className="migo-summary-value">{paymentContext.providerNumber || '-'}</div>
                         </div>
                         <div>
-                            <div className="migo-summary-label">Año de pago</div>
+                            <div className="migo-summary-label">{'Año de pago'}</div>
                             <div className="migo-summary-value">{paymentContext.paymentYear || '-'}</div>
                         </div>
                         <div>
@@ -561,10 +565,14 @@ export default function MigoContainer(): ReactElement {
                         <div className="gm-box gm-content" style={{ minWidth: 420 }}>
                             <h3 className="gm-title">Rechazar Documento MIGO</h3>
                             <div style={{ textAlign: 'left', marginTop: 12 }}>
-                                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>
+                                <label
+                                    htmlFor="migo-reject-reason"
+                                    style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}
+                                >
                                     Motivo de rechazo
                                 </label>
                                 <textarea
+                                    id="migo-reject-reason"
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
                                     placeholder="Ingrese el motivo del rechazo..."

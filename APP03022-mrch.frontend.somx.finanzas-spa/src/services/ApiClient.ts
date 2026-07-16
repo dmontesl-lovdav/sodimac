@@ -94,7 +94,7 @@ export function createApiClient(options?: {
     function parseFilenameFromContentDisposition(header: string | undefined | null): string | null {
         if (!header) return null;
         const utf8Match = header.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
-        if (utf8Match && utf8Match[1]) {
+        if (utf8Match?.[1]) {
             try {
                 return decodeURIComponent(utf8Match[1].replace(/['"]/g, '').trim());
             } catch {
@@ -102,7 +102,7 @@ export function createApiClient(options?: {
             }
         }
         const asciiMatch = header.match(/filename\s*=\s*"?([^";]+)"?/i);
-        if (asciiMatch && asciiMatch[1]) {
+        if (asciiMatch?.[1]) {
             return asciiMatch[1].trim();
         }
         return null;

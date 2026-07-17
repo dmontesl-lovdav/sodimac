@@ -39,8 +39,20 @@ public final class XmlSecureFactory {
      */
     public static TransformerFactory newTransformerFactory() {
         TransformerFactory tf = TransformerFactory.newInstance();
-        tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        // Hardening XXE best-effort: se restringe el acceso a DTD/hojas de estilo externas.
+        // No se activa FEATURE_SECURE_PROCESSING porque Xalan (procesador del render del PDF)
+        // desactiva con ello las extensiones que usa Formato4.0.xsl -> generaría un PDF vacío.
+        // El XML de entrada (CFDI) se parsea aparte con newDocumentBuilderFactory() ya endurecido.
+        trySetAttribute(tf, XMLConstants.ACCESS_EXTERNAL_DTD);
+        trySetAttribute(tf, XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
         return tf;
+    }
+
+    private static void trySetAttribute(TransformerFactory tf, String attribute) {
+        try {
+            tf.setAttribute(attribute, "");
+        } catch (IllegalArgumentException e) {
+            // El procesador (ej. Xalan) no reconoce el atributo; hardening best-effort.
+        }
     }
 }

@@ -82,8 +82,10 @@ public class InvoiceXmlDto {
     @XmlAttribute(name = "Exportacion")
     private String exportacion;
 
+    // Puede haber varios bloques CfdiRelacionados (uno por TipoRelacion). Se capturan todos como lista
+    // para poder filtrar el de TipoRelacion="01" (NC de documentos relacionados). Regla Ivan 2026-07-17.
     @XmlElement(name = "CfdiRelacionados", namespace = "http://www.sat.gob.mx/cfd/4")
-    private CfdiRelacionadosDto cfdiRelacionados;
+    private List<CfdiRelacionadosDto> cfdiRelacionados;
 
     @XmlElement(name = "Emisor", namespace = "http://www.sat.gob.mx/cfd/4")
     private EmisorDto emisor;

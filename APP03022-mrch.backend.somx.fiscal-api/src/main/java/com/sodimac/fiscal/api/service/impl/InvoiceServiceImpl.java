@@ -91,6 +91,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     private static final String K_FECHA_EMISION = "Fecha Emision";
     private static final String K_SUBTOTAL = "Subtotal";
     private static final String K_TOTAL = "Total";
+    // TipoRelacion SAT "01" = Nota de crédito de los documentos relacionados. Único bloque válido para la relación NC->Factura.
+    private static final String TIPO_RELACION_NC = "01";
 
     // Mappers
     private final InvoiceMapper invoiceMapper;
@@ -1440,11 +1442,17 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("=== INICIO GUARDADO CFDIS RELACIONADOS (STM-1168) ===");
         log.debug("NC UUID: {}, Fiscal UUID: {}", ncInvoice.getInvoiceUuid(), ncInvoice.getFiscalUuid());
 
-        // 1. Validar que exista nodo CfdiRelacionados en el XML
-        CfdiRelacionadosDto cfdiRelacionados = invoiceDto.getCfdiRelacionados();
+        // 1. Solo se considera el bloque con TipoRelacion="01" (NC de documentos relacionados). Regla Ivan 2026-07-17.
+        //    Los demás tipos (04 sustitución, 03 devolución, etc.) se ignoran para la relación NC->Factura.
+        List<CfdiRelacionadosDto> bloquesRelacionados = invoiceDto.getCfdiRelacionados();
+        CfdiRelacionadosDto cfdiRelacionados = bloquesRelacionados == null ? null :
+                bloquesRelacionados.stream()
+                        .filter(b -> TIPO_RELACION_NC.equals(b.getTipoRelacion()))
+                        .findFirst()
+                        .orElse(null);
         if (cfdiRelacionados == null || cfdiRelacionados.getCfdiRelacionado() == null
                 || cfdiRelacionados.getCfdiRelacionado().isEmpty()) {
-            log.error("La NC no contiene CFDIs relacionados en el XML");
+            log.error("La NC no contiene un bloque CfdiRelacionados con TipoRelacion={} en el XML", TIPO_RELACION_NC);
             messageCatalog.throwException(FiscalMessageCode.BUS042);
         }
 

@@ -36,6 +36,9 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
 
     private final XmlDocumentTypeDetector xmlDocumentTypeDetector;
 
+    // TipoRelacion SAT "01" = Nota de crédito de los documentos relacionados. Único bloque válido para la relación NC->Factura.
+    private static final String TIPO_RELACION_NC = "01";
+
     /**
      * {@inheritDoc}
      */
@@ -79,10 +82,11 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
             return null;
         }
 
-        // CfdiRelacionados (NC): tipo de relación SAT + UUID de la factura relacionada. F97 QA.
+        // CfdiRelacionados (NC): solo se toma el bloque con TipoRelacion="01" (NC de documentos relacionados).
+        // Puede haber varios bloques (04, 03, etc.); los que no son "01" se ignoran. Regla Ivan 2026-07-17.
         String tipoRelacion = null;
         String uuidRelacionado = null;
-        Element cfdiRelacionados = getFirstElementByTagName(document, "cfdi:CfdiRelacionados", "CfdiRelacionados");
+        Element cfdiRelacionados = getCfdiRelacionadosByTipo(document, TIPO_RELACION_NC);
         if (cfdiRelacionados != null) {
             tipoRelacion = getAttribute(cfdiRelacionados, "TipoRelacion");
             Element cfdiRelacionado = getFirstElementByTagName(cfdiRelacionados, "cfdi:CfdiRelacionado", "CfdiRelacionado");
@@ -231,6 +235,24 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
             NodeList elements = document.getElementsByTagName(tagName);
             if (elements.getLength() > 0) {
                 return (Element) elements.item(0);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Devuelve el nodo CfdiRelacionados cuyo TipoRelacion coincide (ej. "01" para NC de documentos
+     * relacionados). Recorre todos los bloques y retorna el primero que haga match; null si no hay.
+     */
+    private Element getCfdiRelacionadosByTipo(Document document, String tipoRelacion) {
+        NodeList nodes = document.getElementsByTagName("cfdi:CfdiRelacionados");
+        if (nodes.getLength() == 0) {
+            nodes = document.getElementsByTagName("CfdiRelacionados");
+        }
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element el = (Element) nodes.item(i);
+            if (tipoRelacion.equals(getAttribute(el, "TipoRelacion"))) {
+                return el;
             }
         }
         return null;

@@ -223,11 +223,13 @@ function renderStatusCell(
 /** HTML del estado de cuenta (misma estructura que accountStatementPdf.service.ts en back). */
 export function buildAccountStatementHtml(
     payload: AccountStatementReportPayload,
-    receptionStatuses: any[]
+    receptionStatuses: any[],
+    invoiceStatuses: any[]
 ): string {
     const data = toViewModel(payload);
     const h = escapeHtml;
     const vn = data.vendor.vendorNumber;
+    
 
     const ocRows = data.purchaseOrders.map((po) => {
         const purchaseOrderId = po.purchaseOrderId as string | undefined;
@@ -293,7 +295,7 @@ export function buildAccountStatementHtml(
         formatCurrency(Number(i.total) || 0),
         '1',
         formatCurrency(Number(i.total) || 0),
-        i.status != null ? String(i.status) : 'Pendiente',
+        i.status != null ? invoiceStatuses.find((s) => s.value === String(i.status))?.label ?? 'N/A' : 'N/A',
     ]);
 
     const ncRows = data.notasCredito.map((i) => [

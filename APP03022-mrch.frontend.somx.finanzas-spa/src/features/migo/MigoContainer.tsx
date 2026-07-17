@@ -26,7 +26,6 @@ import {
     readFinanceListFilters,
     saveFinanceListFilters,
     financeListTodayDateRange,
-    formatFinanceListLocalDate,
     parseFinanceListDateRange,
     useFinanceListDefaultsOnUrlReset,
 } from '@/shared/hooks';
@@ -62,7 +61,7 @@ export default function MigoContainer(): ReactElement {
     const [searchParams] = useSearchParams();
     const { hasEvent } = useSecurityContext();
 
-    const locationState = (location.state as any) || {};
+    const locationState = (location.state as any) ?? {};
     const paymentFromState = locationState?.payment;
 
     const paymentContext = useMemo<PaymentNavigationContext | null>(() => {

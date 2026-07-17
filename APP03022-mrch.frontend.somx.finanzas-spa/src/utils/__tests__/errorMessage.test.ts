@@ -161,15 +161,38 @@ describe("getErrorMessage", () => {
       expect(getErrorMessage(err)).toBe("Error genérico de validación");
     });
 
-    it("ignora filas null dentro de detailError", () => {
+    it("toma solo el path cuando no hay message", () => {
       const err = {
         response: {
           data: {
-            detailError: [null, { message: "Único válido" }],
+            detailError: [{ path: "campoX" }],
           },
         },
       };
-      expect(getErrorMessage(err)).toBe("Único válido");
+      expect(getErrorMessage(err)).toBe("campoX");
+    });
+
+    it("ignora detailError vacío y usa message", () => {
+      const err = {
+        response: {
+          data: {
+            detailError: [],
+            message: "Otro mensaje",
+          },
+        },
+      };
+      expect(getErrorMessage(err)).toBe("Otro mensaje");
+    });
+
+    it("extrae errors como objeto anidado", () => {
+      const err = {
+        response: {
+          data: {
+            errors: [{ path: "a", message: "b" }],
+          },
+        },
+      };
+      expect(getErrorMessage(err)).toBe("a: b");
     });
   });
 

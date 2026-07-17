@@ -10,7 +10,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import type { ProvidersOptions } from "@/features/orders/interfaces";
-import { fetchCatalog, fetchProvidersAsCatalog, mapCatalogResponseToFilterOptions } from "@/utils/utils";
+import {
+    fetchProvidersAsCatalog,
+    fetchSupplierTypesAsCatalog,
+} from "@/utils/utils";
 import {
   FINANCE_LIST_KEYS,
   financeListTodayDateRange,
@@ -56,7 +59,7 @@ export default function FiltersBar({
     const [paymentYear, setPaymentYear] = useState<string>("");
     const [providerType, setProviderType] = useState<string>("");
     const [dateRange, setDateRange] = useState<DateRange>([null, null]);
-    const [providerTypes, setProviderTypes] = useState<any[]>([]);
+    const [providerTypes, setProviderTypes] = useState<ProvidersOptions[]>([]);
     const [alertModal, setAlertModal] = useState<{
         visible: boolean;
         title: string;
@@ -117,18 +120,12 @@ export default function FiltersBar({
         if (!isAdmin) return;
 
         (async () => {
-            const list = await fetchProvidersAsCatalog();
-            const types = await fetchCatalog("CatTipoProveedor");
+            const [list, types] = await Promise.all([
+                fetchProvidersAsCatalog("supplierNumber"),
+                fetchSupplierTypesAsCatalog(),
+            ]);
             if (list) setProviders(list);
-
-            if(types) {
-                //@ts-ignore
-                const mapped = types.details?.map((item: any) => ({
-                    label: item.description,
-                    value: item.value,
-                }));
-                setProviderTypes([{ label: "Todos los tipos", value: "" }, ...mapped ?? []]);
-            }
+            if (types) setProviderTypes(types);
         })();
     }, [isAdmin]);
 
@@ -245,7 +242,7 @@ export default function FiltersBar({
                         </div>
                         <div className="pay-field">
                             <GenericSelectSearchable
-                                value={providerId}
+                                value={providerType}
                                 onChange={(e: { target: { value: string } }) =>
                                     setProviderType(e.target.value)
                                 }

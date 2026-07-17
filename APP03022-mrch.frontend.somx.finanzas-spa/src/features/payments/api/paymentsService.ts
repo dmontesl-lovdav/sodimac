@@ -24,8 +24,8 @@ class PaymentsClient {
         const body: Record<string, any> = {
             createdAtInitial: params.startDate,
             createdAtEnd: params.endDate,
-            pageNumber: params.page || 1,
-            pageSize: params.size || 10,
+            pageNumber: params.page ?? 1,
+            pageSize: params.size ?? 10,
         };
 
         if (params.providerId) {
@@ -73,7 +73,7 @@ class PaymentsClient {
 
         return {
             items,
-            currentPage: pageable?.pageNumber ?? (params.page || 1),
+            currentPage: pageable?.pageNumber ?? (params.page ?? 1),
             totalItems: pageable?.totalElements ?? items.length,
             totalPages:
                 pageable?.totalPages ??
@@ -81,7 +81,7 @@ class PaymentsClient {
                     1,
                     Math.ceil(
                         (pageable?.totalElements ?? items.length) /
-                        (params.size || 10)
+                        (params.size ?? 10)
                     )
                 ),
         };

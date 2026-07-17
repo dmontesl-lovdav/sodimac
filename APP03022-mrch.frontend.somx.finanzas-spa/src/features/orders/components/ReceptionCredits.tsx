@@ -1,22 +1,17 @@
-import { GenericInput, GenericSelect, GenericModal, GenericTable } from "@/shared/components/ui";
-import { GenericButton } from "@/shared/components/ui/button";
+import { GenericModal, GenericTable } from "@/shared/components/ui";
 import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
 import { FINANCE_LIST_KEYS } from "@/shared/hooks";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
 
-import { ChangeEvent, ReactElement, useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { OrderClient } from "../api/OrderClient";
-import { EMPTY_RECEPTION, ReceptionStatusOptions, Reception, Addendum, Invoice } from "../interfaces";
+import { EMPTY_RECEPTION, Reception, Addendum, Invoice } from "../interfaces";
 import ReceptionHeader from "./parts/ReceptionHeader";
-import ReceptionSkusTable from "./parts/ReceptionSkusTable";
-import ErrorMessage from "@/shared/components/ui/alerts/ErrorMessage";
 import { InvoiceClient } from "../api/InvoiceClient";
-import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
-import { formatDate, formatAmount, getStandardFilename, downloadXML, fetchProviders } from "@/utils/utils";
-import xmlIconUrl from "@/assets/xml.svg";
+import { formatDate, formatAmount, fetchProviders } from "@/utils/utils";
 import "./ReceptionCredits.css";
 import { useReceptionSupplierInfo } from "../receptionSupplierInfo";
 import { Column } from "@/shared/components/ui/table/GenericTable";

@@ -1,7 +1,6 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import axiosRetry from "axios-retry";
 import type { Request } from "express";
-import { createBreaker } from "@/services/circuitBreaker.service.js";
 import { getBreaker } from "@/services/breakerRegistry.js";
 import { getCache, setCache } from "@/services/cache.service.js";
 
@@ -123,10 +122,22 @@ const axiosGetRaw = async (url: string, token?: string, params?: any) => {
       config.headers!["Authorization"] = `Bearer ${token}`;
     }
 
+    try {
+          const response: AxiosResponse = await axiosClient(config);
+          if (response.status === 404) {
+            return null;
+          }
 
-    const response: AxiosResponse = await axiosClient(config);
-    console.log("✅ API respondió:", response.status)
-    return response.data;
+          return response.data;
+    } catch (error: any) {
+
+            if (error?.response?.status === 404) {
+                return null;
+            }
+
+            throw error;
+    }
+
 };
 
 
@@ -211,8 +222,7 @@ export async function axiosGet<T>(
     }
 
     const type = resolveEndpointType(url);
-    //const key = type; // o combinación si quieres más granular
-    const key = url;
+    const key = type;
   try {
     
     
@@ -331,7 +341,7 @@ export async function GetSupplierBySupplierNumber(supplierNumber: number, token:
     if (supplierTmp == '' || supplierTmp == undefined) {
         return undefined;
     } else {
-        const supplier: Supplier = supplierTmp.data as Supplier;
+        const supplier: Supplier = supplierTmp as Supplier;
         return supplier;
     }
 
@@ -392,7 +402,7 @@ export async function ValidStatus(url: string, optionId: number, sourceStatus: n
 
 function resolveEndpointType(url: string): string {
   if (url.includes("/catalog")) return "catalog";
-  if (url.includes("/suppliers")) return "suppliers";
+  if (url.includes("/supplier") || url.includes("/suppliers") ) return "supplier";
   if (url.includes("/status")) return "status";
 
   return "default";

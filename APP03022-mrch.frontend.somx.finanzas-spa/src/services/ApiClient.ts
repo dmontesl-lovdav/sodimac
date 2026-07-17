@@ -20,6 +20,25 @@ export type ApiClient = {
     ) => Promise<void>;
 };
 
+export function parseFilenameFromContentDisposition(
+    header: string | undefined | null
+): string | null {
+    if (!header) return null;
+    const utf8Match = header.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
+    if (utf8Match?.[1]) {
+        try {
+            return decodeURIComponent(utf8Match[1].replace(/['"]/g, "").trim());
+        } catch {
+            // fall through to the ascii match
+        }
+    }
+    const asciiMatch = header.match(/filename\s*=\s*"?([^";]+)"?/i);
+    if (asciiMatch?.[1]) {
+        return asciiMatch[1].trim();
+    }
+    return null;
+}
+
 export function createApiClient(options?: {
     baseUrl?: string;
     tokenProvider?: TokenProvider;
@@ -89,23 +108,6 @@ export function createApiClient(options?: {
         });
 
         return res.data as T;
-    }
-
-    function parseFilenameFromContentDisposition(header: string | undefined | null): string | null {
-        if (!header) return null;
-        const utf8Match = header.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
-        if (utf8Match?.[1]) {
-            try {
-                return decodeURIComponent(utf8Match[1].replace(/['"]/g, '').trim());
-            } catch {
-                // fall through to the ascii match
-            }
-        }
-        const asciiMatch = header.match(/filename\s*=\s*"?([^";]+)"?/i);
-        if (asciiMatch?.[1]) {
-            return asciiMatch[1].trim();
-        }
-        return null;
     }
 
     async function requestBinary(

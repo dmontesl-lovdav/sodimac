@@ -39,6 +39,7 @@ export default function AccountStatementContainer() {
     const [rows, setRows] = useState<AccountStatementRecord[]>([]);
 
     const [receptionStatuses, setReceptionStatuses] = useState<any[]>([]);
+    const [invoiceStatuses, setInvoiceStatuses] = useState<any[]>([]);  
 
     const [page, setPage] = useState<number>(1);
     const [perPage, setPerPage] = useState<number>(25);
@@ -84,9 +85,16 @@ export default function AccountStatementContainer() {
                 setReceptionStatuses(mappedStatus.filter((item: any) => item.value !== "8"));
             }
         };
-        
+        const fetchInvoiceStatuses = async () => {
+            const tipoFacturaRes = await fetchCatalogDetails("CatEstatusFactura");
+            if (tipoFacturaRes) {
+                const mappedStatus = fetchCatalogAsSelectableOptions(tipoFacturaRes, "Todos los estatus");
+                setInvoiceStatuses(mappedStatus);
+            }
+        };
         fetchProviders();
         fetchReceptionStatuses();
+        fetchInvoiceStatuses();
     }, []);
     const fetchData = async (
         criteria: AccountStatementFilters,
@@ -190,7 +198,7 @@ export default function AccountStatementContainer() {
                 row.accountStatementUuid
             );
 
-            openAccountStatementPdfPreview(reportData, receptionStatuses);
+            openAccountStatementPdfPreview(reportData, receptionStatuses, invoiceStatuses);
         } catch (err) {
             setInfoModal({
                 type: "error",

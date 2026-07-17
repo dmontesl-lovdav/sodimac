@@ -11,10 +11,11 @@ import ResultsTable from "./components/ResultsTable";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import { paymentsService } from "./api/paymentsService";
-import { PaymentRecord, PaymentSearchParams } from "./interfaces";
+import { PaymentRecord } from "./interfaces";
 import { PaymentFiltersValues } from "./components/FiltersBar";
 import { authenticator } from "@/configuration/ConfigurationBuilder";
 import { getErrorMessage } from "@/utils/errorMessage";
+import { fetchProviders } from "@/utils/utils";
 
 import "./styles/PaymentsContainer.css";
 import {
@@ -30,6 +31,7 @@ export default function PaymentsContainer(): ReactElement {
     const [allFilteredPayments, setAllFilteredPayments] = useState<PaymentRecord[]>(
         []
     );
+    const [providers, setProviders] = useState<any[]>([]);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>("");
@@ -50,16 +52,14 @@ export default function PaymentsContainer(): ReactElement {
         FINANCE_LIST_KEYS.payments
     );
 
-    // Modal state for errors/info
     const [modalTitle, setModalTitle] = useState<string>("");
     const [modalSeverity, setModalSeverity] = useState<ModalSeverity>("error");
 
     useEffect(() => {
         loadMessages();
         checkAdmin();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        loadProviders();
     }, []);
-
 
     const checkAdmin = async () => {
         try {
@@ -68,6 +68,11 @@ export default function PaymentsContainer(): ReactElement {
         } catch {
             setIsAdmin(false);
         }
+    };
+
+    const loadProviders = async () => {
+        const list = await fetchProviders();
+        setProviders(list ?? []);
     };
 
     const loadMessages = async () => {
@@ -101,18 +106,25 @@ export default function PaymentsContainer(): ReactElement {
         setAllFilteredPayments([]);
 
         try {
-            const useLocalFiltering =
-                !!filters.paymentReference || !!filters.paymentYear;
+            const supplierTypeId = Number(filters.providerType);
+            const hasSupplierType =
+                filters.providerType != null &&
+                filters.providerType !== "" &&
+                Number.isFinite(supplierTypeId) &&
+                supplierTypeId > 0;
 
-            const params: PaymentSearchParams = {
+            const useLocalFiltering =
+                !!filters.paymentReference ||
+                !!filters.paymentYear ||
+                hasSupplierType;
+
+            const result = await paymentsService.searchPayments({
                 startDate: filters.startDate,
                 endDate: filters.endDate,
                 providerId: filters.providerId,
                 page: p,
                 size: useLocalFiltering ? 10000 : s,
-            };
-
-            const result = await paymentsService.searchPayments(params);
+            });
 
             let filteredItems = result.items;
 
@@ -129,12 +141,25 @@ export default function PaymentsContainer(): ReactElement {
                 );
             }
 
+            if (hasSupplierType) {
+                const vendorNumbers = new Set(
+                    providers
+                        .filter(
+                            (item) => item.supplierType?.id == supplierTypeId
+                        )
+                        .map((item) => String(item.supplierNumber))
+                );
+                filteredItems = filteredItems.filter((item) =>
+                    vendorNumbers.has(String(item.providerNumber))
+                );
+            }
+
             if (filteredItems.length === 0 && warnIfEmptyRef.current) {
                 setModalSeverity("info");
                 setModalTitle("Sin resultados");
                 setError(
                     messages["INF6000"] ||
-                    "No existe información con los criterios establecidos."
+                        "No existe información con los criterios establecidos."
                 );
                 setPayments([]);
                 setAllFilteredPayments([]);
@@ -150,7 +175,7 @@ export default function PaymentsContainer(): ReactElement {
                 setPayments(filteredItems.slice(0, s));
                 setPage(1);
                 setPerPage(s);
-                setTotalPages(Math.ceil(filteredItems.length / s));
+                setTotalPages(Math.max(1, Math.ceil(filteredItems.length / s)));
                 setTotalItems(filteredItems.length);
                 return;
             }
@@ -164,9 +189,7 @@ export default function PaymentsContainer(): ReactElement {
         } catch (err: any) {
             setModalSeverity("error");
             setModalTitle("Error");
-            setError(
-                getErrorMessage(err, "Error al buscar pagos.")
-            );
+            setError(getErrorMessage(err, "Error al buscar pagos."));
 
             setPayments([]);
             setAllFilteredPayments([]);
@@ -315,6 +338,7 @@ export default function PaymentsContainer(): ReactElement {
                 <div className="pay-grid-section">
                     <ResultsTable
                         rows={payments}
+                        providers={providers}
                         loading={loading}
                         isAdmin={isAdmin}
                         page={page}

@@ -10,7 +10,7 @@ import { logger } from "@/utils/logger.js";
 import { datasource } from "@/config/typeorm-datasource.js";
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
 import { MigoDocumentReception } from "@/entities/MigoDocumentReception.entity.js";
-import { In } from "typeorm"; 
+import { In } from "typeorm";
 import type { Supplier } from "@/response/GenericCatalogDetails.dto.js";
 import type {
     ListMigoDocumentsQueryDto,
@@ -142,92 +142,163 @@ export async function listReceptions(q: ListMigoReceptionsQueryDto, authToken = 
     return ResponseHandler.responseBuilder("", page, 0, StatusCodes.OK, true, "");
 }
 
-export async function uploadCsv(fileContent: string, fileName: string, createdBy?: number) {
-    const validation = validateLayout(fileContent);
+type LayoutValidationResult = ReturnType<typeof validateLayout>;
 
-    if (validation.globalError) {
-        return ResponseHandler.responseBuilder(
-            validation.globalError.message,
-            { code: validation.globalError.code, totalRows: validation.totalRows },
-            -1,
-            StatusCodes.BAD_REQUEST,
-            false,
-            validation.globalError.message
+interface DuplicateReceptionResult {
+    duplicateList: string;
+    duplicates: string[];
+}
+
+function buildReceptionPairMap(
+    validRows: ParsedRow[],
+): Map<string, { oc: number; reception: number }> {
+    const pairMap = new Map<string, { oc: number; reception: number }>();
+
+    for (const row of validRows) {
+        const oc = toNum(row.Nro_OC);
+        const reception = toNum(row.Nro_Recepcion);
+
+        pairMap.set(
+            `${oc}::${reception}`,
+            { oc, reception },
         );
     }
 
-    const validRows = validation.parsedRows.filter(r => r.isValid);
-    const invalidRows = validation.parsedRows.filter(r => !r.isValid);
+    return pairMap;
+}
 
-    const pairMap = new Map<string, { oc: number; reception: number }>();
-    for (const r of validRows) {
-        const oc = toNum(r.Nro_OC);
-        const reception = toNum(r.Nro_Recepcion);
-        pairMap.set(`${oc}::${reception}`, { oc, reception });
-    }
-    if (pairMap.size > 0) {
-        const existing = await migoRepo.findExistingReceptionPairs([...pairMap.values()]);
-        if (existing.size > 0) {
-            const dupList = [...existing]
-                .map((k) => {
-                    const [oc, reception] = k.split('::');
-                    return `OC ${oc} / Recepción ${reception}`;
-                })
-                .join('; ');
-            const message = `El documento no se puede cargar porque contiene recepciones que ya existen: ${dupList}.`;
-            logger.warn(`[MIGO] Upload rechazado por duplicados: ${dupList}`);
-            return ResponseHandler.responseBuilder(
-                message,
-                { code: 'WRN7021', duplicates: [...existing] },
-                -1,
-                StatusCodes.BAD_REQUEST,
-                false,
-                message,
-            );
-        }
+async function findDuplicateReceptions(
+    validRows: ParsedRow[],
+): Promise<DuplicateReceptionResult | null> {
+    const pairMap = buildReceptionPairMap(validRows);
+
+    if (pairMap.size === 0) {
+        return null;
     }
 
-    const receptions: Array<Record<string, any>> = validRows.map((row: ParsedRow) => {
-        const rec: Record<string, any> = {
-            nroOc: toNum(row.Nro_OC),
-            nroRecepcion: toNum(row.Nro_Recepcion),
-            numeroProveedor: row.Numero_Proveedor || null,
-            sucursal: toNum(row.Sucursal),
-            fechaRecepcion: parseLayoutDate(row.Fecha_Recepcion) ?? new Date(row.Fecha_Recepcion),
-            importeSinImpuesto: toNum(row.Importe_sin_impuesto),
-            cantidad: toNum(row.Cantidad),
-            importeUnitario: toNum(row.Importe_Unitario),
-            importeSinImpuestoDet: toNum(row.Importe_SinImpuesto),
-            isValid: true,
-            rowNumber: row.rowNumber,
-        };
-        if (row.Nro_Guia) rec.nroGuia = row.Nro_Guia;
-        if (row.Origen) rec.origen = row.Origen;
-        if (row.SKU) rec.sku = row.SKU;
-        if (row.Descripcion_Sku) rec.descripcionSku = row.Descripcion_Sku;
-        if (row.MontoOC) {
-            rec.montoOc = toNum(row.MontoOC);
-        } else if (row.Importe_sin_impuesto) {
-            rec.montoOc = toNum(row.Importe_sin_impuesto);
-        }
-        return rec;
-    });
+    const existing = await migoRepo.findExistingReceptionPairs(
+        [...pairMap.values()],
+    );
 
-    const distinctOcs = new Set(validRows.map(r => r.Nro_OC));
-    const distinctReceptions = new Set(validRows.map(r => r.Nro_Recepcion));
-    const ocMontoMap = new Map<string, number>();
-    for (const r of validRows) {
-        if (!ocMontoMap.has(r.Nro_OC)) {
-            const monto = r.MontoOC
-                ? toNum(r.MontoOC)
-                : (r.Importe_sin_impuesto ? toNum(r.Importe_sin_impuesto) : 0);
-            ocMontoMap.set(r.Nro_OC, monto);
-        }
+    if (existing.size === 0) {
+        return null;
     }
-    const totalMontoOc = Array.from(ocMontoMap.values()).reduce((s, v) => s + v, 0);
 
-    const folio = generateFolio();
-    const doc: Record<string, any> = {
+    const duplicates = [...existing];
+    const duplicateList = duplicates
+        .map((key) => {
+            const [oc, reception] = key.split('::');
+            return `OC ${oc} / Recepción ${reception}`;
+        })
+        .join('; ');
+
+    return {
+        duplicateList,
+        duplicates,
+    };
+}
+
+function buildReceptionRecord(
+    row: ParsedRow,
+): Record<string, any> {
+    const reception: Record<string, any> = {
+        nroOc: toNum(row.Nro_OC),
+        nroRecepcion: toNum(row.Nro_Recepcion),
+        numeroProveedor: row.Numero_Proveedor || null,
+        sucursal: toNum(row.Sucursal),
+        fechaRecepcion:
+            parseLayoutDate(row.Fecha_Recepcion) ??
+            new Date(row.Fecha_Recepcion),
+        importeSinImpuesto: toNum(row.Importe_sin_impuesto),
+        cantidad: toNum(row.Cantidad),
+        importeUnitario: toNum(row.Importe_Unitario),
+        importeSinImpuestoDet: toNum(row.Importe_SinImpuesto),
+        isValid: true,
+        rowNumber: row.rowNumber,
+    };
+
+    addOptionalReceptionFields(reception, row);
+
+    return reception;
+}
+
+function addOptionalReceptionFields(
+    reception: Record<string, any>,
+    row: ParsedRow,
+): void {
+    if (row.Nro_Guia) {
+        reception.nroGuia = row.Nro_Guia;
+    }
+
+    if (row.Origen) {
+        reception.origen = row.Origen;
+    }
+
+    if (row.SKU) {
+        reception.sku = row.SKU;
+    }
+
+    if (row.Descripcion_Sku) {
+        reception.descripcionSku = row.Descripcion_Sku;
+    }
+
+    const montoOc = getReceptionAmount(row);
+    if (montoOc !== undefined) {
+        reception.montoOc = montoOc;
+    }
+}
+
+function getReceptionAmount(
+    row: ParsedRow,
+): number | undefined {
+    if (row.MontoOC) {
+        return toNum(row.MontoOC);
+    }
+
+    if (row.Importe_sin_impuesto) {
+        return toNum(row.Importe_sin_impuesto);
+    }
+
+    return undefined;
+}
+
+function calculateTotalMontoOc(
+    validRows: ParsedRow[],
+): number {
+    const amountByPurchaseOrder = new Map<string, number>();
+
+    for (const row of validRows) {
+        if (amountByPurchaseOrder.has(row.Nro_OC)) {
+            continue;
+        }
+
+        amountByPurchaseOrder.set(
+            row.Nro_OC,
+            getReceptionAmount(row) ?? 0,
+        );
+    }
+
+    return [...amountByPurchaseOrder.values()]
+        .reduce((sum, value) => sum + value, 0);
+}
+
+function buildMigoDocument(
+    validation: LayoutValidationResult,
+    validRows: ParsedRow[],
+    receptions: Array<Record<string, any>>,
+    fileName: string,
+    folio: string,
+    createdBy?: number,
+): Record<string, any> {
+    const distinctOcs = new Set(
+        validRows.map((row) => row.Nro_OC),
+    );
+    const distinctReceptions = new Set(
+        validRows.map((row) => row.Nro_Recepcion),
+    );
+    const totalMontoOc = calculateTotalMontoOc(validRows);
+
+    const document: Record<string, any> = {
         folio,
         fileName,
         totalRecords: validation.totalRows,
@@ -235,22 +306,126 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
         numeroRecepcion: distinctReceptions.size,
         montoOc: Math.round(totalMontoOc * 100) / 100,
         numeroRechazoOc: 0,
-        status: validRows.length > 0 ? MigoStatus.PUBLICADO : MigoStatus.RECHAZADO,
+        status:
+            validRows.length > 0
+                ? MigoStatus.PUBLICADO
+                : MigoStatus.RECHAZADO,
         publishedAt: new Date(),
         receptions,
     };
-    if (createdBy != null) doc.createdBy = createdBy;
 
-    const saved = await migoRepo.saveDocument(doc);
+    if (createdBy != null) {
+        document.createdBy = createdBy;
+    }
 
-    const invalidDetails = invalidRows.map(r => ({
-        row: r.rowNumber,
-        errors: r.errors,
+    return document;
+}
+
+function buildInvalidDetails(
+    invalidRows: ParsedRow[],
+): Array<{ row: number; errors: ParsedRow['errors'] }> {
+    return invalidRows.map((row) => ({
+        row: row.rowNumber,
+        errors: row.errors,
     }));
+}
 
-    const summaryMsg = `La validación del layout ha finalizado correctamente.\nTotal de registros: ${validation.totalRows}\nTotal válidos: ${validation.totalValid}\nTotal incorrectos: ${validation.totalInvalid}`;
+function buildValidationSummary(
+    validation: LayoutValidationResult,
+): string {
+    return (
+        'La validación del layout ha finalizado correctamente.\n' +
+        `Total de registros: ${validation.totalRows}\n` +
+        `Total válidos: ${validation.totalValid}\n` +
+        `Total incorrectos: ${validation.totalInvalid}`
+    );
+}
 
-    logger.info(`[MIGO] Document created folio=${folio}, total=${validation.totalRows}, valid=${validation.totalValid}, invalid=${validation.totalInvalid}`);
+function buildGlobalValidationErrorResponse(
+    validation: LayoutValidationResult,
+) {
+    const globalError = validation.globalError!;
+
+    return ResponseHandler.responseBuilder(
+        globalError.message,
+        {
+            code: globalError.code,
+            totalRows: validation.totalRows,
+        },
+        -1,
+        StatusCodes.BAD_REQUEST,
+        false,
+        globalError.message,
+    );
+}
+
+function buildDuplicateErrorResponse(
+    duplicateResult: DuplicateReceptionResult,
+) {
+    const message =
+        'El documento no se puede cargar porque contiene ' +
+        `recepciones que ya existen: ${duplicateResult.duplicateList}.`;
+
+    logger.warn(
+        `[MIGO] Upload rechazado por duplicados: ${duplicateResult.duplicateList}`,
+    );
+
+    return ResponseHandler.responseBuilder(
+        message,
+        {
+            code: 'WRN7021',
+            duplicates: duplicateResult.duplicates,
+        },
+        -1,
+        StatusCodes.BAD_REQUEST,
+        false,
+        message,
+    );
+}
+
+export async function uploadCsv(
+    fileContent: string,
+    fileName: string,
+    createdBy?: number,
+) {
+    const validation = validateLayout(fileContent);
+
+    if (validation.globalError) {
+        return buildGlobalValidationErrorResponse(validation);
+    }
+
+    const validRows = validation.parsedRows.filter(
+        (row) => row.isValid,
+    );
+    const invalidRows = validation.parsedRows.filter(
+        (row) => !row.isValid,
+    );
+
+    const duplicateResult = await findDuplicateReceptions(validRows);
+    if (duplicateResult) {
+        return buildDuplicateErrorResponse(duplicateResult);
+    }
+
+    const receptions = validRows.map(buildReceptionRecord);
+    const folio = generateFolio();
+    const document = buildMigoDocument(
+        validation,
+        validRows,
+        receptions,
+        fileName,
+        folio,
+        createdBy,
+    );
+    const saved = await migoRepo.saveDocument(document);
+    const invalidDetails = buildInvalidDetails(invalidRows);
+    const summaryMsg = buildValidationSummary(validation);
+
+    logger.info(
+        `[MIGO] Document created folio=${folio}, ` +
+        `total=${validation.totalRows}, ` +
+        `valid=${validation.totalValid}, ` +
+        `invalid=${validation.totalInvalid}`,
+    );
 
     return ResponseHandler.responseBuilder(
         summaryMsg,
@@ -266,7 +441,7 @@ export async function uploadCsv(fileContent: string, fileName: string, createdBy
         0,
         StatusCodes.CREATED,
         true,
-        ""
+        '',
     );
 }
 
@@ -418,136 +593,381 @@ async function rawInsertReceptionSku(
     await manager.query(sql, values);
 }
 
+function groupMigoReceptions(
+    rows: MigoDocumentReception[],
+): Map<string, MigoDocumentReception[]> {
+    const groups = new Map<string, MigoDocumentReception[]>();
+
+    for (const row of rows) {
+        const key = `${row.nroOc}::${row.nroRecepcion}`;
+        const currentRows = groups.get(key);
+
+        if (currentRows) {
+            currentRows.push(row);
+        } else {
+            groups.set(key, [row]);
+        }
+    }
+
+    return groups;
+}
+
+function calculateRoundedReceptionAmount(
+    rows: MigoDocumentReception[],
+): number {
+    const totalAmount = rows.reduce(
+        (acc, row) =>
+            acc + (Number(row.importeSinImpuestoDet) || 0),
+        0,
+    );
+
+    return Math.round(totalAmount * 100) / 100;
+}
+
+function isValidVendorNumber(value: number): boolean {
+    return Number.isFinite(value) && value > 0;
+}
+
+function buildPurchaseOrderDraft(
+    first: MigoDocumentReception,
+    orderNumber: string,
+    vendorNumber: number,
+    roundedTotalAmount: number,
+    updatedBy: number | undefined,
+): PurchaseOrder {
+    const draft = new PurchaseOrder();
+    const branchNumber = Number(first.sucursal);
+
+    draft.orderNumber = orderNumber;
+    draft.supplierNumber = vendorNumber;
+    draft.purchaseOrderDate =
+        first.fechaRecepcion ?? new Date();
+    draft.originId = Number.isFinite(branchNumber)
+        ? branchNumber
+        : 0;
+    draft.amount = roundedTotalAmount;
+    draft.status = 1;
+
+    if (updatedBy != null) {
+        draft.createdBy = updatedBy;
+    }
+
+    return draft;
+}
+
+async function resolvePurchaseOrderId(
+    manager: import('typeorm').EntityManager,
+    first: MigoDocumentReception,
+    roundedTotalAmount: number,
+    updatedBy: number | undefined,
+    folio: string,
+): Promise<string | undefined> {
+    const purchaseOrderRepo =
+        manager.getRepository(PurchaseOrder);
+    const orderNumber = String(first.nroOc);
+
+    try {
+        let purchaseOrder = await purchaseOrderRepo.findOne({
+            where: { orderNumber },
+        });
+
+        if (!purchaseOrder && first.numeroProveedor) {
+            const vendorRaw =
+                String(first.numeroProveedor).trim();
+            const vendorNumber = Number(vendorRaw);
+
+            if (!isValidVendorNumber(vendorNumber)) {
+                logger.warn(
+                    `[MIGO] numero_proveedor inválido para OC=${orderNumber}: '${vendorRaw}'. La recepción quedará sin OC.`,
+                );
+                return undefined;
+            }
+
+            const draft = buildPurchaseOrderDraft(
+                first,
+                orderNumber,
+                vendorNumber,
+                roundedTotalAmount,
+                updatedBy,
+            );
+
+            purchaseOrder =
+                await purchaseOrderRepo.save(draft);
+
+            logger.info(
+                `[MIGO] OC ${orderNumber} no existía. Creada automáticamente con vendor=${vendorNumber} (origen MIGO doc=${folio}).`,
+            );
+        }
+
+        return purchaseOrder?.purchaseOrderId;
+    } catch (err) {
+        logger.warn(
+            `[MIGO] No se pudo resolver PurchaseOrder OC=${first.nroOc}: ${(err as Error).message}`,
+        );
+        return undefined;
+    }
+}
+
+async function receptionAlreadyExists(
+    manager: import('typeorm').EntityManager,
+    schema: string,
+    receptionNumber: string,
+    purchaseOrderId: string | undefined,
+): Promise<boolean> {
+    const existingRows = purchaseOrderId
+        ? await manager.query(
+            `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid = $2 LIMIT 1`,
+            [receptionNumber, purchaseOrderId],
+        )
+        : await manager.query(
+            `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid IS NULL LIMIT 1`,
+            [receptionNumber],
+        );
+
+    return (
+        Array.isArray(existingRows) &&
+        existingRows.length > 0
+    );
+}
+
+function buildReceptionInsert(
+    first: MigoDocumentReception,
+    receptionNumber: string,
+    roundedTotalAmount: number,
+    purchaseOrderId: string | undefined,
+    folio: string,
+    updatedBy: number | undefined,
+): Parameters<typeof rawInsertReception>[1] {
+    const receptionInsert:
+        Parameters<typeof rawInsertReception>[1] = {
+        receptionNumber,
+        amount: roundedTotalAmount,
+        status: 0,
+        comment: `MIGO ${folio}`,
+        receptionDate: first.fechaRecepcion,
+    };
+
+    if (first.nroGuia) {
+        receptionInsert.guideNumber = first.nroGuia;
+    }
+
+    if (first.sucursal != null) {
+        receptionInsert.originId =
+            Number(first.sucursal);
+    }
+
+    if (purchaseOrderId) {
+        receptionInsert.purchaseOrderId =
+            purchaseOrderId;
+    }
+
+    if (updatedBy != null) {
+        receptionInsert.createdBy = updatedBy;
+    }
+
+    return receptionInsert;
+}
+
+function buildSkuInsert(
+    row: MigoDocumentReception,
+    receptionId: string,
+    updatedBy: number | undefined,
+): Parameters<typeof rawInsertReceptionSku>[1] {
+    const skuInsert:
+        Parameters<typeof rawInsertReceptionSku>[1] = {
+        receptionId,
+        sku:
+            ((row.sku ?? '').trim() || 'N/A')
+                .slice(0, 15),
+        description:
+            (
+                (row.descripcionSku ?? '').trim() ||
+                (row.sku ?? 'N/A')
+            ).slice(0, 256),
+        quantity:
+            Number(row.cantidad) || 0,
+        unitCost:
+            Number(row.importeUnitario) || 0,
+        totalCost:
+            Number(row.importeSinImpuestoDet) || 0,
+        status: 0,
+    };
+
+    if (updatedBy != null) {
+        skuInsert.createdBy = updatedBy;
+    }
+
+    return skuInsert;
+}
+
+async function insertReceptionSkus(
+    manager: import('typeorm').EntityManager,
+    rows: MigoDocumentReception[],
+    receptionId: string,
+    updatedBy: number | undefined,
+    stats: PromotionStats,
+): Promise<void> {
+    for (const row of rows) {
+        const skuInsert = buildSkuInsert(
+            row,
+            receptionId,
+            updatedBy,
+        );
+
+        await rawInsertReceptionSku(
+            manager,
+            skuInsert,
+        );
+
+        stats.skusCreated++;
+    }
+}
+
+async function promoteReceptionGroup(
+    manager: import('typeorm').EntityManager,
+    rows: MigoDocumentReception[],
+    folio: string,
+    updatedBy: number | undefined,
+    stats: PromotionStats,
+): Promise<void> {
+    const first = rows[0]!;
+    const receptionNumber =
+        String(first.nroRecepcion);
+    const schema = resolveSchema(manager);
+    const roundedTotalAmount =
+        calculateRoundedReceptionAmount(rows);
+
+    const purchaseOrderId =
+        await resolvePurchaseOrderId(
+            manager,
+            first,
+            roundedTotalAmount,
+            updatedBy,
+            folio,
+        );
+
+    const alreadyExists =
+        await receptionAlreadyExists(
+            manager,
+            schema,
+            receptionNumber,
+            purchaseOrderId,
+        );
+
+    if (alreadyExists) {
+        logger.info(
+            `[MIGO] Recepción ${receptionNumber} ya publicada para OC=${first.nroOc} (purchase_order_uuid=${purchaseOrderId ?? 'NULL'}). Saltando.`,
+        );
+        stats.receptionsSkipped++;
+        return;
+    }
+
+    const receptionInsert =
+        buildReceptionInsert(
+            first,
+            receptionNumber,
+            roundedTotalAmount,
+            purchaseOrderId,
+            folio,
+            updatedBy,
+        );
+
+    const receptionId =
+        await rawInsertReception(
+            manager,
+            receptionInsert,
+        );
+
+    stats.receptionsCreated++;
+
+    await insertReceptionSkus(
+        manager,
+        rows,
+        receptionId,
+        updatedBy,
+        stats,
+    );
+}
+
+async function executePromotionTransaction(
+    manager: import('typeorm').EntityManager,
+    groups: Map<string, MigoDocumentReception[]>,
+    migoDocumentId: string,
+    folio: string,
+    updatedBy: number | undefined,
+    stats: PromotionStats,
+): Promise<void> {
+    const dbSchema = resolveSchema(manager);
+
+    logger.info(
+        `[MIGO] Promoviendo recepciones doc=${migoDocumentId} usando schema="${dbSchema}"`,
+    );
+
+    for (const rows of groups.values()) {
+        await promoteReceptionGroup(
+            manager,
+            rows,
+            folio,
+            updatedBy,
+            stats,
+        );
+    }
+}
+
 async function promoteMigoReceptionsToNormalReceptions(
     migoDocumentId: string,
     folio: string,
     updatedBy: number | undefined,
 ): Promise<PromotionStats> {
-    const stats: PromotionStats = { receptionsCreated: 0, receptionsSkipped: 0, skusCreated: 0 };
+    const stats: PromotionStats = {
+        receptionsCreated: 0,
+        receptionsSkipped: 0,
+        skusCreated: 0,
+    };
 
-    const allMigoRows = await migoRepo.findAllReceptionsByDocument(migoDocumentId);
-    const validRows = allMigoRows.filter(r => r.isValid !== false);
+    const allMigoRows =
+        await migoRepo.findAllReceptionsByDocument(
+            migoDocumentId,
+        );
+
+    const validRows = allMigoRows.filter(
+        (row) => row.isValid !== false,
+    );
 
     if (validRows.length === 0) {
-        logger.warn(`[MIGO] No hay recepciones válidas para promover (doc=${migoDocumentId})`);
-        return stats;
+        logger.warn(
+            `[MIGO] No hay recepciones válidas para promover (doc=${migoDocumentId})`,
+        );
+
+        return {
+            receptionsCreated: 0,
+            receptionsSkipped: 0,
+            skusCreated: 0,
+        };
     }
 
-    const groups = new Map<string, MigoDocumentReception[]>();
-    for (const row of validRows) {
-        const key = `${row.nroOc}::${row.nroRecepcion}`;
-        const arr = groups.get(key);
-        if (arr) arr.push(row);
-        else groups.set(key, [row]);
-    }
+    const groups = groupMigoReceptions(validRows);
 
-    await datasource.transaction(async (manager) => {
-        const purchaseOrderRepo = manager.getRepository(PurchaseOrder);
+    await datasource.transaction(
+        async (manager) =>
+            executePromotionTransaction(
+                manager,
+                groups,
+                migoDocumentId,
+                folio,
+                updatedBy,
+                stats,
+            ),
+    );
 
-        const dbSchema = resolveSchema(manager);
-        logger.info(`[MIGO] Promoviendo recepciones doc=${migoDocumentId} usando schema="${dbSchema}"`);
-
-        for (const [, rows] of groups) {
-            const first = rows[0]!;
-            const receptionNumber = String(first.nroRecepcion);
-            const schema = resolveSchema(manager);
-
-            const totalAmount = rows.reduce(
-                (acc, r) => acc + (Number(r.importeSinImpuestoDet) || 0),
-                0,
-            );
-            const roundedTotalAmount = Math.round(totalAmount * 100) / 100;
-
-            let purchaseOrderId: string | undefined;
-            try {
-                const orderNumber = String(first.nroOc);
-                let po = await purchaseOrderRepo.findOne({ where: { orderNumber } });
-
-                if (!po && first.numeroProveedor) {
-                    const vendorRaw = String(first.numeroProveedor).trim();
-                    const vendorNumber = Number(vendorRaw);
-                    if (Number.isFinite(vendorNumber) && vendorNumber > 0) {
-                        const draft = new PurchaseOrder();
-                        draft.orderNumber = orderNumber;
-                        draft.supplierNumber = vendorNumber;
-                        draft.purchaseOrderDate = first.fechaRecepcion ?? new Date();
-                        const sucursalNum = Number(first.sucursal);
-                        draft.originId = Number.isFinite(sucursalNum) ? sucursalNum : 0;
-                        draft.amount = roundedTotalAmount;
-                        draft.status = 1;
-                        if (updatedBy != null) {
-                            draft.createdBy = updatedBy;
-                        }
-                        const created = await purchaseOrderRepo.save(draft);
-                        po = created;
-                        logger.info(
-                            `[MIGO] OC ${orderNumber} no existía. Creada automáticamente con vendor=${vendorNumber} (origen MIGO doc=${folio}).`,
-                        );
-                    } else {
-                        logger.warn(
-                            `[MIGO] numero_proveedor inválido para OC=${orderNumber}: '${vendorRaw}'. La recepción quedará sin OC.`,
-                        );
-                    }
-                }
-
-                if (po) purchaseOrderId = po.purchaseOrderId;
-            } catch (err) {
-                logger.warn(
-                    `[MIGO] No se pudo resolver PurchaseOrder OC=${first.nroOc}: ${(err as Error).message}`,
-                );
-            }
-
-            const existsRows = purchaseOrderId
-                ? await manager.query(
-                    `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid = $2 LIMIT 1`,
-                    [receptionNumber, purchaseOrderId],
-                )
-                : await manager.query(
-                    `SELECT 1 FROM "${schema}".reception WHERE reception_number = $1 AND purchase_order_uuid IS NULL LIMIT 1`,
-                    [receptionNumber],
-                );
-            if (Array.isArray(existsRows) && existsRows.length > 0) {
-                logger.info(
-                    `[MIGO] Recepción ${receptionNumber} ya publicada para OC=${first.nroOc} (purchase_order_uuid=${purchaseOrderId ?? 'NULL'}). Saltando.`,
-                );
-                stats.receptionsSkipped++;
-                continue;
-            }
-
-            const receptionInsert: Parameters<typeof rawInsertReception>[1] = {
-                receptionNumber,
-                amount: roundedTotalAmount,
-                status: 0,
-                comment: `MIGO ${folio}`,
-                receptionDate: first.fechaRecepcion,
-            };
-            if (first.nroGuia) receptionInsert.guideNumber = first.nroGuia;
-            if (first.sucursal != null) receptionInsert.originId = Number(first.sucursal);
-            if (purchaseOrderId) receptionInsert.purchaseOrderId = purchaseOrderId;
-            if (updatedBy != null) receptionInsert.createdBy = updatedBy;
-
-            const receptionId = await rawInsertReception(manager, receptionInsert);
-            stats.receptionsCreated++;
-
-            for (const row of rows) {
-                const skuInsert: Parameters<typeof rawInsertReceptionSku>[1] = {
-                    receptionId,
-                    sku: ((row.sku ?? '').trim() || 'N/A').slice(0, 15),
-                    description: ((row.descripcionSku ?? '').trim() || (row.sku ?? 'N/A')).slice(0, 256),
-                    quantity: Number(row.cantidad) || 0,
-                    unitCost: Number(row.importeUnitario) || 0,
-                    totalCost: Number(row.importeSinImpuestoDet) || 0,
-                    status: 0,
-                };
-                if (updatedBy != null) skuInsert.createdBy = updatedBy;
-
-                await rawInsertReceptionSku(manager, skuInsert);
-                stats.skusCreated++;
-            }
-        }
-    });
-
-    return stats;
+    return {
+        receptionsCreated:
+            stats.receptionsCreated,
+        receptionsSkipped:
+            stats.receptionsSkipped,
+        skusCreated:
+            stats.skusCreated,
+    };
 }
 
 export async function authorizeDocument(migoDocumentId: string, updatedBy?: number) {
@@ -652,12 +1072,12 @@ export async function exportReceptionsCsv(migoDocumentId: string): Promise<strin
         let fechaStr: string = '';
 
         if (r.fechaRecepcion) {
-        const fecha =
-            r.fechaRecepcion instanceof Date
-            ? r.fechaRecepcion
-            : new Date(String(r.fechaRecepcion));
+            const fecha =
+                r.fechaRecepcion instanceof Date
+                    ? r.fechaRecepcion
+                    : new Date(String(r.fechaRecepcion));
 
-        fechaStr = fecha.toISOString().split('T')[0] || '';
+            fechaStr = fecha.toISOString().split('T')[0] || '';
         }
         const cells: string[] = [
             String(r.nroOc), String(r.nroRecepcion),

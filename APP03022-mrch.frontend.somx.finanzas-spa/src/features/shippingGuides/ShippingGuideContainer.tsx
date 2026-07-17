@@ -263,7 +263,7 @@ export default function ShippingGuideContainer(): ReactElement {
   );
 
   const openCancelModal = (targets: ShippingGuide[]) => {
-    const list = targets || [];
+    const list = targets ?? [];
     if (list.length === 0) {
       financeAlert.showWarning(
         "Atención",
@@ -328,7 +328,7 @@ export default function ShippingGuideContainer(): ReactElement {
             ? {
               ...g,
               status: {
-                ...(g.status || {
+                ...(g.status ?? {
                   key: "ECF009",
                   value: 9,
                   color: "",

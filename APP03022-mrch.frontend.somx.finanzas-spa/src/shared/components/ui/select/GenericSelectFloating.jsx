@@ -39,7 +39,7 @@ export default function GenericSelectFloating({
         if (!el) return;
         const update = () => {
             const cs = window.getComputedStyle(el);
-            const pl = parseFloat(cs.paddingLeft || '16');
+            const pl = parseFloat(cs.paddingLeft ?? '16');
             setLeftPad(Number.isFinite(pl) ? pl : 16);
         };
         update();

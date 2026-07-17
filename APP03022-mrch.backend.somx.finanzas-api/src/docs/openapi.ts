@@ -8,30 +8,148 @@ const __dirname = path.dirname(__filename);
 type AnyObj = Record<string, unknown>;
 type Tag = { name: string; description?: string };
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-    return !!v && typeof v === 'object' && !Array.isArray(v);
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 async function importAllFrom(dir: string): Promise<AnyObj[]> {
-    const abs = path.join(__dirname, dir);
-    if (!fs.existsSync(abs)) return [];
+    const absolutePath = path.join(__dirname, dir);
 
-    const files = fs
-        .readdirSync(abs)
-        .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'));
-
-    const mods: AnyObj[] = [];
-
-    for (const f of files) {
-        console.log('Loading OpenAPI file:', f);
-
-        const url = pathToFileURL(path.join(abs, f)).href;
-        const m = await import(url);
-
-        mods.push(m as AnyObj);
+    if (!fs.existsSync(absolutePath)) {
+        return [];
     }
 
-    return mods;
+    const files = fs
+        .readdirSync(absolutePath)
+        .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'));
+
+    const modules: AnyObj[] = [];
+
+    for (const file of files) {
+        console.log('Loading OpenAPI file:', file);
+
+        const moduleUrl = pathToFileURL(
+            path.join(absolutePath, file),
+        ).href;
+
+        const loadedModule = await import(moduleUrl);
+        modules.push(loadedModule as AnyObj);
+    }
+
+    return modules;
+}
+
+function mergeModuleExports(
+    modules: AnyObj[],
+    exportSuffix: 'Schemas' | 'Paths',
+    target: AnyObj,
+    tags: Tag[],
+): void {
+    for (const module of modules) {
+        mergeSingleModule(
+            module,
+            exportSuffix,
+            target,
+            tags,
+        );
+    }
+}
+
+function mergeSingleModule(
+    module: AnyObj,
+    exportSuffix: 'Schemas' | 'Paths',
+    target: AnyObj,
+    tags: Tag[],
+): void {
+    for (const [key, value] of Object.entries(module)) {
+        mergeExportValue(
+            key,
+            value,
+            exportSuffix,
+            target,
+            tags,
+        );
+    }
+}
+
+function mergeExportValue(
+    key: string,
+    value: unknown,
+    exportSuffix: 'Schemas' | 'Paths',
+    target: AnyObj,
+    tags: Tag[],
+): void {
+    if (key.endsWith(exportSuffix) && isPlainObject(value)) {
+        Object.assign(target, value);
+    }
+
+    if (key === 'tags' && Array.isArray(value)) {
+        tags.push(...(value as Tag[]));
+    }
+}
+
+function createInfo(): AnyObj {
+    return {
+        title: process.env.SERVICE_TITLE ?? 'Finanzas API',
+        version: process.env.npm_package_version ?? '1.0.0',
+        description: 'Express + TypeScript API (OAS3)',
+    };
+}
+
+function createServers(): AnyObj[] {
+    return [
+        {
+            url: '/api',
+            description: 'Base URL (paths incluyen /api si así los defines)',
+        },
+    ];
+}
+
+function createSecuritySchemes(): AnyObj {
+    return {
+        bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            description: 'Bearer <token>',
+        },
+    };
+}
+
+function createSchemas(schemas: AnyObj): AnyObj {
+    return {
+        Error: {
+            type: 'object',
+            properties: {
+                error: {
+                    type: 'string',
+                },
+            },
+            example: {
+                error: 'Something went wrong',
+            },
+        },
+        ...schemas,
+    };
+}
+
+function createOpenApiSpec(
+    schemas: AnyObj,
+    paths: AnyObj,
+    tags: Tag[],
+): AnyObj {
+    return {
+        openapi: '3.0.3',
+        info: createInfo(),
+        servers: createServers(),
+        tags,
+        paths,
+        components: {
+            securitySchemes: createSecuritySchemes(),
+            schemas: createSchemas(schemas),
+        },
+        security: [],
+    };
 }
 
 /**
@@ -40,79 +158,33 @@ async function importAllFrom(dir: string): Promise<AnyObj[]> {
  *  - src/docs/paths/*.ts        -> objetos ...Paths
  * y arma una OAS3 válida.
  */
-export async function buildOpenAPISpec() {
-    const componentsMods = await importAllFrom('./components');
-    const pathsMods = await importAllFrom('./paths');
+export async function buildOpenAPISpec(): Promise<AnyObj> {
+    const [componentsModules, pathsModules] = await Promise.all([
+        importAllFrom('./components'),
+        importAllFrom('./paths'),
+    ]);
 
     const schemas: AnyObj = {};
     const paths: AnyObj = {};
     const tags: Tag[] = [];
 
-    // merge de componentes (cualquier export que termine en "Schemas")
-    for (const m of componentsMods) {
-        for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Schemas') && isPlainObject(v)) {
-                Object.assign(schemas, v);
-            }
-
-            if (k === 'tags' && Array.isArray(v)) {
-                tags.push(...(v as Tag[]));
-            }
-        }
-    }
-
-    // merge de paths (cualquier export que termine en "Paths")
-    for (const m of pathsMods) {
-        for (const [k, v] of Object.entries(m)) {
-            if (k.endsWith('Paths') && isPlainObject(v)) {
-                Object.assign(paths, v);
-            }
-
-            if (k === 'tags' && Array.isArray(v)) {
-                tags.push(...(v as Tag[]));
-            }
-        }
-    }
-
-    const spec = {
-        openapi: '3.0.3',
-        info: {
-            title: process.env.SERVICE_TITLE ?? 'Finanzas API',
-            version: process.env.npm_package_version ?? '1.0.0',
-            description: 'Express + TypeScript API (OAS3)',
-        },
-        servers: [
-            {
-                url: '/api',
-                description: 'Base URL (paths incluyen /api si así los defines)',
-            },
-        ],
+    mergeModuleExports(
+        componentsModules,
+        'Schemas',
+        schemas,
         tags,
-        paths,
-        components: {
-            securitySchemes: {
-                bearerAuth: {
-                    type: 'http',
-                    scheme: 'bearer',
-                    bearerFormat: 'JWT',
-                    description: 'Bearer <token>',
-                },
-            },
-            schemas: {
-                Error: {
-                    type: 'object',
-                    properties: {
-                        error: { type: 'string' },
-                    },
-                    example: {
-                        error: 'Something went wrong',
-                    },
-                },
-                ...schemas,
-            },
-        },
-        security: [],
-    };
+    );
 
-    return spec;
+    mergeModuleExports(
+        pathsModules,
+        'Paths',
+        paths,
+        tags,
+    );
+
+    return createOpenApiSpec(
+        schemas,
+        paths,
+        tags,
+    );
 }

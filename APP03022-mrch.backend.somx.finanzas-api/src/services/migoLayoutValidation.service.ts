@@ -32,6 +32,13 @@ export interface ValidationResult {
     totalInvalid: number;
 }
 
+type RawCsvRow = Record<string, string>;
+
+interface OcGroup {
+    sumImporte: number;
+    montoOc: number;
+}
+
 export const REQUIRED_HEADERS = [
     'Nro_OC',
     'Nro_Recepcion',
@@ -50,213 +57,481 @@ export const REQUIRED_HEADERS = [
 
 const OPTIONAL_HEADERS = ['MontoOC'];
 
-export function parseCsv(content: string): { headers: string[]; rows: Record<string, string>[] } {
+export function parseCsv(
+    content: string,
+): { headers: string[]; rows: RawCsvRow[] } {
     const lines = content
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         .split('\n')
-        .filter(l => l.trim().length > 0);
+        .filter((line) => line.trim().length > 0);
 
-    if (lines.length === 0) return { headers: [], rows: [] };
+    if (lines.length === 0) {
+        return { headers: [], rows: [] };
+    }
 
     const separator = lines[0]!.includes(';') ? ';' : ',';
-    const headers = lines[0]!.split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
+    const headers = lines[0]!
+        .split(separator)
+        .map((header) => header.trim().replace(/^"|"$/g, ''));
 
-    const rows: Record<string, string>[] = [];
-    for (let i = 1; i < lines.length; i++) {
-        const values = lines[i]!.split(separator).map(v => v.trim().replace(/^"|"$/g, ''));
-        const row: Record<string, string> = {};
-        headers.forEach((h, idx) => { row[h] = values[idx] ?? ''; });
+    const rows: RawCsvRow[] = [];
+
+    for (let index = 1; index < lines.length; index++) {
+        const values = lines[index]!
+            .split(separator)
+            .map((value) => value.trim().replace(/^"|"$/g, ''));
+
+        const row: RawCsvRow = {};
+
+        headers.forEach((header, headerIndex) => {
+            row[header] = values[headerIndex] ?? '';
+        });
+
         rows.push(row);
     }
 
     return { headers, rows };
 }
 
-function isNumeric(val: string): boolean {
-    if (!val || val.trim() === '') return false;
-    return !isNaN(Number(val.replace(',', '.')));
-}
-
-function toNum(val: string): number {
-    return Number(val.replace(',', '.'));
-}
-
-export function parseLayoutDate(val: string): Date | null {
-    if (!val) return null;
-    const s = val.trim();
-    if (s === '') return null;
-
-    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (isoMatch) {
-        const y = Number(isoMatch[1]);
-        const m = Number(isoMatch[2]) - 1;
-        const d = Number(isoMatch[3]);
-        const hasTime = s.includes('T') || /\d{2}:\d{2}/.test(s);
-        if (hasTime) {
-            const parsed = new Date(s);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        const local = new Date(y, m, d);
-        return isValidYmd(local, y, m, d) ? local : null;
+function isNumeric(value: string): boolean {
+    if (!value || value.trim() === '') {
+        return false;
     }
 
-    const dmyMatch = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s);
-    if (dmyMatch) {
-        const day = Number(dmyMatch[1]);
-        const month = Number(dmyMatch[2]) - 1;
-        const year = Number(dmyMatch[3]);
-        const local = new Date(year, month, day);
-        return isValidYmd(local, year, month, day) ? local : null;
-    }
-
-    return null;
+    return !Number.isNaN(Number(value.replace(',', '.')));
 }
 
-function isValidYmd(d: Date, y: number, m: number, day: number): boolean {
+function toNum(value: string): number {
+    return Number(value.replace(',', '.'));
+}
+
+export function parseLayoutDate(value: string): Date | null {
+    if (!value) {
+        return null;
+    }
+
+    const trimmedValue = value.trim();
+
+    if (trimmedValue === '') {
+        return null;
+    }
+
+    const isoDate = parseIsoDate(trimmedValue);
+    if (isoDate !== null) {
+        return isoDate;
+    }
+
+    return parseDayMonthYearDate(trimmedValue);
+}
+
+function parseIsoDate(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+
+    if (!match) {
+        return null;
+    }
+
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    const hasTime =
+        value.includes('T') ||
+        /\d{2}:\d{2}/.test(value);
+
+    if (hasTime) {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const localDate = new Date(year, month, day);
+
+    return isValidYmd(localDate, year, month, day)
+        ? localDate
+        : null;
+}
+
+function parseDayMonthYearDate(value: string): Date | null {
+    const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(value);
+
+    if (!match) {
+        return null;
+    }
+
+    const day = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const year = Number(match[3]);
+    const localDate = new Date(year, month, day);
+
+    return isValidYmd(localDate, year, month, day)
+        ? localDate
+        : null;
+}
+
+function isValidYmd(
+    date: Date,
+    year: number,
+    month: number,
+    day: number,
+): boolean {
     return (
-        !Number.isNaN(d.getTime()) &&
-        d.getFullYear() === y &&
-        d.getMonth() === m &&
-        d.getDate() === day
+        !Number.isNaN(date.getTime()) &&
+        date.getFullYear() === year &&
+        date.getMonth() === month &&
+        date.getDate() === day
     );
 }
 
-function isValidDate(val: string): boolean {
-    return parseLayoutDate(val) !== null;
+function isValidDate(value: string): boolean {
+    return parseLayoutDate(value) !== null;
 }
 
-export function validateLayout(content: string): ValidationResult {
-    const { headers, rows } = parseCsv(content);
+function buildEmptyLayoutResult(): ValidationResult {
+    return {
+        valid: false,
+        globalError: {
+            code: 'WRN7018',
+            message: 'Layout de recepciones está vacío, favor de revisar.',
+        },
+        parsedRows: [],
+        totalRows: 0,
+        totalValid: 0,
+        totalInvalid: 0,
+    };
+}
 
-    // WRN7018: archivo vacío
-    if (headers.length === 0 || rows.length === 0) {
-        return {
-            valid: false,
-            globalError: { code: 'WRN7018', message: 'Layout de recepciones está vacío, favor de revisar.' },
-            parsedRows: [],
-            totalRows: 0,
-            totalValid: 0,
-            totalInvalid: 0,
+function buildInvalidHeadersResult(totalRows: number): ValidationResult {
+    return {
+        valid: false,
+        globalError: {
+            code: 'WRN7020',
+            message: 'La cabecera del layout esta incorrecta, favor de validar.',
+        },
+        parsedRows: [],
+        totalRows,
+        totalValid: 0,
+        totalInvalid: totalRows,
+    };
+}
+
+function headersAreValid(headers: string[]): boolean {
+    const allHeaders = [
+        ...REQUIRED_HEADERS,
+        ...OPTIONAL_HEADERS,
+    ];
+
+    const requiredMatch = REQUIRED_HEADERS.every(
+        (header, index) => headers[index] === header,
+    );
+
+    const hasOnlyKnownHeaders = headers.every(
+        (header) => allHeaders.includes(header),
+    );
+
+    return (
+        requiredMatch &&
+        hasOnlyKnownHeaders &&
+        headers.length >= REQUIRED_HEADERS.length
+    );
+}
+
+function addNumericValidationErrors(
+    row: RawCsvRow,
+    errors: string[],
+    hasMontoOc: boolean,
+): void {
+    const numericFields: Array<{
+        key: string;
+        message: string;
+    }> = [
+            {
+                key: 'Nro_OC',
+                message: 'Nro_OC debe ser numérico',
+            },
+            {
+                key: 'Nro_Recepcion',
+                message: 'Nro_Recepcion debe ser numérico',
+            },
+            {
+                key: 'Sucursal',
+                message: 'Sucursal debe ser numérico',
+            },
+            {
+                key: 'Importe_sin_impuesto',
+                message: 'Importe_sin_impuesto debe ser numérico',
+            },
+            {
+                key: 'Cantidad',
+                message: 'Cantidad debe ser numérico',
+            },
+            {
+                key: 'Importe_Unitario',
+                message: 'Importe_Unitario debe ser numérico',
+            },
+            {
+                key: 'Importe_SinImpuesto',
+                message: 'Importe_SinImpuesto debe ser numérico',
+            },
+        ];
+
+    for (const field of numericFields) {
+        if (!isNumeric(row[field.key] ?? '')) {
+            errors.push(field.message);
+        }
+    }
+
+    if (!isValidDate(row['Fecha_Recepcion'] ?? '')) {
+        errors.push('Fecha_Recepcion debe ser una fecha válida');
+    }
+
+    const montoOc = row['MontoOC'] ?? '';
+    const mustValidateMontoOc =
+        hasMontoOc &&
+        montoOc.trim() !== '';
+
+    if (mustValidateMontoOc && !isNumeric(montoOc)) {
+        errors.push('MontoOC debe ser numérico');
+    }
+}
+
+function addPositiveValueErrors(
+    row: RawCsvRow,
+    errors: string[],
+): void {
+    validatePositiveValue(
+        row['Cantidad'] ?? '',
+        'Cantidad debe ser mayor a 0',
+        errors,
+    );
+
+    validatePositiveValue(
+        row['Importe_Unitario'] ?? '',
+        'Importe_Unitario debe ser mayor a 0',
+        errors,
+    );
+
+    validatePositiveValue(
+        row['Importe_SinImpuesto'] ?? '',
+        'Importe_SinImpuesto debe ser mayor a 0',
+        errors,
+    );
+}
+
+function validatePositiveValue(
+    value: string,
+    message: string,
+    errors: string[],
+): void {
+    if (isNumeric(value) && toNum(value) <= 0) {
+        errors.push(message);
+    }
+}
+
+function addCalculatedAmountError(
+    row: RawCsvRow,
+    errors: string[],
+): void {
+    const unitAmount = row['Importe_Unitario'] ?? '';
+    const quantity = row['Cantidad'] ?? '';
+    const totalAmount = row['Importe_SinImpuesto'] ?? '';
+
+    if (
+        !isNumeric(unitAmount) ||
+        !isNumeric(quantity) ||
+        !isNumeric(totalAmount)
+    ) {
+        return;
+    }
+
+    const calculated =
+        Math.round(
+            toNum(unitAmount) *
+            toNum(quantity) *
+            100,
+        ) / 100;
+
+    const expected =
+        Math.round(toNum(totalAmount) * 100) / 100;
+
+    if (Math.abs(calculated - expected) <= 0.01) {
+        return;
+    }
+
+    errors.push(
+        `Importe_Unitario (${unitAmount}) * ` +
+        `Cantidad (${quantity}) = ${calculated}, ` +
+        `pero Importe_SinImpuesto es ${expected}`,
+    );
+}
+
+function buildParsedRow(
+    row: RawCsvRow,
+    rowNumber: number,
+    hasMontoOc: boolean,
+): ParsedRow {
+    const errors: string[] = [];
+
+    addNumericValidationErrors(
+        row,
+        errors,
+        hasMontoOc,
+    );
+
+    addPositiveValueErrors(
+        row,
+        errors,
+    );
+
+    addCalculatedAmountError(
+        row,
+        errors,
+    );
+
+    return {
+        Nro_OC: row['Nro_OC']?.trim() ?? '',
+        Nro_Recepcion: row['Nro_Recepcion']?.trim() ?? '',
+        Numero_Proveedor: row['Numero_Proveedor']?.trim() ?? '',
+        Sucursal: row['Sucursal']?.trim() ?? '',
+        Nro_Guia: row['Nro_Guia']?.trim() ?? '',
+        Origen: row['Origen']?.trim() ?? '',
+        Fecha_Recepcion: row['Fecha_Recepcion']?.trim() ?? '',
+        Importe_sin_impuesto:
+            row['Importe_sin_impuesto']?.trim() ?? '',
+        SKU: row['SKU']?.trim() ?? '',
+        Descripcion_Sku:
+            row['Descripcion_Sku']?.trim() ?? '',
+        Cantidad: row['Cantidad']?.trim() ?? '',
+        Importe_Unitario:
+            row['Importe_Unitario']?.trim() ?? '',
+        Importe_SinImpuesto:
+            row['Importe_SinImpuesto']?.trim() ?? '',
+        MontoOC:
+            hasMontoOc
+                ? row['MontoOC']?.trim() ?? ''
+                : '',
+        rowNumber,
+        isValid: errors.length === 0,
+        errors,
+    };
+}
+
+function parseRows(
+    rows: RawCsvRow[],
+    hasMontoOc: boolean,
+): ParsedRow[] {
+    return rows.map(
+        (row, index) =>
+            buildParsedRow(
+                row,
+                index + 2,
+                hasMontoOc,
+            ),
+    );
+}
+
+function canBeGroupedByOc(row: ParsedRow): boolean {
+    return (
+        row.isValid &&
+        isNumeric(row.Nro_OC) &&
+        isNumeric(row.Importe_SinImpuesto) &&
+        !!row.MontoOC &&
+        isNumeric(row.MontoOC)
+    );
+}
+
+function buildOcGroups(
+    parsedRows: ParsedRow[],
+): Map<string, OcGroup> {
+    const groups = new Map<string, OcGroup>();
+
+    for (const row of parsedRows) {
+        if (!canBeGroupedByOc(row)) {
+            continue;
+        }
+
+        const key = row.Nro_OC;
+        const currentGroup = groups.get(key) ?? {
+            sumImporte: 0,
+            montoOc: toNum(row.MontoOC),
         };
+
+        currentGroup.sumImporte =
+            Math.round(
+                (
+                    currentGroup.sumImporte +
+                    toNum(row.Importe_SinImpuesto)
+                ) * 100,
+            ) / 100;
+
+        groups.set(key, currentGroup);
     }
 
-    const allHeaders = [...REQUIRED_HEADERS, ...OPTIONAL_HEADERS];
-    const requiredMatch = REQUIRED_HEADERS.every((h, i) => headers[i] === h);
-    const hasOnlyKnownHeaders = headers.every(h => allHeaders.includes(h));
-    const headersMatch = requiredMatch && hasOnlyKnownHeaders && headers.length >= REQUIRED_HEADERS.length;
-    const hasMontoOc = headers.includes('MontoOC');
-    if (!headersMatch) {
-        return {
-            valid: false,
-            globalError: { code: 'WRN7020', message: 'La cabecera del layout esta incorrecta, favor de validar.' },
-            parsedRows: [],
-            totalRows: rows.length,
-            totalValid: 0,
-            totalInvalid: rows.length,
-        };
+    return groups;
+}
+
+function invalidateRowsWithMontoDifference(
+    parsedRows: ParsedRow[],
+    ocKey: string,
+    group: OcGroup,
+): void {
+    const montoOcRounded =
+        Math.round(group.montoOc * 100) / 100;
+
+    if (
+        Math.abs(
+            group.sumImporte - montoOcRounded,
+        ) <= 0.01
+    ) {
+        return;
     }
 
-    const parsedRows: ParsedRow[] = [];
+    const message =
+        `Suma Importe_SinImpuesto de OC ${ocKey} = ` +
+        `${group.sumImporte}, pero MontoOC = ${montoOcRounded}`;
 
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i]!;
-        const rowNum = i + 2;
-        const errors: string[] = [];
-
-        // Tipo de dato: numéricos
-        if (!isNumeric(row['Nro_OC'] ?? '')) errors.push('Nro_OC debe ser numérico');
-        if (!isNumeric(row['Nro_Recepcion'] ?? '')) errors.push('Nro_Recepcion debe ser numérico');
-        if (!isNumeric(row['Sucursal'] ?? '')) errors.push('Sucursal debe ser numérico');
-        if (!isValidDate(row['Fecha_Recepcion'] ?? '')) errors.push('Fecha_Recepcion debe ser una fecha válida');
-        if (!isNumeric(row['Importe_sin_impuesto'] ?? '')) errors.push('Importe_sin_impuesto debe ser numérico');
-        if (!isNumeric(row['Cantidad'] ?? '')) errors.push('Cantidad debe ser numérico');
-        if (!isNumeric(row['Importe_Unitario'] ?? '')) errors.push('Importe_Unitario debe ser numérico');
-        if (!isNumeric(row['Importe_SinImpuesto'] ?? '')) errors.push('Importe_SinImpuesto debe ser numérico');
-        if (hasMontoOc && row['MontoOC'] && row['MontoOC'].trim() !== '' && !isNumeric(row['MontoOC'])) {
-            errors.push('MontoOC debe ser numérico');
+    for (const row of parsedRows) {
+        if (row.Nro_OC !== ocKey || !row.isValid) {
+            continue;
         }
 
-        // Valores > 0
-        if (isNumeric(row['Cantidad'] ?? '') && toNum(row['Cantidad']!) <= 0) {
-            errors.push('Cantidad debe ser mayor a 0');
-        }
-        if (isNumeric(row['Importe_Unitario'] ?? '') && toNum(row['Importe_Unitario']!) <= 0) {
-            errors.push('Importe_Unitario debe ser mayor a 0');
-        }
-        if (isNumeric(row['Importe_SinImpuesto'] ?? '') && toNum(row['Importe_SinImpuesto']!) <= 0) {
-            errors.push('Importe_SinImpuesto debe ser mayor a 0');
-        }
+        row.isValid = false;
+        row.errors.push(message);
+    }
+}
 
-        // Importe_Unitario * Cantidad == Importe_SinImpuesto
-        if (
-            isNumeric(row['Importe_Unitario'] ?? '') &&
-            isNumeric(row['Cantidad'] ?? '') &&
-            isNumeric(row['Importe_SinImpuesto'] ?? '')
-        ) {
-            const calc = Math.round(toNum(row['Importe_Unitario']!) * toNum(row['Cantidad']!) * 100) / 100;
-            const expected = Math.round(toNum(row['Importe_SinImpuesto']!) * 100) / 100;
-            if (Math.abs(calc - expected) > 0.01) {
-                errors.push(`Importe_Unitario (${row['Importe_Unitario']}) * Cantidad (${row['Cantidad']}) = ${calc}, pero Importe_SinImpuesto es ${expected}`);
-            }
-        }
-
-        parsedRows.push({
-            Nro_OC: row['Nro_OC']?.trim() ?? '',
-            Nro_Recepcion: row['Nro_Recepcion']?.trim() ?? '',
-            Numero_Proveedor: row['Numero_Proveedor']?.trim() ?? '',
-            Sucursal: row['Sucursal']?.trim() ?? '',
-            Nro_Guia: row['Nro_Guia']?.trim() ?? '',
-            Origen: row['Origen']?.trim() ?? '',
-            Fecha_Recepcion: row['Fecha_Recepcion']?.trim() ?? '',
-            Importe_sin_impuesto: row['Importe_sin_impuesto']?.trim() ?? '',
-            SKU: row['SKU']?.trim() ?? '',
-            Descripcion_Sku: row['Descripcion_Sku']?.trim() ?? '',
-            Cantidad: row['Cantidad']?.trim() ?? '',
-            Importe_Unitario: row['Importe_Unitario']?.trim() ?? '',
-            Importe_SinImpuesto: row['Importe_SinImpuesto']?.trim() ?? '',
-            MontoOC: hasMontoOc ? (row['MontoOC']?.trim() ?? '') : '',
-            rowNumber: rowNum,
-            isValid: errors.length === 0,
-            errors,
-        });
+function applyCrossRowValidation(
+    parsedRows: ParsedRow[],
+    hasMontoOc: boolean,
+): void {
+    if (!hasMontoOc) {
+        return;
     }
 
-    // Cross-row validation: sum of Importe_SinImpuesto per OC == MontoOC (solo si MontoOC existe en el CSV)
-    if (hasMontoOc) {
-        const ocGroups = new Map<string, { sumImporte: number; montoOc: number }>();
-        for (const pr of parsedRows) {
-            if (!pr.isValid) continue;
-            if (!isNumeric(pr.Nro_OC) || !isNumeric(pr.Importe_SinImpuesto)) continue;
-            if (!pr.MontoOC || !isNumeric(pr.MontoOC)) continue;
+    const groups = buildOcGroups(parsedRows);
 
-            const key = pr.Nro_OC;
-            if (!ocGroups.has(key)) {
-                ocGroups.set(key, { sumImporte: 0, montoOc: toNum(pr.MontoOC) });
-            }
-            const g = ocGroups.get(key)!;
-            g.sumImporte = Math.round((g.sumImporte + toNum(pr.Importe_SinImpuesto)) * 100) / 100;
-        }
-
-        for (const [ocKey, g] of ocGroups) {
-            const montoOcRounded = Math.round(g.montoOc * 100) / 100;
-            if (Math.abs(g.sumImporte - montoOcRounded) > 0.01) {
-                for (const pr of parsedRows) {
-                    if (pr.Nro_OC === ocKey && pr.isValid) {
-                        pr.isValid = false;
-                        pr.errors.push(
-                            `Suma Importe_SinImpuesto de OC ${ocKey} = ${g.sumImporte}, pero MontoOC = ${montoOcRounded}`
-                        );
-                    }
-                }
-            }
-        }
+    for (const [ocKey, group] of groups) {
+        invalidateRowsWithMontoDifference(
+            parsedRows,
+            ocKey,
+            group,
+        );
     }
+}
 
-    const totalValid = parsedRows.filter(r => r.isValid).length;
-    const totalInvalid = parsedRows.filter(r => !r.isValid).length;
+function buildValidationResult(
+    parsedRows: ParsedRow[],
+): ValidationResult {
+    const totalValid = parsedRows.filter(
+        (row) => row.isValid,
+    ).length;
 
-    logger.info(`[MIGO VALIDATION] Rows=${parsedRows.length}, valid=${totalValid}, invalid=${totalInvalid}`);
+    const totalInvalid =
+        parsedRows.length - totalValid;
+
+    logger.info(
+        `[MIGO VALIDATION] Rows=${parsedRows.length}, ` +
+        `valid=${totalValid}, invalid=${totalInvalid}`,
+    );
 
     return {
         valid: totalValid > 0,
@@ -265,4 +540,31 @@ export function validateLayout(content: string): ValidationResult {
         totalValid,
         totalInvalid,
     };
+}
+
+export function validateLayout(
+    content: string,
+): ValidationResult {
+    const { headers, rows } = parseCsv(content);
+
+    if (headers.length === 0 || rows.length === 0) {
+        return buildEmptyLayoutResult();
+    }
+
+    if (!headersAreValid(headers)) {
+        return buildInvalidHeadersResult(rows.length);
+    }
+
+    const hasMontoOc = headers.includes('MontoOC');
+    const parsedRows = parseRows(
+        rows,
+        hasMontoOc,
+    );
+
+    applyCrossRowValidation(
+        parsedRows,
+        hasMontoOc,
+    );
+
+    return buildValidationResult(parsedRows);
 }

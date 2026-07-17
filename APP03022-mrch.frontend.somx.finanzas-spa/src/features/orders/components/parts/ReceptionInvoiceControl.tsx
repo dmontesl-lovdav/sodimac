@@ -8,7 +8,7 @@ import {
     RECEPTION_INVOICE_TRANSACTION,
     TransactionIdClient,
 } from "../../api/transactionIdClient";
-import { CatalogDetail, CatalogDetailRow, fetchCatalog, fetchProviderBlockers, fetchSystemParameters, formatAmount, formatDate, parseDisplayDate, startOfLocalDay, endOfLocalDay, SupplierBlock } from "@/utils/utils";
+import { CatalogDetailRow, fetchCatalog, fetchProviderBlockers, fetchSystemParameters, formatAmount, formatDate, parseDisplayDate, startOfLocalDay, endOfLocalDay, SupplierBlock } from "@/utils/utils";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import type {
     SystemParameter,

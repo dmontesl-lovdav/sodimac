@@ -11,6 +11,12 @@ export function createBreaker<T>(fn: (...args: any[]) => Promise<T>) {
   breaker.on("halfOpen", () => console.warn("🟡 HALF-OPEN"));
   breaker.on("close", () => console.warn("🟢 CLOSED"));
   breaker.on("reject", () => console.warn("⛔ REJECTED (OPEN)"));
-
+    breaker.on("failure", (err) => {
+        console.log(
+            "FAILURE:",
+            (err as any).response?.status,
+            err?.message
+        );
+    });
   return breaker;
 }

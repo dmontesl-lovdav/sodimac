@@ -1,54 +1,14 @@
+import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { Breadcrumb, GenericModal, GenericButton } from "@shared/components/ui";
+import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
+import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
+import { Title, Divider } from "@/shared/components/ui/misc";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
-  ReactElement,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  Breadcrumb,
-  GenericModal,
-  GenericButton,
-} from "@shared/components/ui";
-
-import {
-  withFinanceBreadcrumb,
-} from "@/shared/components/ui/navigation/financeBreadcrumb";
-
-import {
-  useFinanceAlertModal,
-} from "@/shared/hooks/useFinanceAlertModal";
-
-import {
-  DiscountsClient,
-} from "./api/DiscountsClient";
-
-import type {
-  ProvidersOptions,
-  Rebate,
-  RebateFilters,
-} from "./interfaces";
-
-import {
-  RebateStatusOptions,
-} from "./interfaces";
-
-import FiltersBar from "./components/FiltersBar";
-
-import {
-  Title,
-  Divider,
-} from "@/shared/components/ui/misc";
-
-import DiscountsGridTable from "./components/DiscountsGridTable";
-
-import {
-  APP_EVENT,
-  PermissionGate,
-} from "@shared/security";
-
-import "./styles/DiscountsContainer.css";
-
+  FINANCE_LIST_KEYS,
+  useFinanceListScreenSession,
+  useFinanceListRefetchOnReturn,
+} from "@/shared/hooks";
 import {
   exportToCSV,
   formatAmount,
@@ -57,622 +17,366 @@ import {
   parseDisplayDate,
   startOfLocalDay,
   endOfLocalDay,
-  fetchProvidersAsCatalog,
+  capitalizeWord,
   fetchCatalogDetails,
   fetchCatalogAsSelectableOptions,
   fetchSupplierTypesAsCatalog,
+  fetchProviders,
 } from "@/utils/utils";
 
-import {
-  FINANCE_LIST_KEYS,
-  useFinanceListScreenSession,
-  useFinanceListRefetchOnReturn,
-} from "@/shared/hooks";
+import { DiscountsClient } from "./api/DiscountsClient";
+import type { ProvidersOptions, Rebate, RebateFilters } from "./interfaces";
+import { RebateStatusOptions } from "./interfaces";
+import FiltersBar from "./components/FiltersBar";
+import DiscountsGridTable from "./components/DiscountsGridTable";
+import "./styles/DiscountsContainer.css";
 
-/* ---------------------- Status Renderer ---------------------- */
-
-const renderStatus = (
-  status: number
-) => {
-  const selected =
-    RebateStatusOptions.filter(
-      (item) =>
-        item.value === status
-    );
-
-  if (selected.length === 1) {
-    return selected[0];
-  }
-
-  return {
-    value: -1,
-    type: "error",
-    label: "Desconocido",
-  };
+type ProviderRow = {
+  supplierNumber?: string | number;
+  businessName?: string;
+  rfc?: string;
+  supplierType?: { id?: number; code?: string };
 };
 
-function parseFilterDateBound(
-  value?: string,
-  asEndOfDay = false
-): number | null {
-  if (!value?.trim()) {
-    return null;
-  }
+const CSV_HEADERS = [
+  "Documento",
+  "Referencia",
+  "Tipo Rebate",
+  "Documento Sap",
+  "Importe",
+  "Período",
+  "Número Proveedor",
+  "Nombre Proveedor",
+  "Tipo Proveedor",
+  "Fecha Aplicación",
+  "Fecha Vencimiento",
+  "Estatus",
+];
 
-  const parsed =
-    parseDisplayDate(
-      value.trim()
-    );
+const renderStatus = (status: number) => {
+  const selected = RebateStatusOptions.find((item) => item.value === status);
+  return selected ?? { value: -1, type: "error", label: "Desconocido" };
+};
 
-  if (!parsed) {
-    return null;
-  }
-
-  return (
-    asEndOfDay
-      ? endOfLocalDay(parsed)
-      : startOfLocalDay(parsed)
-  ).getTime();
+function parseFilterDateBound(value?: string, asEndOfDay = false): number | null {
+  if (!value?.trim()) return null;
+  const parsed = parseDisplayDate(value.trim());
+  if (!parsed) return null;
+  return (asEndOfDay ? endOfLocalDay(parsed) : startOfLocalDay(parsed)).getTime();
 }
 
 function isPostingDateInFilterRange(
-  postingDate:
-    | string
-    | null
-    | undefined,
+  postingDate: string | null | undefined,
   from?: string,
   to?: string
 ): boolean {
-  if (!postingDate?.trim()) {
-    return false;
-  }
+  if (!postingDate?.trim()) return false;
+  const parsed = parseDisplayDate(postingDate);
+  if (!parsed) return false;
 
-  const parsed =
-    parseDisplayDate(
-      postingDate
-    );
+  const timestamp = parsed.getTime();
+  const fromTs = parseFilterDateBound(from, false);
+  const toTs = parseFilterDateBound(to, true);
 
-  if (!parsed) {
-    return false;
-  }
-
-  const timestamp =
-    parsed.getTime();
-
-  const fromTimestamp =
-    parseFilterDateBound(
-      from,
-      false
-    );
-
-  const toTimestamp =
-    parseFilterDateBound(
-      to,
-      true
-    );
-
-  if (
-    fromTimestamp != null &&
-    timestamp < fromTimestamp
-  ) {
-    return false;
-  }
-
-  if (
-    toTimestamp != null &&
-    timestamp > toTimestamp
-  ) {
-    return false;
-  }
-
+  if (fromTs != null && timestamp < fromTs) return false;
+  if (toTs != null && timestamp > toTs) return false;
   return true;
 }
 
-export default function DiscountsContainer():
-  ReactElement {
-  const financeAlert =
-    useFinanceAlertModal();
+function includesIgnoreCase(value: string | undefined, query: string): boolean {
+  return (value || "").toLowerCase().includes(query);
+}
 
-  const [loading, setLoading] =
-    useState(false);
+function applyClientFilters(
+  rows: Rebate[],
+  criteria: RebateFilters,
+  providers: ProviderRow[]
+): Rebate[] {
+  let data = rows;
 
-  const [rows, setRows] =
-    useState<Rebate[]>([]);
-
-  const [page, setPage] =
-    useState<number>(1);
-
-  const [perPage, setPerPage] =
-    useState<number>(10);
-
-  const [
-    totalPages,
-    setTotalPages,
-  ] = useState<number>(1);
-
-  const [
-    totalItems,
-    setTotalItems,
-  ] = useState<number>(0);
-
-  const [
-    providers,
-    setProviders,
-  ] = useState<
-    ProvidersOptions[]
-  >([]);
-
-  const [
-    supplierTypeOptions,
-    setSupplierTypeOptions,
-  ] = useState<
-    ProvidersOptions[]
-  >([]);
-
-  const [
-    rebateTypeOptions,
-    setRebateTypeOptions,
-  ] = useState<
-    ProvidersOptions[]
-  >([]);
-
-  const [
-    statusOptions,
-    setStatusOptions,
-  ] = useState<
-    ProvidersOptions[]
-  >([]);
-
-  const [filters, setFilters] =
-    useState<RebateFilters | null>(
-      null
+  if (criteria.supplierType && criteria.supplierType > 0) {
+    const vendorNumbers = new Set(
+      providers
+        .filter((item) => item.supplierType?.id == criteria.supplierType)
+        .map((item) => String(item.supplierNumber))
     );
+    data = data.filter((row) =>
+      vendorNumbers.has(String(row.vendorNumber ?? row.supplierNumber ?? ""))
+    );
+  }
 
-  const warnIfEmptyRef =
-    useRef(false);
+  const documentQuery = criteria.documentNumber?.trim().toLowerCase();
+  if (documentQuery) {
+    data = data.filter((row) => includesIgnoreCase(row.documentNumber, documentQuery));
+  }
+
+  const sapQuery = criteria.sapDocument?.trim().toLowerCase();
+  if (sapQuery) {
+    data = data.filter((row) => includesIgnoreCase(row.sapDocument, sapQuery));
+  }
+
+  if (criteria.from || criteria.to) {
+    data = data.filter((row) =>
+      isPostingDateInFilterRange(row.postingDate, criteria.from, criteria.to)
+    );
+  }
+
+  return data;
+}
+
+function hasClientSideFilter(criteria: RebateFilters): boolean {
+  return Boolean(
+    (criteria.supplierType && criteria.supplierType > 0) ||
+      criteria.documentNumber?.trim() ||
+      criteria.sapDocument?.trim() ||
+      criteria.from ||
+      criteria.to
+  );
+}
+
+function resolvePagination(
+  dataLength: number,
+  page: number,
+  pageSize: number,
+  clientFiltered: boolean
+): { totalItems: number; totalPages: number } {
+  if (clientFiltered) {
+    return {
+      totalItems: dataLength,
+      totalPages: Math.max(1, Math.ceil(dataLength / pageSize)),
+    };
+  }
+
+  const knownMinimum = (page - 1) * pageSize + dataLength;
+  const hasMore = dataLength >= pageSize;
+  return {
+    totalItems: hasMore ? knownMinimum + 1 : knownMinimum,
+    totalPages: hasMore ? page + 1 : page,
+  };
+}
+
+function findProvider(
+  providers: ProviderRow[],
+  vendorNumber: string | number | undefined
+): ProviderRow | undefined {
+  if (vendorNumber == null || vendorNumber === "") return undefined;
+  return providers.find((item) => String(item.supplierNumber) === String(vendorNumber));
+}
+
+function toProviderCatalog(providers: ProviderRow[]): ProvidersOptions[] {
+  return [
+    { label: "Todos los proveedores", value: "" },
+    ...providers.map((provider) => ({
+      label: `${provider.businessName ?? ""} (${provider.rfc ?? ""})`,
+      value: String(provider.supplierNumber ?? ""),
+    })),
+  ];
+}
+
+export default function DiscountsContainer(): ReactElement {
+  const financeAlert = useFinanceAlertModal();
+  const warnIfEmptyRef = useRef(false);
+
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState<Rebate[]>([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [providers, setProviders] = useState<ProviderRow[]>([]);
+  const [providerCatalog, setProviderCatalog] = useState<ProvidersOptions[]>([]);
+  const [supplierTypeOptions, setSupplierTypeOptions] = useState<ProvidersOptions[]>([]);
+  const [rebateTypeOptions, setRebateTypeOptions] = useState<ProvidersOptions[]>([]);
+  const [statusOptions, setStatusOptions] = useState<ProvidersOptions[]>([]);
+  const [filters, setFilters] = useState<RebateFilters | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    const fetchCatalogs =
-      async (): Promise<void> => {
-        const [
-          providerList,
-          supplierTypeList,
-          rebateTypeCatalog,
-          statusCatalog,
-        ] = await Promise.all([
-          fetchProvidersAsCatalog(
-            "supplierNumber"
-          ),
+    const loadCatalogs = async () => {
+      const [providerList, supplierTypeList, rebateTypeCatalog, statusCatalog] =
+        await Promise.all([
+          fetchProviders(),
           fetchSupplierTypesAsCatalog(),
-          fetchCatalogDetails(
-            "CATTIPOREBATE"
-          ),
-          fetchCatalogDetails(
-            "CEDC"
-          ),
+          fetchCatalogDetails("CATTIPOREBATE"),
+          fetchCatalogDetails("CEDC"),
         ]);
 
-        if (!active) {
-          return;
-        }
+      if (!active) return;
 
-        setProviders(
-          providerList ?? []
+      const list = providerList ?? [];
+      setProviders(list);
+      setProviderCatalog(toProviderCatalog(list));
+      setSupplierTypeOptions(supplierTypeList ?? []);
+
+      if (rebateTypeCatalog) {
+        setRebateTypeOptions(
+          fetchCatalogAsSelectableOptions(rebateTypeCatalog, "Todos los tipos")
         );
-
-        setSupplierTypeOptions(
-          supplierTypeList ?? []
+      }
+      if (statusCatalog) {
+        setStatusOptions(
+          fetchCatalogAsSelectableOptions(statusCatalog, "Todos los tipos")
         );
+      }
+    };
 
-        if (rebateTypeCatalog) {
-          setRebateTypeOptions(
-            fetchCatalogAsSelectableOptions(
-              rebateTypeCatalog,
-              "Todos los tipos"
-            )
-          );
-        }
-
-        if (statusCatalog) {
-          setStatusOptions(
-            fetchCatalogAsSelectableOptions(
-              statusCatalog,
-              "Todos los tipos"
-            )
-          );
-        }
-      };
-
-    void fetchCatalogs();
-
+    void loadCatalogs();
     return () => {
       active = false;
     };
   }, []);
 
-  const returningFromDetail =
-    useFinanceListScreenSession(
-      FINANCE_LIST_KEYS.discounts
-    );
+  const returningFromDetail = useFinanceListScreenSession(
+    FINANCE_LIST_KEYS.discounts
+  );
 
-  const runSearch = async (
-    criteria: RebateFilters,
-    nextPage?: number,
-    nextPerPage?: number
-  ): Promise<void> => {
-    try {
-      setLoading(true);
+  const runSearch = useCallback(
+    async (
+      criteria: RebateFilters,
+      nextPage?: number,
+      nextPerPage?: number
+    ): Promise<void> => {
+      try {
+        setLoading(true);
 
-      const currentPage =
-        nextPage ?? page;
+        const currentPage = nextPage ?? page;
+        const currentPageSize = nextPerPage ?? perPage;
+        const finalCriteria: RebateFilters = {
+          ...criteria,
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+        };
 
-      const currentPageSize =
-        nextPerPage ?? perPage;
+        setFilters(finalCriteria);
 
-      const finalCriteria:
-        RebateFilters = {
-        ...criteria,
-        pageNumber:
+        const raw = (await DiscountsClient.get(finalCriteria)) ?? [];
+        const data = applyClientFilters(raw, criteria, providers);
+
+        setRows(data);
+        setPage(currentPage);
+        setPerPage(currentPageSize);
+
+        const pagination = resolvePagination(
+          data.length,
           currentPage,
-        pageSize:
           currentPageSize,
-      };
-
-      setFilters(
-        finalCriteria
-      );
-
-      let data =
-        (
-          await DiscountsClient.get(
-            finalCriteria
-          )
-        ) ?? [];
-
-      /*
-       * Se conservan estas validaciones
-       * para mantener el comportamiento
-       * actual de la pantalla.
-       */
-      if (
-        criteria.documentNumber
-          ?.trim()
-      ) {
-        const query =
-          criteria.documentNumber
-            .trim()
-            .toLowerCase();
-
-        data = data.filter(
-          (row) =>
-            (
-              row.documentNumber ||
-              ""
-            )
-              .toLowerCase()
-              .includes(query)
+          hasClientSideFilter(criteria)
         );
+        setTotalItems(pagination.totalItems);
+        setTotalPages(pagination.totalPages);
+
+        if (data.length === 0 && warnIfEmptyRef.current) {
+          financeAlert.showWarning(
+            "Sin registros",
+            "No se encontraron descuentos comerciales con los criterios indicados."
+          );
+        }
+      } catch (error) {
+        financeAlert.showErrorFrom(
+          "Error",
+          error,
+          "No fue posible obtener los descuentos comerciales. Intenta nuevamente."
+        );
+        setRows([]);
+        setTotalItems(0);
+        setTotalPages(1);
+      } finally {
+        warnIfEmptyRef.current = false;
+        setLoading(false);
       }
-
-      if (
-        criteria.sapDocument
-          ?.trim()
-      ) {
-        const query =
-          criteria.sapDocument
-            .trim()
-            .toLowerCase();
-
-        data = data.filter(
-          (row) =>
-            (
-              row.sapDocument ||
-              ""
-            )
-              .toLowerCase()
-              .includes(query)
-        );
-      }
-
-      if (
-        criteria.from ||
-        criteria.to
-      ) {
-        data = data.filter(
-          (row) =>
-            isPostingDateInFilterRange(
-              row.postingDate,
-              criteria.from,
-              criteria.to
-            )
-        );
-      }
-
-      setRows(data);
-      setPage(currentPage);
-      setPerPage(
-        currentPageSize
-      );
-
-      const hasClientFilter =
-        Boolean(
-          criteria.documentNumber
-            ?.trim()
-        ) ||
-        Boolean(
-          criteria.sapDocument
-            ?.trim()
-        ) ||
-        Boolean(
-          criteria.from ||
-          criteria.to
-        );
-
-      if (hasClientFilter) {
-        setTotalItems(
-          data.length
-        );
-
-        setTotalPages(
-          Math.max(
-            1,
-            Math.ceil(
-              data.length /
-              currentPageSize
-            )
-          )
-        );
-      } else {
-        const knownMinimum =
-          (
-            currentPage -
-            1
-          ) *
-          currentPageSize +
-          data.length;
-
-        const hasMore =
-          data.length >=
-          currentPageSize;
-
-        setTotalItems(
-          hasMore
-            ? knownMinimum + 1
-            : knownMinimum
-        );
-
-        setTotalPages(
-          hasMore
-            ? Math.max(
-              currentPage + 1,
-              currentPage
-            )
-            : currentPage
-        );
-      }
-
-      if (
-        data.length === 0 &&
-        warnIfEmptyRef.current
-      ) {
-        financeAlert.showWarning(
-          "Sin registros",
-          "No se encontraron descuentos comerciales con los criterios indicados."
-        );
-      }
-
-      warnIfEmptyRef.current =
-        false;
-    } catch (error) {
-      warnIfEmptyRef.current =
-        false;
-
-      financeAlert.showErrorFrom(
-        "Error",
-        error,
-        "No fue posible obtener los descuentos comerciales. Intenta nuevamente."
-      );
-
-      setRows([]);
-      setTotalItems(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [page, perPage, providers, financeAlert]
+  );
 
   useFinanceListRefetchOnReturn<RebateFilters>(
     FINANCE_LIST_KEYS.discounts,
     returningFromDetail,
     (criteria) => {
-      warnIfEmptyRef.current =
-        true;
-
+      warnIfEmptyRef.current = true;
       setPage(1);
-
-      void runSearch(
-        criteria,
-        1,
-        perPage
-      );
+      void runSearch(criteria, 1, perPage);
     }
   );
 
-  const handleClearGrid =
-    (): void => {
-      warnIfEmptyRef.current =
-        false;
+  const handleClearGrid = () => {
+    warnIfEmptyRef.current = false;
+    setRows([]);
+    setFilters(null);
+    setPage(1);
+    setTotalItems(0);
+    setTotalPages(1);
+  };
 
-      setRows([]);
-      setFilters(null);
-      setPage(1);
-      setTotalItems(0);
-      setTotalPages(1);
-    };
+  const handleSearch = (criteria: RebateFilters) => {
+    warnIfEmptyRef.current = true;
+    setPage(1);
+    void runSearch(criteria, 1, perPage);
+  };
 
-  const handleExportCsv =
-    (): void => {
-      if (!rows.length) {
-        return;
-      }
+  const handleExportCsv = () => {
+    if (!rows.length) return;
 
-      const headers = [
-        "Documento",
-        "Referencia",
-        "Tipo Rebate",
-        "Documento Sap",
-        "Importe",
-        "Período",
-        "Número Proveedor",
-        "Nombre Proveedor",
-        "Fecha Aplicación",
-        "Fecha Vencimiento",
-        "Estatus",
+    const exportRows = rows.filter((row) =>
+      filters
+        ? isPostingDateInFilterRange(row.postingDate, filters.from, filters.to)
+        : Boolean(row.postingDate)
+    );
+    if (!exportRows.length) return;
+
+    const body = exportRows.map((row) => {
+      const provider = findProvider(providers, row.vendorNumber);
+      const rebateType =
+        rebateTypeOptions.find((item) => item.value === String(row.source))
+          ?.label ?? "--";
+      const supplierTypeCode = provider?.supplierType?.code;
+      const supplierType = supplierTypeCode
+        ? capitalizeWord(supplierTypeCode)
+        : "--";
+
+      return [
+        row.documentNumber ?? "",
+        row.documentReference ?? "",
+        rebateType,
+        row.sapDocument ?? "",
+        formatAmount(row.amount),
+        String(row.periodId ?? ""),
+        String(row.vendorNumber ?? ""),
+        provider?.businessName ?? "--",
+        supplierType,
+        row.postingDate ? formatDate(String(row.postingDate)) : "",
+        row.dueDate ? formatDate(String(row.dueDate)) : "",
+        renderStatus(row.status).label,
       ];
+    });
 
-      const exportRows = filters
-        ? rows.filter((row) =>
-          isPostingDateInFilterRange(
-            row.postingDate,
-            filters.from,
-            filters.to
-          )
-        )
-        : rows.filter(
-          (row) =>
-            row.postingDate
-        );
-
-      if (!exportRows.length) {
-        return;
-      }
-
-      const body =
-        exportRows.map(
-          (row) => {
-            const statusLabel =
-              renderStatus(
-                row.status
-              ).label;
-
-            return [
-              row.documentNumber ??
-              "",
-
-              row.documentReference ??
-              "",
-
-              rebateTypeOptions.find(
-                (item) =>
-                  item.value ===
-                  String(
-                    row.source
-                  )
-              )?.label ??
-              "--",
-
-              row.sapDocument ??
-              "",
-
-              formatAmount(
-                row.amount
-              ),
-
-              String(
-                row.periodId ??
-                ""
-              ),
-
-              String(
-                row.vendorNumber ??
-                ""
-              ),
-
-              providers
-                .find(
-                  (item) =>
-                    item.value ===
-                    String(
-                      row.vendorNumber
-                    )
-                )
-                ?.label
-                .split("(")[0]
-                .trim() ??
-              "--",
-
-              row.postingDate
-                ? formatDate(
-                  String(
-                    row.postingDate
-                  )
-                )
-                : "",
-
-              row.dueDate
-                ? formatDate(
-                  String(
-                    row.dueDate
-                  )
-                )
-                : "",
-
-              statusLabel,
-            ];
-          }
-        );
-
-      exportToCSV(
-        headers,
-        body,
-        `descuentos_comerciales_${formatFilenameTimestamp()}`
-      );
-    };
+    exportToCSV(
+      CSV_HEADERS,
+      body,
+      `descuentos_comerciales_${formatFilenameTimestamp()}`
+    );
+  };
 
   return (
     <div className="dc-layout">
       <Breadcrumb
-        items={withFinanceBreadcrumb([
-          {
-            label:
-              "Descuentos Comerciales",
-          },
-        ])}
+        items={withFinanceBreadcrumb([{ label: "Descuentos Comerciales" }])}
       />
 
       <div className="dc-box">
         <div className="dc-header">
           <div>
-            <Title
-              title="Listado de Descuentos Comerciales"
-            />
-
+            <Title title="Listado de Descuentos Comerciales" />
             <p className="dc-description">
-              Consulta y seguimiento
-              de rebates/documentos
-              comerciales.
+              Consulta y seguimiento de rebates/documentos comerciales.
             </p>
           </div>
 
-          <PermissionGate
-            appEvent={
-              APP_EVENT
-                .DISCOUNTS
-                .DOWNLOAD_CSV
-            }
-          >
+          <PermissionGate appEvent={APP_EVENT.DISCOUNTS.DOWNLOAD_CSV}>
             <GenericButton
               variant="primary"
-              onClick={
-                handleExportCsv
-              }
-              disabled={
-                loading ||
-                rows.length ===
-                0
-              }
+              onClick={handleExportCsv}
+              disabled={loading || rows.length === 0}
               type="button"
             >
               Exportar CSV
@@ -682,37 +386,12 @@ export default function DiscountsContainer():
 
         <div className="dc-filters-section">
           <FiltersBar
-            providers={
-              providers
-            }
-            supplierTypeOptions={
-              supplierTypeOptions
-            }
-            rebateTypeOptions={
-              rebateTypeOptions
-            }
-            statusOptions={
-              statusOptions
-            }
-            onSearch={(
-              criteria
-            ) => {
-              warnIfEmptyRef.current =
-                true;
-
-              setPage(1);
-
-              void runSearch(
-                {
-                  ...criteria,
-                },
-                1,
-                perPage
-              );
-            }}
-            onClear={
-              handleClearGrid
-            }
+            providers={providerCatalog}
+            supplierTypeOptions={supplierTypeOptions}
+            rebateTypeOptions={rebateTypeOptions}
+            statusOptions={statusOptions}
+            onSearch={handleSearch}
+            onClear={handleClearGrid}
           />
         </div>
 
@@ -720,91 +399,39 @@ export default function DiscountsContainer():
 
         <div className="dc-grid-section">
           <DiscountsGridTable
-            providers={
-              providers
-            }
-            rebateTypeOptions={
-              rebateTypeOptions
-            }
+            providers={providers}
+            rebateTypeOptions={rebateTypeOptions}
             rows={rows}
             page={page}
             perPage={perPage}
-            totalPages={
-              totalPages
-            }
-            totalItems={
-              totalItems
-            }
+            totalPages={totalPages}
+            totalItems={totalItems}
             loading={loading}
-            onChangePage={(
-              newPage
-            ) => {
-              setPage(
-                newPage
-              );
-
-              if (filters) {
-                void runSearch(
-                  filters,
-                  newPage,
-                  perPage
-                );
-              }
+            onChangePage={(newPage) => {
+              setPage(newPage);
+              if (filters) void runSearch(filters, newPage, perPage);
             }}
-            onChangePerPage={(
-              newPageSize
-            ) => {
-              setPerPage(
-                newPageSize
-              );
-
+            onChangePerPage={(newPageSize) => {
+              setPerPage(newPageSize);
               setPage(1);
-
-              if (filters) {
-                void runSearch(
-                  filters,
-                  1,
-                  newPageSize
-                );
-              }
+              if (filters) void runSearch(filters, 1, newPageSize);
             }}
-            renderStatus={
-              renderStatus
-            }
+            renderStatus={renderStatus}
           />
         </div>
 
         {loading && (
-          <GenericModal
-            visible
-            variant="loading"
-            message="Cargando…"
-          />
+          <GenericModal visible variant="loading" message="Cargando…" />
         )}
 
         <GenericModal
-          visible={
-            financeAlert
-              .alertVisible
-          }
+          visible={financeAlert.alertVisible}
           variant="alert"
-          severity={
-            financeAlert
-              .alertSeverity
-          }
-          title={
-            financeAlert
-              .alertTitle
-          }
-          message={
-            financeAlert
-              .alertMessage
-          }
+          severity={financeAlert.alertSeverity}
+          title={financeAlert.alertTitle}
+          message={financeAlert.alertMessage}
           buttonText="Aceptar"
-          onClose={
-            financeAlert
-              .closeAlert
-          }
+          onClose={financeAlert.closeAlert}
         />
       </div>
     </div>

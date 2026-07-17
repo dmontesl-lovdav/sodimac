@@ -6,7 +6,7 @@ import { GenericTable } from "@shared/components/ui";
 import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
-import { formatDate } from "@/utils/utils";
+import { capitalizeWord, formatDate } from "@/utils/utils";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import { canRelatePaymentComplement, resolvePaymentStatusDisplay } from "../paymentStatusDisplay";
 import type { PaymentRecord } from "../interfaces";
@@ -18,6 +18,7 @@ import "../styles/PaymentsResultsTable.css";
 
 interface ResultsTableProps {
     rows: PaymentRecord[];
+    providers?: any[];
     loading?: boolean;
     isAdmin?: boolean;
     page: number;
@@ -33,6 +34,7 @@ interface ResultsTableProps {
 
 export default function ResultsTable({
     rows = [],
+    providers = [],
     loading = false,
     page,
     perPage,
@@ -43,6 +45,12 @@ export default function ResultsTable({
     lastFilters = null,
 }: ResultsTableProps): ReactElement {
     const nav = useNavigate();
+
+    const findProvider = (providerNumber: string) =>
+        providers.find(
+            (item) => String(item.supplierNumber) === String(providerNumber)
+        );
+
     const handleViewDetail = (row: PaymentRecord) => {
         const params = new URLSearchParams({
             ref: row.documentReference,
@@ -56,8 +64,8 @@ export default function ResultsTable({
         });
     };
 
-
-    const canAddComplement = (row: PaymentRecord): boolean => canRelatePaymentComplement(row);
+    const canAddComplement = (row: PaymentRecord): boolean =>
+        canRelatePaymentComplement(row);
 
     const columns = [
         { header: "Referencia Pago", render: (r: PaymentRecord) => r.documentReference || "--" },
@@ -71,13 +79,29 @@ export default function ResultsTable({
         { header: "Año Pago", render: (r: PaymentRecord) => r.paymentYear || "--" },
         { header: "Fecha Pago", render: (r: PaymentRecord) => formatDate(r.paymentDate) || "--" },
         { header: "Número Proveedor", render: (r: PaymentRecord) => r.providerNumber || "--" },
-        { header: "Nombre Proveedor", render: (r: PaymentRecord) => r.providerName || "--" },
+        {
+            header: "Nombre Proveedor",
+            render: (r: PaymentRecord) =>
+                findProvider(r.providerNumber)?.businessName ||
+                r.providerName ||
+                "--",
+        },
+        {
+            header: "Tipo Proveedor",
+            render: (r: PaymentRecord) => {
+                const code = findProvider(r.providerNumber)?.supplierType?.code;
+                return code ? capitalizeWord(code) : "--";
+            },
+        },
         { header: "Fecha Registro", render: (r: PaymentRecord) => r.createdAt || "--" },
         { header: "Fecha Actualización", render: (r: PaymentRecord) => r.updatedAt || "--" },
-        { header: "Estatus", render: (r: PaymentRecord) => {
-            const st = resolvePaymentStatusDisplay(r.statusId);
-            return <StatusPill type={st.type}>{st.label}</StatusPill>;
-        }},
+        {
+            header: "Estatus",
+            render: (r: PaymentRecord) => {
+                const st = resolvePaymentStatusDisplay(r.statusId);
+                return <StatusPill type={st.type}>{st.label}</StatusPill>;
+            },
+        },
         {
             header: "Acción",
             align: "center" as const,
@@ -143,7 +167,11 @@ export default function ResultsTable({
                 rows={rows}
                 columns={columns}
                 actions={[]}
-                emptyLabel={loading ? "Cargando..." : "No se encontraron pagos con los criterios establecidos"}
+                emptyLabel={
+                    loading
+                        ? "Cargando..."
+                        : "No se encontraron pagos con los criterios establecidos"
+                }
                 perPage={perPage}
                 page={page}
                 totalPages={totalPages}

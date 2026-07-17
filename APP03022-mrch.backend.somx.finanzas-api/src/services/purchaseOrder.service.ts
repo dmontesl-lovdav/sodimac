@@ -6,12 +6,12 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from "zod/v4";
 import { HttpError } from "@/utils/HttpError.js";
 import type {
-CreatePurchaseOrderDto,
-UpdatePurchaseOrderDto,
-ListPurchaseOrderQueryDto,
+    CreatePurchaseOrderDto,
+    UpdatePurchaseOrderDto,
+    ListPurchaseOrderQueryDto,
 } from "@/schemas/purchaseOrder.schema.js";
 import type {
-ListReceptionQueryDto
+    ListReceptionQueryDto
 } from "@/schemas/reception.schema.js";
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
 import { PurchaseOrder } from "@/entities/PurchaseOrder.entity.js";
@@ -48,27 +48,27 @@ export async function listReception(q: ListReceptionQueryDto, token: string) {
     const parsedDateEnd = z.coerce.date().parse(receptionDateAtEnd);
     parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
     q.receptionDateAtEnd = parsedDateEnd;
-    const CatEstatusRecepcion  = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION , token);
+    const CatEstatusRecepcion = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION, token);
 
     let [result, total, _numberOfElements] = await rececetionRepo.findAllPaginated(q, q.pageSize, q.pageNumber);
-        result = result as Reception[];
-        result.forEach((item, index) => {
-            const foundSupplier: Supplier | undefined = supplierList.find(Supplier => Supplier.supplierNumber == item.purchaseOrder?.supplierNumber);
-            (item as ItemWithReception).supplier = foundSupplier;
+    result = result as Reception[];
+    result.forEach((item, index) => {
+        const foundSupplier: Supplier | undefined = supplierList.find(Supplier => Supplier.supplierNumber == item.purchaseOrder?.supplierNumber);
+        (item as ItemWithReception).supplier = foundSupplier;
 
-            const result = CatEstatusRecepcion.find(ite => ite.value === item.status?.toString());
-            if(result){
-                (item as ItemWithReception).color = result.color;
-            }
+        const result = CatEstatusRecepcion.find(ite => ite.value === item.status?.toString());
+        if (result) {
+            (item as ItemWithReception).color = result.color;
+        }
 
-        });
+    });
 
-        await POUtils.enrichReceptionsListOriginCatalog(result as Reception[], token);
+    await POUtils.enrichReceptionsListOriginCatalog(result as Reception[], token);
 
     const _totalItems = Number(total?.valueOf() == null ? 0 : Number(total?.valueOf()));
-    let _totalPages = _totalItems/q.pageSize;
+    let _totalPages = _totalItems / q.pageSize;
 
-    if(_totalPages - Math.trunc(_totalPages) > 0){
+    if (_totalPages - Math.trunc(_totalPages) > 0) {
         _totalPages = Math.trunc(_totalPages) + 1;
     } else {
         _totalPages = Math.trunc(_totalPages)
@@ -84,203 +84,340 @@ export async function listReception(q: ListReceptionQueryDto, token: string) {
 
     };
 
-      return ResponseHandler.responseBuilder("",responsePageableDTO,0, StatusCodes.OK, true, "");
-  
+    return ResponseHandler.responseBuilder("", responsePageableDTO, 0, StatusCodes.OK, true, "");
+
 }
 
 
-export async function updateReception(dto: UpdatePurchaseOrderDto, token: string) {
+function buildPurchaseOrderFilter(
+    dto: UpdatePurchaseOrderDto,
+): FindOptionsWhere<PurchaseOrder> {
     const filter: FindOptionsWhere<PurchaseOrder> = {};
 
-    if (dto.supplierNumber !== undefined) filter.supplierNumber = dto.supplierNumber;
-    if (dto.orderNumber !== undefined) filter.orderNumber = dto.orderNumber;
+    if (dto.supplierNumber !== undefined) {
+        filter.supplierNumber = dto.supplierNumber;
+    }
 
-    const purchaseOrder = await purchaseOrderRepo.findByOrderNumber(filter);
-    const catalogBase =
+    if (dto.orderNumber !== undefined) {
+        filter.orderNumber = dto.orderNumber;
+    }
+
+    return filter;
+}
+
+function getCatalogWarningBase(): string {
+    return (
         (process.env.CATALOGS_API_URL_BFF ?? "") +
-        constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA;
+        constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA
+    );
+}
+
+async function buildWarningResponse(
+    warningKey: string,
+    token: string,
+    dto: UpdatePurchaseOrderDto,
+    purchaseOrder: PurchaseOrder | null,
+    responseCode: number,
+) {
+    const catalogMessage = await svcAxios.GetCatalogDetail(
+        getCatalogWarningBase() + warningKey,
+        token,
+    );
+
+    return ResponseHandler.responseBuilder(
+        POUtils.buildCatalogWarningMessage(
+            catalogMessage,
+            dto.orderNumber,
+            dto.supplierNumber,
+        ),
+        purchaseOrder,
+        responseCode,
+        StatusCodes.NOT_FOUND,
+        false,
+        "",
+    );
+}
+
+function findReceptionMatch(
+    receptions: Reception[],
+    receptionNumber: string | number,
+): Reception | undefined {
+    return receptions.find(
+        (reception) =>
+            String(reception.receptionNumber).trim() ===
+            String(receptionNumber).trim(),
+    );
+}
+
+async function attachManualAddendumIfNeeded(
+    persistence: Reception,
+    dto: UpdatePurchaseOrderDto,
+    token: string,
+): Promise<void> {
+    const shouldAttachAddendum =
+        dto.uuid != null &&
+        dto.status === 2;
+
+    if (!shouldAttachAddendum) {
+        return;
+    }
+
+    const supplier = await svcAxios.GetSupplierBySupplierNumber(
+        dto.supplierNumber,
+        token,
+    );
+
+    const existingAddendum =
+        await tenantFianaceAddenduemRepo.findByInvoideUuid(dto.uuid!);
+
+    if (existingAddendum) {
+        throw new HttpError(
+            404,
+            "La factura uuid se encuentra previamente registrada en addenda, Por favor, validar con el área de finanzas",
+        );
+    }
+
+    const addendumManual = new AddendumManual();
+    addendumManual.supplierNumber = dto.supplierNumber;
+    addendumManual.orderNumber = dto.orderNumber;
+    addendumManual.invoiceId = dto.uuid!;
+    addendumManual.createdAt = new Date();
+    addendumManual.receptionId = persistence.receptionId;
+
+    if (supplier !== undefined) {
+        addendumManual.supplierTypeId = supplier.supplierType.id;
+    }
+
+    persistence.addendumManual = addendumManual;
+}
+
+function applyReceptionUpdates(
+    persistence: Reception,
+    dto: UpdatePurchaseOrderDto,
+): void {
+    persistence.status = dto.status;
+    persistence.comment = dto.comments;
+    persistence.updatedAt = new Date();
+}
+
+function handleReceptionUpdateError(error: unknown): never {
+    if (error instanceof QueryFailedError) {
+        const databaseError = error as QueryFailedError & {
+            code?: string;
+            detail?: string;
+        };
+
+        const isDuplicateInvoiceUuid =
+            databaseError.code === '23505' &&
+            databaseError.detail?.includes('invoice_uuid');
+
+        if (isDuplicateInvoiceUuid) {
+            throw new HttpError(
+                404,
+                "La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzas",
+            );
+        }
+    }
+
+    if (error instanceof Error) {
+        const details =
+            error.message +
+            String(error.cause ?? '') +
+            String(error.stack ?? '');
+
+        throw new Error(
+            'Error al actualizar la recepción: ' + details,
+        );
+    }
+
+    throw new Error(
+        'Error desconocido al actualizar la recepción',
+    );
+}
+
+async function persistReceptionUpdate(
+    persistence: Reception,
+    token: string,
+) {
+    try {
+        const receptionUpdated = await rececetionRepo.updateOne(
+            persistence.receptionId,
+            persistence,
+        );
+
+        const catalogMessage = await svcAxios.GetCatalogDetail(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogExitoso.CATALOGS_API_EXITOSO +
+            constants.CatalogExitoso
+                .CATALOGS_API_EXITOSO_DETAILS_KEY_RES205,
+            token,
+        );
+
+        return ResponseHandler.responseBuilder(
+            catalogMessage.description,
+            receptionUpdated,
+            0,
+            StatusCodes.OK,
+            true,
+            "",
+        );
+    } catch (error) {
+        return handleReceptionUpdateError(error);
+    }
+}
+
+async function buildInvalidStatusResponse(
+    dto: UpdatePurchaseOrderDto,
+    token: string,
+) {
+    const catalogMessage = await svcAxios.GetCatalogDetail(
+        getCatalogWarningBase() +
+        constants.CatalogAdvertencia
+            .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103,
+        token,
+    );
+
+    return ResponseHandler.responseBuilder(
+        catalogMessage.description,
+        dto,
+        -1,
+        StatusCodes.BAD_REQUEST,
+        false,
+        catalogMessage.key + "=" + catalogMessage.description,
+    );
+}
+
+export async function updateReception(
+    dto: UpdatePurchaseOrderDto,
+    token: string,
+) {
+    const filter = buildPurchaseOrderFilter(dto);
+    const purchaseOrder =
+        await purchaseOrderRepo.findByOrderNumber(filter);
 
     if (!purchaseOrder) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail(
-            catalogBase +
-                constants.CatalogAdvertencia
-                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301,
-            token
-        );
-        return ResponseHandler.responseBuilder(
-            POUtils.buildCatalogWarningMessage(
-                CatMsgWrn,
-                dto.orderNumber,
-                dto.supplierNumber
-            ),
+        return buildWarningResponse(
+            constants.CatalogAdvertencia
+                .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN301,
+            token,
+            dto,
             purchaseOrder,
             0,
-            StatusCodes.NOT_FOUND,
-            false,
-            ""
         );
     }
 
     const persistenceList = await rececetionRepo.findAll(
-        purchaseOrder.purchaseOrderId
+        purchaseOrder.purchaseOrderId,
     );
 
     if (persistenceList.length === 0) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail(
-            catalogBase +
-                constants.CatalogAdvertencia
-                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
-            token
-        );
-        return ResponseHandler.responseBuilder(
-            POUtils.buildCatalogWarningMessage(
-                CatMsgWrn,
-                dto.orderNumber,
-                dto.supplierNumber
-            ),
+        return buildWarningResponse(
+            constants.CatalogAdvertencia
+                .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
+            token,
+            dto,
             purchaseOrder,
             -1,
-            StatusCodes.NOT_FOUND,
-            false,
-            ""
         );
     }
 
-    const receptionMatch = persistenceList.find(
-        (recep) =>
-            String(recep.receptionNumber).trim() ===
-            String(dto.receptionNumber).trim()
+    const persistence = findReceptionMatch(
+        persistenceList,
+        dto.receptionNumber,
     );
 
-    if (!receptionMatch) {
-        const CatMsgWrn = await svcAxios.GetCatalogDetail(
-            catalogBase +
-                constants.CatalogAdvertencia
-                    .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
-            token
-        );
-        return ResponseHandler.responseBuilder(
-            POUtils.buildCatalogWarningMessage(
-                CatMsgWrn,
-                dto.orderNumber,
-                dto.supplierNumber
-            ),
+    if (!persistence) {
+        return buildWarningResponse(
+            constants.CatalogAdvertencia
+                .CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN302,
+            token,
+            dto,
             purchaseOrder,
             -1,
-            StatusCodes.NOT_FOUND,
-            false,
-            ""
         );
     }
 
-    const persistence: Reception = receptionMatch;
+    await attachManualAddendumIfNeeded(
+        persistence,
+        dto,
+        token,
+    );
 
-    if (dto.uuid != null && dto.uuid != undefined && dto.status == 2) {
-        const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
-        //Valida que no exista en tenant_fiscal.Invoice
-        const add = await tenantFianaceAddenduemRepo.findByInvoideUuid(dto.uuid);
-        if (add){
-             throw new HttpError(404, "La factura uuid se encuentra previamente registrada en addenda, Por favor, validar con el área de finanzas");
-        }
-        const addendaManual = new AddendumManual();
-        addendaManual.supplierNumber = dto.supplierNumber;
-        addendaManual.orderNumber = dto.orderNumber;
-        addendaManual.invoiceId = dto.uuid;
-        addendaManual.createdAt = new Date();
-        addendaManual.receptionId = persistence.receptionId;
-        if (supplier != undefined) {
-            addendaManual.supplierTypeId = supplier.supplierType.id;
-        }
-        persistence.addendumManual = addendaManual;
-    }
-    const valStatus = await POUtils.validarStatus(persistence, dto.status, 5, token);
-    persistence.status = dto.status;
-    persistence.comment = dto.comments;
-    persistence.updatedAt = new Date();
+    const validStatus = await POUtils.validarStatus(
+        persistence,
+        dto.status,
+        5,
+        token,
+    );
 
-    if (persistence?.receptionId && valStatus) {
-        try { 
-                const receptionUpdated = await rececetionRepo.updateOne(persistence.receptionId,persistence );
-                const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogExitoso.CATALOGS_API_EXITOSO + constants.CatalogExitoso.CATALOGS_API_EXITOSO_DETAILS_KEY_RES205, token);
-                return ResponseHandler.responseBuilder(CatMsg.description,receptionUpdated,0, StatusCodes.OK, true, "");
+    applyReceptionUpdates(
+        persistence,
+        dto,
+    );
 
-            } 
-            catch (error) {
-                // Validación para errores de base de datos
-                if (error instanceof QueryFailedError) {                  
-                        // PostgreSQL
-                        if ((error as any).code === '23505') {
-                            const detail = (error as any).detail;
-                            if (detail.includes('invoice_uuid')) {
-                               throw new HttpError(404, "La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzas");
-                            }
-                        }
-                    }
-
-                    // Otros errores
-                let err = "";
-                if (error instanceof Error) {
-                    err= error.message + error.cause + error.stack;
-                    throw new Error('Error al actualizar la recepción: ' + err);
-                }
-
-            }
+    if (persistence.receptionId && validStatus) {
+        return persistReceptionUpdate(
+            persistence,
+            token,
+        );
     }
 
-    const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA + constants.CatalogAdvertencia.CATALOGS_API_ADVERTENCIA_DETAILS_KEY_WRN103, token);
-    return ResponseHandler.responseBuilder(CatMsg.description ,dto,-1, StatusCodes.BAD_REQUEST, false, CatMsg.key + "=" + CatMsg.description);
+    return buildInvalidStatusResponse(
+        dto,
+        token,
+    );
 }
 
 
 
 export async function create(req: AuthenticatedRequest, dto: CreatePurchaseOrderDto, transactionalEntityManager: EntityManager
-    ,files: Express.Multer.File[] | null, origin: number, folder?: string, saveFileOnDb?: string) {
+    , files: Express.Multer.File[] | null, origin: number, folder?: string, saveFileOnDb?: string) {
     const token = req.authToken ?? '';
-    let resp = ResponseHandler.responseBuilder("",null,0, StatusCodes.CREATED, true, "");   
+    let resp = ResponseHandler.responseBuilder("", null, 0, StatusCodes.CREATED, true, "");
 
     let receptionsList: DeepPartial<Reception>[] = [];
     let receptionsSkuList: Partial<ReceptionSku>[] = [];
     const { supplier, tipoReceptionSodimacList }
-    : { supplier: Supplier | undefined; tipoReceptionSodimacList: GenericCatalogDetails[]; } 
-    = await POUtils.getCatalogs(dto, token);
-    if(supplier == undefined){
-          throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.supplierNumber);
+        : { supplier: Supplier | undefined; tipoReceptionSodimacList: GenericCatalogDetails[]; }
+        = await POUtils.getCatalogs(dto, token);
+    if (supplier == undefined) {
+        throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.supplierNumber);
     }
     POUtils.fillReceptionList(dto, supplier, receptionsSkuList, tipoReceptionSodimacList, receptionsList);
-    
+
     //Valida si la OC ya existe en la base
     let purchaseOrder = await POUtils.getPO(dto);
 
     let dataP: DeepPartial<PurchaseOrder> | PurchaseOrder;
     let entityCreatedOrder: PurchaseOrder | (Partial<PurchaseOrder> & PurchaseOrder);
-    if (purchaseOrder == null){
+    if (purchaseOrder == null) {
         dataP = POUtils.fillPO(receptionsList, dto, origin);
     } else {
         //La PO existe y se busca sus recepciones actuales en la DB
         dataP = await POUtils.fillReceptionOnPO(purchaseOrder, receptionsList);
     }
-    entityCreatedOrder = await POUtils.createOrUpdatePO(transactionalEntityManager, dataP); 
+    entityCreatedOrder = await POUtils.createOrUpdatePO(transactionalEntityManager, dataP);
 
-    if(dto.shippingGuideList && dto.shippingGuideList.length > 0) {  //APLICA PARA CARTA PORTE
+    if (dto.shippingGuideList && dto.shippingGuideList.length > 0) {  //APLICA PARA CARTA PORTE
         await POUtils.createShippingGuide(req, files, origin, transactionalEntityManager, saveFileOnDb, dto, token);
     }
 
-    if(dto.guideNumber && dto.guideNumber.length > 0){  //APLICA PARA CARTA PORTE
+    if (dto.guideNumber && dto.guideNumber.length > 0) {  //APLICA PARA CARTA PORTE
         await POUtils.createRelations(dto, transactionalEntityManager, token, entityCreatedOrder);
     }
 
-    const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF?? "") +  constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS212, token);
+    const CatMsg = await svcAxios.GetCatalogDetail((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogNegocio.CATALOGS_API_NEGOCIO + constants.CatalogNegocio.CATALOGS_API_NEGOCIO_DETAILS_KEY_BUS212, token);
     logger.info("✅ purchaseOrder Created → data={}", entityCreatedOrder);
-    resp =  ResponseHandler.responseBuilder(CatMsg.description,entityCreatedOrder,0, StatusCodes.CREATED, true, "");
+    resp = ResponseHandler.responseBuilder(CatMsg.description, entityCreatedOrder, 0, StatusCodes.CREATED, true, "");
 
     //} else {
 
 
-        //const entityCreatedOrder = await transactionalEntityManager.save(PurchaseOrder, purchaseOrder); 
+    //const entityCreatedOrder = await transactionalEntityManager.save(PurchaseOrder, purchaseOrder); 
 
     //}
-        
-    
+
+
     return resp;
 }
 
@@ -319,7 +456,6 @@ function buildCriteria(criteria: ListPurchaseOrderQueryDto): FindOptionsWhere<Pu
 }
 
 function updateReceptionAndAddendaManual(dto: { supplierNumber: number; orderNumber: string; receptionNumber: string; status: number; uuid?: string | undefined; }) {
-    let response = ResponseHandler.responseBuilder("",null,0, StatusCodes.OK, true, "");
+    let response = ResponseHandler.responseBuilder("", null, 0, StatusCodes.OK, true, "");
     return response;
 }
-

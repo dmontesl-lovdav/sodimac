@@ -11,7 +11,6 @@ import editIcon from "@assets/edit.svg";
 import { ReactElement, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  fetchCatalog,
   formatDate,
 } from "@/utils/utils";
 import { ShippingGuide } from "../interfaces";
@@ -19,7 +18,6 @@ import {
   getRegisteredShippingGuideStatusLabels,
   resolveShippingGuideStatusDescription,
 } from "../shippingGuideStatusCatalog";
-import { resolvePurchaseOrderStatusDescription } from "../purchaseOrderStatusLabels";
 import { getShippingGuideStatusCode } from "../utils/shippingGuideStatus";
 import { APP_EVENT, useSecurityContext } from "@shared/security";
 import "../styles/shippingGuides.css";

@@ -2,6 +2,7 @@ import { GenericTable } from "@shared/components/ui";
 import {
     formatDate,
     formatAmount,
+    capitalizeWord,
     SelectableOption,
 } from "@/utils/utils";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
@@ -29,7 +30,7 @@ interface Props {
     onChangePerPage: (size: number) => void;
     renderStatus: (status: number) => { type: string; label: string };
     rebateTypeOptions: SelectableOption<string>[];
-    providers: ProvidersOptions[];
+    providers: any[];
 }
 
 
@@ -40,6 +41,14 @@ export default function DiscountsGridTable({
     providers,
     ...props
 }: Props) {
+    console.log(providers);
+
+
+const returnProvider = (r: Rebate) => {
+    console.log(r.vendorNumber);
+    console.log(providers);
+    return providers.find((item) => item.supplierNumber == r.vendorNumber);
+}
 
     const columns = [
         { header: "Documento", render: (r: Rebate) => r.documentNumber ?? "--" },
@@ -61,8 +70,14 @@ export default function DiscountsGridTable({
         {
             header: "Nombre Proveedor",
             render: (r: Rebate) => {
-                return providers.find((item) => item.value === String(r.vendorNumber))
-                        ?.label.split("(")[0] ?? "--";
+                return returnProvider(r)?.businessName ?? "--";
+            },
+        },
+        {
+            header: "Tipo Proveedor",
+            render: (r: Rebate) => {
+                const code = returnProvider(r)?.supplierType?.code;
+                return code ? capitalizeWord(code) : "--";
             },
         },
         {
@@ -92,13 +107,18 @@ export default function DiscountsGridTable({
                 const fiscalParams = new URLSearchParams({
                     numeroProveedor: String(vendorNum ?? ""),
                     numeroDocumento: String(r.documentNumber ?? ""),
-                    referenciaDocumento: r.documentReference ?? "--",
+                    referenciaDocumento: r.documentReference || r.referenceNumber || "",
                     rebateId: String(r.rebateId ?? ""),
                     supplierNumber: String(vendorNum ?? ""),
                     documentNumber: String(r.documentNumber ?? ""),
+                    documentReference: r.documentReference || r.referenceNumber || "",
+                    sapDocument: String(r.sapDocument ?? ""),
                     postingDate: String(r.postingDate ?? ""),
+                    dueDate: String(r.dueDate ?? ""),
                     amount: String(r.amount ?? ""),
+                    periodId: String(r.periodId ?? ""),
                     tipoRebate: tipoLabel,
+                    vendorName: returnProvider(r)?.businessName ?? "--",
                 });
                 if (r.stampedRebate?.invoiceFiscalUuid) {
                     fiscalParams.set("uuid", String(r.stampedRebate.invoiceFiscalUuid));

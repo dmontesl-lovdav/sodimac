@@ -90,7 +90,7 @@ export default function AttachmentUploader({
         const current = Array.isArray(files) ? files.slice() : [];
         const existingNames = new Set(current.map(c => c.name));
 
-        for (const ef of Array.from(eventFiles || [])) {
+        for (const ef of Array.from(eventFiles ?? [])) {
             if (!ef || existingNames.has(ef.name)) continue;
 
             ef.err = getFileValidationError(
@@ -168,7 +168,7 @@ export default function AttachmentUploader({
 
             {/* lista */}
             <div className="files">
-                {(files || []).map(f => (
+                {(files ?? []).map(f => (
                     <div key={f.name} className={`file-container ${f.err ? 'file-err' : ''}`}>
                         <div className="file-name">{f.name}</div>
                         <div className="file-size">{formatSize(f.size)}</div>

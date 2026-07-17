@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    viewBox="0 0 24 24"
-   className="w-full h-full text-[#6b7280]"
+   class="w-full h-full text-[#6b7280]"
    fill="none"
    stroke="currentColor"
    strokeWidth="1.5"

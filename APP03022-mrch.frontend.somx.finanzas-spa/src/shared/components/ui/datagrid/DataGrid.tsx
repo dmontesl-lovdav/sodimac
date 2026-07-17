@@ -195,14 +195,14 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
     enabled: useInternalPagination,
   });
 
-  const rows = useInternalPagination ? paginatedData.rows : externalRows || [];
-  const loading = useInternalPagination ? paginatedData.loading : externalLoading || false;
-  const page = useInternalPagination ? paginatedData.page : externalPage || 1;
-  const perPage = useInternalPagination ? paginatedData.size : externalPerPage || 25;
+  const rows = useInternalPagination ? paginatedData.rows : externalRows ?? [];
+  const loading = useInternalPagination ? paginatedData.loading : externalLoading ?? false;
+  const page = useInternalPagination ? paginatedData.page : externalPage ?? 1;
+  const perPage = useInternalPagination ? paginatedData.size : externalPerPage ?? 25;
   const totalPages = useInternalPagination
     ? paginatedData.totalPages
-    : externalTotalPages || Math.ceil(rows.length / perPage || 1);
-  const totalItems = useInternalPagination ? paginatedData.totalItems : externalTotalItems || rows.length;
+    : externalTotalPages ?? Math.ceil(rows.length / (perPage || 1));
+  const totalItems = useInternalPagination ? paginatedData.totalItems : externalTotalItems ?? rows.length;
   const onChangePage = useInternalPagination ? paginatedData.changePage : externalOnChangePage;
   const onChangePerPage = useInternalPagination ? paginatedData.changePerPage : externalOnChangePerPage;
   const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
@@ -321,7 +321,7 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
       const pdfUrlGetter: (row: T) => string | null | undefined =
         getPdfUrl ??
         ((row: any) => {
-          const baseUrl = process.env.API_BASE_URL || "";
+          const baseUrl = process.env.API_BASE_URL ?? "";
           const fiscalUuid = row?.fiscalUuid;
           if (!fiscalUuid) return null;
           return `${baseUrl.replace(/\/+$/, "")}/pdf/from-uuid/${fiscalUuid}?inline=true`;

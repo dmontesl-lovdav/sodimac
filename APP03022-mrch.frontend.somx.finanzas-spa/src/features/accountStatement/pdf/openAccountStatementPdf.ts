@@ -7,9 +7,10 @@ import { buildAccountStatementHtml } from './accountStatementHtmlBuilder';
  */
 export function openAccountStatementPdfPreview(
     payload: AccountStatementReportPayload,
-    receptionStatuses: any[]
+    receptionStatuses: any[],
+    invoiceStatuses: any[]
 ): void {
-    const html = buildAccountStatementHtml(payload, receptionStatuses);
+    const html = buildAccountStatementHtml(payload, receptionStatuses, invoiceStatuses);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank', 'noopener,noreferrer');

@@ -175,7 +175,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                 const found = Array.isArray(rows)
                     ? rows.find((g) => g.shippingGuideId === guideId)
                     : undefined;
-                if (!cancelled) setGuideCard(found || null);
+                if (!cancelled) setGuideCard(found ?? null);
             } catch {
                 if (!cancelled) setGuideCard(null);
             }

@@ -5,7 +5,7 @@ import {
     saveFinanceListFilters,
     useFinanceListDefaultsOnUrlReset,
 } from '@/shared/hooks';
-import { GenericButton, GenericModal, GenericSelect, GenericSelectSearchable } from '@shared/components/ui';
+import { GenericButton, GenericModal, GenericSelectSearchable } from '@shared/components/ui';
 import type { AccountStatementFilters } from '../interfaces';
 import { fetchCatalog, MONTHS } from '@/utils/utils';
 import { APP_EVENT, PermissionGate } from '@shared/security';

@@ -91,8 +91,9 @@ public class InvoiceServiceImpl implements InvoiceService {
     private static final String K_FECHA_EMISION = "Fecha Emision";
     private static final String K_SUBTOTAL = "Subtotal";
     private static final String K_TOTAL = "Total";
-    // TipoRelacion SAT "01" = Nota de crédito de los documentos relacionados. Único bloque válido para la relación NC->Factura.
-    private static final String TIPO_RELACION_NC = "01";
+    // Catálogo con los TipoRelacion permitidos para ligar una NC con su factura (hoy 01 y 03).
+    // Administrado por negocio desde el portal; se lee directo de shared_catalogs. Regla Ivan 2026-07-20.
+    private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
 
     // Mappers
     private final InvoiceMapper invoiceMapper;
@@ -1442,82 +1443,88 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("=== INICIO GUARDADO CFDIS RELACIONADOS (STM-1168) ===");
         log.debug("NC UUID: {}, Fiscal UUID: {}", ncInvoice.getInvoiceUuid(), ncInvoice.getFiscalUuid());
 
-        // 1. Solo se considera el bloque con TipoRelacion="01" (NC de documentos relacionados). Regla Ivan 2026-07-17.
-        //    Los demás tipos (04 sustitución, 03 devolución, etc.) se ignoran para la relación NC->Factura.
-        List<CfdiRelacionadosDto> bloquesRelacionados = invoiceDto.getCfdiRelacionados();
-        CfdiRelacionadosDto cfdiRelacionados = bloquesRelacionados == null ? null :
-                bloquesRelacionados.stream()
-                        .filter(b -> TIPO_RELACION_NC.equals(b.getTipoRelacion()))
-                        .findFirst()
-                        .orElse(null);
-        if (cfdiRelacionados == null || cfdiRelacionados.getCfdiRelacionado() == null
-                || cfdiRelacionados.getCfdiRelacionado().isEmpty()) {
-            log.error("La NC no contiene un bloque CfdiRelacionados con TipoRelacion={} en el XML", TIPO_RELACION_NC);
+        // 1. Solo se consideran los bloques cuyo TipoRelacion esté en el catálogo CatTipoRelacionFacturaNC
+        //    (tipos permitidos para ligar una NC con su factura; hoy 01 y 03). Se lee DIRECTO de
+        //    shared_catalogs, solo estatus activo. Regla Ivan 2026-07-20.
+        java.util.Set<String> tiposPermitidos =
+                new java.util.HashSet<>(addendumRepository.findActiveCatalogValues(CAT_TIPO_RELACION_NC));
+        List<CfdiRelacionadosDto> bloques = invoiceDto.getCfdiRelacionados();
+        List<CfdiRelacionadosDto> bloquesValidos = (bloques == null) ? java.util.List.of() :
+                bloques.stream()
+                        .filter(b -> b.getTipoRelacion() != null
+                                && tiposPermitidos.contains(b.getTipoRelacion().trim())
+                                && b.getCfdiRelacionado() != null && !b.getCfdiRelacionado().isEmpty())
+                        .collect(java.util.stream.Collectors.toList());
+        if (bloquesValidos.isEmpty()) {
+            log.error("La NC no contiene CfdiRelacionados con TipoRelacion permitido {} en el XML", tiposPermitidos);
             messageCatalog.throwException(FiscalMessageCode.BUS042);
         }
 
-        String tipoRelacion = cfdiRelacionados.getTipoRelacion();
-        List<CfdiRelacionadoDto> relacionados = cfdiRelacionados.getCfdiRelacionado();
+        int totalRelaciones = 0;
 
-        log.info("Tipo de relación: {}", tipoRelacion);
-        log.info("Cantidad de CFDIs relacionados: {}", relacionados.size());
+        // 2. Procesar cada bloque permitido y sus CFDIs relacionados
+        for (CfdiRelacionadosDto bloque : bloquesValidos) {
+            String tipoRelacion = bloque.getTipoRelacion();
+            List<CfdiRelacionadoDto> relacionados = bloque.getCfdiRelacionado();
+            log.info("Bloque TipoRelacion={} con {} CFDIs relacionados", tipoRelacion, relacionados.size());
 
-        // 2. Procesar cada CFDI relacionado
-        for (CfdiRelacionadoDto relacionado : relacionados) {
-            String uuidRelacionadoStr = relacionado.getUuid();
-            log.debug("Procesando CFDI relacionado: {}", uuidRelacionadoStr);
+            for (CfdiRelacionadoDto relacionado : relacionados) {
+                String uuidRelacionadoStr = relacionado.getUuid();
+                log.debug("Procesando CFDI relacionado: {}", uuidRelacionadoStr);
 
-            // 2.1 Parsear UUID
-            UUID uuidRelacionado;
-            try {
-                uuidRelacionado = UUID.fromString(uuidRelacionadoStr);
-            } catch (IllegalArgumentException e) {
-                log.error("UUID de CFDI relacionado no válido: {}", uuidRelacionadoStr);
-                messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionadoStr);
-                return; // Nunca alcanza aquí
+                // 2.1 Parsear UUID
+                UUID uuidRelacionado;
+                try {
+                    uuidRelacionado = UUID.fromString(uuidRelacionadoStr);
+                } catch (IllegalArgumentException e) {
+                    log.error("UUID de CFDI relacionado no válido: {}", uuidRelacionadoStr);
+                    messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionadoStr);
+                    return; // Nunca alcanza aquí
+                }
+
+                // 2.2 Buscar la Factura relacionada por fiscal_uuid
+                Optional<InvoiceEntity> facturaOpt = invoiceRepository.findByFiscalUuid(uuidRelacionado);
+
+                if (facturaOpt.isEmpty()) {
+                    log.error("Factura relacionada no encontrada en BD. UUID: {}", uuidRelacionado);
+                    messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionado);
+                }
+
+                InvoiceEntity facturaRelacionada = facturaOpt.get();
+                log.debug("Factura encontrada. Invoice UUID: {}, Tipo: {}",
+                        facturaRelacionada.getInvoiceUuid(), facturaRelacionada.getDocumentType());
+
+                // 2.3 Validar que sea una Factura (tipo I)
+                if (!"I".equals(facturaRelacionada.getDocumentType())) {
+                    log.error("El CFDI relacionado no es una Factura. Tipo: {}",
+                            facturaRelacionada.getDocumentType());
+                    messageCatalog.throwException(FiscalMessageCode.BUS044,
+                            LBL_UUID + uuidRelacionado + ", Tipo: " + facturaRelacionada.getDocumentType());
+                }
+
+                // 2.3.1 Validar que el monto de la NC no sea mayor al de la factura relacionada (QA junio-2026, BUS061)
+                BigDecimal ncTotal = ncInvoice.getTotal();
+                BigDecimal facturaTotal = facturaRelacionada.getTotal();
+                if (ncTotal != null && facturaTotal != null && ncTotal.compareTo(facturaTotal) > 0) {
+                    log.error("Monto NC {} mayor a factura relacionada {} (UUID {})", ncTotal, facturaTotal, uuidRelacionado);
+                    messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS061,
+                            ncTotal.toPlainString(), facturaTotal.toPlainString());
+                }
+
+                // 2.4 Crear y guardar la relación
+                RelatedCfdiEntity relacion = new RelatedCfdiEntity();
+                relacion.setInvoiceUuid(ncInvoice.getInvoiceUuid());           // UUID de la NC
+                relacion.setRelatedInvoiceUuid(facturaRelacionada.getInvoiceUuid()); // UUID de la Factura
+                relacion.setRelationType(tipoRelacion);
+
+                relatedCfdiRepository.save(relacion);
+                totalRelaciones++;
+                log.info("Relación guardada exitosamente. NC: {} -> Factura: {}",
+                        ncInvoice.getFiscalUuid(), facturaRelacionada.getFiscalUuid());
             }
-
-            // 2.2 Buscar la Factura relacionada por fiscal_uuid
-            Optional<InvoiceEntity> facturaOpt = invoiceRepository.findByFiscalUuid(uuidRelacionado);
-
-            if (facturaOpt.isEmpty()) {
-                log.error("Factura relacionada no encontrada en BD. UUID: {}", uuidRelacionado);
-                messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionado);
-            }
-
-            InvoiceEntity facturaRelacionada = facturaOpt.get();
-            log.debug("Factura encontrada. Invoice UUID: {}, Tipo: {}",
-                    facturaRelacionada.getInvoiceUuid(), facturaRelacionada.getDocumentType());
-
-            // 2.3 Validar que sea una Factura (tipo I)
-            if (!"I".equals(facturaRelacionada.getDocumentType())) {
-                log.error("El CFDI relacionado no es una Factura. Tipo: {}",
-                        facturaRelacionada.getDocumentType());
-                messageCatalog.throwException(FiscalMessageCode.BUS044,
-                        LBL_UUID + uuidRelacionado + ", Tipo: " + facturaRelacionada.getDocumentType());
-            }
-
-            // 2.3.1 Validar que el monto de la NC no sea mayor al de la factura relacionada (QA junio-2026, BUS061)
-            BigDecimal ncTotal = ncInvoice.getTotal();
-            BigDecimal facturaTotal = facturaRelacionada.getTotal();
-            if (ncTotal != null && facturaTotal != null && ncTotal.compareTo(facturaTotal) > 0) {
-                log.error("Monto NC {} mayor a factura relacionada {} (UUID {})", ncTotal, facturaTotal, uuidRelacionado);
-                messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS061,
-                        ncTotal.toPlainString(), facturaTotal.toPlainString());
-            }
-
-            // 2.4 Crear y guardar la relación
-            RelatedCfdiEntity relacion = new RelatedCfdiEntity();
-            relacion.setInvoiceUuid(ncInvoice.getInvoiceUuid());           // UUID de la NC
-            relacion.setRelatedInvoiceUuid(facturaRelacionada.getInvoiceUuid()); // UUID de la Factura
-            relacion.setRelationType(tipoRelacion);
-
-            relatedCfdiRepository.save(relacion);
-            log.info("Relación guardada exitosamente. NC: {} -> Factura: {}",
-                    ncInvoice.getFiscalUuid(), facturaRelacionada.getFiscalUuid());
         }
 
-        log.info("=== FIN GUARDADO CFDIS RELACIONADOS - {} relaciones guardadas ===", relacionados.size());
+        log.info("=== FIN GUARDADO CFDIS RELACIONADOS - {} relaciones guardadas ===", totalRelaciones);
     }
 
     /**

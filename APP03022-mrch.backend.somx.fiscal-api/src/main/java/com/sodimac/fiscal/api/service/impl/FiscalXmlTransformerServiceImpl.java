@@ -35,9 +35,11 @@ import java.time.LocalDateTime;
 public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerService {
 
     private final XmlDocumentTypeDetector xmlDocumentTypeDetector;
+    private final com.sodimac.fiscal.api.repository.AddendumRepository addendumRepository;
 
-    // TipoRelacion SAT "01" = Nota de crédito de los documentos relacionados. Único bloque válido para la relación NC->Factura.
-    private static final String TIPO_RELACION_NC = "01";
+    // Catálogo con los TipoRelacion permitidos para ligar una NC con su factura (hoy 01 y 03).
+    // Se lee directo de shared_catalogs (solo estatus activo). Regla Ivan 2026-07-20.
+    private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
 
     /**
      * {@inheritDoc}
@@ -82,11 +84,14 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
             return null;
         }
 
-        // CfdiRelacionados (NC): solo se toma el bloque con TipoRelacion="01" (NC de documentos relacionados).
-        // Puede haber varios bloques (04, 03, etc.); los que no son "01" se ignoran. Regla Ivan 2026-07-17.
+        // CfdiRelacionados (NC): solo se toma el bloque cuyo TipoRelacion esté permitido en el catálogo
+        // CatTipoRelacionFacturaNC (hoy 01 y 03). Puede haber varios bloques; los no permitidos se ignoran.
+        // Regla Ivan 2026-07-20.
         String tipoRelacion = null;
         String uuidRelacionado = null;
-        Element cfdiRelacionados = getCfdiRelacionadosByTipo(document, TIPO_RELACION_NC);
+        java.util.Set<String> tiposPermitidos =
+                new java.util.HashSet<>(addendumRepository.findActiveCatalogValues(CAT_TIPO_RELACION_NC));
+        Element cfdiRelacionados = getCfdiRelacionadosPermitido(document, tiposPermitidos);
         if (cfdiRelacionados != null) {
             tipoRelacion = getAttribute(cfdiRelacionados, "TipoRelacion");
             Element cfdiRelacionado = getFirstElementByTagName(cfdiRelacionados, "cfdi:CfdiRelacionado", "CfdiRelacionado");
@@ -241,17 +246,18 @@ public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerServ
     }
 
     /**
-     * Devuelve el nodo CfdiRelacionados cuyo TipoRelacion coincide (ej. "01" para NC de documentos
-     * relacionados). Recorre todos los bloques y retorna el primero que haga match; null si no hay.
+     * Devuelve el primer nodo CfdiRelacionados cuyo TipoRelacion esté en el conjunto permitido
+     * (catálogo CatTipoRelacionFacturaNC). Recorre todos los bloques; null si ninguno es permitido.
      */
-    private Element getCfdiRelacionadosByTipo(Document document, String tipoRelacion) {
+    private Element getCfdiRelacionadosPermitido(Document document, java.util.Set<String> tiposPermitidos) {
         NodeList nodes = document.getElementsByTagName("cfdi:CfdiRelacionados");
         if (nodes.getLength() == 0) {
             nodes = document.getElementsByTagName("CfdiRelacionados");
         }
         for (int i = 0; i < nodes.getLength(); i++) {
             Element el = (Element) nodes.item(i);
-            if (tipoRelacion.equals(getAttribute(el, "TipoRelacion"))) {
+            String tipo = getAttribute(el, "TipoRelacion");
+            if (tipo != null && tiposPermitidos.contains(tipo.trim())) {
                 return el;
             }
         }

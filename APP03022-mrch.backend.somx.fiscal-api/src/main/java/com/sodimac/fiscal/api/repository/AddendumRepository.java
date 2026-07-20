@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -109,4 +110,15 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "WHERE ch.code = 'CATRFCRECEPTOR' AND ch.status = 1 AND cd.status = 1 AND dl.description = :rfc)",
             nativeQuery = true)
     boolean existsRfcReceptorAutorizado(@Param("rfc") String rfc);
+
+    /**
+     * Valores activos (status=1) de un catálogo de shared_catalogs, leídos DIRECTO de la tabla
+     * (sin pasar por util-api). Solo considera el estatus (header y detalle activos). Usado para
+     * los tipos de relación permitidos para publicar una NC (`CatTipoRelacionFacturaNC`, hoy 01 y 03).
+     * Regla Ivan 2026-07-20.
+     */
+    @Query(value = "SELECT cd.value FROM shared_catalogs.catalog_header ch " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "WHERE ch.code = :catalogCode AND ch.status = 1 AND cd.status = 1", nativeQuery = true)
+    List<String> findActiveCatalogValues(@Param("catalogCode") String catalogCode);
 }

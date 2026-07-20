@@ -5,15 +5,19 @@
 .al-filters .al-row {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     width: 100%;
 }
 
 .al-filters .al-row > * {
-    flex: 1 1 0;
+    flex: 1 1 200px;
     min-width: 0;
+}
+
+.al-filters .al-row > .dr-wrapper {
+    flex: 0 0 260px;
 }
 
 .al-filters .al-row .al-actions {

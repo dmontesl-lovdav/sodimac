@@ -615,8 +615,9 @@ export default function CatalogsContainer() {
 
           <div style={styles.filtersRow}>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>ID Catálogo</label>
+              <label htmlFor="filter-catalog-id" style={styles.filterLabel}>ID Catálogo</label>
               <input
+                id="filter-catalog-id"
                 type="text"
                 style={styles.filterInput}
                 value={filters.id}
@@ -625,8 +626,9 @@ export default function CatalogsContainer() {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Código</label>
+              <label htmlFor="filter-catalog-code" style={styles.filterLabel}>Código</label>
               <input
+                id="filter-catalog-code"
                 type="text"
                 style={styles.filterInput}
                 value={filters.code}
@@ -635,8 +637,9 @@ export default function CatalogsContainer() {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Prefijo</label>
+              <label htmlFor="filter-catalog-prefix" style={styles.filterLabel}>Prefijo</label>
               <input
+                id="filter-catalog-prefix"
                 type="text"
                 style={styles.filterInput}
                 value={filters.prefix}
@@ -645,8 +648,9 @@ export default function CatalogsContainer() {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Nombre Catálogo</label>
+              <label htmlFor="filter-catalog-name" style={styles.filterLabel}>Nombre Catálogo</label>
               <input
+                id="filter-catalog-name"
                 type="text"
                 style={{ ...styles.filterInput, minWidth: '120px' }}
                 value={filters.name}
@@ -655,8 +659,9 @@ export default function CatalogsContainer() {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Descripción Catálogo</label>
+              <label htmlFor="filter-catalog-description" style={styles.filterLabel}>Descripción Catálogo</label>
               <input
+                id="filter-catalog-description"
                 type="text"
                 style={{ ...styles.filterInput, minWidth: '130px', maxWidth: '180px' }}
                 value={filters.description}
@@ -665,8 +670,9 @@ export default function CatalogsContainer() {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Tipo Catálogo</label>
+              <label htmlFor="filter-catalog-type" style={styles.filterLabel}>Tipo Catálogo</label>
               <select
+                id="filter-catalog-type"
                 style={styles.filterSelect}
                 value={filters.type}
                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
@@ -677,8 +683,9 @@ export default function CatalogsContainer() {
               </select>
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Estatus</label>
+              <label htmlFor="filter-catalog-status" style={styles.filterLabel}>Estatus</label>
               <select
+                id="filter-catalog-status"
                 style={styles.filterSelect}
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}

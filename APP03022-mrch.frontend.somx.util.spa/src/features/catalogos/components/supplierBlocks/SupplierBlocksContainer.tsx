@@ -582,8 +582,9 @@ const SupplierBlocksContainer = () => {
 
           <div style={styles.filtersRow}>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Número Proveedor</label>
+              <label htmlFor="filter-block-supplier-number" style={styles.filterLabel}>Número Proveedor</label>
               <input
+                id="filter-block-supplier-number"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -599,8 +600,9 @@ const SupplierBlocksContainer = () => {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Estatus</label>
+              <label htmlFor="filter-block-status" style={styles.filterLabel}>Estatus</label>
               <select
+                id="filter-block-status"
                 style={styles.filterSelect}
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -611,8 +613,9 @@ const SupplierBlocksContainer = () => {
               </select>
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Vigente Actualmente</label>
+              <label htmlFor="filter-block-currently" style={styles.filterLabel}>Vigente Actualmente</label>
               <select
+                id="filter-block-currently"
                 style={styles.filterSelect}
                 value={filters.currentlyBlocked}
                 onChange={(e) => setFilters({ ...filters, currentlyBlocked: e.target.value })}
@@ -729,7 +732,10 @@ const SupplierBlocksContainer = () => {
                               opacity: togglingId === block.id ? 0.5 : 1,
                               pointerEvents: togglingId === block.id ? 'none' : 'auto',
                             }}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => handleToggleStatus(block)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(block); } }}
                             title={
                               block.status === 1 ? 'Desactivar bloqueo' : 'Activar bloqueo'
                             }

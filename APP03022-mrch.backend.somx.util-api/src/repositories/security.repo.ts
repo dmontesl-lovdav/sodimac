@@ -948,7 +948,7 @@ export async function findProfileModuleProcessAssignment(
 ): Promise<{ available: AssignableItemRow[]; assigned: AssignableItemRow[] }> {
     const langId = resolveLangId(langIdParam);
 
-    const assignedRaw = await datasource
+    const assigned = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
         .innerJoin(CatalogDetail, 'cm', 'cm.id = mp.catalog_detail_module_id')
@@ -973,7 +973,7 @@ export async function findProfileModuleProcessAssignment(
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
 
-    const availableRaw = await datasource
+    const available = await datasource
         .getRepository(ModuleProcess)
         .createQueryBuilder('mp')
         .innerJoin(CatalogDetail, 'cm', 'cm.id = mp.catalog_detail_module_id')
@@ -999,12 +999,6 @@ export async function findProfileModuleProcessAssignment(
         .orderBy(dictionaryLabelExpr('cm', langId), 'ASC')
         .addOrderBy(dictionaryLabelExpr('cp', langId), 'ASC')
         .getRawMany<AssignableItemRow>();
-
-    const assigned = dedupeAssignableByTitle(assignedRaw);
-    const assignedTitles = new Set(assigned.map((r) => r.title));
-    const available = dedupeAssignableByTitle(availableRaw).filter(
-        (r) => !assignedTitles.has(r.title),
-    );
 
     return { available, assigned };
 }
@@ -1071,16 +1065,10 @@ export async function listApplicationEvents(filters: SecuritySearchFilter): Prom
     return toSummaryRows(await qb.getRawMany());
 }
 
-function dedupeAssignableByTitle(rows: AssignableItemRow[]): AssignableItemRow[] {
-    const byTitle = new Map<string, AssignableItemRow>();
-    for (const row of rows) {
-        const key = row.title;
-        const existing = byTitle.get(key);
-        if (!existing || Number(row.id) < Number(existing.id)) {
-            byTitle.set(key, row);
-        }
-    }
-    return [...byTitle.values()].sort((a, b) => a.title.localeCompare(b.title, 'es'));
+function screenEventTitleExpr(langId: number): string {
+    return `CASE WHEN papp.id IS NOT NULL
+        THEN CONCAT(${dictionaryLabelExpr('papp', langId)}, ' | ', ${dictionaryLabelExpr('proc', langId)})
+        ELSE ${dictionaryLabelExpr('proc', langId)} END`;
 }
 
 export async function findModuleProcessAssignment(
@@ -1088,7 +1076,9 @@ export async function findModuleProcessAssignment(
     langIdParam?: number,
 ): Promise<{ available: AssignableItemRow[]; assigned: AssignableItemRow[] }> {
     const langId = resolveLangId(langIdParam);
-    const assignedRaw = await datasource
+    const titleExpr = screenEventTitleExpr(langId);
+
+    const assigned = await datasource
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
@@ -1098,18 +1088,20 @@ export async function findModuleProcessAssignment(
             'mp.catalog_detail_process_id = proc.id AND mp.catalog_detail_module_id = :moduleId AND mp.status = 1',
             { moduleId },
         )
+        .leftJoin(CatalogDetail, 'papp', 'papp.id = proc.parent_element_id')
         .select('proc.id', 'id')
-        .addSelect(dictionaryLabelExpr('proc', langId), 'title')
+        .addSelect(titleExpr, 'title')
         .addSelect(`''`, 'subtitle')
         .groupBy('proc.id')
-        .addGroupBy(dictionaryLabelExpr('proc', langId))
-        .orderBy(dictionaryLabelExpr('proc', langId), 'ASC')
+        .addGroupBy('papp.id')
+        .orderBy(titleExpr, 'ASC')
         .getRawMany<AssignableItemRow>();
 
-    const availableRaw = await datasource
+    const available = await datasource
         .getRepository(CatalogDetail)
         .createQueryBuilder('proc')
         .innerJoin(CatalogHeader, 'hEv', joinHeader('proc', 'hEv', SECURITY_CATALOG_HEADER.evento))
+        .leftJoin(CatalogDetail, 'papp', 'papp.id = proc.parent_element_id')
         .where(
             `NOT EXISTS (
                 SELECT 1 FROM core_security.module_process mp
@@ -1119,18 +1111,12 @@ export async function findModuleProcessAssignment(
         )
         .andWhere('proc.status = 1')
         .select('proc.id', 'id')
-        .addSelect(dictionaryLabelExpr('proc', langId), 'title')
+        .addSelect(titleExpr, 'title')
         .addSelect(`''`, 'subtitle')
         .groupBy('proc.id')
-        .addGroupBy(dictionaryLabelExpr('proc', langId))
-        .orderBy(dictionaryLabelExpr('proc', langId), 'ASC')
+        .addGroupBy('papp.id')
+        .orderBy(titleExpr, 'ASC')
         .getRawMany<AssignableItemRow>();
-
-    const assigned = dedupeAssignableByTitle(assignedRaw);
-    const assignedTitles = new Set(assigned.map((r) => r.title));
-    const available = dedupeAssignableByTitle(availableRaw).filter(
-        (r) => !assignedTitles.has(r.title),
-    );
 
     return { available, assigned };
 }
@@ -1895,18 +1881,7 @@ export async function listModuleProcessesWithUserAssignment(
         assigned: row.assigned === true || row.assigned === 'true' || String(row.assigned) === '1',
     }));
 
-    const byName = new Map<string, UserModuleProcessEventRow>();
-    for (const item of mapped) {
-        const existing = byName.get(item.name);
-        if (
-            !existing ||
-            (item.assigned && !existing.assigned) ||
-            (item.assigned === existing.assigned && item.processId < existing.processId)
-        ) {
-            byName.set(item.name, item);
-        }
-    }
-    return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    return mapped;
 }
 
 export async function findActiveApplicationById(moduleId: number): Promise<CatalogDetail | null> {

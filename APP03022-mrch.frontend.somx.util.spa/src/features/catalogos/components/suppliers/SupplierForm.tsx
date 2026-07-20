@@ -306,8 +306,9 @@ const SupplierForm = () => {
         <form onSubmit={handleSubmit}>
           <div style={styles.grid}>
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Número de Proveedor *</label>
+              <label htmlFor="supplier-supplierNumber" style={styles.formLabel}>Número de Proveedor *</label>
               <input
+                id="supplier-supplierNumber"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -322,8 +323,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>RFC *</label>
+              <label htmlFor="supplier-rfc" style={styles.formLabel}>RFC *</label>
               <input
+                id="supplier-rfc"
                 type="text"
                 name="rfc"
                 style={styles.formInput}
@@ -336,8 +338,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={{ ...styles.formGroup, gridColumn: 'span 2' }}>
-              <label style={styles.formLabel}>Razón Social *</label>
+              <label htmlFor="supplier-businessName" style={styles.formLabel}>Razón Social *</label>
               <input
+                id="supplier-businessName"
                 type="text"
                 name="businessName"
                 style={styles.formInput}
@@ -349,8 +352,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Tipo de Proveedor</label>
+              <label htmlFor="supplier-supplierTypeId" style={styles.formLabel}>Tipo de Proveedor</label>
               <select
+                id="supplier-supplierTypeId"
                 name="supplierTypeId"
                 style={styles.formInput}
                 value={formData.supplierTypeId}
@@ -366,8 +370,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Condición de Pago</label>
+              <label htmlFor="supplier-paymentConditionId" style={styles.formLabel}>Condición de Pago</label>
               <select
+                id="supplier-paymentConditionId"
                 name="paymentConditionId"
                 style={styles.formInput}
                 value={formData.paymentConditionId}
@@ -383,8 +388,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Logo (URL)</label>
+              <label htmlFor="supplier-logo" style={styles.formLabel}>Logo (URL)</label>
               <input
+                id="supplier-logo"
                 type="text"
                 name="logo"
                 style={styles.formInput}
@@ -395,10 +401,11 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>
+              <label htmlFor="supplier-emailPrincipal" style={styles.formLabel}>
                 Email Principal <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
+                id="supplier-emailPrincipal"
                 type="email"
                 name="emailPrincipal"
                 style={styles.formInput}
@@ -411,10 +418,11 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>
+              <label htmlFor="supplier-emailFinancial" style={styles.formLabel}>
                 Email CXC <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
+                id="supplier-emailFinancial"
                 type="email"
                 name="emailFinancial"
                 style={styles.formInput}
@@ -427,8 +435,9 @@ const SupplierForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Email Comercial</label>
+              <label htmlFor="supplier-emailCommercial" style={styles.formLabel}>Email Comercial</label>
               <input
+                id="supplier-emailCommercial"
                 type="email"
                 name="emailCommercial"
                 style={styles.formInput}
@@ -441,8 +450,9 @@ const SupplierForm = () => {
 
             {isEditing && (
               <div style={{ ...styles.formGroup, gridColumn: 'span 2' }}>
-                <label style={styles.formLabel}>Estatus</label>
+                <label htmlFor="supplier-status" style={styles.formLabel}>Estatus</label>
                 <select
+                  id="supplier-status"
                   name="status"
                   style={styles.formInput}
                   value={formData.status}

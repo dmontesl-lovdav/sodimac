@@ -221,7 +221,7 @@ export default function DiscountsContainer(): ReactElement {
       }
     };
 
-    void loadCatalogs();
+    loadCatalogs();
     return () => {
       active = false;
     };
@@ -295,7 +295,7 @@ export default function DiscountsContainer(): ReactElement {
     (criteria) => {
       warnIfEmptyRef.current = true;
       setPage(1);
-      void runSearch(criteria, 1, perPage);
+      runSearch(criteria, 1, perPage);
     }
   );
 
@@ -311,7 +311,7 @@ export default function DiscountsContainer(): ReactElement {
   const handleSearch = (criteria: RebateFilters) => {
     warnIfEmptyRef.current = true;
     setPage(1);
-    void runSearch(criteria, 1, perPage);
+    runSearch(criteria, 1, perPage);
   };
 
   const handleExportCsv = () => {
@@ -409,12 +409,12 @@ export default function DiscountsContainer(): ReactElement {
             loading={loading}
             onChangePage={(newPage) => {
               setPage(newPage);
-              if (filters) void runSearch(filters, newPage, perPage);
+              if (filters) runSearch(filters, newPage, perPage);
             }}
             onChangePerPage={(newPageSize) => {
               setPerPage(newPageSize);
               setPage(1);
-              if (filters) void runSearch(filters, 1, newPageSize);
+              if (filters) runSearch(filters, 1, newPageSize);
             }}
             renderStatus={renderStatus}
           />

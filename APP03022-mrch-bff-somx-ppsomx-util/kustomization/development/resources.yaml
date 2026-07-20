@@ -1,15 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: ${PROJECT_NAME}
+
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
+
       containers:
         - name: ${PROJECT_NAME}
           resources:
             limits:
-              memory: 400Mi
+              memory: "400Mi"
+              ephemeral-storage: "500Mi"
             requests:
-              cpu: 50m
-              memory: 200Mi
+              cpu: "50m"
+              memory: "200Mi"
+              ephemeral-storage: "100Mi"

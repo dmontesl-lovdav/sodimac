@@ -16,6 +16,14 @@ export type CreditNoteXmlData = {
 export type PublishQuery = {
   supplierNumber: string;
   documentNumber: string;
+  documentReference: string;
+  tipoRebate: string;
+  sapDocument: string;
+  amount: string;
+  periodId: string;
+  postingDate: string;
+  dueDate: string;
+  vendorName: string;
 };
 
 /** Respuesta directa de POST invoices/register (publicar NC). */

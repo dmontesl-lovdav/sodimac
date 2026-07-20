@@ -263,7 +263,7 @@ export default function EditConversionForm() {
         <div style={S.stepContainer}>
           <div style={S.stepIndicator}><div style={S.stepNumber}>1</div><div style={S.stepLine} /></div>
           <div style={S.stepContent}>
-            <div style={S.stepTitle} onClick={() => toggleStep(1)}>Buscar Catálogo</div>
+            <div style={S.stepTitle} role="button" tabIndex={0} onClick={() => toggleStep(1)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStep(1); } }}>Buscar Catálogo</div>
             <div style={S.stepSubtitle}>Selecciona el catálogo que contiene el elemento destino.</div>
             {expandedSteps.includes(1) && (
               <div style={{ marginTop: '1rem' }}>
@@ -284,7 +284,9 @@ export default function EditConversionForm() {
           </div>
           <div style={S.stepContent}>
             <div style={{ ...S.stepTitle, ...(isStep1Complete ? {} : S.stepTitleDisabled) }}
-              onClick={() => isStep1Complete && toggleStep(2)}>Seleccionar Elemento</div>
+              role="button" tabIndex={0}
+              onClick={() => isStep1Complete && toggleStep(2)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep1Complete) toggleStep(2); } }}>Seleccionar Elemento</div>
             <div style={S.stepSubtitle}>Selecciona el elemento destino para la conversión.</div>
             {expandedSteps.includes(2) && isStep1Complete && (
               <div style={{ marginTop: '1rem' }}>
@@ -304,7 +306,9 @@ export default function EditConversionForm() {
           </div>
           <div style={S.stepContent}>
             <div style={{ ...S.stepTitle, ...(isStep2Complete ? {} : S.stepTitleDisabled) }}
-              onClick={() => isStep2Complete && toggleStep(3)}>Elemento para Conversión</div>
+              role="button" tabIndex={0}
+              onClick={() => isStep2Complete && toggleStep(3)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep2Complete) toggleStep(3); } }}>Elemento para Conversión</div>
             <div style={S.stepSubtitle}>Detalle del elemento seleccionado.</div>
             {expandedSteps.includes(3) && isStep2Complete && selectedElement && (
               <div style={{ marginTop: '1rem' }}>

@@ -134,6 +134,268 @@ const mapElementToFormData = (element: any): FormData => ({
   parentElementId: element.parentElementId ? String(element.parentElementId) : '',
 });
 
+const activateOnKey = (e: React.KeyboardEvent, action: () => void) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    action();
+  }
+};
+
+interface ElementStep1Props {
+  expanded: boolean;
+  isEditMode: boolean;
+  formData: FormData;
+  errors: FormErrors;
+  elementStatus: number;
+  onToggle: () => void;
+  onInputChange: (field: keyof FormData, value: string) => void;
+  onStatusChange: (value: number) => void;
+}
+
+function ElementStep1({ expanded, isEditMode, formData, errors, elementStatus, onToggle, onInputChange, onStatusChange }: ElementStep1Props) {
+  return (
+    <div style={styles.stepContainer}>
+      <div style={styles.stepIndicator}>
+        <div style={styles.stepNumber}>1</div>
+        <div style={styles.stepLine} />
+      </div>
+      <div style={styles.stepContent}>
+        <div style={styles.stepHeader} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+          <div>
+            <div style={styles.stepTitle}>Datos de Elemento</div>
+            <div style={styles.stepDescription}>{isEditMode ? 'Modifica la información general del elemento.' : 'Captura la información general del nuevo elemento.'}</div>
+          </div>
+          <span style={styles.chevron}><ChevronIcon expanded={expanded} /></span>
+        </div>
+        {expanded && (
+          <div style={{ marginTop: '1rem' }}>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-name" style={styles.label}><span style={styles.labelRequired}>*</span>Nombre del elemento</label>
+              <input id="element-name" type="text" style={{ ...styles.input, ...(errors.elementName ? styles.inputError : {}) }}
+                value={formData.elementName} onChange={e => onInputChange('elementName', e.target.value)} placeholder="Nombre del elemento" maxLength={100} />
+              {errors.elementName && <div style={styles.fieldError}>{errors.elementName}</div>}
+            </div>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-start-date" style={styles.label}><span style={styles.labelRequired}>*</span>Fecha de inicio vigencia</label>
+              <input id="element-start-date" type="date" style={{ ...styles.input, ...(errors.startDate ? styles.inputError : {}) }}
+                value={formData.startDate} onChange={e => onInputChange('startDate', e.target.value)} />
+              {errors.startDate && <div style={styles.fieldError}>{errors.startDate}</div>}
+            </div>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-end-date" style={styles.label}>Fecha de fin vigencia</label>
+              <input id="element-end-date" type="date" style={{ ...styles.input, ...(errors.endDate ? styles.inputError : {}) }}
+                value={formData.endDate} onChange={e => onInputChange('endDate', e.target.value)} />
+              {errors.endDate && <div style={styles.fieldError}>{errors.endDate}</div>}
+            </div>
+            {isEditMode && (
+              <div style={styles.formGroup}>
+                <label htmlFor="element-status" style={styles.label}><span style={styles.labelRequired}>*</span>Estatus de elemento</label>
+                <div style={styles.selectWrapper}>
+                  <select id="element-status" style={styles.select} value={elementStatus} onChange={e => onStatusChange(Number(e.target.value))}>
+                    <option value={1}>Activado</option>
+                    <option value={0}>Desactivado</option>
+                  </select>
+                  <span style={styles.selectArrow}>▼</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ElementStep2Props {
+  expanded: boolean;
+  isStep1Complete: boolean;
+  formData: FormData;
+  errors: FormErrors;
+  onToggle: () => void;
+  onInputChange: (field: keyof FormData, value: string) => void;
+}
+
+function ElementStep2({ expanded, isStep1Complete, formData, errors, onToggle, onInputChange }: ElementStep2Props) {
+  return (
+    <div style={styles.stepContainer}>
+      <div style={styles.stepIndicator}>
+        <div style={{ ...styles.stepNumber, ...(isStep1Complete ? {} : styles.stepNumberDisabled) }}>2</div>
+        <div style={{ ...styles.stepLine, ...(isStep1Complete ? {} : styles.stepLineDisabled) }} />
+      </div>
+      <div style={styles.stepContent}>
+        <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+          <div>
+            <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Valores del Elemento (Opcional)</div>
+            <div style={styles.stepDescription}>Captura el valor por defecto del nuevo elemento.</div>
+          </div>
+          <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expanded} /></span>
+        </div>
+        {expanded && isStep1Complete && (
+          <div style={{ marginTop: '1rem' }}>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-value" style={styles.label}>Valor del elemento</label>
+              <input id="element-value" type="text" style={{ ...styles.input, ...(errors.value ? styles.inputError : {}) }}
+                value={formData.value} onChange={e => onInputChange('value', e.target.value)} placeholder="Valor del elemento" maxLength={100} />
+              {errors.value && <div style={styles.fieldError}>{errors.value}</div>}
+            </div>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-external-key" style={styles.label}>
+                Valor de Conversión (Opcional)
+                <span
+                  title="Valor utilizado por sistemas externos para identificar este elemento. Ejemplo: Si el elemento es 'México', el valor de conversión podría ser 'MX' (código ISO)."
+                  style={{ marginLeft: '6px', cursor: 'help', color: '#64748b', fontSize: '0.8rem' }}
+                >ⓘ</span>
+              </label>
+              <input id="element-external-key" type="text" style={{ ...styles.input, ...(errors.externalKey ? styles.inputError : {}) }}
+                value={formData.externalKey} onChange={e => onInputChange('externalKey', e.target.value)}
+                placeholder="Ingrese el valor de conversión para otros sistemas" maxLength={50} />
+              {errors.externalKey && <div style={styles.fieldError}>{errors.externalKey}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ElementStep3Props {
+  expanded: boolean;
+  isStep1Complete: boolean;
+  isPrimaryCatalog: boolean;
+  formData: FormData;
+  errors: FormErrors;
+  parentCatalogs: CatalogSimple[];
+  parentElements: CatalogElement[];
+  onToggle: () => void;
+  onInputChange: (field: keyof FormData, value: string) => void;
+}
+
+function ElementStep3({ expanded, isStep1Complete, isPrimaryCatalog, formData, errors, parentCatalogs, parentElements, onToggle, onInputChange }: ElementStep3Props) {
+  return (
+    <div style={styles.stepContainer}>
+      <div style={styles.stepIndicator}>
+        <div style={{ ...styles.stepNumber, ...(isStep1Complete ? {} : styles.stepNumberDisabled) }}>3</div>
+      </div>
+      <div style={styles.stepContent}>
+        <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+          <div>
+            <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Catálogo y Elemento Padre (Opcional)</div>
+            <div style={styles.stepDescription}>Selecciona y relaciona el elemento con un catálogo y elemento padre para crear una agrupación.</div>
+          </div>
+          <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expanded} /></span>
+        </div>
+        {expanded && isStep1Complete && (
+          <div style={{ marginTop: '1rem' }}>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-parent-catalog" style={styles.label}>Seleccionar catálogo padre</label>
+              <div style={styles.selectWrapper}>
+                <select id="element-parent-catalog" style={{ ...styles.select, ...(isPrimaryCatalog ? styles.selectDisabled : {}) }}
+                  value={formData.parentCatalogId} onChange={e => onInputChange('parentCatalogId', e.target.value)} disabled={isPrimaryCatalog}>
+                  <option value="">Seleccionar catálogo padre</option>
+                  {parentCatalogs.map(pc => <option key={pc.id} value={pc.id}>{pc.name}</option>)}
+                </select>
+                <span style={styles.selectArrow}>▼</span>
+              </div>
+              {isPrimaryCatalog && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>No disponible para catálogos de tipo Primario.</div>}
+            </div>
+            <div style={styles.formGroup}>
+              <label htmlFor="element-parent-element" style={styles.label}>Seleccionar elemento padre</label>
+              <div style={styles.selectWrapper}>
+                <select id="element-parent-element" style={{ ...styles.select, ...(isPrimaryCatalog || !formData.parentCatalogId ? styles.selectDisabled : {}), ...(errors.parentElementId ? styles.inputError : {}) }}
+                  value={formData.parentElementId} onChange={e => onInputChange('parentElementId', e.target.value)} disabled={isPrimaryCatalog || !formData.parentCatalogId}>
+                  <option value="">Seleccionar elemento padre</option>
+                  {parentElements.map(pe => <option key={pe.id} value={pe.id}>{pe.element || pe.value}</option>)}
+                </select>
+                <span style={styles.selectArrow}>▼</span>
+              </div>
+              {errors.parentElementId && <div style={styles.fieldError}>{errors.parentElementId}</div>}
+              {!isPrimaryCatalog && !formData.parentCatalogId && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Primero seleccione un catálogo padre.</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ElementExitModalProps {
+  isEditMode: boolean;
+  onNo: () => void;
+  onYes: () => void;
+}
+
+function ElementExitModal({ isEditMode, onNo, onYes }: ElementExitModalProps) {
+  return (
+    <div style={styles.modal}>
+      <div style={styles.modalContent}>
+        <h3 style={styles.modalTitle}>¿Desea salir?</h3>
+        <p style={styles.modalText}>{isEditMode ? 'La información editada del elemento se perderá. ¿Desea continuar?' : 'La información ingresada para registrar el elemento se perderá. ¿Desea continuar?'}</p>
+        <div style={styles.modalButtons}>
+          <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={onNo}>No</button>
+          <button style={styles.primaryBtn} onClick={onYes}>Sí</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ChangeRelationModalProps {
+  originalParentCatalogName: string;
+  originalParentElementName: string;
+  newParentCatalogName: string;
+  newParentElementName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function ChangeRelationModal({ originalParentCatalogName, originalParentElementName, newParentCatalogName, newParentElementName, onCancel, onConfirm }: ChangeRelationModalProps) {
+  return (
+    <div style={styles.modal}>
+      <div style={styles.modalContent}>
+        <h3 style={styles.modalTitle}>Cambiar relación del elemento</h3>
+        <p style={styles.modalText}>
+          Vas a cambiar la relación de este elemento:<br /><br />
+          <strong>De:</strong> {originalParentCatalogName} → {originalParentElementName}<br />
+          <strong>A:</strong> {newParentCatalogName} → {newParentElementName}<br /><br />
+          ¿Deseas continuar?
+        </p>
+        <div style={styles.modalButtons}>
+          <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={onCancel}>Cancelar</button>
+          <button style={styles.primaryBtn} onClick={onConfirm}>Confirmar Cambio</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface DeleteRelationModalProps {
+  elementName: string;
+  originalParentCatalogName: string;
+  originalParentElementName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function DeleteRelationModal({ elementName, originalParentCatalogName, originalParentElementName, onCancel, onConfirm }: DeleteRelationModalProps) {
+  return (
+    <div style={styles.modal}>
+      <div style={styles.modalContent}>
+        <h3 style={styles.modalTitle}>Eliminar relación del elemento</h3>
+        <p style={styles.modalText}>
+          Vas a eliminar la relación del elemento '{elementName}' con:<br /><br />
+          <strong>Catálogo Padre:</strong> {originalParentCatalogName}<br />
+          <strong>Elemento Padre:</strong> {originalParentElementName}<br /><br />
+          ¿Deseas continuar?
+        </p>
+        <div style={styles.modalButtons}>
+          <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={onCancel}>Cancelar</button>
+          <button style={styles.dangerBtn} onClick={onConfirm}>Confirmar Eliminación</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ElementForm() {
   const navigate = useNavigate();
   const { id, elementId } = useParams<{ id: string; elementId?: string }>();
@@ -443,143 +705,42 @@ export default function ElementForm() {
             : 'Para crear un nuevo elemento, sigue las instrucciones y completa el formulario, asegurándote de proporcionar información precisa y detallada.'}
         </p>
 
-        <div style={styles.stepContainer}>
-          <div style={styles.stepIndicator}>
-            <div style={styles.stepNumber}>1</div>
-            <div style={styles.stepLine} />
-          </div>
-          <div style={styles.stepContent}>
-            <div style={styles.stepHeader} onClick={() => toggleStep(1)}>
-              <div>
-                <div style={styles.stepTitle}>Datos de Elemento</div>
-                <div style={styles.stepDescription}>{isEditMode ? 'Modifica la información general del elemento.' : 'Captura la información general del nuevo elemento.'}</div>
-              </div>
-              <span style={styles.chevron}><ChevronIcon expanded={expandedSteps.includes(1)} /></span>
-            </div>
-            {expandedSteps.includes(1) && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}><span style={styles.labelRequired}>*</span>Nombre del elemento</label>
-                  <input type="text" style={{ ...styles.input, ...(errors.elementName ? styles.inputError : {}) }}
-                    value={formData.elementName} onChange={e => handleInputChange('elementName', e.target.value)} placeholder="Nombre del elemento" maxLength={100} />
-                  {errors.elementName && <div style={styles.fieldError}>{errors.elementName}</div>}
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}><span style={styles.labelRequired}>*</span>Fecha de inicio vigencia</label>
-                  <input type="date" style={{ ...styles.input, ...(errors.startDate ? styles.inputError : {}) }}
-                    value={formData.startDate} onChange={e => handleInputChange('startDate', e.target.value)} />
-                  {errors.startDate && <div style={styles.fieldError}>{errors.startDate}</div>}
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fecha de fin vigencia</label>
-                  <input type="date" style={{ ...styles.input, ...(errors.endDate ? styles.inputError : {}) }}
-                    value={formData.endDate} onChange={e => handleInputChange('endDate', e.target.value)} />
-                  {errors.endDate && <div style={styles.fieldError}>{errors.endDate}</div>}
-                </div>
-                {isEditMode && (
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}><span style={styles.labelRequired}>*</span>Estatus de elemento</label>
-                    <div style={styles.selectWrapper}>
-                      <select style={styles.select} value={elementStatus} onChange={e => setElementStatus(Number(e.target.value))}>
-                        <option value={1}>Activado</option>
-                        <option value={0}>Desactivado</option>
-                      </select>
-                      <span style={styles.selectArrow}>▼</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        <ElementStep1
+          expanded={expandedSteps.includes(1)}
+          isEditMode={isEditMode}
+          formData={formData}
+          errors={errors}
+          elementStatus={elementStatus}
+          onToggle={() => toggleStep(1)}
+          onInputChange={handleInputChange}
+          onStatusChange={setElementStatus}
+        />
 
-        <div style={styles.stepContainer}>
-          <div style={styles.stepIndicator}>
-            <div style={{ ...styles.stepNumber, ...(isStep1Complete ? {} : styles.stepNumberDisabled) }}>2</div>
-            <div style={{ ...styles.stepLine, ...(isStep1Complete ? {} : styles.stepLineDisabled) }} />
-          </div>
-          <div style={styles.stepContent}>
-            <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} onClick={() => toggleStep(2)}>
-              <div>
-                <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Valores del Elemento (Opcional)</div>
-                <div style={styles.stepDescription}>Captura el valor por defecto del nuevo elemento.</div>
-              </div>
-              <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expandedSteps.includes(2)} /></span>
-            </div>
-            {expandedSteps.includes(2) && isStep1Complete && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Valor del elemento</label>
-                  <input type="text" style={{ ...styles.input, ...(errors.value ? styles.inputError : {}) }}
-                    value={formData.value} onChange={e => handleInputChange('value', e.target.value)} placeholder="Valor del elemento" maxLength={100} />
-                  {errors.value && <div style={styles.fieldError}>{errors.value}</div>}
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>
-                    Valor de Conversión (Opcional)
-                    <span
-                      title="Valor utilizado por sistemas externos para identificar este elemento. Ejemplo: Si el elemento es 'México', el valor de conversión podría ser 'MX' (código ISO)."
-                      style={{ marginLeft: '6px', cursor: 'help', color: '#64748b', fontSize: '0.8rem' }}
-                    >ⓘ</span>
-                  </label>
-                  <input type="text" style={{ ...styles.input, ...(errors.externalKey ? styles.inputError : {}) }}
-                    value={formData.externalKey} onChange={e => handleInputChange('externalKey', e.target.value)}
-                    placeholder="Ingrese el valor de conversión para otros sistemas" maxLength={50} />
-                  {errors.externalKey && <div style={styles.fieldError}>{errors.externalKey}</div>}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <ElementStep2
+          expanded={expandedSteps.includes(2)}
+          isStep1Complete={isStep1Complete}
+          formData={formData}
+          errors={errors}
+          onToggle={() => toggleStep(2)}
+          onInputChange={handleInputChange}
+        />
 
-        <div style={styles.stepContainer}>
-          <div style={styles.stepIndicator}>
-            <div style={{ ...styles.stepNumber, ...(isStep1Complete ? {} : styles.stepNumberDisabled) }}>3</div>
-          </div>
-          <div style={styles.stepContent}>
-            <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} onClick={() => toggleStep(3)}>
-              <div>
-                <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Catálogo y Elemento Padre (Opcional)</div>
-                <div style={styles.stepDescription}>Selecciona y relaciona el elemento con un catálogo y elemento padre para crear una agrupación.</div>
-              </div>
-              <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expandedSteps.includes(3)} /></span>
-            </div>
-            {expandedSteps.includes(3) && isStep1Complete && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Seleccionar catálogo padre</label>
-                  <div style={styles.selectWrapper}>
-                    <select style={{ ...styles.select, ...(isPrimaryCatalog ? styles.selectDisabled : {}) }}
-                      value={formData.parentCatalogId} onChange={e => handleInputChange('parentCatalogId', e.target.value)} disabled={isPrimaryCatalog}>
-                      <option value="">Seleccionar catálogo padre</option>
-                      {parentCatalogs.map(pc => <option key={pc.id} value={pc.id}>{pc.name}</option>)}
-                    </select>
-                    <span style={styles.selectArrow}>▼</span>
-                  </div>
-                  {isPrimaryCatalog && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>No disponible para catálogos de tipo Primario.</div>}
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Seleccionar elemento padre</label>
-                  <div style={styles.selectWrapper}>
-                    <select style={{ ...styles.select, ...(isPrimaryCatalog || !formData.parentCatalogId ? styles.selectDisabled : {}), ...(errors.parentElementId ? styles.inputError : {}) }}
-                      value={formData.parentElementId} onChange={e => handleInputChange('parentElementId', e.target.value)} disabled={isPrimaryCatalog || !formData.parentCatalogId}>
-                      <option value="">Seleccionar elemento padre</option>
-                      {parentElements.map(pe => <option key={pe.id} value={pe.id}>{pe.element || pe.value}</option>)}
-                    </select>
-                    <span style={styles.selectArrow}>▼</span>
-                  </div>
-                  {errors.parentElementId && <div style={styles.fieldError}>{errors.parentElementId}</div>}
-                  {!isPrimaryCatalog && !formData.parentCatalogId && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Primero seleccione un catálogo padre.</div>}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <ElementStep3
+          expanded={expandedSteps.includes(3)}
+          isStep1Complete={isStep1Complete}
+          isPrimaryCatalog={isPrimaryCatalog}
+          formData={formData}
+          errors={errors}
+          parentCatalogs={parentCatalogs}
+          parentElements={parentElements}
+          onToggle={() => toggleStep(3)}
+          onInputChange={handleInputChange}
+        />
 
         <div style={styles.footer}>
-          <span style={styles.ghostBtn} onClick={handleBack}>Volver</span>
+          <span style={styles.ghostBtn} role="button" tabIndex={0} onClick={handleBack} onKeyDown={(e) => activateOnKey(e, handleBack)}>Volver</span>
           <div style={styles.buttonsRight}>
-            <span style={styles.ghostBtn} onClick={handleClear}>Limpiar</span>
+            <span style={styles.ghostBtn} role="button" tabIndex={0} onClick={handleClear} onKeyDown={(e) => activateOnKey(e, handleClear)}>Limpiar</span>
             <button style={{ ...styles.primaryBtn, opacity: isSaving ? 0.6 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}
               onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Guardando...' : 'Guardar Elemento'}
@@ -589,52 +750,32 @@ export default function ElementForm() {
       </div>
 
       {showExitModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <h3 style={styles.modalTitle}>¿Desea salir?</h3>
-            <p style={styles.modalText}>{isEditMode ? 'La información editada del elemento se perderá. ¿Desea continuar?' : 'La información ingresada para registrar el elemento se perderá. ¿Desea continuar?'}</p>
-            <div style={styles.modalButtons}>
-              <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={() => setShowExitModal(false)}>No</button>
-              <button style={styles.primaryBtn} onClick={() => { setShowExitModal(false); navigate(`/util/catalogos/catalogs/${id}/elementos`); }}>Sí</button>
-            </div>
-          </div>
-        </div>
+        <ElementExitModal
+          isEditMode={isEditMode}
+          onNo={() => setShowExitModal(false)}
+          onYes={() => { setShowExitModal(false); navigate(`/util/catalogos/catalogs/${id}/elementos`); }}
+        />
       )}
 
       {showChangeRelationModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <h3 style={styles.modalTitle}>Cambiar relación del elemento</h3>
-            <p style={styles.modalText}>
-              Vas a cambiar la relación de este elemento:<br /><br />
-              <strong>De:</strong> {originalParentCatalogName} → {originalParentElementName}<br />
-              <strong>A:</strong> {getNewParentCatalogName()} → {getNewParentElementName()}<br /><br />
-              ¿Deseas continuar?
-            </p>
-            <div style={styles.modalButtons}>
-              <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={cancelRelationChange}>Cancelar</button>
-              <button style={styles.primaryBtn} onClick={confirmRelationChange}>Confirmar Cambio</button>
-            </div>
-          </div>
-        </div>
+        <ChangeRelationModal
+          originalParentCatalogName={originalParentCatalogName}
+          originalParentElementName={originalParentElementName}
+          newParentCatalogName={getNewParentCatalogName()}
+          newParentElementName={getNewParentElementName()}
+          onCancel={cancelRelationChange}
+          onConfirm={confirmRelationChange}
+        />
       )}
 
       {showDeleteRelationModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <h3 style={styles.modalTitle}>Eliminar relación del elemento</h3>
-            <p style={styles.modalText}>
-              Vas a eliminar la relación del elemento '{formData.elementName}' con:<br /><br />
-              <strong>Catálogo Padre:</strong> {originalParentCatalogName}<br />
-              <strong>Elemento Padre:</strong> {originalParentElementName}<br /><br />
-              ¿Deseas continuar?
-            </p>
-            <div style={styles.modalButtons}>
-              <button style={{ ...styles.ghostBtn, border: '1px solid #e5e7eb', borderRadius: '0.5rem', textDecoration: 'none' }} onClick={cancelRelationChange}>Cancelar</button>
-              <button style={styles.dangerBtn} onClick={confirmRelationChange}>Confirmar Eliminación</button>
-            </div>
-          </div>
-        </div>
+        <DeleteRelationModal
+          elementName={formData.elementName}
+          originalParentCatalogName={originalParentCatalogName}
+          originalParentElementName={originalParentElementName}
+          onCancel={cancelRelationChange}
+          onConfirm={confirmRelationChange}
+        />
       )}
 
       {/* STM-15xx: el toast inferior derecha fue reemplazado por el modal

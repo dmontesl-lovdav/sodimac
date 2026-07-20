@@ -145,6 +145,7 @@ export const ParameterGrid: FC<ParameterGridProps> = ({
               cursor: enabled ? 'pointer' : 'not-allowed',
             }}
             title={getTitle()}
+            aria-label={getTitle()}
           >
             <input
               type="checkbox"

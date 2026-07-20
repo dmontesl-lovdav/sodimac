@@ -117,9 +117,12 @@ export default function AttachmentUploader({
         <div className="main">
             <div
                 className={!multiple && hasFiles ? 'action grayscale' : 'action'}
+                role="button"
+                tabIndex={0}
                 onDragOver={e => e.preventDefault()}
                 onDrop={dropFiles}
                 onClick={() => manualInputFile.current?.click()}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); manualInputFile.current?.click(); } }}
             >
                 <input
                     ref={manualInputFile}
@@ -147,16 +150,16 @@ export default function AttachmentUploader({
 
                         {!f.err && (
                             <>
-                                <div className="file-view" onClick={() => setPreviewFile(f)} title="Ver">
+                                <div className="file-view" role="button" tabIndex={0} onClick={() => setPreviewFile(f)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreviewFile(f); } }} title="Ver">
                                     <img src={view} alt="Ver" />
                                 </div>
-                                <div className="file-download" onClick={() => downloadFile(f)} title="Descargar">
+                                <div className="file-download" role="button" tabIndex={0} onClick={() => downloadFile(f)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); downloadFile(f); } }} title="Descargar">
                                     <img src={download} alt="Descargar" />
                                 </div>
                             </>
                         )}
 
-                        <div className="file-delete" onClick={() => removeFile(f.name)} title="Eliminar">
+                        <div className="file-delete" role="button" tabIndex={0} onClick={() => removeFile(f.name)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeFile(f.name); } }} title="Eliminar">
                             <img src={trash} alt="Borrar" />
                         </div>
 
@@ -166,7 +169,7 @@ export default function AttachmentUploader({
             </div>
 
             {previewFile && (
-                <div className="au-modal-overlay" onClick={closePreview}>
+                <div className="au-modal-overlay" role="button" tabIndex={0} aria-label="Cerrar vista previa" onClick={closePreview} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closePreview(); } }}>
                     <div className="au-modal" onClick={e => e.stopPropagation()}>
                         <button className="au-close" onClick={closePreview}>×</button>
                         <canvas ref={previewCanvas} className="au-canvas" />

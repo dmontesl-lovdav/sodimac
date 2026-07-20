@@ -42,7 +42,16 @@ const Card: React.FC<CardProps> = ({
 
     return (
         <div
+            role="button"
+            tabIndex={0}
+            aria-label={title}
             onClick={handleClick}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClick();
+                }
+            }}
             style={{
                 width: '255px',
                 height: '246px',

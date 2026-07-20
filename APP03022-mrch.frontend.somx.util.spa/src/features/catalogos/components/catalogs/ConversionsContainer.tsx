@@ -279,12 +279,12 @@ export default function ConversionsContainer() {
       </div>
 
       <div style={S.filterRow}>
-        <div style={S.filterGroup}><label style={S.filterLabel}>ID Elemento</label><input style={S.input} value={filters.idElemento} onChange={e => setFilters({ ...filters, idElemento: e.target.value })} /></div>
-        <div style={S.filterGroup}><label style={S.filterLabel}>Elemento</label><input style={S.input} value={filters.elemento} onChange={e => setFilters({ ...filters, elemento: e.target.value })} /></div>
-        <div style={S.filterGroup}><label style={S.filterLabel}>Valor Elemento</label><input style={S.input} value={filters.valor} onChange={e => setFilters({ ...filters, valor: e.target.value })} /></div>
-        <div style={S.filterGroup}><label style={S.filterLabel}>Catálogo Origen</label><input style={S.input} value={filters.catalogoOrigen} onChange={e => setFilters({ ...filters, catalogoOrigen: e.target.value })} /></div>
-        <div style={S.filterGroup}><label style={S.filterLabel}>Estatus</label>
-          <select style={S.select} value={filters.estatus} onChange={e => setFilters({ ...filters, estatus: e.target.value })}>
+        <div style={S.filterGroup}><label htmlFor="filter-conv-id-elemento" style={S.filterLabel}>ID Elemento</label><input id="filter-conv-id-elemento" style={S.input} value={filters.idElemento} onChange={e => setFilters({ ...filters, idElemento: e.target.value })} /></div>
+        <div style={S.filterGroup}><label htmlFor="filter-conv-elemento" style={S.filterLabel}>Elemento</label><input id="filter-conv-elemento" style={S.input} value={filters.elemento} onChange={e => setFilters({ ...filters, elemento: e.target.value })} /></div>
+        <div style={S.filterGroup}><label htmlFor="filter-conv-valor" style={S.filterLabel}>Valor Elemento</label><input id="filter-conv-valor" style={S.input} value={filters.valor} onChange={e => setFilters({ ...filters, valor: e.target.value })} /></div>
+        <div style={S.filterGroup}><label htmlFor="filter-conv-catalogo-origen" style={S.filterLabel}>Catálogo Origen</label><input id="filter-conv-catalogo-origen" style={S.input} value={filters.catalogoOrigen} onChange={e => setFilters({ ...filters, catalogoOrigen: e.target.value })} /></div>
+        <div style={S.filterGroup}><label htmlFor="filter-conv-estatus" style={S.filterLabel}>Estatus</label>
+          <select id="filter-conv-estatus" style={S.select} value={filters.estatus} onChange={e => setFilters({ ...filters, estatus: e.target.value })}>
             <option value="">Todos</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option>
           </select>
         </div>
@@ -329,7 +329,11 @@ export default function ConversionsContainer() {
                     <td style={S.td}>{formatDate(c.fechaActualizacion)}</td>
                     <td style={S.td}>
                       <div style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#0066CC' : '#cbd5e1', cursor: 'pointer', position: 'relative' }}
-                        onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}>
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Cambiar conversión principal"
+                        onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c }); } }}>
                         <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 2, left: c.esPrincipal ? 18 : 2, transition: '0.2s' }} />
                       </div>
                     </td>

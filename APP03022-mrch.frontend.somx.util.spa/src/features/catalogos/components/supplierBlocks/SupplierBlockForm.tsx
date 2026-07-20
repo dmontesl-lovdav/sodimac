@@ -291,8 +291,9 @@ const SupplierBlockForm = () => {
         <form onSubmit={handleSubmit}>
           <div style={styles.grid}>
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Número de Proveedor *</label>
+              <label htmlFor="block-supplierNumber" style={styles.formLabel}>Número de Proveedor *</label>
               <input
+                id="block-supplierNumber"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -309,8 +310,9 @@ const SupplierBlockForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Proveedor</label>
+              <label htmlFor="block-supplier-name" style={styles.formLabel}>Proveedor</label>
               <input
+                id="block-supplier-name"
                 type="text"
                 style={{
                   ...styles.formInput,
@@ -325,12 +327,13 @@ const SupplierBlockForm = () => {
             {supplierInfo && (
               <>
                 <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>RFC</label>
-                  <input type="text" style={styles.formInput} value={supplierInfo.rfc} disabled />
+                  <label htmlFor="block-supplier-rfc" style={styles.formLabel}>RFC</label>
+                  <input id="block-supplier-rfc" type="text" style={styles.formInput} value={supplierInfo.rfc} disabled />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Tipo de Proveedor</label>
+                  <label htmlFor="block-supplier-type" style={styles.formLabel}>Tipo de Proveedor</label>
                   <input
+                    id="block-supplier-type"
                     type="text"
                     style={styles.formInput}
                     value={supplierInfo.supplierType?.description || '-'}
@@ -341,8 +344,9 @@ const SupplierBlockForm = () => {
             )}
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Fecha Inicio Vigencia *</label>
+              <label htmlFor="block-validFrom" style={styles.formLabel}>Fecha Inicio Vigencia *</label>
               <input
+                id="block-validFrom"
                 type="date"
                 name="validFrom"
                 style={styles.formInput}
@@ -353,8 +357,9 @@ const SupplierBlockForm = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Fecha Fin Vigencia *</label>
+              <label htmlFor="block-validTo" style={styles.formLabel}>Fecha Fin Vigencia *</label>
               <input
+                id="block-validTo"
                 type="date"
                 name="validTo"
                 style={styles.formInput}
@@ -365,8 +370,9 @@ const SupplierBlockForm = () => {
             </div>
 
             <div style={{ ...styles.formGroup, gridColumn: 'span 2' }}>
-              <label style={styles.formLabel}>Razón del Bloqueo</label>
+              <label htmlFor="block-blockReason" style={styles.formLabel}>Razón del Bloqueo</label>
               <textarea
+                id="block-blockReason"
                 name="blockReason"
                 style={{ ...styles.formInput, resize: 'vertical' }}
                 value={formData.blockReason}
@@ -378,8 +384,9 @@ const SupplierBlockForm = () => {
 
             {isEditing && (
               <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Estatus</label>
+                <label htmlFor="block-status" style={styles.formLabel}>Estatus</label>
                 <select
+                  id="block-status"
                   name="status"
                   style={styles.formInput}
                   value={formData.status}

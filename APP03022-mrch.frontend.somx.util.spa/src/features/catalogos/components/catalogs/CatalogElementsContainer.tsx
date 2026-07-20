@@ -857,8 +857,9 @@ export default function CatalogElementsContainer() {
 
         <div style={styles.filtersContainer}>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>ID Elemento</label>
+            <label htmlFor="filter-elem-id" style={styles.filterLabel}>ID Elemento</label>
             <input
+              id="filter-elem-id"
               type="text"
               style={styles.filterInput}
               value={filters.idElement}
@@ -867,8 +868,9 @@ export default function CatalogElementsContainer() {
             />
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Clave del Elemento</label>
+            <label htmlFor="filter-elem-key" style={styles.filterLabel}>Clave del Elemento</label>
             <input
+              id="filter-elem-key"
               type="text"
               style={styles.filterInput}
               value={filters.key}
@@ -877,8 +879,9 @@ export default function CatalogElementsContainer() {
             />
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Elemento</label>
+            <label htmlFor="filter-elem-element" style={styles.filterLabel}>Elemento</label>
             <input
+              id="filter-elem-element"
               type="text"
               style={styles.filterInput}
               value={filters.element}
@@ -887,8 +890,9 @@ export default function CatalogElementsContainer() {
             />
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Valor Elemento</label>
+            <label htmlFor="filter-elem-value" style={styles.filterLabel}>Valor Elemento</label>
             <input
+              id="filter-elem-value"
               type="text"
               style={styles.filterInput}
               value={filters.value}
@@ -897,8 +901,9 @@ export default function CatalogElementsContainer() {
             />
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Catálogo Padre</label>
+            <label htmlFor="filter-elem-parent-catalog" style={styles.filterLabel}>Catálogo Padre</label>
             <select
+              id="filter-elem-parent-catalog"
               style={styles.filterSelect}
               value={filters.parentCatalogId}
               onChange={(e) => handleFilterChange('parentCatalogId', e.target.value)}
@@ -912,8 +917,9 @@ export default function CatalogElementsContainer() {
             </select>
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Elemento Padre</label>
+            <label htmlFor="filter-elem-parent-element" style={styles.filterLabel}>Elemento Padre</label>
             <select
+              id="filter-elem-parent-element"
               style={{
                 ...styles.filterSelect,
                 ...(filters.parentCatalogId ? {} : { backgroundColor: '#f8fafc', color: '#94a3b8', cursor: 'not-allowed' }),
@@ -929,8 +935,9 @@ export default function CatalogElementsContainer() {
             </select>
           </div>
           <div style={styles.filterField}>
-            <label style={styles.filterLabel}>Estatus</label>
+            <label htmlFor="filter-elem-status" style={styles.filterLabel}>Estatus</label>
             <select
+              id="filter-elem-status"
               style={styles.filterSelect}
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -941,7 +948,13 @@ export default function CatalogElementsContainer() {
             </select>
           </div>
           <div style={styles.filterButtons}>
-            <span style={styles.ghostBtn} onClick={handleClear}>
+            <span
+              style={styles.ghostBtn}
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClear(); } }}
+            >
               Limpiar
             </span>
             <button
@@ -1104,7 +1117,11 @@ export default function CatalogElementsContainer() {
                             opacity: togglingId === el.id ? 0.5 : 1,
                             pointerEvents: togglingId === el.id ? 'none' : 'auto',
                           }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Cambiar estatus del elemento"
                           onClick={() => handleToggleStatus(el.id)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(el.id); } }}
                         >
                           <span
                             style={{
@@ -1148,7 +1165,13 @@ export default function CatalogElementsContainer() {
           {exportError && (
             <span style={{ fontSize: '0.75rem', color: '#dc2626', marginRight: 'auto' }}>{exportError}</span>
           )}
-          <span style={styles.ghostBtn} onClick={() => navigate('/util/catalogos/catalogs')}>
+          <span
+            style={styles.ghostBtn}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate('/util/catalogos/catalogs')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/util/catalogos/catalogs'); } }}
+          >
             Volver
           </span>
           {showResults && filteredElements.length > 0 && (

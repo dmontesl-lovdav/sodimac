@@ -648,8 +648,9 @@ const SuppliersContainer = () => {
 
           <div style={styles.filtersRow}>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Número Proveedor</label>
+              <label htmlFor="filter-supplier-number" style={styles.filterLabel}>Número Proveedor</label>
               <input
+                id="filter-supplier-number"
                 type="text"
                 style={styles.filterInput}
                 value={filters.supplierNumber}
@@ -658,8 +659,9 @@ const SuppliersContainer = () => {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Razón Social</label>
+              <label htmlFor="filter-supplier-business-name" style={styles.filterLabel}>Razón Social</label>
               <input
+                id="filter-supplier-business-name"
                 type="text"
                 style={styles.filterInput}
                 value={filters.businessName}
@@ -668,8 +670,9 @@ const SuppliersContainer = () => {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>RFC</label>
+              <label htmlFor="filter-supplier-rfc" style={styles.filterLabel}>RFC</label>
               <input
+                id="filter-supplier-rfc"
                 type="text"
                 style={styles.filterInput}
                 value={filters.rfc}
@@ -678,8 +681,9 @@ const SuppliersContainer = () => {
               />
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Tipo</label>
+              <label htmlFor="filter-supplier-type" style={styles.filterLabel}>Tipo</label>
               <select
+                id="filter-supplier-type"
                 style={styles.filterSelect}
                 value={filters.typeId}
                 onChange={(e) => setFilters({ ...filters, typeId: e.target.value })}
@@ -693,8 +697,9 @@ const SuppliersContainer = () => {
               </select>
             </div>
             <div style={styles.filterGroup}>
-              <label style={styles.filterLabel}>Estatus</label>
+              <label htmlFor="filter-supplier-status" style={styles.filterLabel}>Estatus</label>
               <select
+                id="filter-supplier-status"
                 style={styles.filterSelect}
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -833,7 +838,10 @@ const SuppliersContainer = () => {
                               opacity: togglingId === supplier.id ? 0.5 : 1,
                               pointerEvents: togglingId === supplier.id ? 'none' : 'auto',
                             }}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => handleToggleStatus(supplier)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(supplier); } }}
                             title={
                               supplier.status === 1
                                 ? 'Desactivar proveedor'

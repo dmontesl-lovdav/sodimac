@@ -562,7 +562,7 @@ export default function ImportElementsContainer() {
           const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
           resolve(rows);
         } catch (err) {
-          reject(err);
+          reject(err instanceof Error ? err : new Error(String(err)));
         }
       };
       reader.onerror = () => reject(new Error('Error reading file'));
@@ -739,7 +739,18 @@ export default function ImportElementsContainer() {
             <div style={styles.stepLine} />
           </div>
           <div style={styles.stepContent}>
-            <div style={styles.stepHeader} onClick={() => toggleStep(1)}>
+            <div
+              style={styles.stepHeader}
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleStep(1)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleStep(1);
+                }
+              }}
+            >
               <div>
                 <div style={styles.stepTitle}>Elementos del Catálogo</div>
                 <div style={styles.stepDescription}>
@@ -776,7 +787,18 @@ export default function ImportElementsContainer() {
             <div style={styles.stepNumber}>2</div>
           </div>
           <div style={styles.stepContent}>
-            <div style={styles.stepHeader} onClick={() => toggleStep(2)}>
+            <div
+              style={styles.stepHeader}
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleStep(2)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleStep(2);
+                }
+              }}
+            >
               <div>
                 <div style={styles.stepTitle}>Cargar Plantilla</div>
                 <div style={styles.stepDescription}>
@@ -805,12 +827,22 @@ export default function ImportElementsContainer() {
                     ...(isDragging ? styles.dropzoneActive : {}),
                     ...(uploadedFile && !uploadedFile.error ? styles.dropzoneDisabled : {}),
                   }}
+                  role="button"
+                  tabIndex={0}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onClick={() => {
                     if (!uploadedFile || uploadedFile.error) {
                       fileInputRef.current?.click();
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (!uploadedFile || uploadedFile.error) {
+                        fileInputRef.current?.click();
+                      }
                     }
                   }}
                 >
@@ -902,11 +934,33 @@ export default function ImportElementsContainer() {
         )}
 
         <div style={styles.footer}>
-          <span style={styles.ghostBtn} onClick={handleBack}>
+          <span
+            style={styles.ghostBtn}
+            role="button"
+            tabIndex={0}
+            onClick={handleBack}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleBack();
+              }
+            }}
+          >
             Volver
           </span>
           <div style={styles.buttonsRight}>
-            <span style={styles.ghostBtn} onClick={handleClear}>
+            <span
+              style={styles.ghostBtn}
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleClear();
+                }
+              }}
+            >
               Limpiar
             </span>
             <button

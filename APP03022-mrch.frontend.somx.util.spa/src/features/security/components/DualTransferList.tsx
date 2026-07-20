@@ -111,6 +111,8 @@ export function DualTransferList({
       <div className="dual-grid">
         <section
           className="dual-column"
+          role="group"
+          aria-label={leftTitle}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -139,6 +141,8 @@ export function DualTransferList({
               <div
                 key={item.id}
                 className="dual-item dual-item--draggable"
+                role="group"
+                aria-label={item.title}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >
@@ -170,6 +174,8 @@ export function DualTransferList({
 
         <section
           className="dual-column"
+          role="group"
+          aria-label={rightTitle}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -182,6 +188,8 @@ export function DualTransferList({
               <div
                 key={item.id}
                 className="dual-item dual-item--draggable"
+                role="group"
+                aria-label={item.title}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >

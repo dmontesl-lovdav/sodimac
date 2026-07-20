@@ -8,7 +8,6 @@ import { APP_EVENT, PermissionGate } from "@shared/security";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
 import { fetchSystemParameters, formatLocalDateStr, getErrorMessage, buildFiscalSpaUrl, SystemParameter, fetchProvidersAsCatalog } from "@/utils/utils";
-import "@/shared/components/ui/alerts/Alerts.css";
 import type { Invoice } from "../invoice/interfaces";
 import { createCreditNotePublishClient } from "./api/CreditNotePublishClient";
 import { BREADCRUMB, MAX_BYTES, MAX_MB } from "./parts/constants";
@@ -18,10 +17,11 @@ import { resolveXmlValidationCommand } from "./utils/resolveXmlValidationCommand
 import { buildPublishFormData } from "./parts/buildPublishFormData";
 import { useRelatedInvoice } from "./parts/useRelatedInvoice";
 import RelatedInvoiceGrid from "./parts/RelatedInvoiceGrid";
+import DiscountInfoGrid from "./parts/DiscountInfoGrid";
 import CreditNoteSummary from "./parts/CreditNoteSummary";
 import PublishResultNotice from "./parts/PublishResultNotice";
 import { buildFinishModal, isPublishSuccessful } from "./parts/publishResult";
-import type { CreditNoteXmlData, FinishModalState } from "./parts/types";
+import type { CreditNoteXmlData, FinishModalState, PublishQuery } from "./parts/types";
 import "./PublishCreditNote.css";
 
 const PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT = 12;
@@ -75,9 +75,16 @@ export default function PublishCreditNote() {
 
 function PublishCreditNoteContent() {
   const location = useLocation();
+  const [discountInfo, setDiscountInfo] = useState<PublishQuery | null>(null);
   const publishClient = useMemo(() => createCreditNotePublishClient(), []);
   const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
   const isDiscountFlow = isCommercialDiscountFlow(query);
+
+  useEffect(() => {
+    if (isDiscountFlow) {
+      setDiscountInfo(query);
+    }
+  }, [isDiscountFlow, query]);
 
   const xmlInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -219,7 +226,10 @@ function PublishCreditNoteContent() {
       const cmd = resolveXmlValidationCommand(data, parsed);
       setIsValidCreditNote(cmd.isValid);
       setDataMsg(cmd.dataMsg);
-      setRelatedInvoiceUuid(cmd.relatedInvoiceUuid);
+      if(!isDiscountFlow){
+        setRelatedInvoiceUuid(cmd.relatedInvoiceUuid);
+      }
+      
       if (cmd.alert) showAlert(cmd.alert);
     } catch (error: unknown) {
       if (!isActive()) return;
@@ -364,6 +374,12 @@ function PublishCreditNoteContent() {
               loading={loadingInvoice}
               onViewInvoice={handleViewInvoice}
             />
+          </div>
+        )}
+        {discountInfo && (
+          <div>
+            <h2 className="pcn-section-title">Datos del descuento</h2>
+            <DiscountInfoGrid discount={discountInfo} />
           </div>
         )}
 

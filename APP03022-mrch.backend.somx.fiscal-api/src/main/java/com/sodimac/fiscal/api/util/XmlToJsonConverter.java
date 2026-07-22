@@ -127,18 +127,21 @@ public class XmlToJsonConverter {
             };
 
             for (String filePath : invoiceFiles) {
-                try {
-                    String json = convertXmlFileToJson(filePath);
-                    jsonResults.add(json);
-                } catch (IOException e) {
-                    System.err.println("Error procesando archivo " + filePath + ": " + e.getMessage());
-                }
+                convertFileSafely(filePath, jsonResults);
             }
         } catch (Exception e) {
             System.err.println("Error general al procesar archivos XML: " + e.getMessage());
         }
 
         return jsonResults;
+    }
+
+    private void convertFileSafely(String filePath, List<String> jsonResults) {
+        try {
+            jsonResults.add(convertXmlFileToJson(filePath));
+        } catch (IOException e) {
+            System.err.println("Error procesando archivo " + filePath + ": " + e.getMessage());
+        }
     }
 
     /**

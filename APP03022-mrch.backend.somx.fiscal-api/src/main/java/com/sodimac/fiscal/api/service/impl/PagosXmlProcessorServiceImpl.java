@@ -201,11 +201,7 @@ public class PagosXmlProcessorServiceImpl implements PagosXmlProcessorService {
             if (pagos.getPagos() != null) {
                 for (var pago : pagos.getPagos()) {
                     if (pago.getMonto() != null) {
-                        try {
-                            total += Double.parseDouble(pago.getMonto());
-                        } catch (NumberFormatException e) {
-                            log.warn("No se puede parsear monto: {}", pago.getMonto());
-                        }
+                        total += parseMontoSafe(pago.getMonto());
                     }
                 }
             }
@@ -215,6 +211,15 @@ public class PagosXmlProcessorServiceImpl implements PagosXmlProcessorService {
         } catch (Exception e) {
             log.error("Error calculando monto total de pagos", e);
             return "0";
+        }
+    }
+
+    private double parseMontoSafe(String monto) {
+        try {
+            return Double.parseDouble(monto);
+        } catch (NumberFormatException e) {
+            log.warn("No se puede parsear monto: {}", monto);
+            return 0.0;
         }
     }
 }

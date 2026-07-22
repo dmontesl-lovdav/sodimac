@@ -2938,16 +2938,16 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info(LOG_UUID, uuid);
         log.info("Transición: {} -> {}", request.getEstatusOrigen(), request.getEstatusDestino());
 
+        UUID fiscalUuid;
+        try {
+            fiscalUuid = UUID.fromString(uuid);
+        } catch (IllegalArgumentException e) {
+            log.error("UUID inválido: {}", uuid);
+            return InvoiceStatusUpdateResponse.error("BUS3100", "UUID inválido: " + uuid);
+        }
+
         try {
             // === PASO 1: BUSCAR DOCUMENTO ===
-            UUID fiscalUuid;
-            try {
-                fiscalUuid = UUID.fromString(uuid);
-            } catch (IllegalArgumentException e) {
-                log.error("UUID inválido: {}", uuid);
-                return InvoiceStatusUpdateResponse.error("BUS3100", "UUID inválido: " + uuid);
-            }
-
             Optional<InvoiceEntity> invoiceOpt = invoiceRepository.findByFiscalUuid(fiscalUuid);
             if (invoiceOpt.isEmpty()) {
                 log.error(LOG_DOC_NO_ENCONTRADO, uuid);

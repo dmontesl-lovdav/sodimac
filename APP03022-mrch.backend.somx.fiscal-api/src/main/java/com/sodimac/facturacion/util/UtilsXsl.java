@@ -40,10 +40,4 @@ public final class UtilsXsl {
 		return sbStr.toString();
 	}
 	
-	public static void main(String[] args) {
-		String sello = "MONOMLAVALTOVI";
-		String concat = toCamelCase(sello);
-		System.out.println(concat);
-		
-	}
 }

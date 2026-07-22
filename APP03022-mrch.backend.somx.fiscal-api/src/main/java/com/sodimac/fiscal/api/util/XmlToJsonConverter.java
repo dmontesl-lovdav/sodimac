@@ -7,6 +7,7 @@ import com.sodimac.fiscal.api.model.dto.invoicexml.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +34,7 @@ import java.util.Map;
  * @since 2024
  */
 @Component
+@Slf4j
 public class XmlToJsonConverter {
 
     private static final String K_VERSION = "Version";
@@ -130,7 +132,7 @@ public class XmlToJsonConverter {
                 convertFileSafely(filePath, jsonResults);
             }
         } catch (Exception e) {
-            System.err.println("Error general al procesar archivos XML: " + e.getMessage());
+            log.error("Error general al procesar archivos XML: {}", e.getMessage());
         }
 
         return jsonResults;
@@ -140,7 +142,7 @@ public class XmlToJsonConverter {
         try {
             jsonResults.add(convertXmlFileToJson(filePath));
         } catch (IOException e) {
-            System.err.println("Error procesando archivo " + filePath + ": " + e.getMessage());
+            log.error("Error procesando archivo {}: {}", filePath, e.getMessage());
         }
     }
 
@@ -1014,7 +1016,7 @@ public class XmlToJsonConverter {
 
             return timbre;
         } catch (Exception e) {
-            System.err.println("Error al extraer TimbreFiscalDigital: " + e.getMessage());
+            log.error("Error al extraer TimbreFiscalDigital: {}", e.getMessage());
             return null;
         }
     }
@@ -1078,7 +1080,7 @@ public class XmlToJsonConverter {
 
             return impuestos;
         } catch (Exception e) {
-            System.err.println("Error al extraer impuestos de factura: " + e.getMessage());
+            log.error("Error al extraer impuestos de factura: {}", e.getMessage());
             return null;
         }
     }

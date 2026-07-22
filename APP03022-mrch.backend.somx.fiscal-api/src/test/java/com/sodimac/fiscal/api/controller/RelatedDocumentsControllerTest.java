@@ -204,7 +204,7 @@ class RelatedDocumentsControllerTest {
     /**
      * Test 6: Validar estructura completa del DTO de respuesta.
      *
-     * Valida que el documento relacionado retornado contenga todos
+     * Valida que el documento relacionado retornado contenga la totalidad de
      * los campos esperados según la estructura del SAT.
      */
     // @Test

@@ -17,7 +17,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * · <b>cors.allowed-origins</b> (array coma-separado, admite comodines)
  * · <b>cors.allowed-mappings</b> (lista de paths que exponen CORS)
  *
- * – Por defecto permite todo: origins="*", mappings="/**".
+ * – Por defecto permite cualquier origen: origins="*", mappings="/**".
  * Como usamos <i>allowedOriginPatterns</i>, es compatible con
  * <i>allowCredentials(true)</i> incluso cuando hay comodines.
  * </p>

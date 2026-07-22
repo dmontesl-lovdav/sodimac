@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Implementación del servicio de registro de complementos de pago.
  *
- * Orquesta todo el proceso de validación, parseo y registro.
+ * Orquesta el proceso completo de validación, parseo y registro.
  *
  * @author Sodimac Tech Team
  * @version 1.0

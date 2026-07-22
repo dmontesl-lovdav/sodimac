@@ -6,7 +6,7 @@ import com.sodimac.fiscal.api.model.dto.response.PaymentRegistrationResponse;
 /**
  * Servicio principal para el registro de complementos de pago.
  *
- * Orquesta todo el proceso de validación, parseo y registro de complementos de pago
+ * Orquesta el proceso completo de validación, parseo y registro de complementos de pago
  * según las reglas de negocio establecidas.
  *
  * @author Sodimac Tech Team

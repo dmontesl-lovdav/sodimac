@@ -49,54 +49,6 @@
         "prioritizedRule":  false
     },
     {
-        "key":  "1200facf-23f3-4e50-b82f-3cfc6b5d5d32",
-        "rule":  "java:S1135",
-        "severity":  "INFO",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/config/CorsConfigurer.java",
-        "project":  "gh-1122007633",
-        "line":  20,
-        "hash":  "32460ca7f20d515ab945ee0a8a4ae15c",
-        "textRange":  {
-                          "startLine":  20,
-                          "endLine":  20,
-                          "startOffset":  0,
-                          "endOffset":  59
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Complete the task associated to this TODO comment.",
-        "effort":  "0min",
-        "debt":  "0min",
-        "author":  "g_dti29@sodimac.com.mx",
-        "tags":  [
-                     "cwe"
-                 ],
-        "creationDate":  "2025-08-13T19:41:25+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "COMPLETE",
-        "cleanCodeAttributeCategory":  "INTENTIONAL",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "LOW"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
         "key":  "055df792-6059-4ee0-b96c-73e306e6e5a8",
         "rule":  "java:S1874",
         "severity":  "MINOR",
@@ -2182,54 +2134,6 @@
         "prioritizedRule":  false
     },
     {
-        "key":  "babbb485-666d-4fd1-90ca-b8c78d10e803",
-        "rule":  "java:S1135",
-        "severity":  "INFO",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/service/PaymentRegistrationService.java",
-        "project":  "gh-1122007633",
-        "line":  9,
-        "hash":  "e3c9853663b368ba8149fe4bb5d01b49",
-        "textRange":  {
-                          "startLine":  9,
-                          "endLine":  9,
-                          "startOffset":  0,
-                          "endOffset":  84
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Complete the task associated to this TODO comment.",
-        "effort":  "0min",
-        "debt":  "0min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "cwe"
-                 ],
-        "creationDate":  "2025-10-20T18:11:46+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "COMPLETE",
-        "cleanCodeAttributeCategory":  "INTENTIONAL",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "LOW"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
         "key":  "514e85fc-dbf7-4e19-a2e3-7aef01e108f9",
         "rule":  "java:S1130",
         "severity":  "MINOR",
@@ -3123,54 +3027,6 @@
                          ],
         "cleanCodeAttribute":  "CONVENTIONAL",
         "cleanCodeAttributeCategory":  "CONSISTENT",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "LOW"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
-        "key":  "c68676ee-79ab-4d76-bfad-b9ede13e0622",
-        "rule":  "java:S1135",
-        "severity":  "INFO",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/service/impl/CfdiXmlProcessorServiceImpl.java",
-        "project":  "gh-1122007633",
-        "line":  56,
-        "hash":  "d353a60cc17626fd939038a706f67ab4",
-        "textRange":  {
-                          "startLine":  56,
-                          "endLine":  56,
-                          "startOffset":  0,
-                          "endOffset":  97
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Complete the task associated to this TODO comment.",
-        "effort":  "0min",
-        "debt":  "0min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "cwe"
-                 ],
-        "creationDate":  "2026-06-03T22:51:39+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "COMPLETE",
-        "cleanCodeAttributeCategory":  "INTENTIONAL",
         "impacts":  [
                         {
                             "softwareQuality":  "MAINTAINABILITY",
@@ -7891,54 +7747,6 @@
                          ],
         "cleanCodeAttribute":  "CONVENTIONAL",
         "cleanCodeAttributeCategory":  "CONSISTENT",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "LOW"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
-        "key":  "11b1411a-110f-470a-a871-3957de894dc1",
-        "rule":  "java:S1135",
-        "severity":  "INFO",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/service/impl/PaymentRegistrationServiceImpl.java",
-        "project":  "gh-1122007633",
-        "line":  55,
-        "hash":  "85cf1e4fe33499d53ae4ee7259cce15d",
-        "textRange":  {
-                          "startLine":  55,
-                          "endLine":  55,
-                          "startOffset":  0,
-                          "endOffset":  61
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Complete the task associated to this TODO comment.",
-        "effort":  "0min",
-        "debt":  "0min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "cwe"
-                 ],
-        "creationDate":  "2025-10-20T18:11:46+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "COMPLETE",
-        "cleanCodeAttributeCategory":  "INTENTIONAL",
         "impacts":  [
                         {
                             "softwareQuality":  "MAINTAINABILITY",

@@ -37,7 +37,7 @@
     {
         "rule":  "java:S1135",
         "name":  "Track uses of \"TODO\" tags",
-        "count":  12,
+        "count":  8,
         "htmlDesc":  null,
         "howToFix":  null
     },

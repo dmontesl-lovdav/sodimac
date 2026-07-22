@@ -1,17 +1,17 @@
 ﻿[
     {
-        "rule":  "java:S106",
-        "name":  "Standard outputs should not be used directly to log anything",
-        "count":  5,
-        "htmlDesc":  null,
-        "howToFix":  null
-    },
-    {
         "rule":  "java:S107",
         "name":  "Methods should not have too many parameters",
         "count":  9,
         "htmlDesc":  null,
         "howToFix":  null
+    },
+    {
+        "rule":  "java:S1118",
+        "name":  "Utility classes should not have public constructors",
+        "count":  null,
+        "htmlDesc":  null,
+        "howToFix":  "\u003cp\u003eTo prevent the class from being instantiated, you should define a non-public constructor. This will prevent the compiler from implicitly generating\na public parameterless constructor.\u003c/p\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nclass StringUtils { // Noncompliant\n\n  public static String concatenate(String s1, String s2) {\n    return s1 + s2;\n  }\n\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nclass StringUtils { // Compliant\n\n  private StringUtils() {\n    throw new IllegalStateException(\"Utility class\");\n  }\n\n  public static String concatenate(String s1, String s2) {\n    return s1 + s2;\n  }\n\n}\n\u003c/pre\u003e"
     },
     {
         "rule":  "java:S112",
@@ -37,7 +37,7 @@
     {
         "rule":  "java:S1135",
         "name":  "Track uses of \"TODO\" tags",
-        "count":  8,
+        "count":  7,
         "htmlDesc":  null,
         "howToFix":  null
     },

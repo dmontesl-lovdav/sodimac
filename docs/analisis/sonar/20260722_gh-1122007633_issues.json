@@ -1,32 +1,31 @@
 ﻿[
     {
-        "key":  "f1410f64-46db-430b-9911-c386fe57ac0e",
-        "rule":  "java:S106",
+        "key":  "48af147f-52c5-47fb-8359-7d5c2517b651",
+        "rule":  "java:S1118",
         "severity":  "MAJOR",
         "component":  "gh-1122007633:src/main/java/com/sodimac/facturacion/util/UtilsXsl.java",
         "project":  "gh-1122007633",
-        "line":  46,
-        "hash":  "cdd70555897ba10deda5458fe4b0ddb9",
+        "line":  3,
+        "hash":  "86c7a35634f21e4772c3143c0c04fd66",
         "textRange":  {
-                          "startLine":  46,
-                          "endLine":  46,
-                          "startOffset":  2,
-                          "endOffset":  12
+                          "startLine":  3,
+                          "endLine":  3,
+                          "startOffset":  19,
+                          "endOffset":  27
                       },
         "flows":  [
 
                   ],
         "status":  "OPEN",
-        "message":  "Replace this use of System.out by a logger.",
-        "effort":  "10min",
-        "debt":  "10min",
+        "message":  "Add a private constructor to hide the implicit public one.",
+        "effort":  "5min",
+        "debt":  "5min",
         "author":  "robertoguzman776@gmail.com",
         "tags":  [
-                     "bad-practice",
-                     "cert"
+                     "design"
                  ],
-        "creationDate":  "2025-11-27T14:06:52+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
+        "creationDate":  "2026-07-22T22:42:47+0000",
+        "updateDate":  "2026-07-22T22:42:47+0000",
         "type":  "CODE_SMELL",
         "branch":  "uat",
         "scope":  "MAIN",
@@ -37,8 +36,8 @@
         "codeVariants":  [
 
                          ],
-        "cleanCodeAttribute":  "MODULAR",
-        "cleanCodeAttributeCategory":  "ADAPTABLE",
+        "cleanCodeAttribute":  "CLEAR",
+        "cleanCodeAttributeCategory":  "INTENTIONAL",
         "impacts":  [
                         {
                             "softwareQuality":  "MAINTAINABILITY",
@@ -10525,114 +10524,16 @@
         "prioritizedRule":  false
     },
     {
-        "key":  "930c4aa4-ace4-4657-84b5-519ee4b540b3",
-        "rule":  "java:S106",
-        "severity":  "MAJOR",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-        "project":  "gh-1122007633",
-        "line":  133,
-        "hash":  "ce53759796644f5e63b18de5d705d524",
-        "textRange":  {
-                          "startLine":  133,
-                          "endLine":  133,
-                          "startOffset":  12,
-                          "endOffset":  22
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Replace this use of System.err by a logger.",
-        "effort":  "10min",
-        "debt":  "10min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "bad-practice",
-                     "cert"
-                 ],
-        "creationDate":  "2025-09-18T18:59:36+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "MODULAR",
-        "cleanCodeAttributeCategory":  "ADAPTABLE",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "MEDIUM"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
-        "key":  "578b8c5c-7a33-4e15-9a31-849804bfe7fa",
-        "rule":  "java:S106",
-        "severity":  "MAJOR",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-        "project":  "gh-1122007633",
-        "line":  143,
-        "hash":  "666f5b15a14516521a32921bbccea523",
-        "textRange":  {
-                          "startLine":  143,
-                          "endLine":  143,
-                          "startOffset":  12,
-                          "endOffset":  22
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Replace this use of System.err by a logger.",
-        "effort":  "10min",
-        "debt":  "10min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "bad-practice",
-                     "cert"
-                 ],
-        "creationDate":  "2025-09-18T18:59:36+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "MODULAR",
-        "cleanCodeAttributeCategory":  "ADAPTABLE",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "MEDIUM"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
         "key":  "c39cc4a9-0069-487e-842c-80780776ca4c",
         "rule":  "java:S3776",
         "severity":  "CRITICAL",
         "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
         "project":  "gh-1122007633",
-        "line":  152,
+        "line":  154,
         "hash":  "49f44d9d0c75ae7fbe1fe371718c2c0a",
         "textRange":  {
-                          "startLine":  152,
-                          "endLine":  152,
+                          "startLine":  154,
+                          "endLine":  154,
                           "startOffset":  25,
                           "endOffset":  43
                       },
@@ -10642,8 +10543,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  159,
-                                                                  "endLine":  159,
+                                                                  "startLine":  161,
+                                                                  "endLine":  161,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10659,8 +10560,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  162,
-                                                                  "endLine":  162,
+                                                                  "startLine":  164,
+                                                                  "endLine":  164,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10676,8 +10577,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  165,
-                                                                  "endLine":  165,
+                                                                  "startLine":  167,
+                                                                  "endLine":  167,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10693,8 +10594,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  168,
-                                                                  "endLine":  168,
+                                                                  "startLine":  170,
+                                                                  "endLine":  170,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10710,8 +10611,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  171,
-                                                                  "endLine":  171,
+                                                                  "startLine":  173,
+                                                                  "endLine":  173,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10727,8 +10628,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  174,
-                                                                  "endLine":  174,
+                                                                  "startLine":  176,
+                                                                  "endLine":  176,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10744,8 +10645,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  177,
-                                                                  "endLine":  177,
+                                                                  "startLine":  179,
+                                                                  "endLine":  179,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10761,8 +10662,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  180,
-                                                                  "endLine":  180,
+                                                                  "startLine":  182,
+                                                                  "endLine":  182,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10778,8 +10679,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  183,
-                                                                  "endLine":  183,
+                                                                  "startLine":  185,
+                                                                  "endLine":  185,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10795,8 +10696,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  186,
-                                                                  "endLine":  186,
+                                                                  "startLine":  188,
+                                                                  "endLine":  188,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10812,8 +10713,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  189,
-                                                                  "endLine":  189,
+                                                                  "startLine":  191,
+                                                                  "endLine":  191,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10829,8 +10730,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  192,
-                                                                  "endLine":  192,
+                                                                  "startLine":  194,
+                                                                  "endLine":  194,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10846,8 +10747,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  195,
-                                                                  "endLine":  195,
+                                                                  "startLine":  197,
+                                                                  "endLine":  197,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10863,8 +10764,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  198,
-                                                                  "endLine":  198,
+                                                                  "startLine":  200,
+                                                                  "endLine":  200,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10880,8 +10781,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  201,
-                                                                  "endLine":  201,
+                                                                  "startLine":  203,
+                                                                  "endLine":  203,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10897,8 +10798,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  204,
-                                                                  "endLine":  204,
+                                                                  "startLine":  206,
+                                                                  "endLine":  206,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10914,8 +10815,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  207,
-                                                                  "endLine":  207,
+                                                                  "startLine":  209,
+                                                                  "endLine":  209,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10931,8 +10832,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  210,
-                                                                  "endLine":  210,
+                                                                  "startLine":  212,
+                                                                  "endLine":  212,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10948,8 +10849,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  215,
-                                                                  "endLine":  215,
+                                                                  "startLine":  217,
+                                                                  "endLine":  217,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -10965,8 +10866,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  218,
-                                                                  "endLine":  218,
+                                                                  "startLine":  220,
+                                                                  "endLine":  220,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -10982,8 +10883,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  221,
-                                                                  "endLine":  221,
+                                                                  "startLine":  223,
+                                                                  "endLine":  223,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -10999,8 +10900,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  224,
-                                                                  "endLine":  224,
+                                                                  "startLine":  226,
+                                                                  "endLine":  226,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11016,8 +10917,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  231,
-                                                                  "endLine":  231,
+                                                                  "startLine":  233,
+                                                                  "endLine":  233,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11033,8 +10934,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  234,
-                                                                  "endLine":  234,
+                                                                  "startLine":  236,
+                                                                  "endLine":  236,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11050,8 +10951,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  237,
-                                                                  "endLine":  237,
+                                                                  "startLine":  239,
+                                                                  "endLine":  239,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11067,8 +10968,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  240,
-                                                                  "endLine":  240,
+                                                                  "startLine":  242,
+                                                                  "endLine":  242,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11084,8 +10985,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  243,
-                                                                  "endLine":  243,
+                                                                  "startLine":  245,
+                                                                  "endLine":  245,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11101,8 +11002,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  246,
-                                                                  "endLine":  246,
+                                                                  "startLine":  248,
+                                                                  "endLine":  248,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11151,11 +11052,11 @@
         "severity":  "INFO",
         "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
         "project":  "gh-1122007633",
-        "line":  152,
+        "line":  154,
         "hash":  "49f44d9d0c75ae7fbe1fe371718c2c0a",
         "textRange":  {
-                          "startLine":  152,
-                          "endLine":  152,
+                          "startLine":  154,
+                          "endLine":  154,
                           "startOffset":  25,
                           "endOffset":  43
                       },
@@ -11200,11 +11101,11 @@
         "severity":  "CRITICAL",
         "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
         "project":  "gh-1122007633",
-        "line":  480,
+        "line":  482,
         "hash":  "42c86c196e719c7faf64d204a0a07afa",
         "textRange":  {
-                          "startLine":  480,
-                          "endLine":  480,
+                          "startLine":  482,
+                          "endLine":  482,
                           "startOffset":  23,
                           "endOffset":  42
                       },
@@ -11214,8 +11115,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  487,
-                                                                  "endLine":  487,
+                                                                  "startLine":  489,
+                                                                  "endLine":  489,
                                                                   "startOffset":  8,
                                                                   "endOffset":  10
                                                               },
@@ -11231,8 +11132,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  487,
-                                                                  "endLine":  487,
+                                                                  "startLine":  489,
+                                                                  "endLine":  489,
                                                                   "startOffset":  43,
                                                                   "endOffset":  45
                                                               },
@@ -11248,63 +11149,46 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  492,
-                                                                  "endLine":  492,
-                                                                  "startOffset":  8,
-                                                                  "endOffset":  10
-                                                              },
-                                                "msg":  "+1",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
                                                                   "startLine":  494,
                                                                   "endLine":  494,
-                                                                  "startOffset":  12,
-                                                                  "endOffset":  14
-                                                              },
-                                                "msg":  "+2 (incl 1 for nesting)",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  497,
-                                                                  "endLine":  497,
-                                                                  "startOffset":  12,
-                                                                  "endOffset":  14
-                                                              },
-                                                "msg":  "+2 (incl 1 for nesting)",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  503,
-                                                                  "endLine":  503,
                                                                   "startOffset":  8,
                                                                   "endOffset":  10
                                                               },
                                                 "msg":  "+1",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  496,
+                                                                  "endLine":  496,
+                                                                  "startOffset":  12,
+                                                                  "endOffset":  14
+                                                              },
+                                                "msg":  "+2 (incl 1 for nesting)",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  499,
+                                                                  "endLine":  499,
+                                                                  "startOffset":  12,
+                                                                  "endOffset":  14
+                                                              },
+                                                "msg":  "+2 (incl 1 for nesting)",
                                                 "msgFormattings":  [
 
                                                                    ]
@@ -11318,6 +11202,23 @@
                                                 "textRange":  {
                                                                   "startLine":  505,
                                                                   "endLine":  505,
+                                                                  "startOffset":  8,
+                                                                  "endOffset":  10
+                                                              },
+                                                "msg":  "+1",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  507,
+                                                                  "endLine":  507,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11333,8 +11234,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  508,
-                                                                  "endLine":  508,
+                                                                  "startLine":  510,
+                                                                  "endLine":  510,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11350,8 +11251,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  511,
-                                                                  "endLine":  511,
+                                                                  "startLine":  513,
+                                                                  "endLine":  513,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11367,8 +11268,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  514,
-                                                                  "endLine":  514,
+                                                                  "startLine":  516,
+                                                                  "endLine":  516,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11412,65 +11313,16 @@
         "prioritizedRule":  false
     },
     {
-        "key":  "e1a053e2-652b-448c-a3a2-be880656fb90",
-        "rule":  "java:S106",
-        "severity":  "MAJOR",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-        "project":  "gh-1122007633",
-        "line":  1017,
-        "hash":  "af5fbe74898d8eee17b5d123eb88572a",
-        "textRange":  {
-                          "startLine":  1017,
-                          "endLine":  1017,
-                          "startOffset":  12,
-                          "endOffset":  22
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Replace this use of System.err by a logger.",
-        "effort":  "10min",
-        "debt":  "10min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "bad-practice",
-                     "cert"
-                 ],
-        "creationDate":  "2025-09-18T18:59:36+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "MODULAR",
-        "cleanCodeAttributeCategory":  "ADAPTABLE",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "MEDIUM"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
         "key":  "c747abbf-cd11-4dee-8446-c1c68747f7c6",
         "rule":  "java:S3776",
         "severity":  "CRITICAL",
         "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
         "project":  "gh-1122007633",
-        "line":  1027,
+        "line":  1029,
         "hash":  "b18ec54cf452e7bc7686357859ef6232",
         "textRange":  {
-                          "startLine":  1027,
-                          "endLine":  1027,
+                          "startLine":  1029,
+                          "endLine":  1029,
                           "startOffset":  32,
                           "endOffset":  55
                       },
@@ -11480,8 +11332,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1032,
-                                                                  "endLine":  1032,
+                                                                  "startLine":  1034,
+                                                                  "endLine":  1034,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11497,8 +11349,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1036,
-                                                                  "endLine":  1036,
+                                                                  "startLine":  1038,
+                                                                  "endLine":  1038,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11514,8 +11366,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1039,
-                                                                  "endLine":  1039,
+                                                                  "startLine":  1041,
+                                                                  "endLine":  1041,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
@@ -11531,29 +11383,12 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1044,
-                                                                  "endLine":  1044,
+                                                                  "startLine":  1046,
+                                                                  "endLine":  1046,
                                                                   "startOffset":  12,
                                                                   "endOffset":  14
                                                               },
                                                 "msg":  "+1",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  1048,
-                                                                  "endLine":  1048,
-                                                                  "startOffset":  16,
-                                                                  "endOffset":  18
-                                                              },
-                                                "msg":  "+2 (incl 1 for nesting)",
                                                 "msgFormattings":  [
 
                                                                    ]
@@ -11567,74 +11402,6 @@
                                                 "textRange":  {
                                                                   "startLine":  1050,
                                                                   "endLine":  1050,
-                                                                  "startOffset":  20,
-                                                                  "endOffset":  22
-                                                              },
-                                                "msg":  "+3 (incl 2 for nesting)",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  1051,
-                                                                  "endLine":  1051,
-                                                                  "startOffset":  24,
-                                                                  "endOffset":  27
-                                                              },
-                                                "msg":  "+4 (incl 3 for nesting)",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  1054,
-                                                                  "endLine":  1054,
-                                                                  "startOffset":  22,
-                                                                  "endOffset":  26
-                                                              },
-                                                "msg":  "+1",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  1062,
-                                                                  "endLine":  1062,
-                                                                  "startOffset":  12,
-                                                                  "endOffset":  14
-                                                              },
-                                                "msg":  "+1",
-                                                "msgFormattings":  [
-
-                                                                   ]
-                                            }
-                                        ]
-                      },
-                      {
-                          "locations":  [
-                                            {
-                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-                                                "textRange":  {
-                                                                  "startLine":  1066,
-                                                                  "endLine":  1066,
                                                                   "startOffset":  16,
                                                                   "endOffset":  18
                                                               },
@@ -11650,8 +11417,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1068,
-                                                                  "endLine":  1068,
+                                                                  "startLine":  1052,
+                                                                  "endLine":  1052,
                                                                   "startOffset":  20,
                                                                   "endOffset":  22
                                                               },
@@ -11667,8 +11434,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1069,
-                                                                  "endLine":  1069,
+                                                                  "startLine":  1053,
+                                                                  "endLine":  1053,
                                                                   "startOffset":  24,
                                                                   "endOffset":  27
                                                               },
@@ -11684,8 +11451,8 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1072,
-                                                                  "endLine":  1072,
+                                                                  "startLine":  1056,
+                                                                  "endLine":  1056,
                                                                   "startOffset":  22,
                                                                   "endOffset":  26
                                                               },
@@ -11701,8 +11468,93 @@
                                             {
                                                 "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
                                                 "textRange":  {
-                                                                  "startLine":  1080,
-                                                                  "endLine":  1080,
+                                                                  "startLine":  1064,
+                                                                  "endLine":  1064,
+                                                                  "startOffset":  12,
+                                                                  "endOffset":  14
+                                                              },
+                                                "msg":  "+1",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  1068,
+                                                                  "endLine":  1068,
+                                                                  "startOffset":  16,
+                                                                  "endOffset":  18
+                                                              },
+                                                "msg":  "+2 (incl 1 for nesting)",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  1070,
+                                                                  "endLine":  1070,
+                                                                  "startOffset":  20,
+                                                                  "endOffset":  22
+                                                              },
+                                                "msg":  "+3 (incl 2 for nesting)",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  1071,
+                                                                  "endLine":  1071,
+                                                                  "startOffset":  24,
+                                                                  "endOffset":  27
+                                                              },
+                                                "msg":  "+4 (incl 3 for nesting)",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  1074,
+                                                                  "endLine":  1074,
+                                                                  "startOffset":  22,
+                                                                  "endOffset":  26
+                                                              },
+                                                "msg":  "+1",
+                                                "msgFormattings":  [
+
+                                                                   ]
+                                            }
+                                        ]
+                      },
+                      {
+                          "locations":  [
+                                            {
+                                                "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
+                                                "textRange":  {
+                                                                  "startLine":  1082,
+                                                                  "endLine":  1082,
                                                                   "startOffset":  10,
                                                                   "endOffset":  15
                                                               },
@@ -11740,103 +11592,6 @@
                         {
                             "softwareQuality":  "MAINTAINABILITY",
                             "severity":  "HIGH"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
-        "key":  "8734d99d-b2f3-421b-a45a-fdbd04917a1e",
-        "rule":  "java:S106",
-        "severity":  "MAJOR",
-        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/util/XmlToJsonConverter.java",
-        "project":  "gh-1122007633",
-        "line":  1081,
-        "hash":  "9d8511b1b4d46bd0e874d5ed527e54eb",
-        "textRange":  {
-                          "startLine":  1081,
-                          "endLine":  1081,
-                          "startOffset":  12,
-                          "endOffset":  22
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Replace this use of System.err by a logger.",
-        "effort":  "10min",
-        "debt":  "10min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "bad-practice",
-                     "cert"
-                 ],
-        "creationDate":  "2025-09-18T18:59:36+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "MAIN",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "MODULAR",
-        "cleanCodeAttributeCategory":  "ADAPTABLE",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "MEDIUM"
-                        }
-                    ],
-        "issueStatus":  "OPEN",
-        "prioritizedRule":  false
-    },
-    {
-        "key":  "7b676ca7-64ff-44bd-9b69-a16c3d09c4d6",
-        "rule":  "java:S1135",
-        "severity":  "INFO",
-        "component":  "gh-1122007633:src/test/java/com/sodimac/fiscal/api/controller/RelatedDocumentsControllerTest.java",
-        "project":  "gh-1122007633",
-        "line":  207,
-        "hash":  "2af9d82e9790fd50c6caf060942183ac",
-        "textRange":  {
-                          "startLine":  207,
-                          "endLine":  207,
-                          "startOffset":  0,
-                          "endOffset":  67
-                      },
-        "flows":  [
-
-                  ],
-        "status":  "OPEN",
-        "message":  "Complete the task associated to this TODO comment.",
-        "effort":  "0min",
-        "debt":  "0min",
-        "author":  "g_dco018@sodimac.com.mx",
-        "tags":  [
-                     "cwe"
-                 ],
-        "creationDate":  "2025-11-11T08:00:41+0000",
-        "updateDate":  "2026-06-12T04:13:40+0000",
-        "type":  "CODE_SMELL",
-        "branch":  "uat",
-        "scope":  "TEST",
-        "quickFixAvailable":  false,
-        "messageFormattings":  [
-
-                               ],
-        "codeVariants":  [
-
-                         ],
-        "cleanCodeAttribute":  "COMPLETE",
-        "cleanCodeAttributeCategory":  "INTENTIONAL",
-        "impacts":  [
-                        {
-                            "softwareQuality":  "MAINTAINABILITY",
-                            "severity":  "LOW"
                         }
                     ],
         "issueStatus":  "OPEN",

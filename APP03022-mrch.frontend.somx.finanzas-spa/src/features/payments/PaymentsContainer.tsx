@@ -158,7 +158,7 @@ export default function PaymentsContainer(): ReactElement {
                 setModalSeverity("info");
                 setModalTitle("Sin resultados");
                 setError(
-                    messages["INF6000"] ||
+                    messages["INF6000"] ??
                         "No existe información con los criterios establecidos."
                 );
                 setPayments([]);

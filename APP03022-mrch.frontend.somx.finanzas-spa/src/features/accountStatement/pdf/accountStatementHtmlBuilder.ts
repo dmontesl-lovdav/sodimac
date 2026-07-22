@@ -38,7 +38,7 @@ function escapeHtml(s: string): string {
 /** UUID completo sin truncar; si viene vacío muestra guión. */
 function fullUuid(value: unknown): string {
     const raw = String(value ?? '').trim();
-    return raw || '-';
+    return raw ?? '-';
 }
 
 function resolveStatusColor(color: string | null | undefined): string {
@@ -83,7 +83,7 @@ const COL_WIDTH_WEIGHT: Record<string, number> = {
 
 function buildColgroup(headers: string[]): string {
     const weights = headers.map((header) => COL_WIDTH_WEIGHT[header] ?? 8);
-    const total = weights.reduce((sum, w) => sum + w, 0) || 1;
+    const total = ((n) => (n === 0 ? 1 : n))(weights.reduce((sum, w) => sum + w, 0));
     const cols = weights
         .map((w) => `<col style="width:${((w / total) * 100).toFixed(2)}%">`)
         .join('');
@@ -173,9 +173,9 @@ function renderStatusCell(
                     item.description.toLowerCase() === raw.toLowerCase())
         );
         if (match) {
-            return statusCell(match.description || match.name, null);
+            return statusCell(match.description ?? match.name, null);
         }
-        return statusCell(raw || 'N/A');
+        return statusCell(raw ?? 'N/A');
     }
 
     let catalog: CatalogStatusItem[] = [];
@@ -216,7 +216,7 @@ function renderStatusCell(
         case 'aplicado':
             return statusCell('Aplicado', '#D1D5DB');
         default:
-            return statusCell(raw || 'N/A');
+            return statusCell(raw ?? 'N/A');
     }
 }
 
@@ -246,9 +246,9 @@ export function buildAccountStatementHtml(
                 : '-',
             '-',
             'MXN',
-            formatCurrency(Number(po.amount) || 0),
+            formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(po.amount))),
             '1',
-            formatCurrency(Number(po.amount) || 0),
+            formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(po.amount))),
             rec?.status != null ? receptionStatuses.find((s) => s.value === String(rec.status))?.label ?? 'N/A' : 'N/A',
         ];
     });
@@ -277,9 +277,9 @@ export function buildAccountStatementHtml(
         formatDate(b.postingDate as string),
         formatDate(b.postingDate as string),
         'MXN',
-        formatCurrency(Number(b.amount) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(b.amount))),
         '1',
-        formatCurrency(Number(b.amount) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(b.amount))),
         b.status != null ? String(b.status) : 'Aplicado',
     ]);
 
@@ -292,9 +292,9 @@ export function buildAccountStatementHtml(
         '-',
         formatDate((i.certificationDate ?? i.issueDate) as string),
         'MXN',
-        formatCurrency(Number(i.total) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(i.total))),
         '1',
-        formatCurrency(Number(i.total) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(i.total))),
         i.status != null ? invoiceStatuses.find((s) => s.value === String(i.status))?.label ?? 'N/A' : 'N/A',
     ]);
 
@@ -306,9 +306,9 @@ export function buildAccountStatementHtml(
         formatDate(i.issueDate as string),
         formatDate((i.certificationDate ?? i.issueDate) as string),
         'MXN',
-        formatCurrency(Number(i.total) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(i.total))),
         '1',
-        formatCurrency(Number(i.total) || 0),
+        formatCurrency(((n) => (Number.isFinite(n) ? n : 0))(Number(i.total))),
         i.status != null ? String(i.status) : 'Compensada',
     ]);
 

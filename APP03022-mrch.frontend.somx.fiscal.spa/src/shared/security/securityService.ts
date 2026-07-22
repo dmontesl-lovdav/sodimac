@@ -44,10 +44,10 @@ function stripTrailingSlashes(value: string): string {
 
 function resolveBaseUrl(): string {
     const explicit =
-        process.env.UTIL_SECURITY_API_URL ||
-        process.env.REACT_APP_UTIL_SECURITY_API_URL ||
-        process.env.CATALOGS_API_URL ||
-        process.env.REACT_APP_CATALOGS_API_URL ||
+        process.env.UTIL_SECURITY_API_URL ??
+        process.env.REACT_APP_UTIL_SECURITY_API_URL ??
+        process.env.CATALOGS_API_URL ??
+        process.env.REACT_APP_CATALOGS_API_URL ??
         '';
     return stripTrailingSlashes(explicit);
 }
@@ -55,10 +55,10 @@ function resolveBaseUrl(): string {
 function resolveToken(): string | null {
     const state = localHomeStore.getState() as any;
     const storeToken =
-        state?.authentication?.token || state?.authentication?.idToken;
+        state?.authentication?.token ?? state?.authentication?.idToken;
     if (typeof storeToken === 'string' && storeToken.trim()) return storeToken;
     const envToken =
-        process.env.REACT_APP_AUTH_DEFAULT_TOKEN || process.env.AUTH_DEFAULT_TOKEN;
+        process.env.REACT_APP_AUTH_DEFAULT_TOKEN ?? process.env.AUTH_DEFAULT_TOKEN;
     return envToken?.trim() ? envToken : null;
 }
 

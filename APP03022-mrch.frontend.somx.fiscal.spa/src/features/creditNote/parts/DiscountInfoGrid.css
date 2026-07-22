@@ -1,0 +1,52 @@
+.pcn-discount-header-card {
+  margin-bottom: 24px;
+  margin-top: 4px;
+}
+
+.pcn-discount-header-top {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 10px;
+}
+
+.pcn-discount-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pcn-discount-summary-grid {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px 12px;
+  grid-template-columns: repeat(5, 1fr);
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+
+.pcn-discount-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.pcn-discount-summary-item > div:not(.pcn-discount-label) {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1200px) {
+  .pcn-discount-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .pcn-discount-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

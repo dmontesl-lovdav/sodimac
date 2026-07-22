@@ -81,11 +81,15 @@ export default function InvoicesGrid() {
 
   const customFilters = useMemo((): Partial<InvoiceFilters> => {
     const params = new URLSearchParams(location.search);
+    const omitEmpty = (key: string) => {
+      const v = params.get(key);
+      return v ? v : undefined;
+    };
     return {
-      uuid: params.get("uuid") || undefined,
-      fechaInicioRecepcion: params.get("start") || undefined,
-      fechaFinalRecepcion: params.get("end") || undefined,
-      idProveedor: params.get("supplierNumber") || undefined,
+      uuid: omitEmpty("uuid"),
+      fechaInicioRecepcion: omitEmpty("start"),
+      fechaFinalRecepcion: omitEmpty("end"),
+      idProveedor: omitEmpty("supplierNumber"),
     };
   }, [location.search]);
 
@@ -188,7 +192,7 @@ export default function InvoicesGrid() {
         setErrorMsg("No se puede cancelar la factura sin número de proveedor");
         return;
       }
-      await client.cancelInvoice(row.fiscalUuid || "", row.numeroProveedor);
+      await client.cancelInvoice(row.fiscalUuid ?? "", row.numeroProveedor);
       setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al cancelar la factura"));
@@ -209,7 +213,7 @@ export default function InvoicesGrid() {
         setErrorMsg("No se puede reprocesar la factura sin número de proveedor");
         return;
       }
-      await client.reprocessInvoice(row.invoiceUuid || "", row.numeroProveedor);
+      await client.reprocessInvoice(row.invoiceUuid ?? "", row.numeroProveedor);
       setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al reprocesar la factura"));
@@ -327,7 +331,7 @@ export default function InvoicesGrid() {
         variant="alert"
         severity="error"
         title="Error"
-        message={errorMsg || ""}
+        message={errorMsg ?? ""}
         buttonText="Aceptar"
         onClose={() => setErrorMsg(null)}
         onConfirm={() => setErrorMsg(null)}

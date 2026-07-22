@@ -1,6 +1,6 @@
 /** Construye URL al SPA fiscal respetando base con hash (`#/fiscal`). */
 export function buildFiscalSpaUrl(route: string, params?: URLSearchParams): string {
-    const base = (process.env.FISCAL_SPA_URL || "").trim();
+    const base = (process.env.FISCAL_SPA_URL ?? "").trim();
     const cleanRoute = route.replace(/^\//, "");
     const qs = params?.toString();
     const suffix = qs ? `?${qs}` : "";

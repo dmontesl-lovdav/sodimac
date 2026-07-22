@@ -83,7 +83,7 @@ const ReceptionAccordion = ({ skus, receipt }: ReceptionAccordionProps) => {
 };
 
 export default function ReceptionSkusTable({ reception }: ReceptionSkuProps): ReactElement {
-  const skus = reception?.receptionSkus || [];
+  const skus = reception?.receptionSkus ?? [];
 
   if (skus.length === 0) {
     return (

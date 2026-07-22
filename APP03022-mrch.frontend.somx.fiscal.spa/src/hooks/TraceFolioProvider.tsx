@@ -67,8 +67,8 @@ export function extractErrorInfo(value: unknown): { idError: string; mensaje: st
   const idMensaje = pickFirstStringOrNumber([record.idMensaje, record.error, record.title, record.name]);
 
   return {
-    idError: idError || fallback.idError,
-    mensaje: mensaje || fallback.mensaje,
+    idError: idError ?? fallback.idError,
+    mensaje: mensaje ?? fallback.mensaje,
     ...(idMensaje ? { idMensaje } : {}),
   };
 }

@@ -21,7 +21,7 @@ export function normalizeRebateRow(raw: Record<string, unknown>): Rebate {
     return {
         ...(raw as unknown as Rebate),
         documentReference,
-        referenceNumber: referenceNumber || undefined,
+        referenceNumber: referenceNumber ?? undefined,
         supplierNumber,
         vendorNumber: Number.isFinite(vendorNumber) ? vendorNumber : undefined,
         source:

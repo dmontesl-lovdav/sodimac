@@ -201,11 +201,11 @@ export default function DataGrid<T, F extends Record<string, any> = Record<strin
   const perPage = useInternalPagination ? paginatedData.size : externalPerPage ?? 25;
   const totalPages = useInternalPagination
     ? paginatedData.totalPages
-    : externalTotalPages ?? Math.ceil(rows.length / (perPage || 1));
+    : externalTotalPages ?? Math.ceil(rows.length / (perPage ?? 1));
   const totalItems = useInternalPagination ? paginatedData.totalItems : externalTotalItems ?? rows.length;
   const onChangePage = useInternalPagination ? paginatedData.changePage : externalOnChangePage;
   const onChangePerPage = useInternalPagination ? paginatedData.changePerPage : externalOnChangePerPage;
-  const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
+  const effectiveEmptyLabel = emptyLabel ?? (loading ? "Cargando..." : "Sin resultados");
 
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [bulkValue, setBulkValue] = useState<string>("");

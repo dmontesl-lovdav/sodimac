@@ -69,11 +69,11 @@ export default function AccountStatementGrid({
         },
         {
             header: "Número Proveedor",
-            render: (r: AccountStatementRecord) => r.vendorNumber || "--",
+            render: (r: AccountStatementRecord) => r.vendorNumber ?? "--",
         },
         {
             header: "Nombre Proveedor",
-            render: (r: AccountStatementRecord) => r.vendorName || "--",
+            render: (r: AccountStatementRecord) => r.vendorName ?? "--",
         },
         {
             header: "Tipo Proveedor",

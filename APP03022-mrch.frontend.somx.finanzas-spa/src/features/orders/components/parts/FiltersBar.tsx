@@ -64,14 +64,17 @@ function buildOrdersFilterPayload(input: {
 
   const sn = input.provider.trim();
   const parsedSupplier = sn === "" ? NaN : Number(sn);
+  const providerType = input.providerType.trim();
+  const orderNumber = input.orderNumber.trim();
+  const receptionNumber = input.receptionNumber.trim();
   return {
     purchaseOrderDateAtInitial: formatFinanceListLocalDate(dayStart)+"T00:00:00.000Z",
     purchaseOrderDateAtEnd: formatFinanceListLocalDate(dayEnd)+"T23:59:59.999Z",
     supplierNumber:
       sn !== "" && Number.isFinite(parsedSupplier) ? parsedSupplier : undefined,
-    providerType: input.providerType.trim() || undefined,
-    orderNumber: input.orderNumber.trim() || undefined,
-    receptionNumber: input.receptionNumber.trim() || undefined,
+    providerType: providerType ? providerType : undefined,
+    orderNumber: orderNumber ? orderNumber : undefined,
+    receptionNumber: receptionNumber ? receptionNumber : undefined,
     status: input.status.trim() !== "" ? Number(input.status) : undefined,
     pageNumber: 1,
     pageSize: 10,
@@ -87,10 +90,10 @@ type UrlDeepLinkParams = {
 
 function readUrlDeepLinkParams(searchParams: URLSearchParams): UrlDeepLinkParams {
   return {
-    orderNumber: searchParams.get("orderNumber")?.trim() ?? "",
-    supplierNumber: searchParams.get("supplierNumber")?.trim() ?? "",
-    startDate: searchParams.get("startDate")?.trim() ?? "",
-    endDate: searchParams.get("endDate")?.trim() ?? "",
+    orderNumber: (searchParams.get("orderNumber")?.trim() ?? ""),
+    supplierNumber: (searchParams.get("supplierNumber")?.trim() ?? ""),
+    startDate: (searchParams.get("startDate")?.trim() ?? ""),
+    endDate: (searchParams.get("endDate")?.trim() ?? ""),
   };
 }
 

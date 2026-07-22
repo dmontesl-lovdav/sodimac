@@ -187,8 +187,7 @@ export function getDeliveryTypeLabel(
     if (d && typeof d === "object" && "description" in d) {
         return (
             (d as ShippingGuideCatalogItem).description ||
-            (d as ShippingGuideCatalogItem).value ||
-            "N/D"
+            ((d as ShippingGuideCatalogItem).value ?? "N/D")
         );
     }
     return "N/D";

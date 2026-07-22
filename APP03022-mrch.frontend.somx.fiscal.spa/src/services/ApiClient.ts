@@ -68,7 +68,7 @@ export function createApiClient(options?: {
         }
 
         const envToken =
-            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ||
+            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ??
             process.env.AUTH_DEFAULT_TOKEN;
 
         if (envToken?.trim()) {
@@ -147,7 +147,7 @@ export function createApiClient(options?: {
 
         const anchor = document.createElement("a");
         anchor.href = window.URL.createObjectURL(blob);
-        anchor.download = filename || "file.bin";
+        anchor.download = filename ?? "file.bin";
 
         document.body.appendChild(anchor);
         anchor.click();

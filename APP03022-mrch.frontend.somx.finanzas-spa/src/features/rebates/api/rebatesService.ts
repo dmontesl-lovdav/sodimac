@@ -9,12 +9,12 @@ export const rebatesService = {
         params: SearchParams
     ): Promise<PagedResult<DiscountRecord>> {
         const body = {
-            idProveedor: params.vendorId || '',
-            numeroDocumento: params.documentNumber || undefined,
-            referenciaDocumento: params.sapDocument || undefined,
+            idProveedor: params.vendorId ?? '',
+            numeroDocumento: params.documentNumber ?? undefined,
+            referenciaDocumento: params.sapDocument ?? undefined,
             uuid: undefined,
-            page: (params.page || 1) - 1,
-            size: params.size || 20,
+            page: (params.page ?? 1) - 1,
+            size: params.size ?? 20,
         };
 
         const response = await api.request<any>(
@@ -29,30 +29,30 @@ export const rebatesService = {
             : data?.data ?? [];
 
         const items: DiscountRecord[] = content.map((item: any) => ({
-            id: item.id || 0,
+            id: item.id ?? 0,
             vendorNumber:
-                item.vendorNumber || item.idProveedor || '',
+                item.vendorNumber ?? item.idProveedor ?? '',
             vendorName:
-                item.vendorName || item.nombreProveedor || '',
+                item.vendorName ?? item.nombreProveedor ?? '',
             documentNumber:
-                item.documentNumber || item.numeroDocumento || '',
+                item.documentNumber ?? item.numeroDocumento ?? '',
             referenceDocument:
-                item.referenceDocument ||
-                item.referenciaDocumento ||
+                item.referenceDocument ??
+                item.referenciaDocumento ??
                 '',
             rebateType:
-                item.rebateType || item.tipoDescuento || '',
+                item.rebateType ?? item.tipoDescuento ?? '',
             sapDocument:
-                item.sapDocument || item.documentoSap || '',
-            amount: Number(item.amount || item.monto) || 0,
-            periodId: item.periodId || 0,
-            periodName: item.periodName || '',
-            status: item.status || item.estatus || '',
+                item.sapDocument ?? item.documentoSap ?? '',
+            amount: ((n) => (Number.isFinite(n) ? n : 0))(Number(item.amount ?? item.monto)),
+            periodId: item.periodId ?? 0,
+            periodName: item.periodName ?? '',
+            status: item.status ?? item.estatus ?? '',
             applyDate:
-                item.applyDate || item.fechaAplicacion || '',
+                item.applyDate ?? item.fechaAplicacion ?? '',
             expirationDate:
-                item.expirationDate ||
-                item.fechaVencimiento ||
+                item.expirationDate ??
+                item.fechaVencimiento ??
                 '',
         }));
 

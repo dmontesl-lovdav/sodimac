@@ -61,7 +61,7 @@ return colorMap[color] ?? "info";
 const getInvoiceDocumentKind = (reception: Reception) => {
     const inv = getAdendumReferences(reception);
     if (!inv) return "--";
-    return inv.document_type || inv.documentType || "--";
+    return inv.document_type ?? inv.documentType ?? "--";
 };
 
 export default function ReceptionGridTable({ rows, ...props }: Props) {
@@ -111,7 +111,7 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
     };
 
     const columns = [
-        { header: "Recepción", render: (r: Reception) => r.receptionNumber || r.receptionId || "--" },
+        { header: "Recepción", render: (r: Reception) => r.receptionNumber ?? r.receptionId ?? "--" },
         {
             header: "Orden Compra",
             render: (r: Reception) => r.order?.orderNumber ?? r.orderNumber ?? "--",

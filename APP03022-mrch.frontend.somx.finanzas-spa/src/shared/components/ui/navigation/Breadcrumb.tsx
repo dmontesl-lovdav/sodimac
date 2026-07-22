@@ -17,7 +17,7 @@ type DisplayCrumb = BreadcrumbItem & {
 
 function getFbcHomeUrl(): string {
   const raw = process.env.FBC_HOME ?? '';
-  return raw.trim() || '/';
+  return ((t) => (t === "" ? '/' : t))(raw.trim());
 }
 
 function isHomeCrumb(item: BreadcrumbItem): boolean {

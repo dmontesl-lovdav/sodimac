@@ -6,7 +6,7 @@ const USE_MOCK_TRANSACTION_ID =
     process.env.REACT_APP_MOCK_TRANSACTION_ID !== "false";
 
 const api = createApiClient({
-    baseUrl: process.env.API_BASE_URL || "",
+    baseUrl: process.env.API_BASE_URL ?? "",
 });
 
 export const RECEPTION_INVOICE_TRANSACTION = {

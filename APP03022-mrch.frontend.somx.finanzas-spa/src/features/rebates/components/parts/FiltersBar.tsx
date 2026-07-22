@@ -42,9 +42,9 @@ export default function FiltersBar({ onSearch, onClear }: FiltersBarProps): Reac
     const handleSubmit = () => {
         const [start, end] = dateRange;
         const payload: FiltersValues = {
-            vendorId: vendor || undefined,
-            sapDocument: sapDocument || undefined,
-            documentNumber: documentNumber || undefined,
+            vendorId: vendor ? vendor : undefined,
+            sapDocument: sapDocument ? sapDocument : undefined,
+            documentNumber: documentNumber ? documentNumber : undefined,
             dateStart: start ? start.toISOString().split('T')[0] : undefined,
             dateEnd: end ? end.toISOString().split('T')[0] : undefined,
             rebateTypeId: rebateType ? Number(rebateType) : undefined,

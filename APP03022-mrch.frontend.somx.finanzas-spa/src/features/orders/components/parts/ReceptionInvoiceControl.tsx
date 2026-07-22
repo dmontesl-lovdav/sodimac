@@ -2,7 +2,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Reception } from "../../interfaces";
 import type { ReceptionSupplierInfo } from "../../receptionSupplierInfo";
-import { GenericLinearProgress, GenericModal } from "@/shared/components/ui";
+import { GenericModal } from "@/shared/components/ui";
 import { InvoiceClient } from "../../api/InvoiceClient";
 import {
     RECEPTION_INVOICE_TRANSACTION,
@@ -196,7 +196,7 @@ export const ReceptionInvoiceControl = forwardRef<
         }
         invoiceAlert.showSuccess(
             "Operación exitosa",
-            response.message || "Tu factura se procesó correctamente."
+            response.message ?? "Tu factura se procesó correctamente."
         );
     };
 
@@ -279,7 +279,7 @@ export const ReceptionInvoiceControl = forwardRef<
                             idTransaccion: trace.uuidInterno,
                         });
                     }
-                    const fiscalUuid = String(response.fiscalUuid || uuidFromXml).trim();
+                    const fiscalUuid = String(response.fiscalUuid ?? uuidFromXml).trim();
                     setRegisteredFiscalUuid(fiscalUuid);
                     setDataMsg("");
                     setIsValidInvoice(true);
@@ -335,68 +335,72 @@ export const ReceptionInvoiceControl = forwardRef<
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setDataMsg("");
         setInvoiceData(null);
-        setIsValidating(true)
         const selectedFile = e.target.files?.[0] ?? null;
-        if (selectedFile) {
-            fileXMLRef.current = selectedFile;
-            setFileXML(selectedFile);
-            try {
-                const data = await client.validateInvoice(selectedFile);
-                const parsedInvoice: InvoiceData = {
-                    rfcEmisor: data.emisor.rfc,
-                    nombreProveedor: data.emisor.nombre,
-                    serie: data.comprobante.serie,
-                    folio: data.comprobante.folio,
-                    monto: data.comprobante.subTotal,
-                    fechaTimbrado: data.comprobante.fecha,
-                    usoCfdi: data.receptor.usoCFDI,
-                    tipoDeComprobante: data.comprobante.tipoDeComprobante,
-                    uuid: data.timbreFiscalDigital.uuid,
-                };
-                setInvoiceData(parsedInvoice);
-
-                if (parsedInvoice.tipoDeComprobante !== "I") {
-                    setIsValidInvoice(false);
-                    setDataMsg("");
-                    invoiceAlert.showWarning(
-                        "Atención",
-                        await getInvalidInvoiceTypeMessage()
-                    );
-                    return;
-                }
-
-                const xmlValidationOk = data.metadatos.estado === "SUCCESS";
-                const rfcMatches = supplierInfo.rfc == parsedInvoice.rfcEmisor;
-                setIsValidInvoice(xmlValidationOk && rfcMatches);
-
-                if (!rfcMatches) {
-                    setDataMsg("");
-                    invoiceAlert.showWarning(
-                        "Atención", "El RFC del proveedor no coincide con la factura publicada. Por favor, valida el archivo XML.");
-                    return;
-                }
-
-                if (xmlValidationOk) {
-                    setDataMsg("El archivo XML fue validado correctamente.");
-                } else {
-                    setDataMsg("");
-                    invoiceAlert.showWarning(
-                        "Atención",
-                        data.metadatos.mensaje || "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
-                    );
-                }
-            } catch (response: any) {
-                invoiceAlert.showErrorFrom(
-                    "Error al validar XML",
-                    response,
-                    "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
-                );
-                setIsValidInvoice(false)
-            } finally {
-                setIsValidating(false);
-            }
+        if (!selectedFile) {
+            fileXMLRef.current = null;
+            setFileXML(null);
+            setIsValidating(false);
+            return;
         }
-        
+
+        fileXMLRef.current = selectedFile;
+        setFileXML(selectedFile);
+        setIsValidating(true);
+        try {
+            const data = await client.validateInvoice(selectedFile);
+            const parsedInvoice: InvoiceData = {
+                rfcEmisor: data.emisor.rfc,
+                nombreProveedor: data.emisor.nombre,
+                serie: data.comprobante.serie,
+                folio: data.comprobante.folio,
+                monto: data.comprobante.subTotal,
+                fechaTimbrado: data.comprobante.fecha,
+                usoCfdi: data.receptor.usoCFDI,
+                tipoDeComprobante: data.comprobante.tipoDeComprobante,
+                uuid: data.timbreFiscalDigital.uuid,
+            };
+            setInvoiceData(parsedInvoice);
+
+            if (parsedInvoice.tipoDeComprobante !== "I") {
+                setIsValidInvoice(false);
+                setDataMsg("");
+                invoiceAlert.showWarning(
+                    "Atención",
+                    await getInvalidInvoiceTypeMessage()
+                );
+                return;
+            }
+
+            const xmlValidationOk = data.metadatos.estado === "SUCCESS";
+            const rfcMatches = supplierInfo.rfc == parsedInvoice.rfcEmisor;
+            setIsValidInvoice(xmlValidationOk && rfcMatches);
+
+            if (!rfcMatches) {
+                setDataMsg("");
+                invoiceAlert.showWarning(
+                    "Atención", "El RFC del proveedor no coincide con la factura publicada. Por favor, valida el archivo XML.");
+                return;
+            }
+
+            if (xmlValidationOk) {
+                setDataMsg("El archivo XML fue validado correctamente.");
+            } else {
+                setDataMsg("");
+                invoiceAlert.showWarning(
+                    "Atención",
+                    data.metadatos.mensaje ?? "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
+                );
+            }
+        } catch (response: any) {
+            invoiceAlert.showErrorFrom(
+                "Error al validar XML",
+                response,
+                "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
+            );
+            setIsValidInvoice(false)
+        } finally {
+            setIsValidating(false);
+        }
     };
 
     const isSaveDisabled =
@@ -422,43 +426,40 @@ export const ReceptionInvoiceControl = forwardRef<
         onActionStateChange?.();
     }, [isSaveDisabled, isProcessing, isBlockedType, isBlockedProvider, onActionStateChange]);
 
+const isLoadingFiles = isValidating || isProcessing;
+const loadingMessage = isProcessing
+    ? "Procesando factura…"
+    : "Validando XML…";
+
 return (
   <>
   <div className="rc-invoice-control">
-    
-
-    {isProcessing ? <GenericLinearProgress /> : null}
-
     <div className="rc-invoice-layout">
       <div className="rc-invoice-form">
         <h2 className="rc-title">Subir Factura</h2>
         
         <div className="rc-upload-grid">
-          {isValidating ? (
-            <GenericLinearProgress />
-          ) : (
-            <label className={`rc-upload-label${isFinished || isBlockedType || isBlockedProvider ? " rc-upload-label--disabled" : ""}`}>
-              <input
-                ref={xmlInputRef}
-                type="file"
-                accept=".xml"
-                className="rc-file-input"
-                disabled={isFinished || isBlockedType || isBlockedProvider}
-                onChange={handleFileChange}
-              />
-              <p className="rc-upload-text">Subir XML de la factura (Requerido)</p>
-              {fileXML && (
-                <p className="rc-upload-file">{fileXML.name}</p>
-              )}
-            </label>
-          )}
-          <label className={`rc-upload-label${isFinished || isBlockedType || isBlockedProvider ? " rc-upload-label--disabled" : ""}`}>
+          <label className={`rc-upload-label${isFinished || isBlockedType || isBlockedProvider || isLoadingFiles ? " rc-upload-label--disabled" : ""}`}>
+            <input
+              ref={xmlInputRef}
+              type="file"
+              accept=".xml"
+              className="rc-file-input"
+              disabled={isFinished || isBlockedType || isBlockedProvider || isLoadingFiles}
+              onChange={handleFileChange}
+            />
+            <p className="rc-upload-text">Subir XML de la factura (Requerido)</p>
+            {fileXML && (
+              <p className="rc-upload-file">{fileXML.name}</p>
+            )}
+          </label>
+          <label className={`rc-upload-label${isFinished || isBlockedType || isBlockedProvider || isLoadingFiles ? " rc-upload-label--disabled" : ""}`}>
             <input
               ref={pdfInputRef}
               type="file"
               accept=".pdf"
               className="rc-file-input"
-              disabled={isFinished || isBlockedType || isBlockedProvider}
+              disabled={isFinished || isBlockedType || isBlockedProvider || isLoadingFiles}
               onChange={handleFilePDFChange}
             />
             <p className="rc-upload-text">Subir PDF de la factura ({optionalPdf.isEnabled ? "Opcional" : "Requerido"})</p>
@@ -551,6 +552,10 @@ return (
       )}
     </div>
   </div>
+
+  {isLoadingFiles ? (
+    <GenericModal visible variant="loading" message={loadingMessage} />
+  ) : null}
 
   <GenericModal
     visible={toleranceConfirmOpen}

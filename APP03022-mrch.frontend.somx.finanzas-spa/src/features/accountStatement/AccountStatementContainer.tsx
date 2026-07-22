@@ -160,7 +160,7 @@ export default function AccountStatementContainer() {
     );
 
     const handleChangePage = async (nextPage: number) => {
-        const p = Math.max(1, Number(nextPage || 1));
+        const p = Math.max(1, Number(nextPage ?? 1));
         const size = perPageRef.current;
 
         setPage(p);
@@ -171,7 +171,7 @@ export default function AccountStatementContainer() {
     };
 
     const handleChangePerPage = async (n: number) => {
-        const size = Math.max(1, Number(n || 25));
+        const size = Math.max(1, Number(n ?? 25));
 
         perPageRef.current = size;
         setPerPage(size);

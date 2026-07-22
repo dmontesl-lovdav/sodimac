@@ -32,9 +32,9 @@ function getCatalogDisplay(
 ): string {
     if (!item) return "N/D";
     return (
-        item.description ||
-        item.value ||
-        item.key ||
+        item.description ??
+        item.value ??
+        item.key ??
         (item.internalStatus != null ? String(item.internalStatus) : "N/D")
     );
 }
@@ -50,13 +50,13 @@ export function mapShippingGuideToGridExportRow(
     const code = getShippingGuideStatusCode(guide);
     return [
         guide.guideNumber ?? guide.shippingGuideId ?? "",
-        guide.truckPlate || "N/D",
-        guide.trailerPlate || "N/D",
+        guide.truckPlate ?? "N/D",
+        guide.trailerPlate ?? "N/D",
         getCatalogDisplay(guide.OrigenCartaPorte),
         getCatalogDisplay(guide.deliveryType),
-        guide.orderNumber || "N/D",
+        guide.orderNumber ?? "N/D",
         String(guide.vendorNumber ?? guide.supplier?.supplierNumber ?? ""),
-        guide.supplier?.businessName || "N/D",
+        guide.supplier?.businessName ?? "N/D",
         formatGuideDate(guide.deliveryDate),
         formatGuideDate(guide.shippingDate),
         formatGuideDate(guide.createdAt),

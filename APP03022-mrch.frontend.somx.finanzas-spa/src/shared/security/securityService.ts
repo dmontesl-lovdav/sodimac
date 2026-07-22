@@ -38,10 +38,10 @@ interface ApiEnvelope<T> {
 
 function resolveBaseUrl(): string {
     const explicit =
-        process.env.UTIL_SECURITY_API_URL ||
-        process.env.REACT_APP_UTIL_SECURITY_API_URL ||
-        process.env.CATALOGS_API_URL ||
-        process.env.REACT_APP_CATALOGS_API_URL ||
+        process.env.UTIL_SECURITY_API_URL ??
+        process.env.REACT_APP_UTIL_SECURITY_API_URL ??
+        process.env.CATALOGS_API_URL ??
+        process.env.REACT_APP_CATALOGS_API_URL ??
         '';
     return explicit.replace(/\/+$/, '');
 }
@@ -50,7 +50,7 @@ function resolveToken(): string | null {
     const storeToken = (localHomeStore.getState() as any)?.authentication?.token;
     if (typeof storeToken === 'string' && storeToken.trim()) return storeToken;
     const envToken =
-        process.env.REACT_APP_AUTH_DEFAULT_TOKEN || process.env.AUTH_DEFAULT_TOKEN;
+        process.env.REACT_APP_AUTH_DEFAULT_TOKEN ?? process.env.AUTH_DEFAULT_TOKEN;
     return envToken && envToken.trim() ? envToken : null;
 }
 

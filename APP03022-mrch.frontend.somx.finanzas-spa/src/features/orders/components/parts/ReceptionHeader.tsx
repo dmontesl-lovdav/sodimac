@@ -22,7 +22,7 @@ export default function ReceptionHeader({
       <div className="rc-header-top">
         <div className="rc-title-inline">
           <span className="rc-section-title">Resumen recepción</span>
-          <StatusPill>{reception.receptionNumber || reception.receptionId || "—"}</StatusPill>
+          <StatusPill>{reception.receptionNumber ?? reception.receptionId ?? "—"}</StatusPill>
         </div>
         {headerActions ? (
           <div className="rc-header-actions">{headerActions}</div>
@@ -39,11 +39,11 @@ export default function ReceptionHeader({
         </div>
         <div className="rc-summary-item">
           <div className="rc-label">Fecha Recepción</div>
-          <div>{formatDate(reception.receptionDate) || "Sin Información"}</div>
+          <div>{formatDate(reception.receptionDate) ?? "Sin Información"}</div>
         </div>
         <div className="rc-summary-item">
           <div className="rc-label">Fecha Registro</div>
-          <div>{formatDate(reception.createdAt, true) || "Sin Información"}</div>
+          <div>{formatDate(reception.createdAt, true) ?? "Sin Información"}</div>
         </div>
         <div className="rc-summary-item">
           <div className="rc-label">Importe</div>

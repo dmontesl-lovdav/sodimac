@@ -101,10 +101,10 @@ export default function FiltersBar({
                 setDateRange(
                     parseFinanceListDateRange(saved.startDate, saved.endDate)
                 );
-                setProviderId(saved.providerId || "");
-                setPaymentReference(saved.paymentReference || "");
-                setPaymentYear(saved.paymentYear || "");
-                setProviderType(saved.providerType || "");
+                setProviderId(saved.providerId ?? "");
+                setPaymentReference(saved.paymentReference ?? "");
+                setPaymentYear(saved.paymentYear ?? "");
+                setProviderType(saved.providerType ?? "");
                 return;
             }
 
@@ -159,12 +159,12 @@ export default function FiltersBar({
         const [d1, d2] = dateRange;
 
         if (!d1) {
-            showValidationAlert(messages["ERR003"] || "Fecha inicio es obligatoria.");
+            showValidationAlert(messages["ERR003"] ?? "Fecha inicio es obligatoria.");
             return;
         }
 
         if (!d2) {
-            showValidationAlert(messages["ERR004"] || "Fecha fin es obligatoria.");
+            showValidationAlert(messages["ERR004"] ?? "Fecha fin es obligatoria.");
             return;
         }
 
@@ -194,7 +194,7 @@ export default function FiltersBar({
             setAlertModal({
                 visible: true,
                 title: "Rango inválido",
-                message: messages["ERR002"] || "El rango máximo permitido es 6 meses.",
+                message: messages["ERR002"] ?? "El rango máximo permitido es 6 meses.",
                 severity: "warning",
             });
             return;
@@ -202,11 +202,11 @@ export default function FiltersBar({
 
         const payload: PaymentFiltersValues = {
             providerId: isAdmin && providerId ? providerId : undefined,
-            paymentReference: paymentReference || undefined,
-            paymentYear: paymentYear || undefined,
+            paymentReference: paymentReference ?? undefined,
+            paymentYear: paymentYear ?? undefined,
             startDate: formatDateStr(start),
             endDate: formatDateStr(end),
-            providerType: providerType || undefined,
+            providerType: providerType ? providerType : undefined,
         };
 
         saveFinanceListFilters(FILTERS_KEY, payload);

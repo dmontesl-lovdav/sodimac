@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { breadcrumbFinanceHomePage } from '@shared/components/ui/navigation/financeBreadcrumb';
@@ -14,6 +14,7 @@ import { getHealthcheck } from './api';
 import { APP_KEYS } from '@shared/security';
 
 import './styles/FinanzasContainer.css';
+import { syncFinanzasUser } from '@/services/finanzasUserSync';
 
 interface FinanzasCard {
     title: string;
@@ -38,6 +39,10 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
     const [modalMessage, setModalMessage] = useState('');
     const [modalSeverity, setModalSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('info');
 
+    useEffect(() => {
+        syncFinanzasUser();
+    }, []);
+    
     async function handleHealthcheck() {
         try {
             setModalVariant('loading');
@@ -60,9 +65,8 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
             setModalSeverity('error');
             setModalTitle('Error en healthcheck');
             setModalMessage(
-                error?.response?.data?.message ||
-                error?.message ||
-                'No fue posible validar el estado del servicio.'
+                error?.response?.data?.message ??
+                error?.message ?? 'No fue posible validar el estado del servicio.'
             );
         }
     }

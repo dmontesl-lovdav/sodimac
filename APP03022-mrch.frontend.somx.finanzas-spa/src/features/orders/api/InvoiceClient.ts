@@ -1,7 +1,7 @@
 import { createApiClient } from "@/services/ApiClient";
 import { Invoice } from "../interfaces";
 
-const fiscalApi = createApiClient({baseUrl: process.env.FISCAL_API_URL || ""});
+const fiscalApi = createApiClient({baseUrl: process.env.FISCAL_API_URL ?? ""});
 
 export type RegisterInvoiceOptions = {
     idTransaccion?: string;

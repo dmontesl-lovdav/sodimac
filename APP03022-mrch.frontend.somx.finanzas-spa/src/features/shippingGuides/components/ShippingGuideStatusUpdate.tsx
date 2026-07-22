@@ -408,10 +408,10 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                                     )?.label || h.status}
                                 </td>
                                 <td className="gt-td">
-                                    {h.userId || "N/D"}
+                                    {h.userId ?? "N/D"}
                                 </td>
                                 <td className="gt-td">
-                                    {h.comment || "N/D"}
+                                    {h.comment ?? "N/D"}
                                 </td>
                             </tr>
                         ))}
@@ -466,7 +466,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                             Guía embarque
                         </div>
                         <div className="sg-status-field-value">
-                            {guideCard?.guideNumber || guideId || "N/D"}
+                            {(guideCard?.guideNumber || guideId) ?? "N/D"}
                         </div>
                     </div>
                 </div>
@@ -482,7 +482,7 @@ export default function ShippingGuideStatusUpdate(): ReactElement {
                     </div>
                     <div>
                         {statusOptions.find((s) => s.value === currentStatus)
-                            ?.label || "N/D"}
+                            ?.label ?? "N/D"}
                     </div>
                 </div>
 

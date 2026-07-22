@@ -35,7 +35,7 @@ export function buildFinishModal(
   return {
     severity: "success",
     title: "Operación exitosa",
-    message: response.message?.trim() || "Tu nota de crédito se procesó correctamente.",
+    message: ((t) => (t == null || t === "" ? "Tu nota de crédito se procesó correctamente." : t))(response.message?.trim()),
   };
 }
 

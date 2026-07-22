@@ -5,61 +5,44 @@ type Props = {
   data: CreditNoteXmlData;
 };
 
+const SUMMARY_ROWS: Array<{
+  label: string;
+  getValue: (data: CreditNoteXmlData) => string;
+}> = [
+  { label: "RFC Emisor:", getValue: (d) => d.rfcEmisor },
+  { label: "Número Proveedor:", getValue: (d) => d.numeroProveedor },
+  { label: "Nombre Proveedor:", getValue: (d) => d.nombreProveedor },
+  { label: "UUID:", getValue: (d) => d.uuid },
+  { label: "UUID Factura:", getValue: (d) => d.uuidRelacionado },
+  { label: "Serie:", getValue: (d) => d.serie },
+  { label: "Folio:", getValue: (d) => d.folio },
+  {
+    label: "Importe:",
+    getValue: (d) => formatAmount(parseFloat(d.monto)),
+  },
+  {
+    label: "Fecha Timbrado:",
+    getValue: (d) => formatDate(d.fechaTimbrado, true),
+  },
+  { label: "Uso CFDI:", getValue: (d) => d.usoCfdi },
+  { label: "Tipo Comprobante:", getValue: (d) => d.tipoDeComprobante },
+  { label: "Forma de Pago:", getValue: (d) => d.formaPago },
+];
+
 export default function CreditNoteSummary({ data }: Props) {
   return (
     <div className="pcn-summary-wrap">
       <div className="pcn-summary">
         <table className="pcn-summary-table">
           <tbody>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">RFC Emisor:</td>
-              <td className="pcn-cell">{data.rfcEmisor}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Número Proveedor:</td>
-              <td className="pcn-cell">{data.numeroProveedor}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Nombre Proveedor:</td>
-              <td className="pcn-cell">{data.nombreProveedor}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">UUID:</td>
-              <td className="pcn-cell">{data.uuid}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">UUID Factura:</td>
-              <td className="pcn-cell">{data.uuidRelacionado}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Serie:</td>
-              <td className="pcn-cell">{data.serie}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Folio:</td>
-              <td className="pcn-cell">{data.folio}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Importe:</td>
-              <td className="pcn-cell">{formatAmount(parseFloat(data.monto))}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Fecha Timbrado:</td>
-              <td className="pcn-cell">{formatDate(data.fechaTimbrado, true)}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Uso CFDI:</td>
-              <td className="pcn-cell">{data.usoCfdi}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Tipo Comprobante:</td>
-              <td className="pcn-cell">{data.tipoDeComprobante}</td>
-            </tr>
-            <tr>
-              <td className="pcn-cell pcn-cell-label">Forma de Pago:</td>
-              <td className="pcn-cell">{data.formaPago}</td>
-            </tr>
-            
+            {SUMMARY_ROWS.map((row) => (
+              <tr key={row.label}>
+                <th scope="row" className="pcn-cell pcn-cell-label">
+                  {row.label}
+                </th>
+                <td className="pcn-cell">{row.getValue(data)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

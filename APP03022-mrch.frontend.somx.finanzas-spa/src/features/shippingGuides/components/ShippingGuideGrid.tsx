@@ -46,12 +46,12 @@ const getStatusLabel = (guide: ShippingGuide) => {
 
 const getStatusBadgeClass = (guide: ShippingGuide) => {
   const code = getShippingGuideStatusCode(guide);
-  return statusBadgeByCode[code] || "sg-status-muted";
+  return statusBadgeByCode[code] ?? "sg-status-muted";
 };
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
   if (!item) return "N/D";
-  return item.description || item.value || item.key || (item.internalStatus != null ? String(item.internalStatus) : "N/D");
+  return item.description ?? item.value ?? item.key ?? (item.internalStatus != null ? String(item.internalStatus) : "N/D");
 };
 
 const renderStatus = (guide: ShippingGuide) => {
@@ -129,11 +129,11 @@ export function ShippingGuideGrid({
     },
     {
       header: "Placa",
-      render: (guide) => <>{guide.truckPlate || "N/D"}</>,
+      render: (guide) => <>{guide.truckPlate ?? "N/D"}</>,
     },
     {
       header: "Placa Remolque",
-      render: (guide) => <>{guide.trailerPlate || "N/D"}</>,
+      render: (guide) => <>{guide.trailerPlate ?? "N/D"}</>,
     },
     {
       header: "Origen",
@@ -144,7 +144,7 @@ export function ShippingGuideGrid({
     {
       header: "Tipo Entrega",
       render: (guide) => (
-        <span title={guide.deliveryType?.key || ""}>
+        <span title={guide.deliveryType?.key ?? ""}>
           {getCatalogDisplay(guide.deliveryType)}
         </span>
       ),
@@ -162,7 +162,7 @@ export function ShippingGuideGrid({
     },
     {
       header: "Nombre Proveedor",
-      render: (guide) => <>{guide.supplier?.businessName || "N/D"}</>,
+      render: (guide) => <>{guide.supplier?.businessName ?? "N/D"}</>,
     },
     {
       header: "Fecha Entrega",

@@ -73,12 +73,16 @@ export default function CreditsGrid() {
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
   const customFilters = useMemo((): Partial<CreditNoteFilters> => {
     const params = new URLSearchParams(location.search);
+    const omitEmpty = (key: string) => {
+      const v = params.get(key);
+      return v ? v : undefined;
+    };
     return {
-      uuid: params.get("uuid") || undefined,
-      relatedInvoiceUuid: params.get("relatedInvoiceUuid") || undefined,
-      fechaInicioRecepcion: params.get("start") || undefined,
-      fechaFinalRecepcion: params.get("end") || undefined,
-      idProveedor: params.get("supplierNumber") || undefined,
+      uuid: omitEmpty("uuid"),
+      relatedInvoiceUuid: omitEmpty("relatedInvoiceUuid"),
+      fechaInicioRecepcion: omitEmpty("start"),
+      fechaFinalRecepcion: omitEmpty("end"),
+      idProveedor: omitEmpty("supplierNumber"),
     };
   }, [location.search]);
 
@@ -120,7 +124,7 @@ export default function CreditsGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      await client.cancelCreditNote(row.invoiceUuid || "", row.numeroProveedor ?? "1001");
+      await client.cancelCreditNote(row.invoiceUuid ?? "", row.numeroProveedor ?? "1001");
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al cancelar la nota de crédito"));
     } finally {
@@ -305,7 +309,7 @@ export default function CreditsGrid() {
         variant="alert"
         severity="error"
         title="Error"
-        message={errorMsg || ""}
+        message={errorMsg ?? ""}
         buttonText="Aceptar"
         onClose={() => setErrorMsg(null)}
         onConfirm={() => setErrorMsg(null)}

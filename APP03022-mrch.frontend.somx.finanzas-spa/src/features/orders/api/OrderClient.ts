@@ -3,7 +3,7 @@ import type { OrdersFilters } from "../interfaces";
 import { Order, Reception, ReceptionAxios, ReceptionAxiosSingle } from "../interfaces";
 
 const api = createApiClient({
-    baseUrl: process.env.API_BASE_URL || "",
+    baseUrl: process.env.API_BASE_URL ?? "",
 });
 
 const DEFAULT_ROUTE = "purchase-orders";

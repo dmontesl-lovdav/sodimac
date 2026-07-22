@@ -207,12 +207,12 @@ export default function MigoUploadLayout(): ReactElement {
                 const data = res.data;
                 setSummary(data?.summary ?? null);
                 setInvalidRows(data?.invalidRows ?? []);
-                setSuccessMsg(res.message || 'Archivo procesado exitosamente.');
+                setSuccessMsg(res.message ?? 'Archivo procesado exitosamente.');
                 setFile(null);
             } else {
                 financeAlert.showError(
                     'Error al procesar',
-                    res.message || 'Error al procesar el archivo.',
+                    res.message ?? 'Error al procesar el archivo.',
                 );
             }
         } catch (err: unknown) {

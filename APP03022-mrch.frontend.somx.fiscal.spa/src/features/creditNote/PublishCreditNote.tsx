@@ -79,7 +79,6 @@ function PublishCreditNoteContent() {
   const publishClient = useMemo(() => createCreditNotePublishClient(), []);
   const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
   const isDiscountFlow = isCommercialDiscountFlow(query);
-
   useEffect(() => {
     if (isDiscountFlow) {
       setDiscountInfo(query);
@@ -276,7 +275,7 @@ function PublishCreditNoteContent() {
         const logLevel =
           (response.warnings ?? []).some((w) => String(w).trim()) ? "WARN" : "INFO";
         addLog(
-          response.message || `Transacción ${traceId}`,
+          response.message ?? `Transacción ${traceId}`,
           "CREDIT_NOTE",
           "PUBLISH_CREDIT_NOTE",
           logLevel,
@@ -288,7 +287,7 @@ function PublishCreditNoteContent() {
       setFinishModal(buildFinishModal(response));
       setPublishFailed(true);
       addLog(
-        response.message || `Transacción ${traceId}`,
+        response.message ?? `Transacción ${traceId}`,
         "CREDIT_NOTE",
         "PUBLISH_CREDIT_NOTE",
         "ERROR",
@@ -376,12 +375,7 @@ function PublishCreditNoteContent() {
             />
           </div>
         )}
-        {discountInfo && (
-          <div>
-            <h2 className="pcn-section-title">Datos del descuento</h2>
-            <DiscountInfoGrid discount={discountInfo} />
-          </div>
-        )}
+        {discountInfo && <DiscountInfoGrid discount={discountInfo} />}
 
         {isUploading ? <GenericLinearProgress /> : null}
 

@@ -107,11 +107,11 @@ const returnProvider = (r: Rebate) => {
                 const fiscalParams = new URLSearchParams({
                     numeroProveedor: String(vendorNum ?? ""),
                     numeroDocumento: String(r.documentNumber ?? ""),
-                    referenciaDocumento: r.documentReference || r.referenceNumber || "",
+                    referenciaDocumento: r.documentReference ?? r.referenceNumber ?? "",
                     rebateId: String(r.rebateId ?? ""),
                     supplierNumber: String(vendorNum ?? ""),
                     documentNumber: String(r.documentNumber ?? ""),
-                    documentReference: r.documentReference || r.referenceNumber || "",
+                    documentReference: r.documentReference ?? r.referenceNumber ?? "",
                     sapDocument: String(r.sapDocument ?? ""),
                     postingDate: String(r.postingDate ?? ""),
                     dueDate: String(r.dueDate ?? ""),

@@ -29,7 +29,7 @@ export default function GenericSelect({
   ...props
 }: GenericSelectProps): React.ReactElement {
   const rootClass = `fiscal-select-default-root ${containerClassName} ${className}`.trim();
-  const width = widthClass || '15rem';
+  const width = widthClass ?? '15rem';
   return (
     <div className={rootClass} style={{ ['--fiscal-select-width' as string]: width } as React.CSSProperties}>
       <select

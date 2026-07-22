@@ -154,7 +154,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                 setLoading(false);
             }
         };
-        fetchData(params.uuid || "");
+        fetchData(params.uuid ?? "");
     }, [params]);
 
     const updateOrderStatus = async (reason: string, status: number, uuid: string) => {
@@ -234,7 +234,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
         ];
         const rows = skus.map((item) => [
             reception.order?.orderNumber ?? reception.orderNumber ?? "",
-            reception.receptionNumber || reception.receptionId || "",
+            reception.receptionNumber ?? reception.receptionId ?? "",
             String(reception.amount ?? ""),
             reception.receptionDate ? formatDate(String(reception.receptionDate)) : "",
             String(reception.order?.supplierNumber ?? reception.supplierNumber ?? ""),
@@ -244,7 +244,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
             parseFloat(item.unitCost).toFixed(2),
             parseFloat(item.totalCost).toFixed(2),
         ]);
-        const receptionId = String(reception.receptionNumber || reception.receptionId || "rec");
+        const receptionId = String(reception.receptionNumber ?? reception.receptionId ?? "rec");
         const baseName = `recepcion_detalle_${receptionId.replace(/[^\w-]+/g, "_").slice(0, 80)}_${formatFilenameTimestamp()}`;
         exportToCSV(headers, rows, baseName);
         setIsExporting(false);

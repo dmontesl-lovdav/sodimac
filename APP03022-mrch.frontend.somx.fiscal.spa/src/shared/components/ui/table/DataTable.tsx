@@ -116,9 +116,9 @@ export default function GenericTable<T>(
         ? Number(totalItems)
         : rows.length;
 
-    const safePerPage = Math.max(1, Number(perPage || 1));
-    const safeTotalPages = Math.max(1, Number(totalPages || 1));
-    const safePage = Math.min(Math.max(1, Number(page || 1)), safeTotalPages);
+    const safePerPage = Math.max(1, Number(perPage ?? 1));
+    const safeTotalPages = Math.max(1, Number(totalPages ?? 1));
+    const safePage = Math.min(Math.max(1, Number(page ?? 1)), safeTotalPages);
 
     const firstIdx = N === 0 ? 0 : (safePage - 1) * safePerPage + 1;
     const lastIdx = Math.min(safePage * safePerPage, N);
@@ -244,7 +244,7 @@ export default function GenericTable<T>(
                         value={safePage}
                         onChange={(e) =>
                             onChangePage(
-                                Math.max(1, Math.min(safeTotalPages, Number(e.target.value) || 1))
+                                Math.max(1, Math.min(safeTotalPages, ((n) => (Number.isFinite(n) && n !== 0 ? n : 1))(Number(e.target.value))))
                             )
                         }
                         className="fiscal-table-input"

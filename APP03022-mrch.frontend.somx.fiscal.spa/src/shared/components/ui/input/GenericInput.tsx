@@ -3,7 +3,7 @@ import './Input.css';
 
 export function getInputLeftPad(el: HTMLElement): number {
   const cs = window.getComputedStyle(el);
-  const pl = parseFloat(cs.paddingLeft || '16');
+  const pl = parseFloat(cs.paddingLeft ?? '16');
   return Number.isFinite(pl) ? pl : 16;
 }
 
@@ -102,7 +102,7 @@ export default function GenericInput({
     maxLength !== undefined ? counterId : null,
   ]
     .filter(Boolean)
-    .join(' ') || undefined;
+    .join(' ') ?? undefined;
 
   const rootClass = `fiscal-input-root ${className}`.trim();
   const inputClass = `fiscal-input-field ${showError ? 'fiscal-input-field-error' : ''}`.trim();
@@ -129,7 +129,7 @@ export default function GenericInput({
         readOnly={readOnly}
         maxLength={maxLength}
         aria-invalid={showError}
-        aria-describedby={describedBy || undefined}
+        aria-describedby={describedBy ?? undefined}
         className={inputClass}
         {...props}
       />

@@ -72,7 +72,9 @@ export function insertThousandsSeparators(intPart: string): string {
     const digits = negative ? intPart.slice(1) : intPart;
     let out = "";
     for (let i = 0; i < digits.length; i++) {
-        if (i > 0 && (digits.length - i) % 3 === 0) out += ",";
+        if (i > 0 && (digits.length - i) % 3 === 0) {
+            out += ",";
+        }
         out += digits[i];
     }
     return negative ? `-${out}` : out;
@@ -247,7 +249,7 @@ export async function fetchCatalog(catalog: keyof typeof Catalogs): Promise<Cata
   return response;
   /*
   //TODO: Reactivar cuando esté online el API de catálogos
-  const catalogs_api = String(process.env.API_CATALOGS_URL || "") + "/" +catalog;
+  const catalogs_api = String(process.env.API_CATALOGS_URL ?? "") + "/" +catalog;
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
@@ -265,7 +267,7 @@ export async function fetchCatalog(catalog: keyof typeof Catalogs): Promise<Cata
 export async function fetchCatalogDetails(
   catalogName: string
 ): Promise<unknown | null> {
-  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  const base = String(process.env.CATALOGS_API_URL ?? "").replace(/\/$/, "");
   if (base) {
     const path = catalogName.replace(/^\/+/, "");
     try {
@@ -330,7 +332,7 @@ export function mapCatalogResponseToFilterOptions(
 
 
 export async function fetchProvidersAsCatalog(valueField = "rfc", fullList: boolean = false): Promise<SelectableOption[] | null> {
-  const catalogs_api = String(process.env.CATALOGS_API_URL || "") + String(process.env.API_PROVIDERS +"");
+  const catalogs_api = String(process.env.CATALOGS_API_URL ?? "") + String(process.env.API_PROVIDERS +"");
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
@@ -385,7 +387,7 @@ export function fetchCatalogAsSelectableOptions(data: any, labelSet: string = "T
 
 /** Obtención de parámetros de configuración del sistema */
 export async function fetchSystemParameters(): Promise<SystemParametersResponse | null> {
-  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  const base = String(process.env.CATALOGS_API_URL ?? "").replace(/\/$/, "");
   if (base) {
     try {
       const response = await fetch(`${base}/parameters`);
@@ -447,7 +449,7 @@ export function getXmlFileNameFromRow(row: {
  * Si el API falla o no está configurado, devuelve el mensaje por defecto.
  */
 export async function fetchCatalogMessage(catalog: string, messageId: string): Promise<string> {
-  const baseUrl = process.env.CATALOGS_API_URL || "";
+  const baseUrl = process.env.CATALOGS_API_URL ?? "";
   if (!baseUrl) return getDefaultCatalogMessage(catalog, messageId);
   try {
     const url = `${baseUrl}/${catalog}`;
@@ -469,12 +471,15 @@ function getDefaultCatalogMessage(catalog: string, messageId: string): string {
   const DEFAULT_MSG_CRF8002 = "¿Está seguro(a) de que desea cancelar esta nota de crédito?";
 
 
-  if (catalog === "CatMsgAdvertencia" && messageId === "WRN7008")
+  if (catalog === "CatMsgAdvertencia" && messageId === "WRN7008") {
     return DEFAULT_MSG_WRN7008;
-   if (catalog === "CatMsgConfirm" && messageId === "CRF8001")
+  }
+  if (catalog === "CatMsgConfirm" && messageId === "CRF8001") {
     return DEFAULT_MSG_CRF8001;
-   if (catalog === "CatMsgConfirm" && messageId === "CRF8002")
+  }
+  if (catalog === "CatMsgConfirm" && messageId === "CRF8002") {
     return DEFAULT_MSG_CRF8002;
+  }
   return "";
 }
 
@@ -521,8 +526,8 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   if (!error || typeof error !== "object") return fallback;
   const e = error as { message?: string; response?: { data?: { message?: string; code?: string } } };
   const code = e.response?.data?.code;
-  const message = e.response?.data?.message || e.message;
+  const message = e.response?.data?.message ?? e.message;
   if (code && message) return `${code}: ${message}`;
-  return message || fallback;
+  return message ?? fallback;
 }
 

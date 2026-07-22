@@ -93,7 +93,7 @@ export default function GenericDropzone({
   const openDialog = (): void => inputRef.current?.click();
 
   const acceptText =
-    accept ||
+    accept ??
     '.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel';
 
   const boxClass = `fiscal-dropzone ${dragOver ? 'fiscal-dropzone-dragOver' : ''} ${className}`.trim();

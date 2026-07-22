@@ -65,17 +65,17 @@ export default function MigoContainer(): ReactElement {
     const paymentFromState = locationState?.payment;
 
     const paymentContext = useMemo<PaymentNavigationContext | null>(() => {
-        const ref = paymentFromState?.documentReference || searchParams.get('ref') || '';
-        const provider = paymentFromState?.providerNumber || searchParams.get('provider') || '';
-        const year = paymentFromState?.paymentYear || searchParams.get('year') || '';
-        const currency = paymentFromState?.currency || searchParams.get('currency') || '';
+        const ref = paymentFromState?.documentReference ?? searchParams.get('ref') ?? '';
+        const provider = paymentFromState?.providerNumber ?? searchParams.get('provider') ?? '';
+        const year = paymentFromState?.paymentYear ?? searchParams.get('year') ?? '';
+        const currency = paymentFromState?.currency ?? searchParams.get('currency') ?? '';
         let rawAmount: number | null = null;
         if (paymentFromState?.amount != null) {
             rawAmount = Number(paymentFromState.amount);
         } else if (searchParams.get('amount') != null) {
             rawAmount = Number(searchParams.get('amount'));
         }
-        const paymentDate = paymentFromState?.paymentDate || searchParams.get('paymentDate') || '';
+        const paymentDate = paymentFromState?.paymentDate ?? searchParams.get('paymentDate') ?? '';
 
         const hasAnyValue = !!(ref || provider || year || currency || paymentDate || rawAmount != null);
 
@@ -95,12 +95,12 @@ export default function MigoContainer(): ReactElement {
         if (!paymentContext) return '';
 
         const params = new URLSearchParams({
-            ref: paymentContext.documentReference || '',
-            provider: paymentContext.providerNumber || '',
-            year: paymentContext.paymentYear || '',
-            currency: paymentContext.currency || '',
+            ref: paymentContext.documentReference ?? '',
+            provider: paymentContext.providerNumber ?? '',
+            year: paymentContext.paymentYear ?? '',
+            currency: paymentContext.currency ?? '',
             amount: paymentContext.amount != null ? String(paymentContext.amount) : '',
-            paymentDate: paymentContext.paymentDate || '',
+            paymentDate: paymentContext.paymentDate ?? '',
         });
 
         return params.toString();
@@ -163,7 +163,7 @@ export default function MigoContainer(): ReactElement {
     const buildFilters = useCallback((p: number, ps: number): MigoSearchFilters => ({
         publishedAtStart: dateRange[0] ? toIsoStartOfDay(dateRange[0]) : '',
         publishedAtEnd: dateRange[1] ? toIsoEndOfDay(dateRange[1]) : '',
-        fileName: fileNameFilter || undefined,
+        fileName: fileNameFilter ?? undefined,
         pageNumber: p,
         pageSize: ps,
     }), [dateRange, fileNameFilter]);
@@ -461,19 +461,19 @@ export default function MigoContainer(): ReactElement {
                     <div className="migo-summary-card" style={{ marginBottom: 16 }}>
                         <div>
                             <div className="migo-summary-label">Referencia de pago</div>
-                            <div className="migo-summary-value">{paymentContext.documentReference || '-'}</div>
+                            <div className="migo-summary-value">{paymentContext.documentReference ?? '-'}</div>
                         </div>
                         <div>
                             <div className="migo-summary-label">Id Proveedor</div>
-                            <div className="migo-summary-value">{paymentContext.providerNumber || '-'}</div>
+                            <div className="migo-summary-value">{paymentContext.providerNumber ?? '-'}</div>
                         </div>
                         <div>
                             <div className="migo-summary-label">{'Año de pago'}</div>
-                            <div className="migo-summary-value">{paymentContext.paymentYear || '-'}</div>
+                            <div className="migo-summary-value">{paymentContext.paymentYear ?? '-'}</div>
                         </div>
                         <div>
                             <div className="migo-summary-label">Moneda</div>
-                            <div className="migo-summary-value">{paymentContext.currency || '-'}</div>
+                            <div className="migo-summary-value">{paymentContext.currency ?? '-'}</div>
                         </div>
                         <div>
                             <div className="migo-summary-label">Importe</div>

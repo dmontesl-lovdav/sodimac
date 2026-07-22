@@ -3,7 +3,7 @@ import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 import type { PublishCreditNoteResponse } from "../parts/types";
 
 const fiscalApi = createApiClient({
-  baseUrl: process.env.FISCAL_API_URL || "",
+  baseUrl: process.env.FISCAL_API_URL ?? "",
 });
 
 export const createCreditNotePublishClient = (api?: ApiClient) => {

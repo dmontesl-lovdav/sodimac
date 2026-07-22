@@ -41,7 +41,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
             return [
                 item.receptionId,
                 item.order.orderNumber,
-                item.shipping?.guideNumber || "",
+                item.shipping?.guideNumber ?? "",
                 item.originId,
                 item.originId,
                 item.originId,
@@ -81,7 +81,7 @@ export default function ResultsTable({ rows, loading }: { rows: Reception[]; loa
         { header: "Sucursal", render: () => <>--</> },
         { header: "Origen", render: order => <>{order.originId}</> },
         { header: "Descripción Origen", render: () => <>--</> },
-        { header: "Fecha Recepción", render: order => <>{formatDate(order.receptionDate) || "N/D"}</> },
+        { header: "Fecha Recepción", render: order => <>{formatDate(order.receptionDate) ?? "N/D"}</> },
         { header: "Fecha Registro Documento", render: () => <>--</> },
         { header: "Importe", render: order => <>{formatAmount(order.amount)}</> },
         { header: "Estatus", render: order => <OrderPillStatus status={order.status} /> },

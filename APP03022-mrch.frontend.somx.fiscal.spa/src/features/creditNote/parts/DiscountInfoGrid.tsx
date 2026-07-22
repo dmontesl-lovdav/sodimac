@@ -1,7 +1,7 @@
-import { Fragment } from "react";
 import { formatAmount, formatDate } from "@/utils/utils";
 import { displayOrDash } from "./publishQuery";
 import type { PublishQuery } from "./types";
+import "./DiscountInfoGrid.css";
 
 type Props = {
   discount: PublishQuery;
@@ -11,14 +11,6 @@ type Field = {
   label: string;
   value: string;
 };
-
-function chunkFields(fields: Field[], size: number): Field[][] {
-  const rows: Field[][] = [];
-  for (let i = 0; i < fields.length; i += size) {
-    rows.push(fields.slice(i, i + size));
-  }
-  return rows;
-}
 
 export default function DiscountInfoGrid({ discount }: Props) {
   const fields: Field[] = [
@@ -53,41 +45,19 @@ export default function DiscountInfoGrid({ discount }: Props) {
     },
   ];
 
-  const rows = chunkFields(fields, 5);
-
   return (
-    <div className="pcn-invoice-grid-wrap">
-      <table className="pcn-invoice-grid pcn-discount-grid">
-        <tbody>
-          {rows.map((row) => {
-            const rowKey = row.map((f) => f.label).join("|");
-            return (
-              <Fragment key={rowKey}>
-                <tr>
-                  {row.map((field) => (
-                    <th key={`th-${field.label}`} scope="col">
-                      {field.label}
-                    </th>
-                  ))}
-                  {Array.from({ length: 5 - row.length }).map((_, idx) => (
-                    <th key={`th-empty-${idx}`} scope="col" />
-                  ))}
-                </tr>
-                <tr>
-                  {row.map((field) => (
-                    <td key={`td-${field.label}`} className="pcn-cell-wrap">
-                      {field.value}
-                    </td>
-                  ))}
-                  {Array.from({ length: 5 - row.length }).map((_, idx) => (
-                    <td key={`td-empty-${idx}`} />
-                  ))}
-                </tr>
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="pcn-discount-header-card">
+      <div className="pcn-discount-header-top">
+        <span className="pcn-discount-section-title">Datos del descuento</span>
+      </div>
+      <div className="pcn-discount-summary-grid">
+        {fields.map((field) => (
+          <div key={field.label} className="pcn-discount-summary-item">
+            <div className="pcn-discount-label">{field.label}</div>
+            <div>{field.value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

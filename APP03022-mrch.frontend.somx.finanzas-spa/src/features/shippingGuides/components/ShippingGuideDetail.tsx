@@ -136,7 +136,7 @@ export default function ShippingGuideDetailView(): ReactElement {
     }, [guideId]);
 
     const guideTitleNumber =
-        detail.guideNumber?.trim() || "—";
+        ((t) => (t == null || t === "" ? "—" : t))(detail.guideNumber?.trim());
 
     const breadcrumb: BreadcrumbItem[] = useMemo(
         () =>

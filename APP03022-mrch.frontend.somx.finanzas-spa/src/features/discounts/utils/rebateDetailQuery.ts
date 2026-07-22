@@ -42,12 +42,12 @@ export function buildRebateDetailSearchParams(r: Rebate): URLSearchParams {
     setIfPresent(
         p,
         "documentReference",
-        r.documentReference || r.referenceNumber || ""
+        r.documentReference ?? r.referenceNumber ?? ""
     );
     setIfPresent(
         p,
         "referenceNumber",
-        r.referenceNumber || r.documentReference || ""
+        r.referenceNumber ?? r.documentReference ?? ""
     );
     setIfPresent(p, "sapDocument", r.sapDocument);
     setIfPresent(p, "postingDate", r.postingDate);
@@ -59,7 +59,7 @@ export function buildRebateDetailSearchParams(r: Rebate): URLSearchParams {
     setIfPresent(
         p,
         "vendorName",
-        r.vendorName || r.supplier?.businessName || ""
+        r.vendorName ?? r.supplier?.businessName ?? ""
     );
     setIfPresent(p, "createdBy", r.createdBy);
     setIfPresent(p, "createdAt", r.createdAt);
@@ -80,7 +80,7 @@ export function buildRebateDetailSearchParams(r: Rebate): URLSearchParams {
 export function parseRebateDetailFromSearchParams(
     sp: URLSearchParams
 ): RebateDetailFromQuery {
-    const g = (k: string) => sp.get(k)?.trim() ?? "";
+    const g = (k: string) => (sp.get(k)?.trim() ?? "");
     return {
         rebateId: g("rebateId"),
         supplierNumber: g("supplierNumber"),

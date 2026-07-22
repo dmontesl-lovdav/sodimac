@@ -43,8 +43,8 @@ function filterByReceptionQuery(receptions: Reception[], q?: string): Reception[
   if (!t) return receptions;
   return receptions.filter(
     (r) =>
-      (r.receptionNumber || "").toLowerCase().includes(t) ||
-      String(r.receptionId || "")
+      (r.receptionNumber ?? "").toLowerCase().includes(t) ||
+      String(r.receptionId ?? "")
         .toLowerCase()
         .includes(t)
   );
@@ -67,12 +67,13 @@ function resolveReceptionInvoiceUuid(rec: {
 }): string {
   const inv = rec.listAddendum?.[0]?.invoice;
   return (
-    rec.invoiceUuid?.trim() ||
-    inv?.fiscalUuid?.trim() ||
-    inv?.fiscal_uuid?.trim() ||
-    inv?.invoiceUuid?.trim() ||
-    inv?.invoice_uuid?.trim() ||
-    ""
+    [
+      rec.invoiceUuid?.trim(),
+      inv?.fiscalUuid?.trim(),
+      inv?.fiscal_uuid?.trim(),
+      inv?.invoiceUuid?.trim(),
+      inv?.invoice_uuid?.trim(),
+    ].find((v) => Boolean(v)) ?? ""
   );
 }
 
@@ -107,7 +108,7 @@ export default function ReceptionContainer(): ReactElement {
           purchaseOrderId: item.purchaseOrderId,
           orderNumber: item.orderNumber,
           shippingGuideNumber: mergeShippingNumbers(item.shippingGuidePurchaseOrders),
-          vendorName: item?.supplier?.businessName || "",
+          vendorName: item?.supplier?.businessName ?? "",
           originId: toNumber(item.originId),
           amount: toNumber(item.amount),
           status: item.status,
@@ -129,10 +130,11 @@ export default function ReceptionContainer(): ReactElement {
           purchaseOrderDate: item.purchaseOrderDate,
           supplierNumber: String(item.supplierNumber ?? ""),
           vendorName:
-            rec.vendorName ||
-            item?.supplier?.businessName ||
-            item?.vendorName ||
-            "",
+            [
+              rec.vendorName,
+              item?.supplier?.businessName,
+              item?.vendorName,
+            ].find((v) => Boolean(v)) ?? "",
 
           receptionId: String(rec.receptionId ?? ""),
           receptionNumber: rec.receptionNumber,
@@ -266,14 +268,14 @@ export default function ReceptionContainer(): ReactElement {
     const body = allFiltered.map((r) => {
       const inv = getAdendumInvoice(r);
       const doc = inv
-        ? inv.document_type || inv.documentType || "--"
+        ? inv.document_type ?? inv.documentType ?? "--"
         : "--";
       const serie = inv?.series ?? "--";
       const folio = inv?.folio ?? "--";
-      const uuid = resolveReceptionInvoiceUuid(r) || "--";
+      const uuid = resolveReceptionInvoiceUuid(r) ?? "--";
       const statusLabel = resolveReceptionStatusDisplay(r.status).label;
       return [
-        r.receptionNumber || r.receptionId || "",
+        r.receptionNumber ?? r.receptionId ?? "",
         r.order?.orderNumber ?? r.orderNumber ?? "",
         mergeShippingNumbers(r.shippingGuidePurchaseOrders),
         capitalizeWord(r.supplier?.supplierType?.code ?? ""),

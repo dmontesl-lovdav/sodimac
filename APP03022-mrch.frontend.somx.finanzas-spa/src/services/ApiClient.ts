@@ -66,7 +66,7 @@ export function createApiClient(options?: {
         if (storeToken?.trim()) return storeToken;
 
         const envToken =
-            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ||
+            process.env.REACT_APP_AUTH_DEFAULT_TOKEN ??
             process.env.AUTH_DEFAULT_TOKEN;
 
         if (envToken?.trim()) {
@@ -137,7 +137,7 @@ export function createApiClient(options?: {
             parseFilenameFromContentDisposition(dispositionHeader);
 
         const finalFilename =
-            serverFilename || filename || "file.bin";
+            serverFilename || (filename ?? "file.bin");
 
         const contentType =
             (res.headers as Record<string, string> | undefined)?.["content-type"] ??
@@ -154,7 +154,7 @@ export function createApiClient(options?: {
                 type: "text/csv;charset=utf-8",
             })
             : new Blob([res.data], {
-                type: contentType || "application/octet-stream",
+                type: contentType ?? "application/octet-stream",
             });
 
         const anchor = document.createElement("a");

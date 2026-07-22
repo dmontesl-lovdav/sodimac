@@ -84,7 +84,7 @@ function isPostingDateInFilterRange(
 }
 
 function includesIgnoreCase(value: string | undefined, query: string): boolean {
-  return (value || "").toLowerCase().includes(query);
+  return (value ?? "").toLowerCase().includes(query);
 }
 
 function applyClientFilters(

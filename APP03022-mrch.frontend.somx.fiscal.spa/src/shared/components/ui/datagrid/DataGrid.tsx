@@ -225,7 +225,7 @@ export async function resolveCsvExportRows<T, F = any>(opts: {
     return currentRows;
   }
 
-  const size = Math.max(1, pageSize || 10);
+  const size = Math.max(1, pageSize ?? 10);
   const pages = Math.max(1, Math.ceil(totalItems / size));
   const all: T[] = [];
   for (let p = 0; p < pages; p++) {
@@ -353,16 +353,16 @@ function DataGridInner<T, F = any>(
   } as UsePaginatedDataOptions<T, F>);
   const paginatedData = pagedEnabled ? paginatedDataResult : null;
 
-  const rows = paginatedData ? paginatedData.rows : (externalRows || []);
-  const loading = paginatedData ? paginatedData.loading : (externalLoading || false);
+  const rows = paginatedData ? paginatedData.rows : (externalRows ?? []);
+  const loading = paginatedData ? paginatedData.loading : (externalLoading ?? false);
   const fetchError = paginatedData?.error ?? null;
-  const page = paginatedData ? paginatedData.page : (externalPage || 1);
-  const perPage = paginatedData ? paginatedData.size : (externalPerPage || 25);
+  const page = paginatedData ? paginatedData.page : (externalPage ?? 1);
+  const perPage = paginatedData ? paginatedData.size : (externalPerPage ?? 25);
   const totalPages = paginatedData ? paginatedData.totalPages : (externalTotalPages || Math.ceil(rows.length / perPage));
   const totalItems = paginatedData ? paginatedData.totalItems : (externalTotalItems || rows.length);
   const onChangePage = paginatedData ? paginatedData.changePage : externalOnChangePage;
   const onChangePerPage = paginatedData ? paginatedData.changePerPage : externalOnChangePerPage;
-  const effectiveEmptyLabel = emptyLabel || (loading ? "Cargando..." : "Sin resultados");
+  const effectiveEmptyLabel = emptyLabel ?? (loading ? "Cargando..." : "Sin resultados");
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [processing, setProcessing] = useState<boolean>(false);
   const [xmlErrorMsg, setXmlErrorMsg] = useState<string | undefined>(undefined);
@@ -561,7 +561,7 @@ function DataGridInner<T, F = any>(
       variant="alert"
       severity="error"
       title="Error"
-      message={xmlErrorMsg || ""}
+      message={xmlErrorMsg ?? ""}
       buttonText="Aceptar"
       onClose={() => setXmlErrorMsg(undefined)}
       onConfirm={() => setXmlErrorMsg(undefined)}
@@ -574,7 +574,7 @@ function DataGridInner<T, F = any>(
       variant="alert"
       severity="error"
       title="Error al descargar PDF"
-      message={pdfErrorMsg || ""}
+      message={pdfErrorMsg ?? ""}
       buttonText="Aceptar"
       onClose={() => setPdfErrorMsg(undefined)}
       onConfirm={() => setPdfErrorMsg(undefined)}
@@ -593,7 +593,7 @@ function DataGridInner<T, F = any>(
   if (loading) {
     tableEmptyLabel = "Cargando...";
   } else if (fetchError) {
-    tableEmptyLabel = [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") || "Error al obtener los datos";
+    tableEmptyLabel = [fetchError.errorCode, fetchError.message].filter(Boolean).join(" - ") ?? "Error al obtener los datos";
   }
 
   const showOutcomeAlert = emptySearchAlertOpen && !filtersEmpty && !loading && rows.length === 0;

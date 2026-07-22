@@ -51,16 +51,16 @@ class PaymentsClient {
         const content = pageable?.content ?? [];
 
         const items: PaymentRecord[] = content.map((item: any) => ({
-            idPago: item.finanzasPaymentUuid || item.id || '',
+            idPago: item.finanzasPaymentUuid ?? item.id ?? '',
             paymentHeaderUuid: item.paymentHeaderUuid ?? null,
-            documentNumber: item.documentNumber || '',
-            documentReference: item.documentReference || '',
-            providerNumber: String(item.vendorNumber || ''),
-            providerName: item.vendorName || '',
-            currency: item.currency || 'MXN',
-            amount: Number(item.amount) || 0,
-            documentType: item.documentType || '',
-            sapDocument: item.sapDocument || '',
+            documentNumber: item.documentNumber ?? '',
+            documentReference: item.documentReference ?? '',
+            providerNumber: String(item.vendorNumber ?? ''),
+            providerName: item.vendorName ?? '',
+            currency: item.currency ?? 'MXN',
+            amount: ((n) => (Number.isFinite(n) ? n : 0))(Number(item.amount)),
+            documentType: item.documentType ?? '',
+            sapDocument: item.sapDocument ?? '',
             paymentDate: item.paymentDate ? formatDate(item.paymentDate) : '',
             paymentYear: item.paymentDate
                 ? String(parseDisplayDate(item.paymentDate)?.getFullYear() ?? '')
@@ -132,21 +132,21 @@ class PaymentsClient {
                 : accountsResponse?.content ?? [];
 
             documents = accountsData.map((doc: any) => ({
-                id: doc.accountsPayableUuid || doc.id || '',
-                documentNumber: doc.documentNumber || '',
-                documentType: doc.documentType || '',
-                reference: doc.reference || '',
+                id: doc.accountsPayableUuid ?? doc.id ?? '',
+                documentNumber: doc.documentNumber ?? '',
+                documentType: doc.documentType ?? '',
+                reference: doc.reference ?? '',
                 documentDate: doc.documentDate ? formatDate(doc.documentDate) : '',
                 accountingDate: doc.accountingDate ? formatDate(doc.accountingDate) : '',
                 dueDate: doc.dueDate ? formatDate(doc.dueDate) : '',
-                currency: doc.currency || 'MXN',
-                amount: Number(doc.amount) || 0,
-                serie: doc.serie || '',
-                folio: doc.folio || '',
-                uuid: doc.uuid || '',
-                sapDocument: doc.sapDocument || '',
+                currency: doc.currency ?? 'MXN',
+                amount: ((n) => (Number.isFinite(n) ? n : 0))(Number(doc.amount)),
+                serie: doc.serie ?? '',
+                folio: doc.folio ?? '',
+                uuid: doc.uuid ?? '',
+                sapDocument: doc.sapDocument ?? '',
                 paymentDate: doc.paymentDate ? formatDate(doc.paymentDate) : '',
-                status: doc.status || 'Activo',
+                status: doc.status ?? 'Activo',
                 createdAt: doc.createdAt ? formatDate(doc.createdAt) : '',
                 updatedAt: doc.updatedAt ? formatDate(doc.updatedAt) : '',
             }));
@@ -235,19 +235,19 @@ class PaymentsClient {
         const rows = detail.documents.map(doc => [
             ...(isAdmin ? [detail.providerNumber, detail.providerName] : []),
             detail.documentNumber,
-            detail.paymentYear || '',
+            detail.paymentYear ?? '',
             detail.paymentDate,
             detail.amount.toString(),
             detail.currency,
             doc.documentNumber,
-            doc.reference || '',
+            doc.reference ?? '',
             doc.documentDate,
-            ...(isAdmin ? [doc.accountingDate || ''] : []),
+            ...(isAdmin ? [doc.accountingDate ?? ''] : []),
             doc.dueDate,
             doc.amount.toString(),
-            doc.serie || '',
-            doc.folio || '',
-            doc.uuid || '',
+            doc.serie ?? '',
+            doc.folio ?? '',
+            doc.uuid ?? '',
             doc.status,
         ]);
 
@@ -277,15 +277,15 @@ class PaymentsClient {
 
         const csvRows = documents.map(doc => [
             doc.documentNumber,
-            doc.reference || '',
+            doc.reference ?? '',
             doc.currency,
             formatPaymentAmount(doc.amount),
             doc.documentType,
-            doc.sapDocument || '',
-            doc.paymentDate || '',
+            doc.sapDocument ?? '',
+            doc.paymentDate ?? '',
             doc.status,
-            doc.createdAt || '',
-            doc.updatedAt || '',
+            doc.createdAt ?? '',
+            doc.updatedAt ?? '',
         ]);
 
         const csvContent =

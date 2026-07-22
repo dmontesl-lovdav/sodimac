@@ -38,13 +38,13 @@ import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
 type RowExportFormat = "csv" | "xml";
 
 const safeGuideFileTag = (g: ShippingGuide) => {
-  const raw = g.guideNumber || g.shippingGuideId || "guia";
+  const raw = g.guideNumber ?? g.shippingGuideId ?? "guia";
   return String(raw).replace(/[^\w-]+/g, "_").slice(0, 80);
 };
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
   if (!item) return "N/D";
-  return item.description || item.value || item.key || (item.internalStatus != null ? String(item.internalStatus) : "N/D");
+  return item.description ?? item.value ?? item.key ?? (item.internalStatus != null ? String(item.internalStatus) : "N/D");
 };
 
 function parseFilterDateBound(value?: string, asEndOfDay = false): number | null {
@@ -109,7 +109,7 @@ export default function ShippingGuideContainer(): ReactElement {
         setRows([]);
         financeAlert.showError(
           "Error",
-          response.message || "Ocurrió un error en el backend al obtener las guías."
+          response.message ?? "Ocurrió un error en el backend al obtener las guías."
         );
         return;
       }
@@ -126,7 +126,7 @@ export default function ShippingGuideContainer(): ReactElement {
       if (f.orderNumber?.trim()) {
         const q = f.orderNumber.trim().toLowerCase();
         content = content.filter((g) =>
-          (g.orderNumber || "").toLowerCase().includes(q)
+          (g.orderNumber ?? "").toLowerCase().includes(q)
         );
       }
 
@@ -201,13 +201,13 @@ export default function ShippingGuideContainer(): ReactElement {
 
     const body = targets.map((guide) => [
       guide.guideNumber,
-      guide.truckPlate || "N/D",
-      guide.trailerPlate || "N/D",
+      guide.truckPlate ?? "N/D",
+      guide.trailerPlate ?? "N/D",
       guide.originId,
       getCatalogDisplay(guide.deliveryType),
       guide?.orderNumber == "undefined" ? "N/D" : guide?.orderNumber,
       guide.vendorNumber,
-      guide.supplier?.businessName || "N/D",
+      guide.supplier?.businessName ?? "N/D",
       guide.deliveryDate ? formatDate(guide.deliveryDate) : "N/D",
       guide.shippingDate ? formatDate(guide.shippingDate) : "N/D",
       guide.createdAt ? formatDate(guide.createdAt) : "N/D",

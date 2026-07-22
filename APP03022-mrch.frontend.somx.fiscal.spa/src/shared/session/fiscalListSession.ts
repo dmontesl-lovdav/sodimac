@@ -12,7 +12,7 @@ export type FiscalListSessionKeys = {
 const RETURN_FLAG_PREFIX = "fiscal:list:return:";
 
 export function normalizeFiscalPath(path: string): string {
-  return path.replace(/\/$/, "") || "/";
+  return path.replace(/\/$/, "") ?? "/";
 }
 
 export function isFiscalListDetailPath(
@@ -149,7 +149,7 @@ export function useFiscalListReturnFromDetail(
     markFiscalListReturnFromDetail(keys.moduleKey);
     return () => {
       const path = normalizeFiscalPath(
-        typeof window !== "undefined" ? window.location.pathname || "" : ""
+        typeof window !== "undefined" ? window.location.pathname ?? "" : ""
       );
       const base = normalizeFiscalPath(keys.listPath);
       if (

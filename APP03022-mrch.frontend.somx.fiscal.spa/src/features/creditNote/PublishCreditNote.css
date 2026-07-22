@@ -72,19 +72,6 @@
   white-space: nowrap;
 }
 
-.pcn-discount-grid {
-  min-width: 100%;
-  table-layout: fixed;
-  width: 100%;
-}
-
-.pcn-discount-grid th,
-.pcn-discount-grid td {
-  width: 20%;
-  white-space: normal;
-  word-break: break-word;
-}
-
 .pcn-invoice-grid-empty {
   color: #6b7280;
   font-size: 14px;
@@ -207,6 +194,7 @@
 
 .pcn-cell-label {
   font-weight: 600;
+  text-align: left;
 }
 
 @media (max-width: 900px) {

@@ -105,13 +105,13 @@ export function resolveFieldWrapperClass(field: FilterField): string {
 
 export function resolveSelectPlaceholder(field: FilterField): string {
   if (field.type === "providerSelect") {
-    return field.placeholder || "Nombre Proveedor";
+    return field.placeholder ?? "Nombre Proveedor";
   }
-  return field.placeholder || field.label;
+  return field.placeholder ?? field.label;
 }
 
 export function resolveTextPlaceholder(field: FilterField): string {
-  return field.placeholder || field.label;
+  return field.placeholder ?? field.label;
 }
 
 export function resolveDatePlaceholder(field: FilterField): string {
@@ -119,7 +119,7 @@ export function resolveDatePlaceholder(field: FilterField): string {
   if (field.key === "fechaRecepcion") return "Fecha de recepción";
   if (field.key === "fechaPago") return "Fecha de pago";
   if (field.key === "fechaEmision") return "Fecha de emisión";
-  return field.label || "Fecha desde – hasta";
+  return field.label ?? "Fecha desde – hasta";
 }
 
 export function resolveDateFilterKeys(fieldKey: string): {
@@ -420,7 +420,7 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
             return (
               <GenericInputSearch
                 key={field.key}
-                value={String(filters[field.key] || "")}
+                value={String(filters[field.key] ?? "")}
                 onChange={handleFieldChange(field.key)}
                 placeholder={resolveTextPlaceholder(field)}
                 className="generic-input rc-filter-input"

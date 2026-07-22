@@ -84,7 +84,7 @@ function statusFromCode(statusStr: string): { type: string; label: string } {
     const n = Number(statusStr);
     const found = RebateStatusOptions.find((o) => o.value === n);
     if (found) return { type: found.type, label: found.label };
-    return { type: "error", label: statusStr || "N/D" };
+    return { type: "error", label: statusStr ?? "N/D" };
 }
 
 function Field({
@@ -112,8 +112,7 @@ export default function RebateDetailView(): ReactElement {
 
     const docLabel =
         d.documentNumber?.trim() ||
-        d.rebateId?.trim() ||
-        "—";
+        ((t) => (t == null || t === "" ? "—" : t))(d.rebateId?.trim());
 
     const hasPayload =
         Boolean(d.documentNumber?.trim()) ||

@@ -35,12 +35,12 @@ export default function PaymentDetail() {
 
     const statePayment = (location.state as any)?.payment as PaymentRecord | undefined;
 
-    const ref = searchParams.get('ref') || '';
-    const provider = searchParams.get('provider') || '';
-    const year = searchParams.get('year') || '';
-    const headerUuid = searchParams.get('headerUuid') || '';
+    const ref = searchParams.get('ref') ?? '';
+    const provider = searchParams.get('provider') ?? '';
+    const year = searchParams.get('year') ?? '';
+    const headerUuid = searchParams.get('headerUuid') ?? '';
 
-    const [payment, setPayment] = useState<PaymentRecord | null>(statePayment || null);
+    const [payment, setPayment] = useState<PaymentRecord | null>(statePayment ?? null);
 
     const [documents, setDocuments] = useState<PaymentDocument[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ export default function PaymentDetail() {
         const now = new Date();
         const pad2 = (value: number) => value.toString().padStart(2, '0');
 
-        const fileName = `detalle_pago_${ref || 'pago'}_${now.getFullYear()}_${pad2(
+        const fileName = `detalle_pago_${ref ?? 'pago'}_${now.getFullYear()}_${pad2(
             now.getMonth() + 1
         )}_${pad2(now.getDate())}.csv`;
 
@@ -103,7 +103,7 @@ export default function PaymentDetail() {
     };
 
     const getDocButtonLabel = (docType: string): string => {
-        const type = docType?.toLowerCase() || '';
+        const type = docType?.toLowerCase() ?? '';
         if (type.includes('nota') || type.includes('credito') || type.includes('crédito')) {
             return 'Ver Nota de crédito';
         }
@@ -111,21 +111,21 @@ export default function PaymentDetail() {
     };
 
     const mapDetailsToDocsFromHeader = (content: any[]): PaymentDocument[] => {
-        return (content || []).map((d: any) => ({
-            id: d.finanzasPaymentUuid || d.id || '',
-            documentNumber: d.documentNumber || '',
-            documentType: d.documentType || '',
-            reference: d.documentReference || '',
+        return (content ?? []).map((d: any) => ({
+            id: d.finanzasPaymentUuid ?? d.id ?? '',
+            documentNumber: d.documentNumber ?? '',
+            documentType: d.documentType ?? '',
+            reference: d.documentReference ?? '',
             documentDate: d.createdAt ? formatDate(d.createdAt) : '',
             dueDate: '',
-            currency: d.currency || 'MXN',
-            amount: Number(d.amount) || 0,
-            serie: d.serie || d.series || '',
-            folio: d.folio || '',
-            uuid: d.uuid || d.invoiceUuid || d.fiscalUuid || '',
-            sapDocument: d.sapDocument || '',
+            currency: d.currency ?? 'MXN',
+            amount: ((n) => (Number.isFinite(n) ? n : 0))(Number(d.amount)),
+            serie: d.serie ?? d.series ?? '',
+            folio: d.folio ?? '',
+            uuid: d.uuid ?? d.invoiceUuid ?? d.fiscalUuid ?? '',
+            sapDocument: d.sapDocument ?? '',
             paymentDate: d.paymentDate ? formatDate(d.paymentDate) : '',
-            status: typeof d.status === 'number' ? String(d.status) : (d.status || ''),
+            status: typeof d.status === 'number' ? String(d.status) : (d.status ?? ''),
             createdAt: d.createdAt ? formatDate(d.createdAt) : '',
             updatedAt: d.updatedAt ? formatDate(d.updatedAt) : '',
         }));
@@ -137,7 +137,7 @@ export default function PaymentDetail() {
         setUseLocalPagination(false);
 
         try {
-            let resolvedPayment = payment || statePayment || null;
+            let resolvedPayment = (payment || statePayment) ?? null;
 
             if (!resolvedPayment && ref && provider) {
                 const result = await paymentsService.searchPayments({
@@ -171,7 +171,7 @@ export default function PaymentDetail() {
                 return;
             }
 
-            const resolvedHeaderUuid = resolvedPayment.paymentHeaderUuid || headerUuid || '';
+            const resolvedHeaderUuid = (resolvedPayment.paymentHeaderUuid || headerUuid) ?? '';
 
             if (resolvedHeaderUuid) {
                 const response = await paymentsService.getHeaderWithDetails(resolvedHeaderUuid, {
@@ -198,7 +198,7 @@ export default function PaymentDetail() {
             }
 
             const detail = await paymentsService.getPaymentDetail(resolvedPayment.documentNumber);
-            const docsAll = detail.documents || [];
+            const docsAll = detail.documents ?? [];
 
             setUseLocalPagination(true);
 
@@ -238,7 +238,7 @@ export default function PaymentDetail() {
 
     const documentColumns = [
         { header: 'Número Documento', render: (doc: PaymentDocument) => doc.documentNumber },
-        { header: 'Referencia Documento', render: (doc: PaymentDocument) => doc.reference || '-' },
+        { header: 'Referencia Documento', render: (doc: PaymentDocument) => doc.reference ?? '-' },
         { header: 'Moneda', render: (doc: PaymentDocument) => doc.currency },
         {
             header: 'Importe',
@@ -246,11 +246,11 @@ export default function PaymentDetail() {
             align: 'right' as const
         },
         { header: 'Tipo Documento', render: (doc: PaymentDocument) => doc.documentType },
-        { header: 'Referencia Pago', render: (doc: PaymentDocument) => doc.sapDocument || '-' },
-        { header: 'Fecha Pago', render: (doc: PaymentDocument) => doc.paymentDate || doc.documentDate || '-' },
+        { header: 'Referencia Pago', render: (doc: PaymentDocument) => doc.sapDocument ?? '-' },
+        { header: 'Fecha Pago', render: (doc: PaymentDocument) => doc.paymentDate ?? doc.documentDate ?? '-' },
         { header: 'Estatus', render: (doc: PaymentDocument) => doc.status },
-        { header: 'Fecha Registro', render: (doc: PaymentDocument) => doc.createdAt || '-' },
-        { header: 'Fecha de Actualización', render: (doc: PaymentDocument) => doc.updatedAt || '-' },
+        { header: 'Fecha Registro', render: (doc: PaymentDocument) => doc.createdAt ?? '-' },
+        { header: 'Fecha de Actualización', render: (doc: PaymentDocument) => doc.updatedAt ?? '-' },
         {
             header: 'Factura / NC',
             render: (doc: PaymentDocument) => (
@@ -470,7 +470,7 @@ export default function PaymentDetail() {
             <GenericModal
                 visible={!!error}
                 variant="alert"
-                title={modalTitle || 'Aviso'}
+                title={modalTitle ?? 'Aviso'}
                 severity={modalSeverity}
                 message={error}
                 buttonText="Aceptar"

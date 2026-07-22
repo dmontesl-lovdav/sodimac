@@ -79,7 +79,7 @@ export function normalizePublishCreditNoteResponse(raw: unknown): NormalizedPubl
 
   const messageId =
     firstNonEmptyString(raw.idMsg, raw.code) ??
-    (typeof raw.errorCode === "string" ? raw.errorCode.trim() || null : null);
+    (typeof raw.errorCode === "string" ? ((t) => (t === "" ? null : t))(raw.errorCode.trim()) : null);
 
   const displayText =
     firstNonEmptyString(raw.message, raw.detailError, messageId) ?? "";

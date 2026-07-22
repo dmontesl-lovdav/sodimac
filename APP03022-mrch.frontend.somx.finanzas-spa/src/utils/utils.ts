@@ -75,7 +75,7 @@ export function formatDate(
   const d = parseDisplayDate(date);
   if (!d) {
     const raw = String(date).trim();
-    return raw || "-";
+    return raw ?? "-";
   }
 
   const base = `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
@@ -90,7 +90,7 @@ export function formatDateTime(
 ): string {
   if (date == null || date === "") return "-";
   const d = parseDisplayDate(date);
-  if (!d) return String(date).trim() || "-";
+  if (!d) return ((t) => (t === "" ? "-" : t))(String(date).trim());
 
   const base = `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
   const h = pad2(d.getHours());
@@ -272,7 +272,7 @@ export function getFiltersFromLocalStorage<T>(key: string): T | null {
 
 /** Obtención de parámetros de configuración del sistema */
 export async function fetchSystemParameters(): Promise<SystemParametersResponse | null> {
-  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  const base = String(process.env.CATALOGS_API_URL ?? "").replace(/\/$/, "");
   if (base) {
     try {
       const response = await fetch(`${base}/parameters`);
@@ -291,7 +291,7 @@ export async function fetchSystemParameters(): Promise<SystemParametersResponse 
 export async function fetchCatalogDetails(
   catalogName: string
 ): Promise<unknown | null> {
-  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  const base = String(process.env.CATALOGS_API_URL ?? "").replace(/\/$/, "");
   if (base) {
     const path = catalogName.replace(/^\/+/, "");
     try {
@@ -309,7 +309,7 @@ export async function fetchCatalogDetails(
 
 /** Bloqueos de proveedores vía API de catálogos. */
 export async function fetchProviderBlockers(): Promise<unknown | null> {
-  const base = String(process.env.CATALOGS_API_URL || "").replace(/\/$/, "");
+  const base = String(process.env.CATALOGS_API_URL ?? "").replace(/\/$/, "");
   if (base) {
     try {
       const response = await fetch(`${base}/supplier-blocks`);
@@ -423,8 +423,8 @@ export type CatalogFilterOption = { label: string; value: string };
 
 function getCatalogsApiBaseUrl(): string | null {
   const base =
-    process.env.CATALOGS_API_URL ||
-    process.env.REACT_APP_CATALOGS_API_URL ||
+    process.env.CATALOGS_API_URL ??
+    process.env.REACT_APP_CATALOGS_API_URL ??
     "";
   const trimmed = String(base).replace(/\/+$/, "");
   return trimmed.length > 0 ? trimmed : null;
@@ -505,8 +505,8 @@ export async function fetchCatalogDetailMessage(
   const found = (data as any)?.details?.find(
     (row: any) => row.key === detailKey
   );
-  const description = found?.description?.trim() || found?.value?.trim();
-  return description || fallback;
+  const description = found?.description?.trim() ?? found?.value?.trim();
+  return description ?? fallback;
 }
 
 /**
@@ -573,7 +573,7 @@ export async function fetchCatTipoRebateCatalog(): Promise<
   };
 
   const catalogName =
-    process.env.CATALOG_CAT_TIPO_REBATE_SUFFIX || "CatTipoRebate";
+    process.env.CATALOG_CAT_TIPO_REBATE_SUFFIX ?? "CatTipoRebate";
 
   const tryCatalogsService = async (): Promise<
     CatalogFilterOption[] | null

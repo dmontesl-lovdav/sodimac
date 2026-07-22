@@ -13,7 +13,7 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
       const elements = root.getElementsByTagName("*");
       for (let i = 0; i < elements.length; i += 1) {
         const current = elements[i];
-        const local = (current.localName || current.tagName || "").split(":").pop();
+        const local = (current.localName ?? current.tagName ?? "").split(":").pop();
         if (local === name) return current;
       }
       return null;
@@ -30,9 +30,18 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
     const totales = pago ? findByLocalName(pago, "Totales") : null;
     const monto = totales?.getAttribute("Monto") ?? totales?.getAttribute("Total") ?? pago?.getAttribute("Monto") ?? "";
     return {
-      uuid: getAttr(timbre, "UUID") || (doc.querySelector("*[UUID]")?.getAttribute("UUID") ?? ""),
-      rfcEmisor: (getAttr(emisor ?? null, "Rfc") ?? "") || (getAttr(comprobante, "EmisorRfc") ?? ""),
-      nombreEmisor: (getAttr(emisor ?? null, "Nombre") ?? "") || (getAttr(emisor ?? null, "RazonSocial") ?? "") || (getAttr(comprobante, "EmisorNombre") ?? ""),
+      uuid:
+        [getAttr(timbre, "UUID"), doc.querySelector("*[UUID]")?.getAttribute("UUID") ?? ""].find(
+          (v) => v !== ""
+        ) ?? "",
+      rfcEmisor:
+        [getAttr(emisor, "Rfc"), getAttr(comprobante, "EmisorRfc")].find((v) => v !== "") ?? "",
+      nombreEmisor:
+        [
+          getAttr(emisor, "Nombre"),
+          getAttr(emisor, "RazonSocial"),
+          getAttr(comprobante, "EmisorNombre"),
+        ].find((v) => v !== "") ?? "",
       monto: monto ? Number(monto).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : "",
       fechaTimbrado: getAttr(timbre, "FechaTimbrado") ?? "",
     };

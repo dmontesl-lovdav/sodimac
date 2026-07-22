@@ -10,7 +10,7 @@ import { handleLanguageChange } from "../services/languageService";
 import { APP_DEV } from "../constants/environment";
 
 const currentGlobalLanguage: string =
-    globalHomeStore.GetGlobalState().configuration?.language || "ES";
+    globalHomeStore.GetGlobalState().configuration?.language ?? "ES";
 
 i18n
     .use(initReactI18next)

@@ -105,13 +105,13 @@ function AddComplementContent() {
     const provider = providers.find((p) => p.idProveedor === queryData.idProveedor);
     return {
       ...EMPTY_HEADER,
-      nombreProveedor: provider?.businessName || EMPTY_HEADER.nombreProveedor,
-      referenciaPago: queryData.referenciaPago || EMPTY_HEADER.referenciaPago,
-      idProveedor: queryData.idProveedor || EMPTY_HEADER.idProveedor,
-      moneda: queryData.moneda || EMPTY_HEADER.moneda,
-      monto: queryData.monto || EMPTY_HEADER.monto,
-      fechaRegistro: queryData.fechaRegistro || EMPTY_HEADER.fechaRegistro,
-      anioPagos: queryData.anioPagos || EMPTY_HEADER.anioPagos,
+      nombreProveedor: provider?.businessName ?? EMPTY_HEADER.nombreProveedor,
+      referenciaPago: queryData.referenciaPago ?? EMPTY_HEADER.referenciaPago,
+      idProveedor: queryData.idProveedor ?? EMPTY_HEADER.idProveedor,
+      moneda: queryData.moneda ?? EMPTY_HEADER.moneda,
+      monto: queryData.monto ?? EMPTY_HEADER.monto,
+      fechaRegistro: queryData.fechaRegistro ?? EMPTY_HEADER.fechaRegistro,
+      anioPagos: queryData.anioPagos ?? EMPTY_HEADER.anioPagos,
     };
   }, [location.search, providers]);
 
@@ -202,7 +202,7 @@ function AddComplementContent() {
     try {
       const formData = new FormData();
       formData.append("idProveedor", header.idProveedor !== "--" ? header.idProveedor : "");
-      formData.append("tipoProveedor", selectedProvider?.id || "");
+      formData.append("tipoProveedor", selectedProvider?.id ?? "");
       formData.append("idUsuario", client.getUser() + "");
       formData.append("tipoAddenda", "5");
       formData.append("idTransaccion", traceId);
@@ -250,10 +250,10 @@ function AddComplementContent() {
       <BitacoraErrorModal
         visible={!!errorMsg}
         traceId={traceId}
-        message={errorMsg || ""}
+        message={errorMsg ?? ""}
         onClose={() => setErrorMsg(null)}
       />
-      <ModalMsg severity="success" visible={!!resultMessage} msg={resultMessage || ""} onClose={() => setResultMessage("")} />
+      <ModalMsg severity="success" visible={!!resultMessage} msg={resultMessage ?? ""} onClose={() => setResultMessage("")} />
       {isUploading && (
         <GenericModal
           visible
@@ -315,7 +315,7 @@ function AddComplementContent() {
                     <div className="fiscal-row fiscal-gap">
                       {XML_PREVIEW_LABELS.map(({ key, label }) => (
                         <div key={key} className="fiscal-col-6">
-                          <span className="fiscal-font-medium">{label}:</span> {xmlPreview[key] || "--"}
+                          <span className="fiscal-font-medium">{label}:</span> {xmlPreview[key] ?? "--"}
                         </div>
                       ))}
                     </div>

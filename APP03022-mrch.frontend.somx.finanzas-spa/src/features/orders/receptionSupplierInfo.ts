@@ -32,9 +32,9 @@ export function resolveReceptionSupplierInfo(
 
     return {
         number: supplierNumber,
-        name: match?.businessName || reception.vendorName || reception.order?.vendorName || "Sin Información",
-        rfc: match?.rfc || "—",
-        supplierType: match?.supplierType || { id: 0, code: "", description: "" },
+        name: match?.businessName ?? reception.vendorName ?? reception.order?.vendorName ?? "Sin Información",
+        rfc: match?.rfc ?? "—",
+        supplierType: match?.supplierType ?? { id: 0, code: "", description: "" },
     };
 }
 

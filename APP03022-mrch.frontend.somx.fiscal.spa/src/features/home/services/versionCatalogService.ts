@@ -38,8 +38,7 @@ export const versionCatalogService = {
             return {
                 online: false,
                 message:
-                    error?.message ||
-                    "No fue posible establecer conexión con el backend fiscal.",
+                    error?.message ?? "No fue posible establecer conexión con el backend fiscal.",
             };
         }
     },

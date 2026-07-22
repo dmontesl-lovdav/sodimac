@@ -334,21 +334,13 @@ export default function ThreeWayMatchFilters({
                         )
                         : '',
 
-                supplier:
-                    supplier.trim() ||
-                    undefined,
+                supplier: (() => { const v = supplier.trim(); return v === "" ? undefined : v; })(),
 
-                supplierType:
-                    supplierType.trim() ||
-                    undefined,
+                supplierType: (() => { const v = supplierType.trim(); return v === "" ? undefined : v; })(),
 
-                po:
-                    po.trim() ||
-                    undefined,
+                po: (() => { const v = po.trim(); return v === "" ? undefined : v; })(),
 
-                reception:
-                    reception.trim() ||
-                    undefined,
+                reception: (() => { const v = reception.trim(); return v === "" ? undefined : v; })(),
             });
         };
 

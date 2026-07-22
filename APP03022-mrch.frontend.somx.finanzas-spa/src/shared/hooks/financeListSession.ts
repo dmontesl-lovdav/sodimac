@@ -19,7 +19,7 @@ const RETURN_FLAG_PREFIX = "finz:list:return:";
 const PENDING_RESET_PREFIX = "finz:list:pendingReset:";
 
 export function normalizeFinancePath(path: string): string {
-    return path.replace(/\/$/, "") || "/";
+    return path.replace(/\/$/, "") ?? "/";
 }
 
 /** Rutas hijas del listado (detalle, factura, estatus, etc.). */
@@ -152,7 +152,7 @@ export function isFinanceListUrlReset(
 ): boolean {
     if (isResetParamTrue(searchParams)) return true;
     if (typeof window === "undefined") return false;
-    const hash = window.location.hash || "";
+    const hash = window.location.hash ?? "";
     const q = hash.indexOf("?");
     if (q === -1) return false;
     return isResetParamTrue(new URLSearchParams(hash.slice(q)));
@@ -322,7 +322,7 @@ export function useFinanceListReturnFromDetail(
         return () => {
             const path = normalizeFinancePath(
                 typeof window !== "undefined"
-                    ? window.location.pathname || ""
+                    ? window.location.pathname ?? ""
                     : ""
             );
             const base = normalizeFinancePath(listPath);

@@ -13,11 +13,11 @@ export const ModalMsg = ({ msg, title, severity, visible, onClose }: ModalMsgPro
     <GenericModal
           visible={visible}
           variant="alert"
-          title={title || "Atención"}
+          title={title ?? "Atención"}
           message={msg}
           buttonText="Cerrar"
           onClose={onClose}
-          severity={severity || "info"}
+          severity={severity ?? "info"}
         />
   );
 };

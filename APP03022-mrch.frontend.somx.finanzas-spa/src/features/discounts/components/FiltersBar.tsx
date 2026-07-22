@@ -288,13 +288,9 @@ export default function FiltersBar({
             ? parsedSupplierType
             : undefined,
 
-        documentNumber:
-          documentNumber.trim() ||
-          undefined,
+        documentNumber: (() => { const v = documentNumber.trim(); return v === "" ? undefined : v; })(),
 
-        sapDocument:
-          sapDocument.trim() ||
-          undefined,
+        sapDocument: (() => { const v = sapDocument.trim(); return v === "" ? undefined : v; })(),
 
         source:
           normalizedRebateType !== "" &&

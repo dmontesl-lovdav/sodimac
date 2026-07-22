@@ -66,7 +66,7 @@ export default function GenericModal({
           <circle className="gm-spinner-track" cx="12" cy="12" r="10" />
           <path className="gm-spinner-head" d="M22 12a10 10 0 0 1-10 10" />
         </svg>
-        <p className="gm-msg">{message || 'Procesando…'}</p>
+        <p className="gm-msg">{message ?? 'Procesando…'}</p>
       </div>
     );
   } else if (variant === 'confirm') {

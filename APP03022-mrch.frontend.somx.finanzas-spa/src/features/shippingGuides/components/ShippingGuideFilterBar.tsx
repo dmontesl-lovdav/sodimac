@@ -59,9 +59,9 @@ function applySavedFilters(saved: ShippingGuideFilter): {
   range: [Date | null, Date | null];
 } {
   return {
-    guideNumber: saved.guideNumber || "",
-    orderNumber: saved.orderNumber || "",
-    vendorNumber: saved.vendorNumber || "",
+    guideNumber: saved.guideNumber ?? "",
+    orderNumber: saved.orderNumber ?? "",
+    vendorNumber: saved.vendorNumber ?? "",
     status: saved.status != null ? String(saved.status) : "",
     range:
       saved.from && saved.to
@@ -153,7 +153,7 @@ export default function ShippingGuideFilterBar({
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
     const payload: ShippingGuideFilter = {
-      vendorNumber: vendorNumber.trim() || undefined,
+      vendorNumber: (() => { const v = vendorNumber.trim(); return v === "" ? undefined : v; })(),
       from: ymdLocal(from),
       to: ymdLocal(to),
     };

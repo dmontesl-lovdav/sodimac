@@ -132,7 +132,7 @@ function createMockFolio(payload?: TraceFolioPayload): TraceFolio {
 }
 
 export function createTraceabilityClient(api?: ApiClient) {
-  const baseUrl = process.env.FINANZAS_API_URL || "";
+  const baseUrl = process.env.FINANZAS_API_URL ?? "";
   const client = api ?? createApiClient({ baseUrl });
 
   return {

@@ -11,12 +11,13 @@ export const createCreditsClient = <T = unknown>(api?: ApiClient) => {
   return {
     getUser: () => getUserIdFromStore(),
 
+    //Usar esta función para obtener el id del usuario actualización: getUserIdFromStore() ?? "1",
     cancelCreditNote: (uuid: string, numeroProveedor: string) =>
       client.request("invoices", "put", {
         uuid,
         numeroProveedor,
         estatus: 0,
-        idUsuarioActualizacion: getUserIdFromStore() ?? "1",
+        idUsuarioActualizacion: 1,
       }),
 
     getCreditNotes: (filters: CreditNoteFilters & { tipoDocumento?: string }) =>

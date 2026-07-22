@@ -56,7 +56,7 @@ export default function ResultsTable({
             ref: row.documentReference,
             provider: row.providerNumber,
             year: row.paymentYear,
-            headerUuid: row.paymentHeaderUuid || "",
+            headerUuid: row.paymentHeaderUuid ?? "",
         });
 
         nav(`/finanzas/pagos/detalle?${params.toString()}`, {
@@ -68,23 +68,22 @@ export default function ResultsTable({
         canRelatePaymentComplement(row);
 
     const columns = [
-        { header: "Referencia Pago", render: (r: PaymentRecord) => r.documentReference || "--" },
+        { header: "Referencia Pago", render: (r: PaymentRecord) => r.documentReference ?? "--" },
         {
             header: "Importe",
             render: (r: PaymentRecord) =>
                 `$${r.amount?.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`,
             align: "right" as const,
         },
-        { header: "Moneda", render: (r: PaymentRecord) => r.currency || "--" },
-        { header: "Año Pago", render: (r: PaymentRecord) => r.paymentYear || "--" },
-        { header: "Fecha Pago", render: (r: PaymentRecord) => formatDate(r.paymentDate) || "--" },
-        { header: "Número Proveedor", render: (r: PaymentRecord) => r.providerNumber || "--" },
+        { header: "Moneda", render: (r: PaymentRecord) => r.currency ?? "--" },
+        { header: "Año Pago", render: (r: PaymentRecord) => r.paymentYear ?? "--" },
+        { header: "Fecha Pago", render: (r: PaymentRecord) => formatDate(r.paymentDate) ?? "--" },
+        { header: "Número Proveedor", render: (r: PaymentRecord) => r.providerNumber ?? "--" },
         {
             header: "Nombre Proveedor",
             render: (r: PaymentRecord) =>
-                findProvider(r.providerNumber)?.businessName ||
-                r.providerName ||
-                "--",
+                findProvider(r.providerNumber)?.businessName ??
+                r.providerName ?? "--",
         },
         {
             header: "Tipo Proveedor",
@@ -93,8 +92,8 @@ export default function ResultsTable({
                 return code ? capitalizeWord(code) : "--";
             },
         },
-        { header: "Fecha Registro", render: (r: PaymentRecord) => r.createdAt || "--" },
-        { header: "Fecha Actualización", render: (r: PaymentRecord) => r.updatedAt || "--" },
+        { header: "Fecha Registro", render: (r: PaymentRecord) => r.createdAt ?? "--" },
+        { header: "Fecha Actualización", render: (r: PaymentRecord) => r.updatedAt ?? "--" },
         {
             header: "Estatus",
             render: (r: PaymentRecord) => {
@@ -109,12 +108,12 @@ export default function ResultsTable({
                 const disabledAdd = !canAddComplement(r);
 
                 const params = new URLSearchParams({
-                    ref: r.documentReference || "",
-                    provider: r.providerNumber || "",
-                    currency: r.currency || "",
+                    ref: r.documentReference ?? "",
+                    provider: r.providerNumber ?? "",
+                    currency: r.currency ?? "",
                     amount: String(r.amount ?? 0),
-                    paymentDate: r.paymentDate || "",
-                    year: r.paymentYear || "",
+                    paymentDate: r.paymentDate ?? "",
+                    year: r.paymentYear ?? "",
                 });
 
                 return (

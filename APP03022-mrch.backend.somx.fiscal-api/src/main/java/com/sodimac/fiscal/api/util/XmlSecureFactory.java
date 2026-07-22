@@ -36,7 +36,14 @@ public final class XmlSecureFactory {
 
     /**
      * {@link TransformerFactory} sin acceso a DTD ni hojas de estilo externas.
+     *
+     * <p>S2755 suprimido a proposito: el hardening es best-effort (Xalan, usado por el
+     * render del PDF con Formato4.0.xsl, no soporta ACCESS_EXTERNAL_DTD y FEATURE_SECURE_PROCESSING
+     * generaria un PDF vacio). Este factory solo SERIALIZA salida (Document->String); el vector
+     * XXE real (parseo del CFDI de entrada) va por newDocumentBuilderFactory(), que si esta
+     * totalmente endurecido. Ver commit aa4ed2a.</p>
      */
+    @SuppressWarnings("java:S2755")
     public static TransformerFactory newTransformerFactory() {
         TransformerFactory tf = TransformerFactory.newInstance();
         // Hardening XXE best-effort: se restringe el acceso a DTD/hojas de estilo externas.

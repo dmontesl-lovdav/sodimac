@@ -7,7 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 public class ResponseHandler {
-	
+
+	private ResponseHandler() {
+		// utility class
+	}
+
 	public static ResponseEntity<Object> responseBuilder(Object message, HttpStatus httpStatus, Object responseObject, int errorcode,
 			Throwable throwable) {
 		Map<String, Object> response = new HashMap<>();

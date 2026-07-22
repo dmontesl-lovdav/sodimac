@@ -27,6 +27,10 @@ import java.util.UUID;
  */
 public class InvoiceSpecification {
 
+    private InvoiceSpecification() {
+        // utility class
+    }
+
     private static final String K_CREATED_AT = "createdAt";
     private static final String K_INVOICE_UUID = "invoiceUuid";
 

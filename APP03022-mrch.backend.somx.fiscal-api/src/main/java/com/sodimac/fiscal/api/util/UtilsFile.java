@@ -22,7 +22,11 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 public class UtilsFile {
-	
+
+	private UtilsFile() {
+		// utility class
+	}
+
 	public static void writeToZipFile(File file, ZipOutputStream zipStream) throws IOException {
 
 		String path = file.getPath();

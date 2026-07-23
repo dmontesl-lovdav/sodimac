@@ -27,6 +27,7 @@ import {
 } from "typeorm";
 import { logger } from "@/utils/logger.js";
 import * as svcAxios from "@/services/axios.service.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { GenericCatalogDetails, Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 import { DeepPartial } from 'typeorm';
@@ -422,6 +423,14 @@ export async function create(req: AuthenticatedRequest, dto: CreatePurchaseOrder
 }
 
 
+
+/**
+ * Listado GET `/purchase-orders`: proveedores activos (`status = 1`).
+ * Excluye eliminados (`status = 2`, p.ej. Luis Antonio Aguilar Garcia / 252202).
+ */
+export async function getActiveSupplierNumbersForList(): Promise<number[]> {
+    return sharedCatalogService.getActiveSupplierNumbers();
+}
 
 /** Listado GET `/purchase-orders`: enriquece cada recepción anidada con `originName` (catálogo BFF). */
 export async function enrichPurchaseOrdersRecepcionesOriginCatalog(

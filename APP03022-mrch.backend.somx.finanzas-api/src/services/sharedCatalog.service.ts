@@ -135,6 +135,20 @@ export async function getShippingGuideCatalogContext() {
     };
 }
 
+/** Proveedores activos (`status = 1`). Excluye eliminados (`status = 2`). */
+export async function getActiveSupplierNumbers(): Promise<number[]> {
+    const supplierRepo = getDataSource().getRepository(SharedSupplier);
+    const suppliers = await supplierRepo.find({
+        where: { status: 1 },
+        select: ["supplierNumber"],
+        order: { id: "ASC" },
+    });
+
+    return suppliers
+        .map((supplier) => Number(supplier.supplierNumber))
+        .filter((n) => !Number.isNaN(n));
+}
+
 export async function getAllSuppliers(
     tipoProveedorList: GenericCatalogDetails[],
 ): Promise<Supplier[]> {

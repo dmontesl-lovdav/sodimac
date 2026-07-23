@@ -131,6 +131,27 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             });
         }
 
+        // Excluye OCs de proveedores eliminados (status = 2 en shared_catalogs.supplier)
+        const activeSupplierNumbers = await svc.getActiveSupplierNumbersForList();
+        if (activeSupplierNumbers.length === 0) {
+            const emptyPage: ResponsePageableDTO = {
+                content: [],
+                totalElements: 0,
+                numberOfElements: 0,
+                totalPages: 0,
+                pageNumber: parseInt(dto.pageNumber),
+                pageSize: parseInt(dto.pageSize),
+            };
+            return response.json({
+                ...ResponseHandler.responseBuilder("", emptyPage, 0, StatusCodes.OK, true, ""),
+                trace_id: getTraceId(),
+            });
+        }
+        purchaseOrderQuery.andWhere(
+            "purchaseOrder.supplierNumber IN (:...activeSupplierNumbers)",
+            { activeSupplierNumbers },
+        );
+
         const skip = (parseInt(dto.pageNumber) - 1) * parseInt(dto.pageSize);
 
         console.log("[purchaseOrder.list] pagination:", {

@@ -134,14 +134,31 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
 
     const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
 
-    const filter: FindOptionsWhere<ShippingGuide> = buildCriteria(q);
+    const activeSupplierNumbers = await sharedCatalogService.getActiveSupplierNumbers();
+    let vendorFilter = activeSupplierNumbers;
     if (allowedVendors && allowedVendors.length > 0) {
-        filter.vendorNumber = In(allowedVendors);
+        const allowed = new Set(allowedVendors);
+        vendorFilter = activeSupplierNumbers.filter((n) => allowed.has(n));
     }
+
+    const filter: FindOptionsWhere<ShippingGuide> = buildCriteria(q);
     let pageSize: number = 10;  //Por default es 10 registros por pagina
     if (q.pageSize !== undefined) {
         pageSize = q.pageSize;
     }
+
+    if (vendorFilter.length === 0) {
+        const emptyPage: ResponsePageableDTO = {
+            content: [],
+            totalElements: 0,
+            numberOfElements: 0,
+            totalPages: 0,
+            pageNumber: q.pageNumber,
+            pageSize: pageSize,
+        };
+        return ResponseHandler.responseBuilder("", emptyPage, 0, StatusCodes.OK, true, "");
+    }
+    filter.vendorNumber = In(vendorFilter);
 
     let [result, total, _numberOfElements] = await guides.findAllPaginated(filter, pageSize, q.pageNumber);
     result = result as ShippingGuide[];

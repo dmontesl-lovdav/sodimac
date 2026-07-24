@@ -95,6 +95,21 @@ Orden sugerido:
 
 ---
 
+## Retro Ivan 2026-07-24 (no es fila directa)
+
+- **Mensaje tipo relación no permitido** — cuando la NC trae un `TipoRelacion` no permitido, salía BUS042 (engañoso). Ahora → **BUS045** con texto claro ("El tipo de relación de la NC no se encuentra permitido. Por favor, validar con el área financiera..."). Commit `62512b7` + seed `migration/QA-2026-07-24-BUS045-...sql`. **Validado UAT 24/07.** Va con el punto de tipo relación (179/197).
+- **Tipo de NC en blanco** (`tipoNotaCredito`=0 por defecto) → es del **front (Fer)**: debe enviar el `tipoNotaCredito` al publicar. Alternativa back (no elegida): derivar del `<TipoNC>` del addenda.
+
+## Estado final (2026-07-24): todo lo de fiscal-api al alcance de David, cerrado
+
+| Punto | Estado |
+|---|---|
+| 196, 197, 198, 122 | ✓ hechos + validados UAT |
+| BUS045 (retro Ivan) | ✓ hecho + validado UAT |
+| 118, 121, 111, 112, 179 | ✓ ya cubiertos / validados |
+| **Abierto (no depende de David):** 113, 114, 500 de 122 | ⏳ bloqueados por trace UAT (posible inestabilidad ambiente) |
+| **Front (Fer):** listbox f198, enviar tipoNotaCredito | ⏳ |
+
 ## Resumen de acciones
 
 1. **Marcar en la matriz**: sección A (confirmar cerradas); sección B → Ajuste=x + solicitar QA (16, 43, 101, 179, 197).

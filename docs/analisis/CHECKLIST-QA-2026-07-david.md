@@ -54,8 +54,8 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 | 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | **YA CUBIERTO** por `reevaluarFacturaTrasNc` (InvoiceServiceImpl L1232): neto en tolerancia → factura+NCs a 3; fuera y >recepción → NCs a 2; <recepción → cascada. Mismo trabajo fila 104/122 (validado UAT 22/06). Marcar hecho; QA revalida las 2 ramas. |
 | 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | **YA CUBIERTO** — el filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local, 200). Marcar hecho. |
 | 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | El 500 no reprodujo local (posible env UAT). **Depende de trace UAT.** |
-| 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | Cosmético. **Autónomo.** |
-| 112 | Sí | B | Ídem para NC | Cosmético. **Autónomo.** |
+| 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | **YA CUBIERTO** — `buildDocumentFileName` (L2471) agrega "-" solo si hay serie Y folio. Marcar hecho; QA revalida. |
+| 112 | Sí | B | Ídem para NC | **YA CUBIERTO** (mismo método, aplica a XML y PDF). Marcar hecho. |
 
 ---
 

@@ -65,7 +65,7 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 |---|---|---|---|---|
 | **196** | Sí | A | Permitir agregar una NC **con o sin factura**, solo para descuentos comerciales (tipoNC=2) | Cambio de fondo: hoy `saveRelatedCfdis` exige factura (BUS042/043). Permitir sin factura cuando es descuento comercial. **Autónomo.** |
 | **197** | Sí | A | (ver sección B — ya resuelto `7c4b5b9`, **validado UAT 24/07**) | — |
-| **198** | Sí | M | Filtrar consulta de NC por **Tipo de Nota de Crédito** (listbox junto al estatus) | Continuación de `c7a07e0` (ya devuelvo `tipoNotaCreditoDescripcion`); agregar filtro en el search. **Autónomo.** |
+| **198** | Sí | M | Filtrar consulta de NC por **Tipo de Nota de Crédito** (listbox junto al estatus) | **HECHO `bb8f79b`** — filtro `tipoNotaCredito` en search (subquery addendum). Validado e2e local. Front: agregar el listbox. Falta pase+QA. |
 
 ---
 
@@ -117,5 +117,7 @@ Pendiente de pasar a Sodimac (develop→uat). Commits mirror: `76380dc`, `aa4ed2
 | `service/impl/InvoiceServiceImpl.java` | `saveRelatedCfdis` filtra bloques por catálogo (register) | 76380dc, ef4229c |
 | `util/XmlSecureFactory.java` | fix PDF cortesía (XXE Xalan best-effort, sin FEATURE_SECURE_PROCESSING) + `@SuppressWarnings` S2755 | aa4ed2a |
 | `test/.../service/impl/CfdiRelacionadosTipo01Test.java` | test 5 casos (catálogo NC, JAXB) | 76380dc, ef4229c, 7c4b5b9 |
+| `model/dto/InvoiceSearchRequest.java` | campo `tipoNotaCredito` (filtro f198) | bb8f79b |
+| `repository/specification/InvoiceSpecification.java` | predicado filtro por `tipoNotaCredito` (f198) | bb8f79b |
 
 Nota: `docs/` NO viaja al repo real de Sodimac (solo mirror). En UAT **no** requiere seed del catálogo (Ivan ya lo creó por portal); el `UPPER()` cubre el casing.

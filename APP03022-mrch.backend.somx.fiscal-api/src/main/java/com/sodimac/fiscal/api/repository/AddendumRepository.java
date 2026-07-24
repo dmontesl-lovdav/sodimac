@@ -117,8 +117,10 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
      * los tipos de relación permitidos para publicar una NC (`CatTipoRelacionFacturaNC`, hoy 01 y 03).
      * Regla Ivan 2026-07-20.
      */
+    // code case-insensitive: el portal (util-api) guarda el code en MAYUSCULAS (ej. CATTIPORELACIONFACTURANC)
+    // mientras que los catalogos seedeados por SQL van en camelCase. UPPER() evita el mismatch de casing.
     @Query(value = "SELECT cd.value FROM shared_catalogs.catalog_header ch " +
             "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
-            "WHERE ch.code = :catalogCode AND ch.status = 1 AND cd.status = 1", nativeQuery = true)
+            "WHERE UPPER(ch.code) = UPPER(:catalogCode) AND ch.status = 1 AND cd.status = 1", nativeQuery = true)
     List<String> findActiveCatalogValues(@Param("catalogCode") String catalogCode);
 }

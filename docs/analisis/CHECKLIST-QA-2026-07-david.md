@@ -85,3 +85,20 @@ Leyenda estado matriz: `rev`=Revisión DEV, `aj`=Ajuste DEV, `QA`=Validado QA.
 3. **Por implementar (prioridad)**: 121/122 (filtro uuid + 500 search NC), 114/113 (cancelar 500), 196 (NC sin factura descuento), 198 (filtro tipoNC), 118 (estatus cascada), 111/112 (cosmético).
 4. **Fuera de David**: Y04 (recepción manual uuid duplicado) → finanzas/back.
 5. **Causa raíz catálogos (informar, no toca David)**: util-api `createCatalog` uppercasea el code → catálogos creados por portal quedan en MAYÚSCULAS. Mitigado en fiscal-api con query case-insensitive.
+
+---
+
+## F. Clases a modificar en el pase completo a Sodimac (fiscal-api)
+
+Pendiente de pasar a Sodimac (develop→uat). Commits mirror: `76380dc`, `aa4ed2a`, `ef4229c`, `7c4b5b9`.
+
+| Clase | Cambio | Commit(s) |
+|---|---|---|
+| `model/dto/invoicexml/InvoiceXmlDto.java` | `cfdiRelacionados` de objeto único → `List` (captura todos los bloques) | 76380dc |
+| `repository/AddendumRepository.java` | `findActiveCatalogValues` (query directa a shared_catalogs) + `UPPER()` case-insensitive | ef4229c, 7c4b5b9 |
+| `service/impl/FiscalXmlTransformerServiceImpl.java` | consulta filtra bloque por catálogo `CatTipoRelacionFacturaNC` (inyecta AddendumRepository) | ef4229c |
+| `service/impl/InvoiceServiceImpl.java` | `saveRelatedCfdis` filtra bloques por catálogo (register) | 76380dc, ef4229c |
+| `util/XmlSecureFactory.java` | fix PDF cortesía (XXE Xalan best-effort, sin FEATURE_SECURE_PROCESSING) + `@SuppressWarnings` S2755 | aa4ed2a |
+| `test/.../service/impl/CfdiRelacionadosTipo01Test.java` | test 5 casos (catálogo NC, JAXB) | 76380dc, ef4229c, 7c4b5b9 |
+
+Nota: `docs/` NO viaja al repo real de Sodimac (solo mirror). En UAT **no** requiere seed del catálogo (Ivan ya lo creó por portal); el `UPPER()` cubre el casing.

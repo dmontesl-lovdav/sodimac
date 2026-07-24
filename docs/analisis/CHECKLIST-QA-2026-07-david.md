@@ -45,36 +45,53 @@ Leyenda estado matriz: `rev`=Revisión DEV, `aj`=Ajuste DEV, `QA`=Validado QA.
 
 ## C. Pendientes de David (rev=x, sin ajuste) — trabajo por hacer
 
-| Fila | Niv | Descripción | Qué implica |
-|---|---|---|---|
-| 113 | A | Cancelar **factura** → error 500 | Reproducir + fix. Ver ControllerAdvisor (WRN→500). |
-| 114 | A | Cancelar **NC** → error 500 | Idem. (Ojo: la duda de Fer del "no existe" era uuid PK vs fiscal; el 500 es aparte.) |
-| 118 | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | Lógica de estatus en cascada NC↔factura. |
-| 121 | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | Filtro `relatedInvoiceUuid` en search NC. |
-| 122 | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver imagen Y01) | Mismo costal que 121; el 500 del grid NC. |
-| 111 | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | Cosmético en armado de nombre. |
-| 112 | B | Ídem para NC | Cosmético. |
+Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Excel.
+
+| Fila | Excel | Niv | Descripción | Qué implica |
+|---|---|---|---|---|
+| 113 | Sí | A | Cancelar **factura** → error 500 | Reproducir + fix. **Depende de trace UAT** (posible inestabilidad de ambiente). |
+| 114 | Sí | A | Cancelar **NC** → error 500 | Idem. (La duda de Fer del "no existe" era uuid PK vs fiscal; el 500 es aparte.) |
+| 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | Lógica de estatus en cascada NC↔factura. **Autónomo.** |
+| 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | Filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local). Validar/cerrar. **Autónomo.** |
+| 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | El 500 no reprodujo local (posible env UAT). **Depende de trace UAT.** |
+| 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | Cosmético. **Autónomo.** |
+| 112 | Sí | B | Ídem para NC | Cosmético. **Autónomo.** |
 
 ---
 
 ## D. Nuevas en v13 (sin revisión) — por analizar/implementar
 
-| Fila | Niv | Descripción | Nota |
-|---|---|---|---|
-| **196** | A | Permitir agregar una NC **con o sin factura**, solo para descuentos comerciales (tipoNC=2) | Cambio de fondo: hoy `saveRelatedCfdis` exige factura (BUS042/043). Permitir sin factura cuando es descuento comercial. |
-| **197** | A | (ver sección B — ya resuelto por `7c4b5b9`) | — |
-| **198** | M | Filtrar consulta de NC por **Tipo de Nota de Crédito** (listbox junto al estatus) | Continuación de `c7a07e0` (ya devuelvo `tipoNotaCreditoDescripcion`); ahora agregar filtro en el search. |
+| Fila | Excel | Niv | Descripción | Nota |
+|---|---|---|---|---|
+| **196** | Sí | A | Permitir agregar una NC **con o sin factura**, solo para descuentos comerciales (tipoNC=2) | Cambio de fondo: hoy `saveRelatedCfdis` exige factura (BUS042/043). Permitir sin factura cuando es descuento comercial. **Autónomo.** |
+| **197** | Sí | A | (ver sección B — ya resuelto `7c4b5b9`, **validado UAT 24/07**) | — |
+| **198** | Sí | M | Filtrar consulta de NC por **Tipo de Nota de Crédito** (listbox junto al estatus) | Continuación de `c7a07e0` (ya devuelvo `tipoNotaCreditoDescripcion`); agregar filtro en el search. **Autónomo.** |
 
 ---
 
-## E. Observaciones Ivan/Fer 2026-07-23 (correlación con matriz)
+## E. Observaciones Ivan/Fer 2026-07-23 — CONVERSACIÓN (no Excel)
 
-| Reporte | Imagen | Issue | Estado |
-|---|---|---|---|
-| Buscar NC por uuid factura → 500 | Y01 | f121/f122 | Pendiente |
-| Publicar NC → 500 | Y02 | f114-adyacente / register 500 | Reproducir |
-| "UUID Factura" vacío al publicar NC | Y03 | f197 | **Resuelto `7c4b5b9`** (casing catálogo) |
-| Recepción manual con uuid duplicado, lo dejó pasar | Y04 | — (finanzas/back, no David directo) | Pasar a finanzas/back |
+Estas NO están en la matriz; salieron del chat. Los 500 no reprodujeron local → posible **inestabilidad de UAT** (Ivan/Fer: "de repente UAT deja de responder"). Se deprioriza hasta tener trace.
+
+| Reporte | Imagen | Excel | Issue | Estado |
+|---|---|---|---|---|
+| Buscar NC por uuid factura → 500 | Y01 | No (conversación) | correlaciona f121/f122 | No reprodujo local; env UAT |
+| Publicar NC → 500 | Y02 | No (conversación) | register 500 | No reprodujo local; env UAT |
+| "UUID Factura" vacío al publicar NC | Y03 | No (conversación) | = f197 | **Resuelto `7c4b5b9`, validado UAT 24/07** |
+| Recepción manual con uuid duplicado | Y04 | No (conversación) | finanzas/back | Pasar a finanzas/back |
+
+---
+
+## Foco recomendado (solo Excel, autónomos, sin depender de trace UAT)
+
+Orden sugerido:
+1. **f198** (M) — filtro por Tipo de NC en el search. Continúa `c7a07e0`, contrato ya listo. Rápido.
+2. **f196** (A) — NC con/sin factura para descuento comercial. Toca `saveRelatedCfdis`.
+3. **f118** (A) — estatus NC en cascada por tolerancia.
+4. **f121** (M) — filtro por uuid factura relacionada (validar; el spec ya lo trae).
+5. **f111/f112** (B) — cosmético nombre archivo.
+
+**Bloqueados por trace UAT** (no local): f113, f114, f122 (los 500).
 
 ---
 

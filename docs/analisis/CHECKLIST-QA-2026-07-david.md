@@ -53,7 +53,7 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 | 114 | Sí | A | Cancelar **NC** → error 500 | Idem. (La duda de Fer del "no existe" era uuid PK vs fiscal; el 500 es aparte.) |
 | 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | **YA CUBIERTO** por `reevaluarFacturaTrasNc` (InvoiceServiceImpl L1232): neto en tolerancia → factura+NCs a 3; fuera y >recepción → NCs a 2; <recepción → cascada. Mismo trabajo fila 104/122 (validado UAT 22/06). Marcar hecho; QA revalida las 2 ramas. |
 | 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | **YA CUBIERTO** — el filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local, 200). Marcar hecho. |
-| 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | El 500 no reprodujo local (posible env UAT). **Depende de trace UAT.** |
+| 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | **"No retorna" RESUELTO `719a027`**: el filtro solo aceptaba invoice_uuid interno; el usuario usa el folio fiscal → 0 resultados. Ahora acepta ambos. El **500** sigue aparte (depende de trace UAT). |
 | 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | **YA CUBIERTO** — `buildDocumentFileName` (L2471) agrega "-" solo si hay serie Y folio. Marcar hecho; QA revalida. |
 | 112 | Sí | B | Ídem para NC | **YA CUBIERTO** (mismo método, aplica a XML y PDF). Marcar hecho. |
 
@@ -120,5 +120,6 @@ Pendiente de pasar a Sodimac (develop→uat). Commits mirror: `76380dc`, `aa4ed2
 | `model/dto/InvoiceSearchRequest.java` | campo `tipoNotaCredito` (filtro f198) | bb8f79b |
 | `repository/specification/InvoiceSpecification.java` | predicado filtro por `tipoNotaCredito` (f198) | bb8f79b |
 | `service/impl/InvoiceServiceImpl.java` | NC Descuento Comercial (tipo 2) sin factura relacionada (f196) | 8643cff |
+| `repository/specification/InvoiceSpecification.java` | filtro NC por factura relacionada acepta fiscal_uuid o interno (f122) | 719a027 |
 
 Nota: `docs/` NO viaja al repo real de Sodimac (solo mirror). En UAT **no** requiere seed del catálogo (Ivan ya lo creó por portal); el `UPPER()` cubre el casing.

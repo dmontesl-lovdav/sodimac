@@ -206,15 +206,25 @@ public class InvoiceSpecification {
                 predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
-            // 13. NCs relacionadas a una factura específica (Opcional) - STM-335
+            // 13. NCs relacionadas a una factura específica (Opcional) - STM-335 / f122
+            // La factura relacionada puede venir identificada por su invoice_uuid interno O por su
+            // fiscal_uuid (folio fiscal). El usuario/front normalmente tiene el folio fiscal (es lo
+            // que muestra el response), así que se aceptan ambos para que el filtro sí retorne.
             if (searchRequest.getRelatedInvoiceUuid() != null) {
+                UUID relatedUuid = searchRequest.getRelatedInvoiceUuid();
+                // Facturas cuyo invoice_uuid interno o fiscal_uuid coincide con el parámetro.
+                Subquery<UUID> facturaSubquery = query.subquery(UUID.class);
+                Root<InvoiceEntity> facturaRoot = facturaSubquery.from(InvoiceEntity.class);
+                facturaSubquery.select(facturaRoot.get(K_INVOICE_UUID))
+                        .where(criteriaBuilder.or(
+                                criteriaBuilder.equal(facturaRoot.get(K_INVOICE_UUID), relatedUuid),
+                                criteriaBuilder.equal(facturaRoot.get("fiscalUuid"), relatedUuid)
+                        ));
+                // NCs cuya factura relacionada está en ese conjunto.
                 Subquery<UUID> relatedCfdiSubquery = query.subquery(UUID.class);
                 Root<RelatedCfdiEntity> relatedCfdiRoot = relatedCfdiSubquery.from(RelatedCfdiEntity.class);
                 relatedCfdiSubquery.select(relatedCfdiRoot.get(K_INVOICE_UUID))
-                        .where(criteriaBuilder.equal(
-                                relatedCfdiRoot.get("relatedInvoiceUuid"),
-                                searchRequest.getRelatedInvoiceUuid()
-                        ));
+                        .where(relatedCfdiRoot.get("relatedInvoiceUuid").in(facturaSubquery));
                 predicates.add(root.get(K_INVOICE_UUID).in(relatedCfdiSubquery));
             }
 

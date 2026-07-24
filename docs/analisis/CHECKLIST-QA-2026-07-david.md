@@ -52,7 +52,7 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 | 113 | Sí | A | Cancelar **factura** → error 500 | Reproducir + fix. **Depende de trace UAT** (posible inestabilidad de ambiente). |
 | 114 | Sí | A | Cancelar **NC** → error 500 | Idem. (La duda de Fer del "no existe" era uuid PK vs fiscal; el 500 es aparte.) |
 | 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | Lógica de estatus en cascada NC↔factura. **Autónomo.** |
-| 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | Filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local). Validar/cerrar. **Autónomo.** |
+| 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | **YA CUBIERTO** — el filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local, 200). Marcar hecho. |
 | 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | El 500 no reprodujo local (posible env UAT). **Depende de trace UAT.** |
 | 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | Cosmético. **Autónomo.** |
 | 112 | Sí | B | Ídem para NC | Cosmético. **Autónomo.** |
@@ -63,7 +63,7 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 
 | Fila | Excel | Niv | Descripción | Nota |
 |---|---|---|---|---|
-| **196** | Sí | A | Permitir agregar una NC **con o sin factura**, solo para descuentos comerciales (tipoNC=2) | Cambio de fondo: hoy `saveRelatedCfdis` exige factura (BUS042/043). Permitir sin factura cuando es descuento comercial. **Autónomo.** |
+| **196** | Sí | A | Permitir agregar una NC **con o sin factura**, solo para descuentos comerciales (tipoNC=2) | **HECHO `8643cff`** — NC tipo 2 sin CfdiRelacionados pasa; tipo 1 sigue exigiendo factura. Validado e2e local. Falta pase+QA. |
 | **197** | Sí | A | (ver sección B — ya resuelto `7c4b5b9`, **validado UAT 24/07**) | — |
 | **198** | Sí | M | Filtrar consulta de NC por **Tipo de Nota de Crédito** (listbox junto al estatus) | **HECHO `bb8f79b`** — filtro `tipoNotaCredito` en search (subquery addendum). Validado e2e local. Front: agregar el listbox. Falta pase+QA. |
 
@@ -119,5 +119,6 @@ Pendiente de pasar a Sodimac (develop→uat). Commits mirror: `76380dc`, `aa4ed2
 | `test/.../service/impl/CfdiRelacionadosTipo01Test.java` | test 5 casos (catálogo NC, JAXB) | 76380dc, ef4229c, 7c4b5b9 |
 | `model/dto/InvoiceSearchRequest.java` | campo `tipoNotaCredito` (filtro f198) | bb8f79b |
 | `repository/specification/InvoiceSpecification.java` | predicado filtro por `tipoNotaCredito` (f198) | bb8f79b |
+| `service/impl/InvoiceServiceImpl.java` | NC Descuento Comercial (tipo 2) sin factura relacionada (f196) | 8643cff |
 
 Nota: `docs/` NO viaja al repo real de Sodimac (solo mirror). En UAT **no** requiere seed del catálogo (Ivan ya lo creó por portal); el `UPPER()` cubre el casing.

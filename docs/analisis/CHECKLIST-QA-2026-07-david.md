@@ -51,7 +51,7 @@ Columna **Excel** = está en la matriz v13 (fila real). Todos aquí son del Exce
 |---|---|---|---|---|
 | 113 | Sí | A | Cancelar **factura** → error 500 | Reproducir + fix. **Depende de trace UAT** (posible inestabilidad de ambiente). |
 | 114 | Sí | A | Cancelar **NC** → error 500 | Idem. (La duda de Fer del "no existe" era uuid PK vs fiscal; el 500 es aparte.) |
-| 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | Lógica de estatus en cascada NC↔factura. **Autónomo.** |
+| 118 | Sí | A | Estatus NC = "Recibida parcial" (2) hasta que (factura−NCs) cumpla tolerancia; luego ambos a "En proceso de envío" | **YA CUBIERTO** por `reevaluarFacturaTrasNc` (InvoiceServiceImpl L1232): neto en tolerancia → factura+NCs a 3; fuera y >recepción → NCs a 2; <recepción → cascada. Mismo trabajo fila 104/122 (validado UAT 22/06). Marcar hecho; QA revalida las 2 ramas. |
 | 121 | Sí | M | Agregar al API de consulta de NC el filtro por **uuid de la factura relacionada** | **YA CUBIERTO** — el filtro `relatedInvoiceUuid` ya existe en el spec (reproducido OK local, 200). Marcar hecho. |
 | 122 | Sí | M | Consulta por uuid en filtro de NC no retorna (y da **500**, ver Y01) | El 500 no reprodujo local (posible env UAT). **Depende de trace UAT.** |
 | 111 | Sí | B | Nombre archivo PDF sin serie/folio: no poner el guión medio | Cosmético. **Autónomo.** |

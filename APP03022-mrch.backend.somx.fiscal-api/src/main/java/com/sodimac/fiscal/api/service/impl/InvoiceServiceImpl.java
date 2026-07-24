@@ -94,6 +94,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     // Catálogo con los TipoRelacion permitidos para ligar una NC con su factura (hoy 01 y 03).
     // Administrado por negocio desde el portal; se lee directo de shared_catalogs. Regla Ivan 2026-07-20.
     private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
+    // Tipo de NC "Descuento Comercial" (CatTipoNotaCredito value 2): puede registrarse SIN factura relacionada (f196).
+    private static final String TIPO_NC_DESCUENTO_COMERCIAL = "2";
 
     // Mappers
     private final InvoiceMapper invoiceMapper;
@@ -1081,7 +1083,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             // 6. Guardar CFDIs relacionados (para notas de crédito) - STM-1168
             if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
                 log.debug("Guardando CFDIs relacionados para Nota de Crédito");
-                saveRelatedCfdis(invoice, invoiceDto);
+                saveRelatedCfdis(invoice, invoiceDto, tipoNotaCredito);
             }
 
             return invoice;
@@ -1439,7 +1441,7 @@ public class InvoiceServiceImpl implements InvoiceService {
      * @param invoiceDto DTO con los datos del XML parseado
      * @throws FiscalException si no se cumplen las validaciones
      */
-    private void saveRelatedCfdis(InvoiceEntity ncInvoice, InvoiceXmlDto invoiceDto) {
+    private void saveRelatedCfdis(InvoiceEntity ncInvoice, InvoiceXmlDto invoiceDto, String tipoNotaCredito) {
         log.info("=== INICIO GUARDADO CFDIS RELACIONADOS (STM-1168) ===");
         log.debug("NC UUID: {}, Fiscal UUID: {}", ncInvoice.getInvoiceUuid(), ncInvoice.getFiscalUuid());
 
@@ -1456,6 +1458,12 @@ public class InvoiceServiceImpl implements InvoiceService {
                                 && b.getCfdiRelacionado() != null && !b.getCfdiRelacionado().isEmpty())
                         .collect(java.util.stream.Collectors.toList());
         if (bloquesValidos.isEmpty()) {
+            // f196: una NC de Descuento Comercial (tipo 2 de CatTipoNotaCredito) puede ir SIN factura
+            // relacionada. Para los demás tipos (ej. 1 Ajuste por Recepción) la factura sigue siendo obligatoria.
+            if (TIPO_NC_DESCUENTO_COMERCIAL.equals(tipoNotaCredito)) {
+                log.info("NC de Descuento Comercial sin factura relacionada: permitido (f196), no se guardan relaciones");
+                return;
+            }
             log.error("La NC no contiene CfdiRelacionados con TipoRelacion permitido {} en el XML", tiposPermitidos);
             messageCatalog.throwException(FiscalMessageCode.BUS042);
         }

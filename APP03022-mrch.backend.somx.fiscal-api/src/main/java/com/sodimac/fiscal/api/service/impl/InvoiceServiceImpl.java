@@ -1464,7 +1464,16 @@ public class InvoiceServiceImpl implements InvoiceService {
                 log.info("NC de Descuento Comercial sin factura relacionada: permitido (f196), no se guardan relaciones");
                 return;
             }
-            log.error("La NC no contiene CfdiRelacionados con TipoRelacion permitido {} en el XML", tiposPermitidos);
+            // Mensaje claro según el caso (retro Ivan 2026-07-24):
+            // - La NC trae CfdiRelacionados pero con TipoRelacion NO permitido -> BUS045 (tipo no permitido).
+            // - La NC no trae ningún CfdiRelacionados -> BUS042 (debe incluir un relacionado).
+            boolean traeRelacionados = bloques != null && bloques.stream()
+                    .anyMatch(b -> b.getCfdiRelacionado() != null && !b.getCfdiRelacionado().isEmpty());
+            if (traeRelacionados) {
+                log.error("La NC trae CfdiRelacionados pero ninguno con TipoRelacion permitido {}", tiposPermitidos);
+                messageCatalog.throwException(FiscalMessageCode.BUS045);
+            }
+            log.error("La NC no contiene CfdiRelacionados en el XML");
             messageCatalog.throwException(FiscalMessageCode.BUS042);
         }
 

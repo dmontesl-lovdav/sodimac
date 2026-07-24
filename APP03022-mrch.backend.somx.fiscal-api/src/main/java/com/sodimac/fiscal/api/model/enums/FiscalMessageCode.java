@@ -132,7 +132,7 @@ public enum FiscalMessageCode {
     BUS042("BUS042", "La Nota de Crédito debe incluir al menos un CFDI relacionado en el nodo CfdiRelacionados"),
     BUS043("BUS043", "La Factura relacionada no se encuentra registrada en el sistema. Debe registrar primero la Factura antes de cargar la Nota de Crédito"),
     BUS044("BUS044", "El CFDI relacionado no es una Factura (tipo I). Solo se pueden relacionar NC con Facturas"),
-    BUS045("BUS045", "El tipo de relación no es válido. Para Notas de Crédito debe ser 01"),
+    BUS045("BUS045", "El tipo de relación de la Nota de Crédito no se encuentra permitido. Por favor, validar con el área financiera la relación permitida."),
 
     // ========== ERRORES DE NEGOCIO - ACTUALIZACIÓN FACTURAS/NC (BUS046-BUS048) ==========
     BUS046("BUS046", "El documento con UUID no se encuentra registrado en el sistema"),

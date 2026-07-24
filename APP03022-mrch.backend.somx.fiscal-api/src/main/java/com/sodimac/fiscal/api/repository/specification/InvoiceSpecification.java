@@ -194,6 +194,18 @@ public class InvoiceSpecification {
                 predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
             }
 
+            // 12.2 Tipo de Nota de Crédito (Opcional) - filtra por addendum.tipo_nota_credito (1=Ajuste, 2=Descuento). f198.
+            if (searchRequest.getTipoNotaCredito() != null && !searchRequest.getTipoNotaCredito().isBlank()) {
+                Subquery<UUID> addendumSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> addendumRoot = addendumSubquery.from(AddendumEntity.class);
+                addendumSubquery.select(addendumRoot.get(K_INVOICE_UUID))
+                        .where(criteriaBuilder.equal(
+                                addendumRoot.get("tipoNotaCredito"),
+                                searchRequest.getTipoNotaCredito()
+                        ));
+                predicates.add(root.get(K_INVOICE_UUID).in(addendumSubquery));
+            }
+
             // 13. NCs relacionadas a una factura específica (Opcional) - STM-335
             if (searchRequest.getRelatedInvoiceUuid() != null) {
                 Subquery<UUID> relatedCfdiSubquery = query.subquery(UUID.class);

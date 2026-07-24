@@ -125,6 +125,13 @@ public class InvoiceSearchRequest {
     )
     private String tipoProveedor;
 
+    @Schema(
+            description = "Tipo de Nota de Crédito (id de CatTipoNotaCredito: 1=Ajuste por Recepción, 2=Descuento Comercial) para filtrar NCs. Solo aplica con tipoDocumento=E",
+            required = false,
+            example = "1"
+    )
+    private String tipoNotaCredito;
+
     // ========== FILTRO NC POR FACTURA (STM-335) ==========
 
     @Schema(

@@ -1872,10 +1872,11 @@ public class InvoiceServiceImpl implements InvoiceService {
     public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors) {
         log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={}", allowedVendors);
 
-        // Fechas: obligatorias SOLO si NO se busca por UUID (fiscalUuid es único). Con UUID se omiten
-        // validación y filtro de fechas (decisión Fer/Ivan QA jul-2026).
-        if (searchRequest.getUuid() != null) {
-            log.info("Búsqueda por UUID -> se omiten la validación y el filtro de fechas");
+        // Fechas: obligatorias SOLO si NO se busca por UUID. Se omiten con el UUID propio (fiscalUuid)
+        // o al filtrar las NCs de una factura por su UUID relacionado (Fer, QA jul-2026): ambos ya
+        // acotan la búsqueda, no hace falta el rango de fechas.
+        if (searchRequest.getUuid() != null || searchRequest.getRelatedInvoiceUuid() != null) {
+            log.info("Búsqueda por UUID (propio o factura relacionada) -> se omiten la validación y el filtro de fechas");
         } else if (searchRequest.getFechaInicioRecepcion() == null || searchRequest.getFechaFinalRecepcion() == null) {
             log.error("Fechas de recepción faltantes en búsqueda sin UUID");
             messageCatalog.throwException(FiscalMessageCode.BUS3103);

@@ -71,9 +71,11 @@ public class InvoiceSpecification {
             // (invoice.created_at), NO por la reception_date de finanzas (decisión negocio 2026-06-19;
             // revierte el cambio del 2026-06-18). Los campos del request se llaman fechaInicio/FinalRecepcion
             // pero refieren a la fecha de registro/recepción de la factura en el sistema.
-            // Si se busca por UUID (fiscalUuid, único) se ignora el filtro de fechas (Fer/Ivan QA
-            // jul-2026): garantiza que al capturar el UUID no se acote por fecha de registro.
-            if (searchRequest.getUuid() == null) {
+            // Si se busca por UUID (fiscalUuid propio) o por UUID de la factura relacionada
+            // (relatedInvoiceUuid), se ignora el filtro de fechas (Fer/Ivan QA jul-2026): al acotar
+            // por UUID no debe recortarse por la fecha de registro (el grid manda fechas por default
+            // y ocultaba NCs de la factura). Ver también la validación en searchInvoices.
+            if (searchRequest.getUuid() == null && searchRequest.getRelatedInvoiceUuid() == null) {
                 if (searchRequest.getFechaInicioRecepcion() != null) {
                     LocalDateTime startOfDay = searchRequest.getFechaInicioRecepcion().atStartOfDay();
                     predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(K_CREATED_AT), startOfDay));

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import uploadIcon from '@assets/AttachmentUploaderIcon.svg';
 import './GenericDropzone.css';
 
@@ -66,8 +67,6 @@ export default function GenericDropzone({
         if (inputRef.current) inputRef.current.value = '';
     };
 
-    const openDialog = () => inputRef.current?.click();
-
     const acceptText =
         accept ||
         '.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel';
@@ -76,15 +75,6 @@ export default function GenericDropzone({
         <>
             <div
                 ref={boxRef}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        openDialog();
-                    }
-                }}
-                onClick={openDialog}
                 className={`generic-dropzone ${dragOver ? 'drag-over' : ''} ${className}`}
             >
                 <input
@@ -134,3 +124,12 @@ export default function GenericDropzone({
         </>
     );
 }
+
+GenericDropzone.propTypes = {
+    file: PropTypes.object,
+    onFileSelect: PropTypes.func,
+    accept: PropTypes.string,
+    maxSizeMb: PropTypes.number,
+    className: PropTypes.string,
+    children: PropTypes.node,
+};

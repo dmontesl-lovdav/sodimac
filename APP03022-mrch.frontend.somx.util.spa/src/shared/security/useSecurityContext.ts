@@ -79,7 +79,7 @@ export function useSecurityContext(opts: UseSecurityContextOptions = {}): Securi
                 | ApiEnvelope<AccessContext>
                 | null;
             if (resp && typeof resp === 'object' && 'data' in resp && resp.data) {
-                return resp.data as AccessContext;
+                return resp.data;
             }
             return (resp as AccessContext | null) ?? null;
         },

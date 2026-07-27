@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './GenericModal.css';
 
 export default function GenericModal({
@@ -91,6 +92,22 @@ export default function GenericModal({
         </div>
     );
 }
+
+GenericModal.propTypes = {
+    visible: PropTypes.bool,
+    variant: PropTypes.string,
+    message: PropTypes.any,
+    title: PropTypes.string,
+    messageConfirm: PropTypes.any,
+    severity: PropTypes.string,
+    buttonText: PropTypes.string,
+    confirmText: PropTypes.string,
+    cancelText: PropTypes.string,
+    items: PropTypes.array,
+    onClose: PropTypes.func,
+    onConfirm: PropTypes.func,
+    onCancel: PropTypes.func,
+};
 
 const SuccessIcon = (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>

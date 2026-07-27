@@ -161,7 +161,7 @@ export function createApiClient(options?: {
 
         const anchor = document.createElement("a");
         anchor.href = window.URL.createObjectURL(blob);
-        anchor.download = filename || "file.bin";
+        anchor.download = filename ?? "file.bin";
 
         document.body.appendChild(anchor);
         anchor.click();

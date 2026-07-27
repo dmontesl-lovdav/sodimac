@@ -18,9 +18,9 @@ export function SecurityTablePagination({
   onNext,
   onPageSizeChange,
   showPageSizeSelector = true,
-}: Props) {
+}: Readonly<Props>) {
   return (
-    <div className="security-pagination" role="navigation" aria-label="Paginación">
+    <nav className="security-pagination" aria-label="Paginación">
       <div className="security-pagination__info">
         {showPageSizeSelector ? (
           <>
@@ -57,6 +57,6 @@ export function SecurityTablePagination({
           Siguiente
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

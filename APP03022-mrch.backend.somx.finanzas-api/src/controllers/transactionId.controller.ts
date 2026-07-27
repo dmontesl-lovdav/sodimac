@@ -11,21 +11,29 @@ import {
 } from "@/schemas/transactionId.schema.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 
-export async function create(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function create(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {
         const dto: CreateTransactionIdDto = CreateTransactionIdSchema.parse(req.body);
 
         const idUsuario =
-            (req.headers["x-user-id"] as string | undefined) ||
-            dto.idUsuario ||
+            (req.headers["x-user-id"] as string | undefined) ??
+            dto.idUsuario ??
             "system";
 
         const origen =
-            (req.headers["x-service-name"] as string | undefined) ||
-            dto.origen ||
+            (req.headers["x-service-name"] as string | undefined) ??
+            dto.origen ??
             "finanzas-api";
 
-        const created = await svc.create(dto, req.authToken ?? '', { idUsuario, origen });
+        const created = await svc.create(
+            dto,
+            req.authToken ?? "",
+            { idUsuario, origen }
+        );
 
         res.status(StatusCodes.CREATED).json({
             ...ResponseHandler.responseBuilder(
@@ -43,9 +51,15 @@ export async function create(req: AuthenticatedRequest, res: Response, next: Nex
     }
 }
 
-export async function detailByFolioVisible(req: Request, res: Response, next: NextFunction) {
+export async function detailByFolioVisible(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     try {
-        const params: TransactionIdFolioParamDto = TransactionIdFolioParamSchema.parse(req.params);
+        const params: TransactionIdFolioParamDto =
+            TransactionIdFolioParamSchema.parse(req.params);
+
         const result = await svc.detailByFolioVisible(params.folioVisible);
 
         res.status(StatusCodes.OK).json({

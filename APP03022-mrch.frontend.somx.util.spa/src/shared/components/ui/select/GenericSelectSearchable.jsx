@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import './styles/GenericSelectSearchable.css';
 
 export default function GenericSelectSearchable({
@@ -87,16 +88,27 @@ export default function GenericSelectSearchable({
                     )}
 
                     {filtered.map(opt => (
-                        <div
+                        <button
+                            type="button"
                             key={opt.value}
                             className="gss-option"
                             onClick={() => handleSelect(opt)}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', appearance: 'none', border: 'none', background: 'transparent', font: 'inherit', color: 'inherit', cursor: 'pointer' }}
                         >
                             {opt.label}
-                        </div>
+                        </button>
                     ))}
                 </div>
             )}
         </div>
     );
 }
+
+GenericSelectSearchable.propTypes = {
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    options: PropTypes.array,
+    placeholder: PropTypes.string,
+    widthClass: PropTypes.string,
+    containerClassName: PropTypes.string,
+};

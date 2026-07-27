@@ -74,8 +74,7 @@ export const Pagination: FC<PaginationProps> = ({
     };
 
     return (
-        <div
-            role="navigation"
+        <nav
             aria-label="Paginación"
             style={styles.container}
         >
@@ -177,7 +176,7 @@ export const Pagination: FC<PaginationProps> = ({
                     ›
                 </button>
             </div>
-        </div>
+        </nav>
     );
 };
 

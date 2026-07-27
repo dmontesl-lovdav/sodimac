@@ -608,6 +608,7 @@ export default function CatalogsContainer() {
                 onClick={() => navigate('/util/catalogos/catalogs/crear')}
               >
                 <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
+                {' '}
                 Nuevo Catálogo
               </button>
             </div>

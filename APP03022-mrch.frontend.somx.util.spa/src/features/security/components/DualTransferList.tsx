@@ -27,7 +27,7 @@ export function DualTransferList({
   onAssignedItemsChange,
   renderAvailableItemExtra,
   renderAssignedItemExtra,
-}: Props) {
+}: Readonly<Props>) {
   const [query, setQuery] = useState('');
   const [available, setAvailable] = useState<AssignableItem[]>(leftItems);
   const [assigned, setAssigned] = useState<AssignableItem[]>(rightItems);
@@ -109,10 +109,10 @@ export function DualTransferList({
       </div>
 
       <div className="dual-grid">
-        <section
+        <fieldset
           className="dual-column"
-          role="group"
           aria-label={leftTitle}
+          style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -133,16 +133,17 @@ export function DualTransferList({
                 checked={filteredAvailable.length > 0 && filteredAvailable.every((item) => leftSelected.has(item.id))}
                 onChange={(event) => setLeftSelected(event.target.checked ? new Set(filteredAvailable.map((item) => item.id)) : new Set())}
               />
+              {' '}
               Seleccionar visibles
             </label>
           </div>
           <div className="dual-items">
             {filteredAvailable.map((item) => (
-              <div
+              <fieldset
                 key={item.id}
                 className="dual-item dual-item--draggable"
-                role="group"
                 aria-label={item.title}
+                style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >
@@ -161,10 +162,10 @@ export function DualTransferList({
                   {item.title}
                   {renderAssignedItemExtra?.(item)}
                 </div>
-              </div>
+              </fieldset>
             ))}
           </div>
-        </section>
+        </fieldset>
 
         <section className="dual-controls">
           <GenericButton variant="outlineFill" onClick={() => moveRight(Array.from(leftSelected))}>&gt;&gt;</GenericButton>
@@ -172,10 +173,10 @@ export function DualTransferList({
           <GenericButton variant="outlineFill" onClick={() => moveLeft(Array.from(rightSelected))}>&lt;&lt;</GenericButton>
         </section>
 
-        <section
+        <fieldset
           className="dual-column"
-          role="group"
           aria-label={rightTitle}
+          style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -185,11 +186,11 @@ export function DualTransferList({
           <header>{rightTitle} ({assigned.length})</header>
           <div className="dual-items">
             {assigned.map((item) => (
-              <div
+              <fieldset
                 key={item.id}
                 className="dual-item dual-item--draggable"
-                role="group"
                 aria-label={item.title}
+                style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >
@@ -208,10 +209,10 @@ export function DualTransferList({
                   {item.title}
                   {renderAvailableItemExtra?.(item)}
                 </div>
-              </div>
+              </fieldset>
             ))}
           </div>
-        </section>
+        </fieldset>
       </div>
 
       <div className="dual-back">

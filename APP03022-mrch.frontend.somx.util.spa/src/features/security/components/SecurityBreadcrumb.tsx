@@ -3,11 +3,11 @@ import SharedBreadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 export function SecurityBreadcrumb({
   items,
   linkStateByLabel,
-}: {
+}: Readonly<{
   items: string[];
   /** Estado de React Router para enlaces concretos (p. ej. devolver filtros al catálogo). */
   linkStateByLabel?: Record<string, unknown>;
-}) {
+}>) {
   const routeByLabel: Record<string, string> = {
     Inicio: '/',
     'Herramientas y Utilerias': '/util',

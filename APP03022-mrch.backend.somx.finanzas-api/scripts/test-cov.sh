@@ -2,9 +2,6 @@
 
 set -euo pipefail
 
-jest --coverage --passWithNoTests "$@"
+npx jest --config jest.config.cjs --coverage "$@"
 
-if [ ! -f coverage/lcov.info ]; then
-  mkdir -p coverage
-  : > coverage/lcov.info
-fi
+test -s coverage/lcov.info

@@ -1,9 +1,11 @@
+type ParseDisplayDateInput = string | Date | null | undefined;
+
 function pad2(n: number): string {
     return String(n).padStart(2, "0");
 }
 
 export function parseDisplayDate(
-    value: string | Date | null | undefined
+    value: ParseDisplayDateInput
 ): Date | null {
     if (value == null || value === "") return null;
     if (value instanceof Date) {
@@ -13,12 +15,12 @@ export function parseDisplayDate(
     const s = String(value).trim();
     if (!s) return null;
 
-    const slash = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+    const slash = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(s);
     if (slash) {
         return new Date(Number(slash[3]), Number(slash[2]) - 1, Number(slash[1]));
     }
 
-    const isoDate = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const isoDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
     if (isoDate) {
         const hasTime = s.includes("T") || /\d{2}:\d{2}/.test(s);
         if (!hasTime) {

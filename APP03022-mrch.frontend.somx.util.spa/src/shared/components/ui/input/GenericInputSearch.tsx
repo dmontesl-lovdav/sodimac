@@ -13,7 +13,7 @@ export default function GenericInputSearch({
     className = '',
     style,
     ...props
-}: GenericInputSearchProps) {
+}: Readonly<GenericInputSearchProps>) {
     return (
         <input
             {...props}

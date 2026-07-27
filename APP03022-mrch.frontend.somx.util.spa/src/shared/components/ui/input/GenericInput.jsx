@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react';
+import PropTypes from 'prop-types';
 import './GenericInput.css';
 
 export default function GenericInput({
@@ -104,3 +105,20 @@ export default function GenericInput({
         </div>
     );
 }
+
+GenericInput.propTypes = {
+    label: PropTypes.string,
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    placeholder: PropTypes.string,
+    required: PropTypes.bool,
+    maxLength: PropTypes.number,
+    className: PropTypes.string,
+    disabled: PropTypes.bool,
+    readOnly: PropTypes.bool,
+    name: PropTypes.string,
+    type: PropTypes.string,
+    error: PropTypes.any,
+    helperText: PropTypes.string,
+    validateEmail: PropTypes.bool,
+};

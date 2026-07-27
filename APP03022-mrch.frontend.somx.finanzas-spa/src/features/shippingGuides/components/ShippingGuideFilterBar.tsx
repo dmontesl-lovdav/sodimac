@@ -10,9 +10,14 @@ import { useCallback, useEffect, useState } from "react";
 import { ShippingGuideFilter } from "../interfaces";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
+  fetchProviders,
   fetchProvidersAsCatalog,
+  isSupplierActiveOrInactive,
+  isSupplierTransportista,
   endOfLocalDay,
   startOfLocalDay,
+  fetchCatalog,
+  resolveSupplierCatalogOptionValue,
 } from "@/utils/utils";
 import {
   loadShippingGuideStatusFilterOptions,
@@ -107,8 +112,42 @@ export default function ShippingGuideFilterBar({
 
   useEffect(() => {
     (async () => {
-      const list = await fetchProvidersAsCatalog("supplierNumber");
-      if (list) setProviders(list);
+      const [list, catalog] = await Promise.all([
+        fetchProviders(),
+        fetchCatalog("CATTIPOPROVEEDORREBATE"),
+      ]);
+
+      if (!list) return;
+
+      const catalogPayload = catalog as
+        | { details?: Array<{ value?: string | null }> }
+        | Array<{ value?: string | null }>
+        | null;
+
+      const details = Array.isArray(catalogPayload)
+        ? catalogPayload
+        : (catalogPayload?.details ?? []);
+
+      const allowedTypeIds = new Set(
+        details
+          .map((d) => String(d?.value ?? "").trim())
+          .filter((v) => v !== "")
+      );
+
+      const filtered =
+        allowedTypeIds.size > 0
+          ? list.filter((provider) =>
+              allowedTypeIds.has(String(provider.supplierType?.id ?? ""))
+            )
+          : list;
+
+      setProviders([
+        { label: "Todos los proveedores", value: "" },
+        ...filtered.map((provider: Record<string, unknown>) => ({
+          label: `${provider.businessName} (${provider.rfc})`,
+          value: resolveSupplierCatalogOptionValue(provider, "supplierNumber"),
+        })),
+      ]);
     })();
     (async () => {
       const opts = await loadShippingGuideStatusFilterOptions();

@@ -45,9 +45,9 @@ const mapBackendToFrontend = (bp: BackendParameter): Parameter => ({
     idModule: bp.idModule,
     idType: bp.idType,
     name: bp.name,
-    description: bp.description || '',
-    module: bp.module?.name || String(bp.idModule),
-    parameterType: bp.type?.name || String(bp.idType),
+    description: bp.description ?? '',
+    module: bp.module?.name ?? String(bp.idModule),
+    parameterType: bp.type?.name ?? String(bp.idType),
     value: bp.value,
     version: bp.version,
     startDate: bp.startDate?.split('T')[0] ?? '',
@@ -56,7 +56,7 @@ const mapBackendToFrontend = (bp: BackendParameter): Parameter => ({
     createdBy: bp.createdBy != null ? String(bp.createdBy) : 'SYSTEM',
     createdAt: bp.createdAt?.split('T')[0] ?? '',
     updatedBy: bp.updatedBy != null ? String(bp.updatedBy) : null,
-    updatedAt: bp.updatedAt?.split('T')[0] || null,
+    updatedAt: bp.updatedAt?.split('T')[0] ?? null,
 });
 
 export const parameterService = {

@@ -51,7 +51,7 @@ export const exportToExcel = (
     ...data.map((row) =>
       columns.map((col) => {
         const value = row[col.key];
-        return value !== null && value !== undefined ? value : '';
+        return value ?? '';
       })
     ),
   ];

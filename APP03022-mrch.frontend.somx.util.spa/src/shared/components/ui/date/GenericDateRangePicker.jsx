@@ -1,4 +1,5 @@
 import { forwardRef, useRef, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import DatePicker from 'react-datepicker';
 import es from 'date-fns/locale/es';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -47,6 +48,19 @@ const RangeInput = forwardRef(({ value, onChange: _onChange, onClick, placeholde
 ));
 
 RangeInput.displayName = 'RangeInput';
+
+RangeInput.propTypes = {
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    onClick: PropTypes.func,
+    placeholder: PropTypes.string,
+    sizeClass: PropTypes.string,
+    inputClassName: PropTypes.string,
+    inputProps: PropTypes.object,
+    hasValue: PropTypes.bool,
+    onClear: PropTypes.func,
+    onOpen: PropTypes.func,
+};
 
 export default function GenericDateRangePicker({
     value = [null, null],
@@ -193,3 +207,14 @@ export default function GenericDateRangePicker({
         </div>
     );
 }
+
+GenericDateRangePicker.propTypes = {
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    placeholder: PropTypes.any,
+    className: PropTypes.string,
+    size: PropTypes.string,
+    inputClassName: PropTypes.string,
+    popperClassName: PropTypes.string,
+    inputProps: PropTypes.object,
+};

@@ -53,6 +53,7 @@ export default function CreditsGrid() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchToken, setSearchToken] = useState(0);
   const [statusCreditNotes, setStatusCreditNotes] = useState<SelectableOption<string>[]>([]);
+  const [tipoNotaCreditoOptions, setTipoNotaCreditoOptions] = useState<SelectableOption<string>[]>([]);
   const [cancelConfirmRow, setCancelConfirmRow] = useState<CreditNote | null>(null);
   const [cancelConfirmMessage, setCancelConfirmMessage] = useState("");
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
@@ -95,6 +96,12 @@ export default function CreditsGrid() {
   
 
   useEffect(() => {
+    const fetchTipoNotaCredito = async () => {
+      const options = await fetchCatalogDetails("CatTipoNotaCredito");
+      if (options) {
+        setTipoNotaCreditoOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
+      }
+    }
     const fetchStatus = async () => {
       const options = await fetchCatalogDetails("CatEstatusNotaCredito");
       if (options) {
@@ -107,6 +114,7 @@ export default function CreditsGrid() {
         setProviderTypeOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
       }
     }
+    fetchTipoNotaCredito();
     fetchStatus();
     fetchProviderType();
   }, []);
@@ -232,12 +240,12 @@ export default function CreditsGrid() {
     {
       key: "uuid",
       label: "UUID",
-      type: "text",
+      type: "uuid",
     },
     {
       key: "relatedInvoiceUuid",
       label: "UUID Factura",
-      type: "text",
+      type: "uuid",
     },
     {
       key: "tipoProveedor",
@@ -250,6 +258,12 @@ export default function CreditsGrid() {
       label: "Estado nota de crédito",
       type: "select",
       options: statusCreditNotes,
+    },
+    {
+      key: "tipoNotaCredito",
+      label: "Tipo Nota de Crédito",
+      type: "select",
+      options: tipoNotaCreditoOptions,
     },
     {
       key: "fechaRecepcion",

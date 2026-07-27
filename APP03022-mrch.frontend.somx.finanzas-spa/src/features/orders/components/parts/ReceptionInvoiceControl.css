@@ -135,6 +135,7 @@
 
 .rc-cell-label {
     font-weight: 600;
+    text-align: left;
 }
 
 .rc-summary-actions {

@@ -1,9 +1,14 @@
+import PropTypes from 'prop-types';
 import stepperCaption from './StepperCaption.svg';
 import './VerticalStepper.css';
 
 export function Step({ children }) {
     return <div className="vs-step-content">{children}</div>;
 }
+
+Step.propTypes = {
+    children: PropTypes.node,
+};
 
 export function VerticalStepper({ children }) {
     if (!children || children.length === 0) return null;
@@ -29,3 +34,7 @@ export function VerticalStepper({ children }) {
         </div>
     );
 }
+
+VerticalStepper.propTypes = {
+    children: PropTypes.node,
+};

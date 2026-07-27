@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 
 export default function GenericSelectUnderline({
     label,
@@ -74,3 +75,14 @@ export default function GenericSelectUnderline({
         </div>
     );
 }
+
+GenericSelectUnderline.propTypes = {
+    label: PropTypes.node,
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    options: PropTypes.array,
+    placeholder: PropTypes.string,
+    includePlaceholder: PropTypes.bool,
+    fullWidth: PropTypes.bool,
+    className: PropTypes.string,
+};

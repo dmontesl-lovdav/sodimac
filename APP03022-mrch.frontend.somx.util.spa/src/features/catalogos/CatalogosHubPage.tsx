@@ -127,7 +127,7 @@ interface CardItemProps {
   Icon: React.FC;
 }
 
-function CardItem({ title, description, to, Icon }: CardItemProps) {
+function CardItem({ title, description, to, Icon }: Readonly<CardItemProps>) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (

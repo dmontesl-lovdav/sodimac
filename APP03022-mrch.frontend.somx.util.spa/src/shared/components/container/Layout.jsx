@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import './Layout.css';
 
 export const Layout = ({ children }) => {
@@ -6,4 +7,8 @@ export const Layout = ({ children }) => {
       {children}
     </div>
   );
+};
+
+Layout.propTypes = {
+  children: PropTypes.node,
 };

@@ -83,11 +83,11 @@ export default function NewConversionForm() {
     setMessage(null);
     try {
       const result = await conversionService.create({
-        sourceElementId: parseInt(elementId!),
+        sourceElementId: parseInt(elementId ?? ''),
         targetElementId: parseInt(selectedElementId),
       });
 
-      const convId = result.idConversion || result.id || '';
+      const convId = (result.idConversion || result.id) ?? '';
       showSuccess(
         `La conversión ${convId} se ha registrado exitosamente.`,
         'Conversión creada',
@@ -188,7 +188,7 @@ export default function NewConversionForm() {
             <div style={S.stepLine} />
           </div>
           <div style={S.stepContent}>
-            <div style={S.stepTitle} role="button" tabIndex={0} onClick={() => toggleStep(1)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStep(1); } }}>Buscar Catálogo</div>
+            <button type="button" style={{ ...S.stepTitle, border: 'none', background: 'transparent', appearance: 'none', padding: 0 }} onClick={() => toggleStep(1)}>Buscar Catálogo</button>
             <div style={S.stepSubtitle}>Selecciona el catálogo que contiene el elemento destino de la conversión.</div>
             {expandedSteps.includes(1) && (
               <div style={{ marginTop: '1rem' }}>
@@ -212,10 +212,8 @@ export default function NewConversionForm() {
             <div style={{ ...S.stepLine, ...(isStep1Complete ? {} : S.stepLineDisabled) }} />
           </div>
           <div style={S.stepContent}>
-            <div style={{ ...S.stepTitle, ...(isStep1Complete ? {} : S.stepTitleDisabled) }}
-              role="button" tabIndex={0}
-              onClick={() => isStep1Complete && toggleStep(2)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep1Complete) toggleStep(2); } }}>Seleccionar Elemento</div>
+            <button type="button" style={{ ...S.stepTitle, ...(isStep1Complete ? {} : S.stepTitleDisabled), border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
+              onClick={() => isStep1Complete && toggleStep(2)}>Seleccionar Elemento</button>
             <div style={S.stepSubtitle}>Selecciona el elemento destino para la conversión.</div>
             {expandedSteps.includes(2) && isStep1Complete && (
               <div style={{ marginTop: '1rem' }}>
@@ -240,10 +238,8 @@ export default function NewConversionForm() {
             <div style={{ ...S.stepNumber, ...(isStep2Complete ? {} : S.stepNumberDisabled) }}>3</div>
           </div>
           <div style={S.stepContent}>
-            <div style={{ ...S.stepTitle, ...(isStep2Complete ? {} : S.stepTitleDisabled) }}
-              role="button" tabIndex={0}
-              onClick={() => isStep2Complete && toggleStep(3)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep2Complete) toggleStep(3); } }}>Elemento para Conversión</div>
+            <button type="button" style={{ ...S.stepTitle, ...(isStep2Complete ? {} : S.stepTitleDisabled), border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
+              onClick={() => isStep2Complete && toggleStep(3)}>Elemento para Conversión</button>
             <div style={S.stepSubtitle}>Detalle del elemento seleccionado.</div>
             {expandedSteps.includes(3) && isStep2Complete && selectedElement && (
               <div style={{ marginTop: '1rem' }}>

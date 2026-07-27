@@ -24,7 +24,7 @@ function dedupeEventsByProcessId(events: AppEvent[] | undefined): AppEvent[] {
   return Array.from(map.values());
 }
 
-function EventsSubtable({ events }: { events: AppEvent[] }) {
+function EventsSubtable({ events }: Readonly<{ events: AppEvent[] }>) {
   if (events.length === 0) {
     return (
       <tr>
@@ -48,7 +48,7 @@ function EventsSubtable({ events }: { events: AppEvent[] }) {
   );
 }
 
-function AppRowWithEvents({ row }: { row: AppRow }) {
+function AppRowWithEvents({ row }: Readonly<{ row: AppRow }>) {
   const events = dedupeEventsByProcessId(row.events);
   return (
     <Fragment key={row.id}>
@@ -129,7 +129,7 @@ const ATTRIBUTE_COLUMNS = [
   { key: 'description', label: 'Clave' },
 ];
 
-function UserSummaryCard({ header, userLookupKey }: { header: any; userLookupKey: string }) {
+function UserSummaryCard({ header, userLookupKey }: Readonly<{ header: any; userLookupKey: string }>) {
   return (
     <div className="user-catalog-detail__card">
       <span className="user-catalog-detail__badge">Resumen</span>
@@ -160,7 +160,7 @@ function UserSummaryCard({ header, userLookupKey }: { header: any; userLookupKey
   );
 }
 
-function UserProfileCard({ profile, multipleProfilesDetected }: { profile: any; multipleProfilesDetected: boolean }) {
+function UserProfileCard({ profile, multipleProfilesDetected }: Readonly<{ profile: any; multipleProfilesDetected: boolean }>) {
   return (
     <div className="user-catalog-detail__card">
       <span className="user-catalog-detail__badge">Perfil</span>

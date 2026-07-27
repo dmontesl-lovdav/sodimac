@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import './AttachmentUploader.css';
 
 import trash from './AttachmentUploaderTrash.svg';     
@@ -115,24 +116,23 @@ export default function AttachmentUploader({
 
     return (
         <div className="main">
-            <div
+            <input
+                ref={manualInputFile}
+                type="file"
+                style={{ display: 'none' }}
+                accept={acceptAttr}
+                onChange={(e) => addFiles(e.target.files)}
+                disabled={!multiple && hasFiles}
+                multiple={!!multiple}
+            />
+            <button
+                type="button"
                 className={!multiple && hasFiles ? 'action grayscale' : 'action'}
-                role="button"
-                tabIndex={0}
                 onDragOver={e => e.preventDefault()}
                 onDrop={dropFiles}
                 onClick={() => manualInputFile.current?.click()}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); manualInputFile.current?.click(); } }}
+                style={{ appearance: 'none', font: 'inherit', color: 'inherit', textAlign: 'inherit', cursor: 'pointer' }}
             >
-                <input
-                    ref={manualInputFile}
-                    type="file"
-                    style={{ display: 'none' }}
-                    accept={acceptAttr}
-                    onChange={(e) => addFiles(e.target.files)}
-                    disabled={!multiple && (files?.length ? true : false)}
-                    multiple={!!multiple}
-                />
                 <div className="caption-icon"><img src={icon} alt="" /></div>
                 <div className="caption-text">Arrastra y suelta el archivo</div>
                 <div className="caption-text caption-text-alt">o haz clic aquí para explorar</div>
@@ -140,7 +140,7 @@ export default function AttachmentUploader({
                     <div className="pl-5 pr-5">Formatos soportados: {validFileExtensions.join(', ').toUpperCase()}.</div>
                     <div className="pb-5">Peso máximo por archivo: {formatSize(maxFileSize)}.</div>
                 </div>
-            </div>
+            </button>
 
             <div className="files">
                 {(files || []).map(f => (
@@ -150,18 +150,18 @@ export default function AttachmentUploader({
 
                         {!f.err && (
                             <>
-                                <div className="file-view" role="button" tabIndex={0} onClick={() => setPreviewFile(f)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreviewFile(f); } }} title="Ver">
+                                <button type="button" className="file-view" onClick={() => setPreviewFile(f)} title="Ver" style={{ appearance: 'none', border: 'none', background: 'transparent', padding: 0, margin: 0, cursor: 'pointer' }}>
                                     <img src={view} alt="Ver" />
-                                </div>
-                                <div className="file-download" role="button" tabIndex={0} onClick={() => downloadFile(f)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); downloadFile(f); } }} title="Descargar">
+                                </button>
+                                <button type="button" className="file-download" onClick={() => downloadFile(f)} title="Descargar" style={{ appearance: 'none', border: 'none', background: 'transparent', padding: 0, margin: 0, cursor: 'pointer' }}>
                                     <img src={download} alt="Descargar" />
-                                </div>
+                                </button>
                             </>
                         )}
 
-                        <div className="file-delete" role="button" tabIndex={0} onClick={() => removeFile(f.name)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeFile(f.name); } }} title="Eliminar">
+                        <button type="button" className="file-delete" onClick={() => removeFile(f.name)} title="Eliminar" style={{ appearance: 'none', border: 'none', background: 'transparent', padding: 0, margin: 0, cursor: 'pointer' }}>
                             <img src={trash} alt="Borrar" />
-                        </div>
+                        </button>
 
                         {buildErr(f.err)}
                     </div>
@@ -169,8 +169,15 @@ export default function AttachmentUploader({
             </div>
 
             {previewFile && (
-                <div className="au-modal-overlay" role="button" tabIndex={0} aria-label="Cerrar vista previa" onClick={closePreview} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closePreview(); } }}>
-                    <div className="au-modal" onClick={e => e.stopPropagation()}>
+                <div className="au-modal-overlay">
+                    <button
+                        type="button"
+                        className="au-modal-backdrop"
+                        aria-label="Cerrar vista previa"
+                        onClick={closePreview}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: 'transparent', border: 'none', padding: 0, margin: 0, cursor: 'default' }}
+                    />
+                    <div className="au-modal" style={{ position: 'relative', zIndex: 1 }}>
                         <button className="au-close" onClick={closePreview}>×</button>
                         <canvas ref={previewCanvas} className="au-canvas" />
                     </div>
@@ -179,3 +186,12 @@ export default function AttachmentUploader({
         </div>
     );
 }
+
+AttachmentUploader.propTypes = {
+    files: PropTypes.array,
+    setFiles: PropTypes.func,
+    fileExtensions: PropTypes.array,
+    fileSize: PropTypes.number,
+    filenameLength: PropTypes.number,
+    multiple: PropTypes.bool,
+};

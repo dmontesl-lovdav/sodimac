@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import './styles/GenericSelectFloating.css';
 
 const getLabelStateClass = (error, open) => {
@@ -102,7 +103,7 @@ export default function GenericSelectFloating({
                 if (attr === 'name') return name ?? null;
                 if (attr === 'position') return position ?? null;
                 if (attr === 'refreshDetails') return refreshDetails ?? null;
-                return rest && Object.prototype.hasOwnProperty.call(rest, attr)
+                return rest && Object.hasOwn(rest, attr)
                     ? rest[attr]
                     : null;
             },
@@ -189,10 +190,7 @@ export default function GenericSelectFloating({
                 aria-expanded={open}
                 aria-controls={listId}
                 aria-labelledby={labelId}
-                aria-required={required}
                 name={name}
-                position={position}
-                refreshdetails={refreshDetails}
                 {...rest}
                 className={`gs-button 
                     ${disabled ? 'gs-disabled' : ''} 
@@ -228,10 +226,7 @@ export default function GenericSelectFloating({
             {open && (
                 <div
                     ref={menuRef}
-                    role="listbox"
                     id={listId}
-                    tabIndex={-1}
-                    aria-activedescendant={`${id}-opt-${focusIndex}`}
                     className="gs-dropdown"
                 >
                     {items.map((it, idx) => {
@@ -239,21 +234,22 @@ export default function GenericSelectFloating({
                         const focused = idx === focusIndex;
 
                         return (
-                            <div
+                            <button
+                                type="button"
                                 key={it.value}
                                 id={`${id}-opt-${idx}`}
                                 data-idx={idx}
-                                role="option"
-                                aria-selected={selected}
+                                tabIndex={-1}
                                 onMouseEnter={() => setFocusIndex(idx)}
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => selectValue(it.value)}
+                                style={{ display: 'block', width: '100%', textAlign: 'left', appearance: 'none', border: 'none', background: 'transparent', font: 'inherit', color: 'inherit', cursor: 'pointer' }}
                                 className={`gs-option 
                                     ${selected ? 'gs-option-selected' : ''} 
                                     ${focused ? 'gs-option-focused' : ''}`}
                             >
                                 {it.label}
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
@@ -261,3 +257,20 @@ export default function GenericSelectFloating({
         </div>
     );
 }
+
+GenericSelectFloating.propTypes = {
+    label: PropTypes.node,
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    onValueChange: PropTypes.func,
+    options: PropTypes.array,
+    fullWidth: PropTypes.bool,
+    className: PropTypes.string,
+    disabled: PropTypes.bool,
+    error: PropTypes.bool,
+    name: PropTypes.string,
+    position: PropTypes.any,
+    refreshDetails: PropTypes.any,
+    required: PropTypes.bool,
+    requiredMarkClassName: PropTypes.string,
+};

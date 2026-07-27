@@ -140,7 +140,7 @@ const formatParameterForExport = (
   'Estatus': catalogData.statuses.find((c) => String(c.value) === String(item.status))?.label || String(item.status),
   'Usuario Registro': item.createdBy || '',
   'Fecha Registro': formatDateForExport(item.createdAt),
-  'Usuario Modificación': item.updatedBy || '-',
+  'Usuario Modificación': item.updatedBy ?? '-',
   'Fecha Modificación': item.updatedAt ? formatDateForExport(item.updatedAt) : '-',
 });
 
@@ -427,7 +427,6 @@ export const ParameterConfigPage = () => {
                   onSelectionChange={setSelectedIds}
                   onEdit={(p) => { setEditingParameter(p); setIsEditing(true); }}
                   onStatusChange={(p) => { setStatusChangeParameter(p); setIsStatusModalOpen(true); }}
-                  isHistoryMode={appliedFilters.includeHistory}
                   latestVersionIds={latestVersionIds}
                   pageSize={pageSize}
                   currentPage={clampedCurrentPage}

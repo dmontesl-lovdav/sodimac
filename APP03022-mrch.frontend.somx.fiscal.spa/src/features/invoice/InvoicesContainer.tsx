@@ -272,7 +272,7 @@ export default function InvoicesGrid() {
       { key: "idProveedor", label: "Nombre Proveedor", type: "providerSelect" },
       { key: "serie", label: "Serie", type: "text" },
       { key: "folio", label: "Folio", type: "text" },
-      { key: "uuid", label: "UUID", type: "text" },
+      { key: "uuid", label: "UUID", type: "uuid" },
       { key: "tipoProveedor", label: "Tipo Proveedor", type: "selectFloating", options: providerTypeOptions },
       { key: "estatus", label: "Estado", type: "selectFloating", options: statusInvoices },
       { key: "fechaRecepcion", label: "Fecha búsqueda", type: "dateRange", required: true },

@@ -160,7 +160,7 @@ export default function ComplementContainer() {
     {
       key: "uuid",
       label: "UUID",
-      type: "text",
+      type: "uuid",
     },
     {
       key: "tipoProveedor",

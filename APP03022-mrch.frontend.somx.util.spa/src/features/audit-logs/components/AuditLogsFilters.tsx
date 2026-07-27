@@ -7,11 +7,28 @@ import {
 import {
     GenericDateRangePicker,
     GenericInputSearch,
+    GenericSelect,
     GenericButton,
     GenericModal,
 } from '@shared/components/ui';
 
+import { getCatalogDetails } from '../api';
+
 import type { AuditLogsFiltersProps } from '../interfaces';
+
+type CatalogOption = { value: string; label: string };
+
+const mapCatalogOptions = (details: unknown): CatalogOption[] => {
+    if (!Array.isArray(details)) return [];
+    return details
+        .map((d: any) => {
+            const value = String(d?.value ?? d?.key ?? '').trim();
+            const label = String(d?.description ?? d?.value ?? d?.key ?? '').trim();
+            return { value, label };
+        })
+        .filter((o) => o.value !== '')
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+};
 
 import '../styles/AuditLogsFilters.css';
 
@@ -66,6 +83,24 @@ export default function AuditLogsFilters({
     const [modulo, setModulo] = useState<string>(init.modulo);
 
     const [rangeErrorModal, setRangeErrorModal] = useState<boolean>(false);
+
+    const [moduloOptions, setModuloOptions] = useState<CatalogOption[]>([]);
+    const [aplicativoOptions, setAplicativoOptions] = useState<CatalogOption[]>([]);
+
+    useEffect(() => {
+        let active = true;
+        Promise.all([
+            getCatalogDetails('CatModulo').catch(() => []),
+            getCatalogDetails('CatAplicativo').catch(() => []),
+        ]).then(([modulos, aplicativos]) => {
+            if (!active) return;
+            setModuloOptions(mapCatalogOptions(modulos));
+            setAplicativoOptions(mapCatalogOptions(aplicativos));
+        });
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const applyFilterDefaults = useCallback(() => {
         const t = new Date();
@@ -133,19 +168,21 @@ export default function AuditLogsFilters({
                         placeholder="ID Transacción"
                     />
 
-                    <GenericInputSearch
+                    <GenericSelect
                         value={modulo}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             setModulo(e.target.value)
                         }
+                        options={moduloOptions}
                         placeholder="Módulo"
                     />
 
-                    <GenericInputSearch
+                    <GenericSelect
                         value={idAplicativo}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             setIdAplicativo(e.target.value)
                         }
+                        options={aplicativoOptions}
                         placeholder="Aplicativo"
                     />
 

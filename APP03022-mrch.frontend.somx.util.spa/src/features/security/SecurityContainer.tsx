@@ -5,13 +5,6 @@ import { useSecurityAdmin } from './hooks/useSecurityAdmin';
 import { APP_KEYS, useSecurityContext } from '@shared/security';
 import './styles/SecurityContainer.css';
 
-import iconUser from '@assets/icons/alert-up.png';
-import iconApplication from '@assets/icons/alert-up.png';
-import iconProfile from '@assets/icons/alert-up.png';
-import iconEvent from '@assets/icons/alert-up.png';
-import iconPermission from '@assets/icons/alert-up.png';
-import iconAttribute from '@assets/icons/alert-up.png';
-
 type AccessCard = {
   title: string;
   icon?: string;
@@ -27,55 +20,55 @@ const cards: AccessCard[] = [
     desc: 'Consulta de perfil, roles, aplicaciones y atributos por usuario.',
     to: '/seguridad/gestion-usuarios',
     adminOnly: true,
-    icon: iconUser,
+    icon: iconSecurity,
   },
   {
     title: 'Aplicativo Evento',
     desc: 'Relación entre módulos (aplicativos) y procesos (eventos) del sistema.',
     to: '/seguridad/aplicativo-evento',
-    icon: iconApplication,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.PROFILE_ADMIN, APP_KEYS.PERMISSIONS_ADMIN],
   },
   {
     title: 'Perfil Aplicativo',
     desc: 'Relación entre perfiles y módulos (aplicativos) existentes en el sistema.',
     to: '/seguridad/perfil-aplicativo',
-    icon: iconProfile,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.PROFILE_ADMIN],
   },
   {
     title: 'Perfil Evento',
     desc: 'Relación entre perfiles y procesos (eventos) del sistema.',
     to: '/seguridad/perfil-evento',
-    icon: iconEvent,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.PROFILE_ADMIN],
   },
   {
     title: 'Perfil Usuario',
     desc: 'Relación entre perfiles y usuarios existentes en el sistema.',
     to: '/seguridad/perfil-usuario',
-    icon: iconProfile,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.PROFILE_ADMIN],
   },
   {
     title: 'Rol Usuario',
     desc: 'Relación entre roles y usuarios existentes en el sistema.',
     to: '/seguridad/rol-usuario',
-    icon: iconProfile,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.ROLES_ADMIN],
   },
   {
     title: 'Rol Permiso',
     desc: 'Relación entre roles y permisos existentes en el sistema.',
     to: '/seguridad/rol-permiso',
-    icon: iconPermission,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.ROLES_ADMIN, APP_KEYS.PERMISSIONS_ADMIN],
   },
   {
     title: 'Usuario Atributo',
     desc: 'Relación entre usuarios y atributos existentes en el sistema.',
     to: '/seguridad/usuario-atributo',
-    icon: iconAttribute,
+    icon: iconSecurity,
     requiredAnyApp: [APP_KEYS.PROFILE_ADMIN],
   },
 ];

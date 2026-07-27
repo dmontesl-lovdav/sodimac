@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 export default function GenericSelectFilled({
     value,
     onChange,
@@ -34,3 +36,12 @@ export default function GenericSelectFilled({
         </div>
     );
 }
+
+GenericSelectFilled.propTypes = {
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    options: PropTypes.array,
+    placeholder: PropTypes.string,
+    fullWidth: PropTypes.bool,
+    className: PropTypes.string,
+};

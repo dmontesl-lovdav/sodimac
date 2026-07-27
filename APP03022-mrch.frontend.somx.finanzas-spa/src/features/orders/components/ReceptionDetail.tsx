@@ -15,6 +15,7 @@ import { ChangeEvent, ReactElement, forwardRef, useCallback, useEffect, useImper
 import { useParams } from "react-router-dom";
 import { OrderClient } from "../api/OrderClient";
 import { EMPTY_RECEPTION, ReceptionStatusEditOptions, Reception } from "../interfaces";
+import { RECEPTION_STATUS_DICTIONARY } from "../receptionStatusDictionary";
 import ReceptionHeader from "./parts/ReceptionHeader";
 import ReceptionSkusTable from "./parts/ReceptionSkusTable";
 import "./ReceptionDetail.css";
@@ -22,6 +23,33 @@ import { useReceptionSupplierInfo } from "../receptionSupplierInfo";
 
 export interface ReceptionEditStatusFormHandle {
     submit: () => void;
+}
+
+function toReceptionStatus(status: unknown): number {
+    const n = Number(status);
+    return Number.isFinite(n) ? n : -1;
+}
+
+function isReceptionStatusEditable(status: unknown): boolean {
+    const n = toReceptionStatus(status);
+    return n === 0 || n === 7;
+}
+
+function statusOptionFromDictionary(value: number) {
+    const entry = RECEPTION_STATUS_DICTIONARY[value];
+    return {
+        value,
+        type: entry?.pillType ?? "info",
+        label: entry?.shortLabel ?? String(value),
+        description: entry?.description ?? String(value),
+    };
+}
+
+function resolveEditStatusOptions(currentStatus: unknown) {
+    if (toReceptionStatus(currentStatus) === 7) {
+        return [statusOptionFromDictionary(7), statusOptionFromDictionary(0)];
+    }
+    return ReceptionStatusEditOptions;
 }
 
 interface ReceptionEditStatusFormProps {
@@ -41,16 +69,17 @@ const ReceptionEditStatusForm = forwardRef<
     },
     ref
 ) {
-    const [status, setStatus] = useState(reception.status);
+    const [status, setStatus] = useState(() => toReceptionStatus(reception.status));
     const [reason, setReason] = useState(reception.comment ?? "");
     const [uuid, setUuid] = useState(reception.invoiceUuid ?? "");
-
-    console.log(reception);
+    const canEdit = isReceptionStatusEditable(reception.status);
+    const statusOptions = resolveEditStatusOptions(reception.status);
 
     useEffect(() => {
-        if(reception.status !== undefined) {
-            setStatus(reception.status);
-            setReason(reception.status == 0 ? "":reception.comment ?? "");
+        if (reception.status !== undefined && reception.status !== null) {
+            const current = toReceptionStatus(reception.status);
+            setStatus(current);
+            setReason(current === 0 ? "" : reception.comment ?? "");
             setUuid(reception.invoiceUuid ?? "");
         }
     }, [reception]);
@@ -87,8 +116,8 @@ const ReceptionEditStatusForm = forwardRef<
                         }
                         placeholder="Estado"
                         disablePlaceholder={true}
-                        disabled={reception.status != 0}
-                        options={ReceptionStatusEditOptions}
+                        disabled={!canEdit}
+                        options={statusOptions}
                     />
                 </div>
                 <div className="rc-row">
@@ -96,7 +125,7 @@ const ReceptionEditStatusForm = forwardRef<
                         label="Motivo de cambio de estado"
                         placeholder="Escribe la razón por el cambio de estado"
                         value={reason}
-                        disabled={reception.status != 0}
+                        disabled={!canEdit}
                         onChange={(event: ChangeEvent<HTMLInputElement>) =>
                             setReason(event.target.value)
                         }
@@ -109,7 +138,7 @@ const ReceptionEditStatusForm = forwardRef<
                             label="UUID"
                             placeholder="Proporciona el UUID para complementar"
                             value={uuid}
-                            disabled={reception.status != 0}
+                            disabled={!canEdit}
                             onChange={(event: ChangeEvent<HTMLInputElement>) =>
                                 setUuid(event.target.value)
                             }
@@ -267,7 +296,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         headerActions={
                             editable ? (
                                 <GenericButton
-                                    disabled={reception.status != 0}
+                                    disabled={!isReceptionStatusEditable(reception.status)}
                                     variant="primary"
                                     onClick={() => {
                                         editFormRef.current?.submit();

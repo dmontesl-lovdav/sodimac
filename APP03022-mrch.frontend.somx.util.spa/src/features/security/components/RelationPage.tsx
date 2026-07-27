@@ -47,7 +47,7 @@ export function RelationPage({
   useSaveHook,
   leftTitle,
   rightTitle,
-}: Props) {
+}: Readonly<Props>) {
   const location = useLocation();
   const navigate = useNavigate();
   const { showAlert, alertModal } = useAlertModal();

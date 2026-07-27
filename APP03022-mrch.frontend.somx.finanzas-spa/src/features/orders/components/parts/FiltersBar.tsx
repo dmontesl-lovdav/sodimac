@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { ProvidersOptions, OrdersFilters } from "../../interfaces";
 import {
   fetchProvidersAsCatalog,
+  isSupplierActiveOrInactive,
   endOfLocalDay,
   startOfLocalDay,
   fetchCatalogDetails,
@@ -196,7 +197,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
     const loadCatalogs = async () => {
       const [providersRes, tipoProveedorRes, tipoRecepcionRes] =
         await Promise.all([
-          fetchProvidersAsCatalog("supplierNumber"),
+          fetchProvidersAsCatalog("supplierNumber", isSupplierActiveOrInactive),
           fetchCatalogDetails("CatTipoProveedor"),
           fetchCatalogDetails("CatEstatusRecepcion"),
         ]);

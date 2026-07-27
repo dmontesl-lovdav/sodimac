@@ -496,7 +496,7 @@ const EMPTY_FILTERS = {
   status: '',
 };
 
-function ParentDisplay({ isPrimario, value }: { isPrimario: boolean; value: string | null | undefined }) {
+function ParentDisplay({ isPrimario, value }: Readonly<{ isPrimario: boolean; value: string | null | undefined }>) {
   if (isPrimario) return <span style={{ color: '#CCCCCC' }}>(No aplica)</span>;
   if (value) return <span>{value}</span>;
   return <span style={{ color: '#999999' }}>(Sin relación)</span>;
@@ -635,7 +635,7 @@ export default function CatalogElementsContainer() {
       setFilteredElements((prev) =>
         prev.map((el) =>
           el.id === elementId
-            ? { ...el, status: newStatusText as 'Activo' | 'Inactivo' }
+            ? { ...el, status: newStatusText }
             : el
         )
       );
@@ -722,12 +722,12 @@ export default function CatalogElementsContainer() {
         startDate: el.startDate || '',
         endDate: el.endDate || '',
         status: el.status,
-        parentCatalogName: el.parentCatalogName || '',
-        parentElementName: el.parentElementName || '',
+        parentCatalogName: el.parentCatalogName ?? '',
+        parentElementName: el.parentElementName ?? '',
         createdBy: el.createdBy || '',
         createdAt: el.createdAt || '',
-        updatedBy: el.updatedBy || '',
-        updatedAt: el.updatedAt || '',
+        updatedBy: el.updatedBy ?? '',
+        updatedAt: el.updatedAt ?? '',
       }));
 
       if (exportData.length === 0) {
@@ -948,15 +948,13 @@ export default function CatalogElementsContainer() {
             </select>
           </div>
           <div style={styles.filterButtons}>
-            <span
-              style={styles.ghostBtn}
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              style={{ ...styles.ghostBtn, appearance: 'none' }}
               onClick={handleClear}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClear(); } }}
             >
               Limpiar
-            </span>
+            </button>
             <button
               style={styles.outlineBtn}
               onClick={handleSearch}
@@ -1111,17 +1109,19 @@ export default function CatalogElementsContainer() {
                         </button>
                       </td>
                       <td style={styles.td}>
-                        <div
+                        <button
+                          type="button"
                           style={{
                             ...styles.toggleSwitch,
                             opacity: togglingId === el.id ? 0.5 : 1,
                             pointerEvents: togglingId === el.id ? 'none' : 'auto',
+                            border: 'none',
+                            padding: 0,
+                            appearance: 'none',
+                            background: 'transparent',
                           }}
-                          role="button"
-                          tabIndex={0}
                           aria-label="Cambiar estatus del elemento"
                           onClick={() => handleToggleStatus(el.id)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(el.id); } }}
                         >
                           <span
                             style={{
@@ -1136,7 +1136,7 @@ export default function CatalogElementsContainer() {
                               }}
                             />
                           </span>
-                        </div>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1165,15 +1165,13 @@ export default function CatalogElementsContainer() {
           {exportError && (
             <span style={{ fontSize: '0.75rem', color: '#dc2626', marginRight: 'auto' }}>{exportError}</span>
           )}
-          <span
-            style={styles.ghostBtn}
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            style={{ ...styles.ghostBtn, appearance: 'none' }}
             onClick={() => navigate('/util/catalogos/catalogs')}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/util/catalogos/catalogs'); } }}
           >
             Volver
-          </span>
+          </button>
           {showResults && filteredElements.length > 0 && (
             <select
               style={{

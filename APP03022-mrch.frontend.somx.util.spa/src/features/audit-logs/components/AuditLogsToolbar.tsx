@@ -6,7 +6,7 @@ interface Props {
     disabled: boolean;
 }
 
-export default function AuditLogsToolbar({ onExportCsv, disabled }: Props) {
+export default function AuditLogsToolbar({ onExportCsv, disabled }: Readonly<Props>) {
     return (
         <div className="al-toolbar">
             <GenericButton onClick={onExportCsv} disabled={disabled}>

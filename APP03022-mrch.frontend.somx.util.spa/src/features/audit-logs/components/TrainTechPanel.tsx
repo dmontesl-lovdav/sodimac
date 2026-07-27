@@ -2,9 +2,9 @@ import type { AuditLogRecord } from '../interfaces';
 
 export default function TrainTechPanel({
     techRow,
-}: {
+}: Readonly<{
     techRow: AuditLogRecord | null;
-}) {
+}>) {
     if (!techRow?.details?.response_body) return null;
 
     return (

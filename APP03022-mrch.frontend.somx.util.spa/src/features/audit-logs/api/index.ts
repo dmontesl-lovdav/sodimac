@@ -37,6 +37,10 @@ export const getAuditLogDetail = (id: string) => {
     return client.getAuditLogDetail(id);
 };
 
+export const getCatalogDetails = (code: string) => {
+    return client.getCatalogDetailsByCode(code);
+};
+
 export const exportAuditLogsCsv = (filters: any = {}, page: number = 1, size: number = 10) => {
     return client.exportAuditLogsCsv(buildParams(filters, page, size));
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export default function GenericLinearProgress({
     indeterminate = false,
@@ -15,11 +16,7 @@ export default function GenericLinearProgress({
 
     return (
         <div
-            role="progressbar"
             aria-label={ariaLabel}
-            aria-valuemin={0}
-            aria-valuemax={indeterminate ? undefined : 100}
-            aria-valuenow={indeterminate ? undefined : Math.round(pct)}
             className={`${fullWidth ? 'w-full' : 'w-auto'} ${className}`}
         >
             <div className="relative h-1.5 w-full overflow-hidden rounded bg-slate-200">
@@ -52,3 +49,13 @@ export default function GenericLinearProgress({
         </div>
     );
 }
+
+GenericLinearProgress.propTypes = {
+    indeterminate: PropTypes.bool,
+    value: PropTypes.number,
+    max: PropTypes.number,
+    buffer: PropTypes.number,
+    fullWidth: PropTypes.bool,
+    className: PropTypes.string,
+    'aria-label': PropTypes.string,
+};

@@ -40,7 +40,7 @@ export default function AuditLogsGridTable({
     selectedIds,
     onSelectRow,
     ...props
-}: Props) {
+}: Readonly<Props>) {
     const columns = [
         { header: 'Id Transacción', render: (r: AuditLogRecord) => fullText(r.trace_id) },
 
@@ -51,7 +51,7 @@ export default function AuditLogsGridTable({
         {
             header: 'Acción',
             render: (r: any) => {
-                const d = (r as any)?.details;
+                const d = r?.details;
                 const method = d?.method;
                 const msg = r?.message;
                 return (method && String(method).trim()) || (msg && String(msg).trim()) || '-';

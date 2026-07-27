@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import './styles/GenericSelect.css';
 
 export default function GenericSelect({
@@ -33,3 +34,13 @@ export default function GenericSelect({
         </div>
     );
 }
+
+GenericSelect.propTypes = {
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    options: PropTypes.array,
+    placeholder: PropTypes.string,
+    widthClass: PropTypes.string,
+    selectClassName: PropTypes.string,
+    containerClassName: PropTypes.string,
+};

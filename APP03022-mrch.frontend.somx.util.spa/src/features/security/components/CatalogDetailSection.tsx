@@ -20,7 +20,7 @@ export function CatalogDetailSection({
   addLabel,
   onAdd,
   extraAction,
-}: Props) {
+}: Readonly<Props>) {
   const totalPages = Math.max(1, Math.ceil(section.total / section.pageSize));
   const tableColumns = columns.map((column) => ({
     header: column.label,

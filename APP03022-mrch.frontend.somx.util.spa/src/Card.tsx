@@ -41,17 +41,10 @@ const Card: React.FC<CardProps> = ({
     };
 
     return (
-        <div
-            role="button"
-            tabIndex={0}
+        <button
+            type="button"
             aria-label={title}
             onClick={handleClick}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleClick();
-                }
-            }}
             style={{
                 width: '255px',
                 height: '246px',
@@ -64,6 +57,9 @@ const Card: React.FC<CardProps> = ({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 boxSizing: 'border-box',
+                padding: 0,
+                font: 'inherit',
+                appearance: 'none',
                 transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
             }}
             onMouseEnter={(e) => {
@@ -128,7 +124,7 @@ const Card: React.FC<CardProps> = ({
                     {title}
                 </h2>
             </div>
-        </div>
+        </button>
     );
 };
 

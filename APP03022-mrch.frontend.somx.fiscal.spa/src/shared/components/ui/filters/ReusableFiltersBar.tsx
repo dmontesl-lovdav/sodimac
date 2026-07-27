@@ -28,12 +28,40 @@ type SelectableOption<T> = {
 export interface FilterField {
   key: string;
   label: string;
-  type: "text" | "select" | "dateRange" | "selectFloating" | "providerSelect";
+  type: "text" | "select" | "dateRange" | "selectFloating" | "providerSelect" | "uuid";
   placeholder?: string;
   options?: SelectableOption<string | number>[];
   required?: boolean;
   widthClass?: string;
   containerClassName?: string;
+}
+
+/** UUID canónico (8-4-4-4-12 hex), case-insensitive. */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(value: unknown): boolean {
+  const raw = value == null ? "" : String(value).trim();
+  if (!raw) return false;
+  return UUID_RE.test(raw);
+}
+
+export function normalizeUuidFilterValue(value: unknown): string {
+  return normalizeProviderFilterValue(value);
+}
+
+export function validateUuidFilterField(
+  field: FilterField,
+  value: unknown
+): string | null {
+  const normalized = normalizeUuidFilterValue(value);
+  if (!normalized) {
+    return field.required ? `${field.label} es obligatorio` : null;
+  }
+  if (!isValidUuid(normalized)) {
+    return `${field.label} no es un UUID válido`;
+  }
+  return null;
 }
 
 export function normalizeProviderFilterValue(value: unknown): string {
@@ -53,6 +81,12 @@ export function normalizeFiltersForSubmit<F extends Record<string, any>>(
   for (const field of fields) {
     if (field.type === "providerSelect") {
       (next as Record<string, unknown>)[field.key] = normalizeProviderFilterValue(
+        next[field.key]
+      );
+      continue;
+    }
+    if (field.type === "uuid") {
+      (next as Record<string, unknown>)[field.key] = normalizeUuidFilterValue(
         next[field.key]
       );
       continue;
@@ -376,6 +410,18 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
         continue;
       }
 
+      if (field.type === "uuid") {
+        const uuidError = validateUuidFilterField(
+          field,
+          normalizedFilters[field.key]
+        );
+        if (uuidError) {
+          setError(uuidError);
+          return;
+        }
+        continue;
+      }
+
       if (!field.required) continue;
       const value = normalizedFilters[field.key];
       if (!value || (typeof value === "string" && value.trim() === "")) {
@@ -416,7 +462,7 @@ export default function ReusableFiltersBar<F extends Record<string, any>>({
         {fields.map((field) => {
           const wrapperClass = resolveFieldWrapperClass(field);
 
-          if (field.type === "text") {
+          if (field.type === "text" || field.type === "uuid") {
             return (
               <GenericInputSearch
                 key={field.key}

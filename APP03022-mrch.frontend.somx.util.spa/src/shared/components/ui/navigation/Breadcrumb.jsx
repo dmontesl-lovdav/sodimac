@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import './Breadcrumb.css';
 
 function renderBreadcrumbLabel({ label, to, state, external, isLast }) {
@@ -36,3 +37,7 @@ export default function Breadcrumb({ items = [] }) {
         </nav>
     );
 }
+
+Breadcrumb.propTypes = {
+    items: PropTypes.array,
+};

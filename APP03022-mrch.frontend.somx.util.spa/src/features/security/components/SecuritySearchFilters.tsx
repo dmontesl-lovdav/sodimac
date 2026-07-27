@@ -23,7 +23,7 @@ const fromInputDate = (date: string) => {
   return new Date(year, month - 1, day);
 };
 
-export function SecuritySearchFilters({ filters, onChange }: Props) {
+export function SecuritySearchFilters({ filters, onChange }: Readonly<Props>) {
   const { defaultStartDate, defaultEndDate } = useMemo(() => {
     const today = new Date();
     const monthAgo = new Date(today);

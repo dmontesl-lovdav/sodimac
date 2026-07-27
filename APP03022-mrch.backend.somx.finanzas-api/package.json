@@ -20,9 +20,10 @@
     "migration:show": "npm run typeorm -- migration:show",
     "seed": "tsx -r tsconfig-paths/register src/seeds/index.ts",
     "seed:reset": "npm run migration:revert && npm run migration:run && npm run seed",
-    "test": "jest --passWithNoTests",
-    "test:watch": "jest --watch",
-    "test:cov": "bash ./scripts/test-cov.sh"
+    "test": "jest --config jest.config.cjs",
+    "test:watch": "jest --config jest.config.cjs --watch",
+    "test:cov": "bash ./scripts/test-cov.sh",
+    "test:cov:windows": "jest --config jest.config.cjs --coverage"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.3",

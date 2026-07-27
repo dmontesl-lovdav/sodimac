@@ -1,4 +1,5 @@
 import { useId, useMemo } from 'react';
+import PropTypes from 'prop-types';
 
 export default function GenericMarqueeBar({
     className = '',
@@ -18,9 +19,8 @@ export default function GenericMarqueeBar({
         <div
             className={`w-full overflow-hidden ${trackClass} ${rounded ? 'rounded-full' : ''} ${className}`}
             style={{ height }}
-            role="progressbar"
             aria-busy="true"
-            aria-valuetext={roleText}
+            aria-label={roleText}
         >
             <div
                 className={`${barClass} ${rounded ? 'rounded-full' : ''}`}
@@ -41,3 +41,14 @@ export default function GenericMarqueeBar({
         </div>
     );
 }
+
+GenericMarqueeBar.propTypes = {
+    className: PropTypes.string,
+    height: PropTypes.any,
+    trackClass: PropTypes.string,
+    barClass: PropTypes.string,
+    speed: PropTypes.any,
+    width: PropTypes.any,
+    rounded: PropTypes.bool,
+    roleText: PropTypes.string,
+};

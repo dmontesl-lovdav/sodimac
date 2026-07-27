@@ -573,6 +573,7 @@ const SupplierBlocksContainer = () => {
                 onClick={() => navigate('/util/catalogos/bloqueos/crear')}
               >
                 <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
+                {' '}
                 Nuevo Bloqueo
               </button>
             </div>
@@ -726,16 +727,18 @@ const SupplierBlocksContainer = () => {
                           </button>
                         </td>
                         <td style={styles.td}>
-                          <div
+                          <button
+                            type="button"
                             style={{
                               ...styles.toggleSwitch,
                               opacity: togglingId === block.id ? 0.5 : 1,
                               pointerEvents: togglingId === block.id ? 'none' : 'auto',
+                              border: 'none',
+                              padding: 0,
+                              appearance: 'none',
+                              background: 'transparent',
                             }}
-                            role="button"
-                            tabIndex={0}
                             onClick={() => handleToggleStatus(block)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(block); } }}
                             title={
                               block.status === 1 ? 'Desactivar bloqueo' : 'Activar bloqueo'
                             }
@@ -753,7 +756,7 @@ const SupplierBlocksContainer = () => {
                                 }}
                               />
                             </span>
-                          </div>
+                          </button>
                         </td>
                       </tr>
                     ))}

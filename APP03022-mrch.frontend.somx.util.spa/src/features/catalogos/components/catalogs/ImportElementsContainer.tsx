@@ -29,6 +29,8 @@ const MOCK_CATALOGS: CatalogData[] = [
   { id: '0003', name: 'Catálogo de Motivos', description: 'Lista de motivos para aclaraciones y ajustes en transacciones.', type: 'Secundario', status: 'Activo' },
 ];
 
+const FILE_EXTENSION_REGEX = /\.(csv|xls|xlsx)$/i;
+
 const styles = {
   container: {
     minHeight: '100vh',
@@ -443,7 +445,7 @@ export default function ImportElementsContainer() {
     ];
     const maxSize = 4 * 1024 * 1024;
 
-    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(csv|xls|xlsx)$/i)) {
+    if (!allowedTypes.includes(file.type) && !FILE_EXTENSION_REGEX.exec(file.name)) {
       setUploadedFile({
         file,
         name: file.name,
@@ -581,8 +583,8 @@ export default function ImportElementsContainer() {
 
   const mapValidationErrors = (raw: Array<{ cell?: string; message?: string }>) =>
     raw.map((e) => ({
-      cell: e.cell || '',
-      message: e.message || 'Error desconocido',
+      cell: e.cell ?? '',
+      message: e.message ?? 'Error desconocido',
     }));
 
   const applyValidationErrors = (
@@ -739,17 +741,10 @@ export default function ImportElementsContainer() {
             <div style={styles.stepLine} />
           </div>
           <div style={styles.stepContent}>
-            <div
-              style={styles.stepHeader}
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              style={{ ...styles.stepHeader, border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
               onClick={() => toggleStep(1)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleStep(1);
-                }
-              }}
             >
               <div>
                 <div style={styles.stepTitle}>Elementos del Catálogo</div>
@@ -761,7 +756,7 @@ export default function ImportElementsContainer() {
               <span style={styles.chevron}>
                 <ChevronIcon expanded={expandedSteps.includes(1)} />
               </span>
-            </div>
+            </button>
 
             {expandedSteps.includes(1) && (
               <div style={{ marginTop: '1rem' }}>
@@ -787,17 +782,10 @@ export default function ImportElementsContainer() {
             <div style={styles.stepNumber}>2</div>
           </div>
           <div style={styles.stepContent}>
-            <div
-              style={styles.stepHeader}
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              style={{ ...styles.stepHeader, border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
               onClick={() => toggleStep(2)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleStep(2);
-                }
-              }}
             >
               <div>
                 <div style={styles.stepTitle}>Cargar Plantilla</div>
@@ -809,7 +797,7 @@ export default function ImportElementsContainer() {
               <span style={styles.chevron}>
                 <ChevronIcon expanded={expandedSteps.includes(2)} />
               </span>
-            </div>
+            </button>
 
             {expandedSteps.includes(2) && (
               <div style={{ marginTop: '1rem' }}>
@@ -821,28 +809,24 @@ export default function ImportElementsContainer() {
                   onChange={handleFileInputChange}
                 />
 
-                <div
+                <button
+                  type="button"
                   style={{
                     ...styles.dropzone,
+                    backgroundColor: 'transparent',
                     ...(isDragging ? styles.dropzoneActive : {}),
                     ...(uploadedFile && !uploadedFile.error ? styles.dropzoneDisabled : {}),
+                    appearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
                   }}
-                  role="button"
-                  tabIndex={0}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onClick={() => {
                     if (!uploadedFile || uploadedFile.error) {
                       fileInputRef.current?.click();
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      if (!uploadedFile || uploadedFile.error) {
-                        fileInputRef.current?.click();
-                      }
                     }
                   }}
                 >
@@ -856,7 +840,7 @@ export default function ImportElementsContainer() {
                   <div style={styles.dropzoneHint}>
                     Formatos soportados: CSV, XLS, XLSX. Peso máximo: 4mb.
                   </div>
-                </div>
+                </button>
 
                 {uploadedFile && !uploadedFile.error && (
                   <div style={styles.fileInfo}>
@@ -934,35 +918,21 @@ export default function ImportElementsContainer() {
         )}
 
         <div style={styles.footer}>
-          <span
-            style={styles.ghostBtn}
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            style={{ ...styles.ghostBtn, appearance: 'none' }}
             onClick={handleBack}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleBack();
-              }
-            }}
           >
             Volver
-          </span>
+          </button>
           <div style={styles.buttonsRight}>
-            <span
-              style={styles.ghostBtn}
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              style={{ ...styles.ghostBtn, appearance: 'none' }}
               onClick={handleClear}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClear();
-                }
-              }}
             >
               Limpiar
-            </span>
+            </button>
             <button
               style={{
                 ...styles.primaryBtn,

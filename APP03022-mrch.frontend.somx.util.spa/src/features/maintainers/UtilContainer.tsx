@@ -26,7 +26,7 @@ interface UtilCard {
     requiredAnyApp?: string[];
 }
 
-export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
+export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }>) {
     useEffect(() => {
         syncUserToCatalogs();
     }, []);
@@ -162,25 +162,20 @@ export default function UtilContainer({ cards }: { cards?: UtilCard[] }) {
 
                             if (it.action) {
                                 return (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={cardKey}
                                         className={cardClasses}
                                         onClick={() => handleCardClick(it)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                handleCardClick(it);
-                                            }
-                                        }}
-                                        role="button"
-                                        tabIndex={0}
+                                        style={{ appearance: 'none', border: 'none', background: 'transparent', padding: 0, margin: 0, font: 'inherit', color: 'inherit', textAlign: 'inherit', cursor: 'pointer' }}
                                     >
                                         {inner}
-                                    </div>
+                                    </button>
                                 );
                             }
 
                             return (
-                                <Link key={cardKey} to={it.link || '#'} className={cardClasses}>
+                                <Link key={cardKey} to={it.link ?? '#'} className={cardClasses}>
                                     {inner}
                                 </Link>
                             );

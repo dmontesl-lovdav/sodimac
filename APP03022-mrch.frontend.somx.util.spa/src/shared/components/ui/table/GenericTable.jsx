@@ -1,12 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import './GenericTable.css';
 
 export function Switch({ on, onClick }) {
     return (
-        <span
+        <button
+            type="button"
             onClick={onClick}
             className={`switch ${on ? 'switch-on' : 'switch-off'}`}
+            style={{ appearance: 'none', border: 'none', padding: 0, background: 'transparent', font: 'inherit', cursor: 'pointer' }}
         >
             <span className={`switch-thumb ${on ? 'thumb-on' : 'thumb-off'}`}>
                 {on ? (
@@ -20,9 +23,14 @@ export function Switch({ on, onClick }) {
                     </svg>
                 )}
             </span>
-        </span>
+        </button>
     );
 }
+
+Switch.propTypes = {
+    on: PropTypes.bool,
+    onClick: PropTypes.func,
+};
 
 
 export default function GenericTable({
@@ -201,7 +209,7 @@ export default function GenericTable({
                     ) : null}
 
                     <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        Ir a:
+                        <span>Ir a:</span>
                         <input
                             type="number"
                             min={1}
@@ -253,3 +261,22 @@ export default function GenericTable({
         </div>
     );
 }
+
+GenericTable.propTypes = {
+    rows: PropTypes.array,
+    columns: PropTypes.array,
+    actions: PropTypes.array,
+    emptyLabel: PropTypes.node,
+    perPage: PropTypes.number,
+    page: PropTypes.number,
+    totalPages: PropTypes.number,
+    onChangePerPage: PropTypes.func,
+    onChangePage: PropTypes.func,
+    enableSelection: PropTypes.bool,
+    selectedIds: PropTypes.array,
+    onSelectRow: PropTypes.func,
+    selectionHeader: PropTypes.node,
+    totalItems: PropTypes.number,
+    showPagination: PropTypes.bool,
+    showPageSizeSelector: PropTypes.bool,
+};

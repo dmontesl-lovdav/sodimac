@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import './GenericButton.css';
 
 export default function GenericButton({
@@ -36,3 +37,13 @@ export default function GenericButton({
         </button>
     );
 }
+
+GenericButton.propTypes = {
+    children: PropTypes.node,
+    type: PropTypes.string,
+    variant: PropTypes.string,
+    className: PropTypes.string,
+    style: PropTypes.object,
+    disabled: PropTypes.bool,
+    onClick: PropTypes.func,
+};

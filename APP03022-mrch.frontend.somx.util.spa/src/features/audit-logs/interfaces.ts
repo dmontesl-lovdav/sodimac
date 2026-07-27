@@ -31,7 +31,7 @@ export interface AuditLogRecord {
 
     user_id?: string | null;
 
-    details?: AuditLogDetails | any;
+    details?: AuditLogDetails;
 }
 
 export interface AuditLogsFiltersProps {

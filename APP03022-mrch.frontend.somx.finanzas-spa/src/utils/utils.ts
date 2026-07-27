@@ -392,14 +392,18 @@ export async function fetchProviders(): Promise<any[] | null> {
  * @param valueField Opcional: fuerza el campo usado como valor en lugar del id por defecto.
  */
 export async function fetchProvidersAsCatalog(
-  valueField?: string
+  valueField?: string,
+  filterFn?: (provider: Record<string, unknown>) => boolean
 ): Promise<Array<{ label: string; value: string }> | null> {
   const catalogs_api = process.env.CATALOGS_API_URL + "/suppliers";
   try {
     const response = await fetch(catalogs_api);
     if (response.ok) {
       const data = await response.json();
-      const mappedProviders = data.map((provider: Record<string, unknown>) => ({
+      const source = filterFn
+        ? (data as Array<Record<string, unknown>>).filter(filterFn)
+        : (data as Array<Record<string, unknown>>);
+      const mappedProviders = source.map((provider: Record<string, unknown>) => ({
         label: `${provider.businessName} (${provider.rfc})`,
         value: resolveSupplierCatalogOptionValue(provider, valueField),
       }));
@@ -416,6 +420,21 @@ export async function fetchProvidersAsCatalog(
     console.error('Error:', error);
     return null;
   }
+}
+
+const SUPPLIER_STATUS_DELETED = 2;
+
+export function isSupplierActiveOrInactive(provider: Record<string, unknown>): boolean {
+  const status = (provider as { status?: unknown }).status;
+  if (status == null) return true;
+  return Number(status) !== SUPPLIER_STATUS_DELETED;
+}
+
+export function isSupplierTransportista(provider: Record<string, unknown>): boolean {
+  const type = (provider as { supplierType?: { code?: unknown; description?: unknown } }).supplierType;
+  if (!type) return false;
+  const haystack = `${String(type.code ?? '')} ${String(type.description ?? '')}`.toLowerCase();
+  return haystack.includes('transportista');
 }
 
 /** Opciones típicas para filtros (select / búsqueda). */

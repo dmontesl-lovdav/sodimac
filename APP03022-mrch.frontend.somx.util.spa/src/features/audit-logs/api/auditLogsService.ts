@@ -54,6 +54,10 @@ export function createAuditLogsService(api: ApiClient) {
         return api.request(`audit-logs/${id}`, "get");
     }
 
+    async function getCatalogDetailsByCode(code: string) {
+        return api.request(`catalog/${encodeURIComponent(code)}/details`, "get");
+    }
+
     async function exportAuditLogsCsv(params: {
         idAplicativo?: string;
         tipoEvento?: "ALL" | "ERROR" | "ALERTA" | "INFO";
@@ -89,6 +93,7 @@ export function createAuditLogsService(api: ApiClient) {
     return {
         listAuditLogs,
         getAuditLogDetail,
+        getCatalogDetailsByCode,
         exportAuditLogsCsv,
     };
 }

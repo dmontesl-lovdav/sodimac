@@ -50,7 +50,7 @@ export default function EditConversionForm() {
         if (!elem) return;
         setSelectedElement({
           id: elem.id,
-          nombre: elem.element || elem.key || '',
+          nombre: (elem.element || elem.key) ?? '',
           catalogoOrigen: matchedCatName,
           estatus: elem.status === 1 ? 'Activo' : 'Inactivo',
           fechaInicioVigencia: elem.validFrom || '-',
@@ -76,7 +76,7 @@ export default function EditConversionForm() {
         setSelectedElementId(targetElemId);
         setOriginalElementId(targetElemId);
         if (catId) {
-          await loadElementsAndSelected(catId, targetElemId, matchedCat?.name || conv.catalogoOrigen || '');
+          await loadElementsAndSelected(catId, targetElemId, matchedCat?.name ?? conv.catalogoOrigen ?? '');
         }
       } catch {
         /* noop */
@@ -160,7 +160,7 @@ export default function EditConversionForm() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      await conversionService.update(parseInt(conversionId!), {
+      await conversionService.update(parseInt(conversionId ?? ''), {
         targetElementId: parseInt(selectedElementId),
       });
       showSuccess(
@@ -263,7 +263,7 @@ export default function EditConversionForm() {
         <div style={S.stepContainer}>
           <div style={S.stepIndicator}><div style={S.stepNumber}>1</div><div style={S.stepLine} /></div>
           <div style={S.stepContent}>
-            <div style={S.stepTitle} role="button" tabIndex={0} onClick={() => toggleStep(1)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStep(1); } }}>Buscar Catálogo</div>
+            <button type="button" style={{ ...S.stepTitle, border: 'none', background: 'transparent', appearance: 'none', padding: 0 }} onClick={() => toggleStep(1)}>Buscar Catálogo</button>
             <div style={S.stepSubtitle}>Selecciona el catálogo que contiene el elemento destino.</div>
             {expandedSteps.includes(1) && (
               <div style={{ marginTop: '1rem' }}>
@@ -283,10 +283,8 @@ export default function EditConversionForm() {
             <div style={{ ...S.stepLine, ...(isStep1Complete ? {} : S.stepLineDisabled) }} />
           </div>
           <div style={S.stepContent}>
-            <div style={{ ...S.stepTitle, ...(isStep1Complete ? {} : S.stepTitleDisabled) }}
-              role="button" tabIndex={0}
-              onClick={() => isStep1Complete && toggleStep(2)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep1Complete) toggleStep(2); } }}>Seleccionar Elemento</div>
+            <button type="button" style={{ ...S.stepTitle, ...(isStep1Complete ? {} : S.stepTitleDisabled), border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
+              onClick={() => isStep1Complete && toggleStep(2)}>Seleccionar Elemento</button>
             <div style={S.stepSubtitle}>Selecciona el elemento destino para la conversión.</div>
             {expandedSteps.includes(2) && isStep1Complete && (
               <div style={{ marginTop: '1rem' }}>
@@ -305,10 +303,8 @@ export default function EditConversionForm() {
             <div style={{ ...S.stepNumber, ...(isStep2Complete ? {} : S.stepNumberDisabled) }}>3</div>
           </div>
           <div style={S.stepContent}>
-            <div style={{ ...S.stepTitle, ...(isStep2Complete ? {} : S.stepTitleDisabled) }}
-              role="button" tabIndex={0}
-              onClick={() => isStep2Complete && toggleStep(3)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isStep2Complete) toggleStep(3); } }}>Elemento para Conversión</div>
+            <button type="button" style={{ ...S.stepTitle, ...(isStep2Complete ? {} : S.stepTitleDisabled), border: 'none', background: 'transparent', appearance: 'none', padding: 0 }}
+              onClick={() => isStep2Complete && toggleStep(3)}>Elemento para Conversión</button>
             <div style={S.stepSubtitle}>Detalle del elemento seleccionado.</div>
             {expandedSteps.includes(3) && isStep2Complete && selectedElement && (
               <div style={{ marginTop: '1rem' }}>

@@ -18,7 +18,6 @@ interface ParameterGridProps {
   onSelectionChange: (ids: Set<string>) => void;
   onEdit?: (parameter: Parameter) => void;
   onStatusChange?: (parameter: Parameter) => void;
-  isHistoryMode?: boolean;
   latestVersionIds?: Set<string>;
   pageSize: number;
   currentPage: number;
@@ -76,7 +75,7 @@ export const ParameterGrid: FC<ParameterGridProps> = ({
   const isAllSelected = items.length > 0 && currentPageIds.every(id => selectedIds.has(id));
 
   const getLabel = (value: string, catalog: CatalogItem[]) =>
-    catalog.find((item) => item.value === value)?.label || value;
+    catalog.find((item) => item.value === value)?.label ?? value;
 
   const hasExpired = (p: Parameter): boolean => {
     if (!p.endDate) return false;

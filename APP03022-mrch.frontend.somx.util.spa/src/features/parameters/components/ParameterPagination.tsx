@@ -51,9 +51,8 @@ export const ParameterPagination: FC<ParameterPaginationProps> = ({
     }, [currentPage, totalPages]);
 
     return (
-        <div
+        <nav
             className="parameters-grid__pagination"
-            role="navigation"
             aria-label="Paginación"
             style={{ padding: 0, marginTop: 0 }}
         >
@@ -130,6 +129,6 @@ export const ParameterPagination: FC<ParameterPaginationProps> = ({
                     ›
                 </button>
             </div>
-        </div>
+        </nav>
     );
 };

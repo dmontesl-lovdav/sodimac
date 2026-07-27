@@ -23,6 +23,6 @@ export function getCurrentUserCatalogKey(): string {
   } catch {
   }
 
-  const fromEnv = typeof process !== 'undefined' ? process.env.UTIL_CURRENT_USER_KEY : undefined;
-  return fromEnv || 'TEST_USER_01';
+    const fromEnv = typeof process !== 'undefined' ? process.env.UTIL_CURRENT_USER_KEY : undefined;
+    return fromEnv ?? 'TEST_USER_01';
 }

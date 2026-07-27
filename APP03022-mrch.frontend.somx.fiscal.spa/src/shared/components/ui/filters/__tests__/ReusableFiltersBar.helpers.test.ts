@@ -36,6 +36,9 @@ import {
   buildDateRangeFromFilterValues,
   applyDefaultDateFilters,
   hydrateFilterState,
+  isValidUuid,
+  normalizeUuidFilterValue,
+  validateUuidFilterField,
   type FilterField,
 } from "../ReusableFiltersBar";
 
@@ -78,6 +81,55 @@ describe("normalizeFiltersForSubmit", () => {
       { key: "estatus", label: "E", type: "selectFloating" },
     ];
     expect(normalizeFiltersForSubmit({ estatus: " " }, fields).estatus).toBeUndefined();
+  });
+
+  it("recorta campos uuid", () => {
+    const fields: FilterField[] = [
+      { key: "uuid", label: "UUID", type: "uuid" },
+    ];
+    const result = normalizeFiltersForSubmit(
+      { uuid: "  550e8400-e29b-41d4-a716-446655440000  " },
+      fields
+    );
+    expect(result.uuid).toBe("550e8400-e29b-41d4-a716-446655440000");
+  });
+});
+
+describe("uuid helpers", () => {
+  it("isValidUuid acepta UUID canónico e ignora mayúsculas", () => {
+    expect(isValidUuid("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+    expect(isValidUuid("550E8400-E29B-41D4-A716-446655440000")).toBe(true);
+  });
+
+  it("isValidUuid rechaza vacío e inválidos", () => {
+    expect(isValidUuid("")).toBe(false);
+    expect(isValidUuid("   ")).toBe(false);
+    expect(isValidUuid("abc-123")).toBe(false);
+    expect(isValidUuid("550e8400e29b41d4a716446655440000")).toBe(false);
+  });
+
+  it("normalizeUuidFilterValue recorta y limpia", () => {
+    expect(normalizeUuidFilterValue("  x  ")).toBe("x");
+    expect(normalizeUuidFilterValue(" ")).toBe("");
+  });
+
+  it("validateUuidFilterField permite vacío si no es required", () => {
+    const field: FilterField = { key: "uuid", label: "UUID", type: "uuid" };
+    expect(validateUuidFilterField(field, "")).toBeNull();
+    expect(validateUuidFilterField(field, "abc")).toBe("UUID no es un UUID válido");
+    expect(
+      validateUuidFilterField(field, "550e8400-e29b-41d4-a716-446655440000")
+    ).toBeNull();
+  });
+
+  it("validateUuidFilterField exige valor si required", () => {
+    const field: FilterField = {
+      key: "uuid",
+      label: "UUID",
+      type: "uuid",
+      required: true,
+    };
+    expect(validateUuidFilterField(field, "")).toBe("UUID es obligatorio");
   });
 });
 

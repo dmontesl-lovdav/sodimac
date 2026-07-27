@@ -22,7 +22,7 @@ const fromInputDate = (date: string) => {
   return new Date(year, month - 1, day);
 };
 
-export function UserCatalogFilters({ filters, onChange }: Props) {
+export function UserCatalogFilters({ filters, onChange }: Readonly<Props>) {
   return (
     <div className="security-filters">
       <input

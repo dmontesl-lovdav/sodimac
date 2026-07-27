@@ -370,13 +370,6 @@ const mapValidationApiErrors = (apiErrors: any[]): ValidationError[] =>
     description: err.message,
   }));
 
-const activateOnKey = (e: React.KeyboardEvent, action: () => void) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    action();
-  }
-};
-
 const parseExcelElements = async (file: File): Promise<Array<{
   tipoCatalogo: string; elemento: string; valor: string;
   fechaInicioVigencia: string; fechaFinVigencia: string;
@@ -538,7 +531,7 @@ interface CatalogStep1Props {
   onInputChange: (field: keyof CatalogFormData, value: string) => void;
 }
 
-function CatalogStep1({ expanded, isEditMode, formData, errors, onToggle, onInputChange }: CatalogStep1Props) {
+function CatalogStep1({ expanded, isEditMode, formData, errors, onToggle, onInputChange }: Readonly<CatalogStep1Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
@@ -546,12 +539,10 @@ function CatalogStep1({ expanded, isEditMode, formData, errors, onToggle, onInpu
         <div style={styles.stepLine} />
       </div>
       <div style={styles.stepContent}>
-        <div
-          style={styles.stepHeader}
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
+          style={{ ...styles.stepHeader, border: 'none', background: 'transparent', appearance: 'none' }}
           onClick={onToggle}
-          onKeyDown={(e) => activateOnKey(e, onToggle)}
         >
           <div>
             <div style={styles.stepTitle}>Datos de Catálogo</div>
@@ -560,7 +551,7 @@ function CatalogStep1({ expanded, isEditMode, formData, errors, onToggle, onInpu
             </div>
           </div>
           <StepChevron expanded={expanded} />
-        </div>
+        </button>
 
         {expanded && (
           <div style={{ marginTop: '1rem' }}>
@@ -683,7 +674,7 @@ interface CatalogStep2Props {
   onDownloadTemplate: () => void;
 }
 
-function CatalogStep2({ expanded, isStep1Complete, onToggle, onDownloadTemplate }: CatalogStep2Props) {
+function CatalogStep2({ expanded, isStep1Complete, onToggle, onDownloadTemplate }: Readonly<CatalogStep2Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
@@ -703,15 +694,16 @@ function CatalogStep2({ expanded, isStep1Complete, onToggle, onDownloadTemplate 
         />
       </div>
       <div style={styles.stepContent}>
-        <div
+        <button
+          type="button"
           style={{
             ...styles.stepHeader,
             cursor: isStep1Complete ? 'pointer' : 'not-allowed',
+            border: 'none',
+            background: 'transparent',
+            appearance: 'none',
           }}
-          role="button"
-          tabIndex={0}
           onClick={onToggle}
-          onKeyDown={(e) => activateOnKey(e, onToggle)}
         >
           <div>
             <div
@@ -729,7 +721,7 @@ function CatalogStep2({ expanded, isStep1Complete, onToggle, onDownloadTemplate 
             </div>
           </div>
           <StepChevron expanded={expanded} />
-        </div>
+        </button>
 
         {expanded && isStep1Complete && (
           <div style={{ marginTop: '1rem' }}>
@@ -779,7 +771,7 @@ function CatalogStep3({
   uploadedFile,
   onRemoveFile,
   formatFileSize,
-}: CatalogStep3Props) {
+}: Readonly<CatalogStep3Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
@@ -793,15 +785,16 @@ function CatalogStep3({
         </div>
       </div>
       <div style={styles.stepContent}>
-        <div
+        <button
+          type="button"
           style={{
             ...styles.stepHeader,
             cursor: isStep1Complete ? 'pointer' : 'not-allowed',
+            border: 'none',
+            background: 'transparent',
+            appearance: 'none',
           }}
-          role="button"
-          tabIndex={0}
           onClick={onToggle}
-          onKeyDown={(e) => activateOnKey(e, onToggle)}
         >
           <div>
             <div
@@ -818,21 +811,23 @@ function CatalogStep3({
             </div>
           </div>
           <StepChevron expanded={expanded} />
-        </div>
+        </button>
 
         {expanded && isStep1Complete && (
           <div style={{ marginTop: '1rem' }}>
-            <div
+            <button
+              type="button"
               style={{
                 ...styles.dropzone,
                 ...(uploadedFile ? styles.dropzoneDisabled : {}),
+                appearance: 'none',
+                display: 'block',
+                width: '100%',
+                boxSizing: 'border-box',
               }}
-              role="button"
-              tabIndex={0}
               onDragOver={(e) => e.preventDefault()}
               onDrop={onDrop}
               onClick={onDropzoneClick}
-              onKeyDown={(e) => activateOnKey(e, onDropzoneClick)}
             >
               <input
                 ref={fileInputRef}
@@ -856,7 +851,7 @@ function CatalogStep3({
               <div style={styles.dropzoneFormats}>
                 Formatos soportados: CSV, XLS, XLSX. Peso máximo: 4mb.
               </div>
-            </div>
+            </button>
 
             {uploadedFile && (
               <div
@@ -907,7 +902,7 @@ interface ErrorReportBannerProps {
   onDownload: () => void;
 }
 
-function ErrorReportBanner({ count, onDownload }: ErrorReportBannerProps) {
+function ErrorReportBanner({ count, onDownload }: Readonly<ErrorReportBannerProps>) {
   return (
     <div
       style={{
@@ -950,7 +945,7 @@ interface ExitModalProps {
   onConfirm: () => void;
 }
 
-function ExitModal({ isEditMode, onCancel, onConfirm }: ExitModalProps) {
+function ExitModal({ isEditMode, onCancel, onConfirm }: Readonly<ExitModalProps>) {
   return (
     <div
       style={{
@@ -1031,7 +1026,7 @@ interface TypeChangeModalProps {
   onConfirm: () => void;
 }
 
-function TypeChangeModal({ originalType, pendingType, onCancel, onConfirm }: TypeChangeModalProps) {
+function TypeChangeModal({ originalType, pendingType, onCancel, onConfirm }: Readonly<TypeChangeModalProps>) {
   return (
     <div
       style={{
@@ -1286,7 +1281,7 @@ export default function CatalogForm() {
   };
 
   const runUpdateCatalog = async (catalogType: string) => {
-    await catalogService.update(parseInt(id!), {
+    await catalogService.update(parseInt(id ?? ''), {
       name: formData.name,
       description: formData.description || undefined,
       catalogType,
@@ -1533,25 +1528,21 @@ export default function CatalogForm() {
         )}
 
         <div style={styles.footer}>
-          <span
-            style={styles.ghostBtn}
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            style={{ ...styles.ghostBtn, appearance: 'none' }}
             onClick={handleBack}
-            onKeyDown={(e) => activateOnKey(e, handleBack)}
           >
             Volver
-          </span>
+          </button>
           <div style={styles.buttonsRight}>
-            <span
-              style={styles.ghostBtn}
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
+              style={{ ...styles.ghostBtn, appearance: 'none' }}
               onClick={handleClear}
-              onKeyDown={(e) => activateOnKey(e, handleClear)}
             >
               Limpiar
-            </span>
+            </button>
             <button
               style={{
                 ...styles.primaryBtn,

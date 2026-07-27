@@ -14,12 +14,12 @@ export default function TrainTimeline({
     onBack,
     onDownloadTech,
     canDownloadTech,
-}: {
+}: Readonly<{
     rows: AuditLogRecord[];
     onBack: () => void;
     onDownloadTech: () => void;
     canDownloadTech: boolean;
-}) {
+}>) {
     return (
         <div className="alt-section">
             <div className="alt-timeline alt-timeline-fbc">
@@ -43,9 +43,7 @@ export default function TrainTimeline({
                     return (
                         <div className="alt-row alt-row-fbc" key={r.activity_logs_uuid}>
                             <div className="alt-left alt-left-fbc">
-                                <TrainIcon
-                                    kind={kind as 'success' | 'error' | 'alerta' | 'info'}
-                                />
+                                <TrainIcon kind={kind} />
                             </div>
 
                             <div className="alt-content alt-content-fbc">
@@ -118,6 +116,7 @@ export default function TrainTimeline({
                     <span className="alt-downloadIcon" aria-hidden="true">
                         ⬇
                     </span>
+                    {' '}
                     Descargar Log Técnico
                 </button>
             </div>

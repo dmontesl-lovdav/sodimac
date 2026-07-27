@@ -23,7 +23,7 @@ export function PermissionGate({
     hideWhileLoading = true,
     fallback = null,
     children,
-}: PermissionGateProps) {
+}: Readonly<PermissionGateProps>) {
     const sec = useSecurityContext();
 
     if (sec.isLoading) {

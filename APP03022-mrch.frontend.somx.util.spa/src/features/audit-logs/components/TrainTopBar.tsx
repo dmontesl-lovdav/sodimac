@@ -1,12 +1,10 @@
-import { GenericButton } from '@shared/components/ui';
-
 export default function TrainTopBar({
     title,
     onBack,
-}: {
+}: Readonly<{
     title: string;
     onBack: () => void;
-}) {
+}>) {
     return (
         <div className="alt-topbar">
             <div className="alt-titleWrap">

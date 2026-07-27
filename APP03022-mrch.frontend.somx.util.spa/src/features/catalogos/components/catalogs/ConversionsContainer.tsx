@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { conversionService, catalogElementService } from '@features/catalogos/services/catalogosApi';
+import { conversionService } from '@features/catalogos/services/catalogosApi';
 import { exportToCSV, exportToExcel } from '@features/catalogos/utils/export';
 import { Pagination } from '@shared/components/ui/pagination';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
@@ -152,7 +152,7 @@ export default function ConversionsContainer() {
 
   const buildConversionSearchParams = () => {
     const params: any = {
-      idElementoOrigen: parseInt(elementId!),
+      idElementoOrigen: parseInt(elementId ?? ''),
       page: 1,
       pageSize: totalResults || 1000,
       sortBy: 'createdAt',
@@ -328,14 +328,11 @@ export default function ConversionsContainer() {
                     <td style={S.td}>{c.idUsuarioActualizacion || '-'}</td>
                     <td style={S.td}>{formatDate(c.fechaActualizacion)}</td>
                     <td style={S.td}>
-                      <div style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#0066CC' : '#cbd5e1', cursor: 'pointer', position: 'relative' }}
-                        role="button"
-                        tabIndex={0}
+                      <button type="button" style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#0066CC' : '#cbd5e1', cursor: 'pointer', position: 'relative', border: 'none', padding: 0, appearance: 'none' }}
                         aria-label="Cambiar conversión principal"
-                        onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c }); } }}>
+                        onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}>
                         <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 2, left: c.esPrincipal ? 18 : 2, transition: '0.2s' }} />
-                      </div>
+                      </button>
                     </td>
                     <td style={S.td}><button style={{ ...S.btn, ...S.ghostBtn, padding: '0.25rem', fontSize: '0.7rem' }}
                       onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}>✏️</button></td>

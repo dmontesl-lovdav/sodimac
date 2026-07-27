@@ -17,7 +17,7 @@ const pillClassByKind = (kind: 'success' | 'error' | 'info'): string => {
     return 'alt-pill alt-pill-info';
 };
 
-export default function TrainHeaderCard({ header }: { header: Header | null }) {
+export default function TrainHeaderCard({ header }: Readonly<{ header: Header | null }>) {
     return (
         <div className="alt-section">
             <div className="alt-sectionTitle">Detalle de Actividades</div>

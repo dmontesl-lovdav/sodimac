@@ -25,7 +25,7 @@ const defaultActionIcon = (
   </svg>
 );
 
-export function SecurityGrid({ items, title: _title, actionLabel = 'Ver detalle', actionIcon = defaultActionIcon, onAction, onSelectionChange }: Props) {
+export function SecurityGrid({ items, title: _title, actionLabel = 'Ver detalle', actionIcon = defaultActionIcon, onAction, onSelectionChange }: Readonly<Props>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());

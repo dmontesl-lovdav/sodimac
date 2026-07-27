@@ -639,6 +639,7 @@ const SuppliersContainer = () => {
                 onClick={() => navigate('/util/catalogos/proveedores/crear')}
               >
                 <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
+                {' '}
                 Nuevo Proveedor
               </button>
             </div>
@@ -832,16 +833,18 @@ const SuppliersContainer = () => {
                           </button>
                         </td>
                         <td style={styles.td}>
-                          <div
+                          <button
+                            type="button"
                             style={{
                               ...styles.toggleSwitch,
                               opacity: togglingId === supplier.id ? 0.5 : 1,
                               pointerEvents: togglingId === supplier.id ? 'none' : 'auto',
+                              border: 'none',
+                              padding: 0,
+                              appearance: 'none',
+                              background: 'transparent',
                             }}
-                            role="button"
-                            tabIndex={0}
                             onClick={() => handleToggleStatus(supplier)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleStatus(supplier); } }}
                             title={
                               supplier.status === 1
                                 ? 'Desactivar proveedor'
@@ -861,7 +864,7 @@ const SuppliersContainer = () => {
                                 }}
                               />
                             </span>
-                          </div>
+                          </button>
                         </td>
                         <td style={styles.td}>
                           <button

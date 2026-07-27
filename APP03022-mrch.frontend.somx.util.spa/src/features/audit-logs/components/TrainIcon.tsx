@@ -14,7 +14,7 @@ const CLASS_BY_KIND: Record<TrainKind, string> = {
     info: 'alt-node alt-node-info',
 };
 
-export default function TrainIcon({ kind }: { kind: TrainKind }) {
+export default function TrainIcon({ kind }: Readonly<{ kind: TrainKind }>) {
     return (
         <span className={CLASS_BY_KIND[kind]} aria-hidden="true">
             <span className="alt-nodeInner">{GLYPH_BY_KIND[kind]}</span>

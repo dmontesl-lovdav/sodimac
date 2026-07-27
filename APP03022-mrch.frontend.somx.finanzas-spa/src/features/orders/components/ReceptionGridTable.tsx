@@ -175,7 +175,8 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
         {
             header: "Acción",
             render: (r: Reception) => {
-                const disabledEdit = r.status != 0;
+                
+                const disabledEdit = false; 
                 const disabledInvoice = r.status != 0;
                 const disabledCredits = r.status != 1  && r.status != 3 && r.status != 4 && r.status != 5 && r.status != 6;
 

@@ -134,13 +134,6 @@ const mapElementToFormData = (element: any): FormData => ({
   parentElementId: element.parentElementId ? String(element.parentElementId) : '',
 });
 
-const activateOnKey = (e: React.KeyboardEvent, action: () => void) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    action();
-  }
-};
-
 interface ElementStep1Props {
   expanded: boolean;
   isEditMode: boolean;
@@ -152,7 +145,7 @@ interface ElementStep1Props {
   onStatusChange: (value: number) => void;
 }
 
-function ElementStep1({ expanded, isEditMode, formData, errors, elementStatus, onToggle, onInputChange, onStatusChange }: ElementStep1Props) {
+function ElementStep1({ expanded, isEditMode, formData, errors, elementStatus, onToggle, onInputChange, onStatusChange }: Readonly<ElementStep1Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
@@ -160,13 +153,13 @@ function ElementStep1({ expanded, isEditMode, formData, errors, elementStatus, o
         <div style={styles.stepLine} />
       </div>
       <div style={styles.stepContent}>
-        <div style={styles.stepHeader} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+        <button type="button" style={{ ...styles.stepHeader, border: 'none', background: 'transparent', appearance: 'none', padding: 0 }} onClick={onToggle}>
           <div>
             <div style={styles.stepTitle}>Datos de Elemento</div>
             <div style={styles.stepDescription}>{isEditMode ? 'Modifica la información general del elemento.' : 'Captura la información general del nuevo elemento.'}</div>
           </div>
           <span style={styles.chevron}><ChevronIcon expanded={expanded} /></span>
-        </div>
+        </button>
         {expanded && (
           <div style={{ marginTop: '1rem' }}>
             <div style={styles.formGroup}>
@@ -215,7 +208,7 @@ interface ElementStep2Props {
   onInputChange: (field: keyof FormData, value: string) => void;
 }
 
-function ElementStep2({ expanded, isStep1Complete, formData, errors, onToggle, onInputChange }: ElementStep2Props) {
+function ElementStep2({ expanded, isStep1Complete, formData, errors, onToggle, onInputChange }: Readonly<ElementStep2Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
@@ -223,13 +216,13 @@ function ElementStep2({ expanded, isStep1Complete, formData, errors, onToggle, o
         <div style={{ ...styles.stepLine, ...(isStep1Complete ? {} : styles.stepLineDisabled) }} />
       </div>
       <div style={styles.stepContent}>
-        <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+        <button type="button" style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed', border: 'none', background: 'transparent', appearance: 'none', padding: 0 }} onClick={onToggle}>
           <div>
             <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Valores del Elemento (Opcional)</div>
             <div style={styles.stepDescription}>Captura el valor por defecto del nuevo elemento.</div>
           </div>
           <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expanded} /></span>
-        </div>
+        </button>
         {expanded && isStep1Complete && (
           <div style={{ marginTop: '1rem' }}>
             <div style={styles.formGroup}>
@@ -241,6 +234,7 @@ function ElementStep2({ expanded, isStep1Complete, formData, errors, onToggle, o
             <div style={styles.formGroup}>
               <label htmlFor="element-external-key" style={styles.label}>
                 Valor de Conversión (Opcional)
+                {' '}
                 <span
                   title="Valor utilizado por sistemas externos para identificar este elemento. Ejemplo: Si el elemento es 'México', el valor de conversión podría ser 'MX' (código ISO)."
                   style={{ marginLeft: '6px', cursor: 'help', color: '#64748b', fontSize: '0.8rem' }}
@@ -270,20 +264,20 @@ interface ElementStep3Props {
   onInputChange: (field: keyof FormData, value: string) => void;
 }
 
-function ElementStep3({ expanded, isStep1Complete, isPrimaryCatalog, formData, errors, parentCatalogs, parentElements, onToggle, onInputChange }: ElementStep3Props) {
+function ElementStep3({ expanded, isStep1Complete, isPrimaryCatalog, formData, errors, parentCatalogs, parentElements, onToggle, onInputChange }: Readonly<ElementStep3Props>) {
   return (
     <div style={styles.stepContainer}>
       <div style={styles.stepIndicator}>
         <div style={{ ...styles.stepNumber, ...(isStep1Complete ? {} : styles.stepNumberDisabled) }}>3</div>
       </div>
       <div style={styles.stepContent}>
-        <div style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed' }} role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => activateOnKey(e, onToggle)}>
+        <button type="button" style={{ ...styles.stepHeader, cursor: isStep1Complete ? 'pointer' : 'not-allowed', border: 'none', background: 'transparent', appearance: 'none', padding: 0 }} onClick={onToggle}>
           <div>
             <div style={{ ...styles.stepTitle, ...(isStep1Complete ? {} : styles.stepTitleDisabled) }}>Catálogo y Elemento Padre (Opcional)</div>
             <div style={styles.stepDescription}>Selecciona y relaciona el elemento con un catálogo y elemento padre para crear una agrupación.</div>
           </div>
           <span style={{ ...styles.chevron, opacity: isStep1Complete ? 1 : 0.5 }}><ChevronIcon expanded={expanded} /></span>
-        </div>
+        </button>
         {expanded && isStep1Complete && (
           <div style={{ marginTop: '1rem' }}>
             <div style={styles.formGroup}>
@@ -324,7 +318,7 @@ interface ElementExitModalProps {
   onYes: () => void;
 }
 
-function ElementExitModal({ isEditMode, onNo, onYes }: ElementExitModalProps) {
+function ElementExitModal({ isEditMode, onNo, onYes }: Readonly<ElementExitModalProps>) {
   return (
     <div style={styles.modal}>
       <div style={styles.modalContent}>
@@ -348,7 +342,7 @@ interface ChangeRelationModalProps {
   onConfirm: () => void;
 }
 
-function ChangeRelationModal({ originalParentCatalogName, originalParentElementName, newParentCatalogName, newParentElementName, onCancel, onConfirm }: ChangeRelationModalProps) {
+function ChangeRelationModal({ originalParentCatalogName, originalParentElementName, newParentCatalogName, newParentElementName, onCancel, onConfirm }: Readonly<ChangeRelationModalProps>) {
   return (
     <div style={styles.modal}>
       <div style={styles.modalContent}>
@@ -376,7 +370,7 @@ interface DeleteRelationModalProps {
   onConfirm: () => void;
 }
 
-function DeleteRelationModal({ elementName, originalParentCatalogName, originalParentElementName, onCancel, onConfirm }: DeleteRelationModalProps) {
+function DeleteRelationModal({ elementName, originalParentCatalogName, originalParentElementName, onCancel, onConfirm }: Readonly<DeleteRelationModalProps>) {
   return (
     <div style={styles.modal}>
       <div style={styles.modalContent}>
@@ -450,8 +444,8 @@ export default function ElementForm() {
       setOriginalData(data);
       setElementStatus(element.status);
       setOriginalStatus(element.status);
-      setOriginalParentCatalogName(element.parentCatalogName || '');
-      setOriginalParentElementName(element.parentElementName || '');
+      setOriginalParentCatalogName(element.parentCatalogName ?? '');
+      setOriginalParentElementName(element.parentElementName ?? '');
       if (element.parentCatalogId) {
         const elems = await catalogElementService.getActiveElements(element.parentCatalogId);
         setParentElements(elems);
@@ -463,7 +457,7 @@ export default function ElementForm() {
       setIsLoading(true);
       try {
         const catalogDetail = await catalogElementService.getCatalogDetail(catalogId);
-        setCatalogType(catalogDetail.catalogType || '');
+        setCatalogType(catalogDetail.catalogType ?? '');
         const primaries = await catalogService.getPrimaryCatalogs();
         setParentCatalogs(primaries);
         if (isEditMode && elementId) {
@@ -738,9 +732,9 @@ export default function ElementForm() {
         />
 
         <div style={styles.footer}>
-          <span style={styles.ghostBtn} role="button" tabIndex={0} onClick={handleBack} onKeyDown={(e) => activateOnKey(e, handleBack)}>Volver</span>
+          <button type="button" style={{ ...styles.ghostBtn, appearance: 'none' }} onClick={handleBack}>Volver</button>
           <div style={styles.buttonsRight}>
-            <span style={styles.ghostBtn} role="button" tabIndex={0} onClick={handleClear} onKeyDown={(e) => activateOnKey(e, handleClear)}>Limpiar</span>
+            <button type="button" style={{ ...styles.ghostBtn, appearance: 'none' }} onClick={handleClear}>Limpiar</button>
             <button style={{ ...styles.primaryBtn, opacity: isSaving ? 0.6 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}
               onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Guardando...' : 'Guardar Elemento'}

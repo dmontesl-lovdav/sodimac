@@ -36,6 +36,19 @@ const styles = {
     },
 };
 
+const returnType = (documentType: string) => {
+    if(documentType === "E") {
+        return "Nota de crédito";
+    }
+    if(documentType === "I") {
+        return "Factura";
+    }
+    if(documentType === "P") {
+        return "Complemento";
+    }
+    return "--";
+}
+
 const BuildDetail = ({ reception }: { reception: Reception }) => {
     const [invoices, setInvoices] = useState<Addendum[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -80,7 +93,6 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
     }, [reception]);
 
     const addenda = [...(reception.listAddendum ?? []), ...invoices];
-    console.log(addenda);
 
     const columns: Column<Addendum>[] = [
         { header: "UUID", render: (r) => r.invoice?.invoiceUuid ?? "--" },
@@ -88,7 +100,7 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
         { header: "Importe", render: (r) => formatAmount(r.invoice?.subtotal ?? 0) },
         { header: "Serie", render: (r) => r.invoice?.series ?? "--" },
         { header: "Folio", render: (r) => r.invoice?.folio ?? "--" },
-        { header: "Tipo", render: (r) => r.invoice?.documentType ?? "--" },
+        { header: "Tipo", render: (r) => returnType(r.invoice?.documentType ?? "") },
         {
             header: "Acción",
             align: "center",

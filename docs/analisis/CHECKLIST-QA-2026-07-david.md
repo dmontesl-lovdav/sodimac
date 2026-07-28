@@ -100,6 +100,12 @@ Orden sugerido:
 - **Mensaje tipo relación no permitido** — cuando la NC trae un `TipoRelacion` no permitido, salía BUS042 (engañoso). Ahora → **BUS045** con texto claro ("El tipo de relación de la NC no se encuentra permitido. Por favor, validar con el área financiera..."). Commit `62512b7` + seed `migration/QA-2026-07-24-BUS045-...sql`. **Validado UAT 24/07.** Va con el punto de tipo relación (179/197).
 - **Tipo de NC en blanco** (`tipoNotaCredito`=0 por defecto) → es del **front (Fer)**: debe enviar el `tipoNotaCredito` al publicar. Alternativa back (no elegida): derivar del `<TipoNC>` del addenda.
 
+## Ronda búsqueda NC por uuid (Fer/Ivan) 2026-07-27/28 — validado UAT
+
+- **Fer** (`df3473d`): al buscar NC por `relatedInvoiceUuid` ya no son obligatorias las fechas de recepción (antes BUS3103).
+- **Ivan** (`82ed463`): el grid "no correspondía" = el filtro de fechas default del grid (hoy-hoy) ocultaba las NCs de otros días. Ahora al buscar por UUID (propio o de factura relacionada) se ignora el filtro de fechas. Validado: factura con 5 NCs (3 del 24/07 + 2 del 27/07) → trae las 5 (antes 2).
+- **Tema 2 PENDIENTE** — tipoNotaCredito en blanco al publicar: es del **front (Fer)** (debe mandar el valor) o derivar en back del `<TipoNC>` del addenda. Sin decidir.
+
 ## Estado final (2026-07-24): todo lo de fiscal-api al alcance de David, cerrado
 
 | Punto | Estado |

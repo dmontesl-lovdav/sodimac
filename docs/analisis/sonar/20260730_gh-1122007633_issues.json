@@ -1,0 +1,102 @@
+﻿[
+    {
+        "key":  "1f65cbeb-1572-45c6-b909-3376d234a7f8",
+        "rule":  "java:S112",
+        "severity":  "MAJOR",
+        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/service/impl/FiscalXmlTransformerServiceImpl.java",
+        "project":  "gh-1122007633",
+        "line":  72,
+        "hash":  "3db5781ff17472065dace1de665a7c8a",
+        "textRange":  {
+                          "startLine":  72,
+                          "endLine":  72,
+                          "startOffset":  22,
+                          "endOffset":  38
+                      },
+        "flows":  [
+
+                  ],
+        "status":  "OPEN",
+        "message":  "Define and throw a dedicated exception instead of using a generic one.",
+        "effort":  "20min",
+        "debt":  "20min",
+        "author":  "g_dco018@sodimac.com.mx",
+        "tags":  [
+                     "cwe",
+                     "error-handling",
+                     "cert"
+                 ],
+        "creationDate":  "2025-12-05T19:51:50+0000",
+        "updateDate":  "2026-06-12T04:13:40+0000",
+        "type":  "CODE_SMELL",
+        "branch":  "uat",
+        "scope":  "MAIN",
+        "quickFixAvailable":  false,
+        "messageFormattings":  [
+
+                               ],
+        "codeVariants":  [
+
+                         ],
+        "cleanCodeAttribute":  "COMPLETE",
+        "cleanCodeAttributeCategory":  "INTENTIONAL",
+        "impacts":  [
+                        {
+                            "softwareQuality":  "MAINTAINABILITY",
+                            "severity":  "MEDIUM"
+                        }
+                    ],
+        "issueStatus":  "OPEN",
+        "prioritizedRule":  false
+    },
+    {
+        "key":  "36f6e961-6d4e-49b0-b895-3f9c520ec4e3",
+        "rule":  "java:S112",
+        "severity":  "MAJOR",
+        "component":  "gh-1122007633:src/main/java/com/sodimac/fiscal/api/service/impl/FiscalXmlTransformerServiceImpl.java",
+        "project":  "gh-1122007633",
+        "line":  294,
+        "hash":  "3f11b8154c77d4c1d84518b4a731e70f",
+        "textRange":  {
+                          "startLine":  294,
+                          "endLine":  294,
+                          "startOffset":  56,
+                          "endOffset":  65
+                      },
+        "flows":  [
+
+                  ],
+        "status":  "OPEN",
+        "message":  "Define and throw a dedicated exception instead of using a generic one.",
+        "effort":  "20min",
+        "debt":  "20min",
+        "author":  "g_dco018@sodimac.com.mx",
+        "tags":  [
+                     "cwe",
+                     "error-handling",
+                     "cert"
+                 ],
+        "creationDate":  "2025-12-05T19:51:50+0000",
+        "updateDate":  "2026-06-12T04:13:40+0000",
+        "type":  "CODE_SMELL",
+        "branch":  "uat",
+        "scope":  "MAIN",
+        "quickFixAvailable":  false,
+        "messageFormattings":  [
+
+                               ],
+        "codeVariants":  [
+
+                         ],
+        "cleanCodeAttribute":  "COMPLETE",
+        "cleanCodeAttributeCategory":  "INTENTIONAL",
+        "impacts":  [
+                        {
+                            "softwareQuality":  "MAINTAINABILITY",
+                            "severity":  "MEDIUM"
+                        }
+                    ],
+        "issueStatus":  "OPEN",
+        "prioritizedRule":  false
+    }
+]

@@ -1,0 +1,7 @@
+﻿{
+    "rule":  "java:S112",
+    "name":  "Generic exceptions should never be thrown",
+    "count":  2,
+    "htmlDesc":  null,
+    "howToFix":  "\u003cp\u003eTo fix this issue, make sure to throw specific exceptions that are relevant to the context in which they arise. It is recommended to either:\u003c/p\u003e\n\u003cul\u003e\n  \u003cli\u003e Raise a specific exception from the Java standard library when one matches. For example an \u003ccode\u003eIllegalArgumentException\u003c/code\u003e should be\n  thrown when a method receives an invalid argument. \u003c/li\u003e\n  \u003cli\u003e Create a custom exception class deriving from \u003ccode\u003eException\u003c/code\u003e or one of its subclasses. \u003c/li\u003e\n\u003c/ul\u003e\n\n\u003ch4\u003eNoncompliant code example\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"noncompliant\"\u003e\nvoid checkValue(int value) throws Throwable { // Noncompliant: signature is too broad\n    if (value == 42) {\n        throw new RuntimeException(\"Value is 42\"); // Noncompliant: This will be difficult for consumers to handle\n    }\n}\n\u003c/pre\u003e\n\u003ch4\u003eCompliant solution\u003c/h4\u003e\n\u003cpre data-diff-id=\"1\" data-diff-type=\"compliant\"\u003e\nvoid checkValue(int value) {\n    if (value == 42) {\n        throw new IllegalArgumentException(\"Value is 42\"); // Compliant\n    }\n}\n\u003c/pre\u003e"
+}

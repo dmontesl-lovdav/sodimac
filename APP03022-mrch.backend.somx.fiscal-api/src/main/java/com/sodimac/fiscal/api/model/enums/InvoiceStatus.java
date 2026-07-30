@@ -30,7 +30,7 @@ public enum InvoiceStatus {
 
     EN_PROCESO_DESCARGA(4, "En proceso de descarga",
             "Factura descargada para ser enviada a Sodimac SAP PROD",
-            true, new Integer[]{5, 21, 22}),
+            true, new Integer[]{5, 6, 21, 22}),
 
     DESGLOSE_FACTURA(5, "Desglose de factura",
             "Factura desglosada para ser enviada a SAPITO",

@@ -65,6 +65,12 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 1.c) Ampliar el CHECK de tenant_fiscal.invoice.status a 1..22
+--      (mismo gap que en v1.0: sin esto el UPDATE a 19-22 truena con SQLState 23514).
+ALTER TABLE tenant_fiscal.invoice DROP CONSTRAINT IF EXISTS chk_invoice_status;
+ALTER TABLE tenant_fiscal.invoice ADD CONSTRAINT chk_invoice_status
+    CHECK (status = ANY (ARRAY[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]));
+
 -- ============================================================================
 -- PARTE 2 - status_train FACTURA (option_id = 1)
 -- ============================================================================

@@ -39,6 +39,14 @@ interface ApiEnvelope<T> {
 
 const SECURITY_QUERY_KEY = (userKey: string) => ['security', 'access-context', userKey];
 
+const normalizeLabel = (s: string): string =>
+    s
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
 const ADMIN_PROFILE_KEYS =
     typeof process !== 'undefined' && process.env.SECURITY_ADMIN_PROFILE_KEYS
         ? process.env.SECURITY_ADMIN_PROFILE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
@@ -61,6 +69,7 @@ export interface SecurityContextResult {
     hasApp: (appKey: string) => boolean;
     hasAnyApp: (appKeys: string[]) => boolean;
     hasEvent: (appKey: string, eventKey: string) => boolean;
+    hasEventLabel: (appKey: string, label: string) => boolean;
     hasEventInAnyApp: (eventKey: string) => boolean;
     hasPermission: (permissionKey: string) => boolean;
     hasProfile: (profileKey: string) => boolean;
@@ -103,6 +112,20 @@ export function useSecurityContext(opts: UseSecurityContextOptions = {}): Securi
         }
         return map;
     }, [apps]);
+    const labelByApp = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        for (const app of apps) {
+            map.set(
+                app.key,
+                new Set(
+                    (app.events ?? [])
+                        .map((e) => normalizeLabel(e.name ?? ''))
+                        .filter((s) => s !== ''),
+                ),
+            );
+        }
+        return map;
+    }, [apps]);
     const eventGlobalSet = useMemo(() => {
         const set = new Set<string>();
         for (const app of apps) {
@@ -127,6 +150,13 @@ export function useSecurityContext(opts: UseSecurityContextOptions = {}): Securi
             return eventByApp.get(appKey)?.has(eventKey) ?? false;
         },
         [eventByApp],
+    );
+    const hasEventLabel = useCallback(
+        (appKey: string, label: string) => {
+            if (!appKey || !label) return false;
+            return labelByApp.get(appKey)?.has(normalizeLabel(label)) ?? false;
+        },
+        [labelByApp],
     );
     const hasEventInAnyApp = useCallback(
         (eventKey: string) => Boolean(eventKey) && eventGlobalSet.has(eventKey),
@@ -163,6 +193,7 @@ export function useSecurityContext(opts: UseSecurityContextOptions = {}): Securi
         hasApp,
         hasAnyApp,
         hasEvent,
+        hasEventLabel,
         hasEventInAnyApp,
         hasPermission,
         hasProfile,

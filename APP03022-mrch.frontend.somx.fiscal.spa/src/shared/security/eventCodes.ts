@@ -25,30 +25,30 @@ export const EVENT_KEYS = {
 
 export const APP_EVENT = {
     INVOICES: {
-        SEARCH:              { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.SEARCH },
-        CLEAR_FILTERS:       { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.CLEAR_FILTERS },
-        DOWNLOAD_CSV:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV },
+        SEARCH:              { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS:       { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.CLEAR_FILTERS, label: 'Limpiar' },
+        DOWNLOAD_CSV:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV, label: 'Exportar CSV' },
         VIEW_DETAIL:         { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.VIEW_DETAIL },
-        DOWNLOAD_XML:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_XML },
-        DOWNLOAD_PDF:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF },
-        CANCEL:              { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.CANCEL },
-        UPDATE_STATUS:       { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.UPDATE_STATUS },
-        LINK_CREDIT_NOTE:    { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.LINK_CREDIT_NOTE },
+        DOWNLOAD_XML:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_XML, label: 'Ver XML' },
+        DOWNLOAD_PDF:        { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF, label: 'Ver PDF' },
+        CANCEL:              { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.CANCEL, label: 'Cancelar Factura' },
+        UPDATE_STATUS:       { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.UPDATE_STATUS, label: 'Reproceso Contable' },
+        LINK_CREDIT_NOTE:    { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.LINK_CREDIT_NOTE, label: 'Ver Nota Crédito' },
     },
     CREDIT_NOTES: {
-        SEARCH:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.SEARCH },
-        CLEAR_FILTERS:       { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.CLEAR_FILTERS },
-        DOWNLOAD_CSV:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV },
+        SEARCH:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS:       { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.CLEAR_FILTERS, label: 'Limpiar' },
+        DOWNLOAD_CSV:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV, label: 'Exportar CSV' },
         VIEW_DETAIL:         { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.VIEW_DETAIL },
-        DOWNLOAD_XML:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_XML },
-        DOWNLOAD_PDF:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF },
-        CANCEL:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.CANCEL },
-        PUBLISH:             { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.PUBLISH },
-        LINK_INVOICE:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.LINK_INVOICE },
+        DOWNLOAD_XML:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_XML, label: 'Ver XML' },
+        DOWNLOAD_PDF:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF, label: 'Ver PDF' },
+        CANCEL:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.CANCEL, label: 'Cancelar Nota Crédito' },
+        PUBLISH:             { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.PUBLISH, label: 'Agregar Nota de Crédito' },
+        LINK_INVOICE:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.LINK_INVOICE, label: 'Ver Factura' },
     },
     PAYMENT_COMPLEMENTS: {
-        SEARCH:              { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.SEARCH },
-        CLEAR_FILTERS:       { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.CLEAR_FILTERS },
+        SEARCH:              { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS:       { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.CLEAR_FILTERS, label: 'Limpiar' },
         DOWNLOAD_CSV:        { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV },
         DOWNLOAD_CSV_DETAIL: { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.DOWNLOAD_CSV_DETAIL },
         VIEW_DETAIL:         { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.VIEW_DETAIL },
@@ -56,6 +56,6 @@ export const APP_EVENT = {
         DOWNLOAD_PDF:        { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF },
         PUBLISH:             { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.PUBLISH },
     },
-} as const satisfies Record<string, Record<string, { app: AppKey; event: string }>>;
+} as const satisfies Record<string, Record<string, { app: AppKey; event: string; label?: string }>>;
 
-export type AppEvent = { app: AppKey; event: string };
+export type AppEvent = { app: AppKey; event: string; label?: string };

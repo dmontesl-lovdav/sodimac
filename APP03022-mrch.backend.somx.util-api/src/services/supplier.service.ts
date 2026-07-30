@@ -1,5 +1,4 @@
 import { Supplier } from '@/entities/Supplier.entity.js';
-import { SupplierType } from '@/entities/SupplierType.entity.js';
 import { PaymentCondition } from '@/entities/PaymentCondition.entity.js';
 import * as supplierRepo from '@/repositories/supplier.repo.js';
 import * as supplierTypeRepo from '@/repositories/supplierType.repo.js';

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export interface CatalogDetailDto {
+    id?: number;
     key: string | null;
     internalStatus?: number | null;
     externalKey?: string | null;
@@ -10,6 +11,7 @@ export interface CatalogDetailDto {
     sortOrder?: number | null;
     validFrom?: string | null;
     validTo?: string | null;
+    parentElementId?: number | null;
     attributes?: any;
 }
 

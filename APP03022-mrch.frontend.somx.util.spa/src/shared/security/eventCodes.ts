@@ -35,27 +35,27 @@ export const EVENT_KEYS = {
 
 export const APP_EVENT = {
     SUPPLIERS_CATALOG: {
-        DOWNLOAD_CSV:  { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.DOWNLOAD_CSV },
-        SEARCH:        { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.SEARCH },
-        CLEAR_FILTERS: { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.CLEAR_FILTERS },
+        DOWNLOAD_CSV:  { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.DOWNLOAD_CSV, label: 'Exportar CSV' },
+        SEARCH:        { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS: { app: APP_KEYS.SUPPLIERS_CATALOG, event: EVENT_KEYS.SUPPLIERS_CATALOG.CLEAR_FILTERS, label: 'Limpiar' },
     },
     CATALOGS_CATALOG: {
-        DOWNLOAD_CSV:  { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.DOWNLOAD_CSV },
-        SEARCH:        { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.SEARCH },
-        CLEAR_FILTERS: { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.CLEAR_FILTERS },
-        VIEW_DETAIL:   { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.VIEW_DETAIL },
-        EDIT:          { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.EDIT },
+        DOWNLOAD_CSV:  { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.DOWNLOAD_CSV, label: 'Exportar CSV' },
+        SEARCH:        { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS: { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.CLEAR_FILTERS, label: 'Limpiar' },
+        VIEW_DETAIL:   { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.VIEW_DETAIL, label: 'Ver' },
+        EDIT:          { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.EDIT, label: 'Editar' },
     },
     RECEPTIONS: {
-        DOWNLOAD_CSV:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.DOWNLOAD_CSV },
-        DOWNLOAD_CSV_DETAIL: { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.DOWNLOAD_CSV_DETAIL },
-        SEARCH:              { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.SEARCH },
-        CLEAR_FILTERS:       { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.CLEAR_FILTERS },
-        VIEW_DETAIL:         { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.VIEW_DETAIL },
-        EDIT_RECEPTION:      { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.EDIT_RECEPTION },
-        LINK_INVOICE:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_INVOICE },
-        LINK_CREDIT_NOTE:    { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_CREDIT_NOTE },
+        DOWNLOAD_CSV:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.DOWNLOAD_CSV, label: 'Exportar CSV' },
+        DOWNLOAD_CSV_DETAIL: { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.DOWNLOAD_CSV_DETAIL, label: 'Descargar CSV Detalle' },
+        SEARCH:              { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.SEARCH, label: 'Buscar' },
+        CLEAR_FILTERS:       { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.CLEAR_FILTERS, label: 'Limpiar' },
+        VIEW_DETAIL:         { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.VIEW_DETAIL, label: 'Ver detalle' },
+        EDIT_RECEPTION:      { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.EDIT_RECEPTION, label: 'Editar recepción' },
+        LINK_INVOICE:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_INVOICE, label: 'Relacionar factura' },
+        LINK_CREDIT_NOTE:    { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.LINK_CREDIT_NOTE, label: 'Relacionar nota crédito' },
     },
-} as const satisfies Record<string, Record<string, { app: AppKey; event: string }>>;
+} as const satisfies Record<string, Record<string, { app: AppKey; event: string; label: string }>>;
 
-export type AppEvent = { app: AppKey; event: string };
+export type AppEvent = { app: AppKey; event: string; label?: string };

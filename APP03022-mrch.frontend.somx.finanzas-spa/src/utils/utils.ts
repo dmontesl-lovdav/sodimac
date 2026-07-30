@@ -434,7 +434,7 @@ export function isSupplierTransportista(provider: Record<string, unknown>): bool
   const type = (provider as { supplierType?: { code?: unknown; description?: unknown } }).supplierType;
   if (!type) return false;
   const haystack = `${String(type.code ?? '')} ${String(type.description ?? '')}`.toLowerCase();
-  return haystack.includes('transportista');
+  return haystack.includes('transport') || haystack.includes('tpr002');
 }
 
 /** Opciones típicas para filtros (select / búsqueda). */

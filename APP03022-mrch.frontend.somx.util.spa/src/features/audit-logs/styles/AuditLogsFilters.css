@@ -20,6 +20,19 @@
     flex: 0 0 260px;
 }
 
+.al-filters .al-row .generic-select-container {
+    display: block;
+    width: 100%;
+}
+
+.al-filters .al-row .generic-select {
+    width: 100%;
+}
+
+.al-filters .al-row .generic-input {
+    width: 100%;
+}
+
 .al-filters .al-row .al-actions {
     display: flex;
     flex-direction: row;

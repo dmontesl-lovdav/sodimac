@@ -1,7 +1,6 @@
 // src/swagger.ts
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
-import type { Express } from 'express';
 
 import { buildOpenAPISpec } from './docs/openapi.js';
 

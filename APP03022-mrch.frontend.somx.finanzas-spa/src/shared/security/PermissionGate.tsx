@@ -5,7 +5,7 @@ interface PermissionGateProps {
     app?: string;
     anyApp?: string[];
     event?: string;
-    appEvent?: { app: string; event: string };
+    appEvent?: { app: string; event: string; label?: string };
     permission?: string;
     profile?: string;
     hideWhileLoading?: boolean;
@@ -38,7 +38,11 @@ export function PermissionGate({
     if (app !== undefined)         checks.push(sec.hasApp(app));
     if (anyApp !== undefined)      checks.push(sec.hasAnyApp(anyApp));
     if (event !== undefined)       checks.push(sec.hasEventInAnyApp(event));
-    if (appEvent !== undefined)    checks.push(sec.hasEvent(appEvent.app, appEvent.event));
+    if (appEvent !== undefined) {
+        const byKey = sec.hasEvent(appEvent.app, appEvent.event);
+        const byLabel = appEvent.label ? sec.hasEventLabel(appEvent.app, appEvent.label) : false;
+        checks.push(byKey || byLabel);
+    }
     if (permission !== undefined)  checks.push(sec.hasPermission(permission));
     if (profile !== undefined)     checks.push(sec.hasProfile(profile));
 

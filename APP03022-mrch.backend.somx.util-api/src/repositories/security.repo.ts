@@ -1529,9 +1529,7 @@ export async function getSecurityUserDetailsByCatalogKey(
 
     const attributes: SecurityUserDetailsResponse['attributes'] = uaHeaders.map((ua) => {
         const t = typeById.get(ua.idCatalogDetailAttributeType);
-        const attributeType: SecurityCatalogRef = t
-            ? t
-            : {
+        const attributeType: SecurityCatalogRef = t ?? {
                   id: ua.idCatalogDetailAttributeType,
                   catalogKey: '',
                   dictId: 0,

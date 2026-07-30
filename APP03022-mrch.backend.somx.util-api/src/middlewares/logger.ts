@@ -42,7 +42,7 @@ export function getTraceIdV2() {
 export async function logActivity(
     isError: boolean,
     message: string,
-    messageDetail: string | null | unknown,
+    messageDetail: unknown,
     details: any = {},
     _duration_ms: number = 0
 ): Promise<void> {

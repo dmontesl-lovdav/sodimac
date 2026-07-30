@@ -8,6 +8,7 @@ export function toDto(
     if (!entity) return null;
     const description = dictionary.get(entity.dictId) ?? '';
     return {
+        id: entity.id,
         key: entity.key,
         internalStatus: entity.internalStatus ?? null,
         externalKey: entity.externalKey ?? null,
@@ -17,6 +18,7 @@ export function toDto(
         sortOrder: entity.sortOrder ?? null,
         validFrom: entity.validFrom ?? null,
         validTo: entity.validTo ?? null,
+        parentElementId: entity.parentElementId ?? null,
         attributes: entity.attributes ?? null
     };
 }

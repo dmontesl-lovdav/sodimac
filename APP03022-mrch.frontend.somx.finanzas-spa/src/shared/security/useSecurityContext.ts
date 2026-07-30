@@ -12,6 +12,14 @@ interface CacheEntry {
 const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, CacheEntry>();
 
+const normalizeLabel = (s: string): string =>
+    s
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
 function getCached(userKey: string): CacheEntry | null {
     const entry = cache.get(userKey);
     if (!entry) return null;
@@ -48,13 +56,14 @@ export interface SecurityContextResult {
     error: unknown;
     userKey: string;
     raw: AccessContext | null;
-    apps: { key: string; events?: { key: string }[] }[];
+    apps: { key: string; events?: { key: string; name?: string }[] }[];
     profiles: { key: string }[];
     roles: { key: string }[];
     permissions: { key: string }[];
     hasApp: (appKey: string) => boolean;
     hasAnyApp: (appKeys: string[]) => boolean;
     hasEvent: (appKey: string, eventKey: string) => boolean;
+    hasEventLabel: (appKey: string, label: string) => boolean;
     hasEventInAnyApp: (eventKey: string) => boolean;
     hasPermission: (permissionKey: string) => boolean;
     hasProfile: (profileKey: string) => boolean;
@@ -117,6 +126,20 @@ export function useSecurityContext(): SecurityContextResult {
         }
         return map;
     }, [apps]);
+    const labelByApp = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        for (const app of apps) {
+            map.set(
+                app.key,
+                new Set(
+                    (app.events ?? [])
+                        .map((e) => normalizeLabel(e.name ?? ''))
+                        .filter((s) => s !== ''),
+                ),
+            );
+        }
+        return map;
+    }, [apps]);
     const eventGlobal = useMemo(() => {
         const set = new Set<string>();
         for (const app of apps) {
@@ -140,6 +163,13 @@ export function useSecurityContext(): SecurityContextResult {
             return eventByApp.get(appKey)?.has(eventKey) ?? false;
         },
         [eventByApp],
+    );
+    const hasEventLabel = useCallback(
+        (appKey: string, label: string) => {
+            if (!appKey || !label) return false;
+            return labelByApp.get(appKey)?.has(normalizeLabel(label)) ?? false;
+        },
+        [labelByApp],
     );
     const hasEventInAnyApp = useCallback(
         (eventKey: string) => Boolean(eventKey) && eventGlobal.has(eventKey),
@@ -166,6 +196,7 @@ export function useSecurityContext(): SecurityContextResult {
         hasApp,
         hasAnyApp,
         hasEvent,
+        hasEventLabel,
         hasEventInAnyApp,
         hasPermission,
         hasProfile,

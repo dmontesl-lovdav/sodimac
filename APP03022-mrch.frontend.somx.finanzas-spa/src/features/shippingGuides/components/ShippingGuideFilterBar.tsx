@@ -11,12 +11,10 @@ import { ShippingGuideFilter } from "../interfaces";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
   fetchProviders,
-  fetchProvidersAsCatalog,
   isSupplierActiveOrInactive,
   isSupplierTransportista,
   endOfLocalDay,
   startOfLocalDay,
-  fetchCatalog,
   resolveSupplierCatalogOptionValue,
 } from "@/utils/utils";
 import {
@@ -112,34 +110,13 @@ export default function ShippingGuideFilterBar({
 
   useEffect(() => {
     (async () => {
-      const [list, catalog] = await Promise.all([
-        fetchProviders(),
-        fetchCatalog("CATTIPOPROVEEDORREBATE"),
-      ]);
-
+      const list = await fetchProviders();
       if (!list) return;
 
-      const catalogPayload = catalog as
-        | { details?: Array<{ value?: string | null }> }
-        | Array<{ value?: string | null }>
-        | null;
-
-      const details = Array.isArray(catalogPayload)
-        ? catalogPayload
-        : (catalogPayload?.details ?? []);
-
-      const allowedTypeIds = new Set(
-        details
-          .map((d) => String(d?.value ?? "").trim())
-          .filter((v) => v !== "")
+      const filtered = list.filter(
+        (provider) =>
+          isSupplierTransportista(provider) && isSupplierActiveOrInactive(provider)
       );
-
-      const filtered =
-        allowedTypeIds.size > 0
-          ? list.filter((provider) =>
-              allowedTypeIds.has(String(provider.supplierType?.id ?? ""))
-            )
-          : list;
 
       setProviders([
         { label: "Todos los proveedores", value: "" },

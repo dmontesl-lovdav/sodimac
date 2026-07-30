@@ -16,7 +16,7 @@ import { getCatalogDetails } from '../api';
 
 import type { AuditLogsFiltersProps } from '../interfaces';
 
-type CatalogOption = { value: string; label: string };
+type CatalogOption = { value: string; label: string; id?: number; parentElementId?: number | null };
 
 const mapCatalogOptions = (details: unknown): CatalogOption[] => {
     if (!Array.isArray(details)) return [];
@@ -24,7 +24,9 @@ const mapCatalogOptions = (details: unknown): CatalogOption[] => {
         .map((d: any) => {
             const value = String(d?.value ?? d?.key ?? '').trim();
             const label = String(d?.description ?? d?.value ?? d?.key ?? '').trim();
-            return { value, label };
+            const id = typeof d?.id === 'number' ? d.id : undefined;
+            const parentElementId = typeof d?.parentElementId === 'number' ? d.parentElementId : null;
+            return { value, label, id, parentElementId };
         })
         .filter((o) => o.value !== '')
         .sort((a, b) => a.label.localeCompare(b.label, 'es'));
@@ -102,6 +104,21 @@ export default function AuditLogsFilters({
         };
     }, []);
 
+    const selectedModuloId = useMemo(
+        () => moduloOptions.find((o) => o.value === modulo)?.id ?? null,
+        [moduloOptions, modulo],
+    );
+
+    const visibleAplicativoOptions = useMemo(() => {
+        if (selectedModuloId == null) return aplicativoOptions;
+        return aplicativoOptions.filter((o) => o.parentElementId === selectedModuloId);
+    }, [aplicativoOptions, selectedModuloId]);
+
+    const handleModuloChange = (value: string) => {
+        setModulo(value);
+        setIdAplicativo('');
+    };
+
     const applyFilterDefaults = useCallback(() => {
         const t = new Date();
         const s = new Date(t);
@@ -171,7 +188,7 @@ export default function AuditLogsFilters({
                     <GenericSelect
                         value={modulo}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setModulo(e.target.value)
+                            handleModuloChange(e.target.value)
                         }
                         options={moduloOptions}
                         placeholder="Módulo"
@@ -182,7 +199,7 @@ export default function AuditLogsFilters({
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             setIdAplicativo(e.target.value)
                         }
-                        options={aplicativoOptions}
+                        options={visibleAplicativoOptions}
                         placeholder="Aplicativo"
                     />
 

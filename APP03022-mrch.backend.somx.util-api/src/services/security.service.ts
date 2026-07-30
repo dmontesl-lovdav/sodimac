@@ -550,7 +550,7 @@ export async function getUserDetailsByCatalogKey(userKey: string, idProfile?: nu
         user: {
             key: key,
             name: data.user.givenName+' '+data.user.familyName,
-            email: data.user.email || '',
+            email: data.user.email ?? '',
         },
         profiles: profiles
             .map((p) => ({
@@ -672,7 +672,7 @@ export async function getUserCatalogDetail(
         : {
               id: user.idUserData,
               username: user.preferredUsername ?? user.sub,
-              fullName: [user.givenName, user.familyName].filter(Boolean).join(' ').trim() || user.preferredUsername || user.sub,
+              fullName: [user.givenName, user.familyName].filter(Boolean).join(' ').trim() || (user.preferredUsername ?? user.sub),
               email: user.email,
               status: user.status,
               createdAt: user.createdAt.toISOString(),

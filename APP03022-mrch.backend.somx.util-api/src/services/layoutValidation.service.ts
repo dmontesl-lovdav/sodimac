@@ -71,7 +71,7 @@ function primitiveCellValue(v: unknown): string | null | undefined {
 }
 
 function textFromRichText(v: Record<string, unknown>): string | null | undefined {
-    if ('text' in v && typeof v.text === 'string') return (v.text as string).trim();
+    if ('text' in v && typeof v.text === 'string') return v.text.trim();
     if ('richText' in v && Array.isArray(v.richText)) {
         return (v.richText as Array<{ text?: string }>)
             .map((r) => r.text ?? '')

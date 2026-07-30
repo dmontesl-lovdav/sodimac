@@ -250,7 +250,7 @@ function isUniqueKeyViolation(err: unknown): boolean {
 
 function extractKeyNumberFromError(err: unknown, prefix: string): number | null {
     const detail = (err as { detail?: string })?.detail ?? '';
-    const match = detail.match(new RegExp(`${prefix.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(\\d+)`));
+    const match = new RegExp(`${prefix.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(\\d+)`).exec(detail);
     if (!match?.[1]) return null;
     const parsed = Number.parseInt(match[1], 10);
     return Number.isFinite(parsed) ? parsed : null;

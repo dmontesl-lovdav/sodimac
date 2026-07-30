@@ -109,10 +109,9 @@ export function DualTransferList({
       </div>
 
       <div className="dual-grid">
-        <fieldset
+        <div
           className="dual-column"
           aria-label={leftTitle}
-          style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -139,11 +138,9 @@ export function DualTransferList({
           </div>
           <div className="dual-items">
             {filteredAvailable.map((item) => (
-              <fieldset
+              <div
                 key={item.id}
                 className="dual-item dual-item--draggable"
-                aria-label={item.title}
-                style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >
@@ -162,10 +159,10 @@ export function DualTransferList({
                   {item.title}
                   {renderAssignedItemExtra?.(item)}
                 </div>
-              </fieldset>
+              </div>
             ))}
           </div>
-        </fieldset>
+        </div>
 
         <section className="dual-controls">
           <GenericButton variant="outlineFill" onClick={() => moveRight(Array.from(leftSelected))}>&gt;&gt;</GenericButton>
@@ -173,10 +170,9 @@ export function DualTransferList({
           <GenericButton variant="outlineFill" onClick={() => moveLeft(Array.from(rightSelected))}>&lt;&lt;</GenericButton>
         </section>
 
-        <fieldset
+        <div
           className="dual-column"
           aria-label={rightTitle}
-          style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -186,11 +182,9 @@ export function DualTransferList({
           <header>{rightTitle} ({assigned.length})</header>
           <div className="dual-items">
             {assigned.map((item) => (
-              <fieldset
+              <div
                 key={item.id}
                 className="dual-item dual-item--draggable"
-                aria-label={item.title}
-                style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
                 draggable
                 onDragStart={(event) => handleDragStart(event, item.id)}
               >
@@ -209,10 +203,10 @@ export function DualTransferList({
                   {item.title}
                   {renderAvailableItemExtra?.(item)}
                 </div>
-              </fieldset>
+              </div>
             ))}
           </div>
-        </fieldset>
+        </div>
       </div>
 
       <div className="dual-back">

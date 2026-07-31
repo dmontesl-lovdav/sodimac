@@ -1503,6 +1503,15 @@ public class InvoiceServiceImpl implements InvoiceService {
                 Optional<InvoiceEntity> facturaOpt = invoiceRepository.findByFiscalUuid(uuidRelacionado);
 
                 if (facturaOpt.isEmpty()) {
+                    // Regla Ivan 2026-07-31: una NC de Descuento Comercial (tipo 2) PUEDE o no tener
+                    // factura relacionada. Si el XML declara una factura que no existe en el sistema,
+                    // se deja pasar sin ligar (no rechaza). Para los demás tipos (ej. 1 Ajuste por
+                    // Recepción) la factura relacionada sigue siendo obligatoria -> BUS043.
+                    if (TIPO_NC_DESCUENTO_COMERCIAL.equals(tipoNotaCredito)) {
+                        log.info("NC de Descuento Comercial: factura relacionada {} no existe en el sistema; "
+                                + "se permite pasar sin ligar la relación (regla Ivan 2026-07-31)", uuidRelacionado);
+                        continue;
+                    }
                     log.error("Factura relacionada no encontrada en BD. UUID: {}", uuidRelacionado);
                     messageCatalog.throwException(FiscalMessageCode.BUS043, LBL_UUID + uuidRelacionado);
                 }

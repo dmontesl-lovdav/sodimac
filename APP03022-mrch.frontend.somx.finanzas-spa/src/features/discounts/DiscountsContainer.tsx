@@ -173,6 +173,34 @@ function toProviderCatalog(providers: ProviderRow[]): ProvidersOptions[] {
   ];
 }
 
+/** IDs de tipo proveedor permitidos en rebates (`details[].value` del catálogo CATTIPOPROVEEDORREBATE). */
+function getRebateAllowedSupplierTypeIds(catalog: unknown): Set<number> {
+  const raw = catalog as Record<string, unknown> | null | undefined;
+  const rows: Array<{ value?: string | number }> = Array.isArray(catalog)
+    ? catalog
+    : Array.isArray(raw?.details)
+      ? (raw.details as Array<{ value?: string | number }>)
+      : [];
+
+  return new Set(
+    rows
+      .map((row) => Number(row.value))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  );
+}
+
+function filterProvidersByRebateTypes(
+  providers: ProviderRow[],
+  allowedTypeIds: Set<number>
+): ProviderRow[] {
+  if (allowedTypeIds.size === 0) return providers;
+  return providers.filter(
+    (provider) =>
+      provider.supplierType?.id != null &&
+      allowedTypeIds.has(Number(provider.supplierType.id))
+  );
+}
+
 export default function DiscountsContainer(): ReactElement {
   const financeAlert = useFinanceAlertModal();
   const warnIfEmptyRef = useRef(false);
@@ -194,20 +222,39 @@ export default function DiscountsContainer(): ReactElement {
     let active = true;
 
     const loadCatalogs = async () => {
-      const [providerList, supplierTypeList, rebateTypeCatalog, statusCatalog] =
+      const [providerList, supplierTypeList, rebateTypeCatalog, statusCatalog, providerRebateTypeCatalog] =
         await Promise.all([
           fetchProviders(),
           fetchSupplierTypesAsCatalog(),
           fetchCatalogDetails("CATTIPOREBATE"),
           fetchCatalogDetails("CEDC"),
+          fetchCatalogDetails("CATTIPOPROVEEDORREBATE"),
         ]);
 
       if (!active) return;
 
       const list = providerList ?? [];
       setProviders(list);
-      setProviderCatalog(toProviderCatalog(list));
-      setSupplierTypeOptions(supplierTypeList ?? []);
+
+      if (providerRebateTypeCatalog) {
+        const allowedTypeIds = getRebateAllowedSupplierTypeIds(providerRebateTypeCatalog);
+        const rebateTypeFilterOptions = fetchCatalogAsSelectableOptions(
+          providerRebateTypeCatalog,
+          "Todos los tipos",
+          "value"
+        ).map((option) => ({
+          ...option,
+          value: option.value.trim(),
+        }));
+
+        setSupplierTypeOptions(rebateTypeFilterOptions);
+        setProviderCatalog(
+          toProviderCatalog(filterProvidersByRebateTypes(list, allowedTypeIds))
+        );
+      } else {
+        setSupplierTypeOptions(supplierTypeList ?? []);
+        setProviderCatalog(toProviderCatalog(list));
+      }
 
       if (rebateTypeCatalog) {
         setRebateTypeOptions(

@@ -49,7 +49,7 @@ export default function ComplementContainer() {
   const invoiceClient = createCreditsClient();
   const gridRef = useRef<DataGridHandle>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
-  const { hasEvent } = useSecurityContext();
+  const { can } = useSecurityContext();
 
   const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<ComplementPayment> }[] = [
     {
@@ -63,7 +63,7 @@ export default function ComplementContainer() {
     },
   ];
   const rowActions: RowAction<ComplementPayment>[] = rowActionDescriptors
-    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const handleGetXmlContent = useCallback(async (row: ComplementPayment) => {

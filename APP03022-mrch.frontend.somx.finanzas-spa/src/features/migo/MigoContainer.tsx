@@ -59,7 +59,7 @@ export default function MigoContainer(): ReactElement {
     const financeAlert = useFinanceAlertModal();
     const notifyIfEmptySearch = useRef(false);
     const [searchParams] = useSearchParams();
-    const { hasEvent } = useSecurityContext();
+    const { can } = useSecurityContext();
 
     const locationState = (location.state as any) ?? {};
     const paymentFromState = locationState?.payment;
@@ -426,7 +426,7 @@ export default function MigoContainer(): ReactElement {
         },
     ];
     const rowActions: RowAction<MigoDocument>[] = rowActionDescriptors
-        .filter(({ gate }) => hasEvent(gate.app, gate.event))
+        .filter(({ gate }) => can(gate))
         .map(({ action }) => action);
 
     return (

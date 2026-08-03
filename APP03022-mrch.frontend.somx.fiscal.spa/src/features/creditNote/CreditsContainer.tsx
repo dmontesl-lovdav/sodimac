@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -35,7 +35,7 @@ const columns: DataGridColumn<CreditNote>[] = [
   { header: "Folio", accessor: r => r.folio ?? "--", exportAccessor: r => r.folio },
   { header: "Subtotal", accessor: r => r.subtotal != null ? formatAmount(r.subtotal) : "--", exportAccessor: r => r.subtotal },
   { header: "Total", accessor: r => r.total != null ? formatAmount(r.total) : "--", exportAccessor: r => r.total },
-  { header: "UUID", accessor: r => r.invoiceUuid ?? "--", exportAccessor: r => r.invoiceUuid },
+  { header: "UUID", accessor: r => r.fiscalUuid ?? "--", exportAccessor: r => r.fiscalUuid },
   { header: "UUID Factura", accessor: r => r.relatedInvoiceUuid ?? "--", exportAccessor: r => r.relatedInvoiceUuid + "" },
   { header: "Tipo Nota de Crédito", accessor: r => r.tipoNotaCreditoDescripcion ?? "--", exportAccessor: r => r.tipoNotaCreditoDescripcion },
   { header: "Tipo Proveedor", accessor: r => r.tipoProveedorDescripcion ?? "--", exportAccessor: r => r.tipoProveedorDescripcion },
@@ -68,7 +68,7 @@ export default function CreditsGrid() {
   const location = useLocation();
   const navigate = useNavigate();
   const gridRef = useRef<DataGridHandle>(null);
-  const { hasEvent } = useSecurityContext();
+  const { can } = useSecurityContext();
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
@@ -132,7 +132,7 @@ export default function CreditsGrid() {
     setProcessLoading(true);
     setErrorMsg(null);
     try {
-      await client.cancelCreditNote(row.invoiceUuid ?? "", row.numeroProveedor ?? "1001");
+      await client.cancelCreditNote(row.fiscalUuid ?? "", row.numeroProveedor ?? "1001");
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al cancelar la nota de crédito"));
     } finally {
@@ -192,16 +192,18 @@ export default function CreditsGrid() {
       action: {
         title: "Ver factura relacionada",
         icon: viewIcon,
-        onClick: (row, nav) => {
+        onClick: (row) => {
           if (!row.relatedInvoiceUuid) return;
-          const startDate = row.createdAt ?? "";
-          const endDate = row.createdAt ?? "";
           const qs = new URLSearchParams({
             uuid: String(row.relatedInvoiceUuid),
-            start: startDate,
-            end: endDate,
+            start: row.createdAt ?? "",
+            end: row.createdAt ?? "",
           });
-          nav(`/fiscal/facturas?${qs.toString()}`);
+          window.open(
+            buildFiscalSpaUrl("facturas", qs),
+            "_blank",
+            "noopener,noreferrer"
+          );
         },
         isDisabled: (row) => !row.relatedInvoiceUuid,
       },
@@ -212,12 +214,15 @@ export default function CreditsGrid() {
         title: "Cancelar nota de crédito",
         icon: trashIcon,
         onClick: (_row) => { openCancelConfirm(_row); },
-        isDisabled: (row) => row.status != CREDIT_NOTE_PROCESS_SENDED && row.status != CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status != CREDIT_NOTE_RECHAZO_CONTABLE,
+        //&& row.status != CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status != CREDIT_NOTE_RECHAZO_CONTABLE
+        isDisabled: (row) => {
+          return row.status != CREDIT_NOTE_PROCESS_SENDED
+        },
       },
     },
   ];
   const rowActions: RowAction<CreditNote>[] = rowActionDescriptors
-    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
 

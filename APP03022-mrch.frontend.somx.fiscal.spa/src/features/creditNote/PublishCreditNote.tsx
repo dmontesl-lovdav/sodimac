@@ -109,17 +109,22 @@ function PublishCreditNoteContent() {
   const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
   const [paramsLoading, setParamsLoading] = useState(true);
   const [optionalPdf, setOptionalPdf] = useState({ value: "0", isEnabled: false });
+  const [providers, setProviders] = useState<any>(null);
+  const [providersLoading, setProvidersLoading] = useState(true);
 
   const { traceId, addLog, headerActions, noTraceWarning, traceLoading } = useTraceFolio();
   const hasTraceId = Boolean(traceId);
-  const isPageLoading = traceLoading || paramsLoading;
+  const isPageLoading = traceLoading || paramsLoading || providersLoading;
   const uploadsLocked = isFinished || !hasTraceId || isPageLoading;
 
-  const [providers, setProviders] = useState<any>(null);
   useEffect(() => {
     const fetchProvidersList = async () => {
-      const providers = await fetchProvidersAsCatalog("rfc", true);
-      setProviders(providers);
+      try {
+        const providerCatalog = await fetchProvidersAsCatalog("rfc", true);
+        setProviders(providerCatalog);
+      } finally {
+        setProvidersLoading(false);
+      }
     };
     fetchProvidersList();
   }, []);
@@ -135,6 +140,11 @@ function PublishCreditNoteContent() {
     setOptionalPdf(checkSystemParameterValue(systemParameters, paramId));
   }, [systemParameters, isDiscountFlow]);
 
+  const supplierMatchesDiscount =
+    !isDiscountFlow ||
+    (Boolean(creditNoteData) &&
+      query.supplierNumber.trim() === (creditNoteData?.numeroProveedor ?? "").trim());
+
   const canPublish =
     hasTraceId &&
     !isPageLoading &&
@@ -144,6 +154,7 @@ function PublishCreditNoteContent() {
     !isUploading &&
     !isFinished &&
     !publishFailed &&
+    supplierMatchesDiscount &&
     (isDiscountFlow ? Boolean(query.supplierNumber.trim()) : Boolean(relatedInvoice));
 
   const showAlert = useCallback((message: string) => {
@@ -228,8 +239,17 @@ function PublishCreditNoteContent() {
       if(!isDiscountFlow){
         setRelatedInvoiceUuid(cmd.relatedInvoiceUuid);
       }
-      
-      if (cmd.alert) showAlert(cmd.alert);
+
+      if (
+        isDiscountFlow &&
+        query.supplierNumber.trim() !== parsed.numeroProveedor.trim()
+      ) {
+        showAlert(
+          "El RFC del proveedor no coincide con el descuento comercial. Por favor, valida el archivo XML."
+        );
+      } else if (cmd.alert) {
+        showAlert(cmd.alert);
+      }
     } catch (error: unknown) {
       if (!isActive()) return;
       showAlert(getErrorMessage(error, "No fue posible validar el archivo XML."));
@@ -241,6 +261,15 @@ function PublishCreditNoteContent() {
 
   const handlePublish = useCallback(async () => {
     if (!xmlFile || !traceId || !creditNoteData || isFinished || publishFailed) return;
+    if (
+      isDiscountFlow &&
+      query.supplierNumber.trim() !== creditNoteData.numeroProveedor.trim()
+    ) {
+      showAlert(
+        "El RFC del proveedor no coincide con el descuento comercial. Por favor, valida el archivo XML."
+      );
+      return;
+    }
     if (!optionalPdf.isEnabled) {
       showAlert("El archivo PDF es requerido para publicar la nota de crédito.");
       return;
@@ -308,6 +337,7 @@ function PublishCreditNoteContent() {
     creditNoteData,
     isFinished,
     publishFailed,
+    isDiscountFlow,
     query,
     relatedInvoice,
     publishClient,

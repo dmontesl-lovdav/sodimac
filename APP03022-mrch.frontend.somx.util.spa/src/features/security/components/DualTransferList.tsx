@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import GenericButton from '@shared/components/ui/button/GenericButton';
 import type { AssignableItem } from '../types';
 import '../styles/DualTransferList.css';
@@ -70,23 +70,6 @@ export function DualTransferList({
     setRightSelected(new Set());
   };
 
-  const handleDragStart = (event: DragEvent, id: number) => {
-    event.dataTransfer.setData('text/plain', String(id));
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDropOnRight = (event: DragEvent) => {
-    event.preventDefault();
-    const id = Number(event.dataTransfer.getData('text/plain'));
-    if (Number.isFinite(id)) moveRight([id]);
-  };
-
-  const handleDropOnLeft = (event: DragEvent) => {
-    event.preventDefault();
-    const id = Number(event.dataTransfer.getData('text/plain'));
-    if (Number.isFinite(id)) moveLeft([id]);
-  };
-
   const submit = async () => {
     setLoading(true);
     try {
@@ -109,15 +92,7 @@ export function DualTransferList({
       </div>
 
       <div className="dual-grid">
-        <div
-          className="dual-column"
-          aria-label={leftTitle}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-          }}
-          onDrop={handleDropOnLeft}
-        >
+        <div className="dual-column" aria-label={leftTitle}>
           <header>{leftTitle} ({filteredAvailable.length})</header>
           <div className="dual-search">
             <input
@@ -140,9 +115,7 @@ export function DualTransferList({
             {filteredAvailable.map((item) => (
               <div
                 key={item.id}
-                className="dual-item dual-item--draggable"
-                draggable
-                onDragStart={(event) => handleDragStart(event, item.id)}
+                className="dual-item"
               >
                 <input
                   type="checkbox"
@@ -170,23 +143,13 @@ export function DualTransferList({
           <GenericButton variant="outlineFill" onClick={() => moveLeft(Array.from(rightSelected))}>&lt;&lt;</GenericButton>
         </section>
 
-        <div
-          className="dual-column"
-          aria-label={rightTitle}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-          }}
-          onDrop={handleDropOnRight}
-        >
+        <div className="dual-column" aria-label={rightTitle}>
           <header>{rightTitle} ({assigned.length})</header>
           <div className="dual-items">
             {assigned.map((item) => (
               <div
                 key={item.id}
-                className="dual-item dual-item--draggable"
-                draggable
-                onDragStart={(event) => handleDragStart(event, item.id)}
+                className="dual-item"
               >
                 <input
                   type="checkbox"

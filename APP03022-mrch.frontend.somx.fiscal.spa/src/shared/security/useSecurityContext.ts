@@ -21,6 +21,16 @@ const normalizeLabel = (s: string): string =>
         .toLowerCase()
         .replace(/\s+/g, ' ');
 
+const ADMIN_PROFILE_KEYS =
+    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_PROFILE_KEYS
+        ? process.env.SECURITY_ADMIN_PROFILE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['PER009'];
+
+const ADMIN_ROLE_KEYS =
+    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_ROLE_KEYS
+        ? process.env.SECURITY_ADMIN_ROLE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['ROL010'];
+
 /** Limpia la caché de seguridad (solo para tests). */
 export function clearSecurityContextCache(): void {
     cache.clear();
@@ -57,10 +67,116 @@ async function fetchContext(userKey: string): Promise<AccessContext | null> {
     return promise;
 }
 
+interface AccessContextResolution {
+    data: AccessContext | null;
+    error: unknown;
+}
+
+/** Resuelve el contexto (desde caché o red) sin acoplar el resultado al estado de React. */
+async function loadAccessContext(userKey: string): Promise<AccessContextResolution> {
+    const hit = getCached(userKey);
+    if (hit?.data) {
+        return { data: hit.data, error: hit.error ?? null };
+    }
+
+    const data = await fetchContext(userKey);
+    return { data, error: cache.get(userKey)?.error ?? null };
+}
+
+function resolveIsAdmin(profiles: { key: string }[], roles: { key: string }[]): boolean {
+    const hasAdminProfile = profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key));
+    const hasAdminRole = roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
+    return hasAdminProfile || hasAdminRole;
+}
+
+type AppEntry = { key: string; events?: { key: string; name?: string }[] };
+
+interface AppIndexes {
+    appKeySet: Set<string>;
+    eventByApp: Map<string, Set<string>>;
+    labelByApp: Map<string, Set<string>>;
+    eventGlobal: Set<string>;
+}
+
+/** Construye, en una sola pasada, los índices de búsqueda usados por los checkers de permisos. */
+function buildAppIndexes(apps: AppEntry[]): AppIndexes {
+    const appKeySet = new Set(apps.map((a) => a.key));
+    const eventByApp = new Map<string, Set<string>>();
+    const labelByApp = new Map<string, Set<string>>();
+    const eventGlobal = new Set<string>();
+
+    for (const app of apps) {
+        const events = app.events ?? [];
+        eventByApp.set(app.key, new Set(events.map((e) => e.key)));
+        labelByApp.set(
+            app.key,
+            new Set(events.map((e) => normalizeLabel(e.name ?? '')).filter((s) => s !== '')),
+        );
+        for (const ev of events) {
+            if (ev.key) eventGlobal.add(ev.key);
+        }
+    }
+
+    return { appKeySet, eventByApp, labelByApp, eventGlobal };
+}
+
+function evaluateCan(
+    appEvent: { app: string; event: string; label?: string },
+    isAdmin: boolean,
+    indexes: Pick<AppIndexes, 'eventByApp' | 'labelByApp'>,
+): boolean {
+    if (isAdmin) return true;
+    if (!appEvent?.app) return false;
+    if (appEvent.event && indexes.eventByApp.get(appEvent.app)?.has(appEvent.event)) return true;
+    if (!appEvent.label) return false;
+    return indexes.labelByApp.get(appEvent.app)?.has(normalizeLabel(appEvent.label)) ?? false;
+}
+
+// Checkers puros de nivel superior: mantienen la ramificación fuera del hook
+// para no acumular complejidad cognitiva en `useSecurityContext`.
+function checkHasApp(appKey: string, appKeySet: Set<string>): boolean {
+    return Boolean(appKey) && appKeySet.has(appKey);
+}
+
+function checkHasAnyApp(appKeys: string[], appKeySet: Set<string>): boolean {
+    return appKeys.some((k) => Boolean(k) && appKeySet.has(k));
+}
+
+function checkHasEvent(
+    appKey: string,
+    eventKey: string,
+    eventByApp: Map<string, Set<string>>,
+): boolean {
+    if (!appKey || !eventKey) return false;
+    return eventByApp.get(appKey)?.has(eventKey) ?? false;
+}
+
+function checkHasEventLabel(
+    appKey: string,
+    label: string,
+    labelByApp: Map<string, Set<string>>,
+): boolean {
+    if (!appKey || !label) return false;
+    return labelByApp.get(appKey)?.has(normalizeLabel(label)) ?? false;
+}
+
+function checkHasEventInAnyApp(eventKey: string, eventGlobal: Set<string>): boolean {
+    return Boolean(eventKey) && eventGlobal.has(eventKey);
+}
+
+function checkHasPermission(permissionKey: string, permSet: Set<string>): boolean {
+    return Boolean(permissionKey) && permSet.has(permissionKey);
+}
+
+function checkHasProfile(profileKey: string, profileSet: Set<string>): boolean {
+    return Boolean(profileKey) && profileSet.has(profileKey);
+}
+
 export interface SecurityContextResult {
     isLoading: boolean;
     error: unknown;
     userKey: string;
+    isAdmin: boolean;
     raw: AccessContext | null;
     apps: { key: string; events?: { key: string; name?: string }[] }[];
     profiles: { key: string }[];
@@ -70,124 +186,88 @@ export interface SecurityContextResult {
     hasAnyApp: (appKeys: string[]) => boolean;
     hasEvent: (appKey: string, eventKey: string) => boolean;
     hasEventLabel: (appKey: string, label: string) => boolean;
+    can: (appEvent: { app: string; event: string; label?: string }) => boolean;
     hasEventInAnyApp: (eventKey: string) => boolean;
     hasPermission: (permissionKey: string) => boolean;
     hasProfile: (profileKey: string) => boolean;
 }
 
-export function useSecurityContext(): SecurityContextResult {
-    useAppSelector((s) => s.authentication);
-    const userKey = getCurrentUserKey();
+/** Carga (o reutiliza de caché) el contexto de acceso del usuario actual. */
+function useAccessContextState(userKey: string) {
     const cached = userKey ? getCached(userKey) : null;
-    const cachedData = cached?.data ?? null;
-    const cachedError = cached?.error ?? null;
 
-    const [data, setData] = useState<AccessContext | null>(cachedData);
-    const [error, setError] = useState<unknown>(cachedError);
-    const [isLoading, setIsLoading] = useState<boolean>(!cachedData && Boolean(userKey));
+    const [data, setData] = useState<AccessContext | null>(cached?.data ?? null);
+    const [error, setError] = useState<unknown>(cached?.error ?? null);
+    const [isLoading, setIsLoading] = useState<boolean>(!cached?.data && Boolean(userKey));
 
     useEffect(() => {
         if (!userKey) {
             setIsLoading(false);
             return;
         }
-        const hit = getCached(userKey);
-        if (hit?.data) {
-            setData(hit.data);
-            setError(hit.error ?? null);
-            setIsLoading(false);
-            return;
-        }
+
         let cancelled = false;
         setIsLoading(true);
-        fetchContext(userKey)
-            .then((resp) => {
-                if (cancelled) return;
-                setData(resp);
-                const entry = cache.get(userKey);
-                setError(entry?.error ?? null);
-            })
-            .catch((err) => {
-                if (cancelled) return;
-                setError(err);
-                setData(null);
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        loadAccessContext(userKey).then((resolution) => {
+            if (cancelled) return;
+            setData(resolution.data);
+            setError(resolution.error);
+            setIsLoading(false);
+        });
         return () => {
             cancelled = true;
         };
     }, [userKey]);
+
+    return { data, error, isLoading };
+}
+
+export function useSecurityContext(): SecurityContextResult {
+    useAppSelector((s) => s.authentication);
+    const userKey = getCurrentUserKey();
+    const { data, error, isLoading } = useAccessContextState(userKey);
 
     const apps = useMemo(() => data?.apps ?? [], [data]);
     const profiles = useMemo(() => data?.profiles ?? [], [data]);
     const roles = useMemo(() => data?.roles ?? [], [data]);
     const permissions = useMemo(() => data?.permissions ?? [], [data]);
 
-    const appKeySet = useMemo(() => new Set(apps.map((a) => a.key)), [apps]);
-    const eventByApp = useMemo(() => {
-        const map = new Map<string, Set<string>>();
-        for (const app of apps) {
-            map.set(app.key, new Set((app.events ?? []).map((e) => e.key)));
-        }
-        return map;
-    }, [apps]);
-    const labelByApp = useMemo(() => {
-        const map = new Map<string, Set<string>>();
-        for (const app of apps) {
-            map.set(
-                app.key,
-                new Set(
-                    (app.events ?? [])
-                        .map((e) => normalizeLabel(e.name ?? ''))
-                        .filter((s) => s !== ''),
-                ),
-            );
-        }
-        return map;
-    }, [apps]);
-    const eventGlobal = useMemo(() => {
-        const set = new Set<string>();
-        for (const app of apps) {
-            for (const ev of app.events ?? []) {
-                if (ev.key) set.add(ev.key);
-            }
-        }
-        return set;
-    }, [apps]);
+    const { appKeySet, eventByApp, labelByApp, eventGlobal } = useMemo(
+        () => buildAppIndexes(apps),
+        [apps],
+    );
     const permSet = useMemo(() => new Set(permissions.map((p) => p.key)), [permissions]);
     const profileSet = useMemo(() => new Set(profiles.map((p) => p.key)), [profiles]);
+    const isAdmin = useMemo(() => resolveIsAdmin(profiles, roles), [profiles, roles]);
 
-    const hasApp = useCallback((key: string) => Boolean(key) && appKeySet.has(key), [appKeySet]);
+    const hasApp = useCallback((key: string) => checkHasApp(key, appKeySet), [appKeySet]);
     const hasAnyApp = useCallback(
-        (keys: string[]) => keys.some((k) => Boolean(k) && appKeySet.has(k)),
+        (keys: string[]) => checkHasAnyApp(keys, appKeySet),
         [appKeySet],
     );
     const hasEvent = useCallback(
-        (appKey: string, eventKey: string) => {
-            if (!appKey || !eventKey) return false;
-            return eventByApp.get(appKey)?.has(eventKey) ?? false;
-        },
+        (appKey: string, eventKey: string) => checkHasEvent(appKey, eventKey, eventByApp),
         [eventByApp],
     );
     const hasEventLabel = useCallback(
-        (appKey: string, label: string) => {
-            if (!appKey || !label) return false;
-            return labelByApp.get(appKey)?.has(normalizeLabel(label)) ?? false;
-        },
+        (appKey: string, label: string) => checkHasEventLabel(appKey, label, labelByApp),
         [labelByApp],
     );
+    const can = useCallback(
+        (appEvent: { app: string; event: string; label?: string }) =>
+            evaluateCan(appEvent, isAdmin, { eventByApp, labelByApp }),
+        [eventByApp, labelByApp, isAdmin],
+    );
     const hasEventInAnyApp = useCallback(
-        (eventKey: string) => Boolean(eventKey) && eventGlobal.has(eventKey),
+        (eventKey: string) => checkHasEventInAnyApp(eventKey, eventGlobal),
         [eventGlobal],
     );
     const hasPermission = useCallback(
-        (permKey: string) => Boolean(permKey) && permSet.has(permKey),
+        (permKey: string) => checkHasPermission(permKey, permSet),
         [permSet],
     );
     const hasProfile = useCallback(
-        (profileKey: string) => Boolean(profileKey) && profileSet.has(profileKey),
+        (profileKey: string) => checkHasProfile(profileKey, profileSet),
         [profileSet],
     );
 
@@ -195,6 +275,7 @@ export function useSecurityContext(): SecurityContextResult {
         isLoading,
         error,
         userKey,
+        isAdmin,
         raw: data,
         apps,
         profiles,
@@ -204,6 +285,7 @@ export function useSecurityContext(): SecurityContextResult {
         hasAnyApp,
         hasEvent,
         hasEventLabel,
+        can,
         hasEventInAnyApp,
         hasPermission,
         hasProfile,

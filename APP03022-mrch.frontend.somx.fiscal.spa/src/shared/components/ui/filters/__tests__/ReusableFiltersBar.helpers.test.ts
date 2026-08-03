@@ -116,7 +116,9 @@ describe("uuid helpers", () => {
   it("validateUuidFilterField permite vacío si no es required", () => {
     const field: FilterField = { key: "uuid", label: "UUID", type: "uuid" };
     expect(validateUuidFilterField(field, "")).toBeNull();
-    expect(validateUuidFilterField(field, "abc")).toBe("UUID no es un UUID válido");
+    expect(validateUuidFilterField(field, "abc")).toBe(
+      "El UUID proporcionado no es válido, favor de validar la estructura del UUID"
+    );
     expect(
       validateUuidFilterField(field, "550e8400-e29b-41d4-a716-446655440000")
     ).toBeNull();

@@ -121,7 +121,7 @@ export default function InvoicesGrid() {
   const gridRef = useRef<DataGridHandle>(null);
   const deepLinkSearchedRef = useRef<string | null>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
-  const { hasEvent } = useSecurityContext();
+  const { can } = useSecurityContext();
 
   useEffect(() => {
     void (async () => {
@@ -264,7 +264,7 @@ export default function InvoicesGrid() {
     },
   ];
   const rowActions: RowAction<Invoice>[] = rowActionDescriptors
-    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const filterFields: FilterField[] = useMemo(

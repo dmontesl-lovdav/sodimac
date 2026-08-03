@@ -82,7 +82,7 @@ export function ShippingGuideGrid({
   onDownloadXmlRow,
 }: ShippingGuideGridProps): ReactElement {
   const nav = useNavigate();
-  const { hasEvent } = useSecurityContext();
+  const { can } = useSecurityContext();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -252,7 +252,7 @@ export function ShippingGuideGrid({
     },
   ];
   const actions: RowAction<ShippingGuide>[] = allActions
-    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   return (

@@ -58,7 +58,7 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
             .then((response) => setSuppliers(response ?? []))
             .catch(() => undefined);
 
-        const relatedUuid = reception.listAddendum?.[0]?.invoice?.invoiceUuid;
+        const relatedUuid = reception.listAddendum?.[0]?.invoice?.fiscalUuid;
         if (!relatedUuid || !reception.createdAt) {
             setInvoices([]);
             return;
@@ -92,10 +92,12 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
         });
     }, [reception]);
 
-    const addenda = [...(reception.listAddendum ?? []), ...invoices];
+    console.log(invoices);
+    const addenda = [...(reception.listAddendum?.[0] ? [reception.listAddendum?.[0]] : []), ...invoices];
+    console.log(addenda);
 
     const columns: Column<Addendum>[] = [
-        { header: "UUID", render: (r) => r.invoice?.invoiceUuid ?? "--" },
+        { header: "UUID", render: (r) => (r.invoice?.documentType=="I"?r.invoice?.fiscalUuid:r.invoice?.invoiceUuid)  ?? "--" },
         { header: "Fecha Registro", render: r => r.createdAt ? formatDate(r.createdAt) : "N/D" },
         { header: "Importe", render: (r) => formatAmount(r.invoice?.subtotal ?? 0) },
         { header: "Serie", render: (r) => r.invoice?.series ?? "--" },

@@ -33,6 +33,9 @@ export function PermissionGate({
     if (sec.error) {
         return <>{fallback}</>;
     }
+    if (sec.isAdmin) {
+        return <>{children}</>;
+    }
 
     const checks: boolean[] = [];
     if (app !== undefined)         checks.push(sec.hasApp(app));

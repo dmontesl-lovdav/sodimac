@@ -73,8 +73,8 @@ type DataGridProps<T, F = any> = {
   /** Acciones por fila adicionales (se muestran antes de XML/PDF) */
   rowActions?: GenericRowAction<T>[];
 
-  xmlAppEvent?: { app: string; event: string };
-  pdfAppEvent?: { app: string; event: string };
+  xmlAppEvent?: { app: string; event: string; label?: string };
+  pdfAppEvent?: { app: string; event: string; label?: string };
 
   /** Si es true y no hay filas, se muestra SimpleLobby con este mensaje (ej. "Realiza una búsqueda en los filtros"). */
   filtersEmpty?: boolean;
@@ -339,8 +339,8 @@ function DataGridInner<T, F = any>(
   ref: React.ForwardedRef<DataGridHandle>
 ): ReactElement {
   const sec = useSecurityContext();
-  const canXml = !xmlAppEvent || sec.hasEvent(xmlAppEvent.app, xmlAppEvent.event);
-  const canPdf = !pdfAppEvent || sec.hasEvent(pdfAppEvent.app, pdfAppEvent.event);
+  const canXml = !xmlAppEvent || sec.can(xmlAppEvent);
+  const canPdf = !pdfAppEvent || sec.can(pdfAppEvent);
 
   const pagedEnabled = Boolean(fetchFn) && filters != null;
   const paginatedDataResult = usePaginatedData<T, F>({

@@ -2,9 +2,18 @@
 
 set -euo pipefail
 
-jest --coverage --passWithNoTests "$@"
+rm -rf coverage
 
-if [ ! -f coverage/lcov.info ]; then
-  mkdir -p coverage
-  : > coverage/lcov.info
+npx jest \
+  --config jest.config.js \
+  --coverage \
+  --passWithNoTests \
+  "$@"
+
+if [ ! -s coverage/lcov.info ]; then
+  echo "ERROR: Jest no generó un reporte válido en coverage/lcov.info."
+  exit 1
 fi
+
+echo "Reporte de cobertura generado correctamente:"
+echo "coverage/lcov.info"

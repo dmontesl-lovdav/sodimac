@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: ${PROJECT_NAME}
-          image: foo/bar
+          image: foo/bar:1.0.0
 
           ports:
             - containerPort: 8080

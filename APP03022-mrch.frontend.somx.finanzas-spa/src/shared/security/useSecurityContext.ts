@@ -20,6 +20,16 @@ const normalizeLabel = (s: string): string =>
         .toLowerCase()
         .replace(/\s+/g, ' ');
 
+const ADMIN_PROFILE_KEYS =
+    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_PROFILE_KEYS
+        ? process.env.SECURITY_ADMIN_PROFILE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['PER009'];
+
+const ADMIN_ROLE_KEYS =
+    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_ROLE_KEYS
+        ? process.env.SECURITY_ADMIN_ROLE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['ROL010'];
+
 function getCached(userKey: string): CacheEntry | null {
     const entry = cache.get(userKey);
     if (!entry) return null;
@@ -55,6 +65,7 @@ export interface SecurityContextResult {
     isLoading: boolean;
     error: unknown;
     userKey: string;
+    isAdmin: boolean;
     raw: AccessContext | null;
     apps: { key: string; events?: { key: string; name?: string }[] }[];
     profiles: { key: string }[];
@@ -64,6 +75,7 @@ export interface SecurityContextResult {
     hasAnyApp: (appKeys: string[]) => boolean;
     hasEvent: (appKey: string, eventKey: string) => boolean;
     hasEventLabel: (appKey: string, label: string) => boolean;
+    can: (appEvent: { app: string; event: string; label?: string }) => boolean;
     hasEventInAnyApp: (eventKey: string) => boolean;
     hasPermission: (permissionKey: string) => boolean;
     hasProfile: (profileKey: string) => boolean;
@@ -171,6 +183,21 @@ export function useSecurityContext(): SecurityContextResult {
         },
         [labelByApp],
     );
+    const isAdmin =
+        profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key)) ||
+        roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
+    const can = useCallback(
+        (appEvent: { app: string; event: string; label?: string }) => {
+            if (isAdmin) return true;
+            if (!appEvent?.app) return false;
+            if (appEvent.event && eventByApp.get(appEvent.app)?.has(appEvent.event)) return true;
+            if (appEvent.label) {
+                return labelByApp.get(appEvent.app)?.has(normalizeLabel(appEvent.label)) ?? false;
+            }
+            return false;
+        },
+        [eventByApp, labelByApp, isAdmin],
+    );
     const hasEventInAnyApp = useCallback(
         (eventKey: string) => Boolean(eventKey) && eventGlobal.has(eventKey),
         [eventGlobal],
@@ -188,6 +215,7 @@ export function useSecurityContext(): SecurityContextResult {
         isLoading,
         error,
         userKey,
+        isAdmin,
         raw: data,
         apps,
         profiles,
@@ -197,6 +225,7 @@ export function useSecurityContext(): SecurityContextResult {
         hasAnyApp,
         hasEvent,
         hasEventLabel,
+        can,
         hasEventInAnyApp,
         hasPermission,
         hasProfile,

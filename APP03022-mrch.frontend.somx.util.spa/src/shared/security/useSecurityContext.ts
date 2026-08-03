@@ -50,7 +50,12 @@ const normalizeLabel = (s: string): string =>
 const ADMIN_PROFILE_KEYS =
     typeof process !== 'undefined' && process.env.SECURITY_ADMIN_PROFILE_KEYS
         ? process.env.SECURITY_ADMIN_PROFILE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
-        : [];
+        : ['PER009'];
+
+const ADMIN_ROLE_KEYS =
+    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_ROLE_KEYS
+        ? process.env.SECURITY_ADMIN_ROLE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['ROL010'];
 
 interface UseSecurityContextOptions {
     enabled?: boolean;
@@ -176,9 +181,8 @@ export function useSecurityContext(opts: UseSecurityContextOptions = {}): Securi
     );
 
     const isAdmin =
-        ADMIN_PROFILE_KEYS.length === 0
-            ? true
-            : profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key));
+        profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key)) ||
+        roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
 
     return {
         isLoading: query.isLoading,

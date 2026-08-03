@@ -59,7 +59,7 @@ export function validateUuidFilterField(
     return field.required ? `${field.label} es obligatorio` : null;
   }
   if (!isValidUuid(normalized)) {
-    return `${field.label} no es un UUID válido`;
+    return "El UUID proporcionado no es válido, favor de validar la estructura del UUID";
   }
   return null;
 }

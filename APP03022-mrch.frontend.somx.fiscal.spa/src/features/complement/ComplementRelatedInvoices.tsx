@@ -34,7 +34,7 @@ const { uuid } = useParams<{ uuid: string }>();
   useFiscalListReturnFromDetail(FISCAL_LIST_KEYS.complementPayments);
   const gridRef = useRef<DataGridHandle>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
-  const { hasEvent } = useSecurityContext();
+  const { can } = useSecurityContext();
 
   const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<RelatedInvoice> }[] = [
     {
@@ -47,7 +47,7 @@ const { uuid } = useParams<{ uuid: string }>();
     },
   ];
   const rowActions: RowAction<RelatedInvoice>[] = rowActionDescriptors
-    .filter(({ gate }) => hasEvent(gate.app, gate.event))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const handleFetch = useCallback(async () => {

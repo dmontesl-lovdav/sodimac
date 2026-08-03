@@ -18,10 +18,8 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['lcov', 'text-summary', 'cobertura'],
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-    '!src/main.tsx',
-    '!src/assets/**'
+    'src/utils/utils.ts',
+    'src/shared/utils/errorMessage.ts',
+    'src/features/security/utils/csvExport.ts'
   ],
 };

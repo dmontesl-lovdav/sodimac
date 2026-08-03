@@ -38,54 +38,63 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
+}
+
 function firstNonEmptyString(...values: unknown[]): string | null {
-  for (const v of values) {
-    if (typeof v === "string" && v.trim()) return v.trim();
-  }
-  return null;
+  const found = values.find(isNonEmptyString);
+  return found ? found.trim() : null;
 }
 
 function extractCreditNoteUuid(payload: Record<string, unknown>): string | null {
   const nested = payload.data;
   const data = isRecord(nested) ? nested : null;
 
-  return (
-    firstNonEmptyString(
-      payload.invoiceUuid,
-      payload.uuid,
-      payload.fiscalUuid,
-      data?.invoiceUuid,
-      data?.uuid,
-      data?.fiscalUuid,
-    ) ?? null
+  return firstNonEmptyString(
+    payload.invoiceUuid,
+    payload.uuid,
+    payload.fiscalUuid,
+    data?.invoiceUuid,
+    data?.uuid,
+    data?.fiscalUuid,
   );
+}
+
+/** Convierte un string vacío/solo-espacios en null; deja el resto trimeado. */
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+const EMPTY_RESPONSE: NormalizedPublishCreditNoteResponse = {
+  displayText: "",
+  messageId: null,
+  creditNoteUuid: null,
+};
+
+/** Resuelve el messageId estructurado (idMsg/code) o, en su defecto, el errorCode. */
+function resolveMessageId(raw: Record<string, unknown>): string | null {
+  const structured = firstNonEmptyString(raw.idMsg, raw.code);
+  if (structured) return structured;
+  return isNonEmptyString(raw.errorCode) ? emptyToNull(raw.errorCode) : null;
 }
 
 /**
  * Convierte la respuesta cruda del API en un objeto estable para la capa de UI.
  */
 export function normalizePublishCreditNoteResponse(raw: unknown): NormalizedPublishCreditNoteResponse {
-  if (raw == null) {
-    return { displayText: "", messageId: null, creditNoteUuid: null };
-  }
-
   if (typeof raw === "string") {
-    return { displayText: raw.trim(), messageId: null, creditNoteUuid: null };
+    return { ...EMPTY_RESPONSE, displayText: raw.trim() };
   }
 
   if (!isRecord(raw)) {
-    return { displayText: "", messageId: null, creditNoteUuid: null };
+    return EMPTY_RESPONSE;
   }
 
-  const messageId =
-    firstNonEmptyString(raw.idMsg, raw.code) ??
-    (typeof raw.errorCode === "string" ? ((t) => (t === "" ? null : t))(raw.errorCode.trim()) : null);
-
-  const displayText =
-    firstNonEmptyString(raw.message, raw.detailError, messageId) ?? "";
-
+  const messageId = resolveMessageId(raw);
   return {
-    displayText,
+    displayText: firstNonEmptyString(raw.message, raw.detailError, messageId) ?? "",
     messageId: messageId ? messageId.toUpperCase() : null,
     creditNoteUuid: extractCreditNoteUuid(raw),
   };
@@ -95,6 +104,20 @@ const SUCCESS_IDS = new Set<string>([FISCAL_MESSAGE_ID.CREDIT_NOTE_REGISTERED]);
 const WARNING_IDS = new Set<string>([FISCAL_MESSAGE_ID.PUBLISH_ALERT]);
 const ALL_KNOWN_IDS = [...SUCCESS_IDS, ...WARNING_IDS];
 
+/** Clasifica un id de mensaje conocido; null si no pertenece a ningún catálogo. */
+function classifyMessageId(id: string): PublishCreditNoteOutcome | null {
+  if (SUCCESS_IDS.has(id)) return "success";
+  if (WARNING_IDS.has(id)) return "warning";
+  return null;
+}
+
+/** Busca, dentro de un texto libre, alguno de los identificadores conocidos del catálogo. */
+function classifyMessageFromText(text: string): PublishCreditNoteOutcome | null {
+  const upperText = text.toUpperCase();
+  const matchedId = ALL_KNOWN_IDS.find((id) => upperText.includes(id));
+  return matchedId ? classifyMessageId(matchedId) : null;
+}
+
 /**
  * Resuelve el resultado a partir del id estructurado o, en su defecto,
  * buscando identificadores conocidos en el texto (sin expresiones regulares).
@@ -102,19 +125,8 @@ const ALL_KNOWN_IDS = [...SUCCESS_IDS, ...WARNING_IDS];
 export function resolvePublishCreditNoteOutcome(
   normalized: NormalizedPublishCreditNoteResponse,
 ): PublishCreditNoteOutcome {
-  if (normalized.messageId) {
-    if (SUCCESS_IDS.has(normalized.messageId)) return "success";
-    if (WARNING_IDS.has(normalized.messageId)) return "warning";
-    return "error";
-  }
-
-  const text = `${normalized.displayText}`.toUpperCase();
-  for (const id of ALL_KNOWN_IDS) {
-    if (text.includes(id)) {
-      if (SUCCESS_IDS.has(id)) return "success";
-      if (WARNING_IDS.has(id)) return "warning";
-    }
-  }
-
-  return "error";
+  const outcome = normalized.messageId
+    ? classifyMessageId(normalized.messageId)
+    : classifyMessageFromText(normalized.displayText);
+  return outcome ?? "error";
 }

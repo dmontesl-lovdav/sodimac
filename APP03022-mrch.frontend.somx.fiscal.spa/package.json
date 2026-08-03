@@ -6,8 +6,10 @@
     "start": "cross-env NODE_ENV=development webpack serve --mode development --config config/webpack.config.js",
     "dev": "cross-env NODE_ENV=development webpack serve --mode development --config config/webpack.config.js",
     "build": "cross-env NODE_ENV=production webpack --mode production --config config/webpack.config.js",
-    "test": "jest --passWithNoTests",
-    "test:cov": "bash ./scripts/test-cov.sh"
+    "test": "jest --config jest.config.js --passWithNoTests",
+    "test:watch": "jest --config jest.config.js --watch",
+    "test:cov": "bash ./scripts/test-cov.sh",
+    "test:cov:windows": "jest --config jest.config.js --coverage"
   },
   "engines": {
     "node": ">=20.18.1"
@@ -28,25 +30,6 @@
     "single-spa": "^6.0.3",
     "single-spa-react": "^6.0.2",
     "xlsx": "^0.18.5"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.(ts|tsx)$": "babel-jest"
-    },
-    "moduleNameMapper": {
-      "^@assets/.*$": "<rootDir>/src/test/fileMock.js",
-      "\\.(css|less|scss)$": "<rootDir>/src/test/styleMock.js",
-      "\\.(svg|png|jpg|jpeg|gif|webp)$": "<rootDir>/src/test/fileMock.js",
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^@shared/(.*)$": "<rootDir>/src/shared/$1",
-      "^@features/(.*)$": "<rootDir>/src/features/$1",
-      "^@store/(.*)$": "<rootDir>/src/store/$1"
-    },
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/dist/"
-    ]
   },
   "devDependencies": {
     "@babel/core": "^7.18.2",

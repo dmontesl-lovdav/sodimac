@@ -25,11 +25,11 @@ export function buildPublishFormData({
   if (isCommercialDiscountFlow(query)) {
     formData.append("documentNumber", query.documentNumber);
     formData.append("supplierNumber", query.supplierNumber);
-    formData.append("type", "2");
+    formData.append("tipoNotaCredito", "2");
     return formData;
   }
 
   formData.append("supplierNumber", relatedInvoice?.numeroProveedor ?? "");
-  formData.append("type", "1");
+  formData.append("tipoNotaCredito", "1");
   return formData;
 }

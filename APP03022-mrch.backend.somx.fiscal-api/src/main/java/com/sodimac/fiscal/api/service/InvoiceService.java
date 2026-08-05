@@ -50,7 +50,7 @@ public interface InvoiceService {
      */
     InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
             String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile,
-            String tipoNotaCredito, boolean confirmarCancelacionNc);
+            String tipoNotaCredito, String rebateId, boolean confirmarCancelacionNc);
 
     /**
      * Actualiza una factura o nota de crédito existente (STM-339).

@@ -120,6 +120,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final PaymentsRepository paymentsRepository;
     private final AddendumRepository addendumRepository;
     private final ReceptionRepository receptionRepository;
+    private final RebateRepository rebateRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final RelatedCfdiRepository relatedCfdiRepository;
     private final InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
@@ -142,7 +143,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Transactional
     public InvoiceRegistrationResponse registerInvoice(MultipartFile xmlFile, String idTransaccion,
             String receptionId, String supplierNumber, String purchaseOrderNumber, MultipartFile pdfFile,
-            String tipoNotaCredito, boolean confirmarCancelacionNc) {
+            String tipoNotaCredito, String rebateId, boolean confirmarCancelacionNc) {
         final String SERVICE_NAME = "InvoiceService.registerInvoice";
         long startTime = System.currentTimeMillis();
 
@@ -309,6 +310,13 @@ public class InvoiceServiceImpl implements InvoiceService {
             // Orden QA: primero forma de pago (CatFormaPagoValidoNc), luego uso CFDI (CatUsoCfdiValidoNc).
             if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
                 validateCreditNoteCatalogs(invoiceDto, idTransaccion, SERVICE_NAME);
+
+                // === PASO 6.6: TOLERANCIA DESCUENTO COMERCIAL (solo NC tipo 2) ===
+                // El Ajuste por Recepción (tipo 1) NO valida tolerancia: ya se validó en la carga
+                // inicial de la factura (decisión Ivan ago-2026).
+                if (TIPO_NC_DESCUENTO_COMERCIAL.equals(tipoNotaCredito)) {
+                    validateDescuentoComercialTolerance(invoiceDto, rebateId, idTransaccion, SERVICE_NAME);
+                }
             }
 
             // === PASO 7: VALIDAR TOLERANCIA IMPORTE (solo Facturas) ===
@@ -731,6 +739,68 @@ public class InvoiceServiceImpl implements InvoiceService {
      *
      * Si el catálogo está vacío/inactivo o el valor no está configurado, se rechaza el registro.
      */
+    /**
+     * Tolerancia del descuento comercial (NC tipo 2). Regla Ivan ago-2026:
+     * el importe (subtotal) de la NC NO puede quedar por debajo del valor del descuento comercial
+     * (tenant_finance.rebate.amount, leído por rebate_uuid) más allá de la tolerancia PARAM-16
+     * (ToleranciaImporteRebate). Si se pasa, se RECHAZA con BUS2032.
+     *
+     * Es una validación de un solo sentido: solo rechaza cuando la NC es INFERIOR al descuento.
+     * Si el rebateId no viene o el rebate no existe / no tiene monto, se omite (no bloquea).
+     */
+    private void validateDescuentoComercialTolerance(InvoiceXmlDto invoiceDto, String rebateId,
+            String idTransaccion, String serviceName) {
+
+        if (rebateId == null || rebateId.isBlank()) {
+            log.warn("rebateId no proporcionado en NC de Descuento Comercial; se omite validación de tolerancia");
+            return;
+        }
+
+        UUID rebateUuid;
+        try {
+            rebateUuid = UUID.fromString(rebateId.trim());
+        } catch (IllegalArgumentException e) {
+            log.warn("rebateId no es un UUID válido ({}); se omite validación de tolerancia", rebateId);
+            return;
+        }
+
+        BigDecimal subtotalNc;
+        try {
+            subtotalNc = new BigDecimal(invoiceDto.getSubTotal());
+        } catch (Exception e) {
+            log.warn("SubTotal de la NC no es numérico ({}); se omite validación de tolerancia", invoiceDto.getSubTotal());
+            return;
+        }
+
+        RebateEntity rebate = rebateRepository.findById(rebateUuid).orElse(null);
+        if (rebate == null || rebate.getAmount() == null) {
+            log.warn("Rebate {} no encontrado o sin monto; se omite validación de tolerancia", rebateUuid);
+            return;
+        }
+        BigDecimal descuento = rebate.getAmount();
+
+        BigDecimal tolerancia = readActiveParamValue(CatParameterKey.TOLERANCIA_IMPORTE_REBATE.getId());
+        if (tolerancia == null) {
+            tolerancia = BigDecimal.ZERO; // parámetro inactivo -> comparación exacta
+        }
+
+        // Rechaza solo si la NC queda por DEBAJO del descuento más allá de la tolerancia:
+        //   descuento - subtotalNc > tolerancia
+        BigDecimal faltante = descuento.subtract(subtotalNc);
+        log.info("Validación tolerancia descuento comercial: descuento={}, subtotalNC={}, faltante={}, tolerancia={}",
+                descuento, subtotalNc, faltante, tolerancia);
+
+        if (faltante.compareTo(tolerancia) > 0) {
+            log.warn("NC ({}) inferior al descuento comercial ({}) fuera de tolerancia ({}). Rechazo BUS2032.",
+                    subtotalNc, descuento, tolerancia);
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                    K_SYSTEM, true, "NC de descuento comercial fuera de tolerancia (BUS2032)",
+                    "descuento=" + descuento.toPlainString() + ", subtotalNC=" + subtotalNc.toPlainString()
+                            + ", tolerancia=" + tolerancia.toPlainString(), null, null);
+            messageCatalog.throwException(FiscalMessageCode.BUS2032);
+        }
+    }
+
     private void validateCreditNoteCatalogs(InvoiceXmlDto invoiceDto, String idTransaccion, String serviceName) {
         final String CAT_FORMA_PAGO_NC = "CatFormaPagoValidoNc";
         final String CAT_USO_CFDI_NC = "CatUsoCfdiValidoNc";

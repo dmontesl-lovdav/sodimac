@@ -208,7 +208,12 @@ public enum FiscalMessageCode {
 
     // Búsqueda sin UUID: las fechas de recepción son obligatorias. QA Fer/Ivan jul-2026.
     // Código BUS (no WRN) para que el ControllerAdvisor lo mapee a HTTP 400 (error de negocio).
-    BUS3103("BUS3103", "Las fechas de recepción son obligatorias cuando no se realiza la búsqueda por UUID.");
+    BUS3103("BUS3103", "Las fechas de recepción son obligatorias cuando no se realiza la búsqueda por UUID."),
+
+    // Tolerancia del descuento comercial (NC tipo 2): rechaza si el importe de la NC queda por
+    // debajo del valor del descuento (rebate.amount) más allá de la tolerancia (PARAM-16). Ivan ago-2026.
+    // El texto autoritativo vive en cat_message; este es el fallback.
+    BUS2032("BUS2032", "El importe de la nota de crédito es inferior al valor del descuento comercial, considerando la tolerancia permitida de $40.00 MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.");
 
     private final String code;
     private final String message;

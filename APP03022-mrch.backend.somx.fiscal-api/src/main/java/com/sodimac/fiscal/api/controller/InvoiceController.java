@@ -177,6 +177,8 @@ public class InvoiceController {
             @RequestParam(value = "pdfFile", required = false) MultipartFile pdfFile,
             @Parameter(description = "Tipo de nota de crédito (solo NC): 1=Ajuste por Recepción, 2=Descuento Comercial")
             @RequestParam(value = "tipoNotaCredito", required = false) String tipoNotaCredito,
+            @Parameter(description = "UUID del rebate/descuento comercial en finanzas (solo NC tipo 2). Se usa para validar la tolerancia del descuento contra el subtotal de la NC (BUS2032).")
+            @RequestParam(value = "rebateId", required = false) String rebateId,
             @Parameter(description = "Confirma cancelar NCs + rechazar la factura cuando el neto (factura - NCs) queda por debajo de la recepción (fila 104). Si es false y aplica, se rechaza con WRN7034 sin registrar la NC.")
             @RequestParam(value = "confirmarCancelacionNc", required = false, defaultValue = "false") boolean confirmarCancelacionNc) {
 
@@ -219,7 +221,7 @@ public class InvoiceController {
         // Procesar registro
         InvoiceRegistrationResponse response = invoiceService.registerInvoice(
                 file, idTransaccion, receptionId, supplierNumber, purchaseOrderNumber, pdfFile, tipoNotaCredito,
-                confirmarCancelacionNc);
+                rebateId, confirmarCancelacionNc);
 
         // Determinar código HTTP según resultado
         if (response.isSuccess()) {

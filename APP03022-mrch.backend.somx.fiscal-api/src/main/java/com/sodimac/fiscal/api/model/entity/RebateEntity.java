@@ -26,7 +26,4 @@ public class RebateEntity {
     /** Valor del descuento comercial. Se compara contra el subtotal de la NC. */
     @Column(name = "amount")
     private BigDecimal amount;
-
-    @Column(name = "status")
-    private BigDecimal status;
 }

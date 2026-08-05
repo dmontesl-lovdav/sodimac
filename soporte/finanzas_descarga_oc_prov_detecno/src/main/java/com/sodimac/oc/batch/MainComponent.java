@@ -26,6 +26,7 @@ public class MainComponent {
 	@Autowired
 	OrdenCompraService ordenCompraService;
 
+	// Modo backfill manual: rango fijo configurado. Tiene prioridad sobre los demas.
 	@Value("${descarga.periodo.enabled:false}")
 	private boolean periodoEnabled;
 
@@ -35,6 +36,13 @@ public class MainComponent {
 	@Value("${descarga.periodo.fechaFin:}")
 	private String periodoFechaFin;
 
+	// Modo diario: ventana movil de N dias hacia atras, recalculada en cada corrida.
+	@Value("${descarga.ultimos-dias.enabled:false}")
+	private boolean ultimosDiasEnabled;
+
+	@Value("${descarga.ultimos-dias.cantidad:30}")
+	private int ultimosDiasCantidad;
+
 	@Value("${descarga.periodo.dias-por-bloque:7}")
 	private int diasPorBloque;
 
@@ -43,8 +51,13 @@ public class MainComponent {
 	private Logger logger = LoggerFactory.getLogger(MainComponent.class);
 
 	public void mainMethod() {
+		// Precedencia: periodo (backfill manual) > ultimos-dias (diario) > original.
 		if (periodoEnabled) {
 			mainMethodPorPeriodos();
+			return;
+		}
+		if (ultimosDiasEnabled) {
+			mainMethodUltimosDias();
 			return;
 		}
 
@@ -65,8 +78,7 @@ public class MainComponent {
 		logger.info("Termina proceso correctamente");
 	}
 
-	// Descarga el rango configurado partido en bloques de N dias. Cada bloque: consulta Detecno,
-	// guarda en temp y ejecuta el SP (mantiene la temp pequena y replica el ciclo original por bloque).
+	// Backfill manual: descarga el rango fijo configurado en application.properties.
 	private void mainMethodPorPeriodos() {
 		try {
 			Date inicio = format.parse(periodoFechaInicio);
@@ -76,64 +88,80 @@ public class MainComponent {
 				throw new RuntimeException("descarga.periodo.fechaInicio es posterior a fechaFin");
 			}
 
-			logger.info("Descarga por periodos: {} al {} en bloques de {} dias", periodoFechaInicio, periodoFechaFin, diasPorBloque);
-
-			Calendar bloqueIni = Calendar.getInstance();
-			bloqueIni.setTime(inicio);
-
-			int bloque = 0;
-			int bloquesOk = 0;
-			long totalOrdenes = 0;
-			List<String> bloquesFallidos = new ArrayList<>();
-
-			while (!bloqueIni.getTime().after(fin)) {
-				Calendar bloqueFin = (Calendar) bloqueIni.clone();
-				bloqueFin.add(Calendar.DAY_OF_YEAR, diasPorBloque - 1);
-				if (bloqueFin.getTime().after(fin)) {
-					bloqueFin.setTime(fin);
-				}
-
-				String fi = format.format(bloqueIni.getTime());
-				String ff = format.format(bloqueFin.getTime());
-
-				bloque++;
-
-				// Cada bloque solo descarga e inserta en la temp. El SP es O(n^2) sobre la tabla
-				// historica, por eso se ejecuta UNA sola vez al final (no por bloque).
-				try {
-					logger.info("Bloque {}: descargando {} al {}", bloque, fi, ff);
-
-					DetecnoResponse ordenes = detecnoClient.getOrdenesCompra(fi, ff);
-					logger.info("Bloque {}: se obtuvieron {} ordenes", bloque, ordenes.getTotalCount());
-
-					ordenCompraService.saveOrdenesBatch(ordenes.getData());
-
-					totalOrdenes += ordenes.getData().size();
-					bloquesOk++;
-				} catch (Exception e) {
-					bloquesFallidos.add(fi + " al " + ff);
-					logger.error("Bloque {} FALLO ({} al {}): {}. Se continua con el siguiente.", bloque, fi, ff, e.getMessage(), e);
-				}
-
-				bloqueIni.setTime(bloqueFin.getTime());
-				bloqueIni.add(Calendar.DAY_OF_YEAR, 1);
-			}
-
-			logger.info("Descarga terminada. {} bloques OK de {}, {} ordenes insertadas en temp.", bloquesOk, bloque, totalOrdenes);
-			if (!bloquesFallidos.isEmpty()) {
-				logger.warn("Bloques FALLIDOS ({}): {}. Re-ejecutar solo esos rangos.", bloquesFallidos.size(), bloquesFallidos);
-			}
-
-			// SP una sola vez sobre toda la temp ya cargada.
-			if (totalOrdenes > 0) {
-				logger.info("Inicia ejecucion del SP [uspRegistroOrdenCompraProveedor] sobre {} ordenes", totalOrdenes);
-				ordenCompraService.ejecutaSP();
-				logger.info("SP finalizado.");
-			} else {
-				logger.warn("No se inserto ninguna orden, se omite la ejecucion del SP.");
-			}
+			procesarRango(inicio, fin, "Descarga por periodos");
 		} catch (ParseException e) {
 			throw new RuntimeException("Formato de fecha invalido en descarga.periodo (esperado yyyy/MM/dd)", e);
+		}
+	}
+
+	// Diario: ventana movil de los ultimos N dias (hoy - (N-1) .. hoy), recalculada cada corrida.
+	// La re-descarga del solapamiento es inofensiva: el indice unico rechaza lo ya cargado.
+	// Se auto-cura: si un dia fallo, la corrida siguiente lo vuelve a cubrir.
+	private void mainMethodUltimosDias() {
+		Calendar cal = Calendar.getInstance();
+		Date fin = cal.getTime();
+		cal.add(Calendar.DAY_OF_YEAR, -(ultimosDiasCantidad - 1));
+		Date inicio = cal.getTime();
+
+		procesarRango(inicio, fin, "Descarga ultimos " + ultimosDiasCantidad + " dias");
+	}
+
+	// Loop comun: parte [inicio, fin] en bloques de N dias. Cada bloque descarga e inserta en temp
+	// (resiliente: si uno falla, se registra y sigue). El SP corre UNA sola vez al final.
+	private void procesarRango(Date inicio, Date fin, String etiqueta) {
+		logger.info("{}: {} al {} en bloques de {} dias", etiqueta, format.format(inicio), format.format(fin), diasPorBloque);
+
+		Calendar bloqueIni = Calendar.getInstance();
+		bloqueIni.setTime(inicio);
+
+		int bloque = 0;
+		int bloquesOk = 0;
+		long totalOrdenes = 0;
+		List<String> bloquesFallidos = new ArrayList<>();
+
+		while (!bloqueIni.getTime().after(fin)) {
+			Calendar bloqueFin = (Calendar) bloqueIni.clone();
+			bloqueFin.add(Calendar.DAY_OF_YEAR, diasPorBloque - 1);
+			if (bloqueFin.getTime().after(fin)) {
+				bloqueFin.setTime(fin);
+			}
+
+			String fi = format.format(bloqueIni.getTime());
+			String ff = format.format(bloqueFin.getTime());
+
+			bloque++;
+
+			try {
+				logger.info("Bloque {}: descargando {} al {}", bloque, fi, ff);
+
+				DetecnoResponse ordenes = detecnoClient.getOrdenesCompra(fi, ff);
+				logger.info("Bloque {}: se obtuvieron {} ordenes", bloque, ordenes.getTotalCount());
+
+				ordenCompraService.saveOrdenesBatch(ordenes.getData());
+
+				totalOrdenes += ordenes.getData().size();
+				bloquesOk++;
+			} catch (Exception e) {
+				bloquesFallidos.add(fi + " al " + ff);
+				logger.error("Bloque {} FALLO ({} al {}): {}. Se continua con el siguiente.", bloque, fi, ff, e.getMessage(), e);
+			}
+
+			bloqueIni.setTime(bloqueFin.getTime());
+			bloqueIni.add(Calendar.DAY_OF_YEAR, 1);
+		}
+
+		logger.info("Descarga terminada. {} bloques OK de {}, {} ordenes insertadas en temp.", bloquesOk, bloque, totalOrdenes);
+		if (!bloquesFallidos.isEmpty()) {
+			logger.warn("Bloques FALLIDOS ({}): {}. Re-ejecutar solo esos rangos.", bloquesFallidos.size(), bloquesFallidos);
+		}
+
+		// SP una sola vez sobre toda la temp ya cargada.
+		if (totalOrdenes > 0) {
+			logger.info("Inicia ejecucion del SP [uspRegistroOrdenCompraProveedor] sobre {} ordenes", totalOrdenes);
+			ordenCompraService.ejecutaSP();
+			logger.info("SP finalizado.");
+		} else {
+			logger.warn("No se inserto ninguna orden, se omite la ejecucion del SP.");
 		}
 	}
 }

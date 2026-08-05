@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { breadcrumbFinanceHomePage } from '@shared/components/ui/navigation/financeBreadcrumb';
@@ -11,7 +11,7 @@ import iconReport from '@assets/icons/report.png';
 import iconDoneCheck from '@assets/icons/done-check.png';
 import iconWarning from '@assets/icons/warning.png';
 import { getHealthcheck } from './api';
-import { APP_KEYS } from '@shared/security';
+import { APP_KEYS, PermissionGate } from '@shared/security';
 
 import './styles/FinanzasContainer.css';
 import { syncFinanzasUser } from '@/services/finanzasUserSync';
@@ -98,11 +98,7 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
             description: 'Consulta y gestiona los pagos de proveedores.',
             link: '/finanzas/pagos',
             icon: iconDoneCheck,
-            requiredAnyApp: [
-                APP_KEYS.INVOICES,
-                APP_KEYS.CREDIT_NOTES,
-                APP_KEYS.PAYMENT_COMPLEMENTS,
-            ],
+            requiredApp: APP_KEYS.PAYMENTS,
         },
         {
             title: 'Estado de cuenta',
@@ -135,7 +131,6 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
         },
     ];
 
-    /* TODO: Implement the permission gate when restoring filtered cards */
     const finalCards = cards ?? DEFAULT_CARDS;
 
     return (
@@ -168,22 +163,16 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                                 </div>
                             );
 
+                            let element;
                             if (it.disabled) {
-                                return (
-                                    <div
-                                        key={key}
-                                        className={cardClasses}
-                                        title="Deshabilitado"
-                                    >
+                                element = (
+                                    <div className={cardClasses} title="Deshabilitado">
                                         {inner}
                                     </div>
                                 );
-                            }
-
-                            if (it.onClick) {
-                                return (
+                            } else if (it.onClick) {
+                                element = (
                                     <button
-                                        key={key}
                                         type="button"
                                         className={cardClasses}
                                         onClick={it.onClick}
@@ -192,17 +181,30 @@ export default function FinanzasContainer({ cards }: { cards?: FinanzasCard[] })
                                         {inner}
                                     </button>
                                 );
+                            } else {
+                                element = (
+                                    <Link
+                                        to={(it.link ?? '') + '?reset=true'}
+                                        className={cardClasses}
+                                    >
+                                        {inner}
+                                    </Link>
+                                );
                             }
 
-                            return (
-                                <Link
-                                    key={key}
-                                    to={(it.link ?? '') + '?reset=true'}
-                                    className={cardClasses}
-                                >
-                                    {inner}
-                                </Link>
-                            );
+                            if (it.requiredApp || it.requiredAnyApp) {
+                                return (
+                                    <PermissionGate
+                                        key={key}
+                                        app={it.requiredApp}
+                                        anyApp={it.requiredAnyApp}
+                                    >
+                                        {element}
+                                    </PermissionGate>
+                                );
+                            }
+
+                            return <Fragment key={key}>{element}</Fragment>;
                         })}
                     </section>
                 </section>

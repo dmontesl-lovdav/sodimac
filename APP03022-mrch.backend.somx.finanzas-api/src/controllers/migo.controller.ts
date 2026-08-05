@@ -51,7 +51,8 @@ export async function uploadCsv(req: Request, res: Response, next: NextFunction)
         }
 
         const content = file.buffer.toString('utf-8');
-        const result = await migoService.uploadCsv(content, file.originalname);
+        const authToken = (req as AuthenticatedRequest).authToken ?? '';
+        const result = await migoService.uploadCsv(content, file.originalname, undefined, authToken);
         return res.status(result.httpStatus).json(result);
     } catch (err) {
         next(err);

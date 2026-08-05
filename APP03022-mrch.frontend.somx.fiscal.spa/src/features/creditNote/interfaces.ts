@@ -1,7 +1,7 @@
 /** Estatus: disponibles para cancelación */
 export const CREDIT_NOTE_PENDIENTE_CONTABILIZAR = 2;
 export const CREDIT_NOTE_RECHAZO_CONTABLE = 11;
-export const CREDIT_NOTE_PROCESS_SENDED = 1;
+export const CREDIT_NOTE_PROCESS_SENDED = 3;
 
 export interface CreditNoteFilters {
   relatedInvoiceUuid: string;

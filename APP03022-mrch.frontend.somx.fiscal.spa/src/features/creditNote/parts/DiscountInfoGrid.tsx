@@ -5,6 +5,7 @@ import "./DiscountInfoGrid.css";
 
 type Props = {
   discount: PublishQuery;
+  providers: any[];
 };
 
 type Field = {
@@ -12,7 +13,9 @@ type Field = {
   value: string;
 };
 
-export default function DiscountInfoGrid({ discount }: Props) {
+export default function DiscountInfoGrid({ discount, providers }: Props) {
+  console.log(providers);
+  const supplierRfc = providers.find((provider) => provider.idProveedor == discount.supplierNumber)?.rfc;
   const fields: Field[] = [
     { label: "Referencia", value: displayOrDash(discount.documentReference) },
     { label: "Tipo Rebate", value: displayOrDash(discount.tipoRebate) },
@@ -33,6 +36,10 @@ export default function DiscountInfoGrid({ discount }: Props) {
     {
       label: "Fecha Vencimiento",
       value: discount.dueDate.trim() ? formatDate(discount.dueDate) : "--",
+    },
+    {
+      label: "RFC Proveedor",
+      value: displayOrDash(supplierRfc),
     },
     {
       label: "Número de Proveedor",

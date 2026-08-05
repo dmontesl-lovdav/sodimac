@@ -18,6 +18,13 @@ function appendFormField(form: FormData, key: string, value: string | number | u
 }
 
 export const InvoiceClient = {
+    async getInvoiceByUuid(uuid: string): Promise<any> {
+        return fiscalApi.request<any>(`invoices/search`, "post", {
+            uuid: uuid,
+            tipoDocumento: "I"
+        });
+    },
+
     async validateInvoice(invoice: File): Promise<any> {
         const form = new FormData();
         form.append("file", invoice);

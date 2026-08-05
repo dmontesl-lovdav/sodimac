@@ -383,10 +383,101 @@ function buildDuplicateErrorResponse(
     );
 }
 
+const SUPPLIER_STATUS_INACTIVE = 0;
+
+type SupplierIssueReason = 'inactive' | 'not_catalogued';
+interface SupplierIssue {
+    supplierNumber: string;
+    reason: SupplierIssueReason;
+}
+
+function normalizeSupplierNumber(value: unknown): string {
+    const raw = String(value ?? '').trim();
+    if (raw === '') return '';
+    const num = Number(raw);
+    return Number.isFinite(num) ? String(num) : raw;
+}
+
+async function findSupplierIssues(
+    validRows: ParsedRow[],
+    authToken: string,
+): Promise<SupplierIssue[] | null> {
+    const distinct = [
+        ...new Set(
+            validRows
+                .map((row) => normalizeSupplierNumber(row.Numero_Proveedor))
+                .filter((value) => value !== ''),
+        ),
+    ];
+    if (distinct.length === 0) return null;
+
+    let supplierList: Supplier[];
+    try {
+        supplierList = await svcAxios.GetSuppliers(authToken);
+    } catch (err) {
+        logger.warn(
+            `[MIGO] No se pudo validar proveedores (catálogo no disponible): ${(err as Error).message}`,
+        );
+        return null;
+    }
+
+    const statusByNumber = new Map<string, number>();
+    for (const s of supplierList) {
+        const key = normalizeSupplierNumber(s.supplierNumber);
+        if (key !== '') statusByNumber.set(key, Number(s.status));
+    }
+
+    const issues: SupplierIssue[] = [];
+    for (const num of distinct) {
+        if (!statusByNumber.has(num)) {
+            issues.push({ supplierNumber: num, reason: 'not_catalogued' });
+        } else if (statusByNumber.get(num) === SUPPLIER_STATUS_INACTIVE) {
+            issues.push({ supplierNumber: num, reason: 'inactive' });
+        }
+    }
+
+    return issues.length > 0 ? issues : null;
+}
+
+function supplierIssueMessage(issue: SupplierIssue): string {
+    if (issue.reason === 'inactive') {
+        return `No es posible publicar la recepción del proveedor ${issue.supplierNumber} se encuentra inactivo, favor de validar.`;
+    }
+    return `No es posible publicar la recepción del proveedor ${issue.supplierNumber} porque no se encuentra catálogado, favor de validar.`;
+}
+
+function buildSupplierIssuesErrorResponse(issues: SupplierIssue[]) {
+    const message = issues.map(supplierIssueMessage).join('\n');
+    const hasInactive = issues.some((i) => i.reason === 'inactive');
+    const code = hasInactive ? 'WRN7036' : 'WRN7037';
+
+    logger.warn(
+        `[MIGO] Upload rechazado por proveedor(es): ${issues
+            .map((i) => `${i.supplierNumber}(${i.reason})`)
+            .join(', ')}`,
+    );
+
+    return ResponseHandler.responseBuilder(
+        message,
+        {
+            code,
+            issues: issues.map((i) => ({
+                supplierNumber: i.supplierNumber,
+                code: i.reason === 'inactive' ? 'WRN7036' : 'WRN7037',
+            })),
+        },
+        -1,
+        StatusCodes.BAD_REQUEST,
+        false,
+        message,
+    );
+}
+
 export async function uploadCsv(
     fileContent: string,
     fileName: string,
     createdBy?: number,
+    authToken = '',
 ) {
     const validation = validateLayout(fileContent);
 
@@ -400,6 +491,11 @@ export async function uploadCsv(
     const invalidRows = validation.parsedRows.filter(
         (row) => !row.isValid,
     );
+
+    const supplierIssues = await findSupplierIssues(validRows, authToken);
+    if (supplierIssues) {
+        return buildSupplierIssuesErrorResponse(supplierIssues);
+    }
 
     const duplicateResult = await findDuplicateReceptions(validRows);
     if (duplicateResult) {

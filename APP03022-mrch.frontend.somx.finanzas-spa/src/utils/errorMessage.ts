@@ -1,6 +1,22 @@
 /** Formato típico backend Finanzas (Zod / validación). */
 type DetailErrorRow = { path?: string; message?: string };
 
+/**
+ * Algunos endpoints concatenan el mensaje de negocio con `undefined`,
+ * `HttpError:` y el stack de Node. Deja solo el texto útil para la UI.
+ */
+function sanitizeErrorText(text: string): string {
+  const markers = ["undefinedHttpError:", "undefined\nHttpError:", "HttpError:", "\n    at ", "\nat "];
+  let result = text;
+  for (const marker of markers) {
+    const idx = result.indexOf(marker);
+    if (idx !== -1) {
+      result = result.slice(0, idx);
+    }
+  }
+  return result.replace(/undefined$/i, "").trim();
+}
+
 function formatObjectDetailRow(row: DetailErrorRow): string | undefined {
   const path = typeof row.path === "string" ? row.path.trim() : "";
   const message = typeof row.message === "string" ? row.message.trim() : "";
@@ -51,8 +67,14 @@ function firstErrorsMessage(errs: unknown): string | undefined {
 
 /** Extrae mensaje legible del cuerpo JSON de error del API. */
 function extractReadableApiMessage(data: Record<string, unknown>): string | undefined {
+  // detailError (array Zod o string de negocio) tiene prioridad sobre message genérico (EXC00x).
   const fromDetails = formatDetailErrors(data.detailError);
-  if (fromDetails) return fromDetails;
+  if (fromDetails) return sanitizeErrorText(fromDetails);
+
+  if (typeof data.detailError === "string" && data.detailError.trim()) {
+    const fromDetailString = sanitizeErrorText(data.detailError.trim());
+    if (fromDetailString) return fromDetailString;
+  }
 
   const msg = data.message;
   const msgStr = typeof msg === "string" ? msg.trim() : "";
@@ -60,16 +82,21 @@ function extractReadableApiMessage(data: Record<string, unknown>): string | unde
   if (msgStr === "ValidationError") {
     return "Los datos enviados no son válidos. Revisa los campos e intenta de nuevo.";
   }
-  if (msgStr) return msgStr;
+  if (msgStr) return sanitizeErrorText(msgStr);
 
-  if (typeof data.error === "string" && data.error.trim()) return data.error.trim();
-  if (typeof data.detail === "string" && data.detail.trim()) return data.detail.trim();
+  if (typeof data.error === "string" && data.error.trim()) {
+    return sanitizeErrorText(data.error.trim());
+  }
+  if (typeof data.detail === "string" && data.detail.trim()) {
+    return sanitizeErrorText(data.detail.trim());
+  }
 
-  return firstErrorsMessage(data.errors);
+  const fromErrors = firstErrorsMessage(data.errors);
+  return fromErrors ? sanitizeErrorText(fromErrors) : undefined;
 }
 
 function messageFromResponseData(data: unknown): string | undefined {
-  if (typeof data === "string" && data.trim()) return data.trim();
+  if (typeof data === "string" && data.trim()) return sanitizeErrorText(data.trim());
   if (data && typeof data === "object" && !Array.isArray(data)) {
     return extractReadableApiMessage(data as Record<string, unknown>);
   }
@@ -98,7 +125,7 @@ function messageFromAxiosLike(e: {
     if (e.message === "Network Error") {
       return "No hay conexión con el servidor. Verifica tu red e intenta nuevamente.";
     }
-    return e.message.trim();
+    return sanitizeErrorText(e.message.trim());
   }
 
   const status = e.response?.status;

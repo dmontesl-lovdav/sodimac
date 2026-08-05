@@ -14,6 +14,7 @@ import { exportToCSV, formatDate, formatFilenameTimestamp } from "@/utils/utils"
 import { ChangeEvent, ReactElement, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { OrderClient } from "../api/OrderClient";
+import { InvoiceClient } from "../api/InvoiceClient";
 import { EMPTY_RECEPTION, ReceptionStatusEditOptions, Reception } from "../interfaces";
 import { RECEPTION_STATUS_DICTIONARY } from "../receptionStatusDictionary";
 import ReceptionHeader from "./parts/ReceptionHeader";
@@ -215,6 +216,16 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         return;
                 }
 
+                //consumida manual primero validamos que no exista esa factura en la recepción
+                const invoiceClient = InvoiceClient;
+                const invoiceResponse = await invoiceClient.getInvoiceByUuid(uuid);
+                if (invoiceResponse.content.length > 0) {
+                    financeAlert.showWarning(
+                        "Datos incorrectos",
+                        "El UUID proporcionado se encuentra previamente registrado, por favor, validar con el área de finanzas."
+                    );
+                    return;
+                }
                 const payload = {
                     supplierNumber,
                     orderNumber,
@@ -235,9 +246,11 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
             }
 
         } catch (err) {
-            const error = (err as any).response.data.detailError;
-            financeAlert.showError("Error", error);
-            console.error(err);
+            financeAlert.showErrorFrom(
+                "Error",
+                err,
+                "No fue posible actualizar el estado de la recepción."
+            );
         } finally {
             setLoading(false);
         }
@@ -296,7 +309,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         headerActions={
                             editable ? (
                                 <GenericButton
-                                    disabled={!isReceptionStatusEditable(reception.status)}
+                                    //disabled={!isReceptionStatusEditable(reception.status)}
                                     variant="primary"
                                     onClick={() => {
                                         editFormRef.current?.submit();

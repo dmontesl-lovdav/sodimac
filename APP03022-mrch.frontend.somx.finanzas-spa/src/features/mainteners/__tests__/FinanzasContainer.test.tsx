@@ -28,6 +28,7 @@ jest.mock("@shared/security", () => ({
     THREE_WAY_MATCH: "h",
     MIGO: "i",
   },
+  PermissionGate: ({ children }: any) => children,
 }));
 jest.mock("react-router-dom", () => {
   const ReactLocal = require("react");

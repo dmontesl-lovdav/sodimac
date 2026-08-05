@@ -15,6 +15,7 @@ export interface Supplier {
     emailPrincipal: string;
     emailFinancial: string;
     emailCommercial: string;
+    status?: number;
     supplierType: {
                     id: number;
                     code: string;

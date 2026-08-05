@@ -77,6 +77,7 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
                 receptionNumber: reception.receptionNumber ?? "",
                 createdAt: item.createdAt ?? "",
                 invoice: {
+                    fiscalUuid: item.fiscalUuid,
                     invoiceUuid: item.invoiceUuid,
                     emisorRfc: item.emisorRfc,
                     subtotal: item.subtotal,
@@ -92,12 +93,13 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
         });
     }, [reception]);
 
-    console.log(invoices);
     const addenda = [...(reception.listAddendum?.[0] ? [reception.listAddendum?.[0]] : []), ...invoices];
-    console.log(addenda);
+
+
+    const supplierNum = addenda[0]?.supplierNumber;
 
     const columns: Column<Addendum>[] = [
-        { header: "UUID", render: (r) => (r.invoice?.documentType=="I"?r.invoice?.fiscalUuid:r.invoice?.invoiceUuid)  ?? "--" },
+        { header: "UUID", render: (r) => r.invoice?.fiscalUuid  ?? "--" },
         { header: "Fecha Registro", render: r => r.createdAt ? formatDate(r.createdAt) : "N/D" },
         { header: "Importe", render: (r) => formatAmount(r.invoice?.subtotal ?? 0) },
         { header: "Serie", render: (r) => r.invoice?.series ?? "--" },
@@ -108,33 +110,18 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
             align: "center",
             render: (r) => {
                 const isCreditNote = r.invoice?.documentType === "E";
-                const emisorRfc =
-                    r.invoice?.emisorRfc ??
-                    reception.supplier?.rfc ??
-                    "";
-                const supplierRfc =
-                    suppliers.find((s) => s.rfc === emisorRfc)?.supplierNumber ?? emisorRfc;
                 const endDate = reception.createdAt?.split("T")[0] ?? "";
                 const start = new Date(reception.createdAt ?? "");
                 start.setMonth(start.getMonth() - 6);
                 const startDate = start.toISOString().split("T")[0];
-                const relatedInvoiceUuid =
-                    reception.listAddendum?.[0]?.invoice?.invoiceUuid ?? "";
 
                 const params = new URLSearchParams({
-                    supplierNumber: supplierRfc,
-                    
+                    supplierNumber: supplierNum,
+                    uuid: r.invoice?.fiscalUuid ?? "",
                     start: startDate,
                     end: endDate,
                 });
-                if(!isCreditNote) {
-                    params.set("uuid", r.invoice?.fiscalUuid ?? "");
-                }
-
-                if (isCreditNote && relatedInvoiceUuid) {
-                    params.set("relatedInvoiceUuid", relatedInvoiceUuid);
-                }
-
+               
                 return (
                     <div className="rc-action-wrap">
                         <a

@@ -6,12 +6,13 @@ import { useAppSelector } from '@/store/hooks/useAppSelector';
 interface CacheEntry {
     data: AccessContext | null;
     error: unknown;
-    expiresAt: number;
     inFlight?: Promise<AccessContext | null>;
 }
 
-const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, CacheEntry>();
+
+const ADMIN_PROFILE_KEYS = ['PER009'];
+const ADMIN_ROLE_KEYS = ['ROL010'];
 
 const normalizeLabel = (s: string): string =>
     s
@@ -21,26 +22,18 @@ const normalizeLabel = (s: string): string =>
         .toLowerCase()
         .replace(/\s+/g, ' ');
 
-const ADMIN_PROFILE_KEYS =
-    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_PROFILE_KEYS
-        ? process.env.SECURITY_ADMIN_PROFILE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
-        : ['PER009'];
-
-const ADMIN_ROLE_KEYS =
-    typeof process !== 'undefined' && process.env.SECURITY_ADMIN_ROLE_KEYS
-        ? process.env.SECURITY_ADMIN_ROLE_KEYS.split(',').map((s) => s.trim()).filter(Boolean)
-        : ['ROL010'];
-
 /** Limpia la caché de seguridad (solo para tests). */
 export function clearSecurityContextCache(): void {
     cache.clear();
 }
 
-function getCached(userKey: string): CacheEntry | null {
-    const entry = cache.get(userKey);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt && !entry.inFlight) return null;
-    return entry;
+function storeCache(
+    userKey: string,
+    data: AccessContext | null,
+    error: unknown,
+    inFlight?: Promise<AccessContext | null>,
+): void {
+    cache.set(userKey, { data, error, inFlight });
 }
 
 async function fetchContext(userKey: string): Promise<AccessContext | null> {
@@ -50,43 +43,35 @@ async function fetchContext(userKey: string): Promise<AccessContext | null> {
     const promise = securityService
         .getAccessContext(userKey)
         .then((data) => {
-            cache.set(userKey, { data, error: null, expiresAt: Date.now() + CACHE_TTL_MS });
+            storeCache(userKey, data, null);
             return data;
         })
         .catch((error) => {
-            cache.set(userKey, { data: null, error, expiresAt: Date.now() + CACHE_TTL_MS });
+            storeCache(userKey, null, error);
             return null;
         });
 
-    cache.set(userKey, {
-        data: existing?.data ?? null,
-        error: null,
-        expiresAt: Date.now() + CACHE_TTL_MS,
-        inFlight: promise,
-    });
+    let previousData: AccessContext | null = null;
+    if (existing) previousData = existing.data;
+    storeCache(userKey, previousData, null, promise);
     return promise;
 }
 
-interface AccessContextResolution {
-    data: AccessContext | null;
-    error: unknown;
-}
-
-/** Resuelve el contexto (desde caché o red) sin acoplar el resultado al estado de React. */
-async function loadAccessContext(userKey: string): Promise<AccessContextResolution> {
-    const hit = getCached(userKey);
+async function loadAccessContext(
+    userKey: string,
+): Promise<{ data: AccessContext | null; error: unknown }> {
+    const hit = cache.get(userKey);
     if (hit?.data) {
-        return { data: hit.data, error: hit.error ?? null };
+        return { data: hit.data, error: hit.error };
     }
 
     const data = await fetchContext(userKey);
-    return { data, error: cache.get(userKey)?.error ?? null };
+    return { data, error: cache.get(userKey)?.error };
 }
 
 function resolveIsAdmin(profiles: { key: string }[], roles: { key: string }[]): boolean {
-    const hasAdminProfile = profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key));
-    const hasAdminRole = roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
-    return hasAdminProfile || hasAdminRole;
+    if (profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key))) return true;
+    return roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
 }
 
 type AppEntry = { key: string; events?: { key: string; name?: string }[] };
@@ -98,7 +83,12 @@ interface AppIndexes {
     eventGlobal: Set<string>;
 }
 
-/** Construye, en una sola pasada, los índices de búsqueda usados por los checkers de permisos. */
+function listOrEmpty<T>(items: T[] | undefined): T[] {
+    if (items) return items;
+    return [];
+}
+
+/** Construye los índices de búsqueda usados por los checkers de permisos. */
 function buildAppIndexes(apps: AppEntry[]): AppIndexes {
     const appKeySet = new Set(apps.map((a) => a.key));
     const eventByApp = new Map<string, Set<string>>();
@@ -106,15 +96,19 @@ function buildAppIndexes(apps: AppEntry[]): AppIndexes {
     const eventGlobal = new Set<string>();
 
     for (const app of apps) {
-        const events = app.events ?? [];
-        eventByApp.set(app.key, new Set(events.map((e) => e.key)));
-        labelByApp.set(
-            app.key,
-            new Set(events.map((e) => normalizeLabel(e.name ?? '')).filter((s) => s !== '')),
-        );
+        const events = listOrEmpty(app.events);
+        const eventKeys = new Set<string>();
+        const labels = new Set<string>();
+
         for (const ev of events) {
-            if (ev.key) eventGlobal.add(ev.key);
+            eventKeys.add(ev.key);
+            eventGlobal.add(ev.key);
+            labels.add(normalizeLabel(ev.name || ''));
         }
+        labels.delete('');
+
+        eventByApp.set(app.key, eventKeys);
+        labelByApp.set(app.key, labels);
     }
 
     return { appKeySet, eventByApp, labelByApp, eventGlobal };
@@ -123,53 +117,14 @@ function buildAppIndexes(apps: AppEntry[]): AppIndexes {
 function evaluateCan(
     appEvent: { app: string; event: string; label?: string },
     isAdmin: boolean,
-    indexes: Pick<AppIndexes, 'eventByApp' | 'labelByApp'>,
-): boolean {
-    if (isAdmin) return true;
-    if (!appEvent?.app) return false;
-    if (appEvent.event && indexes.eventByApp.get(appEvent.app)?.has(appEvent.event)) return true;
-    if (!appEvent.label) return false;
-    return indexes.labelByApp.get(appEvent.app)?.has(normalizeLabel(appEvent.label)) ?? false;
-}
-
-// Checkers puros de nivel superior: mantienen la ramificación fuera del hook
-// para no acumular complejidad cognitiva en `useSecurityContext`.
-function checkHasApp(appKey: string, appKeySet: Set<string>): boolean {
-    return Boolean(appKey) && appKeySet.has(appKey);
-}
-
-function checkHasAnyApp(appKeys: string[], appKeySet: Set<string>): boolean {
-    return appKeys.some((k) => Boolean(k) && appKeySet.has(k));
-}
-
-function checkHasEvent(
-    appKey: string,
-    eventKey: string,
     eventByApp: Map<string, Set<string>>,
-): boolean {
-    if (!appKey || !eventKey) return false;
-    return eventByApp.get(appKey)?.has(eventKey) ?? false;
-}
-
-function checkHasEventLabel(
-    appKey: string,
-    label: string,
     labelByApp: Map<string, Set<string>>,
 ): boolean {
-    if (!appKey || !label) return false;
-    return labelByApp.get(appKey)?.has(normalizeLabel(label)) ?? false;
-}
-
-function checkHasEventInAnyApp(eventKey: string, eventGlobal: Set<string>): boolean {
-    return Boolean(eventKey) && eventGlobal.has(eventKey);
-}
-
-function checkHasPermission(permissionKey: string, permSet: Set<string>): boolean {
-    return Boolean(permissionKey) && permSet.has(permissionKey);
-}
-
-function checkHasProfile(profileKey: string, profileSet: Set<string>): boolean {
-    return Boolean(profileKey) && profileSet.has(profileKey);
+    if (isAdmin) return true;
+    if (!appEvent.app) return false;
+    if (eventByApp.get(appEvent.app)?.has(appEvent.event)) return true;
+    if (!appEvent.label) return false;
+    return labelByApp.get(appEvent.app)?.has(normalizeLabel(appEvent.label)) === true;
 }
 
 export interface SecurityContextResult {
@@ -194,14 +149,14 @@ export interface SecurityContextResult {
 
 /** Carga (o reutiliza de caché) el contexto de acceso del usuario actual. */
 function useAccessContextState(userKey: string) {
-    const cached = userKey ? getCached(userKey) : null;
-
-    const [data, setData] = useState<AccessContext | null>(cached?.data ?? null);
-    const [error, setError] = useState<unknown>(cached?.error ?? null);
-    const [isLoading, setIsLoading] = useState<boolean>(!cached?.data && Boolean(userKey));
+    const [data, setData] = useState<AccessContext | null>(null);
+    const [error, setError] = useState<unknown>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (!userKey) {
+            setData(null);
+            setError(null);
             setIsLoading(false);
             return;
         }
@@ -227,10 +182,10 @@ export function useSecurityContext(): SecurityContextResult {
     const userKey = getCurrentUserKey();
     const { data, error, isLoading } = useAccessContextState(userKey);
 
-    const apps = useMemo(() => data?.apps ?? [], [data]);
-    const profiles = useMemo(() => data?.profiles ?? [], [data]);
-    const roles = useMemo(() => data?.roles ?? [], [data]);
-    const permissions = useMemo(() => data?.permissions ?? [], [data]);
+    const apps = useMemo(() => listOrEmpty(data?.apps), [data]);
+    const profiles = useMemo(() => listOrEmpty(data?.profiles), [data]);
+    const roles = useMemo(() => listOrEmpty(data?.roles), [data]);
+    const permissions = useMemo(() => listOrEmpty(data?.permissions), [data]);
 
     const { appKeySet, eventByApp, labelByApp, eventGlobal } = useMemo(
         () => buildAppIndexes(apps),
@@ -240,34 +195,32 @@ export function useSecurityContext(): SecurityContextResult {
     const profileSet = useMemo(() => new Set(profiles.map((p) => p.key)), [profiles]);
     const isAdmin = useMemo(() => resolveIsAdmin(profiles, roles), [profiles, roles]);
 
-    const hasApp = useCallback((key: string) => checkHasApp(key, appKeySet), [appKeySet]);
+    const hasApp = useCallback((key: string) => appKeySet.has(key), [appKeySet]);
     const hasAnyApp = useCallback(
-        (keys: string[]) => checkHasAnyApp(keys, appKeySet),
+        (keys: string[]) => keys.some((k) => appKeySet.has(k)),
         [appKeySet],
     );
     const hasEvent = useCallback(
-        (appKey: string, eventKey: string) => checkHasEvent(appKey, eventKey, eventByApp),
+        (appKey: string, eventKey: string) => eventByApp.get(appKey)?.has(eventKey) === true,
         [eventByApp],
     );
     const hasEventLabel = useCallback(
-        (appKey: string, label: string) => checkHasEventLabel(appKey, label, labelByApp),
+        (appKey: string, label: string) =>
+            labelByApp.get(appKey)?.has(normalizeLabel(label)) === true,
         [labelByApp],
     );
     const can = useCallback(
         (appEvent: { app: string; event: string; label?: string }) =>
-            evaluateCan(appEvent, isAdmin, { eventByApp, labelByApp }),
+            evaluateCan(appEvent, isAdmin, eventByApp, labelByApp),
         [eventByApp, labelByApp, isAdmin],
     );
     const hasEventInAnyApp = useCallback(
-        (eventKey: string) => checkHasEventInAnyApp(eventKey, eventGlobal),
+        (eventKey: string) => eventGlobal.has(eventKey),
         [eventGlobal],
     );
-    const hasPermission = useCallback(
-        (permKey: string) => checkHasPermission(permKey, permSet),
-        [permSet],
-    );
+    const hasPermission = useCallback((permKey: string) => permSet.has(permKey), [permSet]);
     const hasProfile = useCallback(
-        (profileKey: string) => checkHasProfile(profileKey, profileSet),
+        (profileKey: string) => profileSet.has(profileKey),
         [profileSet],
     );
 

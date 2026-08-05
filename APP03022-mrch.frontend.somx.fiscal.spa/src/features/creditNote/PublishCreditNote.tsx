@@ -405,7 +405,7 @@ function PublishCreditNoteContent() {
             />
           </div>
         )}
-        {discountInfo && <DiscountInfoGrid discount={discountInfo} />}
+        {discountInfo && providers && <DiscountInfoGrid discount={discountInfo} providers={providers}/>}
 
         {isUploading ? <GenericLinearProgress /> : null}
 

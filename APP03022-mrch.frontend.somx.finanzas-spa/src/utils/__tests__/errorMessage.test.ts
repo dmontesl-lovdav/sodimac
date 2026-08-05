@@ -237,6 +237,45 @@ describe("getErrorMessage", () => {
     });
   });
 
+  describe("mensaje con stack HttpError pegado", () => {
+    const dirty =
+      "La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzasundefinedHttpError: La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzas\n" +
+      "at handleReceptionUpdateError (file:///usr/src/app/dist/services/purchaseOrder.service.js:108:19)";
+    const clean =
+      "La factura uuid se encuentra previamente registrada en addenda Manual, Por favor, validar con el área de finanzas";
+
+    it("prioriza detailError sanitizado sobre message genérico EXC004", () => {
+      const err = {
+        response: {
+          data: {
+            message:
+              "ERROR: EXC004. Se produjuo un excepcion al actualizar la Recepción. Verifique el detalle del error.",
+            detailError: dirty,
+          },
+        },
+      };
+      expect(getErrorMessage(err)).toBe(clean);
+    });
+
+    it("limpia message cuando trae undefinedHttpError y stack", () => {
+      const err = {
+        response: {
+          data: { message: dirty },
+        },
+      };
+      expect(getErrorMessage(err)).toBe(clean);
+    });
+
+    it("limpia detailError string si no hay message", () => {
+      const err = {
+        response: {
+          data: { detailError: dirty },
+        },
+      };
+      expect(getErrorMessage(err)).toBe(clean);
+    });
+  });
+
   describe("objeto sin información útil", () => {
     it("devuelve el fallback cuando no hay campos reconocibles", () => {
       expect(getErrorMessage({ foo: "bar" })).toBe(

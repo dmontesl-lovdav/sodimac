@@ -211,7 +211,7 @@ export default function AuditLogsFilters({
                     />
 
                     <div className="al-actions finz-filter-actions">
-                        <GenericButton variant="primary" onClick={handleSearch}>
+                        <GenericButton variant="outline" onClick={handleSearch}>
                             Buscar
                         </GenericButton>
                         <GenericButton variant="outlineFill" onClick={handleClear}>

@@ -24,7 +24,12 @@ export class FinanzasPaymentHeader {
     @Column({ name: 'payment_date', type: 'date', nullable: false })
     paymentDate!: Date;
 
-    @Column({ name: 'status', type: 'int', nullable: false, default: 1 })
+    @Column({
+        name: "status",
+        type: "int",
+        nullable: false,
+        default: 0,
+    })
     status!: number;
 
     @Column({ name: 'created_by', type: 'bigint', nullable: true })

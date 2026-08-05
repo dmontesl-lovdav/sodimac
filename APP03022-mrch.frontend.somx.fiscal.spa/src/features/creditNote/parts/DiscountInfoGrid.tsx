@@ -14,7 +14,6 @@ type Field = {
 };
 
 export default function DiscountInfoGrid({ discount, providers }: Props) {
-  console.log(providers);
   const supplierRfc = providers.find((provider) => provider.idProveedor == discount.supplierNumber)?.rfc;
   const fields: Field[] = [
     { label: "Referencia", value: displayOrDash(discount.documentReference) },

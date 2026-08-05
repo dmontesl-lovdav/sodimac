@@ -11,6 +11,7 @@ function param(params: URLSearchParams, ...keys: string[]): string {
 export function parsePublishQuery(search: string): PublishQuery {
   const params = new URLSearchParams(search);
   return {
+    rebateId: param(params, "rebateId"),
     supplierNumber: param(params, "supplierNumber", "numeroProveedor"),
     documentNumber: param(params, "documentNumber", "numeroDocumento"),
     documentReference: param(params, "documentReference", "referenciaDocumento", "referenceNumber"),
@@ -25,7 +26,7 @@ export function parsePublishQuery(search: string): PublishQuery {
 }
 
 export function isCommercialDiscountFlow(query: PublishQuery): boolean {
-  return query.documentNumber.trim() !== "";
+  return query.rebateId.trim() !== "" || query.documentNumber.trim() !== "";
 }
 
 export function displayOrDash(value: string | undefined | null): string {

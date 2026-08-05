@@ -107,9 +107,7 @@ export function startOfLocalDay(d: Date): Date {
 }
 
 export function endOfLocalDay(d: Date): Date {
-  //console.log(d);
   const x = new Date(d);
-  //console.log(x);
   x.setHours(23, 59, 59, 999);
   return x;
 }

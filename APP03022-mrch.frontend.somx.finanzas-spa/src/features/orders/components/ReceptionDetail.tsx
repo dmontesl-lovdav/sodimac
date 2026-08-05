@@ -309,7 +309,7 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                         headerActions={
                             editable ? (
                                 <GenericButton
-                                    //disabled={!isReceptionStatusEditable(reception.status)}
+                                    disabled={!isReceptionStatusEditable(reception.status)}
                                     variant="primary"
                                     onClick={() => {
                                         editFormRef.current?.submit();

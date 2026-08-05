@@ -10,45 +10,84 @@ import type {
     UpdateFinanzasPaymentDto,
     CreateFinanzasPaymentHeaderWithDetailsDto,
     ListFinanzasPaymentDetailsByHeaderQueryDto,
+    UpdateFinanzasPaymentPatchDto,
 } from "@/schemas/finanzasPayment.schema.js";
 import { FinanzasPaymentHeader } from "@/entities/FinanzasPaymentHeader.entity.js";
 import { FinanzasPayment } from "@/entities/FinanzasPayment.entities.js";
-import { Between, MoreThanOrEqual, FindOptionsWhere } from "typeorm";
+import {
+    Between,
+    MoreThanOrEqual,
+    type FindOptionsWhere,
+} from "typeorm";
 import { datasource } from "@/config/typeorm-datasource.js";
 import { randomUUID } from "crypto";
 
 export async function list(q: ListFinanzasPaymentQuery) {
     const start = Date.now();
+
     console.log("[finanzas-payment][service.list] START", q);
 
     const filter: FindOptionsWhere<FinanzasPayment> = {};
 
-    if (q.documentNumber !== undefined) filter.documentNumber = q.documentNumber;
-    if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
-    if (q.finanzasPaymentUuid !== undefined) filter.finanzasPaymentUuid = q.finanzasPaymentUuid as string;
-    if (q.sapDocument !== undefined) filter.sapDocument = q.sapDocument;
-    if (q.paymentDate) filter.paymentDate = MoreThanOrEqual(q.paymentDate);
-
-    const createdAtEndString = q.createdAtEnd;
-    const parsedDateEnd = z.coerce.date().parse(createdAtEndString);
-    parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
-
-    if (q.createdAtInitial && parsedDateEnd) {
-        filter.createdAt = Between(q.createdAtInitial, parsedDateEnd);
+    if (q.documentNumber !== undefined) {
+        filter.documentNumber = q.documentNumber;
     }
 
-    console.log("[finanzas-payment][service.list] FILTER", filter);
+    if (q.vendorNumber !== undefined) {
+        filter.vendorNumber = q.vendorNumber;
+    }
+
+    if (q.finanzasPaymentUuid !== undefined) {
+        filter.finanzasPaymentUuid = q.finanzasPaymentUuid;
+    }
+
+    if (q.sapDocument !== undefined) {
+        filter.sapDocument = q.sapDocument;
+    }
+
+    if (q.paymentDate !== undefined) {
+        filter.paymentDate = MoreThanOrEqual(q.paymentDate);
+    }
+
+    const parsedDateEnd = z.coerce.date().parse(q.createdAtEnd);
+    parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
+
+    if (q.createdAtInitial !== undefined) {
+        filter.createdAt = Between(
+            q.createdAtInitial,
+            parsedDateEnd
+        );
+    }
+
+    console.log(
+        "[finanzas-payment][service.list] FILTER",
+        filter
+    );
 
     const repoStart = Date.now();
-    const [result, total, numberOfElements] = await r.findAllPaginated(filter, q.pageSize, q.pageNumber);
-    console.log("[finanzas-payment][service.list] REPO_DONE", {
-        repoElapsedMs: Date.now() - repoStart,
-        rows: result.length,
-        total,
-        numberOfElements,
-    });
 
-    const totalItems = Number(total?.valueOf() == null ? 0 : Number(total?.valueOf()));
+    const [result, total, numberOfElements] =
+        await r.findAllPaginated(
+            filter,
+            q.pageSize,
+            q.pageNumber
+        );
+
+    console.log(
+        "[finanzas-payment][service.list] REPO_DONE",
+        {
+            repoElapsedMs: Date.now() - repoStart,
+            rows: result.length,
+            total,
+            numberOfElements,
+        }
+    );
+
+    const totalItems =
+        total?.valueOf() == null
+            ? 0
+            : Number(total.valueOf());
+
     let totalPages = totalItems / q.pageSize;
 
     if (totalPages - Math.trunc(totalPages) > 0) {
@@ -60,7 +99,10 @@ export async function list(q: ListFinanzasPaymentQuery) {
     const responsePageableDTO: ResponsePageableDTO = {
         content: result,
         totalElements: totalItems,
-        numberOfElements: numberOfElements?.valueOf() == null ? 0 : Number(numberOfElements?.valueOf()),
+        numberOfElements:
+            numberOfElements?.valueOf() == null
+                ? 0
+                : Number(numberOfElements.valueOf()),
         totalPages,
         pageNumber: q.pageNumber,
         pageSize: q.pageSize,
@@ -72,124 +114,275 @@ export async function list(q: ListFinanzasPaymentQuery) {
         totalPages,
     });
 
-    return ResponseHandler.responseBuilder("", responsePageableDTO, 0, StatusCodes.OK, true, "");
+    return ResponseHandler.responseBuilder(
+        "",
+        responsePageableDTO,
+        0,
+        StatusCodes.OK,
+        true,
+        ""
+    );
 }
 
-export async function get(FinanzasPaymentUuid: string) {
-    return r.findById(FinanzasPaymentUuid);
+export async function get(finanzasPaymentUuid: string) {
+    return r.findById(finanzasPaymentUuid);
 }
 
-export async function create(dto: CreateFinanzasPaymentDto) {
+/**
+ * Crea un detalle de pago.
+ *
+ * El paymentHeaderUuid puede enviarse para relacionar el detalle con
+ * una cabecera existente o puede omitirse.
+ */
+export async function create(
+    dto: CreateFinanzasPaymentDto
+) {
+    const now = new Date();
+
     const data: Partial<FinanzasPayment> = {
         company: dto.company,
         documentNumber: dto.documentNumber,
         documentReference: dto.documentReference,
-        amount: dto.amount,
         vendorNumber: dto.vendorNumber,
-        status: dto.status,
+        amount: dto.amount,
+        currency: dto.currency ?? "MXN",
         documentType: dto.documentType,
         sapDocument: dto.sapDocument,
         paymentDate: dto.paymentDate,
-        createdAt: new Date(),
-        paymentHeaderUuid: dto.paymentHeaderUuid ?? null
+        status: dto.status ?? 0,
+        paymentHeaderUuid:
+            dto.paymentHeaderUuid ?? null,
+        createdBy: dto.createdBy ?? null,
+        createdAt: now,
+        updatedBy: null,
+        updatedAt: null,
     };
 
     const entityCreated = await r.createOne(data);
-    return ResponseHandler.responseBuilder("", entityCreated, 0, StatusCodes.CREATED, true, "");
+
+    return ResponseHandler.responseBuilder(
+        "",
+        entityCreated,
+        0,
+        StatusCodes.CREATED,
+        true,
+        ""
+    );
 }
 
 /**
- * Crea cabecera + detalles en una sola transacción.
- * - paymentHeaderUuid se genera en backend (UUID)
- * - totalAmount cabecera = suma(details.amount)
+ * Crea una cabecera y, opcionalmente, sus detalles en una sola
+ * transacción.
+ *
+ * Reglas:
+ * - Si paymentHeaderUuid llega en el request, se conserva.
+ * - Si paymentHeaderUuid no llega, se genera un UUID.
+ * - details puede omitirse o enviarse vacío.
+ * - Las validaciones de INCOME, CREDIT_NOTE y total solamente se
+ *   ejecutan cuando existen detalles.
+ * - El status predeterminado es 0.
  */
-export async function createHeaderWithDetails(dto: CreateFinanzasPaymentHeaderWithDetailsDto) {
+export async function createHeaderWithDetails(
+    dto: CreateFinanzasPaymentHeaderWithDetailsDto
+) {
     const queryRunner = datasource.createQueryRunner();
 
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-        const headerRepository = queryRunner.manager.getRepository(FinanzasPaymentHeader);
-        const detailRepository = queryRunner.manager.getRepository(FinanzasPayment);
-
-        const hasIncome = dto.details.some(d => d.paymentLineType === "INCOME");
-        if (!hasIncome) {
-            await queryRunner.rollbackTransaction();
-            return ResponseHandler.responseBuilder(
-                "WRN7025",
-                { message: "El desglose del pago no contiene un ingreso, favor de validar." },
-                0,
-                StatusCodes.BAD_REQUEST,
-                false,
-                ""
+        const headerRepository =
+            queryRunner.manager.getRepository(
+                FinanzasPaymentHeader
             );
-        }
 
-        const sumIncome = dto.details
-            .filter(d => d.paymentLineType === "INCOME")
-            .reduce((acc, d) => acc + Number(d.amount), 0);
-
-        const sumCreditNotes = dto.details
-            .filter(d => d.paymentLineType === "CREDIT_NOTE")
-            .reduce((acc, d) => acc + Number(d.amount), 0);
-
-        const expectedTotal = Number((sumIncome - sumCreditNotes).toFixed(2));
-        const headerTotal = Number(Number(dto.totalAmount).toFixed(2));
-
-        if (headerTotal !== expectedTotal) {
-            await queryRunner.rollbackTransaction();
-            return ResponseHandler.responseBuilder(
-                "WRN7024",
-                { message: "El valor del pago total no es igual al desglose del pago, favor de validar." },
-                0,
-                StatusCodes.BAD_REQUEST,
-                false,
-                ""
+        const detailRepository =
+            queryRunner.manager.getRepository(
+                FinanzasPayment
             );
-        }
 
-        const paymentHeaderUuid = randomUUID();
-        const now = new Date();
-
-        const header = headerRepository.create({
-            paymentHeaderUuid,
-            company: dto.company,
-            anio: dto.anio,
-            vendorNumber: dto.vendorNumber,
-            currency: dto.currency,
-            totalAmount: headerTotal.toFixed(2),
-            paymentDate: dto.paymentDate,
-            status: dto.status,
-            createdBy: dto.createdBy ?? null,
-            createdAt: now,
-            updatedBy: null,
-            updatedAt: null,
-        });
-
-        const headerSaved = await headerRepository.save(header);
-
-        const detailsToSave = dto.details.map(item =>
-            detailRepository.create({
-                company: dto.company,
-                documentNumber: item.documentNumber,
-                documentReference: item.documentReference,
-                vendorNumber: dto.vendorNumber,
-                amount: item.amount,
-                currency: dto.currency,
-                documentType: item.documentType,
-                sapDocument: item.sapDocument,
-                paymentDate: dto.paymentDate,
-                status: dto.status,
-                paymentHeaderUuid,
-                createdAt: now,
-                createdBy: dto.createdBy ?? null,
-                updatedAt: null,
-                updatedBy: null,
-            })
+        const details = dto.details ?? [];
+        const headerTotal = Number(
+            Number(dto.totalAmount).toFixed(2)
         );
 
-        const detailsSaved = await detailRepository.save(detailsToSave);
+        let expectedTotal: number | null = null;
+
+        /*
+         * La validación del desglose solo se ejecuta cuando
+         * se reciben detalles.
+         */
+        if (details.length > 0) {
+            const hasIncome = details.some(
+                (detail) =>
+                    detail.paymentLineType === "INCOME"
+            );
+
+            if (!hasIncome) {
+                await queryRunner.rollbackTransaction();
+
+                return ResponseHandler.responseBuilder(
+                    "WRN7025",
+                    {
+                        message:
+                            "El desglose del pago no contiene un ingreso, favor de validar.",
+                    },
+                    0,
+                    StatusCodes.BAD_REQUEST,
+                    false,
+                    ""
+                );
+            }
+
+            const sumIncome = details
+                .filter(
+                    (detail) =>
+                        detail.paymentLineType ===
+                        "INCOME"
+                )
+                .reduce(
+                    (accumulator, detail) =>
+                        accumulator +
+                        Number(detail.amount),
+                    0
+                );
+
+            const sumCreditNotes = details
+                .filter(
+                    (detail) =>
+                        detail.paymentLineType ===
+                        "CREDIT_NOTE"
+                )
+                .reduce(
+                    (accumulator, detail) =>
+                        accumulator +
+                        Number(detail.amount),
+                    0
+                );
+
+            expectedTotal = Number(
+                (
+                    sumIncome - sumCreditNotes
+                ).toFixed(2)
+            );
+
+            if (headerTotal !== expectedTotal) {
+                await queryRunner.rollbackTransaction();
+
+                return ResponseHandler.responseBuilder(
+                    "WRN7024",
+                    {
+                        message:
+                            "El valor del pago total no es igual al desglose del pago, favor de validar.",
+                    },
+                    0,
+                    StatusCodes.BAD_REQUEST,
+                    false,
+                    ""
+                );
+            }
+        }
+
+        /*
+         * Permite usar el UUID enviado por el consumidor.
+         * Si no llega, conserva el comportamiento anterior y genera uno.
+         */
+        const paymentHeaderUuid =
+            dto.paymentHeaderUuid ?? randomUUID();
+
+        const existingHeader =
+            await headerRepository.findOneBy({
+                paymentHeaderUuid,
+            });
+
+        if (existingHeader) {
+            await queryRunner.rollbackTransaction();
+
+            return ResponseHandler.responseBuilder(
+                "PAYMENT_HEADER_UUID_ALREADY_EXISTS",
+                {
+                    message:
+                        "The supplied paymentHeaderUuid already exists.",
+                    paymentHeaderUuid,
+                },
+                0,
+                StatusCodes.CONFLICT,
+                false,
+                ""
+            );
+        }
+
+        const now = new Date();
+        const status = dto.status ?? 0;
+
+        const header =
+            headerRepository.create({
+                paymentHeaderUuid,
+                company: dto.company,
+                anio: dto.anio,
+                vendorNumber: dto.vendorNumber,
+                currency: dto.currency ?? "MXN",
+                totalAmount:
+                    headerTotal.toFixed(2),
+                paymentDate: dto.paymentDate,
+                status,
+                createdBy: dto.createdBy ?? null,
+                createdAt: now,
+                updatedBy: null,
+                updatedAt: null,
+            });
+
+        const headerSaved =
+            await headerRepository.save(header);
+
+        /*
+         * Cuando no se reciben detalles, no se realiza un insert
+         * vacío en el repositorio.
+         */
+        let detailsSaved: FinanzasPayment[] = [];
+
+        if (details.length > 0) {
+            const detailsToSave = details.map(
+                (item) =>
+                    detailRepository.create({
+                        company: dto.company,
+                        documentNumber:
+                            item.documentNumber,
+                        documentReference:
+                            item.documentReference,
+                        vendorNumber:
+                            dto.vendorNumber,
+                        amount: item.amount,
+                        currency:
+                            dto.currency ?? "MXN",
+                        documentType:
+                            item.documentType,
+                        sapDocument:
+                            item.sapDocument,
+                        paymentDate:
+                            dto.paymentDate,
+
+                        /*
+                         * El detalle puede traer status propio.
+                         * Si no llega, hereda el de la cabecera.
+                         */
+                        status:
+                            item.status ?? status,
+
+                        paymentHeaderUuid,
+                        createdAt: now,
+                        createdBy:
+                            dto.createdBy ?? null,
+                        updatedAt: null,
+                        updatedBy: null,
+                    })
+            );
+
+            detailsSaved =
+                await detailRepository.save(
+                    detailsToSave
+                );
+        }
 
         await queryRunner.commitTransaction();
 
@@ -200,9 +393,21 @@ export async function createHeaderWithDetails(dto: CreateFinanzasPaymentHeaderWi
                 details: detailsSaved,
                 summary: {
                     paymentHeaderUuid,
-                    totalDetails: detailsSaved.length,
-                    headerTotal: headerTotal.toFixed(2),
-                    expectedTotal: expectedTotal.toFixed(2),
+                    totalDetails:
+                        detailsSaved.length,
+                    headerTotal:
+                        headerTotal.toFixed(2),
+
+                    /*
+                     * Si no hubo detalles todavía no existe
+                     * un total calculado de desglose.
+                     */
+                    expectedTotal:
+                        expectedTotal === null
+                            ? null
+                            : expectedTotal.toFixed(
+                                2
+                            ),
                 },
             },
             0,
@@ -211,7 +416,10 @@ export async function createHeaderWithDetails(dto: CreateFinanzasPaymentHeaderWi
             ""
         );
     } catch (error) {
-        await queryRunner.rollbackTransaction();
+        if (queryRunner.isTransactionActive) {
+            await queryRunner.rollbackTransaction();
+        }
+
         throw error;
     } finally {
         await queryRunner.release();
@@ -219,21 +427,47 @@ export async function createHeaderWithDetails(dto: CreateFinanzasPaymentHeaderWi
 }
 
 /**
- * Obtiene cabecera + detalles por paymentHeaderUuid
- * - Si no envían paginación, regresa todos los detalles
- * - Si envían pageNumber/pageSize, regresa detailsPage paginado
+ * Obtiene cabecera y detalles mediante paymentHeaderUuid.
+ *
+ * Si no se envía paginación, devuelve todos los detalles.
+ * Si se envía pageNumber/pageSize, devuelve detailsPage.
  */
-export async function getHeaderWithDetails(paymentHeaderUuid: string, q?: ListFinanzasPaymentDetailsByHeaderQueryDto) {
-    const header = await headerRepo.findById(paymentHeaderUuid);
+export async function getHeaderWithDetails(
+    paymentHeaderUuid: string,
+    q?: ListFinanzasPaymentDetailsByHeaderQueryDto
+) {
+    const header =
+        await headerRepo.findById(paymentHeaderUuid);
 
     if (!header) {
-        return ResponseHandler.responseBuilder("Header payment not found", null, 0, StatusCodes.NOT_FOUND, false, "");
+        return ResponseHandler.responseBuilder(
+            "Header payment not found",
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
     }
 
     if (!q) {
-        const details = await r.findByPaymentHeaderUuid(paymentHeaderUuid);
+        const details =
+            await r.findByPaymentHeaderUuid(
+                paymentHeaderUuid
+            );
 
-        const totalAmountDetail = details.reduce((acc, item) => acc + Number(item.amount), 0).toFixed(2);
+        /*
+         * Se conserva el cálculo anterior para no cambiar
+         * el contrato actual de este endpoint.
+         */
+        const totalAmountDetail = details
+            .reduce(
+                (accumulator, item) =>
+                    accumulator +
+                    Number(item.amount),
+                0
+            )
+            .toFixed(2);
 
         return ResponseHandler.responseBuilder(
             "",
@@ -243,9 +477,14 @@ export async function getHeaderWithDetails(paymentHeaderUuid: string, q?: ListFi
                 summary: {
                     paymentHeaderUuid,
                     totalDetails: details.length,
-                    totalAmountHeader: header.totalAmount,
+                    totalAmountHeader:
+                        header.totalAmount,
                     totalAmountDetail,
-                    amountsMatch: Number(header.totalAmount) === Number(totalAmountDetail),
+                    amountsMatch:
+                        Number(
+                            header.totalAmount
+                        ) ===
+                        Number(totalAmountDetail),
                 },
             },
             0,
@@ -255,14 +494,23 @@ export async function getHeaderWithDetails(paymentHeaderUuid: string, q?: ListFi
         );
     }
 
-    const [details, total, numberOfElements] = await r.findAllPaginatedByPaymentHeaderUuid(
-        paymentHeaderUuid,
-        q.pageSize,
-        q.pageNumber
-    );
+    const [
+        details,
+        total,
+        numberOfElements,
+    ] =
+        await r.findAllPaginatedByPaymentHeaderUuid(
+            paymentHeaderUuid,
+            q.pageSize,
+            q.pageNumber
+        );
 
     let totalPages = total / q.pageSize;
-    totalPages = totalPages - Math.trunc(totalPages) > 0 ? Math.trunc(totalPages) + 1 : Math.trunc(totalPages);
+
+    totalPages =
+        totalPages - Math.trunc(totalPages) > 0
+            ? Math.trunc(totalPages) + 1
+            : Math.trunc(totalPages);
 
     return ResponseHandler.responseBuilder(
         "",
@@ -278,7 +526,8 @@ export async function getHeaderWithDetails(paymentHeaderUuid: string, q?: ListFi
             },
             summary: {
                 paymentHeaderUuid,
-                totalAmountHeader: header.totalAmount,
+                totalAmountHeader:
+                    header.totalAmount,
             },
         },
         0,
@@ -288,16 +537,123 @@ export async function getHeaderWithDetails(paymentHeaderUuid: string, q?: ListFi
     );
 }
 
-export async function update(dto: UpdateFinanzasPaymentDto) {
-    const filter: FindOptionsWhere<FinanzasPayment> = {};
+/**
+ * Actualiza parcialmente un detalle mediante su UUID.
+ *
+ * PATCH /finanzas-payment/:finanzasPaymentUuid
+ *
+ * Todos los campos del DTO son opcionales. El schema garantiza
+ * que al menos uno sea enviado.
+ */
+export async function update(
+    finanzasPaymentUuid: string,
+    dto: UpdateFinanzasPaymentPatchDto
+) {
+    const existing =
+        await r.findById(finanzasPaymentUuid);
 
-    if (dto.documentNumber !== undefined) filter.documentNumber = dto.documentNumber;
-    if (dto.vendorNumber !== undefined) filter.vendorNumber = dto.vendorNumber;
-    if (dto.documentType !== undefined) filter.documentType = dto.documentType;
-    if (dto.sapDocument !== undefined) filter.sapDocument = dto.sapDocument;
+    if (!existing) {
+        return ResponseHandler.responseBuilder(
+            "NOT FOUND",
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
+    }
 
-    const entityUpdated = await r.updateStatus(filter, dto.status);
-    let response = ResponseHandler.responseBuilder("", entityUpdated, 0, StatusCodes.OK, true, "");
-    if (!entityUpdated) response = ResponseHandler.responseBuilder("NOT FOUND", entityUpdated, 0, StatusCodes.NOT_FOUND, false, "");
-    return response;
+    const patch: Partial<FinanzasPayment> = {
+        updatedAt: new Date(),
+    };
+
+    if (dto.company !== undefined) {
+        patch.company = dto.company;
+    }
+
+    if (dto.documentNumber !== undefined) {
+        patch.documentNumber =
+            dto.documentNumber;
+    }
+
+    if (
+        dto.documentReference !== undefined
+    ) {
+        patch.documentReference =
+            dto.documentReference;
+    }
+
+    if (dto.vendorNumber !== undefined) {
+        patch.vendorNumber =
+            dto.vendorNumber;
+    }
+
+    if (dto.amount !== undefined) {
+        patch.amount = dto.amount;
+    }
+
+    if (dto.currency !== undefined) {
+        patch.currency = dto.currency;
+    }
+
+    if (dto.documentType !== undefined) {
+        patch.documentType =
+            dto.documentType;
+    }
+
+    if (dto.sapDocument !== undefined) {
+        patch.sapDocument =
+            dto.sapDocument;
+    }
+
+    if (dto.paymentDate !== undefined) {
+        patch.paymentDate =
+            dto.paymentDate;
+    }
+
+    /*
+     * Se compara contra undefined para permitir status = 0.
+     */
+    if (dto.status !== undefined) {
+        patch.status = dto.status;
+    }
+
+    /*
+     * Permite asignar, cambiar o quitar la relación lógica.
+     */
+    if (
+        dto.paymentHeaderUuid !== undefined
+    ) {
+        patch.paymentHeaderUuid =
+            dto.paymentHeaderUuid;
+    }
+
+    if (dto.updatedBy !== undefined) {
+        patch.updatedBy = dto.updatedBy;
+    }
+
+    const entityUpdated = await r.updateOne(
+        finanzasPaymentUuid,
+        patch
+    );
+
+    if (!entityUpdated) {
+        return ResponseHandler.responseBuilder(
+            "NOT FOUND",
+            null,
+            0,
+            StatusCodes.NOT_FOUND,
+            false,
+            ""
+        );
+    }
+
+    return ResponseHandler.responseBuilder(
+        "",
+        entityUpdated,
+        0,
+        StatusCodes.OK,
+        true,
+        ""
+    );
 }

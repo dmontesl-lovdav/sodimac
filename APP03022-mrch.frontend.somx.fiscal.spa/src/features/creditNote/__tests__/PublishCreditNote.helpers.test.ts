@@ -64,6 +64,7 @@ jest.mock("../parts/publishResult", () => ({
 import {
   checkSystemParameterValue,
   getXmlFileError,
+  getPdfFileError,
   resolveLoadingMessage,
 } from "../PublishCreditNote";
 
@@ -99,12 +100,29 @@ describe("getXmlFileError", () => {
 
   it("valida extensión .xml", () => {
     const file = { name: "a.pdf", size: 1 } as File;
-    expect(getXmlFileError(file, 100, 1)).toContain(".xml");
+    expect(getXmlFileError(file, 100, 1)).toContain("xml válido");
   });
 
   it("acepta XML válido", () => {
     const file = { name: "nota.XML", size: 1 } as File;
     expect(getXmlFileError(file, 100, 1)).toBeNull();
+  });
+});
+
+describe("getPdfFileError", () => {
+  it("valida tamaño", () => {
+    const file = { name: "a.pdf", size: 10 } as File;
+    expect(getPdfFileError(file, 5, 1)).toContain("no debe exceder");
+  });
+
+  it("valida extensión .pdf", () => {
+    const file = { name: "a.xml", size: 1 } as File;
+    expect(getPdfFileError(file, 100, 1)).toContain("pdf válido");
+  });
+
+  it("acepta PDF válido", () => {
+    const file = { name: "factura.PDF", size: 1 } as File;
+    expect(getPdfFileError(file, 100, 1)).toBeNull();
   });
 });
 

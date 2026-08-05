@@ -5,14 +5,23 @@ describe("parsePublishQuery", () => {
   describe("query string vacío o sin parámetros relevantes", () => {
     it("devuelve strings vacíos cuando search es vacío", () => {
       const result = parsePublishQuery("");
+      expect(result.rebateId).toBe("");
       expect(result.supplierNumber).toBe("");
       expect(result.documentNumber).toBe("");
     });
 
     it("devuelve strings vacíos cuando no hay parámetros conocidos", () => {
       const result = parsePublishQuery("?foo=bar&baz=qux");
+      expect(result.rebateId).toBe("");
       expect(result.supplierNumber).toBe("");
       expect(result.documentNumber).toBe("");
+    });
+  });
+
+  describe("rebateId", () => {
+    it("extrae rebateId del query string", () => {
+      const result = parsePublishQuery("?rebateId=abc-123");
+      expect(result.rebateId).toBe("abc-123");
     });
   });
 
@@ -64,24 +73,41 @@ describe("parsePublishQuery", () => {
   });
 });
 
+function baseQuery(overrides: Partial<ReturnType<typeof parsePublishQuery>> = {}) {
+  return {
+    rebateId: "",
+    supplierNumber: "",
+    documentNumber: "",
+    documentReference: "",
+    tipoRebate: "",
+    sapDocument: "",
+    amount: "",
+    periodId: "",
+    postingDate: "",
+    dueDate: "",
+    vendorName: "",
+    ...overrides,
+  };
+}
+
 describe("isCommercialDiscountFlow", () => {
+  it("devuelve true cuando rebateId tiene contenido", () => {
+    expect(isCommercialDiscountFlow(baseQuery({ rebateId: "uuid-rebate" }))).toBe(true);
+  });
+
   it("devuelve true cuando documentNumber tiene contenido", () => {
-    expect(isCommercialDiscountFlow({ supplierNumber: "P001", documentNumber: "DOC-1" })).toBe(true);
+    expect(isCommercialDiscountFlow(baseQuery({ supplierNumber: "P001", documentNumber: "DOC-1" }))).toBe(true);
   });
 
-  it("devuelve false cuando documentNumber es string vacío", () => {
-    expect(isCommercialDiscountFlow({ supplierNumber: "P001", documentNumber: "" })).toBe(false);
+  it("devuelve false cuando rebateId y documentNumber están vacíos", () => {
+    expect(isCommercialDiscountFlow(baseQuery({ supplierNumber: "P001" }))).toBe(false);
   });
 
-  it("devuelve false cuando documentNumber es solo espacios", () => {
-    expect(isCommercialDiscountFlow({ supplierNumber: "P001", documentNumber: "   " })).toBe(false);
+  it("devuelve false cuando rebateId y documentNumber son solo espacios", () => {
+    expect(isCommercialDiscountFlow(baseQuery({ rebateId: "   ", documentNumber: "   " }))).toBe(false);
   });
 
   it("devuelve true incluso cuando supplierNumber está vacío si documentNumber tiene valor", () => {
-    expect(isCommercialDiscountFlow({ supplierNumber: "", documentNumber: "DOC-999" })).toBe(true);
-  });
-
-  it("devuelve false cuando ambos campos están vacíos", () => {
-    expect(isCommercialDiscountFlow({ supplierNumber: "", documentNumber: "" })).toBe(false);
+    expect(isCommercialDiscountFlow(baseQuery({ documentNumber: "DOC-999" }))).toBe(true);
   });
 });

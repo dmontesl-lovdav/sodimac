@@ -37,8 +37,16 @@ export function checkSystemParameterValue(
 }
 
 export function getXmlFileError(file: File, maxBytes: number, maxMb: number): string | null {
-  if (file.size > maxBytes) return `El archivo no debe exceder ${maxMb} MB.`;
-  if (!file.name.toLowerCase().endsWith(".xml")) return "El archivo XML es requerido y debe tener extensión .xml.";
+  if (!file.name.trim().toLowerCase().endsWith(".xml")) {
+    return "El tipo de archivo no es el correcto, debes subir un xml válido.";
+  }
+  return null;
+}
+
+export function getPdfFileError(file: File, maxBytes: number, maxMb: number): string | null {
+  if (!file.name.trim().toLowerCase().endsWith(".pdf")) {
+    return "El tipo de archivo no es el correcto, debes subir un pdf válido.";
+  }
   return null;
 }
 
@@ -51,6 +59,10 @@ export function resolveLoadingMessage(isUploading: boolean, isValidating: boolea
 
 
 export default function PublishCreditNote() {
+  const location = useLocation();
+  const FBC_URL = process.env.FBC_HOME;
+  const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
+  const isDiscountFlow = isCommercialDiscountFlow(query);
   const traceFolioPayload = useMemo<TraceFolioPayload>(
     () => ({
       idAplicativo: "fiscal-front",
@@ -66,7 +78,7 @@ export default function PublishCreditNote() {
 
   return decorate(
     BREADCRUMB,
-    "/fiscal/notas-credito",
+    isDiscountFlow ? `${FBC_URL}finanzas#/finanzas/descuentos-comerciales` : "/fiscal/notas-credito",
     <TraceFolioProvider traceFolioPayload={traceFolioPayload}>
       <PublishCreditNoteContent />
     </TraceFolioProvider>
@@ -310,6 +322,20 @@ function PublishCreditNoteContent() {
           logLevel,
           response
         );
+
+        const rebateId = query.rebateId.trim();
+        if (isDiscountFlow && rebateId) {
+          try {
+            await publishClient.updateRebateStatus(rebateId, 2);
+          } catch (rebateError: unknown) {
+            showAlert(
+              getErrorMessage(
+                rebateError,
+                "La nota de crédito se publicó, pero no se pudo actualizar el estatus del descuento comercial."
+              )
+            );
+          }
+        }
         return;
       }
 
@@ -439,7 +465,19 @@ function PublishCreditNoteContent() {
                   className="pcn-file-input"
                   onChange={(e) => {
                     if (isFinished) return;
-                    setPdfFile(e.target.files?.[0] ?? null);
+                    const selectedFile = e.target.files?.[0] ?? null;
+                    if (!selectedFile) {
+                      setPdfFile(null);
+                      return;
+                    }
+                    const fileError = getPdfFileError(selectedFile, MAX_BYTES, MAX_MB);
+                    if (fileError) {
+                      showAlert(fileError);
+                      e.target.value = "";
+                      setPdfFile(null);
+                      return;
+                    }
+                    setPdfFile(selectedFile);
                   }}
                   disabled={uploadsLocked}
                 />

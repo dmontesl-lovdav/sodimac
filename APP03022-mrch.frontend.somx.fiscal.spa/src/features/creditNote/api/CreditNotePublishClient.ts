@@ -2,12 +2,19 @@ import { createApiClient, type ApiClient } from "@/services/ApiClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 import type { PublishCreditNoteResponse } from "../parts/types";
 
-const fiscalApi = createApiClient({
-  baseUrl: process.env.FISCAL_API_URL ?? "",
-});
+function resolveFinanzasApiBaseUrl(): string {
+  return (
+    process.env.FINANZAS_API_URL ??
+    process.env.API_FINANZAS_URL ??
+    ""
+  );
+}
 
 export const createCreditNotePublishClient = (api?: ApiClient) => {
   const client = api ?? createApiClient();
+  const finanzasClient = createApiClient({
+    baseUrl: resolveFinanzasApiBaseUrl(),
+  });
 
   return {
     getUser: () => getUserIdFromStore(),
@@ -20,5 +27,19 @@ export const createCreditNotePublishClient = (api?: ApiClient) => {
 
     publishCreditNote: (formData: FormData) =>
       client.request<PublishCreditNoteResponse>("invoices/register", "post", formData),
+
+    /** PUT /rebates/:id — actualiza status del descuento comercial (1 → 2). */
+    updateRebateStatus: (rebateId: string, status: number) => {
+      const userId = Number(getUserIdFromStore());
+      const body: { status: number; updatedBy?: number } = { status };
+      if (Number.isFinite(userId)) {
+        body.updatedBy = userId;
+      }
+      return finanzasClient.request<unknown>(
+        `rebates/${encodeURIComponent(rebateId)}`,
+        "put",
+        body
+      );
+    },
   };
 };

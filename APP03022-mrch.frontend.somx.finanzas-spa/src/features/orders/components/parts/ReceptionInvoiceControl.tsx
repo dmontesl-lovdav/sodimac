@@ -29,6 +29,11 @@ function normalizeParamName(s: string | undefined | null): string {
     return (s ?? '').trim().toLowerCase();
 }
 
+function hasFileExtension(file: File, extension: "xml" | "pdf"): boolean {
+    const name = file.name.trim().toLowerCase();
+    return name.endsWith(`.${extension}`);
+}
+
 interface InvoiceData {
     rfcEmisor: string;
     nombreProveedor: string;
@@ -325,11 +330,26 @@ export const ReceptionInvoiceControl = forwardRef<
 
     const handleFilePDFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] ?? null;
+        if (!selectedFile) {
+            filePDFRef.current = null;
+            setFilePDF(null);
+            return;
+        }
+
+        if (!hasFileExtension(selectedFile, "pdf")) {
+            e.target.value = "";
+            filePDFRef.current = null;
+            setFilePDF(null);
+            invoiceAlert.showWarning(
+                "Atención",
+                "El tipo de archivo no es el correcto, debes subir un pdf válido."
+            );
+            return;
+        }
+
         filePDFRef.current = selectedFile;
         setFilePDF(selectedFile);
-        if (selectedFile) {
-            setIsValidInvoice(true);
-        }
+        setIsValidInvoice(true);
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -340,6 +360,18 @@ export const ReceptionInvoiceControl = forwardRef<
             fileXMLRef.current = null;
             setFileXML(null);
             setIsValidating(false);
+            return;
+        }
+
+        if (!hasFileExtension(selectedFile, "xml")) {
+            e.target.value = "";
+            fileXMLRef.current = null;
+            setFileXML(null);
+            setIsValidating(false);
+            invoiceAlert.showWarning(
+                "Atención",
+                "El tipo de archivo no es el correcto, debes subir un xml válido."
+            );
             return;
         }
 

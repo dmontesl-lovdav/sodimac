@@ -14,6 +14,7 @@ export type CreditNoteXmlData = {
 };
 
 export type PublishQuery = {
+  rebateId: string;
   supplierNumber: string;
   documentNumber: string;
   documentReference: string;

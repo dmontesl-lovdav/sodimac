@@ -41,12 +41,8 @@ export default function DiscountsGridTable({
     providers,
     ...props
 }: Props) {
-    console.log(providers);
-
 
 const returnProvider = (r: Rebate) => {
-    console.log(r.vendorNumber);
-    console.log(providers);
     return providers.find((item) => item.supplierNumber == r.vendorNumber);
 }
 

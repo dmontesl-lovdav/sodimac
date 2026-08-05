@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -47,10 +48,11 @@ public class PaymentRegistrationRequest {
 
     /**
      * ID del usuario que registra el complemento de pago.
+     * Es el identificador del usuario autenticado (UUID del token); solo se usa para
+     * trazabilidad en bitácora, no se persiste como created_by numérico.
      */
-    @NotNull(message = "El ID de usuario es requerido")
-    @Positive(message = "El ID de usuario debe ser un número positivo")
-    private Long idUsuario;
+    @NotBlank(message = "El ID de usuario es requerido")
+    private String idUsuario;
 
     /**
      * Archivo XML del complemento de pago.

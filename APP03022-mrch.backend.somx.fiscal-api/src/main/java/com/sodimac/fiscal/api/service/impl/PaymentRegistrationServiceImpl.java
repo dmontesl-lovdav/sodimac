@@ -465,7 +465,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         payments.setStatus(1); // Vigente
         payments.setCertificationDate(parsedXml.getTimbreFiscalDigital() != null ?
                 LocalDateTime.parse(parsedXml.getTimbreFiscalDigital().getFechaTimbrado().substring(0, 19)) : null);
-        payments.setCreatedBy(request.getIdUsuario());
+        // created_by (bigint) queda null: idUsuario es el UUID del usuario y solo se usa para
+        // trazabilidad en bitácora. Consistente con el flujo de factura, que tampoco lo persiste.
 
         return payments;
     }
@@ -500,7 +501,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             payment.setPayerAccount(pagoDto.getCtaOrdenante());
             payment.setBeneficiaryBankRfc(pagoDto.getRfcEmisorCtaBen());
             payment.setBeneficiaryAccount(pagoDto.getCtaBeneficiario());
-            payment.setCreatedBy(request.getIdUsuario());
+            // created_by null: ver nota en buildPaymentsEntity (idUsuario es UUID, solo bitácora).
 
             payment = paymentRepository.save(payment);
             log.debug("Payment guardado: UUID={}, monto={}", payment.getPaymentUuid(), payment.getAmount());
@@ -521,7 +522,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     relDoc.setCurrency(docto.getMonedaDR() != null ? docto.getMonedaDR() : "MXN");
                     relDoc.setExchangeRate(docto.getEquivalenciaDR() != null && !docto.getEquivalenciaDR().isEmpty()
                             ? new BigDecimal(docto.getEquivalenciaDR()) : BigDecimal.ONE);
-                    relDoc.setCreatedBy(request.getIdUsuario());
+                    // created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
 
                     relatedDocumentsRepository.save(relDoc);
                     log.debug("RelatedDocument guardado: docUuid={}, pagado={}, saldo={}",
@@ -549,10 +550,9 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         addendum.setShippingGuideNumber(null);
         addendum.setAddendaType(request.getTipoAddenda()); // 5
         addendum.setSupplierType(request.getTipoProveedor());
-        addendum.setUserId(request.getIdUsuario());
+        // user_id/created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
         addendum.setAddendumContent(parsedXml.getAddendaContent());
         addendum.setUpdateDate(null);
-        addendum.setCreatedBy(request.getIdUsuario());
 
         addendumRepository.save(addendum);
         log.debug("Addenda guardada");
@@ -576,8 +576,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         fileRegistry.setErrorCode(errorCode);
         fileRegistry.setErrorMessage(errorMessage);
         fileRegistry.setSupplierId(request.getIdProveedor());
-        fileRegistry.setUserId(request.getIdUsuario());
-        fileRegistry.setCreatedBy(request.getIdUsuario());
+        // user_id/created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
 
         fileRegistryRepository.save(fileRegistry);
         log.debug("Registro de archivo guardado: {}", fileName);

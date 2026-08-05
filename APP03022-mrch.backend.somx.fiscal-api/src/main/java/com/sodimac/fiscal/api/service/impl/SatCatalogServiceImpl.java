@@ -1,18 +1,24 @@
 package com.sodimac.fiscal.api.service.impl;
 
+import com.sodimac.fiscal.api.repository.AddendumRepository;
 import com.sodimac.fiscal.api.service.SatCatalogService;
 import com.sodimac.fiscal.api.util.LanguageIdMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Lectura de catálogos de shared_catalogs DIRECTO desde la BD (misma base b2b_portal),
+ * sin pasar por util-api. Antes usaba HTTP a util-api ({utils.api.url}/catalog/...); si fiscal
+ * no alcanzaba util-api en un ambiente, los valores volvían vacíos y disparaban rechazos falsos
+ * (ej. BUS058/BUS059). Ahora se resuelve por JPA (AddendumRepository, native shared_catalogs),
+ * mismo patrón que CatTipoRelacionFacturaNC. Las descripciones conservan fallback hardcodeado.
+ */
 @Service
 @Slf4j
 public class SatCatalogServiceImpl implements SatCatalogService {
@@ -21,15 +27,12 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     private static final String CATALOG_TIPO_ADDENDA = "TipoAddenda";
     private static final String UNKNOWN = "Desconocido";
 
-    @Value("${utils.api.url:http://localhost:3712}")
-    private String utilsApiUrl;
-
-    private final RestTemplate restTemplate;
+    private final AddendumRepository addendumRepository;
 
     private final Map<String, String> descriptionCache = new ConcurrentHashMap<>();
 
-    public SatCatalogServiceImpl(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public SatCatalogServiceImpl(AddendumRepository addendumRepository) {
+        this.addendumRepository = addendumRepository;
     }
 
     @Override
@@ -51,7 +54,6 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public String getCatalogDescription(String catalogCode, String externalKey) {
         if (catalogCode == null || externalKey == null) {
             return null;
@@ -66,27 +68,14 @@ public class SatCatalogServiceImpl implements SatCatalogService {
         }
 
         try {
-            String url = String.format("%s/catalog/%s/details?lang=%d",
-                    utilsApiUrl, catalogCode, langId);
-
-            ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                for (Map detail : response.getBody()) {
-                    String detailExternalKey = (String) detail.get("externalKey");
-                    if (externalKey.equals(detailExternalKey)) {
-                        String description = (String) detail.get("description");
-                        if (description != null) {
-                            descriptionCache.put(cacheKey, description);
-                            log.debug("Descripcion obtenida de util-api para {}/{} (lang={}): {}",
-                                    catalogCode, externalKey, langId, description);
-                            return description;
-                        }
-                    }
-                }
+            String description = addendumRepository.findCatalogDescription(catalogCode, externalKey, langId);
+            if (description != null) {
+                descriptionCache.put(cacheKey, description);
+                log.debug("Descripción de catálogo {}/{} (lang={}): {}", catalogCode, externalKey, langId, description);
+                return description;
             }
         } catch (Exception e) {
-            log.warn("Error consultando util-api para {}/{} (lang={}): {}. Usando fallback.",
+            log.warn("Error leyendo descripción del catálogo {}/{} (lang={}): {}. Usando fallback.",
                     catalogCode, externalKey, langId, e.getMessage());
         }
 
@@ -94,30 +83,20 @@ public class SatCatalogServiceImpl implements SatCatalogService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public java.util.Set<String> getActiveCatalogValues(String catalogCode) {
         java.util.Set<String> values = new java.util.HashSet<>();
         if (catalogCode == null || catalogCode.isBlank()) {
             return values;
         }
-        int langId = getCurrentLanguageId();
         try {
-            String url = String.format("%s/catalog/%s/details?lang=%d", utilsApiUrl, catalogCode, langId);
-            ResponseEntity<Map[]> response = restTemplate.getForEntity(url, Map[].class);
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                for (Map detail : response.getBody()) {
-                    Object value = detail.get("value");
-                    Object externalKey = detail.get("externalKey");
-                    if (value != null && !value.toString().isBlank()) {
-                        values.add(value.toString().trim());
-                    }
-                    if (externalKey != null && !externalKey.toString().isBlank()) {
-                        values.add(externalKey.toString().trim());
-                    }
+            List<String> activos = addendumRepository.findActiveCatalogValues(catalogCode);
+            for (String value : activos) {
+                if (value != null && !value.isBlank()) {
+                    values.add(value.trim());
                 }
             }
         } catch (Exception e) {
-            log.warn("Error consultando valores del catálogo {} en util-api: {}", catalogCode, e.getMessage());
+            log.warn("Error leyendo valores del catálogo {} en shared_catalogs: {}", catalogCode, e.getMessage());
         }
         return values;
     }

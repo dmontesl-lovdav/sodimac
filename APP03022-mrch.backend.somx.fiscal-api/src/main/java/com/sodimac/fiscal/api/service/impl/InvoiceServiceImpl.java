@@ -805,10 +805,13 @@ public class InvoiceServiceImpl implements InvoiceService {
         final String CAT_FORMA_PAGO_NC = "CatFormaPagoValidoNc";
         final String CAT_USO_CFDI_NC = "CatUsoCfdiValidoNc";
 
+        // Los catálogos viven en shared_catalogs (misma BD). Se leen DIRECTO por JPA (mismo patrón
+        // que CatTipoRelacionFacturaNC en findActiveCatalogValues) para NO depender de util-api:
+        // si fiscal no alcanza util-api, getActiveCatalogValues devolvía set vacío -> BUS058/BUS059 falso.
         // PASO 6.5.1: forma de pago (Comprobante/@FormaPago)
         String formaPago = invoiceDto.getFormaPago();
         log.info("Paso 6.5.1: Validando forma de pago NC '{}' contra {}", formaPago, CAT_FORMA_PAGO_NC);
-        java.util.Set<String> formasValidas = satCatalogService.getActiveCatalogValues(CAT_FORMA_PAGO_NC);
+        java.util.Set<String> formasValidas = new java.util.HashSet<>(addendumRepository.findActiveCatalogValues(CAT_FORMA_PAGO_NC));
         if (formaPago == null || formaPago.isBlank() || !formasValidas.contains(formaPago.trim())) {
             log.warn("Forma de pago NC no válida. formaPago={} validas={}", formaPago, formasValidas);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,
@@ -820,7 +823,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         // PASO 6.5.2: uso CFDI (Receptor/@UsoCFDI)
         String usoCfdi = invoiceDto.getReceptorUsoCFDI();
         log.info("Paso 6.5.2: Validando uso CFDI NC '{}' contra {}", usoCfdi, CAT_USO_CFDI_NC);
-        java.util.Set<String> usosValidos = satCatalogService.getActiveCatalogValues(CAT_USO_CFDI_NC);
+        java.util.Set<String> usosValidos = new java.util.HashSet<>(addendumRepository.findActiveCatalogValues(CAT_USO_CFDI_NC));
         if (usoCfdi == null || usoCfdi.isBlank() || !usosValidos.contains(usoCfdi.trim())) {
             log.warn("Uso CFDI NC no válido. usoCfdi={} validos={}", usoCfdi, usosValidos);
             auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_DUPLICADO_UUID.getCode(), serviceName,

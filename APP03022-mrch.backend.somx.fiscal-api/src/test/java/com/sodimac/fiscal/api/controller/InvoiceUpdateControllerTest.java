@@ -53,7 +53,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(2); // Recibido Parcial
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -84,7 +84,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(3); // Pendiente de Contabilizar
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -108,7 +108,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(5); // Transición inválida desde estatus 1
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -133,7 +133,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(nonExistentUuid);
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(2);
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -156,7 +156,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(999); // Estatus que no existe
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -179,7 +179,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(null); // UUID nulo
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(2);
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -198,7 +198,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(null); // Estatus nulo
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -243,7 +243,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_NC_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(2); // Recibido Parcial
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 
@@ -268,7 +268,7 @@ public class InvoiceUpdateControllerTest {
         request.setUuid(UUID.fromString(TEST_NC_FISCAL_UUID));
         request.setNumeroProveedor(new BigDecimal("1234567890"));
         request.setEstatus(3); // Pendiente de Contabilizar
-        request.setIdUsuarioActualizacion(12345L);
+        request.setIdUsuarioActualizacion("9f7affd6-fc0f-4f76-bcaf-65b1af36a47d");
 
         String requestJson = objectMapper.writeValueAsString(request);
 

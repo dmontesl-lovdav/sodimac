@@ -45,7 +45,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
             String statusMessage,
             String requestData,
             String responseData,
-            Long userId) {
+            UUID userId) {
 
         try {
             LogEntity logEntry = new LogEntity();

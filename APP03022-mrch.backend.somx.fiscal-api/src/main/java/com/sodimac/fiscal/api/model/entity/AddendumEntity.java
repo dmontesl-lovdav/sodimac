@@ -59,7 +59,7 @@ public class AddendumEntity extends BaseEntity {
     private Integer addendaType;
 
     @Column(name = "user_id")
-    private Long userId;
+    private UUID userId;
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;

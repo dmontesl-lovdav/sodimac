@@ -38,5 +38,5 @@ public interface ActivityLogService {
             String statusMessage,
             String requestData,
             String responseData,
-            Long userId);
+            UUID userId);
 }

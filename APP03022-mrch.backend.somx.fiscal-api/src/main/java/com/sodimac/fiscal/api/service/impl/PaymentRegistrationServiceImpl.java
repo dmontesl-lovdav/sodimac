@@ -465,8 +465,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         payments.setStatus(1); // Vigente
         payments.setCertificationDate(parsedXml.getTimbreFiscalDigital() != null ?
                 LocalDateTime.parse(parsedXml.getTimbreFiscalDigital().getFechaTimbrado().substring(0, 19)) : null);
-        // created_by (bigint) queda null: idUsuario es el UUID del usuario y solo se usa para
-        // trazabilidad en bitácora. Consistente con el flujo de factura, que tampoco lo persiste.
+        payments.setCreatedBy(toUserUuid(request.getIdUsuario()));
 
         return payments;
     }
@@ -501,7 +500,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             payment.setPayerAccount(pagoDto.getCtaOrdenante());
             payment.setBeneficiaryBankRfc(pagoDto.getRfcEmisorCtaBen());
             payment.setBeneficiaryAccount(pagoDto.getCtaBeneficiario());
-            // created_by null: ver nota en buildPaymentsEntity (idUsuario es UUID, solo bitácora).
+            payment.setCreatedBy(toUserUuid(request.getIdUsuario()));
 
             payment = paymentRepository.save(payment);
             log.debug("Payment guardado: UUID={}, monto={}", payment.getPaymentUuid(), payment.getAmount());
@@ -522,7 +521,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     relDoc.setCurrency(docto.getMonedaDR() != null ? docto.getMonedaDR() : "MXN");
                     relDoc.setExchangeRate(docto.getEquivalenciaDR() != null && !docto.getEquivalenciaDR().isEmpty()
                             ? new BigDecimal(docto.getEquivalenciaDR()) : BigDecimal.ONE);
-                    // created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
+                    relDoc.setCreatedBy(toUserUuid(request.getIdUsuario()));
 
                     relatedDocumentsRepository.save(relDoc);
                     log.debug("RelatedDocument guardado: docUuid={}, pagado={}, saldo={}",
@@ -532,6 +531,19 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         }
 
         log.info("Dispersión completada: {} pagos procesados", parsedXml.getPagos().getPagos().size());
+    }
+
+    /** Parsea el UUID de usuario (sub del token) que manda el front. null si viene vacío o inválido. */
+    private static UUID toUserUuid(String v) {
+        if (v == null || v.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(v.trim());
+        } catch (IllegalArgumentException e) {
+            log.warn("idUsuario no es un UUID válido ({}); se guarda null", v);
+            return null;
+        }
     }
 
     /**
@@ -550,7 +562,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         addendum.setShippingGuideNumber(null);
         addendum.setAddendaType(request.getTipoAddenda()); // 5
         addendum.setSupplierType(request.getTipoProveedor());
-        // user_id/created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
+        addendum.setUserId(toUserUuid(request.getIdUsuario()));
+        addendum.setCreatedBy(toUserUuid(request.getIdUsuario()));
         addendum.setAddendumContent(parsedXml.getAddendaContent());
         addendum.setUpdateDate(null);
 
@@ -576,7 +589,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
         fileRegistry.setErrorCode(errorCode);
         fileRegistry.setErrorMessage(errorMessage);
         fileRegistry.setSupplierId(request.getIdProveedor());
-        // user_id/created_by null: idUsuario es UUID, solo bitácora (ver buildPaymentsEntity).
+        fileRegistry.setUserId(toUserUuid(request.getIdUsuario()));
+        fileRegistry.setCreatedBy(toUserUuid(request.getIdUsuario()));
 
         fileRegistryRepository.save(fileRegistry);
         log.debug("Registro de archivo guardado: {}", fileName);

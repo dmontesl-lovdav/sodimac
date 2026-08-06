@@ -106,7 +106,7 @@ public class PaymentSearchResponse {
     private LocalDateTime createdAt;
 
     /**
-     * Usuario que creó el registro.
+     * Usuario que creó el registro (UUID del sub del token).
      */
-    private Long createdBy;
+    private UUID createdBy;
 }

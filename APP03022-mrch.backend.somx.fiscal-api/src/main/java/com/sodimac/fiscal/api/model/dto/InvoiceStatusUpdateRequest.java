@@ -50,11 +50,11 @@ public class InvoiceStatusUpdateRequest {
 
     @NotNull(message = "ID de usuario actualización es obligatorio")
     @Schema(
-            description = "ID del usuario que realiza la actualización",
+            description = "UUID del usuario que realiza la actualización (sub del token). Sistema/batch: 00000000-0000-0000-0000-000000000000",
             required = true,
-            example = "12345"
+            example = "9f7affd6-fc0f-4f76-bcaf-65b1af36a47d"
     )
-    private Long idUsuarioActualizacion;
+    private String idUsuarioActualizacion;
 
     @Schema(
             description = "Fecha de contabilización. Solo se guarda si estatusDestino = 7 (Pendiente de Pago)",

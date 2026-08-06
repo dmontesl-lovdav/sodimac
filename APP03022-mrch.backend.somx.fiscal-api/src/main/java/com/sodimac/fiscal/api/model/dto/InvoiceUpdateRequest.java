@@ -39,8 +39,8 @@ public class InvoiceUpdateRequest {
     private Integer estatus;
 
     @NotNull(message = "ID de usuario actualización es obligatorio")
-    @Schema(description = "ID del usuario que realiza la actualización", required = true, example = "12345")
-    private Long idUsuarioActualizacion;
+    @Schema(description = "UUID del usuario que realiza la actualización (sub del token)", required = true, example = "9f7affd6-fc0f-4f76-bcaf-65b1af36a47d")
+    private String idUsuarioActualizacion;
 
     @Schema(description = "Datos de addenda a actualizar (opcional)")
     private AddendaUpdateDto addenda;

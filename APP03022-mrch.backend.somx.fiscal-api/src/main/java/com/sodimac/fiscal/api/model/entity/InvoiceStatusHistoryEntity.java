@@ -41,7 +41,7 @@ public class InvoiceStatusHistoryEntity {
     private Integer statusTo;
 
     @Column(name = "changed_by")
-    private Integer changedBy;
+    private UUID changedBy;
 
     @Column(name = "changed_at")
     private LocalDateTime changedAt;

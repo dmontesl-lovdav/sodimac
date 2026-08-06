@@ -47,7 +47,7 @@ public class PaymentFileRegistryEntity extends BaseEntity {
     private Long supplierId;
 
     @Column(name = "user_id")
-    private Long userId;
+    private UUID userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payments_uuid", referencedColumnName = "payments_uuid", insertable = false, updatable = false)

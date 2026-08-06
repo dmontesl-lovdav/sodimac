@@ -8,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
@@ -15,15 +16,16 @@ import java.time.LocalDateTime;
 @Setter
 public abstract class BaseEntity {
 
+    // Identidad de usuario unificada a UUID (el sub del token). Antes Long. 2026-08-06.
     @Column(name = "created_by")
-    private Long createdBy;
+    private UUID createdBy;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_by")
-    private Long updatedBy;
+    private UUID updatedBy;
 
     @LastModifiedDate
     @Column(name = "updated_at")

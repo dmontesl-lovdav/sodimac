@@ -524,7 +524,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 4: ACTUALIZAR ESTATUS ===
             log.info("Paso 4: Actualizando estatus");
             invoice.setStatus(newStatusCode);
-            invoice.setUpdatedBy(request.getIdUsuarioActualizacion());
+            invoice.setUpdatedBy(parseUserUuid(request.getIdUsuarioActualizacion()));
             // Nota: BaseEntity maneja updated_at automáticamente con @PreUpdate
 
             invoice = invoiceRepository.save(invoice);
@@ -798,6 +798,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "descuento=" + descuento.toPlainString() + ", subtotalNC=" + subtotalNc.toPlainString()
                             + ", tolerancia=" + tolerancia.toPlainString(), null, null);
             messageCatalog.throwException(FiscalMessageCode.BUS2032);
+        }
+    }
+
+    /** Parsea el UUID de usuario que manda el front (sub del token). null si viene vacío o inválido. */
+    private static UUID parseUserUuid(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value.trim());
+        } catch (IllegalArgumentException e) {
+            log.warn("idUsuario no es un UUID válido ({}); se guarda null", value);
+            return null;
         }
     }
 
@@ -3106,7 +3119,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 5: ACTUALIZAR ESTATUS ===
             Integer estatusAnterior = invoice.getStatus();
             invoice.setStatus(request.getEstatusDestino());
-            invoice.setUpdatedBy(request.getIdUsuarioActualizacion());
+            invoice.setUpdatedBy(parseUserUuid(request.getIdUsuarioActualizacion()));
             invoice.setUpdatedAt(LocalDateTime.now());
 
             // Si el estatus destino es 7 (Pendiente de Pago), guardar fecha de contabilización
@@ -3134,7 +3147,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                         .fiscalUuid(invoice.getFiscalUuid())
                         .statusFrom(estatusAnterior)
                         .statusTo(request.getEstatusDestino())
-                        .changedBy(request.getIdUsuarioActualizacion() != null ? request.getIdUsuarioActualizacion().intValue() : null)
+                        .changedBy(parseUserUuid(request.getIdUsuarioActualizacion()))
                         .changedAt(LocalDateTime.now())
                         .comment(request.getComentario())
                         .build();

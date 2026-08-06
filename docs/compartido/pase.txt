@@ -71,3 +71,8 @@ vw_credit_note,created_by,uuid
 vw_credit_note,updated_by,uuid
 vw_invoice,created_by,uuid
 vw_invoice,updated_by,uuid
+
+
+
+SELECT fiscal_uuid, status FROM tenant_fiscal.invoice WHERE document_type='I' AND status=2 LIMIT 1;
+curl.exe -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/<FISCAL_UUID>/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":1,\"estatusOrigen\":2,\"estatusDestino\":3,\"idUsuarioActualizacion\":\"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d\"}" -w "\nHTTP %{http_code}\n"

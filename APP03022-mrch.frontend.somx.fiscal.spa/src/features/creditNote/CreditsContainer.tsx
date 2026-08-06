@@ -222,7 +222,7 @@ export default function CreditsGrid() {
     },
   ];
   const rowActions: RowAction<CreditNote>[] = rowActionDescriptors
-    .filter(({ gate }) => can(gate))
+    //.filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
 

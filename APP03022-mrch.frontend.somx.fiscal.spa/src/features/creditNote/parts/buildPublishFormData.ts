@@ -25,6 +25,7 @@ export function buildPublishFormData({
   if (isCommercialDiscountFlow(query)) {
     formData.append("documentNumber", query.documentNumber);
     formData.append("supplierNumber", query.supplierNumber);
+    formData.append("rebateId", query.rebateId);
     formData.append("tipoNotaCredito", "2");
     return formData;
   }

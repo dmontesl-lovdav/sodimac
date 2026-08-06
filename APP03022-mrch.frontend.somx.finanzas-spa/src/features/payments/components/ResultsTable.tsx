@@ -114,6 +114,8 @@ export default function ResultsTable({
                     amount: String(r.amount ?? 0),
                     paymentDate: r.paymentDate ?? "",
                     year: r.paymentYear ?? "",
+                    uuid: r.paymentHeaderUuid ?? "",
+                    status: r.status ?? "",
                 });
 
                 return (

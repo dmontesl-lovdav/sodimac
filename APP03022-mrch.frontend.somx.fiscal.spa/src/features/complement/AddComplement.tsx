@@ -1,42 +1,52 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { TraceFolioPayload } from "@/services/TraceabilityClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
 import { useLocation } from "react-router-dom";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
-import { Divider, Title } from "@/shared/components/ui/misc";
-import { GenericDropzone, GenericButton, GenericModal } from "@/shared/components/ui";
+import { GenericButton, GenericModal } from "@/shared/components/ui";
 import { APP_EVENT, PermissionGate } from "@shared/security";
+import { GenericLinearProgress } from "@/shared/components/ui/progress";
 import { createComplementPaymentClient } from "./api/ComplementPaymentClient";
 import { TraceFolioProvider, useTraceFolio } from "@/hooks/TraceFolioProvider";
-import { EMPTY_HEADER, PaymentHeaderData, ProviderCatalogItem, QueryPaymentData, XmlComplementPreview } from "./interfaces";
+import {
+  EMPTY_HEADER,
+  PaymentHeaderData,
+  ProviderCatalogItem,
+  QueryPaymentData,
+  XmlComplementPreview,
+} from "./interfaces";
 import { parseComplementXml } from "./utils/helpers";
-import { fetchProvidersAsCatalog, formatBytes, getErrorMessage, isValidPdf, isValidXml, toCurrency } from "@/utils/utils";
+import { fetchProvidersAsCatalog, getErrorMessage, toCurrency } from "@/utils/utils";
 import { ModalMsg } from "@/shared/components/ui/modal/ModalMsg";
 import BitacoraErrorModal from "@/shared/components/ui/modal/BitacoraErrorModal";
+import "../creditNote/PublishCreditNote.css";
+import "../creditNote/parts/DiscountInfoGrid.css";
 
-//TODO: Obtener de api de configuración o constantes globales
-const XML_ACCEPT = ".xml,application/xml,text/xml";
-const PDF_ACCEPT = ".pdf,application/pdf";
 const MAX_MB = 10;
+const MAX_BYTES = MAX_MB * 1024 * 1024;
 
-const PAYMENT_LABELS: Array<{ key: keyof PaymentHeaderData; label: string; formatter?: (value: string) => string }> = [
-  { key: "idProveedor", label: "Id Proveedor" },
+const PAYMENT_FIELDS: Array<{
+  key: keyof PaymentHeaderData;
+  label: string;
+  formatter?: (value: string) => string;
+}> = [
+  { key: "idProveedor", label: "Número Proveedor" },
   { key: "nombreProveedor", label: "Nombre Proveedor" },
-  { key: "referenciaPago", label: "Referencia de pago" },
-  { key: "anioPagos", label: "Año Pagos" },
+  { key: "rfcProveedor", label: "RFC Proveedor" },
+  { key: "anioPagos", label: "Año Pago" },
   { key: "moneda", label: "Moneda" },
   { key: "monto", label: "Monto", formatter: toCurrency },
-  { key: "estatus", label: "Estatus" },
-  { key: "fechaRegistro", label: "Fecha de registro" },
+  { key: "status", label: "Estatus" },
+  { key: "fechaRegistro", label: "Fecha Registro" },
 ];
 
-const XML_PREVIEW_LABELS: Array<{ key: keyof XmlComplementPreview; label: string }> = [
-  { key: "uuid", label: "UUID" },
-  { key: "rfcEmisor", label: "RFC Emisor" },
-  { key: "nombreEmisor", label: "Nombre Emisor" },
-  { key: "monto", label: "Monto" },
-  { key: "fechaTimbrado", label: "Fecha de timbrado" },
+const XML_SUMMARY_ROWS: Array<{ key: keyof XmlComplementPreview; label: string }> = [
+  { key: "uuid", label: "UUID:" },
+  { key: "rfcEmisor", label: "RFC Emisor:" },
+  { key: "nombreEmisor", label: "Nombre Emisor:" },
+  { key: "monto", label: "Monto:" },
+  { key: "fechaTimbrado", label: "Fecha de timbrado:" },
 ];
 
 function parsePaymentQuery(search: string): QueryPaymentData | null {
@@ -50,18 +60,34 @@ function parsePaymentQuery(search: string): QueryPaymentData | null {
     monto: params.get("amount") ?? "",
     fechaRegistro: params.get("paymentDate") ?? "",
     anioPagos: params.get("year") ?? "",
+    uuid: params.get("uuid") ?? "",
+    status: params.get("status") ?? "",
   };
 
   return Object.values(data).some(Boolean) ? data : null;
 }
 
+function getXmlFileError(file: File): string | null {
+  if (file.size > MAX_BYTES) return `El archivo no debe exceder ${MAX_MB} MB.`;
+  if (!file.name.trim().toLowerCase().endsWith(".xml")) {
+    return "El tipo de archivo no es el correcto, debes subir un xml válido.";
+  }
+  return null;
+}
 
+function getPdfFileError(file: File): string | null {
+  if (file.size > MAX_BYTES) return `El archivo no debe exceder ${MAX_MB} MB.`;
+  if (!file.name.trim().toLowerCase().endsWith(".pdf")) {
+    return "El tipo de archivo no es el correcto, debes subir un pdf válido.";
+  }
+  return null;
+}
 
 const BREADCRUMB: BreadcrumbItem[] = [
   { label: "Fiscal", to: "/" },
+  { label: "Consulta complemento pago", to: "/fiscal/consulta-complemento-pago" },
   { label: "Añadir complemento de pago" },
 ];
-
 
 export default function AddComplement() {
   const traceFolioPayload = useMemo<TraceFolioPayload>(
@@ -78,7 +104,7 @@ export default function AddComplement() {
   );
   return decorate(
     BREADCRUMB,
-    "/",
+    "/fiscal/consulta-complemento-pago",
     <TraceFolioProvider traceFolioPayload={traceFolioPayload}>
       <AddComplementContent />
     </TraceFolioProvider>
@@ -87,11 +113,16 @@ export default function AddComplement() {
 
 function AddComplementContent() {
   const location = useLocation();
+  const xmlInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [providers, setProviders] = useState<ProviderCatalogItem[]>([]);
 
   useEffect(() => {
     async function loadProviders() {
-      const providerOptions = (await fetchProvidersAsCatalog("supplierNumber", true)) as ProviderCatalogItem[] | null;
+      const providerOptions = (await fetchProvidersAsCatalog(
+        "supplierNumber",
+        true
+      )) as ProviderCatalogItem[] | null;
       if (providerOptions) {
         setProviders(providerOptions);
       }
@@ -106,12 +137,15 @@ function AddComplementContent() {
     return {
       ...EMPTY_HEADER,
       nombreProveedor: provider?.businessName ?? EMPTY_HEADER.nombreProveedor,
+      rfcProveedor: provider?.rfc ?? EMPTY_HEADER.rfcProveedor,
       referenciaPago: queryData.referenciaPago ?? EMPTY_HEADER.referenciaPago,
       idProveedor: queryData.idProveedor ?? EMPTY_HEADER.idProveedor,
       moneda: queryData.moneda ?? EMPTY_HEADER.moneda,
       monto: queryData.monto ?? EMPTY_HEADER.monto,
       fechaRegistro: queryData.fechaRegistro ?? EMPTY_HEADER.fechaRegistro,
       anioPagos: queryData.anioPagos ?? EMPTY_HEADER.anioPagos,
+      uuid: queryData.uuid ?? EMPTY_HEADER.uuid,
+      status: queryData.status ?? EMPTY_HEADER.status,
     };
   }, [location.search, providers]);
 
@@ -122,81 +156,182 @@ function AddComplementContent() {
   const [xmlFile, setXmlFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [xmlPreview, setXmlPreview] = useState<XmlComplementPreview | null>(null);
+  const [isValidComplement, setIsValidComplement] = useState(false);
   const [published, setPublished] = useState(false);
-  const [resultMessage, setResultMessage] = useState<string>("");
+  const [resultMessage, setResultMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   const selectedProvider = useMemo(
     () => providers.find((provider) => provider.idProveedor === header.idProveedor),
-    [providers, header.idProveedor],
+    [providers, header.idProveedor]
   );
 
-  const handleXmlSelect = useCallback((file: File | null) => {
-    if (file && !isValidXml(file)) {
-      setErrorMsg("El archivo debe ser XML (extensión .xml y tipo MIME application/xml o text/xml).");
-      return;
-    }
-    setXmlFile(file);
+  const selectedRfc = useMemo(() => {
+    const fromHeader = header.rfcProveedor?.trim();
+    if (fromHeader && fromHeader !== "--") return fromHeader.toUpperCase();
+    const fromProvider = selectedProvider?.rfc?.trim();
+    return fromProvider ? fromProvider.toUpperCase() : "";
+  }, [header.rfcProveedor, selectedProvider]);
+
+  const { traceId, addLog, headerActions, noTraceWarning, traceFooter, traceLoading } =
+    useTraceFolio();
+  const hasTraceId = Boolean(traceId);
+  const uploadsLocked = published || !hasTraceId || traceLoading || isUploading;
+  const canPublish =
+    hasTraceId && Boolean(xmlFile) && isValidComplement && !isUploading && !published;
+  const canRelate = hasTraceId && published && !isUploading;
+
+  const showAlert = useCallback((message: string) => {
+    setAlertMessage(message);
+    setAlertVisible(true);
+  }, []);
+
+  const resetFileInputs = () => {
+    if (xmlInputRef.current) xmlInputRef.current.value = "";
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
+  };
+
+  const handleClearForm = useCallback(() => {
+    resetFileInputs();
+    setXmlFile(null);
+    setPdfFile(null);
     setXmlPreview(null);
+    setIsValidComplement(false);
+    setPublished(false);
+    setResultMessage("");
     setErrorMsg(null);
-    if (file) {
+    setAlertVisible(false);
+    setAlertMessage("");
+  }, []);
+
+  const validateComplementXml = useCallback(
+    (parsed: XmlComplementPreview | null): boolean => {
+      if (!parsed) {
+        showAlert("No fue posible leer la información del XML.");
+        return false;
+      }
+
+      if (parsed.tipoDeComprobante.trim().toUpperCase() !== "P") {
+        showAlert(
+          "El archivo XML no corresponde a un complemento de pago válido. Por favor, valida el documento antes de continuar."
+        );
+        return false;
+      }
+
+      const xmlRfc = parsed.rfcEmisor.trim().toUpperCase();
+      if (selectedRfc && xmlRfc && xmlRfc !== selectedRfc) {
+        showAlert(
+          "El RFC del proveedor no coincide con el complemento de pago. Por favor, valida el archivo XML."
+        );
+        return false;
+      }
+
+      return true;
+    },
+    [selectedRfc, showAlert]
+  );
+
+  const handleXmlChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (published) return;
+      const selectedFile = e.target.files?.[0] ?? null;
+      if (!selectedFile) {
+        setXmlFile(null);
+        setXmlPreview(null);
+        setIsValidComplement(false);
+        return;
+      }
+
+      const fileError = getXmlFileError(selectedFile);
+      if (fileError) {
+        showAlert(fileError);
+        e.target.value = "";
+        resetFileInputs();
+        setXmlFile(null);
+        setXmlPreview(null);
+        setIsValidComplement(false);
+        return;
+      }
+
+      setXmlFile(selectedFile);
+      setXmlPreview(null);
+      setIsValidComplement(false);
+      setErrorMsg(null);
+      setPublished(false);
+
       const reader = new FileReader();
       reader.onload = () => {
         const text = String(reader.result ?? "");
         const parsed = parseComplementXml(text);
         setXmlPreview(parsed);
+        setIsValidComplement(validateComplementXml(parsed));
       };
-      reader.readAsText(file);
-    }
-  }, []);
+      reader.readAsText(selectedFile);
 
-  const handlePdfSelect = useCallback((file: File | null) => {
-    if (file && !isValidPdf(file)) {
-      setErrorMsg("El archivo debe ser PDF (extensión .pdf y tipo MIME application/pdf).");
-      return;
-    }
-    setPdfFile(file);
-    setErrorMsg(null);
-  }, []);
-
-  const handleRemoveXml = useCallback(() => {
-    setXmlFile(null);
-    setXmlPreview(null);
-    setErrorMsg(null);
-    setPublished(false);
-  }, []);
-
-  const handleRemovePdf = useCallback(() => {
-    setPdfFile(null);
-    setErrorMsg(null);
-    setPublished(false);
-  }, []);
-
-  const { traceId, addLog, headerActions, noTraceWarning, traceFooter } = useTraceFolio();
-  const hasTraceId = Boolean(traceId);
-  const canPublish = hasTraceId && Boolean(xmlFile) && !isUploading && !published;
-  const canRelate = hasTraceId && published && !isUploading;
-
-  const handleXmlSelectWithTrace = useCallback(
-    (file: File | null) => {
-      handleXmlSelect(file);
-      if (file && traceId) {
+      if (traceId) {
         const userId = client.getUser() ?? "unknown";
         addLog(
-          `Usuario ${userId} sube el archivo ${file.name} de tipo XML en la pantalla complemento de pago`,
+          `Usuario ${userId} sube el archivo ${selectedFile.name} de tipo XML en la pantalla complemento de pago`,
           "COMPLEMENT",
           "UPLOAD_XML",
           "INFO",
-          { userId, fileName: file.name, fileType: file.type, fileSize: file.size }
+          {
+            userId,
+            fileName: selectedFile.name,
+            fileType: selectedFile.type,
+            fileSize: selectedFile.size,
+          }
         );
       }
     },
-    [traceId, addLog, client, handleXmlSelect]
+    [published, showAlert, traceId, client, addLog, validateComplementXml]
+  );
+
+  const handlePdfChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (published) return;
+      const selectedFile = e.target.files?.[0] ?? null;
+      if (!selectedFile) {
+        setPdfFile(null);
+        return;
+      }
+
+      const fileError = getPdfFileError(selectedFile);
+      if (fileError) {
+        showAlert(fileError);
+        e.target.value = "";
+        setPdfFile(null);
+        return;
+      }
+
+      setPdfFile(selectedFile);
+      setErrorMsg(null);
+      setPublished(false);
+    },
+    [published, showAlert]
   );
 
   const handlePublish = useCallback(async () => {
-    if (!xmlFile || !traceId) return;
+    if (!xmlFile || !traceId || !xmlPreview || published) return;
+
+    if (xmlPreview.tipoDeComprobante.trim().toUpperCase() !== "P") {
+      showAlert(
+        "El archivo XML no corresponde a un complemento de pago válido. Por favor, valida el documento antes de continuar."
+      );
+      return;
+    }
+
+    const xmlRfc = xmlPreview.rfcEmisor.trim().toUpperCase();
+    if (selectedRfc && xmlRfc && xmlRfc !== selectedRfc) {
+      showAlert(
+        "El RFC del proveedor no coincide con el complemento de pago. Por favor, valida el archivo XML."
+      );
+      return;
+    }
+
     setIsUploading(true);
     setErrorMsg(null);
     try {
@@ -209,7 +344,9 @@ function AddComplementContent() {
       formData.append("xmlFile", xmlFile);
       if (pdfFile) formData.append("pdf", pdfFile);
       const response = await client.publishComplement(formData);
-      const msg = (response as { message?: string })?.message ?? "Complemento de pago publicado correctamente.";
+      const msg =
+        (response as { message?: string })?.message ??
+        "Complemento de pago publicado correctamente.";
       setResultMessage(msg);
       addLog(msg, "COMPLEMENT", "PUBLISH_COMPLEMENT", "INFO", response);
       setPublished(true);
@@ -220,7 +357,19 @@ function AddComplementContent() {
     } finally {
       setIsUploading(false);
     }
-  }, [xmlFile, pdfFile, client, selectedProvider, traceId, addLog, header.idProveedor]);
+  }, [
+    xmlFile,
+    pdfFile,
+    xmlPreview,
+    published,
+    client,
+    selectedProvider,
+    selectedRfc,
+    traceId,
+    addLog,
+    header.idProveedor,
+    showAlert,
+  ]);
 
   const handleRelate = useCallback(async () => {
     const idPago = payment?.referenciaPago ?? header.referenciaPago;
@@ -245,6 +394,14 @@ function AddComplementContent() {
     }
   }, [payment, header.referenciaPago, client, traceId, addLog]);
 
+  const uploadLabelClass = () =>
+    `pcn-upload-label${uploadsLocked ? " pcn-upload-label--disabled" : ""}`;
+
+  const displayOrDash = (value: string) => {
+    const trimmed = value?.trim();
+    return trimmed && trimmed !== "--" ? trimmed : "--";
+  };
+
   return (
     <div>
       <BitacoraErrorModal
@@ -253,125 +410,158 @@ function AddComplementContent() {
         message={errorMsg ?? ""}
         onClose={() => setErrorMsg(null)}
       />
-      <ModalMsg severity="success" visible={!!resultMessage} msg={resultMessage ?? ""} onClose={() => setResultMessage("")} />
-      {isUploading && (
+      <ModalMsg
+        severity="success"
+        visible={!!resultMessage}
+        msg={resultMessage ?? ""}
+        onClose={() => setResultMessage("")}
+      />
+      {(isUploading || traceLoading) && (
         <GenericModal
           visible
           variant="loading"
-          message="Procesando complemento de pago..."
+          message={isUploading ? "Procesando complemento de pago…" : "Cargando información…"}
         />
       )}
-      <Title
-        title="Nuevo complemento de pago"
-        description="Relaciona un pago con el complemento de pago."
-        actions={headerActions}
+      <GenericModal
+        visible={alertVisible && !published}
+        variant="alert"
+        severity="warning"
+        title="Atención"
+        message={alertMessage}
+        buttonText="Aceptar"
+        onClose={() => setAlertVisible(false)}
       />
-      
-      <section className="fiscal-mb-4">
-        <h5 className="fiscal-mb-2">Datos del pago</h5>
-        <div className="fiscal-row fiscal-gap fiscal-mb-4">
-          {PAYMENT_LABELS.map(({ key, label, formatter }) => (
-            <div key={key} className="fiscal-col-6">
-              <span className="fiscal-font-medium">{label}:</span> {formatter ? formatter(header[key]) : header[key]}
-            </div>
-          ))}
+
+      <div className="pcn-page-header">
+        <div className="pcn-page-header-main">
+          <h1>Publicar Complemento de Pago</h1>
+          <p>Carga y publica el complemento de pago al sistema</p>
         </div>
-      </section>
-      <Divider />
+        <div className="pcn-page-header-actions">
+          {headerActions}
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+            <GenericButton
+              variant="primary"
+              disabled={!canPublish}
+              onClick={() => {
+                handlePublish();
+              }}
+            >
+              {isUploading && !published ? "Publicando…" : "Publicar"}
+            </GenericButton>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+            <GenericButton
+              variant="outlineFill"
+              disabled={!canRelate}
+              onClick={() => {
+                handleRelate();
+              }}
+            >
+              Relacionar
+            </GenericButton>
+          </PermissionGate>
+          <GenericButton
+            variant="outlineFill"
+            disabled={isUploading || published}
+            onClick={handleClearForm}
+          >
+            Limpiar
+          </GenericButton>
+        </div>
+      </div>
+
       {noTraceWarning}
-      {
-        hasTraceId ? (
-          <div>
-            <section className="fiscal-mb-4">
-        <h5 className="fiscal-mb-2">Carga de archivos</h5>
-        <div className="fiscal-row fiscal-gap">
-          <div className="fiscal-col-6">
-            <p className="fiscal-block fiscal-font-medium fiscal-mb-2" id="complement-xml-label">
-              Complemento XML (obligatorio)
-            </p>
-            {!xmlFile ? (
-              <GenericDropzone
-                file={xmlFile}
-                onFileSelect={handleXmlSelectWithTrace}
-                accept={XML_ACCEPT}
-                maxSizeMb={MAX_MB}
-                fileInfoPosition="below"
-              />
-            ) : (
-              <div className="fiscal-p-4 fiscal-bg-gray fiscal-rounded">
-                <h6 className="fiscal-font-medium fiscal-mb-2">Archivo XML seleccionado</h6>
-                <p className="fiscal-mb-2">
-                  <span className="fiscal-font-medium">Nombre:</span> {xmlFile.name}
-                </p>
-                <GenericButton
-                  type="button"
-                  onClick={handleRemoveXml}
-                  variant="outline"
-                >
-                  Cambiar o eliminar archivo
-                </GenericButton>
-                {xmlPreview && (
-                  <div className="fiscal-mt-4">
-                    <div className="fiscal-row fiscal-gap">
-                      {XML_PREVIEW_LABELS.map(({ key, label }) => (
-                        <div key={key} className="fiscal-col-6">
-                          <span className="fiscal-font-medium">{label}:</span> {xmlPreview[key] ?? "--"}
-                        </div>
-                      ))}
-                    </div>
+
+      {hasTraceId ? (
+        <div className="pcn-control">
+          <div className="pcn-discount-header-card">
+            <div className="pcn-discount-header-top">
+              <span className="pcn-discount-section-title">Datos del pago</span>
+            </div>
+            <div className="pcn-discount-summary-grid">
+              {PAYMENT_FIELDS.map(({ key, label, formatter }) => (
+                <div key={key} className="pcn-discount-summary-item">
+                  <div className="pcn-discount-label">{label}</div>
+                  <div>
+                    {formatter
+                      ? formatter(header[key])
+                      : displayOrDash(header[key])}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="fiscal-col-6">
-            <p className="fiscal-block fiscal-font-medium fiscal-mb-2" id="complement-pdf-label">
-              PDF (opcional)
-            </p>
-            {!pdfFile ? (
-              <GenericDropzone
-                file={pdfFile}
-                onFileSelect={handlePdfSelect}
-                accept={PDF_ACCEPT}
-                maxSizeMb={MAX_MB}
-                fileInfoPosition="below"
-              />
-            ) : (
-              <div className="fiscal-p-4 fiscal-bg-gray fiscal-rounded">
-                <h6 className="fiscal-font-medium fiscal-mb-2">Archivo PDF seleccionado</h6>
-                <p className="fiscal-mb-2">
-                  <span className="fiscal-font-medium">Nombre:</span> {pdfFile.name}
-                </p>
-                <p className="fiscal-mb-2">
-                  <span className="fiscal-font-medium">Tamaño:</span> {formatBytes(pdfFile.size)}
-                </p>
-                <GenericButton type="button" onClick={handleRemovePdf} variant="outline">
-                  Cambiar o eliminar archivo
-                </GenericButton>
+
+          {isUploading ? <GenericLinearProgress /> : null}
+
+          <div className="pcn-layout">
+            <div className="pcn-form">
+              <h2 className="pcn-section-title">Subir Complemento de Pago</h2>
+
+              <div className="pcn-upload-grid">
+                <label className={uploadLabelClass()}>
+                  <input
+                    ref={xmlInputRef}
+                    type="file"
+                    accept=".xml"
+                    className="pcn-file-input"
+                    onChange={handleXmlChange}
+                    disabled={uploadsLocked}
+                  />
+                  <p className="pcn-upload-text">
+                    Subir XML del complemento de pago (Requerido)
+                  </p>
+                  {xmlFile && <p className="pcn-upload-file">{xmlFile.name}</p>}
+                </label>
+
+                <label className={uploadLabelClass()}>
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="pcn-file-input"
+                    onChange={handlePdfChange}
+                    disabled={uploadsLocked}
+                  />
+                  <p className="pcn-upload-text">
+                    Subir PDF del complemento de pago (Opcional)
+                  </p>
+                  {pdfFile && <p className="pcn-upload-file">{pdfFile.name}</p>}
+                </label>
               </div>
-            )}
+
+              {published && resultMessage.trim() !== "" ? (
+                <p className="pcn-notice pcn-notice--success" role="status" aria-live="polite">
+                  {resultMessage}
+                </p>
+              ) : null}
+            </div>
+
+            {xmlPreview ? (
+              <div className="pcn-summary-wrap">
+                <div className="pcn-summary">
+                  <table className="pcn-summary-table">
+                    <tbody>
+                      {XML_SUMMARY_ROWS.map((row) => (
+                        <tr key={row.key}>
+                          <th scope="row" className="pcn-cell pcn-cell-label">
+                            {row.label}
+                          </th>
+                          <td className="pcn-cell">{xmlPreview[row.key] ?? "--"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
-        
-      </section>
-      <Divider />
-      <section className="fiscal-mb-4">
-        <div className="fiscal-flex fiscal-gap-2 fiscal-flex-wrap">
-          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
-            <GenericButton onClick={() => { handlePublish(); }} disabled={!canPublish}>
-              {isUploading && !published ? "Publicando…" : "Publicar complemento"}
-            </GenericButton>
-          </PermissionGate>
-          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
-            <GenericButton variant="outline" onClick={() => { handleRelate(); }} disabled={!canRelate}>
-              Relacionar complemento
-            </GenericButton>
-          </PermissionGate>
-        </div>
-      </section>
-          </div>
-        ): traceFooter
-      }
+      ) : (
+        traceFooter
+      )}
     </div>
   );
 }

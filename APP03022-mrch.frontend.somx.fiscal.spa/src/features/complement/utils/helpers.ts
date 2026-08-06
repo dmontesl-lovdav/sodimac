@@ -44,6 +44,8 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
         ].find((v) => v !== "") ?? "",
       monto: monto ? Number(monto).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : "",
       fechaTimbrado: getAttr(timbre, "FechaTimbrado") ?? "",
+      tipoDeComprobante:
+        getAttr(comprobante, "TipoDeComprobante") || getAttr(comprobante, "tipoDeComprobante") || "",
     };
   } catch {
     return null;
@@ -64,13 +66,15 @@ function resolvePaymentYear(row: ComplementPayment): string {
 
 export function toPaymentHeader(row: ComplementPayment): PaymentHeaderData {
   return {
+    uuid: row.fiscalUuid ?? row.paymentsUuid ?? "--",
+    rfcProveedor: row.issuerRfc ?? "--",
     idProveedor: row.issuerRfc ?? "--",
     nombreProveedor: row.issuerName ?? "--",
     referenciaPago: row.paymentsUuid ?? "--",
     anioPagos: resolvePaymentYear(row),
     moneda: "MXN",
     monto: row.totalAmount != null ? formatAmount(row.totalAmount) : "--",
-    estatus: row.statusDescription ?? "--",
+    status: row.statusDescription ?? "--",
     fechaRegistro: row.createdAt ? formatDate(row.createdAt) : "--",
   };
 }

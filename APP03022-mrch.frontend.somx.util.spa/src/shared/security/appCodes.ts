@@ -2,6 +2,7 @@
 export const APP_KEYS = {
     SUPPLIERS_CATALOG:   'APL001', 
     CATALOGS_CATALOG:    'APL002', 
+    SUPPLIER_BLOCKS:     'APL0018',
     RECEPTIONS:          'APL003',
     CARTA_PORTE:         'APL004',
     DISCOUNTS:           'APL005', 

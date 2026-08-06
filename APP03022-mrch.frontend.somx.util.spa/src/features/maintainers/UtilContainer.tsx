@@ -50,7 +50,7 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
             description: 'Consulta y administra los catálogos disponibles del sistema.',
             link: '/util/catalogos',
             icon: iconSupport,
-            requiredAnyApp: [APP_KEYS.SUPPLIERS_CATALOG, APP_KEYS.CATALOGS_CATALOG],
+            requiredAnyApp: [APP_KEYS.SUPPLIERS_CATALOG, APP_KEYS.CATALOGS_CATALOG, APP_KEYS.SUPPLIER_BLOCKS],
         },
         {
             title: 'Auditoría',

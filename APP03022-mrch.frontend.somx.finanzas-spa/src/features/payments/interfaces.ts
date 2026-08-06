@@ -12,7 +12,7 @@ export interface PaymentSearchParams {
 export interface PaymentRecord {
     idPago: string;
 
-    // ✅ NUEVO: UUID de cabecera para navegar a detalle paginado (GET header-with-details/:uuid)
+    // UUID de cabecera para navegar al detalle del pago.
     paymentHeaderUuid?: string | null;
 
     documentNumber: string;
@@ -37,9 +37,9 @@ export interface PaymentStatus {
 }
 
 export const PAYMENT_STATUSES: PaymentStatus[] = [
-    { id: 0, description: 'Pendiente de complemento' },
-    { id: 1, description: 'Complemento relacionado' },
-    { id: 2, description: 'Pago cancelado' }
+    { id: 0, description: "Pendiente de complemento" },
+    { id: 1, description: "Complemento relacionado" },
+    { id: 2, description: "Pago cancelado" },
 ];
 
 export interface PagedResult<T> {
@@ -56,6 +56,13 @@ export interface PaymentDetail extends PaymentRecord {
 
 export interface PaymentDocument {
     id: string;
+
+    /**
+     * UUID del detalle de pago. En el endpoint header-with-details
+     * corresponde a finanzasPaymentUuid.
+     */
+    finanzasPaymentUuid?: string;
+
     documentNumber: string;
     documentType: string;
     reference?: string;
@@ -66,7 +73,13 @@ export interface PaymentDocument {
     amount: number;
     serie?: string;
     folio?: string;
+
+    /**
+     * UUID mostrado en el grid y utilizado por la navegación fiscal.
+     * Para payment_detail se alimenta con finanzasPaymentUuid.
+     */
     uuid?: string;
+
     sapDocument?: string;
     paymentDate?: string;
     status: string;
@@ -83,7 +96,7 @@ export interface ComplementInfo {
 }
 
 export interface ExportOptions {
-    format: 'csv' | 'xlsx';
+    format: "csv" | "xlsx";
     includeHeaders: boolean;
     columns?: string[];
 }

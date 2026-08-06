@@ -37,6 +37,7 @@ export function checkSystemParameterValue(
 }
 
 export function getXmlFileError(file: File, maxBytes: number, maxMb: number): string | null {
+  if (file.size > maxBytes) return `El archivo no debe exceder ${maxMb} MB.`;
   if (!file.name.trim().toLowerCase().endsWith(".xml")) {
     return "El tipo de archivo no es el correcto, debes subir un xml válido.";
   }
@@ -44,6 +45,7 @@ export function getXmlFileError(file: File, maxBytes: number, maxMb: number): st
 }
 
 export function getPdfFileError(file: File, maxBytes: number, maxMb: number): string | null {
+  if (file.size > maxBytes) return `El archivo no debe exceder ${maxMb} MB.`;
   if (!file.name.trim().toLowerCase().endsWith(".pdf")) {
     return "El tipo de archivo no es el correcto, debes subir un pdf válido.";
   }
@@ -304,6 +306,7 @@ function PublishCreditNoteContent() {
         traceId,
         query,
         relatedInvoice,
+        
       });
 
       const response = await publishClient.publishCreditNote(formData);

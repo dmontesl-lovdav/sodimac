@@ -1,27 +1,51 @@
 // FILE: src/features/payments/pages/PaymentDetail.tsx
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
-import { GenericButton, GenericTable, GenericModal } from '@shared/components/ui';
-import { GenericMarqueeBar } from '@/shared/components/ui/progress';
-import { FINANCE_HOME_PATH } from '@/shared/components/ui/navigation/financeBreadcrumb';
-import { getErrorMessage } from '@/utils/errorMessage';
-import { formatDate } from '@/utils/utils';
-import { buildFiscalDocumentViewUrl } from '@/utils/fiscalSpaUrl';
-import { resolvePaymentStatusDisplay } from '../paymentStatusDisplay';
-import { StatusPill } from '@/shared/components/ui/statusPill/StatusPill';
-import { paymentsService } from '../api/paymentsService';
-import { PaymentRecord, PaymentDocument } from '../interfaces';
-import eyeIcon from '@assets/eye-show.svg';
+
+import { useEffect, useState } from "react";
+import {
+    Link,
+    useLocation,
+    useNavigate,
+    useSearchParams,
+} from "react-router-dom";
+
+import {
+    GenericButton,
+    GenericModal,
+    GenericTable,
+} from "@shared/components/ui";
+import { GenericMarqueeBar } from "@/shared/components/ui/progress";
+import { FINANCE_HOME_PATH } from "@/shared/components/ui/navigation/financeBreadcrumb";
+import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
+
+import { getErrorMessage } from "@/utils/errorMessage";
+import { formatDate, fetchProviders } from "@/utils/utils";
+import { buildFiscalDocumentViewUrl } from "@/utils/fiscalSpaUrl";
+
+import {
+    paymentsService,
+    sortPaymentDocuments,
+} from "../api/paymentsService";
+import {
+    PaymentDocument,
+    PaymentRecord,
+} from "../interfaces";
+import { resolvePaymentStatusDisplay } from "../paymentStatusDisplay";
+
+import eyeIcon from "@assets/eye-show.svg";
 import downloadIconUrl from "@assets/download.svg";
 
 import {
     FINANCE_LIST_KEYS,
     useFinanceListReturnFromDetail,
-} from '@/shared/hooks';
+} from "@/shared/hooks";
 
-import '../styles/PaymentDetail.css';
+import "../styles/PaymentDetail.css";
 
-type ModalSeverity = 'success' | 'error' | 'warning' | 'info';
+type ModalSeverity =
+    | "success"
+    | "error"
+    | "warning"
+    | "info";
 
 export default function PaymentDetail() {
     const navigate = useNavigate();
@@ -33,192 +57,414 @@ export default function PaymentDetail() {
         FINANCE_LIST_KEYS.payments.listPath
     );
 
-    const statePayment = (location.state as any)?.payment as PaymentRecord | undefined;
+    const statePayment = (location.state as any)
+        ?.payment as PaymentRecord | undefined;
 
-    const ref = searchParams.get('ref') ?? '';
-    const provider = searchParams.get('provider') ?? '';
-    const year = searchParams.get('year') ?? '';
-    const headerUuid = searchParams.get('headerUuid') ?? '';
+    const ref = searchParams.get("ref") ?? "";
+    const provider =
+        searchParams.get("provider") ?? "";
+    const year = searchParams.get("year") ?? "";
+    const headerUuid =
+        searchParams.get("headerUuid") ?? "";
 
-    const [payment, setPayment] = useState<PaymentRecord | null>(statePayment ?? null);
+    const [payment, setPayment] =
+        useState<PaymentRecord | null>(
+            statePayment ?? null
+        );
 
-    const [documents, setDocuments] = useState<PaymentDocument[]>([]);
+    /**
+     * allDocuments conserva el resultado completo y ordenado.
+     * documents contiene únicamente la página visible.
+     */
+    const [allDocuments, setAllDocuments] = useState<
+        PaymentDocument[]
+    >([]);
+    const [documents, setDocuments] = useState<
+        PaymentDocument[]
+    >([]);
+
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string>('');
+    const [error, setError] =
+        useState<string>("");
 
     const [docPage, setDocPage] = useState(1);
-    const [docPerPage, setDocPerPage] = useState(10);
-    const [docTotalPages, setDocTotalPages] = useState(1);
-    const [docTotalItems, setDocTotalItems] = useState(0);
+    const [docPerPage, setDocPerPage] =
+        useState(10);
+    const [docTotalPages, setDocTotalPages] =
+        useState(1);
+    const [docTotalItems, setDocTotalItems] =
+        useState(0);
 
-    const [useLocalPagination, setUseLocalPagination] = useState(false);
+    const [useLocalPagination, setUseLocalPagination] =
+        useState(false);
 
-    // ✅ Modal state
-    const [modalTitle, setModalTitle] = useState<string>('');
-    const [modalSeverity, setModalSeverity] = useState<ModalSeverity>('error');
+    const [modalTitle, setModalTitle] =
+        useState<string>("");
+    const [modalSeverity, setModalSeverity] =
+        useState<ModalSeverity>("error");
 
     useEffect(() => {
-        loadDetailData(1, docPerPage);
+        loadDetailData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ref, provider, year, headerUuid]);
 
-    const formatAmount = (amount: number): string =>
-        `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formatAmount = (
+        amount: number
+    ): string =>
+        `$${amount.toLocaleString("es-MX", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`;
 
     const handleBack = () => {
-        navigate('/finanzas/pagos');
+        navigate("/finanzas/pagos");
+    };
+
+    const applyDocumentPage = (
+        source: PaymentDocument[],
+        pageNumber: number,
+        pageSize: number
+    ) => {
+        const totalItems = source.length;
+        const totalPages = Math.max(
+            1,
+            Math.ceil(totalItems / pageSize)
+        );
+        const safePage = Math.min(
+            Math.max(pageNumber, 1),
+            totalPages
+        );
+        const startIndex =
+            (safePage - 1) * pageSize;
+
+        setDocuments(
+            source.slice(
+                startIndex,
+                startIndex + pageSize
+            )
+        );
+        setDocTotalItems(totalItems);
+        setDocTotalPages(totalPages);
+        setDocPage(safePage);
+        setDocPerPage(pageSize);
     };
 
     const handleExportCsv = () => {
-        if (documents.length === 0) return;
+        if (allDocuments.length === 0) {
+            return;
+        }
 
-        const blob = paymentsService.exportDetailCsv(documents);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const blob =
+            paymentsService.exportDetailCsv(
+                allDocuments,
+                payment?.providerName ?? ""
+            );
+
+        const url =
+            window.URL.createObjectURL(blob);
+        const anchor =
+            document.createElement("a");
         const now = new Date();
-        const pad2 = (value: number) => value.toString().padStart(2, '0');
+        const pad2 = (value: number) =>
+            value.toString().padStart(2, "0");
 
-        const fileName = `detalle_pago_${ref ?? 'pago'}_${now.getFullYear()}_${pad2(
-            now.getMonth() + 1
-        )}_${pad2(now.getDate())}.csv`;
+        const fileName =
+            `detalle_pago_${ref || "pago"}_${now.getFullYear()}_${pad2(
+                now.getMonth() + 1
+            )}_${pad2(now.getDate())}.csv`;
 
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        anchor.href = url;
+        anchor.download = fileName;
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+
         window.URL.revokeObjectURL(url);
     };
 
-    const handleViewDocument = (doc: PaymentDocument) => {
-        const providerNum = payment?.providerNumber || provider;
-        window.location.href = buildFiscalDocumentViewUrl({
-            documentType: doc.documentType,
-            providerNumber: providerNum,
-            uuid: doc.uuid,
-            serie: doc.serie,
-            folio: doc.folio,
-            documentNumber: doc.documentNumber,
-        });
+    const handleViewDocument = (
+        document: PaymentDocument
+    ) => {
+        const providerNumber =
+            payment?.providerNumber || provider;
+
+        window.location.href =
+            buildFiscalDocumentViewUrl({
+                documentType:
+                    document.documentType,
+                providerNumber,
+                uuid:
+                    document.uuid ??
+                    document.finanzasPaymentUuid,
+                serie: document.serie,
+                folio: document.folio,
+                documentNumber:
+                    document.documentNumber,
+            });
     };
 
-    const getDocButtonLabel = (docType: string): string => {
-        const type = docType?.toLowerCase() ?? '';
-        if (type.includes('nota') || type.includes('credito') || type.includes('crédito')) {
-            return 'Ver Nota de crédito';
+    const getDocButtonLabel = (
+        documentType: string
+    ): string => {
+        const normalized =
+            documentType?.toLowerCase() ?? "";
+
+        if (
+            normalized === "nc" ||
+            normalized.includes("nota") ||
+            normalized.includes("credito") ||
+            normalized.includes("crédito")
+        ) {
+            return "Ver Nota de crédito";
         }
-        return 'Ver Factura';
+
+        return "Ver Factura";
     };
 
-    const mapDetailsToDocsFromHeader = (content: any[]): PaymentDocument[] => {
-        return (content ?? []).map((d: any) => ({
-            id: d.finanzasPaymentUuid ?? d.id ?? '',
-            documentNumber: d.documentNumber ?? '',
-            documentType: d.documentType ?? '',
-            reference: d.documentReference ?? '',
-            documentDate: d.createdAt ? formatDate(d.createdAt) : '',
-            dueDate: '',
-            currency: d.currency ?? 'MXN',
-            amount: ((n) => (Number.isFinite(n) ? n : 0))(Number(d.amount)),
-            serie: d.serie ?? d.series ?? '',
-            folio: d.folio ?? '',
-            uuid: d.uuid ?? d.invoiceUuid ?? d.fiscalUuid ?? '',
-            sapDocument: d.sapDocument ?? '',
-            paymentDate: d.paymentDate ? formatDate(d.paymentDate) : '',
-            status: typeof d.status === 'number' ? String(d.status) : (d.status ?? ''),
-            createdAt: d.createdAt ? formatDate(d.createdAt) : '',
-            updatedAt: d.updatedAt ? formatDate(d.updatedAt) : '',
-        }));
+    /**
+     * El endpoint header-with-details no devuelve un UUID fiscal
+     * separado. El UUID disponible para cada renglón es
+     * finanzasPaymentUuid, por lo que se conserva en ambos campos.
+     */
+    const mapDetailsToDocsFromHeader = (
+        content: any[]
+    ): PaymentDocument[] =>
+        (content ?? []).map((detail: any) => {
+            const detailUuid =
+                detail.finanzasPaymentUuid ??
+                detail.id ??
+                "";
+
+            return {
+                id: detailUuid,
+                finanzasPaymentUuid:
+                    detailUuid || undefined,
+                documentNumber:
+                    detail.documentNumber ?? "",
+                documentType:
+                    detail.documentType ?? "",
+                reference:
+                    detail.documentReference ?? "",
+                documentDate: detail.createdAt
+                    ? formatDate(detail.createdAt)
+                    : "",
+                dueDate: "",
+                currency:
+                    detail.currency ?? "MXN",
+                amount: ((numberValue) =>
+                    Number.isFinite(numberValue)
+                        ? numberValue
+                        : 0)(Number(detail.amount)),
+                serie:
+                    detail.serie ??
+                    detail.series ??
+                    "",
+                folio: detail.folio ?? "",
+                uuid:
+                    detailUuid ||
+                    detail.uuid ||
+                    detail.invoiceUuid ||
+                    detail.fiscalUuid ||
+                    "",
+                sapDocument:
+                    detail.sapDocument ?? "",
+                paymentDate: detail.paymentDate
+                    ? formatDate(detail.paymentDate)
+                    : "",
+                status:
+                    typeof detail.status ===
+                        "number"
+                        ? String(detail.status)
+                        : detail.status ?? "",
+                createdAt: detail.createdAt
+                    ? formatDate(detail.createdAt)
+                    : "",
+                updatedAt: detail.updatedAt
+                    ? formatDate(detail.updatedAt)
+                    : "",
+            };
+        });
+
+    /**
+     * El listado principal resuelve visualmente el proveedor con
+     * catálogo, pero el PaymentRecord puede llegar sin providerName.
+     * Aquí se completa únicamente cuando hace falta.
+     */
+    const resolveProviderName = async (
+        currentPayment: PaymentRecord
+    ): Promise<PaymentRecord> => {
+        if (currentPayment.providerName) {
+            return currentPayment;
+        }
+
+        try {
+            const providerList =
+                await fetchProviders();
+
+            const foundProvider = (
+                providerList ?? []
+            ).find(
+                (item: any) =>
+                    String(item.supplierNumber) ===
+                    String(
+                        currentPayment.providerNumber
+                    )
+            );
+
+            const providerName =
+                foundProvider?.businessName ??
+                foundProvider?.supplierName ??
+                foundProvider?.name ??
+                "";
+
+            if (!providerName) {
+                return currentPayment;
+            }
+
+            return {
+                ...currentPayment,
+                providerName,
+            };
+        } catch (providerError) {
+            console.error(
+                "[PaymentDetail] Error resolving provider name:",
+                providerError
+            );
+
+            return currentPayment;
+        }
     };
 
-    const loadDetailData = async (pageNumber: number, pageSize: number) => {
+    const loadDetailData = async () => {
         setLoading(true);
-        setError('');
+        setError("");
         setUseLocalPagination(false);
 
         try {
-            let resolvedPayment = (payment || statePayment) ?? null;
+            let resolvedPayment =
+                (payment || statePayment) ?? null;
 
-            if (!resolvedPayment && ref && provider) {
-                const result = await paymentsService.searchPayments({
-                    startDate: year ? `${year}-01-01` : '2020-01-01',
-                    endDate: new Date().toISOString().split('T')[0],
-                    providerId: provider,
-                    page: 1,
-                    size: 10000,
-                });
+            if (
+                !resolvedPayment &&
+                ref &&
+                provider
+            ) {
+                const result =
+                    await paymentsService.searchAllPayments(
+                        {
+                            startDate: year
+                                ? `${year}-01-01`
+                                : "2020-01-01",
+                            endDate: new Date()
+                                .toISOString()
+                                .split("T")[0],
+                            providerId: provider,
+                            page: 1,
+                            size: 200,
+                        }
+                    );
 
-                const found = result.items.find((item) =>
-                    item.documentReference === ref &&
-                    item.providerNumber === provider &&
-                    (!year || item.paymentYear === year)
-                );
-
-                if (found) {
-                    resolvedPayment = found;
-                    setPayment(found);
-                }
+                resolvedPayment =
+                    result.items.find(
+                        (item) =>
+                            item.documentReference ===
+                            ref &&
+                            item.providerNumber ===
+                            provider &&
+                            (!year ||
+                                item.paymentYear ===
+                                year)
+                    ) ?? null;
             }
 
             if (!resolvedPayment) {
-                setModalSeverity('info');
-                setModalTitle('Sin información');
-                setError('No se encontró el pago solicitado.');
+                setModalSeverity("info");
+                setModalTitle("Sin información");
+                setError(
+                    "No se encontró el pago solicitado."
+                );
+                setAllDocuments([]);
                 setDocuments([]);
                 setDocTotalItems(0);
                 setDocTotalPages(1);
                 setDocPage(1);
+
                 return;
             }
 
-            const resolvedHeaderUuid = (resolvedPayment.paymentHeaderUuid || headerUuid) ?? '';
+            resolvedPayment =
+                await resolveProviderName(
+                    resolvedPayment
+                );
+
+            setPayment(resolvedPayment);
+
+            const resolvedHeaderUuid =
+                resolvedPayment.paymentHeaderUuid ||
+                headerUuid ||
+                "";
+
+            let resolvedDocuments:
+                | PaymentDocument[]
+                | undefined;
 
             if (resolvedHeaderUuid) {
-                const response = await paymentsService.getHeaderWithDetails(resolvedHeaderUuid, {
-                    pageNumber,
-                    pageSize,
-                });
+                /*
+                 * Se consulta sin paginación para ordenar globalmente:
+                 * facturas primero, luego notas de crédito, y dentro
+                 * de cada grupo por importe descendente.
+                 */
+                const response =
+                    await paymentsService.getHeaderWithDetails(
+                        resolvedHeaderUuid
+                    );
 
-                const payload = response?.data ?? response ?? {};
-                const detailsPage = payload?.detailsPage ?? null;
+                const payload =
+                    response?.data ?? response ?? {};
 
-                const content = detailsPage?.content ?? [];
-                const totalPages = detailsPage?.totalPages ?? 1;
-                const totalItems = detailsPage?.totalElements ?? content.length;
-                const currentPage = detailsPage?.pageNumber ?? pageNumber;
+                const content =
+                    payload?.details ??
+                    payload?.detailsPage?.content ??
+                    [];
 
-                const docs = mapDetailsToDocsFromHeader(content);
+                resolvedDocuments =
+                    mapDetailsToDocsFromHeader(
+                        content
+                    );
+            } else {
+                const detail =
+                    await paymentsService.getPaymentDetail(
+                        resolvedPayment.documentNumber
+                    );
 
-                setDocuments(docs);
-                setDocTotalItems(totalItems);
-                setDocTotalPages(Math.max(1, totalPages));
-                setDocPage(currentPage);
-                setDocPerPage(pageSize);
-                return;
+                resolvedDocuments =
+                    detail.documents ?? [];
             }
 
-            const detail = await paymentsService.getPaymentDetail(resolvedPayment.documentNumber);
-            const docsAll = detail.documents ?? [];
+            const orderedDocuments =
+                sortPaymentDocuments(
+                    resolvedDocuments
+                );
 
             setUseLocalPagination(true);
-
-            const totalItems = docsAll.length;
-            const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-            const startIndex = (pageNumber - 1) * pageSize;
-            const pageItems = docsAll.slice(startIndex, startIndex + pageSize);
-
-            setDocuments(pageItems);
-            setDocTotalItems(totalItems);
-            setDocTotalPages(totalPages);
-            setDocPage(pageNumber);
-            setDocPerPage(pageSize);
-        } catch (err: any) {
-            setModalSeverity('error');
-            setModalTitle('Error');
+            setAllDocuments(orderedDocuments);
+            applyDocumentPage(
+                orderedDocuments,
+                1,
+                docPerPage
+            );
+        } catch (loadError: any) {
+            setModalSeverity("error");
+            setModalTitle("Error");
             setError(
-                getErrorMessage(err, 'Error al cargar el detalle del pago.'),
+                getErrorMessage(
+                    loadError,
+                    "Error al cargar el detalle del pago."
+                )
             );
 
+            setAllDocuments([]);
             setDocuments([]);
             setDocTotalItems(0);
             setDocTotalPages(1);
@@ -228,43 +474,127 @@ export default function PaymentDetail() {
         }
     };
 
-    const handleDocPageChange = (newPage: number) => {
-        loadDetailData(newPage, docPerPage);
+    const handleDocPageChange = (
+        newPage: number
+    ) => {
+        applyDocumentPage(
+            allDocuments,
+            newPage,
+            docPerPage
+        );
     };
 
-    const handleDocPerPageChange = (newPerPage: number) => {
-        loadDetailData(1, newPerPage);
+    const handleDocPerPageChange = (
+        newPerPage: number
+    ) => {
+        applyDocumentPage(
+            allDocuments,
+            1,
+            newPerPage
+        );
     };
 
+    /**
+     * Orden y nombres solicitados:
+     * Número Documento, UUID, Moneda, Importe, Tipo Documento,
+     * Referencia Pago, Fecha Pago, Fecha Registro,
+     * Fecha de Actualización y Factura / NC.
+     *
+     * La columna Estatus se elimina únicamente del detalle.
+     */
     const documentColumns = [
-        { header: 'Número Documento', render: (doc: PaymentDocument) => doc.documentNumber },
-        { header: 'Referencia Documento', render: (doc: PaymentDocument) => doc.reference ?? '-' },
-        { header: 'Moneda', render: (doc: PaymentDocument) => doc.currency },
         {
-            header: 'Importe',
-            render: (doc: PaymentDocument) => formatAmount(doc.amount),
-            align: 'right' as const
+            header: "Número Documento",
+            render: (
+                document: PaymentDocument
+            ) =>
+                document.documentNumber ||
+                "—",
         },
-        { header: 'Tipo Documento', render: (doc: PaymentDocument) => doc.documentType },
-        { header: 'Referencia Pago', render: (doc: PaymentDocument) => doc.sapDocument ?? '-' },
-        { header: 'Fecha Pago', render: (doc: PaymentDocument) => doc.paymentDate ?? doc.documentDate ?? '-' },
-        { header: 'Estatus', render: (doc: PaymentDocument) => doc.status },
-        { header: 'Fecha Registro', render: (doc: PaymentDocument) => doc.createdAt ?? '-' },
-        { header: 'Fecha de Actualización', render: (doc: PaymentDocument) => doc.updatedAt ?? '-' },
         {
-            header: 'Factura / NC',
-            render: (doc: PaymentDocument) => (
+            header: "UUID",
+            render: (
+                document: PaymentDocument
+            ) =>
+                document.uuid ??
+                document.finanzasPaymentUuid ??
+                "—",
+        },
+        {
+            header: "Moneda",
+            render: (
+                document: PaymentDocument
+            ) => document.currency || "—",
+        },
+        {
+            header: "Importe",
+            render: (
+                document: PaymentDocument
+            ) => formatAmount(document.amount),
+            align: "right" as const,
+        },
+        {
+            header: "Tipo Documento",
+            render: (
+                document: PaymentDocument
+            ) =>
+                document.documentType || "—",
+        },
+        {
+            header: "Referencia Pago",
+            render: (
+                document: PaymentDocument
+            ) => document.reference ?? "—",
+        },
+        {
+            header: "Fecha Pago",
+            render: (
+                document: PaymentDocument
+            ) =>
+                document.paymentDate ??
+                document.documentDate ??
+                "—",
+        },
+        {
+            header: "Fecha Registro",
+            render: (
+                document: PaymentDocument
+            ) => document.createdAt ?? "—",
+        },
+        {
+            header: "Fecha de Actualización",
+            render: (
+                document: PaymentDocument
+            ) => document.updatedAt ?? "—",
+        },
+        {
+            header: "Factura / NC",
+            render: (
+                document: PaymentDocument
+            ) => (
                 <button
-                    onClick={() => handleViewDocument(doc)}
+                    onClick={() =>
+                        handleViewDocument(
+                            document
+                        )
+                    }
                     className="payment-detail__view-btn"
-                    aria-label={getDocButtonLabel(doc.documentType)}
-                    title={getDocButtonLabel(doc.documentType)}
+                    aria-label={getDocButtonLabel(
+                        document.documentType
+                    )}
+                    title={getDocButtonLabel(
+                        document.documentType
+                    )}
                     type="button"
                 >
-                    <img src={eyeIcon} alt="" className="payment-detail__view-icon" />
+                    <img
+                        src={eyeIcon}
+                        alt=""
+                        className="payment-detail__view-icon"
+                    />
                 </button>
             ),
-            align: 'center' as const,
+            align: "center" as const,
         },
     ];
 
@@ -272,22 +602,51 @@ export default function PaymentDetail() {
         return (
             <div className="payment-detail__layout">
                 <div className="payment-detail__breadcrumb">
-                    <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Inicio</Link>
-                    <span className="payment-detail__breadcrumb-sep">&gt;</span>
-                    <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Finanzas</Link>
-                    <span className="payment-detail__breadcrumb-sep">&gt;</span>
-                    <Link to="/finanzas/pagos" className="payment-detail__breadcrumb-link">Pagos</Link>
-                    <span className="payment-detail__breadcrumb-sep">&gt;</span>
-                    <span className="payment-detail__breadcrumb-current">Detalle pago</span>
+                    <Link
+                        to={FINANCE_HOME_PATH}
+                        className="payment-detail__breadcrumb-link"
+                    >
+                        Inicio
+                    </Link>
+                    <span className="payment-detail__breadcrumb-sep">
+                        &gt;
+                    </span>
+                    <Link
+                        to={FINANCE_HOME_PATH}
+                        className="payment-detail__breadcrumb-link"
+                    >
+                        Finanzas
+                    </Link>
+                    <span className="payment-detail__breadcrumb-sep">
+                        &gt;
+                    </span>
+                    <Link
+                        to="/finanzas/pagos"
+                        className="payment-detail__breadcrumb-link"
+                    >
+                        Pagos
+                    </Link>
+                    <span className="payment-detail__breadcrumb-sep">
+                        &gt;
+                    </span>
+                    <span className="payment-detail__breadcrumb-current">
+                        Detalle pago
+                    </span>
                 </div>
 
                 <div className="payment-detail__box">
                     <div className="payment-detail__loading-wrap">
-                        <div className="payment-detail__loading-text">Cargando detalle del pago...</div>
+                        <div className="payment-detail__loading-text">
+                            Cargando detalle del pago...
+                        </div>
                     </div>
                 </div>
 
-                <GenericModal visible={true} variant="loading" message="Cargando…" />
+                <GenericModal
+                    visible
+                    variant="loading"
+                    message="Cargando…"
+                />
             </div>
         );
     }
@@ -295,10 +654,24 @@ export default function PaymentDetail() {
     return (
         <div className="payment-detail__layout">
             <div className="payment-detail__breadcrumb">
-                <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Inicio</Link>
-                <span className="payment-detail__breadcrumb-sep">&gt;</span>
-                <Link to={FINANCE_HOME_PATH} className="payment-detail__breadcrumb-link">Finanzas</Link>
-                <span className="payment-detail__breadcrumb-sep">&gt;</span>
+                <Link
+                    to={FINANCE_HOME_PATH}
+                    className="payment-detail__breadcrumb-link"
+                >
+                    Inicio
+                </Link>
+                <span className="payment-detail__breadcrumb-sep">
+                    &gt;
+                </span>
+                <Link
+                    to={FINANCE_HOME_PATH}
+                    className="payment-detail__breadcrumb-link"
+                >
+                    Finanzas
+                </Link>
+                <span className="payment-detail__breadcrumb-sep">
+                    &gt;
+                </span>
 
                 <button
                     onClick={handleBack}
@@ -308,8 +681,12 @@ export default function PaymentDetail() {
                     Pagos
                 </button>
 
-                <span className="payment-detail__breadcrumb-sep">&gt;</span>
-                <span className="payment-detail__breadcrumb-current">Detalle pago</span>
+                <span className="payment-detail__breadcrumb-sep">
+                    &gt;
+                </span>
+                <span className="payment-detail__breadcrumb-current">
+                    Detalle pago
+                </span>
             </div>
 
             <div className="payment-detail__box">
@@ -318,14 +695,28 @@ export default function PaymentDetail() {
                 <div className="payment-detail__header">
                     <div className="payment-detail__header-left">
                         <div className="payment-detail__header-icon">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6C4.9 2 4 2.9 4 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z" fill="#003865" />
-                                <path d="M8 16h8v1.5H8V16zm0-3h8v1.5H8V13z" fill="#003865" />
+                            <svg
+                                width="40"
+                                height="40"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M14 2H6C4.9 2 4 2.9 4 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"
+                                    fill="#003865"
+                                />
+                                <path
+                                    d="M8 16h8v1.5H8V16zm0-3h8v1.5H8V13z"
+                                    fill="#003865"
+                                />
                             </svg>
                         </div>
 
                         <div>
-                            <h2 className="payment-detail__title">Detalle de pago</h2>
+                            <h2 className="payment-detail__title">
+                                Detalle de pago
+                            </h2>
                             <p className="payment-detail__subtitle">
                                 Consulta la información detallada del pago y los documentos relacionados.
                             </p>
@@ -335,12 +726,18 @@ export default function PaymentDetail() {
                     <div className="payment-detail__header-actions finz-toolbar-actions">
                         <GenericButton
                             onClick={handleExportCsv}
-                            disabled={loading || documents.length === 0}
+                            disabled={
+                                loading ||
+                                allDocuments.length ===
+                                0
+                            }
                         >
                             <span
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
+                                    display:
+                                        "flex",
+                                    alignItems:
+                                        "center",
                                     gap: 6,
                                 }}
                             >
@@ -348,8 +745,10 @@ export default function PaymentDetail() {
                                     className="pay-download-ico"
                                     aria-hidden="true"
                                     style={{
-                                        WebkitMaskImage: `url(${downloadIconUrl})`,
-                                        maskImage: `url(${downloadIconUrl})`,
+                                        WebkitMaskImage:
+                                            `url(${downloadIconUrl})`,
+                                        maskImage:
+                                            `url(${downloadIconUrl})`,
                                     }}
                                 />
                                 Exportar CSV
@@ -371,35 +770,48 @@ export default function PaymentDetail() {
                                         Referencia de pago
                                     </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.documentReference ?? "—"}
+                                        {payment.documentReference ??
+                                            "—"}
                                     </p>
                                 </div>
                                 <div className="payment-detail__info-cell">
-                                    <p className="payment-detail__info-label">Año Pago</p>
+                                    <p className="payment-detail__info-label">
+                                        Año Pago
+                                    </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.paymentYear ?? "—"}
+                                        {payment.paymentYear ??
+                                            "—"}
                                     </p>
                                 </div>
                                 <div className="payment-detail__info-cell">
-                                    <p className="payment-detail__info-label">Moneda</p>
+                                    <p className="payment-detail__info-label">
+                                        Moneda
+                                    </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.currency ?? "—"}
+                                        {payment.currency ??
+                                            "—"}
                                     </p>
                                 </div>
                                 <div className="payment-detail__info-cell">
-                                    <p className="payment-detail__info-label">Monto</p>
+                                    <p className="payment-detail__info-label">
+                                        Monto
+                                    </p>
                                     <p className="payment-detail__info-value payment-detail__info-value--large">
-                                        {formatAmount(payment.amount)}
+                                        {formatAmount(
+                                            payment.amount
+                                        )}
                                     </p>
                                 </div>
                             </div>
+
                             <div className="payment-detail__info-row payment-detail__info-row--band payment-detail__info-row--second">
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Número Proveedor
                                     </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.providerNumber ?? "—"}
+                                        {payment.providerNumber ??
+                                            "—"}
                                     </p>
                                 </div>
                                 <div className="payment-detail__info-cell">
@@ -407,18 +819,35 @@ export default function PaymentDetail() {
                                         Nombre Proveedor
                                     </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.providerName ?? "—"}
+                                        {payment.providerName ||
+                                            "—"}
                                     </p>
                                 </div>
                                 <div className="payment-detail__info-cell">
-                                    <p className="payment-detail__info-label">Estatus</p>
+                                    <p className="payment-detail__info-label">
+                                        Estatus
+                                    </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.statusId != null ? (
-                                            <StatusPill type={resolvePaymentStatusDisplay(payment.statusId).type}>
-                                                {resolvePaymentStatusDisplay(payment.statusId).label}
+                                        {payment.statusId !=
+                                            null ? (
+                                            <StatusPill
+                                                type={
+                                                    resolvePaymentStatusDisplay(
+                                                        payment.statusId
+                                                    )
+                                                        .type
+                                                }
+                                            >
+                                                {
+                                                    resolvePaymentStatusDisplay(
+                                                        payment.statusId
+                                                    )
+                                                        .label
+                                                }
                                             </StatusPill>
                                         ) : (
-                                            payment.status ?? "—"
+                                            payment.status ??
+                                            "—"
                                         )}
                                     </p>
                                 </div>
@@ -427,7 +856,8 @@ export default function PaymentDetail() {
                                         Fecha Registro
                                     </p>
                                     <p className="payment-detail__info-value">
-                                        {payment.createdAt ?? "—"}
+                                        {payment.createdAt ??
+                                            "—"}
                                     </p>
                                 </div>
                             </div>
@@ -439,7 +869,9 @@ export default function PaymentDetail() {
                     <div className="payment-detail__table-head">
                         <h3 className="payment-detail__table-title">
                             Relación del pago
-                            {useLocalPagination ? ' (sin cabecera)' : ''}
+                            {useLocalPagination
+                                ? ""
+                                : ""}
                         </h3>
                     </div>
 
@@ -448,38 +880,56 @@ export default function PaymentDetail() {
                             rows={documents}
                             columns={documentColumns}
                             actions={[]}
-                            emptyLabel={loading ? 'Cargando documentos...' : 'No hay documentos relacionados'}
+                            emptyLabel={
+                                loading
+                                    ? "Cargando documentos..."
+                                    : "No hay documentos relacionados"
+                            }
                             perPage={docPerPage}
                             page={docPage}
-                            totalPages={docTotalPages}
-                            totalItems={docTotalItems}
-                            onChangePerPage={handleDocPerPageChange}
-                            onChangePage={handleDocPageChange}
+                            totalPages={
+                                docTotalPages
+                            }
+                            totalItems={
+                                docTotalItems
+                            }
+                            onChangePerPage={
+                                handleDocPerPageChange
+                            }
+                            onChangePage={
+                                handleDocPageChange
+                            }
                         />
                     </div>
                 </div>
 
                 <div className="payment-detail__footer-actions finz-page-actions">
-                    <GenericButton variant="back" type="button" onClick={handleBack}>
+                    <GenericButton
+                        variant="back"
+                        type="button"
+                        onClick={handleBack}
+                    >
                         Volver
                     </GenericButton>
                 </div>
             </div>
 
-            {/* Errors/Info via GenericModal */}
             <GenericModal
-                visible={!!error}
+                visible={Boolean(error)}
                 variant="alert"
-                title={modalTitle ?? 'Aviso'}
+                title={modalTitle || "Aviso"}
                 severity={modalSeverity}
                 message={error}
                 buttonText="Aceptar"
-                onClose={() => setError('')}
+                onClose={() => setError("")}
             />
 
-            {/* Loading via GenericModal */}
             {loading && (
-                <GenericModal visible variant="loading" message="Cargando…" />
+                <GenericModal
+                    visible
+                    variant="loading"
+                    message="Cargando…"
+                />
             )}
         </div>
     );

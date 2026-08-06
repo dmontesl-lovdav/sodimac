@@ -6,7 +6,13 @@ import {
     GenericModal,
 } from "@shared/components/ui";
 import type { ChangeEvent, ReactElement } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 
 import type { ProvidersOptions } from "@/features/orders/interfaces";
@@ -15,17 +21,17 @@ import {
     fetchSupplierTypesAsCatalog,
 } from "@/utils/utils";
 import {
-  FINANCE_LIST_KEYS,
-  financeListTodayDateRange,
-  readFinanceListFilters,
-  parseFinanceListDateRange,
-  saveFinanceListFilters,
-  useFinanceListDefaultsOnUrlReset,
+    FINANCE_LIST_KEYS,
+    financeListTodayDateRange,
+    readFinanceListFilters,
+    parseFinanceListDateRange,
+    saveFinanceListFilters,
+    useFinanceListDefaultsOnUrlReset,
 } from "@/shared/hooks";
 
-const FILTERS_KEY = FINANCE_LIST_KEYS.payments.filters;
-
 import "../styles/PaymentsFiltersBar.css";
+
+const FILTERS_KEY = FINANCE_LIST_KEYS.payments.filters;
 
 export interface PaymentFiltersValues {
     providerId?: string;
@@ -60,24 +66,32 @@ export default function FiltersBar({
     const [providerType, setProviderType] = useState<string>("");
     const [dateRange, setDateRange] = useState<DateRange>([null, null]);
     const [providerTypes, setProviderTypes] = useState<ProvidersOptions[]>([]);
+
     const [alertModal, setAlertModal] = useState<{
         visible: boolean;
         title: string;
         message: string;
         severity: "warning" | "error" | "info";
-    }>({ visible: false, title: "", message: "", severity: "warning" });
+    }>({
+        visible: false,
+        title: "",
+        message: "",
+        severity: "warning",
+    });
 
     const hasLoadedRef = useRef(false);
     const defaultsAppliedRef = useRef(false);
 
     const today = useMemo(() => {
-        const t = new Date();
-        t.setHours(0, 0, 0, 0);
-        return t;
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+
+        return currentDate;
     }, []);
 
     const applyFilterDefaults = useCallback(() => {
         const [start, end] = financeListTodayDateRange();
+
         setDateRange([start, end]);
         setProviderId("");
         setPaymentReference("");
@@ -93,60 +107,90 @@ export default function FiltersBar({
     useEffect(() => {
         if (!hasLoadedRef.current) {
             hasLoadedRef.current = true;
+
             const saved =
                 initialValues ??
                 readFinanceListFilters<PaymentFiltersValues>(FILTERS_KEY);
 
             if (saved) {
                 setDateRange(
-                    parseFinanceListDateRange(saved.startDate, saved.endDate)
+                    parseFinanceListDateRange(
+                        saved.startDate,
+                        saved.endDate
+                    )
                 );
                 setProviderId(saved.providerId ?? "");
                 setPaymentReference(saved.paymentReference ?? "");
                 setPaymentYear(saved.paymentYear ?? "");
                 setProviderType(saved.providerType ?? "");
+
                 return;
             }
 
             if (!defaultsAppliedRef.current) {
                 defaultsAppliedRef.current = true;
-                const d = new Date(today);
-                setDateRange([new Date(d.getTime()), new Date(d.getTime())]);
+
+                const currentDate = new Date(today);
+
+                setDateRange([
+                    new Date(currentDate.getTime()),
+                    new Date(currentDate.getTime()),
+                ]);
             }
         }
     }, [initialValues, today]);
 
     useEffect(() => {
-        if (!isAdmin) return;
+        if (!isAdmin) {
+            return;
+        }
 
         (async () => {
-            const [list, types] = await Promise.all([
+            const [providerList, typeList] = await Promise.all([
                 fetchProvidersAsCatalog("supplierNumber"),
                 fetchSupplierTypesAsCatalog(),
             ]);
-            if (list) setProviders(list);
-            if (types) setProviderTypes(types);
+
+            if (providerList) {
+                setProviders(providerList);
+            }
+
+            if (typeList) {
+                setProviderTypes(typeList);
+            }
         })();
     }, [isAdmin]);
 
-    const formatDateStr = (d: Date): string => {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
+    const formatDateStr = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
     };
 
-    const isRangeOverSixMonths = (start: Date, end: Date): boolean => {
-        const diffMonths =
+    const isRangeOverSixMonths = (
+        start: Date,
+        end: Date
+    ): boolean => {
+        const differenceInMonths =
             (end.getFullYear() - start.getFullYear()) * 12 +
             (end.getMonth() - start.getMonth());
-        return diffMonths > 6;
+
+        return differenceInMonths > 6;
     };
 
-    const closeAlertModal = () =>
-        setAlertModal((prev) => ({ ...prev, visible: false }));
+    const closeAlertModal = () => {
+        setAlertModal((previous) => ({
+            ...previous,
+            visible: false,
+        }));
+    };
 
-    const showValidationAlert = (message: string, title = "Validación") => {
+    const showValidationAlert = (
+        message: string,
+        title = "Validación"
+    ) => {
         setAlertModal({
             visible: true,
             title,
@@ -156,37 +200,47 @@ export default function FiltersBar({
     };
 
     const handleSearch = (): void => {
-        const [d1, d2] = dateRange;
+        const [initialDate, finalDate] = dateRange;
 
-        if (!d1) {
-            showValidationAlert(messages["ERR003"] ?? "Fecha inicio es obligatoria.");
+        if (!initialDate) {
+            showValidationAlert(
+                messages["ERR003"] ??
+                "Fecha inicio es obligatoria."
+            );
+
             return;
         }
 
-        if (!d2) {
-            showValidationAlert(messages["ERR004"] ?? "Fecha fin es obligatoria.");
+        if (!finalDate) {
+            showValidationAlert(
+                messages["ERR004"] ??
+                "Fecha fin es obligatoria."
+            );
+
             return;
         }
 
-        const start = new Date(d1);
+        const start = new Date(initialDate);
         start.setHours(0, 0, 0, 0);
 
-        const end = new Date(d2);
+        const end = new Date(finalDate);
         end.setHours(0, 0, 0, 0);
 
         if (end > today) {
             showValidationAlert(
                 "La fecha fin no puede ser posterior a la fecha actual.",
-                "Validación de fechas",
+                "Validación de fechas"
             );
+
             return;
         }
 
         if (start > end) {
             showValidationAlert(
                 "La fecha de inicio no puede ser mayor a la fecha fin.",
-                "Validación de fechas",
+                "Validación de fechas"
             );
+
             return;
         }
 
@@ -194,31 +248,48 @@ export default function FiltersBar({
             setAlertModal({
                 visible: true,
                 title: "Rango inválido",
-                message: messages["ERR002"] ?? "El rango máximo permitido es 6 meses.",
+                message:
+                    messages["ERR002"] ??
+                    "El rango máximo permitido es 6 meses.",
                 severity: "warning",
             });
+
             return;
         }
 
         const payload: PaymentFiltersValues = {
-            providerId: isAdmin && providerId ? providerId : undefined,
-            paymentReference: paymentReference ?? undefined,
-            paymentYear: paymentYear ?? undefined,
+            providerId:
+                isAdmin && providerId
+                    ? providerId
+                    : undefined,
+            paymentReference:
+                paymentReference || undefined,
+            paymentYear:
+                paymentYear || undefined,
             startDate: formatDateStr(start),
             endDate: formatDateStr(end),
-            providerType: providerType ? providerType : undefined,
+            providerType:
+                providerType || undefined,
         };
 
         saveFinanceListFilters(FILTERS_KEY, payload);
         onSearch(payload);
     };
 
+    /**
+     * Limpia los filtros de texto y catálogos, pero conserva el
+     * comportamiento requerido para fechas: el calendario vuelve
+     * al día actual en lugar de quedar vacío.
+     */
     const handleClear = (): void => {
+        const [start, end] = financeListTodayDateRange();
+
         setProviderId("");
         setPaymentReference("");
         setPaymentYear("");
         setProviderType("");
-        setDateRange([null, null]);
+        setDateRange([start, end]);
+
         closeAlertModal();
         onClear?.();
     };
@@ -229,37 +300,57 @@ export default function FiltersBar({
                 <div className="pay-filter-bar finz-filter-row">
                     {isAdmin && (
                         <>
-                        <div className="pay-field">
-                            <GenericSelectSearchable
-                                value={providerId}
-                                onChange={(e: { target: { value: string } }) =>
-                                    setProviderId(e.target.value)
-                                }
-                                options={providers}
-                                placeholder="Nombre Proveedor"
-                                widthClass="gs-width-provider"
-                            />
-                        </div>
-                        <div className="pay-field">
-                            <GenericSelectSearchable
-                                value={providerType}
-                                onChange={(e: { target: { value: string } }) =>
-                                    setProviderType(e.target.value)
-                                }
-                                options={providerTypes}
-                                placeholder="Tipo Proveedor"
-                                widthClass="gs-width-provider"
-                            />
-                        </div>
-                        </>
+                            <div className="pay-field">
+                                <GenericSelectSearchable
+                                    value={providerId}
+                                    onChange={(
+                                        event: {
+                                            target: {
+                                                value: string;
+                                            };
+                                        }
+                                    ) =>
+                                        setProviderId(
+                                            event.target.value
+                                        )
+                                    }
+                                    options={providers}
+                                    placeholder="Nombre Proveedor"
+                                    widthClass="gs-width-provider"
+                                />
+                            </div>
 
+                            <div className="pay-field">
+                                <GenericSelectSearchable
+                                    value={providerType}
+                                    onChange={(
+                                        event: {
+                                            target: {
+                                                value: string;
+                                            };
+                                        }
+                                    ) =>
+                                        setProviderType(
+                                            event.target.value
+                                        )
+                                    }
+                                    options={providerTypes}
+                                    placeholder="Tipo Proveedor"
+                                    widthClass="gs-width-provider"
+                                />
+                            </div>
+                        </>
                     )}
 
                     <div className="pay-field">
                         <GenericInputSearch
                             value={paymentReference}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                setPaymentReference(e.target.value)
+                            onChange={(
+                                event: ChangeEvent<HTMLInputElement>
+                            ) =>
+                                setPaymentReference(
+                                    event.target.value
+                                )
                             }
                             placeholder="Referencia Pago"
                             className="pay-input-md"
@@ -269,9 +360,14 @@ export default function FiltersBar({
                     <div className="pay-field">
                         <GenericInputSearch
                             value={paymentYear}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                                setPaymentYear(val);
+                            onChange={(
+                                event: ChangeEvent<HTMLInputElement>
+                            ) => {
+                                const value = event.target.value
+                                    .replace(/\D/g, "")
+                                    .slice(0, 4);
+
+                                setPaymentYear(value);
                             }}
                             placeholder="Año Pago"
                             className="pay-input-sm"
@@ -292,13 +388,26 @@ export default function FiltersBar({
                     </div>
 
                     <div className="pay-actions-container finz-filter-actions">
-                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.SEARCH}>
-                            <GenericButton variant="outlineFill" onClick={handleSearch}>
+                        <PermissionGate
+                            appEvent={APP_EVENT.PAYMENTS.SEARCH}
+                        >
+                            <GenericButton
+                                variant="outlineFill"
+                                onClick={handleSearch}
+                            >
                                 Buscar
                             </GenericButton>
                         </PermissionGate>
-                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.CLEAR_FILTERS}>
-                            <GenericButton variant="outlineFill" onClick={handleClear}>
+
+                        <PermissionGate
+                            appEvent={
+                                APP_EVENT.PAYMENTS.CLEAR_FILTERS
+                            }
+                        >
+                            <GenericButton
+                                variant="outlineFill"
+                                onClick={handleClear}
+                            >
                                 Limpiar
                             </GenericButton>
                         </PermissionGate>

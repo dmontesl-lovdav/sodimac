@@ -177,7 +177,7 @@ export default function CatalogosHubPage() {
                 Icon={ProveedoresIcon}
               />
             </PermissionGate>
-            <PermissionGate app={APP_KEYS.SUPPLIERS_CATALOG}>
+            <PermissionGate app={APP_KEYS.SUPPLIER_BLOCKS}>
               <CardItem
                 title="Bloqueo de Proveedores"
                 description="Administra los bloqueos de pago a proveedores por rangos de fecha."

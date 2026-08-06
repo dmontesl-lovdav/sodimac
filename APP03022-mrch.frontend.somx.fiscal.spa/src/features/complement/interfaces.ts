@@ -68,13 +68,15 @@ export interface ComplementPaymentResponse {
 }
 
 export interface PaymentHeaderData {
+  uuid: string;
+  rfcProveedor: string;
   idProveedor: string;
   nombreProveedor: string;
   referenciaPago: string;
   anioPagos: string;
   moneda: string;
   monto: string;
-  estatus: string;
+  status: string;
   fechaRegistro: string;
 }
 
@@ -84,23 +86,27 @@ export interface XmlComplementPreview {
   nombreEmisor: string;
   monto: string;
   fechaTimbrado: string;
+  tipoDeComprobante: string;
 }
 
 
 export const EMPTY_HEADER: PaymentHeaderData = {
+  uuid: "--",
+  rfcProveedor: "--",
   idProveedor: "--",
   nombreProveedor: "--",
   referenciaPago: "--",
   anioPagos: "--",
   moneda: "--",
   monto: "--",
-  estatus: "--",
+  status: "--",
   fechaRegistro: "--",
 };
 
 export type ProviderCatalogItem = {
   id: string;
   idProveedor: string;
+  rfc: string;
   businessName?: string;
   tipoProveedor?: {
     id?: string;
@@ -108,10 +114,12 @@ export type ProviderCatalogItem = {
 };
 
 export type QueryPaymentData = {
+  uuid: string;
   referenciaPago: string;
   idProveedor: string;
   moneda: string;
   monto: string;
   fechaRegistro: string;
   anioPagos: string;
+  status: string;
 };

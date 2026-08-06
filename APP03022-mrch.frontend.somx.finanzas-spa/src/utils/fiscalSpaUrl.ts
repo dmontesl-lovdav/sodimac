@@ -1,6 +1,12 @@
 /** Construye URL al SPA fiscal respetando base con hash (`#/fiscal`). */
-export function buildFiscalSpaUrl(route: string, params?: URLSearchParams): string {
-    const base = (process.env.FISCAL_SPA_URL ?? "").trim();
+export function buildFiscalSpaUrl(
+    route: string,
+    params?: URLSearchParams
+): string {
+    const base = (
+        process.env.FISCAL_SPA_URL ?? ""
+    ).trim();
+
     const cleanRoute = route.replace(/^\//, "");
     const qs = params?.toString();
     const suffix = qs ? `?${qs}` : "";
@@ -10,21 +16,36 @@ export function buildFiscalSpaUrl(route: string, params?: URLSearchParams): stri
     }
 
     if (base.includes("#")) {
-        const [origin, hashPath = ""] = base.split("#");
-        const hashBase = hashPath.replace(/\/$/, "");
+        const [origin, hashPath = ""] =
+            base.split("#");
+
+        const hashBase =
+            hashPath.replace(/\/$/, "");
+
         return `${origin}#${hashBase}/${cleanRoute}${suffix}`;
     }
 
-    return `${base.replace(/\/$/, "")}/${cleanRoute}${suffix}`;
+    return `${base.replace(
+        /\/$/,
+        ""
+    )}/${cleanRoute}${suffix}`;
 }
 
-export function isCreditNoteDocumentType(documentType?: string): boolean {
-    const type = (documentType ?? "").toLowerCase();
+export function isCreditNoteDocumentType(
+    documentType?: string
+): boolean {
+    const type = String(documentType ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, " ");
+
     return (
-        type.includes("nota") ||
-        type.includes("credito") ||
-        type.includes("crédito") ||
-        type.includes("nc")
+        type === "nc" ||
+        type === "nota credito" ||
+        type === "nota de credito" ||
+        type === "nota crédito" ||
+        type === "nota de crédito" ||
+        type === "credit note"
     );
 }
 
@@ -37,21 +58,47 @@ export function buildFiscalDocumentViewUrl(args: {
     documentNumber?: string;
 }): string {
     const params = new URLSearchParams();
-    const provider = String(args.providerNumber ?? "").trim();
-    if (provider) params.set("idProveedor", provider);
 
-    const uuid = String(args.uuid ?? "").trim();
-    if (uuid) params.set("uuid", uuid);
+    const provider = String(
+        args.providerNumber ?? ""
+    ).trim();
 
-    const serie = String(args.serie ?? "").trim();
-    if (serie) params.set("serie", serie);
+    if (provider) {
+        params.set("idProveedor", provider);
+    }
 
-    const folio = String(args.folio ?? args.documentNumber ?? "").trim();
-    if (folio) params.set("folio", folio);
+    const uuid = String(
+        args.uuid ?? ""
+    ).trim();
 
-    const route = isCreditNoteDocumentType(args.documentType)
-        ? "notas-credito"
-        : "facturas";
+    if (uuid) {
+        params.set("uuid", uuid);
+    }
+
+    const serie = String(
+        args.serie ?? ""
+    ).trim();
+
+    if (serie) {
+        params.set("serie", serie);
+    }
+
+    const folio = String(
+        args.folio ??
+        args.documentNumber ??
+        ""
+    ).trim();
+
+    if (folio) {
+        params.set("folio", folio);
+    }
+
+    const route =
+        isCreditNoteDocumentType(
+            args.documentType
+        )
+            ? "notas-credito"
+            : "facturas";
 
     return buildFiscalSpaUrl(route, params);
 }

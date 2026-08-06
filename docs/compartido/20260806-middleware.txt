@@ -39,3 +39,31 @@ FROM facturas WHERE idCliente = 118565 ORDER BY fechaCreacion;
 22417296,"2026071910500019059",I,"","2026-07-19 21:01:49"
 22419218,"2026072310500196856",I,"","2026-07-23 20:46:26"
 22452522,"2026071610500066579",I,"","2026-08-06 00:13:53"
+
+
+
+Guadalupe, tienes razón y resultó ser más grande de lo que parecía. Te confirmo lo que encontramos.
+
+Sobre el ticket 2026071610500066579: ya timbró (UUID 6cc8d5cf-76d7-4b40-95ff-be15c9aea6c4, folio 177054). El problema del descuento que lo tenía frenado desde julio quedó resuelto con el cambio que subimos a producción anoche.
+
+Sobre tu observación del G02: no fue un error de captura de esa factura. Revisando el origen, encontramos que el sistema cambia solo el uso de CFDI del cliente cuando se le emite una nota de crédito, y ese cambio se queda guardado en su perfil de forma permanente. A partir de ese momento, todas sus compras futuras se facturan con G02, aunque sean ventas normales.
+
+Un ejemplo del historial: este cliente hizo una devolución en noviembre de 2023. Desde ese día se le han emitido 20 facturas de venta, todas con G02, durante dos años y medio.
+
+Alcance preliminar: unos 3,808 clientes con el uso alterado y alrededor de 19,672 facturas de ingreso. El 95.9% de esos clientes tuvo una nota de crédito, lo que confirma que ese es el mecanismo. Estamos afinando la cifra exacta.
+
+Algo importante: el SAT no rechaza esta combinación, por eso nunca apareció como error. Las facturas se timbran normal y solo se detecta revisando el uso contra el tipo de comprobante, como lo hiciste tú.
+
+Necesitamos tu criterio en tres puntos:
+
+¿Cuál es el uso correcto para estas ventas? Suponemos G03 "Gastos en general", que es el que tenía este cliente antes de su devolución, pero queremos tu confirmación.
+¿Qué se hace con las facturas ya emitidas? ¿Se cancelan y reexpiden, o se dejan? Es decisión fiscal, no técnica.
+Necesitamos autorización para corregir el proceso que altera el perfil. Mientras no se corrija, cada devolución nueva vuelve a contaminar al cliente, y limpiar los datos ahora no serviría de nada.
+Quedamos atentos.
+
+Dos cosas que deliberadamente dejé fuera y quiero que decidas tú:
+
+El tema de guardado no autorizado. Ese mismo proceso también sobrescribe razón social, correo, régimen y código postal de clientes que marcaron que no querían que se guardaran sus datos. Es un asunto de datos personales, no fiscal, y probablemente no le toca a Guadalupe resolverlo. Si se lo mencionas, ella no va a poder hacer nada y se mezclan dos conversaciones. Sugiero llevarlo por separado a quien corresponda.
+
+La cifra exacta. Los 19,672 incluyen facturas emitidas antes de que el cliente se contaminara — esas salieron bien. Te pasé la consulta que da el número limpio; si la corres antes de enviar, cambia el dato del mensaje y llegas con el número definitivo en vez de uno preliminar.
+

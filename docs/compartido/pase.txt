@@ -111,3 +111,17 @@ HTTP 500
 
 C:\Users\g_dco018>
 
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+git checkout develop
+git pull origin develop
+git commit --allow-empty -m "chore(fiscal): forzar redeploy identidad UUID"
+git push origin develop
+
+git checkout uat
+git pull origin uat
+git commit --allow-empty -m "chore(fiscal): forzar redeploy identidad UUID"
+git push origin uat

@@ -1,0 +1,14 @@
+cd C:\local
+git pull origin dmontes
+robocopy "C:\local\APP03022-mrch.backend.somx.fiscal-api" "C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api" /MIR /XD .git node_modules dist target build .idea /XF *.log
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git checkout develop
+git pull origin develop
+git status
+git add -A src/main/java/com/sodimac/fiscal/api/ src/test/java/com/sodimac/fiscal/api/ migration/QA-2026-08-06-identidad-usuario-uuid.sql
+git commit -m "feat(fiscal): unificar identidad de usuario a UUID (created_by/updated_by/user_id/changed_by)"
+git push origin develop
+git checkout uat
+git pull origin uat
+git merge develop --no-ff -m "merge: identidad de usuario UUID"
+git push origin uat

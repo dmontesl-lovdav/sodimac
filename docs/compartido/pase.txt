@@ -88,6 +88,26 @@ git fetch origin
 git log --oneline -3 origin/develop
 git log --oneline -3 origin/uat
 
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git fetch origin
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -3 origin/develop
+32ab2ce (origin/develop, develop) feat(fiscal): unificar identidad de usuario a UUID (created_by/updated_by/user_id/changed_by)
+478fade feat(fiscal): tolerancia descuento comercial NC (BUS2032) + catalogos por BD directo
+63b5c45 fix(fiscal): catalogos NC/descripciones desde shared_catalogs directo (fix BUS058/BUS059, desacople util-api)
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -3 origin/uat
+8b1d8bd (HEAD -> uat, origin/uat) merge: identidad de usuario UUID
+32ab2ce (origin/develop, develop) feat(fiscal): unificar identidad de usuario a UUID (created_by/updated_by/user_id/changed_by)
+60bbc2e merge: tolerancia descuento comercial + catalogos BD directo
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
 curl.exe -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/a12b2040-d8f8-4fce-ab9d-37a636f8e59e/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":1,\"estatusOrigen\":2,\"estatusDestino\":3,\"idUsuarioActualizacion\":\"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d\"}" -w "\nHTTP %{http_code}\n"
 
 SELECT updated_by FROM tenant_fiscal.invoice WHERE fiscal_uuid='a12b2040-d8f8-4fce-ab9d-37a636f8e59e';
+
+
+C:\Users\g_dco018>curl.exe -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/a12b2040-d8f8-4fce-ab9d-37a636f8e59e/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":1,\"estatusOrigen\":2,\"estatusDestino\":3,\"idUsuarioActualizacion\":\"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d\"}" -w "\nHTTP %{http_code}\n"
+{"message":"Internal Server Error","code":500}
+HTTP 500
+
+C:\Users\g_dco018>
+

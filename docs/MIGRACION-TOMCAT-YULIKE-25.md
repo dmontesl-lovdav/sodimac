@@ -1,6 +1,10 @@
 # Migracion Tomcat Yulike - Servidor .25
 
-Tarea: repuntar BDs de los wars corriendo en Tomcat `10.138.153.25` hacia el nuevo servidor de BD `10.138.153.29`, y verificar que el codigo fuente en `sesiones/git/` coincide con lo desplegado.
+**IMPORTANTE (correccion 2026-07-14): `.25` (`somxvlcarteleriaq`) NO es el servidor productivo.** Es un servidor de **laboratorio** creado para probar la actualizacion de Tomcat antes de aplicarla en real. El servidor productivo real es **`10.138.150.87`** (coincide con el `url: https://10.138.150.87` del profile `prod` en `totemgcis/src/main/resources/application.yml`). Lo que se actualizo de verdad fue el Tomcat, no la BD — la BD en real nunca cambio, sigue en `150.29`.
+
+**Verificado 2026-07-14**: se bajaron los `.war` reales de produccion (`.87`) a `sesiones/git/entregables .87/entregables/`. Hash SHA256 identico byte a byte contra los 3 wars de `.25` ya analizados (`totem.war`, `wsct.war`, `gcis.war`) — el laboratorio era copia fiel de lo real. Toda la verificacion repo-vs-war de este documento (drift Hikari, applicationdev.properties, clases 1:1) sigue siendo valida contra produccion real, no hace falta repetirla.
+
+Tarea original: repuntar BDs de los wars corriendo en Tomcat `10.138.153.25` hacia el nuevo servidor de BD `10.138.153.29` (laboratorio), y verificar que el codigo fuente en `sesiones/git/` coincide con lo desplegado.
 
 Origen: nota `sesiones/git/war/20260707-yulike.txt` + tabla `sesiones/git/war/image01.png`.
 
@@ -110,7 +114,7 @@ Tras editar, reempaquetar o solo reemplazar el `.properties` dentro de `WEB-INF/
 | Repo | War | Resultado |
 |---|---|---|
 | `sodimacfinanzaswsct` | `wsct.war` | **Identico**. `application.properties`, `cifrado.properties` y los 4 `database*.properties` byte a byte iguales entre `src/main/resources` y el war extraido. |
-| `totemback` | `totem.war` | **Resuelto 2026-07-07**. El war tenia un bloque Hikari (`spring.datasource.hikari.*`, 6 lineas) que no existia en ningun commit/rama del repo. El usuario lo elimino por error en el servidor `.25` antes de commitear — se recupero y se agrego a `sesiones/git/totemback/src/main/resources/application.properties` (confirmado byte a byte contra el war original). Pendiente: commitear y volver a aplicar en el server. |
+| `totemback` | `totem.war` | **Resuelto 2026-07-14**. El war tenia un bloque Hikari (`spring.datasource.hikari.*`, 6 lineas) que no existia en ningun commit/rama del repo. Recuperado y commiteado en `C:\workspace-sodimac-legacy\totemback` (rama `Develop`), host de BD queda en `10.138.150.29` (el de la migracion a `153.29` fue solo prueba de laboratorio en esta sesion, NO aplicado en real — ver seccion Pendiente). |
 | `totemgcis` | `gcis.war` | **NO coincide**. El war tiene un archivo `applicationdev.properties` que no existe en el repo local (el repo solo trae `application.properties` + `application.yml`). Tampoco aparece en ninguna rama remota. |
 | `carteleria` (?) | `carteleria-rest_localhost.war` | Fuera de scope, no revisado. |
 
@@ -119,11 +123,9 @@ Conclusion: hay **drift** repo-vs-servidor en `totemback` y `totemgcis` — camb
 ---
 
 ## Pendiente
-- [x] Bloque Hikari de `totemback` recuperado y agregado a `src/main/resources/application.properties` (2026-07-07). Falta commit + re-deploy en `.25` (el usuario lo habia borrado ahi por error).
+- [x] Bloque Hikari de `totemback` recuperado y commiteado en `C:\workspace-sodimac-legacy\totemback`, rama `Develop` (2026-07-14). Falta merge `Develop` -> `main` y re-deploy en `.25`.
 - [ ] Decidir si el `applicationdev.properties` de `totemgcis` se commitea al repo antes de tocar nada (para no perderlo en el proximo deploy desde Git).
 - [x] Conectividad de red `.25` -> `.29` puerto `3306` (MySQL) **validada 2026-07-07**: `timeout 5 bash -c '</dev/tcp/10.138.153.29/3306'` -> `OK`. Confirma solo TCP/firewall, no que las DBs/usuarios ya existan del otro lado.
 - [ ] Confirmar con Yulike que las DBs `totem` y `totemconsultas` ya existen con datos/permisos para `wstotemUser`/`wsconsultaUser` en `10.138.153.29` antes de repuntar (mensaje enviado, ver seccion de mensaje pendiente de respuesta).
-- [x] Wars modificados generados en `sesiones/git/war/modificados/` (`totem.war`, `wsct.war`) con host `153.29`. Subidos y aplicados en `.25` (2026-07-07).
-- [x] `wsct.war` **repuntado y funcionando en `.29`** (2026-07-07) — hubo que editar el properties expandido directo + reiniciar Tomcat (ver gotcha arriba, el simple reemplazo del `.war` no alcanzaba).
-- [ ] Confirmar mismo resultado para `totem.war` (aplicar mismo fix: editar expandido + reiniciar Tomcat si no se hizo ya).
+- [ ] **Correccion 2026-07-14: NINGUNO de los 3 wars se repunto de verdad.** Los 3 escenarios (`totem.war`, `wsct.war`, `gcis.war`) fueron solo prueba de laboratorio en esta sesion — ni el reinicio de Tomcat de `wsct` fue en el server real de Sodimac. Los 3 siguen en `150.29` en produccion real. El plan de repunte completo (properties nuevos, gotcha de Tomcat, valor cifrado nuevo) sigue vigente como guia, pero nada de eso esta aplicado todavia. Usuario va a volver a bajar los `.war` productivos reales para evitar confusion entre lo de laboratorio y lo real.
 - [ ] Password de `g_dco018` reciporterse — la temporal exige cambio en primer login (`WajmcPYm3h3FjtDML!` ya generada).

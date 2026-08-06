@@ -4,12 +4,13 @@
 > Patrón común: binario portable en carpeta compartida → PC Sodimac extrae/exporta → archivo
 > viaja por USB/share → se restaura/publica en Docker local.
 
-**2 bases cubiertas:**
+**3 bases cubiertas:**
 
 | # | BD origen | Motor | Herramienta portable | Sección |
 |---|---|---|---|---|
 | 1 | `b2b_portal` (UAT) | PostgreSQL 18.3 | `pg_dump` (PG18 zip EDB) | [Parte A](#parte-a--postgresql-b2b_portal-uat) |
 | 2 | `SODIMAC_SAP_DEV` (DEV) | SQL Server | `SqlPackage` (dacpac) | [Parte B](#parte-b--sql-server-sodimac_sap_dev-dev) |
+| 3 | `configuracion` (PROD, `finanzasadminfacturacion`) | MySQL | `mysqldump` (zip portable) | [Parte C](#parte-c--mysql-configuracion-prod) |
 
 Los binarios portable NO viajan por el mirror (`sesiones/` gitignored) → mover por USB/share.
 
@@ -217,3 +218,105 @@ Publish crea la DB si no existe. Sin datos (el dacpac no los trae).
 - `.dacpac` = solo esquema. Para datos de una tabla puntual → `bcp ... out/in -n` (data-only).
 - No mezclar modelos: `SODIMAC_SAP_DEV` local = FBC nuevo (8 tablas); `SODIMAC_SAP_DEV_FULL` =
   autofacturador viejo (~70 tablas, solo esquema).
+
+---
+
+# Parte C — MySQL `configuracion` (PROD)
+
+> Iniciado 2026-07-14. Copia la BD real de `finanzasadminfacturacion` (server `.88`, ver
+> `[[project_rca_servidor88_20260516]]`) para reproducir localmente el bug del RCA (C3P0
+> `checkoutTimeout=0`, pool agotado). Detalle del repo/análisis en
+> `C:\workspace-sodimac-legacy\docs\ESTADO-PROYECTOS.md` y `BASES-DE-DATOS.md`.
+
+Origen: MySQL PROD `10.138.150.71:3306`, DB `configuracion`, user `configUser` / `ki&de$w29oEK`
+(desencriptado de `cifrado.properties` del propio proyecto). **Version confirmada 2026-07-14**:
+`SELECT VERSION()` → `8.4.4`.
+
+## 0. Pre-requisito — `mysqldump` portable
+
+`mysqldump` no requiere instalador — el ZIP "Generic" de MySQL Community Server trae los binarios
+cliente sueltos, sin admin.
+
+1. PC personal — descargar zip (~200 MB) a `sesiones/` (gitignored):
+   - URL: `https://dev.mysql.com/downloads/mysql/` → "Windows (x86, 64-bit), ZIP Archive"
+   - Elegir version **8.4.x** (server real confirmado `8.4.4`, container local `sodimac-mysql` ya es `8.4.10` — misma familia, sin problema de compatibilidad)
+2. Mover zip a PC Sodimac por USB / share.
+3. PC Sodimac — descomprimir:
+   ```powershell
+   Expand-Archive <ruta-zip> -DestinationPath C:\software\mysql -Force
+   ```
+   Queda `C:\software\mysql\<version>\bin\mysqldump.exe`.
+
+## 1. Generar dump (PC Sodimac)
+
+```powershell
+& "C:\software\mysql\mysql-8.4.4-winx64\bin\mysqldump.exe" `
+  --host=10.138.150.71 --port=3306 --user=configUser -p `
+  --single-transaction --no-tablespaces --routines --triggers `
+  --databases configuracion `
+  --result-file=C:\Users\g_dco018\dump-configuracion.sql
+```
+
+Notas (todo confirmado 2026-07-14):
+- `--single-transaction`: dump consistente sin bloquear tablas (requiere InnoDB, que ya usan aquí).
+- `--no-tablespaces`: **obligatorio** con usuarios de aplicación (`configUser` no tiene privilegio
+  `PROCESS`) — sin esto falla con `Access denied; you need (at least one of) the PROCESS
+  privilege(s)... when trying to dump tablespaces`.
+- **NO usar `--events`**: `configUser` no tiene privilegio `EVENT` → aborta el dump con
+  `Couldn't execute 'show events': Access denied for user 'configUser'@'%' to database
+  'configuracion' (1044)`. Si se pasa igual, el dump muere EN el paso de events (al final), tras
+  volcar todas las tablas+datos: el `.sql` queda usable pero sin footer `-- Dump completed`.
+- `--routines --triggers`: esta BD no tiene ninguno (0), pero no estorban.
+- `-p` sin valor pegado = pide el password interactivo (evita exponerlo en el historial de PowerShell,
+  el `&`/`$` del password rompe si se pasa inline sin escapar bien).
+- `--databases configuracion` (no `configuracion` a secas) → el dump incluye el `CREATE DATABASE`,
+  restaura sin tener que crearla a mano antes.
+
+## 2. Copiar dump a PC personal
+
+→ `C:\workspace-sodimac\sesiones\db\dump-configuracion-full.sql` (USB/share).
+
+## 3. Restaurar en Docker local (PC personal)
+
+Container **`sodimac-mysql`** ya creado (2026-07-14): MySQL 8.4.10, puerto `3306`,
+`docker run --name sodimac-mysql -e MYSQL_ROOT_PASSWORD='Sodimac2026#Dev' -p 3306:3306 -v sodimac-mysqldata:/var/lib/mysql -d mysql:8.4`.
+
+```bash
+docker exec -i sodimac-mysql mysql -uroot -p'Sodimac2026#Dev' \
+  < /c/workspace-sodimac/sesiones/db/dump-configuracion-full.sql
+```
+
+Como el dump trae `--databases configuracion`, no hace falta crear la DB antes ni especificarla
+en el comando — el propio dump la crea.
+
+## 4. Verificar
+
+```bash
+docker exec sodimac-mysql mysql -uroot -p'Sodimac2026#Dev' -e \
+  "USE configuracion; SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema='configuracion' ORDER BY table_rows DESC;"
+```
+
+## 5. Crear usuario de aplicación (opcional, para igualar creds reales)
+
+Si se quiere correr `finanzasadminfacturacion` local apuntando a este container con las MISMAS
+credenciales que usa en prod (`configUser`/`ki&de$w29oEK`):
+
+```bash
+docker exec sodimac-mysql mysql -uroot -p'Sodimac2026#Dev' -e \
+  "CREATE USER IF NOT EXISTS 'configUser'@'%' IDENTIFIED BY 'ki&de\$w29oEK'; GRANT ALL PRIVILEGES ON configuracion.* TO 'configUser'@'%'; FLUSH PRIVILEGES;"
+```
+
+Con esto el `application.properties`/`databaseConfig.properties` del repo (`10.138.150.71` →
+`localhost`, mismo user/pass) queda igual de simple que apuntar el host a `localhost:3306`.
+
+## Notas (Parte C)
+
+- **Validado 2026-07-14**: dump ~898 MB, restaurado en `sodimac-mysql` en ~2 min, 0 errores.
+  **38 tablas, ~984 MB** en disco. Tablas gigantes: `bitactividades` (~4.85M filas, bitácora) y
+  `foliohistorial` (~2.2M filas) explican el tamaño. El resto son catálogos/config chicos.
+- El dump `.sql` (898 MB) NO se versiona (`sesiones/` gitignored) — mover por USB/share, no por mirror.
+- Restaurar por **stdin** (`< archivo`), no `docker cp` (trampa MSYS pathconv de Git Bash). Para
+  `docker exec` con rutas internas, prefijar `MSYS_NO_PATHCONV=1`.
+- Objetivo: reproducir el incidente del RCA `.88` contra la rama local
+  `C:\workspace-sodimac-legacy\finanzasadminfacturacion` (rama `prod-actual-con-defecto`, código
+  exacto de prod con el bug, sin el fix de `TokenService`/Spring Data JPA).

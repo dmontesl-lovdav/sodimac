@@ -12,3 +12,62 @@ git checkout uat
 git pull origin uat
 git merge develop --no-ff -m "merge: identidad de usuario UUID"
 git push origin uat
+
+-- Verificación: todas deben quedar 'uuid'
+SELECT c.relname AS tabla, a.attname AS columna, t.typname AS tipo
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_attribute a ON a.attrelid = c.oid
+JOIN pg_type t ON t.oid = a.atttypid
+WHERE n.nspname = 'tenant_fiscal'
+  AND c.relkind IN ('r','v')
+  AND a.attname IN ('created_by','updated_by','user_id','changed_by')
+  AND c.relname NOT LIKE '%orphan_backup%'
+ORDER BY c.relname, a.attname;
+
+"tabla","columna","tipo"
+addendum,created_by,uuid
+addendum,updated_by,uuid
+addendum,user_id,uuid
+equivalence_dr,created_by,uuid
+equivalence_dr,updated_by,uuid
+invoice,created_by,uuid
+invoice,updated_by,uuid
+invoice_status_history,changed_by,uuid
+issuer,created_by,uuid
+issuer,updated_by,uuid
+log,created_by,uuid
+log,updated_by,uuid
+pac_catalog,created_by,uuid
+pac_catalog,updated_by,uuid
+payment,created_by,uuid
+payment,updated_by,uuid
+payment_file_registry,created_by,uuid
+payment_file_registry,updated_by,uuid
+payment_file_registry,user_id,uuid
+payment_response_catalog,created_by,uuid
+payment_response_catalog,updated_by,uuid
+payments,created_by,uuid
+payments,updated_by,uuid
+receiver,created_by,uuid
+receiver,updated_by,uuid
+related_cfdi,created_by,uuid
+related_cfdi,updated_by,uuid
+related_documents,created_by,uuid
+related_documents,updated_by,uuid
+tax,created_by,uuid
+tax,updated_by,uuid
+tax_detail,created_by,uuid
+tax_detail,updated_by,uuid
+tax_transfer,created_by,uuid
+tax_transfer,updated_by,uuid
+tax_withholding,created_by,uuid
+tax_withholding,updated_by,uuid
+totals,created_by,uuid
+totals,updated_by,uuid
+version_catalog,created_by,uuid
+version_catalog,updated_by,uuid
+vw_credit_note,created_by,uuid
+vw_credit_note,updated_by,uuid
+vw_invoice,created_by,uuid
+vw_invoice,updated_by,uuid

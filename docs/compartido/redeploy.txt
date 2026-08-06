@@ -1,0 +1,17 @@
+Forzar redeploy (empty commit) - identidad UUID
+Correr en la PC de Sodimac, repo real fiscal-api.
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+git checkout develop
+git pull origin develop
+git commit --allow-empty -m "chore(fiscal): forzar redeploy identidad UUID"
+git push origin develop
+
+git checkout uat
+git pull origin uat
+git commit --allow-empty -m "chore(fiscal): forzar redeploy identidad UUID"
+git push origin uat
+
+# Luego: esperar a que Actions termine (verde) y el pod reinicie con la imagen nueva.
+# Reintentar el curl de status update. Si sigue 500 con pod ya nuevo -> sacar el log de fiscal-api.

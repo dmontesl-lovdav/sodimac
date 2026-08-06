@@ -1,6 +1,7 @@
 # ============================================================================
 # relay-run.ps1  —  CORRER EN LA PC DE SODIMAC
-# Baja del mirror lo último y EJECUTA el archivo compartido docs/scripts/_relay/sodimac-run.ps1
+# SOLO baja del mirror lo último y MUESTRA el archivo compartido para que lo revises.
+# NO ejecuta nada. Si lo ves bien, tú lo corres aparte (ver comando al final).
 # Uso:  powershell -File docs\scripts\relay-run.ps1
 # ============================================================================
 $ErrorActionPreference = "Stop"
@@ -16,6 +17,8 @@ if ($LASTEXITCODE -ne 0) { throw "git pull fallo" }
 $runFile = Join-Path $root "docs/scripts/_relay/sodimac-run.ps1"
 if (-not (Test-Path $runFile)) { throw "No existe $runFile" }
 
-Write-Host "== Ejecutando sodimac-run.ps1 ==" -ForegroundColor Green
-& $runFile
-Write-Host "== Fin sodimac-run.ps1 ==" -ForegroundColor Green
+Write-Host "`n===================== sodimac-run.ps1 (REVISAR, NO ejecutado) =====================" -ForegroundColor Green
+Get-Content $runFile
+Write-Host "==================================================================================" -ForegroundColor Green
+Write-Host "`nSi lo ves bien, ejecutalo tu:" -ForegroundColor Yellow
+Write-Host "   powershell -File docs\scripts\_relay\sodimac-run.ps1" -ForegroundColor Yellow

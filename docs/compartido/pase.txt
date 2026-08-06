@@ -80,3 +80,14 @@ a12b2040-d8f8-4fce-ab9d-37a636f8e59e,2
 
 
 curl.exe -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/<FISCAL_UUID>/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":1,\"estatusOrigen\":2,\"estatusDestino\":3,\"idUsuarioActualizacion\":\"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d\"}" -w "\nHTTP %{http_code}\n"
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git fetch origin
+git log --oneline -3 origin/develop
+git log --oneline -3 origin/uat
+
+curl.exe -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/a12b2040-d8f8-4fce-ab9d-37a636f8e59e/status" -H "Content-Type: application/json" -d "{\"numeroProveedor\":1,\"estatusOrigen\":2,\"estatusDestino\":3,\"idUsuarioActualizacion\":\"9f7affd6-fc0f-4f76-bcaf-65b1af36a47d\"}" -w "\nHTTP %{http_code}\n"
+
+SELECT updated_by FROM tenant_fiscal.invoice WHERE fiscal_uuid='a12b2040-d8f8-4fce-ab9d-37a636f8e59e';

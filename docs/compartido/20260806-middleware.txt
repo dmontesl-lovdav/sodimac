@@ -1,0 +1,13 @@
+SELECT COUNT(*) AS clientes_g02,
+       SUM(CASE WHEN EXISTS (
+             SELECT 1 FROM facturas f
+             WHERE f.idCliente = c.idCliente
+               AND f.uuidRelacionado IS NOT NULL AND f.uuidRelacionado <> ''
+           ) THEN 1 ELSE 0 END) AS con_nota_credito
+FROM clientes c
+JOIN catusoscfdi cat ON cat.idUsoCfdi = c.idUsoCfdi
+WHERE cat.clave = 'G02';
+
+
+SELECT idFactura, ticket, idComprobante, uuidRelacionado, fechaTimbrado
+FROM facturas WHERE idCliente = 118565 ORDER BY fechaCreacion;

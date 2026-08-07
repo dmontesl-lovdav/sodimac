@@ -71,3 +71,60 @@ La cifra exacta. Los 19,672 incluyen facturas emitidas antes de que el cliente s
 SHOW CREATE PROCEDURE uspObtenerUsoCfdi;
 
 CALL uspObtenerUsoCfdi(2, 1, '612');
+
+
+
+-- ============================================================
+-- Inactivar G02 del combo de usos de CFDI (reporte de Lupita)
+-- BD: configuracion   |   Fecha: 2026-08-07
+-- ============================================================
+
+-- 1) RESPALDO (obligatorio, permite revertir aunque se pierda este script)
+CREATE TABLE bkp_usocfdi_regimenfiscal_20260807 AS
+  SELECT * FROM usocfdi_regimenfiscal
+  WHERE idUsoCfdi = (SELECT idUsoCfdi FROM catusoscfdi WHERE clave = 'G02');
+
+CREATE TABLE bkp_catusoscfdi_20260807 AS
+  SELECT * FROM catusoscfdi WHERE clave = 'G02';
+
+-- 2) ESTADO ANTES
+SELECT r.regimenfiscal, ur.idTipoPersona, ur.activo+0 AS activo
+FROM usocfdi_regimenfiscal ur
+JOIN catusoscfdi u      ON u.idUsoCfdi = ur.idUsoCfdi
+JOIN catregimenfiscal r ON r.id = ur.idRegimenFiscal
+WHERE u.clave = 'G02'
+ORDER BY r.regimenfiscal, ur.idTipoPersona;
+
+-- 3) INACTIVAR — relación por régimen (lo que filtra el combo)
+UPDATE usocfdi_regimenfiscal
+SET activo = 0
+WHERE idUsoCfdi = (SELECT idUsoCfdi FROM catusoscfdi WHERE clave = 'G02');
+-- esperado: 22 filas afectadas
+
+-- 4) INACTIVAR — catálogo (por si el SP filtra por aquí y no por la relación)
+UPDATE catusoscfdi
+SET activo = 0
+WHERE clave = 'G02';
+-- esperado: 1 fila afectada
+
+-- 5) VERIFICAR
+SELECT u.clave, u.activo+0 AS uso_activo,
+       SUM(ur.activo+0) AS relaciones_activas, COUNT(*) AS relaciones_totales
+FROM catusoscfdi u
+LEFT JOIN usocfdi_regimenfiscal ur ON ur.idUsoCfdi = u.idUsoCfdi
+WHERE u.clave = 'G02'
+GROUP BY u.clave, u.activo;
+-- esperado: uso_activo = 0, relaciones_activas = 0, relaciones_totales = 22
+Actualizo los dos niveles porque no tenemos el cuerpo de uspObtenerUsoCfdi (la copia en docker vino sin procedimientos), así que no sé cuál de las dos banderas consulta. Tocar ambas garantiza el efecto; si sólo mira una, la otra sobra sin causar daño.
+
+Reversa
+
+UPDATE usocfdi_regimenfiscal ur
+JOIN bkp_usocfdi_regimenfiscal_20260807 b
+  ON b.idUsoCfdi = ur.idUsoCfdi AND b.idRegimenFiscal = ur.idRegimenFiscal
+ AND b.idVersionCfdi = ur.idVersionCfdi AND b.idTipoPersona = ur.idTipoPersona
+SET ur.activo = b.activo;
+
+UPDATE catusoscfdi u
+JOIN bkp_catusoscfdi_20260807 b ON b.idUsoCfdi = u.idUsoCfdi
+SET u.activo = b.activo;

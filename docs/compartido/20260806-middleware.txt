@@ -67,3 +67,7 @@ El tema de guardado no autorizado. Ese mismo proceso también sobrescribe razón
 
 La cifra exacta. Los 19,672 incluyen facturas emitidas antes de que el cliente se contaminara — esas salieron bien. Te pasé la consulta que da el número limpio; si la corres antes de enviar, cambia el dato del mensaje y llegas con el número definitivo en vez de uno preliminar.
 
+
+SHOW CREATE PROCEDURE uspObtenerUsoCfdi;
+
+CALL uspObtenerUsoCfdi(2, 1, '612');

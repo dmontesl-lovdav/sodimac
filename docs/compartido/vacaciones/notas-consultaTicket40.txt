@@ -1,0 +1,64 @@
+http://localhost:8080/wsobtenerticketv/ConsultaTicket40/v1.0/
+http://10.138.150.88:8080/wsobtenerticket/ConsultaTicket40/v1.0/
+http://10.138.150.7:8080/wsobtenerticket/ConsultaTicket40/v1.0/
+
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:req="http://mdwcorp.falabella.com/SOD/CORP/OSB/schema/Cliente/Ticket/Obtener/Req-v2018.02">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <req:ClienteTicketObtenerExpReq>
+         <!--Optional:-->
+         <req:body>
+            <!--Optional:-->
+            <req:i_num_oc></req:i_num_oc>
+            <!--Optional:-->
+            <req:i_num_ticket>3911</req:i_num_ticket>
+            <!--Optional:-->
+            <req:i_num_tienda>2038</req:i_num_tienda>
+            <!--Optional:-->
+            <req:i_num_caja>004</req:i_num_caja>
+            <!--Optional:-->
+            <req:fecha_trx>21-07-2026</req:fecha_trx>
+         </req:body>
+      </req:ClienteTicketObtenerExpReq>
+   </soapenv:Body>
+</soapenv:Envelope>
+
+
+
+2025062520000051475
+
+
+20250625 2000 005 1475
+
+20260520 2038 014 7336
+20260520 2038 014 7335
+
+20260528 1100 016 5898
+20260721 2038 004 3911
+2026072120380043911
+
+
+
+
+fecha = (body.getFechaTrx()==null)? "": body.getFechaTrx().trim();
+tienda = (body.getINumTienda()==null)? "": body.getINumTienda().trim();
+caja = (body.getINumCaja()==null)? "": body.getINumCaja().trim();
+transaccion = (body.getINumTicket()==null)? "0": body.getINumTicket().toString();
+numeroOrden = (body.getINumOc()==null || body.getINumOc().isEmpty())? "0": body.getINumOc().trim();
+
+String ticket = fecha + tienda + caja + transaccion;
+
+fecha=25/06/2025;
+tienda=2000
+caja=005
+transaccion=1475
+
+
+fecha=20/05/2026
+tienda=2038
+caja=014
+transaccion=7335
+
+
+

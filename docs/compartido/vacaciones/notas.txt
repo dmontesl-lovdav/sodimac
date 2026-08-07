@@ -1,0 +1,470 @@
+https://confluence.falabella.tech/display/SMI/Nuevo+portal+de+proveedores
+
+Conexión remoto al ambiente de pruebas
+10.138.153.10:33689
+user
+$0d1M4cPr0j3Ct
+
+postgress
+adminpg4
+
+Postgress:
+IP: 10.138.153.10
+Puerto: 5432
+Sodim@cP0str3s
+
+
+
+IP: 10.138.153.20
+Puerto: 5432
+Sodim@cP0sgr3s
+
+jdbc:sqlserver://10.138.153.10:5319;databaseName=SODIMAC_SAP_DEV;encrypt=true;trustServerCertificate=true
+SODIMAC_SAP_DEV --> SQL SERVER
+10.138.153.10
+SodimacDevUsr
+Pa55wordDev
+
+sp_genera_poliza_ap_nc
+
+
+PRODUCCIÓN, ENTRAR REMOTAMENTE 77: 
+IP:10.138.150.77:33689
+usuario:user
+password:$gdd2019#FacQ@
+
+
+BCFacturacionPuntoCes
+10.138.150.83:33689
+ODAMX-DEV\admin-dev
+sup3Rm@ri0Br055
+
+Conexión remoto al ambiente de pruebas
+10.138.153.20:33689
+user
+$0d1M4cPr0j3CtS
+
+
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_SAP_PROD
+SodimacETLUSR 
+$0dimac2020
+
+
+Credivoucher
+D:\CrediVoucher
+
+SET JAVA_HOME=C:\Program Files\Java\jdk-17
+SET JAVA_HOME=C:\software\java\jdk1.8.0_441
+SET PATH=%JAVA_HOME%\bin;%PATH%
+
+Montar unidad C en D
+subst d: c:\
+
+Cripto:
+MDAW 	--> crypto.key && crypto.iv
+454SD	-->	crypto.pass && crypto.salt
+
+
+PRODUCCIÓN PUNTOS CES
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_SAP_PROD;encrypt=true;trustServerCertificate=true
+SodimacEtlUsr
+$0dimac2020
+
+reportes cfdi batch
+Origen
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_FISCAL_PROD;encrypt=true;trustServerCertificate=true
+Usuario:UserBatchFinanzas
+Password:kiTuNs39#m2$qPy2n1
+
+select count(1) -- top 10 *  --3,276,559
+from SODIMAC_FISCAL_PROD.dbo.RELACION_VENTA_FACTURACION
+where FECHA_TICKET >= '2024-01-01'
+and   FECHA_TICKET <= '2024-12-31'
+
+select count(1) --5275
+from TABLERO_CONTROL_TIMBRADO;
+
+Destino
+jdbc:mysql://10.138.150.71:3306/sodimacfiscal?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT&cachePrepStmts=true&useServerPrepStmts=true&rewriteBatchedStatements=true
+UserBatchFinanzas
+UserBatchFinanzas
+
+/*
+Procesos batch del .77
+*/
+
+select count(1)
+ -- DELETE 
+FROM relacionventafacturacion 
+WHERE FECHA_TICKET >= '2023-01-01' and FECHA_TICKET <= '2023-01-01';
+
+select count(1) --10133
+from tablerocontroltimbrado 
+
+
+REMOTAMENTE
+10.138.150.76:33689
+https://10.138.150.76:8443/cfdi
+Usuario:user
+10: $0d1M4cPr0j3Ct
+76: @ifr2020#ProF$
+
+Credivoucher Se encuentra en el .77
+D:\CrediVoucher\credivoucher.bat
+https://jira.falabella.tech/browse/STM-473
+
+
+Puntos CES Se encuentra en el .88 (también está en el .77 pero esta deshabilitado)
+D:\Consolas\BctFacturacionCes\bctfacturacionPuntosCes.bat
+https://jira.falabella.tech/browse/STM-182
+
+
+https://genera.emisiondetecno.mx/Sodimac/Detickets/cfdiWebEmision_Servicio40_SodimacDetickets/asp/Certificados.aspx
+usr:Administrador 
+pwd:4343fdfd657jhfg0 
+
+ 
+
+smendozah@sodimac.com.mx 
+20r3B4t3sS41d
+
+Totem PROD
+10.138.150.87
+g_dco018
+aWTezPuIIksZMQ
+totemOracle2x252!
+P#vRf_ImPHO9Iz
+P#vRf_ImPHO9Iz2
+
+spring.datasource.url= jdbc:mysql://10.138.150.29:3306/totem?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&reWriteBatchedInserts=true
+spring.datasource.username=wstotemUser
+spring.datasource.password=wstotemUser
+
+mvn install:install-file -Dfile=C:\workspace_sts\invoice-api\libs\cfdv40.jar -DgroupId=mx.gob.sat -DartifactId=cfdv40 -Dversion=1.0 -Dpackaging=jar
+
+
+Se tienen que subir dos ajustes:
+1.- C:\workspace_sts\sodimacfinanzaswsct  	--> Ancho de imagen
+2.- CFDI 									--> Detalle de NC
+3.- Subir servicio punto postgress			--> Subir a git
+4.- Sodimac finanzas sincronización batch	-->  Subir a git
+
+
+
+scomp -out test.jar test.xsd -src test
+mvn install:install-file -Dfile=C:\workspace_sts\invoice-api\libs\test.jar -DgroupId=dml.beans -DartifactId=test -Dversion=1.0 -Dpackaging=jar
+mvn install:install-file -Dfile=C:\workspace_sts\invoice-api\libs\cfdv40.jar -DgroupId=mx.gob.sat -DartifactId=cfdv40 -Dversion=1.0 -Dpackaging=jar
+
+#Prod
+#jdbc.bct.url=jdbc:oracle:thin:@ramsay.falabella.cl:1531:arsmxpr
+#jdbc.bct.user=BATSW_FAC
+#jdbc.bct.pass=M5R89NJYVS
+
+
+SELECT *
+FROM TRX_HDR
+WHERE TIPO_TRX=1
+AND FECHA_TRX >= TRUNC(SYSDATE-1)
+AND MNT_TOTAL_A_PAGAR BETWEEN 1 AND 5
+ORDER BY FECHA_TRX DESC;
+
+20250605 2140 0033 558 5
+
+
+10.138.150.88 
+U: rmartineztap 
+Pass:Oracle2x17 
+
+
+Base de datos de MySQL (Producción)
+SSH
+10.138.150.71 
+U: rmartineztap 
+SodimacMexico2025*
+
+mysql -u dba_mysql -p
+Sodimac123*
+
+
+
+AdminFiscal Web 150.88 -> 150.7
+AdminFiscal DB 150.71 -> 150.12
+
+somxvladmfiscdbp	(10.138.150.12)
+Usuario:g_dco018
+Contraseña:++sm0t9QBao#ak1
+
+mysql -u dba_mysql -p
+Ewqasdcxz123.MYSQL
+Ewqasdcxz123.MYSQL
+ 
+somxvladmfiscwebp (10.138.150.7) --> .88
+Usuario:g_dco018
+Contraseña:UraTuA5WO5S=lM1  (Anterior)
+Contraseña:UraTuA5WO5S=lM2
+ 
+ 
+ molguinm@sod.com.mx
+ veAR2XDJFZ
+ 
+ 
+ 
+ servidor 10.138.150.38:33689
+user: .\user
+pwd: sup3Rm@ri0Br055
+
+Token GIT: Vj3SXKxajT5wFujdMGS1
+
+jdbc:mysql://10.138.150.71:3306/configuracion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+configUser
+ki&de$w29oEK
+
+jdbc:mysql://10.138.150.71:3306/configuracion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+hibernate.connection.username=configUser
+hibernate.connection.password=ki&de$w29oEK
+
+
+POST http://10.138.150.88:8080/finanzasadminfacturacion/api/login
+{ 
+  "username": "userWsft", 
+  "password": "E0R9KWF482" 
+} 
+
+
+POST http://10.138.150.88:8080/finanzasadminfacturacion/api/emisor
+{
+  "rfc": "CSD161207R2A",
+  "sucursal": 1100,
+  "tipoDeComprobante": "DC",
+  "tipoDeOperacion": "T",
+  "version": "4.0",
+  "idAplicacion": 3,
+  "formaPago": "05"
+}
+
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_FISCAL_PROD;encrypt=true;trustServerCertificate=true
+jdbc:sqlserver://10.138.150.83:1433;DatabaseName=SODIMAC_FISCAL_PROD;trustServerCertificate=true
+UserBatchFinanzas
+kiTuNs39#m2$qPy2n1
+
+
+jlgomezg@sodimac.com.mx
+20r3B4t3sS41d
+
+
+{ 
+  "username": "userWsft", 
+  "password": "E0R9KWF482" 
+} 
+ 
+{ 
+  "username": "userWsPrmFac", 
+  "password": "E0R9KWF482" 
+}
+ 
+ 
+hibernate.connection.url=jdbc:mysql://10.138.150.74:3306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+hibernate.connection.password=wsfacturacionUser, 
+hibernate.connection.username=wsfacturacionUser
+
+
+jdbc:mysql://10.138.153.10:4306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+jdbc:mysql://10.138.150.77:3306/wsfacturacion
+wsfacturacionUser
+wsfacturacionUser
+
+{hibernate.connection.driver_class=com.mysql.cj.jdbc.Driver, hibernate.hbm2ddl.auto=none, hibernate.c3p0.idleConnectionTestPeriod=14400, hibernate.c3p0.max_size=20, hibernate.c3p0.preferredTestQuery=SELECT 1, hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect, hibernate.c3p0.testConnectionOnCheckout=true, hibernate.c3p0.privilegeSpawnedThreads=true, hibernate.cache.use_query_cache=false, hibernate.c3p0.min_size=5, hibernate.connection.password=wsfacturacionUser, hibernate.connection.username=wsfacturacionUser, hibernate.cache.use_second_level_cache=false, 
+hibernate.connection.url=jdbc:mysql://localhost:3306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT, hibernate.c3p0.timeout=1800, hibernate.show_sql=false, hibernate.c3p0.acquire_increment=5, hibernate.c3p0.contextClassLoaderSource=library}
+{hibernate.connection.driver_class=com.mysql.cj.jdbc.Driver, hibernate.hbm2ddl.auto=none, hibernate.c3p0.idleConnectionTestPeriod=14400, hibernate.c3p0.max_size=20, hibernate.c3p0.preferredTestQuery=SELECT 1, hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect, hibernate.c3p0.testConnectionOnCheckout=true, hibernate.c3p0.privilegeSpawnedThreads=true, hibernate.cache.use_query_cache=false, hibernate.c3p0.min_size=5, hibernate.connection.password=wsfacturacionUser, hibernate.connection.username=wsfacturacionUser, hibernate.cache.use_second_level_cache=false, 
+hibernate.connection.url=jdbc:mysql://10.138.150.77:3306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT, hibernate.c3p0.timeout=1800, hibernate.show_sql=false, hibernate.c3p0.acquire_increment=5, hibernate.c3p0.contextClassLoaderSource=library}
+
+Migración
+En la migración también se debe de modificar el CFDI fiscal, ya que apunta al usuario dba_mysql del servidor .71
+
+
+.83 o servidor .13
+Para ver el proceso de OC de detectno, validar que se ejecute bien el proceso
+
+
+ETLS
+servidor 10.138.153.13:33689 
+user: .\admin-dev
+pwd: sup3Rm@ri0Br055}
+
+Nuevo ETLs:
+servidor 10.138.150.38:33689
+user: .\user
+pwd: sup3Rm@ri0Br055
+
+
+
+Pagos de Santander
+Consola en el .76
+Tickets_PagosVVEE_EnvioFacturacion.exe
+	--> appConfig
+Envio Facturación
+userPagos
+usrBatch
+
+
+<connectionStrings>
+<add name="SODIMAC_TICKETS_OP_PVVE" connectionString="metadata=res://*/EntityModels.SODIMAC_TICKETS_OP_PVVE.csdl|res://*/EntityModels.SODIMAC_TICKETS_OP_PVVE.ssdl|res://*/EntityModels.SODIMAC_TICKETS_OP_PVVE.msl;provider=System.Data.SqlClient;provider connection string=&quot;data source=10.138.11.54;initial catalog=SODIMAC_TICKETS_OP;persist security info=True;user id=SODIMACADM;password=Pa55word;MultipleActiveResultSets=True;App=EntityFramework&quot;" providerName="System.Data.EntityClient" />
+<add name="SODIMAC_FISCAL_PVVEE" connectionString="server=10.138.150.71;user id=userPagos;password=djIe7I4k7dn9ws$;persistsecurityinfo=True;database=sodimacfiscal" providerName="System.Data.EntityClient" />
+</connectionStrings>
+
+
+Servidor 10.138.150.71:3306 
+BD: sodimacfiscal
+usuario: UserEtl
+pass: $gd20#45FcQ@
+ 
+Servidor 10.138.150.77:3306 
+BD: facturacion
+usuario: facturaUser
+pass: facturaUser
+Ahi estan lo dos usuarios de la ETL que van del 77 al 71
+ 
+ 
+ 
+ 
+ 
+Servidores Oracle Linux de Laboratorio
+Aplicación: 10.138.153.87
+BD MySQL: 10.138.153.29
+
+g_dco018
+aWTezPuIIksZMQ
+totemOracle2x252!
+
+
+
+Me reuní con Josue para ver en que proyecto voy a integrar el poryecto de Rebates, al final se decidio que el mismo que donde esta Pagos, ya se 
+solicito acceso para que Josue suba sus cambios al proyecto git de finanzas-api y posteriormente integrar los mios.
+
+Me reuní con Francisco, se integro al proyecto GIT de fiscal api las validaciones de validar Factura y NC
+
+Actualmente estoy con Ajuste de microservicio para registrar, actualizar y consultar los descuentos comerciales - Rebates, 
+Se estima que el día de mañana este terminado
+
+databaseFac.properties
+jdbc:mysql://10.138.150.77:3306/facturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+    jdbc:mysql://localhost:3306/facturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+
+databaseWs.properties
+jdbc:mysql://10.138.150.77:3306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+    jdbc:mysql://localhost:3306/wsfacturacion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+	
+
+Rebates
+acastellanosc@sodimac.com.mx	
+KqN48j&S#Bmr
+
+
+Gabo
+Ordenes de compra
+
+
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_FISCAL_PROD;encrypt=true;trustServerCertificate=true
+UserBatchFinanzas
+kiTuNs39#m2$qPy2n1
+
+
+com.mysql.cj.jdbc.Driver
+jdbc:mysql://10.138.150.71:3306/sodimacfiscal?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT&cachePrepStmts=true&useServerPrepStmts=true&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&useSSL=true
+UserBatchFinanzas
+$gd20#45FcQ@
+
+
+Fiscal usuario de Ivan
+iscortesz@sodimac.com.mx
+E0r9KwF$482s
+
+
+java.sql.SQLException: Access denied for user 'UserBatchFinanzas'@'mogdco018.falabella.com' (using password: YES)
+
+Test-NetConnection 10.138.150.88 -Port 8080
+curl -v http://10.138.150.88:8088/wsmdlwticket/Ticket/Obtener/v1.0?wsdl
+
+curl -v http://10.138.150.88:8088/wsmdlwticket/Ticket/Obtener/v1.0?wsdl -H "Content-Type: text/xml;charset=UTF-8" -H "SOAPAction: http://mdwcorp.falabella.com/SOD/CORP/OSB/wsdl/Cliente/Ticket/Obtener-v1.0/Op" -d @request.xml
+
+
+
+
+jdbc:sqlserver://10.138.150.124:5319;databaseName=SODIMAC_WEB_PROD
+Pa55word
+SODIMACADM
+
+hibernate.connection.url=jdbc:mysql://10.138.150.29:3306/totemconsultas?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+wsconsultaUser
+
+Token: 4578
+
+Hay que validar jira 213 de versionamiento de parámetros
+
+
+BCP DEV 
+IP: f8cloud1129
+Puerto: 1541
+SID: arsmxts
+usuario: oromero
+pwd:DFVGRTHJy1Gj
+ 
+ 
+ 
+ crypto.key=SODIMAC2020MARZOSODIMAC2020MARZO
+crypto.iv=0000000000000000
+
+#Dev
+jdbc.bct.url=MDAwMDAwMDAwMDAwMDAwMN/Fam0wU4E3l0nGeIXHG5BSfkMKWrU8tW8Qxy6mXGG8w8sWW63ZC3DCUL4E7/uOKQ==
+jdbc.bct.user=MDAwMDAwMDAwMDAwMDAwMNnYFaPtRB1bP8yndvNibnU=
+jdbc.bct.pass=MDAwMDAwMDAwMDAwMDAwMF0rKbjpqooqnUU1KlU/OFk=
+
+
+jdbc.bct.url=MDAwMDAwMDAwMDAwMDAwMN/Fam0wU4E3l0nGeIXHG5BEQ4Onu4VWZ/gmM4PXOy38j9mobVd8nPrZHBdczq2g/A==
+jdbc.bct.user=MDAwMDAwMDAwMDAwMDAwMNnYFaPtRB1bP8yndvNibnU=
+jdbc.bct.pass=MDAwMDAwMDAwMDAwMDAwMF0rKbjpqooqnUU1KlU/OFk=
+
+jdbc.bct.url=jdbc:oracle:thin:@10.222.109.24:1541:arsmxts
+jdbc.bct.user=BATSW_FAC
+jdbc.bct_pass=lAMSL01LAM2
+jdbc.bct.url=jdbc:oracle:thin:@10.242.7.48:1541:arsmxts
+
+curl -s telnet://localhost:5434 --connect-timeout 2 2>&1 || echo "Verificando puerto 5434..."
+
+jdbc:mysql://10.138.153.10:3306/configuracion?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+configUser
+configUser
+
+
+jdbc:mysql://10.138.153.10:3306/sodimacfiscal?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=CST6CDT
+sodimacfiscal
+s$0d1m4cFi2c4L
+
+
+Sapito PROD
+host:embalse
+usr:usapmx
+pwd:74OmUqP3
+pto:1531
+database:odsrmxpr
+
+jdbc:oracle:thin:@ramsay.falabella.cl:1531/arsmxpr
+USW_BCT
+ubct234dv8
+
+Comandos java
+Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*java*" } | Select-Object ProcessId, Name, CommandLine
+
+
+
+
+Usuario 'g_dco018' configurado en 10.138.153.25
+Contraseña temporal: WajmcPYm3h3Fjt
+Contraseña nueva: WajmcPYm3h3FjtDML!
+
+atorresga@sodimac.com.mx
+BQu4JomESrt
+
+cfdi
+juespiritu@sodimac.com.mx
+J0r4KaF$937x

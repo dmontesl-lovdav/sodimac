@@ -1,0 +1,392 @@
+ SELECT * -- ISNULL(VALOR, @V_TIPO_DOCUMENTO_TEMP)
+ FROM CatConfiguracion
+ WHERE NombreVariable='TipoDocumentoAP';
+ 
+ SELECT COUNT(1)
+FROM [dbo].[Envios_Ap_Temp]
+WHERE FLAG_ENVIADO = 0;
+
+-- truncate table [dbo].[Envios_Ap_Temp];
+
+SELECT TOP 5
+    ID,
+    CODIGO_PROVEEDOR,
+    NUMERO_DOCUMENTO,
+    NUMERO_REFERENCIA,
+    TIPO_DOCUMENTO,
+    MONEDA,
+    TIPO_CAMBIO,
+    IdPeriodo,
+    Timbrado,
+    TipoRebate
+FROM [dbo].[Envios_Ap_Temp];
+
+
+SELECT COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE FLAG_ENVIADO = 0
+AND
+(
+    EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap_Manual] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    OR EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap] C
+        WHERE C.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND C.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND C.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    OR EXISTS
+    (
+        SELECT 1
+        FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+);
+
+
+SELECT * /*@V_CONTADOR = */ -- COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE FLAG_ENVIADO = 0
+AND TIPO_DOCUMENTO != 'REMAN';
+
+SELECT /*@V_CONTADOR =*/ COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE MONEDA != 'MXN'
+AND TIPO_CAMBIO <= 1;
+
+SELECT /*@V_CONTADOR = */ COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE MONEDA = 'MXN'
+AND TIPO_CAMBIO != 1;
+
+SELECT TOP 5
+    MONEDA,
+    TIPO_CAMBIO,
+    NUMERO_DOCUMENTO
+FROM [dbo].[Envios_Ap_Temp]
+WHERE MONEDA = 'MXN'
+AND TIPO_CAMBIO != 1;
+
+SELECT /*@V_CONTADOR =*/ COUNT(1)
+FROM
+(
+    SELECT
+        REFERENCIA_DOCUMENTO,
+        NUMERO_DOCUMENTO,
+        CODIGO_PROVEEDOR,
+        SUM(CONVERT(NUMERIC, SUCURSAL)) SUCURSAL
+    FROM [dbo].[Envios_Ap_Temp]
+    GROUP BY REFERENCIA_DOCUMENTO, NUMERO_DOCUMENTO, CODIGO_PROVEEDOR
+    HAVING SUM(CONVERT(NUMERIC, SUCURSAL)) <= 0
+) A;
+
+
+SELECT /*@RegistrosAInsertar_Manual = */ COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE
+(
+    NOT EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap_Manual] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    OR NOT EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    AND NOT EXISTS
+    (
+        SELECT 1
+        FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+);
+
+SELECT TOP 1
+    FECHA_DOCUMENTO,
+    CONVERT(DATE, FECHA_DOCUMENTO, 103) AS FECHA_DOC_CONVERTIDA,
+    FECHA_VENCIMIENTO,
+    CONVERT(DATE, FECHA_VENCIMIENTO, 103) AS FECHA_VENC_CONVERTIDA,
+    FECHA_CONTABLE,
+    CONVERT(DATE, FECHA_CONTABLE, 103) AS FECHA_CONT_CONVERTIDA,
+    FECHA_ENVIO,
+    CONVERT(DATE, FECHA_ENVIO, 103) AS FECHA_ENVIO_CONVERTIDA,
+    FECHA_RECEPCION,
+    CONVERT(DATE, FECHA_RECEPCION, 103) AS FECHA_RECEP_CONVERTIDA
+FROM [dbo].[Envios_Ap_Temp];
+
+SELECT /*@TotalSAP = */COUNT(*) FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap];
+
+SELECT /*@RegistrosAInsertar_SAP = */ COUNT(1)
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE
+(
+    NOT EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap_Manual] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    OR NOT EXISTS
+    (
+        SELECT 1
+        FROM [dbo].[Envios_Ap] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+    AND NOT EXISTS
+    (
+        SELECT 1
+        FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap] B
+        WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+        AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+        AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+    )
+);
+
+
+INSERT INTO [Envios_Ap_Manual]
+SELECT 
+NEWID() ID,
+EMPRESA,	
+CONVERT(DATE,FECHA_DOCUMENTO,103) FECHA_DOCUMENTO,
+LTRIM(RTRIM(REFERENCIA_DOCUMENTO)) REFERENCIA_DOCUMENTO,	
+LTRIM(RTRIM(NUMERO_DOCUMENTO)) NUMERO_DOCUMENTO,
+LTRIM(RTRIM(MONEDA)) MONEDA,	
+TIPO_CAMBIO,	
+DEBITO_CREDITO,	
+CUENTA_CONTABLE,	
+CODIGO_PROVEEDOR,	
+IMPORTE,	
+SUCURSAL,	
+CONDICION_PAGO,
+CONVERT(DATE,FECHA_VENCIMIENTO,103) FECHA_VENCIMIENTO,
+NULL BLOQUEO_PAGO,	
+SISTEMA_ORIGEN,
+CONVERT(DATE,FECHA_ENVIO,103) FECHA_ENVIO,
+CONVERT(DATE,FECHA_CONTABLE,103) FECHA_CONTABLE,
+CLASE_DOCUMENTO,	
+NUMERO_REFERENCIA,	
+CENTRO_COSTO,	
+CENTRO_BENEFICIO,	
+(CASE WHEN LTRIM(RTRIM(NUMERO_UUID)) = '' THEN NULL ELSE NUMERO_UUID END) NUMERO_UUID,
+FLAG_ENVIADO,	
+CONVERT(DATE,FECHA_RECEPCION,103) FECHA_RECEPCION,	
+LTRIM(RTRIM(TIPO_DOCUMENTO)),	
+'SODISAP' ORIGEN_ETL,	
+IdPeriodo,
+Timbrado,
+TipoRebate
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE
+(
+	NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [dbo].[Envios_Ap_Manual] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+	OR NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [dbo].[Envios_Ap] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+	AND NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+);
+	
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH,
+    IS_NULLABLE
+FROM [SODIMAC_SAP_PROD].INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Envios_Ap_Temp'
+ORDER BY ORDINAL_POSITION;
+
+INSERT INTO [SODIMAC_SAP_PROD].[dbo].[Envios_Ap]
+SELECT 
+NEWID() ID,
+EMPRESA,	
+CONVERT(DATE,FECHA_DOCUMENTO,103) FECHA_DOCUMENTO,
+LEFT(LTRIM(RTRIM(REFERENCIA_DOCUMENTO)), 20) REFERENCIA_DOCUMENTO,	
+-- LTRIM(RTRIM(NUMERO_DOCUMENTO)) NUMERO_DOCUMENTO,
+LEFT(LTRIM(RTRIM(NUMERO_DOCUMENTO)), 30) NUMERO_DOCUMENTO,
+LTRIM(RTRIM(MONEDA)) MONEDA,	
+TIPO_CAMBIO,	
+DEBITO_CREDITO,	
+CUENTA_CONTABLE,	
+CODIGO_PROVEEDOR,	
+IMPORTE,	
+SUCURSAL,	
+CONDICION_PAGO,
+CONVERT(DATE,FECHA_VENCIMIENTO,103) FECHA_VENCIMIENTO,
+NULL BLOQUEO_PAGO,	
+LEFT(LTRIM(RTRIM(SISTEMA_ORIGEN)), 30) SISTEMA_ORIGEN,
+CONVERT(DATE,FECHA_ENVIO,103) FECHA_ENVIO,
+CONVERT(DATE,FECHA_CONTABLE,103) FECHA_CONTABLE,
+CLASE_DOCUMENTO,	
+NUMERO_REFERENCIA,	
+CENTRO_COSTO,	
+CENTRO_BENEFICIO,	
+(CASE WHEN LTRIM(RTRIM(NUMERO_UUID)) = '' THEN NULL ELSE NUMERO_UUID END) NUMERO_UUID,
+FLAG_ENVIADO,	
+CONVERT(DATE,FECHA_RECEPCION,103) FECHA_RECEPCION,	
+LTRIM(RTRIM(TIPO_DOCUMENTO)),	
+'SODISAP' ORIGEN_ETL,	
+IdPeriodo
+FROM [dbo].[Envios_Ap_Temp] A
+WHERE
+(
+	NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [dbo].[Envios_Ap_Manual] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+	OR NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [dbo].[Envios_Ap] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+	AND NOT EXISTS 
+	( 
+		SELECT 1
+		FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap] B
+		WHERE B.CODIGO_PROVEEDOR = A.CODIGO_PROVEEDOR
+		AND B.NUMERO_DOCUMENTO   = A.NUMERO_DOCUMENTO
+		AND B.NUMERO_REFERENCIA  = A.NUMERO_REFERENCIA
+	)
+);
+		
+SELECT TOP 1 /*@V_ID_PERIODO =*/ IdPeriodo -- 158
+FROM [dbo].[Envios_Ap_Temp] 
+
+SELECT /*@V_NUM_REGISTRO = */COUNT(1)
+FROM [dbo].[Envios_Ap_Temp];
+TRUNCATE TABLE [dbo].[Envios_Ap_Temp];
+INSERT INTO controlDocumento VALUES (14,@V_NOMBRE_ARCHIVO,null,@V_ID_PERIODO,0,3,@V_IDUSUARIO,getdate(),null,null,1,@V_NUM_REGISTRO);
+
+INSERT INTO controlDocumento VALUES (
+    14,                                                          -- Tipo documento (14 = Envios AP)
+    'Conversion_Envios_Ap_v2 varios fill rate Agosto2025.5.csv', -- @V_NOMBRE_ARCHIVO
+    null,                                                        -- Campo adicional (null)
+    158,                                                         -- @V_ID_PERIODO
+    0,                                                           -- Estado inicial
+    3,                                                           -- ID tipo proceso
+    2,                                                           -- @V_IDUSUARIO
+    '2025-10-24 11:30:45',                                      -- GETDATE() (fecha/hora actual)
+    null,                                                        -- Fecha fin (null)
+    null,                                                        -- Observaciones (null)
+    1,                                                           -- Estado activo
+    387                                                          -- @V_NUM_REGISTRO (total registros procesados)
+);
+
+SELECT * 
+FROM controlDocumento 
+WHERE IdPeriodo = 158 
+AND idDocumento = 14
+ORDER BY 1 DESC;
+
+
+SELECT 
+    CASE 
+        WHEN 1 = 1 THEN 'Éxito - Registros aplicados correctamente'
+        ELSE 'Error'
+    END AS Estado;
+
+SELECT COUNT(*) AS Total_Envios_Ap_Manual
+FROM [dbo].[Envios_Ap_Manual]
+WHERE IdPeriodo = 158;
+
+SELECT COUNT(*) AS Total_SODIMAC_SAP_PROD
+FROM [SODIMAC_SAP_PROD].[dbo].[Envios_Ap]
+WHERE IdPeriodo = 158;
+
+DECLARE @V_CODIGO INT = 1;
+DECLARE @V_DESC VARCHAR(1500);
+
+SET @V_CODIGO = 1;
+SET @V_DESC = [dbo].[fn_obtiene_mensaje](1, null, null, null, null, null);
+
+SELECT @V_CODIGO AS Codigo, @V_DESC AS Descripcion;
+
+DECLARE @V_DESC VARCHAR(1500) = 'Registros aplicados con exito';
+DECLARE @V_OBJETO VARCHAR(30) = '[dbo].[sp_carga_envios_ap]';
+DECLARE @V_NOMBRE_ARCHIVO VARCHAR(100) = 'Conversion_Envios_Ap_v2 varios fill rate Agosto2025.5.csv';
+DECLARE @V_IDUSUARIO NUMERIC = 2;
+
+EXEC [dbo].[usp_RegistroLog] 
+    @V_DESC, 
+    @V_OBJETO, 
+    '', 
+    '', 
+    '', 
+    @V_NOMBRE_ARCHIVO, 
+    @V_IDUSUARIO;
+
+SELECT *
+        FROM [dbo].[Envios_Ap] C
+        
+SELECT *
+        FROM [dbo].[Envios_Ap_Manual] B
+        where NUMERO_DOCUMENTO like '%Conversion%2026%';
+
+-- idDocumento=14
+select *
+from controlDocumento
+where idDocumento=14
+and   nombreArchivo like '%Conversion_Envios_Ap_ Devoluciones  y NC CXP 06.04.2026%';
+
+select *
+from catDocumento;
+
+select *
+from Envios_Ap_Temp eat 
+
+select *
+from Envios_Ap
+where numero_documento like '%24-013160002-22D%';
+
+select *
+from Envios_Ap_Manual
+where numero_documento like '%13-Des Prom 24-013160002-22D%';
+

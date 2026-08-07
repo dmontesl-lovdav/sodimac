@@ -1,0 +1,72 @@
+update tenant_fiscal.invoice
+set xml_content = '<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="66448" MetodoPago="PPD" Exportacion="01" TipoDeComprobante="I" Total="8931.14" TipoCambio="1" Moneda="MXN" SubTotal="7699.25" CondicionesDePago="45 dias neto" Certificado="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" NoCertificado="00001000000707409566" FormaPago="99" Sello="nlzwXG62LRBVm7ok3U6z+nCkHVzkEClUH+rDHYpUQw90WcTSQFHsRj0R30s2CVOqmZJtJlYjwBlOEEkX11otsnr/7r+vEKg+YCntOZ3pV0uacbJvX34/tGTf+QagmYqPMySHrUB8i85Y1ZRgUuJEUKkbpWAuKEUSnU27P5hZ/hLv0gwxKX6bxgdCRbp2z+MUuM50bM/D7bCQ3dSsKXLmV+jUCZddDuRVGKGxZ7x755sBjrMIrGY0V3A5uwyy+eYpfUBgqIXCC6gd90iyrhgjRCINhmj1JZYGnNORy0VatwGdcatxu/qYiMUeVofQstNgILOGqaPP7Zn1hgq2ja6bXA==" Fecha="2025-05-06T22:00:42" Folio="1943844" Serie="FEMT" Version="4.0" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"><cfdi:Emisor RegimenFiscal="601" Nombre="MUELLER COMERCIAL DE MEXICO" Rfc="MCM041029CN1"/><cfdi:Receptor UsoCFDI="G01" RegimenFiscalReceptor="601" DomicilioFiscalReceptor="53150" Nombre="COMERCIALIZADORA SDMHC" Rfc="CSD161207R2A"/><cfdi:Conceptos><cfdi:Concepto ObjetoImp="02" Importe="340.00" ValorUnitario="3.40" Descripcion="CINTA TEFLON 1/2 X 260" Unidad="Pieza" ClaveUnidad="H87" Cantidad="100.00" NoIdentificacion="ES65000" ClaveProdServ="31201612"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="54.40" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="340.00"/></cfdi:Traslados></cfdi:Impuestos><cfdi:InformacionAduanera NumeroPedimento="24  16  1634  4010187"/></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="1501.00" ValorUnitario="15.01" Descripcion="CINTA TEFLON AD 1/2x260" Unidad="Pieza" ClaveUnidad="H87" Cantidad="100.00" NoIdentificacion="ES65006" ClaveProdServ="31201612"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="240.16" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="1501.00"/></cfdi:Traslados></cfdi:Impuestos><cfdi:InformacionAduanera NumeroPedimento="24  16  1634  4010187"/></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="337.00" ValorUnitario="13.48" Descripcion="1/2 x 4 GAL NIPPLE" Unidad="Pieza" ClaveUnidad="H87" Cantidad="25.00" NoIdentificacion="563-040RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="53.92" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="337.00"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="1513.50" ValorUnitario="30.27" Descripcion="RED BUSH GALV DE 1 x 3/4" Unidad="Pieza" ClaveUnidad="H87" Cantidad="50.00" NoIdentificacion="511-954RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="242.16" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="1513.50"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="177.00" ValorUnitario="7.08" Descripcion="TAPON MACHO GALV DE 1/2" Unidad="Pieza" ClaveUnidad="H87" Cantidad="25.00" NoIdentificacion="511-803RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="28.32" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="177.00"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="592.50" ValorUnitario="23.70" Descripcion="1 x 4 GAL NIPPLE" Unidad="Pieza" ClaveUnidad="H87" Cantidad="25.00" NoIdentificacion="565-040RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="94.80" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="592.50"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="198.00" ValorUnitario="7.92" Descripcion="3/4 x CLS GAL NIPPLE" Unidad="Pieza" ClaveUnidad="H87" Cantidad="25.00" NoIdentificacion="564-001RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="31.68" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="198.00"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="530.60" ValorUnitario="15.16" Descripcion="CODO GALV 90 DE 3/4" Unidad="Pieza" ClaveUnidad="H87" Cantidad="35.00" NoIdentificacion="510-004RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="84.90" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="530.60"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="287.75" ValorUnitario="11.51" Descripcion="3/4 x 2 GAL NIPPLE" Unidad="Pieza" ClaveUnidad="H87" Cantidad="25.00" NoIdentificacion="564-020RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="46.04" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="287.75"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="735.30" ValorUnitario="24.51" Descripcion="NIPLE BOTELLA GALV 1" Unidad="Pieza" ClaveUnidad="H87" Cantidad="30.00" NoIdentificacion="700-805RT" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="117.65" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="735.30"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="1035.00" ValorUnitario="6.90" Descripcion="1/2X2 NIPLE GALV PREMIUM" Unidad="Pieza" ClaveUnidad="H87" Cantidad="150.00" NoIdentificacion="753-020SD" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="165.60" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="1035.00"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto><cfdi:Concepto ObjetoImp="02" Importe="451.60" ValorUnitario="45.16" Descripcion="1/2X18 TRAMO GAL PREMIUM" Unidad="Pieza" ClaveUnidad="H87" Cantidad="10.00" NoIdentificacion="753-180SD" ClaveProdServ="01010101"><cfdi:Impuestos><cfdi:Traslados><cfdi:Traslado Importe="72.26" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="451.60"/></cfdi:Traslados></cfdi:Impuestos></cfdi:Concepto></cfdi:Conceptos><cfdi:Impuestos TotalImpuestosTrasladados="1231.89"><cfdi:Traslados><cfdi:Traslado Importe="1231.89" TasaOCuota="0.160000" TipoFactor="Tasa" Impuesto="002" Base="7699.25"/></cfdi:Traslados></cfdi:Impuestos><cfdi:Complemento><tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" Version="1.1" UUID="153c1091-2c86-452c-8234-c6f497a9903d" FechaTimbrado="2025-05-06T23:58:37" RfcProvCertif="LSO1306189R5" SelloCFD="nlzwXG62LRBVm7ok3U6z+nCkHVzkEClUH+rDHYpUQw90WcTSQFHsRj0R30s2CVOqmZJtJlYjwBlOEEkX11otsnr/7r+vEKg+YCntOZ3pV0uacbJvX34/tGTf+QagmYqPMySHrUB8i85Y1ZRgUuJEUKkbpWAuKEUSnU27P5hZ/hLv0gwxKX6bxgdCRbp2z+MUuM50bM/D7bCQ3dSsKXLmV+jUCZddDuRVGKGxZ7x755sBjrMIrGY0V3A5uwyy+eYpfUBgqIXCC6gd90iyrhgjRCINhmj1JZYGnNORy0VatwGdcatxu/qYiMUeVofQstNgILOGqaPP7Zn1hgq2ja6bXA==" NoCertificadoSAT="00001000000509846663" SelloSAT="MjRtSlPiafNse9lIVf3MGYvrMcBUIti0QnDZ3zYXEX9k7tpcztCX+ZnJ00kHGV//Zcygo+OfVDIjUB4LvSO6ShxA9931Q7lMCWDC/phAck/s57kNz5cb5IKemKf0+IDYRYKBL1KDpBCQktGuG93C3PUn6TjWnu+3bc0sI1mAZXMPIlHTgCvx3BtgKRPWlBXK6jr00jx/ewBjDODkQQbR13cGm/4fSqWmFDfdR2jaWAeafrDzO096ctRytWr9Pecb65TpAhcoFe+At8xeMoDCz8wp0EAtW9Kim2y8cLyRdV0to2ujULb3bAhKKnk43AsUkP7nsfWONxh+jiErBJFc7Q=="/></cfdi:Complemento><cfdi:Addenda><Addenda_Sodimac_Detecno><RFC>MCM041029CN1</RFC><UUID>153c1091-2c86-452c-8234-c6f497a9903d</UUID><Folio>FEMT1943844</Folio><NoOC>377465</NoOC><NoRecepcion>231265</NoRecepcion><Proveedor>250193</Proveedor></Addenda_Sodimac_Detecno></cfdi:Addenda></cfdi:Comprobante>'
+where 1=1;
+
+
+select *
+from tenant_fiscal.invoice;
+
+
+SELECT i.invoice_uuid,
+i.fiscal_uuid,
+i.document_type,
+i.status AS status_actual,
+i.updated_by AS usuario_anterior,
+i.updated_at AS fecha_anterior,
+a.supplier_number
+FROM tenant_fiscal.invoice i LEFT JOIN tenant_fiscal.addendum a ON i.invoice_uuid = a.invoice_uuid
+WHERE i.fiscal_uuid = 'bbbbbbbb-1111-2222-3333-444444444444'
+
+SELECT invoice_uuid,
+		fiscal_uuid,
+		status,
+		updated_by,
+		updated_at
+FROM tenant_fiscal.invoice
+WHERE fiscal_uuid = 'bbbbbbbb-1111-2222-3333-444444444444'
+
+SELECT addendum_uuid,
+	invoice_uuid,
+	supplier_number,
+	supplier_type,
+	reception_number,
+	purchase_order_number,
+	shipping_guide_number,
+	addenda_type,
+	user_id,
+	update_date
+FROM tenant_fiscal.addendum
+WHERE invoice_uuid = ( SELECT invoice_uuid FROM tenant_fiscal.invoice WHERE fiscal_uuid = '50E9F895-F12E-4D28-8BA3-5D9B58FF10FF');
+
+SELECT log_id,
+		operation_type,
+		cfdi_uuid,
+		status_code,
+		status_message,
+		request_data,
+		response_data,
+		record_start_date,
+		record_end_date,
+		created_by
+FROM tenant_fiscal.log
+WHERE cfdi_uuid = '50E9F895-F12E-4D28-8BA3-5D9B58FF10FF'
+ORDER BY transaction_date desc;
+
+SELECT addendum_uuid,
+	invoice_uuid,
+	supplier_number,
+	supplier_type,
+	reception_number,
+	purchase_order_number,
+	shipping_guide_number,
+	addenda_type,
+	user_id,
+	update_date
+FROM tenant_fiscal.addendum
+WHERE invoice_uuid = ( SELECT invoice_uuid FROM tenant_fiscal.invoice WHERE fiscal_uuid = '50E9F895-F12E-4D28-8BA3-5D9B58FF10FF')
+
+
+
+
+----------------------------
+

@@ -1,0 +1,320 @@
+SELECT
+  TICKET  
+, NUM_LINEA
+, TIENDA
+, CAJA
+, FECHA_TICKET
+, SKU
+, REPLACE(DESCRIPCION,',','') DESCRIPCION
+, CANTIDAD
+, SUBTOTAL
+, EXENTO  
+, NVL(IVA0,0)       IVA0
+, NVL(IVA16,0)      IVA16
+, NVL(IEPS6,0)      IEPS6
+, NVL(IEPS7,0)      IEPS7
+, NVL(IEPS25,0)     IEPS25
+, NVL(OTROS,0)      OTROS
+, NVL(DESCUENTO,0)  DESCUENTO
+, (SUBTOTAL + NVL(IVA16,0) + NVL(IEPS6,0)  + NVL(IEPS7,0)  + NVL(IEPS25,0) + NVL(OTROS,0) ) TOTAL_ARTICULO
+, '#'||TRX_ORIGINAL TICKET_BASE
+, UUID UUID_GLOBAL
+, NUM_FACTURA UUID_CLIENTE
+, FACTURA_NC_CLI_UUID
+, FACTURA_NC_UUID
+, TIPO_TRX
+, TIPO_TICKET
+, SUBTOTAL_TICKET
+, MONTO_TICKET
+, MONTO_TICKET_PAGADO
+, '#'||NUM_DOC_CANAL
+, (CASE WHEN NUM_DOC_CANAL LIKE '26%' THEN 'Linio' ELSE 'Sodimac' END) ORIGEN
+FROM
+(
+    SELECT *
+    FROM 
+    (
+    WITH IMPUESTO_DET AS
+    (
+            SELECT NUM_TRX
+            , NUM_LINEA
+            , UPC_CODE
+            , MIN(TOTAL_LINEA)   SUBTOTAL
+            , SUM(NVL(EXENTO,0))EXENTO
+            , SUM(NVL(IVA0,0))   IVA0
+            , SUM(NVL(IVA16,0))  IVA16
+            , SUM(NVL(IEPS6,0))  IEPS6
+            , SUM(NVL(IEPS7,0))  IEPS7
+            , SUM(NVL(IEPS25,0)) IEPS25
+            , SUM(NVL(OTROS,0))  OTROS
+            FROM (
+            SELECT 
+                  C.NUM_TRX
+                , C.UPC_CODE  
+                , C.NUM_LINEA  
+                , (
+                     CASE 
+                     WHEN C.TIPO_IMPTO = 0 AND C.ID_TASA_IMPTO = 0 AND C.PCTJE_IMPTO = 0 THEN
+                     'EXENTO'
+                     WHEN C.TIPO_IMPTO = 0 AND C.ID_TASA_IMPTO = 2 AND C.PCTJE_IMPTO = 0 THEN
+                     'IVA0'
+                     WHEN C.TIPO_IMPTO = 0 AND C.ID_TASA_IMPTO = 1 AND C.PCTJE_IMPTO IN (0.16,-0.16) THEN
+                     'IVA16'
+                     WHEN C.TIPO_IMPTO = 1 AND C.ID_TASA_IMPTO = 5 AND C.PCTJE_IMPTO IN (0.06,-0.06) THEN
+                     'IEPS6'
+                     WHEN C.TIPO_IMPTO = 1 AND C.ID_TASA_IMPTO = 6 AND C.PCTJE_IMPTO IN (0.07,-0.07) THEN
+                     'IEPS7'
+                     WHEN C.TIPO_IMPTO = 1 AND C.ID_TASA_IMPTO = 6 AND C.PCTJE_IMPTO IN (0.265) THEN
+                     'IEPS25'
+                     ELSE
+                     'OTROS'
+                     END
+                   ) IMPUESTO
+                , C.TOTAL_LINEA
+                , (CASE WHEN C.TIPO_IMPTO = 0 AND C.ID_TASA_IMPTO IN (2,0) AND C.PCTJE_IMPTO = 0 THEN C.TOTAL_LINEA ELSE C.MNT_IMPTO END ) MNT_IMPTO
+            FROM TRX_DET_IMPUESTO  C
+            WHERE TRUNC(C.FECHA_TRX) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')        
+            ORDER BY C.NUM_TRX,C.NUM_LINEA,C.UPC_CODE,C.ORDEN_IMPTO ASC
+            )
+            PIVOT 
+            (
+                SUM(NVL(MNT_IMPTO,0))
+                FOR IMPUESTO IN ('EXENTO' AS EXENTO,'IVA0' AS IVA0,'IVA16' AS IVA16,'IEPS6' AS IEPS6,'IEPS7' AS IEPS7,'IEPS25' AS IEPS25,'OTROS' AS OTROS)
+            )
+            GROUP BY NUM_TRX,NUM_LINEA,UPC_CODE
+    ),
+    FACTURACION_GLOBAL AS 
+    (
+        SELECT 
+          B.NUM_TRX
+        , A.UUID
+        FROM FAC_HDR A
+        INNER JOIN FAC_DET_TICKETS B
+        ON A.ID_PROCESO = B.ID_PROCESO
+        WHERE TRUNC(A.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+        AND A.TIPO_OPERACION='V'
+        AND A.UUID IS NOT NULL
+        AND A.ESTADO = 2
+        AND A.F_TIMBRADO = (
+            SELECT MIN(AA.F_TIMBRADO) 
+            FROM FAC_HDR AA
+            INNER JOIN FAC_DET_TICKETS BB
+            ON AA.ID_PROCESO = BB.ID_PROCESO
+            WHERE BB.NUM_TRX = B.NUM_TRX
+            AND TRUNC(AA.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+            AND AA.TIPO_OPERACION='V'
+            AND AA.UUID IS NOT NULL
+        )
+        GROUP BY  B.NUM_TRX, A.UUID 
+        /*
+        UNION ALL
+        SELECT X.NUM_TRX
+        , X.NUM_FACTURA
+        FROM EST_FACTURAS X
+        WHERE X.FECHA_CIERRE IS NOT NULL
+        AND X.NUM_TIENDA IS NOT NULL
+        */
+    ),
+    NC_GLOBAL AS 
+    (
+        SELECT 
+          B.NUM_TRX         TICKET
+        , B.TRX_RELACIONADA TICKET_ORIGEN    
+        , A.UUID FACTURA_NC_UUID
+        FROM FAC_HDR A
+        INNER JOIN FAC_DET_TICKETS B
+        ON A.ID_PROCESO = B.ID_PROCESO
+        WHERE TRUNC(A.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+        AND A.TIPO_OPERACION='D'
+        AND A.UUID IS NOT NULL
+        AND A.ESTADO = 2
+        AND A.F_TIMBRADO = (
+            SELECT MIN(AA.F_TIMBRADO) 
+            FROM FAC_HDR AA
+            INNER JOIN FAC_DET_TICKETS BB
+            ON AA.ID_PROCESO = BB.ID_PROCESO
+            WHERE BB.NUM_TRX = B.NUM_TRX
+            AND TRUNC(AA.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+            AND AA.TIPO_OPERACION='D'
+            AND AA.UUID IS NOT NULL
+        )
+        GROUP BY B.NUM_TRX,B.TRX_RELACIONADA,A.UUID
+        /*
+        UNION ALL
+        SELECT X.NUM_TRX
+        , Y.TRX_ORIGINAL TICKET_ORIGEN
+        , X.NUM_FACTURA FACTURA_NC_UUID
+        FROM EST_FACTURAS X
+        INNER JOIN  TRX_HDR Y
+        ON X.NUM_TRX = Y.NUM_TRX
+        WHERE X.FECHA_CIERRE IS NOT NULL
+        AND X.NUM_TIENDA IS NOT NULL
+        AND Y.TIPO_TRX  IN (9,10)
+        */
+    ),
+    NC_FAC_CLI_GLOBAL AS 
+    (
+        SELECT 
+          B.NUM_TRX TICKET
+        , A.UUID FACTURA_NC_CLI_UUID
+        FROM FAC_HDR A
+        INNER JOIN FAC_DET_TICKETS B
+        ON A.ID_PROCESO = B.ID_PROCESO
+        WHERE TRUNC(A.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+        AND A.TIPO_OPERACION='FD'
+        AND A.UUID IS NOT NULL
+        AND A.ESTADO = 2
+        AND A.F_TIMBRADO = (
+            SELECT MIN(AA.F_TIMBRADO) 
+            FROM FAC_HDR AA
+            INNER JOIN FAC_DET_TICKETS BB
+            ON AA.ID_PROCESO = BB.ID_PROCESO
+            WHERE BB.NUM_TRX = B.NUM_TRX
+            AND TRUNC(AA.F_VENTA) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/12/2025','DD/MM/YYYY')
+            AND AA.TIPO_OPERACION='FD'
+            AND AA.UUID IS NOT NULL
+        ) 
+        GROUP BY B.NUM_TRX, A.UUID
+    ),
+    FACTURACION_CLIENTE AS 
+    (
+       SELECT 
+         CL.NUM_TRX 
+       , CL.NUM_FACTURA
+       FROM EST_FACTURAS CL
+       WHERE CL.NUM_FACTURA IS NOT NULL
+       AND CL.NUM_TIENDA IS NULL
+       AND SUBSTR(CL.NUM_TRX,1,4) IN ('2024','2025')
+    )
+    SELECT
+     '#'||A.NUM_TRX   TICKET  
+    , A.NUM_TIENDA    TIENDA
+    , A.TIPO_TRX
+    , (
+            CASE WHEN A.TIPO_TRX = 1 THEN
+            'Venta' 
+            WHEN A.TIPO_TRX IN (9,10) THEN
+            'Devolucion'
+            ELSE
+            'Otro'
+            END
+       ) TIPO_TICKET
+    , A.NUM_CAJA      CAJA
+    , A.FECHA_TRX     FECHA_TICKET
+    , B.NUM_LINEA
+    , B.SKU||B.DV_SKU SKU
+    , B.DESCRIPCION   DESCRIPCION
+    , B.CANTIDAD      CANTIDAD
+    , C.SUBTOTAL
+    , C.EXENTO
+    , C.IVA0
+    , C.IVA16
+    , C.IEPS6
+    , C.IEPS7
+    , C.IEPS25
+    , C.OTROS
+    , B.DESCUENTO
+    , A.TRX_ORIGINAL 
+    , F.UUID  
+    , B.NUM_DOC_CANAL
+    , CLI.NUM_FACTURA 
+    , NC_CLI.FACTURA_NC_CLI_UUID
+    , NC_GLO.FACTURA_NC_UUID
+    , A.MNT_TOT_SN_IMPTOS SUBTOTAL_TICKET
+    , A.MNT_TOTAL_A_PAGAR MONTO_TICKET
+    , (SELECT SUM(PG.MNT_TOTAL) FROM TRX_FRM_PAGO PG WHERE PG.NUM_TRX = A.NUM_TRX AND PG.NUM_TIENDA = A.NUM_TIENDA )  MONTO_TICKET_PAGADO
+    FROM TRX_HDR A
+    INNER JOIN TRX_DET B
+    ON A.NUM_TRX = B.NUM_TRX
+    LEFT JOIN IMPUESTO_DET C
+    ON  C.NUM_TRX = B.NUM_TRX
+    AND C.UPC_CODE = B.SKU
+    AND C.NUM_LINEA = B.NUM_LINEA
+    LEFT JOIN FACTURACION_GLOBAL F
+    ON A.NUM_TRX = F.NUM_TRX
+    LEFT JOIN FACTURACION_CLIENTE CLI
+    ON CLI.NUM_TRX = A.NUM_TRX
+    LEFT JOIN NC_FAC_CLI_GLOBAL NC_CLI
+    ON NC_CLI.TICKET = A.NUM_TRX
+    LEFT JOIN NC_GLOBAL NC_GLO
+    ON NC_GLO.TICKET = A.NUM_TRX
+    WHERE A.TIPO_TRX IN (9,10,1)
+    AND TRUNC(A.FECHA_TRX) BETWEEN TO_DATE('01/01/2025','DD/MM/YYYY') AND TO_DATE('31/01/2025','DD/MM/YYYY')
+--    AND A.NUM_TRX='2022073010100018053'
+--    AND F.UUID='9DAC790B-1A3C-453F-B8CB-3922843D18AB'
+    ORDER BY A.NUM_TRX,B.NUM_LINEA,B.SKU ASC
+    )
+) 
+ORDER BY FECHA_TICKET,TIENDA,TICKET,NUM_LINEA ASC;
+
+
+
+SELECT u FROM EstFacturasEntity u WHERE u.id.numTrx = :numTrx AND u.numTienda IS NULL AND u.fechaCierre IS NULL 
+AND (numFactura is null or numFactura = '') 
+and not exists (select 1 from EstFacturasEntity y where y.id.numTrx = :numTrx and y.numFactura = :uuid) order by fecha
+
+SELECT * 
+FROM EST_FACTURAS u
+WHERE 1=1
+-- AND u.NUM_TRX = '2018072810100060420' 
+AND u.NUM_TIENDA IS NULL 
+AND u.FECHA_CIERRE IS NULL 
+AND ( u.NUM_FACTURA IS NULL OR u.NUM_FACTURA = '')
+--AND  rownum <= 10
+and not exists (select 1 FROM EST_FACTURAS y WHERE y.NUM_TRX = '2018072810100060374' AND  y.NUM_FACTURA = 'a')  order by fecha;
+
+SELECT * FROM FACTURAS ;
+
+--- Notas de Crédito ------------
+
+ 		 SELECT A.NUM_TRX, A.MNT_TOTAL_A_PAGAR, A.TRX_ORIGINAL -- 283
+		 FROM TRX_HDR A
+		 WHERE 1=1
+
+		 AND EXISTS (
+		 SELECT 1
+		 FROM TRX_DET DET
+		 WHERE DET.NUM_TRX = A.NUM_TRX
+		 AND DET.FECHA_TRX = A.FECHA_TRX
+		 )
+		 AND TRUNC(A.FECHA_TRX) >= TO_DATE('03/03/2023','DD/MM/YYYY')
+		
+		 AND A.TIPO_TRX in (9,10)
+		
+		 AND EXISTS
+		 (
+		 SELECT 1
+		 FROM EST_FACTURAS C
+		 WHERE C.NUM_TRX = A.TRX_ORIGINAL
+		 AND C.NUM_TIENDA IS NULL
+		 AND C.NUM_FACTURA IS NOT NULL
+		 )
+		
+		 AND NOT EXISTS
+		 (
+		 SELECT 1
+		 FROM EST_FACTURAS D
+		 WHERE D.NUM_TRX = A.NUM_TRX
+		 AND D.NUM_TIENDA IS NULL
+		 AND D.NUM_FACTURA IS NOT NULL
+		 )
+		
+		 and to_number(substr(a.num_trx, 1, 4)) >= to_number(TO_CHAR(SYSDATE - 1,'YYYY'))
+		
+		 ORDER BY A.FECHA_TRX DESC;
+		 
+		 
+		 select NUM_TRX
+		      , NUM_LINEA
+		      , SKU
+		      , DV_SKU
+		      , CANTIDAD
+		      , UM
+		      , DESCRIPCION
+		      , nvl(PRECIO_UNITARIO, 0) as PRECIO_UNITARIO
+		      , nvl(PRECIO_TOTAL, 0) as PRECIO_TOTAL
+		      , nvl(NUM_DOC_CANAL, 0) as NUM_DOC_CANAL
+		      , CASE WHEN NUM_DOC_CANAL IS NULL THEN 'Y' ELSE 'N' END AS COD_PROVEEDOR 
+		 from TRX_DET where NUM_DOC_CANAL LIKE '%{documento}' 
+--		 and TO_DATE(FECHA_TRX, 'dd-mm-yy') >= TO_DATE('{fechaPeriodo}', 'dd-mm-yy') 
+		 order by NUM_DOC_CANAL, PRECIO_UNITARIO desc

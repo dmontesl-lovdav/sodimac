@@ -1,0 +1,22 @@
+select NUM_TRX
+     , FECHA_TRX
+     , NUM_TIENDA
+     , NUM_CAJA
+     , COD_CAJERO
+     , NUM_TICKET
+     , TIPO_TRX
+     , MNT_TOTAL_A_PAGAR
+     , MNT_TOT_SN_IMPTOS
+     , TRX_ORIGINAL
+     , CASE WHEN TRX_ORIGINAL IS NULL 
+     	THEN 'N' 
+     	ELSE 'Y' 
+     END AS ID_CLIENTE 
+from TRX_HDR 
+where NUM_TRX = '2022081910100029485' 
+and TIPO_TRX in (1, 9, 10);
+
+-- 569314.35
+
+-- 2022-08-19 10:54:04.000
+

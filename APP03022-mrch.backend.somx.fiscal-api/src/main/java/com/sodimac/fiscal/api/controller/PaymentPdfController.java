@@ -1,8 +1,8 @@
 package com.sodimac.fiscal.api.controller;
 
-import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
+import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.pdf.PaymentPdfService;
-import com.sodimac.fiscal.api.repository.InvoiceRepository;
+import com.sodimac.fiscal.api.repository.PaymentsRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,7 +31,7 @@ import java.util.UUID;
 public class PaymentPdfController {
 
     private final PaymentPdfService paymentPdfService;
-    private final InvoiceRepository invoiceRepository;
+    private final PaymentsRepository paymentsRepository;
 
     @Operation(
         summary = "Generar PDF de pago desde archivo XML",
@@ -59,7 +59,8 @@ public class PaymentPdfController {
 
     @Operation(
         summary = "Generar PDF de pago desde UUID",
-        description = "Genera un PDF de complemento de pago a partir del UUID fiscal. El XML se obtiene del campo xml_content."
+        description = "Genera un PDF de complemento de pago a partir del UUID fiscal o del payments_uuid. "
+                + "El XML se obtiene de payments.xml_content."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "PDF generado exitosamente",
@@ -67,19 +68,24 @@ public class PaymentPdfController {
         @ApiResponse(responseCode = "404", description = "UUID no encontrado en la base de datos"),
         @ApiResponse(responseCode = "500", description = "Error interno al generar el PDF")
     })
-    @GetMapping(value = "/from-uuid/{invoiceUuid}", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/from-uuid/{paymentUuid}", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> pdfFromUuid(
-            @Parameter(description = "UUID fiscal del complemento de pago", required = true)
-            @PathVariable UUID invoiceUuid,
+            @Parameter(description = "UUID fiscal o payments_uuid del complemento de pago", required = true)
+            @PathVariable UUID paymentUuid,
             @Parameter(description = "true: visualizar en navegador, false: descargar")
             @RequestParam(defaultValue = "true") boolean inline) {
 
-        InvoiceEntity row = invoiceRepository.findByFiscalUuid(invoiceUuid)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el UUID " + invoiceUuid));
+        PaymentsEntity row = paymentsRepository.findByFiscalUuid(paymentUuid)
+                .or(() -> paymentsRepository.findById(paymentUuid))
+                .orElseThrow(() -> new IllegalArgumentException("No existe el UUID " + paymentUuid));
 
-        String xml = row.getXmlContent(); // <-- asegúrate que este campo exista en tu entity
+        String xml = row.getXmlContent();
+        if (xml == null || xml.isBlank()) {
+            throw new IllegalArgumentException("El complemento no tiene XML disponible: " + paymentUuid);
+        }
         byte[] pdf = paymentPdfService.renderFromXml(xml);
-        return buildPdfResponse(pdf, inline, "pago_" + invoiceUuid + ".pdf");
+        UUID nameUuid = row.getFiscalUuid() != null ? row.getFiscalUuid() : paymentUuid;
+        return buildPdfResponse(pdf, inline, "pago_" + nameUuid + ".pdf");
     }
 
     private static ResponseEntity<byte[]> buildPdfResponse(byte[] pdf, boolean inline, String fileName) {

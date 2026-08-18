@@ -59,6 +59,12 @@
     color: #047857;
 }
 
+.rc-invoice-notice--warning {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+}
+
 .rc-invoice-fiscal-link {
     color: #047857;
     font-weight: 600;

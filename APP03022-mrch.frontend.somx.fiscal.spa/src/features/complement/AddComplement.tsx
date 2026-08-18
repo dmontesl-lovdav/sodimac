@@ -42,11 +42,17 @@ const PAYMENT_FIELDS: Array<{
 ];
 
 const XML_SUMMARY_ROWS: Array<{ key: keyof XmlComplementPreview; label: string }> = [
-  { key: "uuid", label: "UUID:" },
+  
   { key: "rfcEmisor", label: "RFC Emisor:" },
   { key: "nombreEmisor", label: "Nombre Emisor:" },
+  { key: "serie", label: "Serie:" },
+  { key: "folio", label: "Folio:" },
+  { key: "uuid", label: "UUID:" },
   { key: "monto", label: "Monto:" },
-  { key: "fechaTimbrado", label: "Fecha de timbrado:" },
+  { key: "tipoComprobante", label: "Tipo Comprobante:" },
+  { key: "formaDePagoP", label: "Forma de Pago:" },
+  { key: "fechaPago", label: "Fecha Pago:" },
+  { key: "fechaTimbrado", label: "Fecha Timbrado:" }
 ];
 
 function parsePaymentQuery(search: string): QueryPaymentData | null {
@@ -214,7 +220,7 @@ function AddComplementContent() {
         return false;
       }
 
-      if (parsed.tipoDeComprobante.trim().toUpperCase() !== "P") {
+      if (parsed.tipoComprobante.trim().toUpperCase() !== "P") {
         showAlert(
           "El archivo XML no corresponde a un complemento de pago válido. Por favor, valida el documento antes de continuar."
         );
@@ -261,6 +267,7 @@ function AddComplementContent() {
       setIsValidComplement(false);
       setErrorMsg(null);
       setPublished(false);
+
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -317,7 +324,7 @@ function AddComplementContent() {
   const handlePublish = useCallback(async () => {
     if (!xmlFile || !traceId || !xmlPreview || published) return;
 
-    if (xmlPreview.tipoDeComprobante.trim().toUpperCase() !== "P") {
+    if (xmlPreview.tipoComprobante.trim().toUpperCase() !== "P") {
       showAlert(
         "El archivo XML no corresponde a un complemento de pago válido. Por favor, valida el documento antes de continuar."
       );

@@ -23,6 +23,13 @@ public class ReceptionEntity {
     private String receptionNumber;
 
     /**
+     * Número de guía de embarque ligada (transporte). Relaciona con
+     * {@code tenant_finance.shipping_guide.guide_number}.
+     */
+    @Column(name = "guide_number", length = 50)
+    private String guideNumber;
+
+    /**
      * Estatus de la recepción (catálogo CatEstatusRecepcion): 0=Disponible, 1=Consumida,
      * 2=Consumida manual, 7=Cancelada... fiscal lo marca a Consumida (1) al publicar una
      * factura que cuadra con la recepción (dentro de tolerancia o mayor). QA filas 54-57.

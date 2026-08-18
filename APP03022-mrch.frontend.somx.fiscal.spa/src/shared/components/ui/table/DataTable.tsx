@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './DataTable.css'
 /* --------------------------------- Types --------------------------------- */
@@ -22,6 +23,143 @@ export interface RowAction<T> {
     onClick: (row: T, nav: ReturnType<typeof useNavigate>) => void | Promise<void>;
     /** Deshabilitar acción por fila (opcional) */
     isDisabled?: (row: T) => boolean;
+}
+
+function KebabIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            aria-hidden="true"
+            className="fiscal-table-kebab-icon"
+        >
+            <circle cx="12" cy="5" r="1.75" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.75" fill="currentColor" />
+            <circle cx="12" cy="19" r="1.75" fill="currentColor" />
+        </svg>
+    );
+}
+
+function RowActionsMenu<T>({
+    row,
+    actions,
+    nav,
+}: {
+    row: T;
+    actions: RowAction<T>[];
+    nav: ReturnType<typeof useNavigate>;
+}) {
+    const [open, setOpen] = React.useState(false);
+    const triggerRef = React.useRef<HTMLButtonElement>(null);
+    const menuRef = React.useRef<HTMLDivElement>(null);
+    const [pos, setPos] = React.useState({ top: 0, right: 0 });
+
+    const updatePosition = React.useCallback(() => {
+        const rect = triggerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        setPos({
+            top: rect.bottom + 4,
+            right: Math.max(8, window.innerWidth - rect.right),
+        });
+    }, []);
+
+    const close = React.useCallback(() => setOpen(false), []);
+
+    const toggle = () => {
+        if (open) {
+            close();
+            return;
+        }
+        updatePosition();
+        setOpen(true);
+    };
+
+    React.useEffect(() => {
+        if (!open) return;
+
+        const onPointerDown = (e: MouseEvent) => {
+            const target = e.target as Node;
+            if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) {
+                return;
+            }
+            close();
+        };
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') close();
+        };
+
+        const onReposition = () => {
+            updatePosition();
+        };
+
+        document.addEventListener('mousedown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        window.addEventListener('resize', onReposition);
+        window.addEventListener('scroll', onReposition, true);
+
+        return () => {
+            document.removeEventListener('mousedown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('resize', onReposition);
+            window.removeEventListener('scroll', onReposition, true);
+        };
+    }, [open, close, updatePosition]);
+
+    return (
+        <div className="fiscal-table-actions">
+            <button
+                ref={triggerRef}
+                type="button"
+                title="Acciones"
+                aria-label="Acciones"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="fiscal-table-action-btn fiscal-table-kebab-btn"
+                onClick={toggle}
+            >
+                <KebabIcon />
+            </button>
+
+            {open &&
+                createPortal(
+                    <div
+                        ref={menuRef}
+                        role="menu"
+                        className="fiscal-table-actions-menu"
+                        style={{ top: pos.top, right: pos.right }}
+                    >
+                        {actions.map(({ title, icon, onClick, isDisabled }) => {
+                            const disabled = isDisabled?.(row) ?? false;
+                            return (
+                                <button
+                                    key={title}
+                                    type="button"
+                                    role="menuitem"
+                                    title={title}
+                                    disabled={disabled}
+                                    className="fiscal-table-actions-menu-item"
+                                    onClick={() => {
+                                        if (disabled) return;
+                                        close();
+                                        void onClick(row, nav);
+                                    }}
+                                >
+                                    <img
+                                        src={icon}
+                                        className="fiscal-table-action-icon"
+                                        alt=""
+                                    />
+                                    <span>{title}</span>
+                                </button>
+                            );
+                        })}
+                    </div>,
+                    document.body
+                )}
+        </div>
+    );
 }
 
 export interface GenericTableProps<T> {
@@ -187,23 +325,8 @@ export default function GenericTable<T>(
 
                             {/* acciones */}
                             {actions.length > 0 && (
-                                <td className="fiscal-table-td fiscal-table-align-center">
-                                    <div className="fiscal-table-actions">
-                                        {actions.map(({ title, icon, onClick, isDisabled }) => {
-                                            const disabled = isDisabled?.(row) ?? false;
-                                            return (
-                                                <button
-                                                    key={title}
-                                                    title={title}
-                                                    onClick={() => !disabled && onClick(row, nav)}
-                                                    className="fiscal-table-action-btn"
-                                                    disabled={disabled}
-                                                >
-                                                    <img src={icon} className="fiscal-table-action-icon" alt={title} />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                <td className="fiscal-table-td fiscal-table-align-center fiscal-table-actions-cell">
+                                    <RowActionsMenu row={row} actions={actions} nav={nav} />
                                 </td>
                             )}
                         </tr>

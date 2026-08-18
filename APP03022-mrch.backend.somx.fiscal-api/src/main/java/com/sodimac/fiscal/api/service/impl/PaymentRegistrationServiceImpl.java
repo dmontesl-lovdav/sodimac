@@ -214,21 +214,32 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     String.valueOf(request.getIdUsuario()), false, "Version Pagos 2.0 validada correctamente",
                     "Version: 2.0, TipoComprobante: P", null, null);
 
-            // === PASO 9: VALIDAR CON SAT VÍA MULTIPAC ===
+            // === PASO 9: VALIDAR DOCUMENTOS RELACIONADOS ===
+            // IdDocumento del XML = fiscal_uuid; FK related_documents.document_uuid → invoice.invoice_uuid
+            log.info("Paso 9: Validando documentos relacionados (DoctoRelacionado) en invoice");
+            Map<UUID, UUID> relatedInvoiceMap = validationService.validateAndResolveRelatedDocuments(parsedXml);
+            log.info("Documentos relacionados validados: {}", relatedInvoiceMap.size());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_DOCUMENTOS_RELACIONADOS.getCode(), SERVICE_NAME,
+                    String.valueOf(request.getIdUsuario()), false, "Documentos relacionados validados",
+                    "Cantidad: " + relatedInvoiceMap.size(),
+                    Map.of("relatedDocuments", relatedInvoiceMap.size()), null);
+
+            // === PASO 10: VALIDAR CON SAT VÍA MULTIPAC ===
             // TODO: Implementar validación SAT mediante multipac (Detecno) cuando esté disponible
-            log.info("Paso 9: Validacion SAT omitida (pendiente de implementar via multipac)");
+            log.info("Paso 10: Validacion SAT omitida (pendiente de implementar via multipac)");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_VALIDAR_SAT.getCode(), SERVICE_NAME,
                     String.valueOf(request.getIdUsuario()), false, "Validacion SAT omitida (pendiente de implementar via multipac)",
                     "Este paso se habilitara cuando se integre el servicio multipac (Detecno)", null, null);
 
-            // === PASO 10: REGISTRAR EN BASE DE DATOS ===
-            log.info("Paso 10: Registrando complemento de pago en base de datos");
+            // === PASO 11: REGISTRAR EN BASE DE DATOS ===
+            log.info("Paso 11: Registrando complemento de pago en base de datos");
             PaymentRegistrationResponse response = savePaymentToDatabase(
                     parsedXml,
                     request,
                     fileName,
                     xmlContent,
-                    fiscalUuid
+                    fiscalUuid,
+                    relatedInvoiceMap
             );
             log.info("Complemento persistido exitosamente. UUID: {}", response.getPaymentsUuid());
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_PERSISTIR_BD.getCode(), SERVICE_NAME,
@@ -237,8 +248,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     Map.of("paymentsUuid", response.getPaymentsUuid().toString(),
                             "fiscalUuid", fiscalUuid.toString()), null);
 
-            // === PASO 11: REGISTRAR ARCHIVO PROCESADO ===
-            log.info("Paso 11: Registrando archivo procesado");
+            // === PASO 12: REGISTRAR ARCHIVO PROCESADO ===
+            log.info("Paso 12: Registrando archivo procesado");
             saveFileRegistry(fileName, response.getPaymentsUuid(), "SUCCESS", null, null, request);
             log.info("Registro de archivo completado");
             auditoriaApiService.logActivity(idTransaccion, AuditAction.PAGO_REGISTRO_ARCHIVO.getCode(), SERVICE_NAME,
@@ -375,7 +386,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             PaymentRegistrationRequest request,
             String fileName,
             String xmlContent,
-            UUID fiscalUuid) {
+            UUID fiscalUuid,
+            Map<UUID, UUID> relatedInvoiceMap) {
 
         log.info("Guardando complemento de pago en base de datos");
 
@@ -392,7 +404,7 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             log.info("Payments guardado con UUID: {}", payments.getPaymentsUuid());
 
             // 4. Dispersar pagos y documentos relacionados
-            savePaymentsAndRelatedDocuments(payments, parsedXml, request);
+            savePaymentsAndRelatedDocuments(payments, parsedXml, request, relatedInvoiceMap);
 
             // 5. Crear y guardar Addenda
             createAndSaveAddenda(payments, parsedXml, request);
@@ -473,12 +485,14 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
     /**
      * Dispersa los pagos individuales y sus documentos relacionados.
      * Parsea cada nodo Pago del complemento y lo persiste en la tabla payment,
-     * luego cada DoctoRelacionado en la tabla related_documents.
+     * luego cada DoctoRelacionado en related_documents usando el invoice_uuid
+     * resuelto (no el UUID fiscal del XML).
      */
     private void savePaymentsAndRelatedDocuments(
             PaymentsEntity payments,
             ParsedPaymentXmlDto parsedXml,
-            PaymentRegistrationRequest request) {
+            PaymentRegistrationRequest request,
+            Map<UUID, UUID> relatedInvoiceMap) {
 
         if (parsedXml.getPagos() == null || parsedXml.getPagos().getPagos() == null) {
             log.warn("No se encontraron pagos para dispersar");
@@ -508,9 +522,18 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
             // Dispersar documentos relacionados de este pago
             if (pagoDto.getDoctosRelacionados() != null) {
                 for (DoctoRelacionadoDto docto : pagoDto.getDoctosRelacionados()) {
+                    UUID fiscalDocUuid = UUID.fromString(docto.getIdDocumento().trim());
+                    UUID invoiceUuid = relatedInvoiceMap.get(fiscalDocUuid);
+                    if (invoiceUuid == null) {
+                        // Defensa: no debería ocurrir tras validateAndResolveRelatedDocuments
+                        messageCatalog.throwError(FiscalMessageCode.ERR031,
+                                String.format("UUID fiscal: %s", fiscalDocUuid));
+                    }
+
                     RelatedDocumentsEntity relDoc = new RelatedDocumentsEntity();
                     relDoc.setPaymentUuid(payment.getPaymentUuid());
-                    relDoc.setDocumentUuid(UUID.fromString(docto.getIdDocumento()));
+                    // FK fk_related_documents_document → invoice.invoice_uuid (PK), no fiscal_uuid
+                    relDoc.setDocumentUuid(invoiceUuid);
                     relDoc.setAmountPaid(new BigDecimal(docto.getImpPagado()));
                     relDoc.setPreviousBalance(new BigDecimal(docto.getImpSaldoAnt()));
                     relDoc.setRemainingBalance(new BigDecimal(docto.getImpSaldoInsoluto()));
@@ -524,8 +547,8 @@ public class PaymentRegistrationServiceImpl implements PaymentRegistrationServic
                     relDoc.setCreatedBy(toUserUuid(request.getIdUsuario()));
 
                     relatedDocumentsRepository.save(relDoc);
-                    log.debug("RelatedDocument guardado: docUuid={}, pagado={}, saldo={}",
-                            docto.getIdDocumento(), docto.getImpPagado(), docto.getImpSaldoInsoluto());
+                    log.debug("RelatedDocument guardado: fiscalUuid={}, invoiceUuid={}, pagado={}, saldo={}",
+                            fiscalDocUuid, invoiceUuid, docto.getImpPagado(), docto.getImpSaldoInsoluto());
                 }
             }
         }

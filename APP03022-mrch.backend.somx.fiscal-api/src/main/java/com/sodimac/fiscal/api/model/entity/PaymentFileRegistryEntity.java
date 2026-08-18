@@ -23,8 +23,18 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 public class PaymentFileRegistryEntity extends BaseEntity {
 
+    /**
+     * PK entero. La columna en BD no tiene DEFAULT nextval (solo existe la secuencia suelta),
+     * por eso no se usa IDENTITY: Hibernate debe pedir nextval e incluir el id en el INSERT.
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "payment_file_registry_seq")
+    @SequenceGenerator(
+            name = "payment_file_registry_seq",
+            sequenceName = "payment_file_registry_file_registry_id_seq",
+            schema = "tenant_fiscal",
+            allocationSize = 1
+    )
     @Column(name = "file_registry_id")
     private Long fileRegistryId;
 

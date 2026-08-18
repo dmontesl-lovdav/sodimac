@@ -48,6 +48,9 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
     private static final String K_ISSUER = "issuer";
     private static final String K_RECEIVER = "receiver";
     private static final String K_PAYMENTS_UUID = "paymentsUuid";
+    private static final String K_FISCAL_UUID = "fiscalUuid";
+    private static final String K_CREATED_AT = "createdAt";
+    private static final String K_SUPPLIER_NUMBER = "supplierNumber";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -71,6 +74,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
                 (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
                 (Join<PaymentsEntity, ReceiverEntity>) receiverFetch);
         addTipoProveedorPredicate(cb, query, root, searchRequest.getTipoProveedor(), predicates);
+        addNumeroProveedorPredicate(cb, query, root, searchRequest.getNumeroProveedor(), predicates);
 
         // Aplicar predicados
         if (!predicates.isEmpty()) {
@@ -113,9 +117,13 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
                                            Join<PaymentsEntity, ReceiverEntity> receiverJoin) {
         List<Predicate> predicates = new ArrayList<>();
 
-        // Filtro por UUID
+        // UUID: acepta PK interno o folio fiscal SAT
         if (searchRequest.getPaymentsUuid() != null) {
-            predicates.add(cb.equal(root.get(K_PAYMENTS_UUID), searchRequest.getPaymentsUuid()));
+            UUID uuid = searchRequest.getPaymentsUuid();
+            predicates.add(cb.or(
+                    cb.equal(root.get(K_PAYMENTS_UUID), uuid),
+                    cb.equal(root.get(K_FISCAL_UUID), uuid)
+            ));
         }
 
         // Filtro por folio
@@ -138,12 +146,24 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
             predicates.add(cb.equal(receiverJoin.get("rfc"), searchRequest.getRfcReceptor().trim().toUpperCase()));
         }
 
-        // Filtro por rango de fechas
+        // Filtro por rango de fechas de pago
         if (searchRequest.getFechaPagoInicio() != null) {
             predicates.add(cb.greaterThanOrEqualTo(root.get("paymentDate"), searchRequest.getFechaPagoInicio()));
         }
         if (searchRequest.getFechaPagoFin() != null) {
             predicates.add(cb.lessThanOrEqualTo(root.get("paymentDate"), searchRequest.getFechaPagoFin()));
+        }
+
+        // Filtro por fecha de registro (created_at)
+        if (searchRequest.getFechaRegistroInicio() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(
+                    root.get(K_CREATED_AT),
+                    searchRequest.getFechaRegistroInicio().atStartOfDay()));
+        }
+        if (searchRequest.getFechaRegistroFin() != null) {
+            predicates.add(cb.lessThan(
+                    root.get(K_CREATED_AT),
+                    searchRequest.getFechaRegistroFin().plusDays(1).atStartOfDay()));
         }
 
         // Filtro por status
@@ -152,6 +172,26 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         }
 
         return predicates;
+    }
+
+    /**
+     * Filtro por número de proveedor (addendum.supplier_number vía payments_uuid).
+     */
+    private void addNumeroProveedorPredicate(CriteriaBuilder cb, CriteriaQuery<?> query,
+                                             Root<PaymentsEntity> root,
+                                             Long numeroProveedor,
+                                             List<Predicate> predicates) {
+        if (numeroProveedor == null) {
+            return;
+        }
+        Subquery<UUID> sub = query.subquery(UUID.class);
+        Root<AddendumEntity> addRoot = sub.from(AddendumEntity.class);
+        sub.select(addRoot.get(K_PAYMENTS_UUID))
+                .where(cb.and(
+                        cb.isNotNull(addRoot.get(K_PAYMENTS_UUID)),
+                        cb.equal(addRoot.get(K_SUPPLIER_NUMBER), java.math.BigDecimal.valueOf(numeroProveedor))
+                ));
+        predicates.add(root.get(K_PAYMENTS_UUID).in(sub));
     }
 
     /**
@@ -169,6 +209,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
         // Construir los mismos predicados
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
         addTipoProveedorPredicate(cb, countQuery, root, searchRequest.getTipoProveedor(), predicates);
+        addNumeroProveedorPredicate(cb, countQuery, root, searchRequest.getNumeroProveedor(), predicates);
 
         countQuery.select(cb.count(root));
 
@@ -197,6 +238,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
                 (Join<PaymentsEntity, IssuerEntity>) issuerFetch,
                 (Join<PaymentsEntity, ReceiverEntity>) receiverFetch);
         addTipoProveedorPredicate(cb, query, root, searchRequest.getTipoProveedor(), predicates);
+        addNumeroProveedorPredicate(cb, query, root, searchRequest.getNumeroProveedor(), predicates);
 
         // Filtro de seguridad por vendor (addendum.supplier_number)
         addVendorPredicate(cb, query, root, allowedVendors, predicates);
@@ -266,6 +308,7 @@ public class PaymentsRepositoryCustomImpl implements PaymentsRepositoryCustom {
 
         List<Predicate> predicates = buildPredicates(cb, root, searchRequest, issuerJoin, receiverJoin);
         addTipoProveedorPredicate(cb, countQuery, root, searchRequest.getTipoProveedor(), predicates);
+        addNumeroProveedorPredicate(cb, countQuery, root, searchRequest.getNumeroProveedor(), predicates);
         addVendorPredicate(cb, countQuery, root, allowedVendors, predicates);
 
         countQuery.select(cb.count(root));

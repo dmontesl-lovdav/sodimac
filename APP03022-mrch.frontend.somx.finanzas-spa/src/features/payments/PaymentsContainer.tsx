@@ -30,6 +30,7 @@ import { PaymentFiltersValues } from "./components/FiltersBar";
 import { authenticator } from "@/configuration/ConfigurationBuilder";
 import { getErrorMessage } from "@/utils/errorMessage";
 import { fetchProviders } from "@/utils/utils";
+import ConfigurationBuilder from "@/configuration/ConfigurationBuilder";
 
 import "./styles/PaymentsContainer.css";
 import {
@@ -95,6 +96,9 @@ export default function PaymentsContainer(): ReactElement {
     const [modalSeverity, setModalSeverity] =
         useState<ModalSeverity>("error");
 
+    const isLocal =
+        ConfigurationBuilder.localDeployment;
+
     useEffect(() => {
         loadMessages();
         checkAdmin();
@@ -113,9 +117,196 @@ export default function PaymentsContainer(): ReactElement {
     };
 
     const loadProviders = async () => {
-        const list = await fetchProviders();
+        console.log(
+            "[Payments][loadProviders] INICIO"
+        );
 
-        setProviders(list ?? []);
+        try {
+            console.log(
+                "[Payments][loadProviders] llamando fetchProviders()"
+            );
+
+            const list =
+                await fetchProviders();
+
+            console.log(
+                "[Payments][loadProviders] resultado fetchProviders()",
+                list
+            );
+
+            if (
+                Array.isArray(list) &&
+                list.length > 0
+            ) {
+                console.log(
+                    "[Payments][loadProviders] proveedores obtenidos por función global",
+                    list
+                );
+
+                setProviders(list);
+
+                return;
+            }
+
+            console.warn(
+                "[Payments][loadProviders] fetchProviders no regresó proveedores. Intentando fallback local."
+            );
+
+            const catalogsApiUrl =
+                process.env
+                    .CATALOGS_API_URL;
+
+            const reactCatalogsApiUrl =
+                process.env
+                    .REACT_APP_CATALOGS_API_URL;
+
+            console.log(
+                "[Payments][loadProviders] CATALOGS_API_URL",
+                catalogsApiUrl
+            );
+
+            console.log(
+                "[Payments][loadProviders] REACT_APP_CATALOGS_API_URL",
+                reactCatalogsApiUrl
+            );
+
+            const base = String(
+                catalogsApiUrl ??
+                reactCatalogsApiUrl ??
+                ""
+            ).replace(
+                /\/+$/,
+                ""
+            );
+
+            console.log(
+                "[Payments][loadProviders] BASE RESUELTA",
+                base
+            );
+
+            if (!base) {
+                console.error(
+                    "[Payments][loadProviders] ERROR: no existe URL para catálogo de proveedores"
+                );
+
+                setProviders([]);
+
+                return;
+            }
+
+            const suppliersUrl =
+                `${base}/suppliers`;
+
+            console.log(
+                "[Payments][loadProviders] URL suppliers",
+                suppliersUrl
+            );
+
+            const response =
+                await fetch(
+                    suppliersUrl
+                );
+
+            console.log(
+                "[Payments][loadProviders] HTTP STATUS",
+                response.status
+            );
+
+            console.log(
+                "[Payments][loadProviders] HTTP OK",
+                response.ok
+            );
+
+            console.log(
+                "[Payments][loadProviders] STATUS TEXT",
+                response.statusText
+            );
+
+            if (!response.ok) {
+                console.error(
+                    "[Payments][loadProviders] FALLÓ petición suppliers",
+                    {
+                        status:
+                            response.status,
+                        statusText:
+                            response.statusText,
+                        url:
+                            suppliersUrl,
+                    }
+                );
+
+                setProviders([]);
+
+                return;
+            }
+
+            const data =
+                await response.json();
+
+            console.log(
+                "[Payments][loadProviders] RESPUESTA RAW",
+                data
+            );
+
+            const providerList =
+                Array.isArray(data)
+                    ? data
+                    : Array.isArray(
+                        data?.data
+                    )
+                        ? data.data
+                        : Array.isArray(
+                            data?.content
+                        )
+                            ? data.content
+                            : Array.isArray(
+                                data?.items
+                            )
+                                ? data.items
+                                : [];
+
+            console.log(
+                "[Payments][loadProviders] PROVIDERS NORMALIZADOS",
+                providerList
+            );
+
+            console.log(
+                "[Payments][loadProviders] TOTAL",
+                providerList.length
+            );
+
+            const supplier14786 =
+                providerList.find(
+                    (
+                        provider: any
+                    ) =>
+                        String(
+                            provider
+                                ?.supplierNumber
+                        ) ===
+                        "14786"
+                );
+
+            console.log(
+                "[Payments][loadProviders] BUSCANDO 14786",
+                supplier14786
+            );
+
+            setProviders(
+                providerList
+            );
+
+            console.log(
+                "[Payments][loadProviders] FIN"
+            );
+        } catch (error) {
+            console.error(
+                "[Payments][loadProviders] EXCEPCIÓN",
+                error
+            );
+
+            setProviders([]);
+        }
     };
 
     const loadMessages = async () => {
@@ -436,45 +627,89 @@ export default function PaymentsContainer(): ReactElement {
             return;
         }
 
+        const paymentsForExport =
+            payments.map(
+                (payment) => {
+                    const supplier =
+                        providers.find(
+                            (provider) =>
+                                String(
+                                    provider.supplierNumber
+                                ) ===
+                                String(
+                                    payment.providerNumber
+                                )
+                        );
+
+                    return {
+                        ...payment,
+                        providerName:
+                            supplier?.businessName ??
+                            payment.providerName ??
+                            "",
+                    };
+                }
+            );
+
         const blob =
             paymentsService.exportPaymentsCsv(
-                payments
+                paymentsForExport
             );
 
         const url =
-            window.URL.createObjectURL(blob);
+            window.URL.createObjectURL(
+                blob
+            );
 
         const anchor =
             document.createElement("a");
 
-        const now = new Date();
+        const now =
+            new Date();
 
-        const pad2 = (value: number) =>
+        const pad2 = (
+            value: number
+        ) =>
             value
                 .toString()
                 .padStart(2, "0");
 
-        const ymd = `${now.getFullYear()}${pad2(
-            now.getMonth() + 1
-        )}${pad2(now.getDate())}`;
+        const ymd =
+            `${now.getFullYear()}${pad2(
+                now.getMonth() + 1
+            )}${pad2(
+                now.getDate()
+            )}`;
 
-        const hms = `${pad2(
-            now.getHours()
-        )}.${pad2(
-            now.getMinutes()
-        )}.${pad2(now.getSeconds())}`;
+        const hms =
+            `${pad2(
+                now.getHours()
+            )}.${pad2(
+                now.getMinutes()
+            )}.${pad2(
+                now.getSeconds()
+            )}`;
 
         const fileName =
             `pagos_${ymd}_${hms}.csv`;
 
         anchor.href = url;
-        anchor.download = fileName;
+        anchor.download =
+            fileName;
 
-        document.body.appendChild(anchor);
+        document.body.appendChild(
+            anchor
+        );
+
         anchor.click();
-        document.body.removeChild(anchor);
 
-        window.URL.revokeObjectURL(url);
+        document.body.removeChild(
+            anchor
+        );
+
+        window.URL.revokeObjectURL(
+            url
+        );
     };
 
     const handleClearSearch = () => {
@@ -511,28 +746,18 @@ export default function PaymentsContainer(): ReactElement {
                     </div>
 
                     <div className="pay-header-actions">
-                        <PermissionGate
-                            appEvent={
-                                APP_EVENT.PAYMENTS
-                                    .DOWNLOAD_CSV
-                            }
-                        >
+                        {isLocal ? (
                             <GenericButton
-                                onClick={
-                                    handleExportCsv
-                                }
+                                onClick={handleExportCsv}
                                 disabled={
                                     loading ||
-                                    payments.length ===
-                                    0
+                                    payments.length === 0
                                 }
                             >
                                 <span
                                     style={{
-                                        display:
-                                            "flex",
-                                        alignItems:
-                                            "center",
+                                        display: "flex",
+                                        alignItems: "center",
                                         gap: 6,
                                     }}
                                 >
@@ -550,7 +775,43 @@ export default function PaymentsContainer(): ReactElement {
                                     Exportar CSV
                                 </span>
                             </GenericButton>
-                        </PermissionGate>
+                        ) : (
+                            <PermissionGate
+                                appEvent={
+                                    APP_EVENT.PAYMENTS
+                                        .DOWNLOAD_CSV
+                                }
+                            >
+                                <GenericButton
+                                    onClick={handleExportCsv}
+                                    disabled={
+                                        loading ||
+                                        payments.length === 0
+                                    }
+                                >
+                                    <span
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <span
+                                            className="pay-download-ico"
+                                            aria-hidden="true"
+                                            style={{
+                                                WebkitMaskImage:
+                                                    `url(${downloadIconUrl})`,
+                                                maskImage:
+                                                    `url(${downloadIconUrl})`,
+                                            }}
+                                        />
+
+                                        Exportar CSV
+                                    </span>
+                                </GenericButton>
+                            </PermissionGate>
+                        )}
                     </div>
                 </div>
 

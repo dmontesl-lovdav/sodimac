@@ -35,12 +35,6 @@ import {
 } from "./shippingGuideStatusCatalog";
 import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
 
-type RowExportFormat = "csv" | "xml";
-
-const safeGuideFileTag = (g: ShippingGuide) => {
-  const raw = g.guideNumber ?? g.shippingGuideId ?? "guia";
-  return String(raw).replace(/[^\w-]+/g, "_").slice(0, 80);
-};
 
 const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
   if (!item) return "N/D";

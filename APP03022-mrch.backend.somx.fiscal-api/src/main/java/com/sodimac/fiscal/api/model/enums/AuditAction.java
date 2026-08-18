@@ -39,6 +39,7 @@ public enum AuditAction {
     PAGO_VALIDAR_DUPLICADO("PAGO_VALIDAR_DUPLICADO", "Validación de duplicado por UUID fiscal"),
     PAGO_VALIDAR_RECEPTOR("PAGO_VALIDAR_RECEPTOR", "Validación de receptor autorizado"),
     PAGO_VALIDAR_VERSION("PAGO_VALIDAR_VERSION", "Validación de versión Pagos 2.0"),
+    PAGO_VALIDAR_DOCUMENTOS_RELACIONADOS("PAGO_VALIDAR_DOCUMENTOS_RELACIONADOS", "Validación de documentos relacionados (DoctoRelacionado)"),
     PAGO_VALIDAR_SAT("PAGO_VALIDAR_SAT", "Validación con SAT vía multipac"),
     PAGO_PERSISTIR_BD("PAGO_PERSISTIR_BD", "Persistencia del complemento de pago en BD"),
     PAGO_REGISTRO_ARCHIVO("PAGO_REGISTRO_ARCHIVO", "Registro de archivo procesado"),

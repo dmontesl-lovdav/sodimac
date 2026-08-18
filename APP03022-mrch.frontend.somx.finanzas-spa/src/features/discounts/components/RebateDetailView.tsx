@@ -167,7 +167,7 @@ export default function RebateDetailView(): ReactElement {
             <div style={styles.sectionTitle}>Datos generales</div>
             <div style={styles.grid}>
                 <Field label="Número Documento">{fmt(d.documentNumber)}</Field>
-                <Field label="Referencia">{fmt(d.documentReference)}</Field>
+                
                 <Field label="Documento Sap">{fmt(d.sapDocument)}</Field>
                 <Field label="Estatus">
                     {d.status !== "" ? (
@@ -184,12 +184,14 @@ export default function RebateDetailView(): ReactElement {
                 <Field label="Fecha Vencimiento">
                     {d.dueDate ? formatDate(d.dueDate) : "N/D"}
                 </Field>
-                <Field label="Fecha Aplicación">
-                    {d.postingDate ? formatDate(d.postingDate) : "N/D"}
-                </Field>
+                
                 <Field label="Fecha Alta">{formatDateTime(d.createdAt, { seconds: true })}</Field>
                 <Field label="Número Proveedor">{fmt(d.supplierNumber)}</Field>
                 <Field label="Nombre Proveedor">{fmt(d.vendorName)}</Field>
+                <Field label="Referencia">{fmt(d.documentReference)}</Field>
+                <Field label="Fecha Aplicación">
+                    {d.postingDate ? formatDate(d.postingDate) : "N/D"}
+                </Field>
             </div>
 
             {hasStamped ? (

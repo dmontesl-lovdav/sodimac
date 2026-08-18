@@ -84,6 +84,11 @@ public class PaymentSearchResponse {
     private String receiverName;
 
     /**
+     * Subtotal de los pagos contenidos (suma de montos en {@code payment}).
+     */
+    private BigDecimal subtotalAmount;
+
+    /**
      * Monto total de los pagos contenidos.
      */
     private BigDecimal totalAmount;

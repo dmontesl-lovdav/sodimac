@@ -15,6 +15,7 @@ import { formatDate, formatAmount, fetchProviders } from "@/utils/utils";
 import "./ReceptionCredits.css";
 import { useReceptionSupplierInfo } from "../receptionSupplierInfo";
 import { Column } from "@/shared/components/ui/table/GenericTable";
+import RowActionsMenu from "@/shared/components/ui/table/RowActionsMenu";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import viewIcon from '@assets/eye-show.svg';
 
@@ -121,31 +122,25 @@ const BuildDetail = ({ reception }: { reception: Reception }) => {
                     start: startDate,
                     end: endDate,
                 });
-               
+
+                const title = isCreditNote ? "Ver nota de crédito" : "Ver factura";
+                const href = buildFiscalSpaUrl(
+                    isCreditNote ? "notas-credito" : "facturas",
+                    params
+                );
+
                 return (
-                    <div className="rc-action-wrap">
-                        <a
-                            href={buildFiscalSpaUrl(
-                                isCreditNote ? "notas-credito" : "facturas",
-                                params
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rc-invoice-fiscal-link"
-                        >
-                            <button
-                                title={isCreditNote ? "Ver nota de crédito" : "Ver factura"}
-                                className="rc-action-btn"
-                                type="button"
-                            >
-                                <img
-                                    src={viewIcon}
-                                    alt={isCreditNote ? "Ver nota de crédito" : "Ver factura"}
-                                    className="rc-action-icon"
-                                />
-                            </button>
-                        </a>
-                    </div>
+                    <RowActionsMenu
+                        items={[
+                            {
+                                title,
+                                icon: viewIcon,
+                                onClick: () => {
+                                    window.open(href, "_blank", "noopener,noreferrer");
+                                },
+                            },
+                        ]}
+                    />
                 );
             },
         },

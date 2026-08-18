@@ -1,19 +1,23 @@
-import { ReactElement } from "react";
+import { ReactElement, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { GenericTable } from "@shared/components/ui";
+import type { RowAction } from "@/shared/components/ui/table/GenericTable";
 
 import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
 import { capitalizeWord, formatDate } from "@/utils/utils";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
-import { canRelatePaymentComplement, resolvePaymentStatusDisplay } from "../paymentStatusDisplay";
+import {
+    canRelatePaymentComplement,
+    resolvePaymentStatusDisplay,
+} from "../paymentStatusDisplay";
 import type { PaymentRecord } from "../interfaces";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
 import type { PaymentFiltersValues } from "./FiltersBar";
 
-import { APP_EVENT, PermissionGate } from "@shared/security";
+import { APP_EVENT, useSecurityContext } from "@shared/security";
 import "../styles/PaymentsResultsTable.css";
 
 interface ResultsTableProps {
@@ -45,6 +49,7 @@ export default function ResultsTable({
     lastFilters = null,
 }: ResultsTableProps): ReactElement {
     const nav = useNavigate();
+    const { can } = useSecurityContext();
 
     const findProvider = (providerNumber: string) =>
         providers.find(
@@ -60,30 +65,39 @@ export default function ResultsTable({
         });
 
         nav(`/finanzas/pagos/detalle?${params.toString()}`, {
-            state: { payment: row, filters: lastFilters },
+            state: {
+                payment: row,
+                filters: lastFilters,
+            },
         });
     };
 
-    const canAddComplement = (row: PaymentRecord): boolean =>
-        canRelatePaymentComplement(row);
-
+    /*
+     * Orden solicitado para la pantalla principal:
+     * Referencia Pago, Año Pago, Fecha Pago, Importe, Moneda,
+     * Tipo Proveedor, Número Proveedor, Nombre Proveedor,
+     * Fecha Registro, Fecha Actualización, Estatus y Acción.
+     */
     const columns = [
-        { header: "Referencia Pago", render: (r: PaymentRecord) => r.documentReference ?? "--" },
+        {
+            header: "Referencia Pago",
+            render: (r: PaymentRecord) => r.documentReference ?? "--",
+        },
+        {
+            header: "Año Pago",
+            render: (r: PaymentRecord) => r.paymentYear ?? "--",
+        },
         {
             header: "Importe",
             render: (r: PaymentRecord) =>
-                `$${r.amount?.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`,
+                `$${r.amount?.toLocaleString("es-MX", {
+                    minimumFractionDigits: 2,
+                })}`,
             align: "right" as const,
         },
-        { header: "Moneda", render: (r: PaymentRecord) => r.currency ?? "--" },
-        { header: "Año Pago", render: (r: PaymentRecord) => r.paymentYear ?? "--" },
-        { header: "Fecha Pago", render: (r: PaymentRecord) => formatDate(r.paymentDate) ?? "--" },
-        { header: "Número Proveedor", render: (r: PaymentRecord) => r.providerNumber ?? "--" },
         {
-            header: "Nombre Proveedor",
-            render: (r: PaymentRecord) =>
-                findProvider(r.providerNumber)?.businessName ??
-                r.providerName ?? "--",
+            header: "Moneda",
+            render: (r: PaymentRecord) => r.currency ?? "--",
         },
         {
             header: "Tipo Proveedor",
@@ -92,82 +106,80 @@ export default function ResultsTable({
                 return code ? capitalizeWord(code) : "--";
             },
         },
-        { header: "Fecha Registro", render: (r: PaymentRecord) => r.createdAt ?? "--" },
-        { header: "Fecha Actualización", render: (r: PaymentRecord) => r.updatedAt ?? "--" },
+        {
+            header: "Número Proveedor",
+            render: (r: PaymentRecord) => r.providerNumber ?? "--",
+        },
+        {
+            header: "Nombre Proveedor",
+            render: (r: PaymentRecord) =>
+                findProvider(r.providerNumber)?.businessName ??
+                r.providerName ??
+                "--",
+        },
+        {
+            header: "Fecha Registro",
+            render: (r: PaymentRecord) => r.createdAt ?? "--",
+        },
         {
             header: "Estatus",
             render: (r: PaymentRecord) => {
-                const st = resolvePaymentStatusDisplay(r.statusId);
-                return <StatusPill type={st.type}>{st.label}</StatusPill>;
-            },
-        },
-        {
-            header: "Acción",
-            align: "center" as const,
-            render: (r: PaymentRecord) => {
-                const disabledAdd = !canAddComplement(r);
-
-                const params = new URLSearchParams({
-                    ref: r.documentReference ?? "",
-                    provider: r.providerNumber ?? "",
-                    currency: r.currency ?? "",
-                    amount: String(r.amount ?? 0),
-                    paymentDate: r.paymentDate ?? "",
-                    year: r.paymentYear ?? "",
-                    uuid: r.paymentHeaderUuid ?? "",
-                    status: r.status ?? "",
-                });
-
+                const status = resolvePaymentStatusDisplay(r.statusId);
                 return (
-                    <div className="pay-actions">
-                        <PermissionGate appEvent={APP_EVENT.PAYMENTS.VIEW_DETAIL}>
-                            <button
-                                title="Ver detalle"
-                                onClick={() => handleViewDetail(r)}
-                                className="pay-action-btn"
-                                type="button"
-                            >
-                                <img src={eyeIconUrl} alt="Ver" className="pay-action-icon" />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
-                            <button
-                                title={
-                                    disabledAdd
-                                        ? "No disponible (solo pagos pendientes de complemento)"
-                                        : "Agregar complemento de pago"
-                                }
-                                onClick={() =>
-                                    !disabledAdd &&
-                                    (window.location.href = buildFiscalSpaUrl(
-                                        "publicar-complemento",
-                                        params
-                                    ))
-                                }
-                                className="pay-action-btn"
-                                type="button"
-                                disabled={disabledAdd}
-                                style={{
-                                    cursor: disabledAdd ? "not-allowed" : "pointer",
-                                    opacity: disabledAdd ? 0.4 : 1,
-                                }}
-                            >
-                                <img src={plusIconUrl} alt="Agregar" className="pay-action-icon" />
-                            </button>
-                        </PermissionGate>
-                    </div>
+                    <StatusPill type={status.type}>{status.label}</StatusPill>
                 );
             },
         },
     ];
+
+    const rowActionDescriptors = useMemo(
+        () => [
+            {
+                gate: APP_EVENT.PAYMENTS.VIEW_DETAIL,
+                action: {
+                    title: "Ver detalle",
+                    icon: eyeIconUrl,
+                    onClick: (r: PaymentRecord) => handleViewDetail(r),
+                } satisfies RowAction<PaymentRecord>,
+            },
+            {
+                gate: APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH,
+                action: {
+                    title: "Agregar complemento de pago",
+                    icon: plusIconUrl,
+                    onClick: (r: PaymentRecord) => {
+                        const params = new URLSearchParams({
+                            ref: r.documentReference ?? "",
+                            provider: r.providerNumber ?? "",
+                            currency: r.currency ?? "",
+                            amount: String(r.amount ?? 0),
+                            paymentDate: r.paymentDate ?? "",
+                            year: r.paymentYear ?? "",
+                            uuid: r.paymentHeaderUuid ?? "",
+                            status: r.status ?? "",
+                        });
+                        window.location.href = buildFiscalSpaUrl(
+                            "publicar-complemento",
+                            params
+                        );
+                    },
+                    isDisabled: (r: PaymentRecord) => !canRelatePaymentComplement(r),
+                } satisfies RowAction<PaymentRecord>,
+            },
+        ],
+        [lastFilters]
+    );
+
+    const actions: RowAction<PaymentRecord>[] = rowActionDescriptors
+        .filter(({ gate }) => can(gate))
+        .map(({ action }) => action);
 
     return (
         <div className="pay-results">
             <GenericTable<PaymentRecord>
                 rows={rows}
                 columns={columns}
-                actions={[]}
+                actions={actions}
                 emptyLabel={
                     loading
                         ? "Cargando..."

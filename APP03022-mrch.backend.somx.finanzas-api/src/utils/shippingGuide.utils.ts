@@ -34,9 +34,9 @@ type CreateShippingGuideParams = {
 
 export async function createShippingGuide(
     params: CreateShippingGuideParams
-    ) {
+) {
     const entityCreatedList: ShippingGuide[] = [];
-    const token = params.req.authToken?? '';
+    const token = params.req.authToken ?? '';
     const shippingGuideDocumentList: Partial<ShippingGuideDocument>[] = [];
     if (params.dto.shipingGuideDocumentList != null && params.dto.shipingGuideDocumentList.length > 0) {
         for (const shipdoc of params.dto.shipingGuideDocumentList) {
@@ -50,7 +50,7 @@ export async function createShippingGuide(
             }
             shippingGuideDocumentList.push(datarec);
         };
-    } 
+    }
 
     const data = {
         guideNumber: params.dto.guideNumber,
@@ -121,13 +121,28 @@ export async function saveFilesOnBucket(files: Express.Multer.File[], req: Reque
     return enviados;
 }
 
-export async function validateSupplier(req: AuthenticatedRequest, vendorNumber: Number) {
-    const supplierList = await svcAxios.GetSuppliers(req.authToken ?? '');
-    const foundSupplier: Supplier | undefined = supplierList.find(
-        supplier => supplier.supplierNumber?.toString() === vendorNumber?.toString()
-    );
+export async function validateSupplier(
+    req: AuthenticatedRequest,
+    vendorNumber: number
+) {
+    const supplierList =
+        await svcAxios.GetSuppliers(
+            req.authToken ?? ""
+        );
+
+    const foundSupplier:
+        Supplier | undefined =
+        supplierList.find(
+            (supplier) =>
+                supplier.supplierNumber?.toString() ===
+                vendorNumber?.toString()
+        );
+
     if (foundSupplier == undefined) {
-        throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + vendorNumber);
+        throw new Error(
+            "No existe el proveedor en el catalogo de proveedores. Proveedor: " +
+            vendorNumber
+        );
     }
 }
 
@@ -189,10 +204,10 @@ export function mapShippingGuideToDetailPayload(
         const po = link.purchaseOrder as PurchaseOrder | undefined;
         const poSupplier = po
             ? ctx.supplierList.find(
-                  (supplier) =>
-                      supplier.supplierNumber?.toString() ===
-                      po.supplierNumber?.toString()
-              )
+                (supplier) =>
+                    supplier.supplierNumber?.toString() ===
+                    po.supplierNumber?.toString()
+            )
             : undefined;
 
         const reception = resolveReceptionForGuide(
@@ -211,21 +226,21 @@ export function mapShippingGuideToDetailPayload(
             updatedAt: link.updatedAt,
             purchaseOrder: po
                 ? {
-                      purchaseOrderId: po.purchaseOrderId,
-                      orderNumber: po.orderNumber,
-                      supplierNumber: po.supplierNumber,
-                      supplierBusinessName:
-                          poSupplier?.businessName ?? null,
-                      originId: po.originId,
-                      amount: po.amount,
-                      status: reception?.status ?? po.status,
-                      purchaseOrderDate: po.purchaseOrderDate,
-                      receptionDate,
-                      createdBy: po.createdBy,
-                      createdAt: po.createdAt,
-                      updatedBy: po.updatedBy,
-                      updatedAt: po.updatedAt,
-                  }
+                    purchaseOrderId: po.purchaseOrderId,
+                    orderNumber: po.orderNumber,
+                    supplierNumber: po.supplierNumber,
+                    supplierBusinessName:
+                        poSupplier?.businessName ?? null,
+                    originId: po.originId,
+                    amount: po.amount,
+                    status: reception?.status ?? po.status,
+                    purchaseOrderDate: po.purchaseOrderDate,
+                    receptionDate,
+                    createdBy: po.createdBy,
+                    createdAt: po.createdAt,
+                    updatedBy: po.updatedBy,
+                    updatedAt: po.updatedAt,
+                }
                 : null,
         };
     });

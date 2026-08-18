@@ -264,7 +264,7 @@ export default function InvoicesGrid() {
     },
   ];
   const rowActions: RowAction<Invoice>[] = rowActionDescriptors
-    .filter(({ gate }) => can(gate))
+    //.filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const filterFields: FilterField[] = useMemo(

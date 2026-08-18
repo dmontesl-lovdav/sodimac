@@ -34,6 +34,17 @@ export class FinanzasPayment {
     })
     documentReference!: string;
 
+    /**
+     * UUID fiscal real de la factura / nota de crédito.
+     * Es el valor que debe mostrarse en el detalle del pago.
+     */
+    @Column({
+        name: "uuid",
+        type: "uuid",
+        nullable: true,
+    })
+    uuid?: string | null;
+
     @Column({
         name: "vendor_number",
         type: "int",

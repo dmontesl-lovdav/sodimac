@@ -21,14 +21,26 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
 
     const getAttr = (el: Element | null, name: string): string =>
       el?.getAttribute(name) ?? "";
+
     const comprobante = findByLocalName(doc, "Comprobante");
     const emisor = comprobante ? findByLocalName(comprobante, "Emisor") : null;
     const timbre = findByLocalName(doc, "TimbreFiscalDigital");
     const complemento = findByLocalName(doc, "Complemento");
     const pagos = complemento ? findByLocalName(complemento, "Pagos") : null;
+    // En Pagos 2.0, Totales es hermano de Pago (no hijo)
+    const totales = pagos ? findByLocalName(pagos, "Totales") : null;
     const pago = pagos ? findByLocalName(pagos, "Pago") : null;
-    const totales = pago ? findByLocalName(pago, "Totales") : null;
-    const monto = totales?.getAttribute("Monto") ?? totales?.getAttribute("Total") ?? pago?.getAttribute("Monto") ?? "";
+
+    const montoRaw =
+      getAttr(pago, "Monto") ||
+      getAttr(totales, "MontoTotalPagos") ||
+      getAttr(totales, "Monto") ||
+      getAttr(totales, "Total") ||
+      "";
+
+    const fechaPagoRaw = getAttr(pago, "FechaPago");
+    const fechaTimbradoRaw = getAttr(timbre, "FechaTimbrado");
+
     return {
       uuid:
         [getAttr(timbre, "UUID"), doc.querySelector("*[UUID]")?.getAttribute("UUID") ?? ""].find(
@@ -42,17 +54,23 @@ export function parseComplementXml(xmlText: string): XmlComplementPreview | null
           getAttr(emisor, "RazonSocial"),
           getAttr(comprobante, "EmisorNombre"),
         ].find((v) => v !== "") ?? "",
-      monto: monto ? Number(monto).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : "",
-      fechaTimbrado: getAttr(timbre, "FechaTimbrado") ?? "",
-      tipoDeComprobante:
-        getAttr(comprobante, "TipoDeComprobante") || getAttr(comprobante, "tipoDeComprobante") || "",
+      serie: getAttr(comprobante, "Serie"),
+      folio: getAttr(comprobante, "Folio"),
+      monto: montoRaw
+        ? Number(montoRaw).toLocaleString("es-MX", { minimumFractionDigits: 2 })
+        : "",
+      tipoComprobante:
+        getAttr(comprobante, "TipoDeComprobante") ||
+        getAttr(comprobante, "tipoDeComprobante") ||
+        "",
+      formaDePagoP: getAttr(pago, "FormaDePagoP"),
+      fechaPago: fechaPagoRaw ? formatDate(fechaPagoRaw) : "",
+      fechaTimbrado: fechaTimbradoRaw ? formatDate(fechaTimbradoRaw) : "",
     };
   } catch {
     return null;
   }
 }
-
-
 
 function resolvePaymentYear(row: ComplementPayment): string {
   if (row.paymentDate) {

@@ -25,7 +25,8 @@ import java.util.UUID;
 public class PaymentSearchRequest {
 
     /**
-     * UUID del complemento de pago (folio fiscal).
+     * UUID del complemento (PK interno o folio fiscal SAT). Se compara contra
+     * {@code payments_uuid} y {@code fiscal_uuid}.
      */
     private UUID paymentsUuid;
 
@@ -68,6 +69,16 @@ public class PaymentSearchRequest {
      * Fecha de pago final (rango de búsqueda).
      */
     private LocalDate fechaPagoFin;
+
+    /**
+     * Fecha de registro inicial ({@code created_at}).
+     */
+    private LocalDate fechaRegistroInicio;
+
+    /**
+     * Fecha de registro final ({@code created_at}).
+     */
+    private LocalDate fechaRegistroFin;
 
     /**
      * Estado del complemento de pago.

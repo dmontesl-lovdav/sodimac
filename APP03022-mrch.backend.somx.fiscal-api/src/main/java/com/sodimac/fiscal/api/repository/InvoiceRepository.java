@@ -3,6 +3,8 @@ package com.sodimac.fiscal.api.repository;
 import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -52,6 +54,26 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
             String series, String folio, UUID issuerUuid, String documentType);
 
     /**
+     * Igual que {@link #existsBySeriesAndFolioAndIssuerUuidAndDocumentType}, pero ignora
+     * registros con el estatus indicado (p. ej. Rechazo Comercial).
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
+            FROM InvoiceEntity i
+            WHERE i.series = :series
+              AND i.folio = :folio
+              AND i.issuerUuid = :issuerUuid
+              AND i.documentType = :documentType
+              AND i.status <> :excludedStatus
+            """)
+    boolean existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatus(
+            @Param("series") String series,
+            @Param("folio") String folio,
+            @Param("issuerUuid") UUID issuerUuid,
+            @Param("documentType") String documentType,
+            @Param("excludedStatus") Integer excludedStatus);
+
+    /**
      * Verifica si existe un documento con el mismo UUID fiscal, emisor y tipo.
      * Usado para validar duplicidad por UUID del mismo proveedor (STM-395/STM-397).
      *
@@ -63,4 +85,34 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
     boolean existsByFiscalUuidAndIssuerUuidAndDocumentType(
             UUID fiscalUuid, UUID issuerUuid, String documentType);
 
+    /**
+     * Existe algún documento con el UUID fiscal cuyo estatus NO sea el excluido
+     * (p. ej. permite reintentar si el único registro es Rechazo Comercial).
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
+            FROM InvoiceEntity i
+            WHERE i.fiscalUuid = :fiscalUuid
+              AND i.status <> :excludedStatus
+            """)
+    boolean existsByFiscalUuidExcludingStatus(
+            @Param("fiscalUuid") UUID fiscalUuid,
+            @Param("excludedStatus") Integer excludedStatus);
+
+    /**
+     * Existe documento con UUID fiscal + emisor + tipo, excluyendo un estatus.
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
+            FROM InvoiceEntity i
+            WHERE i.fiscalUuid = :fiscalUuid
+              AND i.issuerUuid = :issuerUuid
+              AND i.documentType = :documentType
+              AND i.status <> :excludedStatus
+            """)
+    boolean existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatus(
+            @Param("fiscalUuid") UUID fiscalUuid,
+            @Param("issuerUuid") UUID issuerUuid,
+            @Param("documentType") String documentType,
+            @Param("excludedStatus") Integer excludedStatus);
 }

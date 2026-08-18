@@ -17,6 +17,7 @@ export type AccountStatementReportPayload = {
         accountStatementUuid: string;
         vendorNumber: number;
         year: number;
+
         month: number;
         version: number;
         initialBalance: number | null;

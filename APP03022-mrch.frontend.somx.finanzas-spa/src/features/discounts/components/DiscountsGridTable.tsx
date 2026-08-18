@@ -1,4 +1,7 @@
+import { useMemo } from "react";
+import type { NavigateFunction } from "react-router-dom";
 import { GenericTable } from "@shared/components/ui";
+import type { RowAction } from "@/shared/components/ui/table/GenericTable";
 import {
     formatDate,
     formatAmount,
@@ -6,10 +9,8 @@ import {
     SelectableOption,
 } from "@/utils/utils";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
-import type { ProvidersOptions, Rebate } from "../interfaces";
-import {
-    getRebateVendorNumber,
-} from "../interfaces";
+import type { Rebate } from "../interfaces";
+import { getRebateVendorNumber } from "../interfaces";
 import { REBATE_DETAIL_ROUTE } from "../constants";
 import { buildRebateDetailSearchParams } from "../utils/rebateDetailQuery";
 
@@ -17,7 +18,7 @@ import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
-import { APP_EVENT, PermissionGate } from "@shared/security";
+import { APP_EVENT, useSecurityContext } from "@shared/security";
 
 interface Props {
     rows: Rebate[];
@@ -33,7 +34,6 @@ interface Props {
     providers: any[];
 }
 
-
 export default function DiscountsGridTable({
     rows,
     renderStatus,
@@ -41,20 +41,20 @@ export default function DiscountsGridTable({
     providers,
     ...props
 }: Props) {
+    const { can } = useSecurityContext();
 
-const returnProvider = (r: Rebate) => {
-    return providers.find((item) => item.supplierNumber == r.vendorNumber);
-}
+    const returnProvider = (r: Rebate) => {
+        return providers.find((item) => item.supplierNumber == r.vendorNumber);
+    };
+
+    const getTipoLabel = (r: Rebate) =>
+        rebateTypeOptions.find((item) => item.value === String(r.source))?.label ?? "--";
 
     const columns = [
         { header: "Documento", render: (r: Rebate) => r.documentNumber ?? "--" },
         {
-            header: "Referencia",
-            render: (r: Rebate) => r.documentReference ?? "--",
-        },
-        {
             header: "Tipo Rebate",
-            render: (r: Rebate) => rebateTypeOptions.find((item) => item.value === String(r.source))?.label ?? "--",
+            render: (r: Rebate) => getTipoLabel(r),
         },
         { header: "Documento SAP", render: (r: Rebate) => r.sapDocument ?? "--" },
         { header: "Importe", render: (r: Rebate) => formatAmount(r.amount) },
@@ -65,9 +65,7 @@ const returnProvider = (r: Rebate) => {
         },
         {
             header: "Nombre Proveedor",
-            render: (r: Rebate) => {
-                return returnProvider(r)?.businessName ?? "--";
-            },
+            render: (r: Rebate) => returnProvider(r)?.businessName ?? "--",
         },
         {
             header: "Tipo Proveedor",
@@ -75,10 +73,6 @@ const returnProvider = (r: Rebate) => {
                 const code = returnProvider(r)?.supplierType?.code;
                 return code ? capitalizeWord(code) : "--";
             },
-        },
-        {
-            header: "Fecha Aplicación",
-            render: (r: Rebate) => (r.postingDate ? formatDate(r.postingDate) : "N/D"),
         },
         {
             header: "Fecha Vencimiento",
@@ -92,94 +86,71 @@ const returnProvider = (r: Rebate) => {
                 </StatusPill>
             ),
         },
-        {
-            header: "Acciones",
-            align: "center" as const,
-            render: (r: Rebate, nav: (path: string) => void) => {
-                const vendorNum = getRebateVendorNumber(r);
-                const disabled = false;
-                const tipoLabel = rebateTypeOptions.find((item) => item.value === String(r.source))?.label ?? "--";
-
-                const fiscalParams = new URLSearchParams({
-                    numeroProveedor: String(vendorNum ?? ""),
-                    numeroDocumento: String(r.documentNumber ?? ""),
-                    referenciaDocumento: r.documentReference ?? r.referenceNumber ?? "",
-                    rebateId: String(r.rebateId ?? ""),
-                    supplierNumber: String(vendorNum ?? ""),
-                    documentNumber: String(r.documentNumber ?? ""),
-                    documentReference: r.documentReference ?? r.referenceNumber ?? "",
-                    sapDocument: String(r.sapDocument ?? ""),
-                    postingDate: String(r.postingDate ?? ""),
-                    dueDate: String(r.dueDate ?? ""),
-                    amount: String(r.amount ?? ""),
-                    periodId: String(r.periodId ?? ""),
-                    tipoRebate: tipoLabel,
-                    vendorName: returnProvider(r)?.businessName ?? "--",
-                });
-                if (r.stampedRebate?.invoiceFiscalUuid) {
-                    fiscalParams.set("uuid", String(r.stampedRebate.invoiceFiscalUuid));
-                }
-
-                const detailParams = buildRebateDetailSearchParams(r);
-                detailParams.set("tipoRebate", tipoLabel);
-
-                return (
-                    <div className="table-actions">
-                        <PermissionGate appEvent={APP_EVENT.DISCOUNTS.VIEW_DETAIL}>
-                            <button
-                                title="Ver descuento relacionado"
-                                type="button"
-                                disabled={disabled}
-                                onClick={() =>
-                                    !disabled &&
-                                    nav(
-                                        `${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`
-                                    )
-                                }
-                                style={{
-                                    cursor: disabled ? "not-allowed" : "pointer",
-                                    opacity: disabled ? 0.4 : 1,
-                                    background: "transparent",
-                                    border: "none",
-                                    padding: 0,
-                                }}
-                            >
-                                <img src={eyeIconUrl} alt="Ver" width={20} height={20} />
-                            </button>
-                        </PermissionGate>
-                        <PermissionGate appEvent={APP_EVENT.DISCOUNTS.LINK_CREDIT_NOTE}>
-                            <button
-                                title="Relacionar Nota de Crédito"
-                                type="button"
-                                disabled={disabled}
-                                onClick={() =>
-                                    !disabled &&
-                                    (window.location.href = buildFiscalSpaUrl(
-                                        "publicar-nota-credito",
-                                        fiscalParams
-                                    ))
-                                }
-                                style={{
-                                    cursor: disabled ? "not-allowed" : "pointer",
-                                    opacity: disabled ? 0.4 : 1,
-                                    background: "transparent",
-                                    border: "none",
-                                    padding: 0,
-                                }}
-                            >
-                                <img src={plusIconUrl} alt="Relacionar" width={20} height={20} />
-                            </button>
-                        </PermissionGate>
-                    </div>
-                );
-            },
-        },
     ];
+
+    const rowActionDescriptors = useMemo(
+        () =>
+            [
+                {
+                    gate: APP_EVENT.DISCOUNTS.VIEW_DETAIL,
+                    action: {
+                        title: "Ver descuento relacionado",
+                        icon: eyeIconUrl,
+                        onClick: (r: Rebate, nav: NavigateFunction) => {
+                            const detailParams = buildRebateDetailSearchParams(r);
+                            detailParams.set("tipoRebate", getTipoLabel(r));
+                            nav(`${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`);
+                        },
+                    } satisfies RowAction<Rebate>,
+                },
+                {
+                    gate: APP_EVENT.DISCOUNTS.LINK_CREDIT_NOTE,
+                    action: {
+                        title: "Relacionar Nota de Crédito",
+                        icon: plusIconUrl,
+                        onClick: (r: Rebate) => {
+                            const vendorNum = getRebateVendorNumber(r);
+                            const tipoLabel = getTipoLabel(r);
+                            const fiscalParams = new URLSearchParams({
+                                numeroProveedor: String(vendorNum ?? ""),
+                                numeroDocumento: String(r.documentNumber ?? ""),
+                                referenciaDocumento: r.documentReference ?? r.referenceNumber ?? "",
+                                rebateId: String(r.rebateId ?? ""),
+                                supplierNumber: String(vendorNum ?? ""),
+                                documentNumber: String(r.documentNumber ?? ""),
+                                documentReference: r.documentReference ?? r.referenceNumber ?? "",
+                                sapDocument: String(r.sapDocument ?? ""),
+                                postingDate: String(r.postingDate ?? ""),
+                                dueDate: String(r.dueDate ?? ""),
+                                amount: String(r.amount ?? ""),
+                                periodId: String(r.periodId ?? ""),
+                                tipoRebate: tipoLabel,
+                                vendorName: returnProvider(r)?.businessName ?? "--",
+                            });
+                            if (r.stampedRebate?.invoiceFiscalUuid) {
+                                fiscalParams.set("uuid", String(r.stampedRebate.invoiceFiscalUuid));
+                            }
+                            window.location.href = buildFiscalSpaUrl(
+                                "publicar-nota-credito",
+                                fiscalParams
+                            );
+                        },
+                    } satisfies RowAction<Rebate>,
+                },
+            ] as const,
+        // providers / rebateTypeOptions used inside handlers via closure; keep deps aligned
+        [providers, rebateTypeOptions]
+    );
+
+    const actions: RowAction<Rebate>[] = rowActionDescriptors
+        .filter(({ gate }) => can(gate))
+        .map(({ action }) => action);
 
     return (
         <GenericTable
             rows={rows}
             columns={columns}
+            actions={actions}
             emptyLabel="Sin resultados"
             {...props}
         />

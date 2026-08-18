@@ -12,6 +12,18 @@ interface ReceptionHeaderProps {
   headerActions?: ReactNode;
 }
 
+
+const getAdendumReferences = (reception: Reception) => {
+  if (!reception.listAddendum || reception.listAddendum.length === 0) return null;
+  return reception.listAddendum[0].invoice;
+};
+
+const getInvoiceDocumentKind = (reception: Reception) => {
+  const inv = getAdendumReferences(reception);
+  if (!inv) return "--";
+  return inv.document_type ?? inv.documentType ?? "--";
+};
+
 export default function ReceptionHeader({
   reception,
   supplierInfo,
@@ -60,6 +72,18 @@ export default function ReceptionHeader({
         <div className="rc-summary-item">
           <div className="rc-label">Nombre Proveedor</div>
           <div>{supplierInfo.name}</div>
+        </div>
+        <div className="rc-summary-item">
+          <div className="rc-label">Guía</div>
+          <div>{reception.order?.shippingGuideNumber ?? "—"}</div>
+        </div>
+        <div className="rc-summary-item">
+          <div className="rc-label">Sucursal</div>
+          <div>{reception.destinationId ?? "—"}</div>
+        </div>
+        <div className="rc-summary-item">
+          <div className="rc-label">Documento</div>
+          <div>{getInvoiceDocumentKind(reception)}</div>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 // ✅ FILE: src/features/account-statement/components/AccountStatementGrid.tsx
 import type { ReactElement } from "react";
+import { useMemo } from "react";
 import { GenericTable } from "@shared/components/ui";
+import type { RowAction } from "@/shared/components/ui/table/GenericTable";
 import type { AccountStatementRecord } from "../interfaces";
 import {
     canConfirmAccountStatement,
@@ -12,7 +14,7 @@ import requestConfirmIcon from "@assets/RequestConfirmIcon.svg";
 import deleteIcon from "@assets/delete.svg";
 
 import { formatDate, MONTHS } from "@/utils/utils";
-import { APP_EVENT, PermissionGate } from "@shared/security";
+import { APP_EVENT, useSecurityContext } from "@shared/security";
 
 import "../styles/AccountStatementGrid.css";
 
@@ -35,14 +37,6 @@ function monthLabel(mes: number): string {
     return found ? found.label : String(mes);
 }
 
-function enabledActionBtnClass(): string {
-    return "as-action-btn";
-}
-
-function disabledActionBtnClass(): string {
-    return "as-action-btn as-action-btn--disabled";
-}
-
 export default function AccountStatementGrid({
     rows = [],
     loading = false,
@@ -56,6 +50,8 @@ export default function AccountStatementGrid({
     onReview,
     onReject,
 }: AccountStatementGridProps): ReactElement {
+    const { can } = useSecurityContext();
+
     const columns = [
         {
             header: "Mes",
@@ -99,84 +95,50 @@ export default function AccountStatementGrid({
             render: (r: AccountStatementRecord) =>
                 r.status ? r.statusLabel : "--",
         },
-        {
-            header: "Acción",
-            align: "center" as const,
-            render: (r: AccountStatementRecord) => {
-                const canConfirm = canConfirmAccountStatement(r);
-                const canReject = canRejectAccountStatement(r);
-
-                return (
-                    <div className="as-actions">
-                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.VIEW_DETAIL}>
-                            <button
-                                title="Ver"
-                                onClick={() => onView(r)}
-                                className="as-action-btn"
-                                type="button"
-                            >
-                                <img src={eyeShowIcon} alt="Ver" className="as-action-icon" />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.CONFIRM_REVIEW}>
-                            <button
-                                title={
-                                    canConfirm
-                                        ? "Confirmar revisión"
-                                        : "No disponible para este estatus"
-                                }
-                                onClick={() => {
-                                    if (canConfirm) onReview(r);
-                                }}
-                                className={
-                                    canConfirm
-                                        ? enabledActionBtnClass()
-                                        : disabledActionBtnClass()
-                                }
-                                type="button"
-                                disabled={!canConfirm}
-                            >
-                                <img
-                                    src={requestConfirmIcon}
-                                    alt="Confirmar revisión"
-                                    className="as-action-icon"
-                                />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.ACCOUNT_STATEMENT.REQUEST_REVIEW}>
-                            <button
-                                title={
-                                    canReject
-                                        ? "Rechazar"
-                                        : "No disponible para este estatus"
-                                }
-                                onClick={() => {
-                                    if (canReject) onReject(r);
-                                }}
-                                className={
-                                    canReject
-                                        ? enabledActionBtnClass()
-                                        : disabledActionBtnClass()
-                                }
-                                type="button"
-                                disabled={!canReject}
-                            >
-                                <img src={deleteIcon} alt="Rechazar" className="as-action-icon" />
-                            </button>
-                        </PermissionGate>
-                    </div>
-                );
-            },
-        },
     ];
+
+    const rowActionDescriptors = useMemo(
+        () => [
+            {
+                gate: APP_EVENT.ACCOUNT_STATEMENT.VIEW_DETAIL,
+                action: {
+                    title: "Ver",
+                    icon: eyeShowIcon,
+                    onClick: (r) => onView(r),
+                } satisfies RowAction<AccountStatementRecord>,
+            },
+            {
+                gate: APP_EVENT.ACCOUNT_STATEMENT.CONFIRM_REVIEW,
+                action: {
+                    title: "Confirmar revisión",
+                    icon: requestConfirmIcon,
+                    onClick: (r) => onReview(r),
+                    isDisabled: (r) => !canConfirmAccountStatement(r),
+                } satisfies RowAction<AccountStatementRecord>,
+            },
+            {
+                gate: APP_EVENT.ACCOUNT_STATEMENT.REQUEST_REVIEW,
+                action: {
+                    title: "Rechazar",
+                    icon: deleteIcon,
+                    onClick: (r) => onReject(r),
+                    isDisabled: (r) => !canRejectAccountStatement(r),
+                } satisfies RowAction<AccountStatementRecord>,
+            },
+        ],
+        [onView, onReview, onReject]
+    );
+
+    const actions: RowAction<AccountStatementRecord>[] = rowActionDescriptors
+        .filter(({ gate }) => can(gate))
+        .map(({ action }) => action);
 
     return (
         <div className="as-grid">
             <GenericTable<AccountStatementRecord>
                 rows={rows}
                 columns={columns}
+                actions={actions}
                 emptyLabel={loading ? "Cargando..." : "Sin resultados"}
                 page={page}
                 perPage={perPage}

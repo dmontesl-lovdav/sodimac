@@ -69,10 +69,15 @@
   color: #6b7280;
 }
 
+.gt-actions-cell {
+  min-width: 48px;
+  width: 48px;
+}
+
 .gt-actions {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  align-items: center;
   color: #002d4c;
 }
 

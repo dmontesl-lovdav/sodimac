@@ -1,9 +1,10 @@
+import { useMemo } from "react";
 import { GenericTable } from "@shared/components/ui";
-import { useNavigate } from "react-router-dom";
+import type { RowAction } from "@/shared/components/ui/table/GenericTable";
 import type { Reception } from "../interfaces";
 import { formatDate, formatAmount, fetchCatalog, mapCatalogResponseToFilterOptions } from "@/utils/utils";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
-import { APP_EVENT, PermissionGate } from "@shared/security";
+import { APP_EVENT, useSecurityContext } from "@shared/security";
 
 import eyeIconUrl from "@assets/eye-show.svg";
 import editIconUrl from "@assets/edit.svg";
@@ -11,7 +12,6 @@ import invoiceIconUrl from "@assets/icons/document.svg";
 import creditsIconUrl from "@assets/xml.svg";
 import "./ReceptionGridTable.css";
 
-import { resolveReceptionStatusDisplay } from "../receptionStatusDisplay";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -24,7 +24,6 @@ interface Props {
     onChangePage: (page: number) => void;
     onChangePerPage: (size: number) => void;
 }
-
 
 const getAdendumReferences = (reception: Reception) => {
     if (!reception.listAddendum || reception.listAddendum.length === 0) return null;
@@ -44,34 +43,29 @@ const getInvoiceUuid = (reception: Reception) => {
     );
 };
 
-const resolveColor=(color: string) => {
-const colorMap: Record<string, string> = {
-    "amarillo": "warning",
-    "amarrillo": "warning",
-    "verde": "success",
-    "rojo": "error",
-    "azul": "info",
-    "morado": "info",
-    "naranja": "warning",
-    "gris": "info",
-} as const;
-return colorMap[color] ?? "info";
-};
-
-const getInvoiceDocumentKind = (reception: Reception) => {
-    const inv = getAdendumReferences(reception);
-    if (!inv) return "--";
-    return inv.document_type ?? inv.documentType ?? "--";
+const resolveColor = (color: string) => {
+    const colorMap: Record<string, string> = {
+        amarillo: "warning",
+        amarrillo: "warning",
+        verde: "success",
+        rojo: "error",
+        azul: "info",
+        morado: "info",
+        naranja: "warning",
+        gris: "info",
+    } as const;
+    return colorMap[color] ?? "info";
 };
 
 export default function ReceptionGridTable({ rows, ...props }: Props) {
-    const nav = useNavigate();
+    const { can } = useSecurityContext();
     const [providerTypeCatalog, setProviderTypeCatalog] = useState<
         { label: string; value: string }[]
     >([]);
     const [statusCatalog, setStatusCatalog] = useState<
         { label: string; value: string; color: string }[]
     >([]);
+
     useEffect(() => {
         (async () => {
             const catalog = await fetchCatalog("CatEstatusRecepcion");
@@ -117,29 +111,17 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
             render: (r: Reception) => r.order?.orderNumber ?? r.orderNumber ?? "--",
         },
         {
-            header: "Guía",
-            render: (r: Reception) => r.order?.shippingGuideNumber ?? "--",
-        },
-        {
-            header: "Sucursal",
-            align: "center" as const,
-            render: (r: Reception) => r.destinationId ?? "--",
-        },
-        {
             header: "Número Proveedor",
             render: (r: Reception) => r.supplier?.supplierNumber ?? r.supplierNumber ?? "--",
         },
         {
             header: "Nombre Proveedor",
-            render: (r: Reception) => r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
+            render: (r: Reception) =>
+                r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
         },
         {
             header: "Tipo Proveedor",
             render: (r: Reception) => resolveProviderTypeLabel(r),
-        },
-        {
-            header: "Documento",
-            render: (r: Reception) => getInvoiceDocumentKind(r),
         },
         {
             header: "Importe",
@@ -168,77 +150,73 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
         {
             header: "Estatus",
             render: (r: Reception) => {
-                const status = statusCatalog.find(item => item.value == String(r.status));
-                return status ? <StatusPill type={status.color}>{status.label}</StatusPill> : "--";
-            },
-        },
-        {
-            header: "Acción",
-            render: (r: Reception) => {
-                
-                const disabledEdit = r.status != 0 && r.status != 7; 
-                const disabledInvoice = r.status != 0;
-                const disabledCredits = r.status != 1  && r.status != 3 && r.status != 4 && r.status != 5 && r.status != 6;
-
-                return (
-                    <div className="rc-actions">
-                        <PermissionGate appEvent={APP_EVENT.RECEPTIONS.VIEW_DETAIL}>
-                            <button
-                                title="Ver Detalles"
-                                onClick={() => nav(`/finanzas/recepciones/${r.receptionId}`)}
-                                className="rc-action-btn"
-                                type="button"
-                            >
-                                <img src={eyeIconUrl} alt="Ver" className="rc-action-icon" />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.RECEPTIONS.EDIT_RECEPTION}>
-                            <button
-                                title="Editar Recepción"
-                                onClick={() => nav(`/finanzas/recepciones/${r.receptionId}/editar`)}
-                                disabled={disabledEdit}
-                                className="rc-action-btn"
-                                type="button"
-                            >
-                                <img src={editIconUrl} alt="Editar" className="rc-action-icon" />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.RECEPTIONS.LINK_INVOICE}>
-                            <button
-                                title="Facturación"
-                                onClick={() => nav(`/finanzas/recepciones/${r.receptionId}/factura`)}
-                                className="rc-action-btn"
-                                disabled={disabledInvoice}
-                                type="button"
-                            >
-                                <img src={invoiceIconUrl} alt="Facturación" className="rc-action-icon" />
-                            </button>
-                        </PermissionGate>
-
-                        <PermissionGate appEvent={APP_EVENT.RECEPTIONS.LINK_CREDIT_NOTE}>
-                            <button
-                                title="Ver Factura"
-                                onClick={() => nav(`/finanzas/recepciones/${r.receptionId}/notas-credito`)}
-                                className="rc-action-btn"
-                                disabled={disabledCredits}
-                                type="button"
-                            >
-                                <img src={creditsIconUrl} alt="Factura" className="rc-action-icon" />
-                            </button>
-                        </PermissionGate>
-                    </div>
+                const status = statusCatalog.find((item) => item.value == String(r.status));
+                return status ? (
+                    <StatusPill type={status.color}>{status.label}</StatusPill>
+                ) : (
+                    "--"
                 );
             },
         },
     ];
+
+    const rowActionDescriptors = useMemo(
+        () => [
+            {
+                gate: APP_EVENT.RECEPTIONS.VIEW_DETAIL,
+                action: {
+                    title: "Ver Detalles",
+                    icon: eyeIconUrl,
+                    onClick: (r, nav) => nav(`/finanzas/recepciones/${r.receptionId}`),
+                } satisfies RowAction<Reception>,
+            },
+            {
+                gate: APP_EVENT.RECEPTIONS.EDIT_RECEPTION,
+                action: {
+                    title: "Editar Recepción",
+                    icon: editIconUrl,
+                    onClick: (r, nav) => nav(`/finanzas/recepciones/${r.receptionId}/editar`),
+                    isDisabled: (r) => r.status != 0 && r.status != 7,
+                } satisfies RowAction<Reception>,
+            },
+            {
+                gate: APP_EVENT.RECEPTIONS.LINK_INVOICE,
+                action: {
+                    title: "Facturación",
+                    icon: invoiceIconUrl,
+                    onClick: (r, nav) => nav(`/finanzas/recepciones/${r.receptionId}/factura`),
+                    isDisabled: (r) => r.status != 0,
+                } satisfies RowAction<Reception>,
+            },
+            {
+                gate: APP_EVENT.RECEPTIONS.LINK_CREDIT_NOTE,
+                action: {
+                    title: "Ver Factura",
+                    icon: creditsIconUrl,
+                    onClick: (r, nav) =>
+                        nav(`/finanzas/recepciones/${r.receptionId}/notas-credito`),
+                    isDisabled: (r) =>
+                        r.status != 1 &&
+                        r.status != 3 &&
+                        r.status != 4 &&
+                        r.status != 5 &&
+                        r.status != 6,
+                } satisfies RowAction<Reception>,
+            },
+        ],
+        []
+    );
+
+    const actions: RowAction<Reception>[] = rowActionDescriptors
+        .filter(({ gate }) => can(gate))
+        .map(({ action }) => action);
 
     return (
         <div className="rc-list-grid-wrap">
             <GenericTable
                 rows={rows}
                 columns={columns}
+                actions={actions}
                 emptyLabel="Sin resultados"
                 {...props}
             />

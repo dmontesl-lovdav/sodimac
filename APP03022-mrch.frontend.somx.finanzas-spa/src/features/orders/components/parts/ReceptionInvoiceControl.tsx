@@ -81,6 +81,7 @@ export const ReceptionInvoiceControl = forwardRef<
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const [isFinished, setIsFinished] = useState(false);
     const [dataMsg, setDataMsg] = useState("");
+    const [noticeKind, setNoticeKind] = useState<"success" | "warning" | "error">("success");
     const [registeredFiscalUuid, setRegisteredFiscalUuid] = useState("");
     const [isValidInvoice, setIsValidInvoice] = useState(false);
     const [optionalPdf, setOptionalPdf] = useState<SystemParameterCheckResult>({ value: "0", isEnabled: false });
@@ -88,7 +89,7 @@ export const ReceptionInvoiceControl = forwardRef<
     const [isBlockedProvider, setIsBlockedProvider] = useState(false);
     const [toleranceConfirmOpen, setToleranceConfirmOpen] = useState(false);
     const [toleranceConfirmMessage, setToleranceConfirmMessage] = useState("");
-    
+
     const checkSystemParameterValue = (parameterId: number): SystemParameterCheckResult => {
         const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
         if (!parameter) {
@@ -181,21 +182,73 @@ export const ReceptionInvoiceControl = forwardRef<
         setIsFinished(false);
         setIsValidInvoice(false);
         setDataMsg("");
+        setNoticeKind("success");
         setRegisteredFiscalUuid("");
         setIsValidating(false);
         setIsProcessing(false);
+        setToleranceConfirmOpen(false);
+        setToleranceConfirmMessage("");
     }, []);
 
-    const showValidationAlert = (message: string) => {
-        setIsValidInvoice(false);
-        setDataMsg("");
+    const resolveTolerance = (invoiceAmount: number): number => {
+        const toleranceValue = checkSystemParameterByName(PARAM_NAME_TOLERANCE_VALUE);
+        const tolerancePercent = checkSystemParameterByName(PARAM_NAME_TOLERANCE_PERCENT);
+        if (toleranceValue.isEnabled && toleranceValue.value != null) {
+            return Number(toleranceValue.value);
+        }
+        if (tolerancePercent.isEnabled && tolerancePercent.value != null) {
+            return invoiceAmount * (Number(tolerancePercent.value) / 100);
+        }
+        return 0;
+    };
+
+    /** Modal + aviso amarillo en la zona de dataMsg. Por defecto bloquea guardar. */
+    const showLoadWarning = (message: string, options?: { blockSave?: boolean }) => {
+        const blockSave = options?.blockSave !== false;
+        if (blockSave) setIsValidInvoice(false);
+        setNoticeKind("warning");
+        setDataMsg(message);
         invoiceAlert.showWarning("Atención", message);
+    };
+
+    const showValidationAlert = (message: string) => {
+        showLoadWarning(message, { blockSave: true });
+    };
+
+    const evaluateAmountVsReception = (
+        invoiceAmount: number,
+        receptionAmount: number
+    ): {
+        withinTolerance: boolean;
+        belowReception: boolean;
+        aboveReception: boolean;
+        difference: number;
+        tolerance: number;
+        belowMessage: string;
+        aboveMessage: string;
+    } => {
+        const difference = Math.abs(invoiceAmount - receptionAmount);
+        const tolerance = resolveTolerance(invoiceAmount);
+        const withinTolerance = difference <= tolerance;
+        const belowReception = !withinTolerance && invoiceAmount < receptionAmount;
+        const aboveReception = !withinTolerance && invoiceAmount > receptionAmount;
+        return {
+            withinTolerance,
+            belowReception,
+            aboveReception,
+            difference,
+            tolerance,
+            belowMessage: `El importe de la factura es inferior al valor de la recepción, considerando la tolerancia permitida de ${formatAmount(tolerance)} MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.`,
+            aboveMessage: `El importe de la factura (${formatAmount(invoiceAmount)}) es mayor al de la recepción (${formatAmount(receptionAmount)}). La diferencia de ${formatAmount(difference)} supera la tolerancia permitida de ${formatAmount(tolerance)} MXN.`,
+        };
     };
 
     const showFinishAlert = (response: { message?: string; warnings?: string[] }) => {
         setDataMsg("");
         const warnings = (response.warnings ?? []).filter((w) => String(w).trim() !== "");
         if (warnings.length > 0) {
+            setNoticeKind("warning");
+            setDataMsg(warnings.join("\n\n"));
             invoiceAlert.showWarning("Atención", warnings.join("\n\n"));
             return;
         }
@@ -225,7 +278,7 @@ export const ReceptionInvoiceControl = forwardRef<
             showValidationAlert("El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar.");
             return;
         }
-        if (supplierInfo.rfc != invoiceData?.rfcEmisor){
+        if (supplierInfo.rfc != invoiceData?.rfcEmisor) {
             showValidationAlert("El RFC del proveedor no coincide con la factura publicada. Por favor, valida el archivo XML.");
             return;
         }
@@ -233,23 +286,13 @@ export const ReceptionInvoiceControl = forwardRef<
         const invoiceAmount = parseFloat(invoiceData.monto);
         const receptionAmount = parseFloat(reception.amount + "");
 
-        setDataMsg("");
         const uuidFromXml = (invoiceData.uuid ?? "").trim();
         if (!uuidFromXml) {
-            showValidationAlert("El XML validado no contiene UUID (timbre fiscal). Vuelve a cargar un XML válido." );
+            showValidationAlert("El XML validado no contiene UUID (timbre fiscal). Vuelve a cargar un XML válido.");
             return;
         }
 
-        const difference = Math.abs(invoiceAmount - receptionAmount);
-        const toleranceValue = checkSystemParameterByName(PARAM_NAME_TOLERANCE_VALUE);
-        const tolerancePercent = checkSystemParameterByName(PARAM_NAME_TOLERANCE_PERCENT);
-        
-        let tolerance = 0;
-        if (toleranceValue.isEnabled && toleranceValue.value != null) {
-            tolerance = Number(toleranceValue.value);
-        } else if (tolerancePercent.isEnabled && tolerancePercent.value != null) {
-            tolerance = invoiceAmount * (Number(tolerancePercent.value) / 100);
-        }
+        const amountCheck = evaluateAmountVsReception(invoiceAmount, receptionAmount);
 
         const publishInvoice = async () => {
             setIsValidInvoice(true);
@@ -291,7 +334,8 @@ export const ReceptionInvoiceControl = forwardRef<
                     setIsFinished(true);
                     showFinishAlert(response);
                 } else {
-                    setDataMsg("");
+                    setNoticeKind("error");
+                    setDataMsg(`${response.code}: ${response.message}`);
                     invoiceAlert.showError(
                         "Error",
                         `${response.code}: ${response.message}`
@@ -312,21 +356,21 @@ export const ReceptionInvoiceControl = forwardRef<
 
         publishInvoiceRef.current = publishInvoice;
 
-        if (difference <= tolerance) {
+        if (amountCheck.withinTolerance) {
             await publishInvoice();
             return;
         }
 
-        if (invoiceAmount < receptionAmount) {
-            showValidationAlert(`El importe de la factura es inferior al valor de la recepción, considerando la tolerancia permitida de ${formatAmount(tolerance)} MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.`);
+        if (amountCheck.belowReception) {
+            showValidationAlert(amountCheck.belowMessage);
             return;
         }
 
         setToleranceConfirmMessage(
-            `El importe de la factura (${formatAmount(invoiceAmount)}) es mayor al de la recepción (${formatAmount(receptionAmount)}). La diferencia de ${formatAmount(difference)} supera la tolerancia permitida de ${formatAmount(tolerance)} MXN. ¿Desea continuar?`
+            `${amountCheck.aboveMessage} ¿Desea continuar?`
         );
         setToleranceConfirmOpen(true);
-    }
+    };
 
     const handleFilePDFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] ?? null;
@@ -340,8 +384,7 @@ export const ReceptionInvoiceControl = forwardRef<
             e.target.value = "";
             filePDFRef.current = null;
             setFilePDF(null);
-            invoiceAlert.showWarning(
-                "Atención",
+            showLoadWarning(
                 "El tipo de archivo no es el correcto, debes subir un pdf válido."
             );
             return;
@@ -354,6 +397,7 @@ export const ReceptionInvoiceControl = forwardRef<
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setDataMsg("");
+        setNoticeKind("success");
         setInvoiceData(null);
         const selectedFile = e.target.files?.[0] ?? null;
         if (!selectedFile) {
@@ -368,8 +412,7 @@ export const ReceptionInvoiceControl = forwardRef<
             fileXMLRef.current = null;
             setFileXML(null);
             setIsValidating(false);
-            invoiceAlert.showWarning(
-                "Atención",
+            showLoadWarning(
                 "El tipo de archivo no es el correcto, debes subir un xml válido."
             );
             return;
@@ -394,42 +437,75 @@ export const ReceptionInvoiceControl = forwardRef<
             setInvoiceData(parsedInvoice);
 
             if (parsedInvoice.tipoDeComprobante !== "I") {
-                setIsValidInvoice(false);
-                setDataMsg("");
-                invoiceAlert.showWarning(
-                    "Atención",
-                    await getInvalidInvoiceTypeMessage()
+                const msg = await getInvalidInvoiceTypeMessage();
+                showLoadWarning(msg);
+                return;
+            }
+
+            const uuidFromXml = (parsedInvoice.uuid ?? "").trim();
+            if (!uuidFromXml) {
+                showLoadWarning(
+                    "El XML validado no contiene UUID (timbre fiscal). Vuelve a cargar un XML válido."
+                );
+                return;
+            }
+
+            const rfcMatches = supplierInfo.rfc == parsedInvoice.rfcEmisor;
+            if (!rfcMatches) {
+                showLoadWarning(
+                    "El RFC del proveedor no coincide con la factura publicada. Por favor, valida el archivo XML."
                 );
                 return;
             }
 
             const xmlValidationOk = data.metadatos.estado === "SUCCESS";
-            const rfcMatches = supplierInfo.rfc == parsedInvoice.rfcEmisor;
-            setIsValidInvoice(xmlValidationOk && rfcMatches);
-
-            if (!rfcMatches) {
-                setDataMsg("");
-                invoiceAlert.showWarning(
-                    "Atención", "El RFC del proveedor no coincide con la factura publicada. Por favor, valida el archivo XML.");
+            if (!xmlValidationOk) {
+                showLoadWarning(
+                    data.metadatos.mensaje ??
+                        "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
+                );
                 return;
             }
 
-            if (xmlValidationOk) {
-                setDataMsg("El archivo XML fue validado correctamente.");
-            } else {
-                setDataMsg("");
-                invoiceAlert.showWarning(
-                    "Atención",
-                    data.metadatos.mensaje ?? "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
+            const invoiceAmount = parseFloat(parsedInvoice.monto);
+            const receptionAmount = parseFloat(reception.amount + "");
+            if (!Number.isFinite(invoiceAmount)) {
+                showLoadWarning(
+                    "No fue posible leer el importe de la factura. Por favor, valida el archivo XML."
                 );
+                return;
             }
+
+            const amountCheck = evaluateAmountVsReception(invoiceAmount, receptionAmount);
+
+            if (amountCheck.belowReception) {
+                showLoadWarning(amountCheck.belowMessage);
+                return;
+            }
+
+            if (amountCheck.aboveReception) {
+                setIsValidInvoice(true);
+                showLoadWarning(
+                    `${amountCheck.aboveMessage} Al guardar se te pedirá confirmación para continuar.`,
+                    { blockSave: false }
+                );
+                return;
+            }
+
+            setIsValidInvoice(true);
+            setNoticeKind("success");
+            setDataMsg("El archivo XML fue validado correctamente.");
         } catch (response: any) {
             invoiceAlert.showErrorFrom(
                 "Error al validar XML",
                 response,
                 "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
             );
-            setIsValidInvoice(false)
+            setNoticeKind("error");
+            setDataMsg(
+                "El archivo XML no corresponde a una factura válida. Por favor, valida el documento antes de continuar."
+            );
+            setIsValidInvoice(false);
         } finally {
             setIsValidating(false);
         }
@@ -524,7 +600,7 @@ return (
 
         {!registeredFiscalUuid && dataMsg.trim() !== "" ? (
           <p
-            className={`rc-invoice-notice rc-invoice-notice--${isValidInvoice ? "success" : "error"}`}
+            className={`rc-invoice-notice rc-invoice-notice--${noticeKind}`}
             role="status"
             aria-live="polite"
           >

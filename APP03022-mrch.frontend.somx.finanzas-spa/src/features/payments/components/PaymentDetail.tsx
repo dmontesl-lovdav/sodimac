@@ -157,7 +157,9 @@ export default function PaymentDetail() {
         const blob =
             paymentsService.exportDetailCsv(
                 allDocuments,
-                payment?.providerName ?? ""
+                payment?.providerName ?? "",
+                payment?.providerNumber ?? provider,
+                payment?.documentReference ?? ref
             );
 
         const url =
@@ -194,9 +196,7 @@ export default function PaymentDetail() {
                 documentType:
                     document.documentType,
                 providerNumber,
-                uuid:
-                    document.uuid ??
-                    document.finanzasPaymentUuid,
+                uuid: document.uuid,
                 serie: document.serie,
                 folio: document.folio,
                 documentNumber:
@@ -223,9 +223,9 @@ export default function PaymentDetail() {
     };
 
     /**
-     * El endpoint header-with-details no devuelve un UUID fiscal
-     * separado. El UUID disponible para cada renglón es
-     * finanzasPaymentUuid, por lo que se conserva en ambos campos.
+     * finanzasPaymentUuid identifica internamente el detalle del pago.
+     * uuid/fiscalUuid/invoiceUuid representa el UUID fiscal de la factura/NC.
+     * No se debe usar finanzasPaymentUuid como UUID fiscal.
      */
     const mapDetailsToDocsFromHeader = (
         content: any[]
@@ -262,10 +262,9 @@ export default function PaymentDetail() {
                     "",
                 folio: detail.folio ?? "",
                 uuid:
-                    detailUuid ||
-                    detail.uuid ||
-                    detail.invoiceUuid ||
-                    detail.fiscalUuid ||
+                    detail.uuid ??
+                    detail.fiscalUuid ??
+                    detail.invoiceUuid ??
                     "",
                 sapDocument:
                     detail.sapDocument ?? "",
@@ -496,8 +495,8 @@ export default function PaymentDetail() {
 
     /**
      * Orden y nombres solicitados:
-     * Número Documento, UUID, Moneda, Importe, Tipo Documento,
-     * Referencia Pago, Fecha Pago, Fecha Registro,
+     * Número Documento, Documento SAP, UUID, Moneda, Importe,
+     * Tipo Documento, Fecha Pago, Fecha Registro,
      * Fecha de Actualización y Factura / NC.
      *
      * La columna Estatus se elimina únicamente del detalle.
@@ -512,13 +511,19 @@ export default function PaymentDetail() {
                 "—",
         },
         {
+            header: "Documento SAP",
+            render: (
+                document: PaymentDocument
+            ) =>
+                document.sapDocument ||
+                "—",
+        },
+        {
             header: "UUID",
             render: (
                 document: PaymentDocument
             ) =>
-                document.uuid ??
-                document.finanzasPaymentUuid ??
-                "—",
+                document.uuid || "—",
         },
         {
             header: "Moneda",
@@ -539,12 +544,6 @@ export default function PaymentDetail() {
                 document: PaymentDocument
             ) =>
                 document.documentType || "—",
-        },
-        {
-            header: "Referencia Pago",
-            render: (
-                document: PaymentDocument
-            ) => document.reference ?? "—",
         },
         {
             header: "Fecha Pago",
@@ -774,6 +773,7 @@ export default function PaymentDetail() {
                                             "—"}
                                     </p>
                                 </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Año Pago
@@ -783,6 +783,7 @@ export default function PaymentDetail() {
                                             "—"}
                                     </p>
                                 </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Moneda
@@ -792,6 +793,7 @@ export default function PaymentDetail() {
                                             "—"}
                                     </p>
                                 </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Monto
@@ -814,6 +816,7 @@ export default function PaymentDetail() {
                                             "—"}
                                     </p>
                                 </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Nombre Proveedor
@@ -823,6 +826,7 @@ export default function PaymentDetail() {
                                             "—"}
                                     </p>
                                 </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Estatus
@@ -851,12 +855,33 @@ export default function PaymentDetail() {
                                         )}
                                     </p>
                                 </div>
+
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Fecha Pago
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.paymentDate ??
+                                            "—"}
+                                    </p>
+                                </div>
+
                                 <div className="payment-detail__info-cell">
                                     <p className="payment-detail__info-label">
                                         Fecha Registro
                                     </p>
                                     <p className="payment-detail__info-value">
                                         {payment.createdAt ??
+                                            "—"}
+                                    </p>
+                                </div>
+
+                                <div className="payment-detail__info-cell">
+                                    <p className="payment-detail__info-label">
+                                        Fecha Actualización
+                                    </p>
+                                    <p className="payment-detail__info-value">
+                                        {payment.updatedAt ??
                                             "—"}
                                     </p>
                                 </div>

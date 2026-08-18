@@ -4,9 +4,12 @@ export interface ComplementPaymentFilters {
   folio?: string;
   rfcEmisor?: string;
   numeroProveedor?: string;
+  tipoProveedor?: string;
   rfcReceptor?: string;
   fechaPagoInicio?: string;
   fechaPagoFin?: string;
+  fechaRegistroInicio?: string;
+  fechaRegistroFin?: string;
   fechaEmisionInicio?: string;
   fechaEmisionFin?: string;
   status?: string;
@@ -16,13 +19,13 @@ export interface ComplementPaymentFilters {
 
 export interface ErrorResponse {
   response?: {
-    data?: { errorCode?: string; message?: string }
-  }
+    data?: { errorCode?: string; message?: string };
+  };
 }
 
 export const EMPTY_COMPLEMENT_PAYMENT: ComplementPaymentFilters = {
-  fechaPagoInicio: "",
-  fechaPagoFin: "",
+  fechaRegistroInicio: "",
+  fechaRegistroFin: "",
   numeroProveedor: "",
   page: 0,
   size: 10,
@@ -33,30 +36,35 @@ export interface ComplementPayment {
   fiscalUuid: string;
   series: string;
   folio: string;
-  subtotal: number;
+  subtotalAmount: number;
   totalAmount: number;
   issuerRfc: string;
   issuerName: string;
   receiverRfc: string;
   receiverName: string;
   paymentDate: string;
+  certificationDate?: string;
   createdAt: string;
+  status?: number;
   statusDescription: string;
   relatedDocumentsCount?: number;
 }
 
 export interface RelatedInvoice {
-   relatedDocumentUuid: string;
-   paymentUuid: string;
-   documentUuid: string;
-   amountPaid: number;
-   previousBalance: number;
-   remainingBalance: number;
-   installmentNumber: number;
-   series: string;
-   folio: string;
-   currency: string;
-   exchangeRate: number;
+  relatedDocumentUuid: string;
+  paymentUuid: string;
+  /** invoice_uuid interno (para PDF). */
+  documentUuid: string;
+  /** Folio fiscal SAT (para mostrar y XML). */
+  fiscalUuid?: string;
+  amountPaid: number;
+  previousBalance: number;
+  remainingBalance: number;
+  installmentNumber: number;
+  series: string;
+  folio: string;
+  currency: string;
+  exchangeRate: number;
 }
 
 export interface ComplementPaymentResponse {
@@ -86,9 +94,12 @@ export interface XmlComplementPreview {
   nombreEmisor: string;
   monto: string;
   fechaTimbrado: string;
-  tipoDeComprobante: string;
+  serie: string;
+  folio: string;
+  tipoComprobante: string;
+  formaDePagoP: string;
+  fechaPago: string;
 }
-
 
 export const EMPTY_HEADER: PaymentHeaderData = {
   uuid: "--",

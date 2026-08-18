@@ -132,10 +132,6 @@ export function ShippingGuideGrid({
       render: (guide) => <>{guide.truckPlate ?? "N/D"}</>,
     },
     {
-      header: "Placa Remolque",
-      render: (guide) => <>{guide.trailerPlate ?? "N/D"}</>,
-    },
-    {
       header: "Origen",
       render: (guide) => (
         <>{guide.originId}</>

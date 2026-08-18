@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DataTable.css'
+import RowActionsMenu, { toRowActionMenuItems } from './RowActionsMenu';
 /* --------------------------------- Types --------------------------------- */
 export type Align = 'left' | 'center' | 'right';
 
@@ -175,23 +176,10 @@ export default function GenericTable<T>(
 
                             {/* acciones */}
                             {actions.length > 0 && (
-                                <td className="gt-td gt-align-center">
-                                    <div className="gt-actions">
-                                        {actions.map(({ title, icon, onClick, isDisabled }) => {
-                                            const disabled = isDisabled?.(row) ?? false;
-                                            return (
-                                                <button
-                                                    key={title}
-                                                    title={title}
-                                                    onClick={() => !disabled && onClick(row, nav)}
-                                                    className="gt-action-btn"
-                                                    disabled={disabled}
-                                                >
-                                                    <img src={icon} className="gt-action-icon" alt={title} />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                <td className="gt-td gt-align-center gt-actions-cell">
+                                    <RowActionsMenu
+                                        items={toRowActionMenuItems(row, actions, nav)}
+                                    />
                                 </td>
                             )}
                         </tr>

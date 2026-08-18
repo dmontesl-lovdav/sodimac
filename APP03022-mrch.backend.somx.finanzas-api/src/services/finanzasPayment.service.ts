@@ -22,37 +22,50 @@ import {
 import { datasource } from "@/config/typeorm-datasource.js";
 import { randomUUID } from "crypto";
 
-export async function list(q: ListFinanzasPaymentQuery) {
+export async function list(
+    q: ListFinanzasPaymentQuery
+) {
     const start = Date.now();
 
-    console.log("[finanzas-payment][service.list] START", q);
+    console.log(
+        "[finanzas-payment][service.list] START",
+        q
+    );
 
-    const filter: FindOptionsWhere<FinanzasPayment> = {};
-
-    if (q.documentNumber !== undefined) {
-        filter.documentNumber = q.documentNumber;
-    }
+    /*
+     * La pantalla principal de pagos trabaja a nivel cabecera.
+     *
+     * Un payment_header representa un único pago, independientemente
+     * de la cantidad de registros existentes en payment_detail.
+     */
+    const filter: FindOptionsWhere<FinanzasPaymentHeader> =
+        {};
 
     if (q.vendorNumber !== undefined) {
-        filter.vendorNumber = q.vendorNumber;
-    }
-
-    if (q.finanzasPaymentUuid !== undefined) {
-        filter.finanzasPaymentUuid = q.finanzasPaymentUuid;
-    }
-
-    if (q.sapDocument !== undefined) {
-        filter.sapDocument = q.sapDocument;
+        filter.vendorNumber =
+            q.vendorNumber;
     }
 
     if (q.paymentDate !== undefined) {
-        filter.paymentDate = MoreThanOrEqual(q.paymentDate);
+        filter.paymentDate =
+            MoreThanOrEqual(
+                q.paymentDate
+            );
     }
 
-    const parsedDateEnd = z.coerce.date().parse(q.createdAtEnd);
-    parsedDateEnd.setDate(parsedDateEnd.getDate() + 1);
+    const parsedDateEnd =
+        z.coerce.date().parse(
+            q.createdAtEnd
+        );
 
-    if (q.createdAtInitial !== undefined) {
+    parsedDateEnd.setDate(
+        parsedDateEnd.getDate() + 1
+    );
+
+    if (
+        q.createdAtInitial !==
+        undefined
+    ) {
         filter.createdAt = Between(
             q.createdAtInitial,
             parsedDateEnd
@@ -60,27 +73,86 @@ export async function list(q: ListFinanzasPaymentQuery) {
     }
 
     console.log(
-        "[finanzas-payment][service.list] FILTER",
+        "[finanzas-payment][service.list] HEADER_FILTER",
         filter
     );
 
     const repoStart = Date.now();
 
-    const [result, total, numberOfElements] =
-        await r.findAllPaginated(
+    const [
+        result,
+        total,
+        numberOfElements,
+    ] =
+        await headerRepo.findAllPaginated(
             filter,
             q.pageSize,
             q.pageNumber
         );
 
     console.log(
-        "[finanzas-payment][service.list] REPO_DONE",
+        "[finanzas-payment][service.list] HEADER_REPO_DONE",
         {
-            repoElapsedMs: Date.now() - repoStart,
+            repoElapsedMs:
+                Date.now() -
+                repoStart,
             rows: result.length,
             total,
             numberOfElements,
         }
+    );
+
+    /*
+     * Se conserva el contrato que actualmente consume el frontend.
+     *
+     * payment_header.totalAmount se expone como amount para que
+     * la pantalla principal muestre el monto real de la cabecera
+     * y no el importe de alguno de sus detalles.
+     */
+    const content = result.map(
+        (item) => ({
+            id:
+                item.paymentHeaderUuid,
+
+            paymentHeaderUuid:
+                item.paymentHeaderUuid,
+
+            company:
+                item.company,
+
+            anio:
+                item.anio,
+
+            documentReference:
+                item.documentReference,
+
+            vendorNumber:
+                item.vendorNumber,
+
+            amount:
+                item.totalAmount,
+
+            currency:
+                item.currency,
+
+            paymentDate:
+                item.paymentDate,
+
+            status:
+                item.status,
+
+            createdBy:
+                item.createdBy,
+
+            createdAt:
+                item.createdAt,
+
+            updatedBy:
+                item.updatedBy,
+
+            updatedAt:
+                item.updatedAt,
+        })
     );
 
     const totalItems =
@@ -88,31 +160,49 @@ export async function list(q: ListFinanzasPaymentQuery) {
             ? 0
             : Number(total.valueOf());
 
-    let totalPages = totalItems / q.pageSize;
+    let totalPages =
+        totalItems / q.pageSize;
 
-    if (totalPages - Math.trunc(totalPages) > 0) {
-        totalPages = Math.trunc(totalPages) + 1;
+    if (
+        totalPages -
+        Math.trunc(totalPages) >
+        0
+    ) {
+        totalPages =
+            Math.trunc(totalPages) + 1;
     } else {
-        totalPages = Math.trunc(totalPages);
+        totalPages =
+            Math.trunc(totalPages);
     }
 
-    const responsePageableDTO: ResponsePageableDTO = {
-        content: result,
-        totalElements: totalItems,
+    const responsePageableDTO:
+        ResponsePageableDTO = {
+        content,
+        totalElements:
+            totalItems,
         numberOfElements:
-            numberOfElements?.valueOf() == null
+            numberOfElements?.valueOf() ==
+                null
                 ? 0
-                : Number(numberOfElements.valueOf()),
+                : Number(
+                    numberOfElements.valueOf()
+                ),
         totalPages,
-        pageNumber: q.pageNumber,
-        pageSize: q.pageSize,
+        pageNumber:
+            q.pageNumber,
+        pageSize:
+            q.pageSize,
     };
 
-    console.log("[finanzas-payment][service.list] END", {
-        elapsedMs: Date.now() - start,
-        totalItems,
-        totalPages,
-    });
+    console.log(
+        "[finanzas-payment][service.list] END",
+        {
+            elapsedMs:
+                Date.now() - start,
+            totalItems,
+            totalPages,
+        }
+    );
 
     return ResponseHandler.responseBuilder(
         "",
@@ -124,8 +214,12 @@ export async function list(q: ListFinanzasPaymentQuery) {
     );
 }
 
-export async function get(finanzasPaymentUuid: string) {
-    return r.findById(finanzasPaymentUuid);
+export async function get(
+    finanzasPaymentUuid: string
+) {
+    return r.findById(
+        finanzasPaymentUuid
+    );
 }
 
 /**
@@ -139,26 +233,37 @@ export async function create(
 ) {
     const now = new Date();
 
-    const data: Partial<FinanzasPayment> = {
+    const data: Partial<FinanzasPayment> =
+    {
         company: dto.company,
-        documentNumber: dto.documentNumber,
-        documentReference: dto.documentReference,
-        vendorNumber: dto.vendorNumber,
+        documentNumber:
+            dto.documentNumber,
+        documentReference:
+            dto.documentReference,
+        vendorNumber:
+            dto.vendorNumber,
         amount: dto.amount,
-        currency: dto.currency ?? "MXN",
-        documentType: dto.documentType,
-        sapDocument: dto.sapDocument,
-        paymentDate: dto.paymentDate,
+        currency:
+            dto.currency ?? "MXN",
+        documentType:
+            dto.documentType,
+        sapDocument:
+            dto.sapDocument,
+        paymentDate:
+            dto.paymentDate,
         status: dto.status ?? 0,
         paymentHeaderUuid:
-            dto.paymentHeaderUuid ?? null,
-        createdBy: dto.createdBy ?? null,
+            dto.paymentHeaderUuid ??
+            null,
+        createdBy:
+            dto.createdBy ?? null,
         createdAt: now,
         updatedBy: null,
         updatedAt: null,
     };
 
-    const entityCreated = await r.createOne(data);
+    const entityCreated =
+        await r.createOne(data);
 
     return ResponseHandler.responseBuilder(
         "",
@@ -185,7 +290,8 @@ export async function create(
 export async function createHeaderWithDetails(
     dto: CreateFinanzasPaymentHeaderWithDetailsDto
 ) {
-    const queryRunner = datasource.createQueryRunner();
+    const queryRunner =
+        datasource.createQueryRunner();
 
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -201,22 +307,30 @@ export async function createHeaderWithDetails(
                 FinanzasPayment
             );
 
-        const details = dto.details ?? [];
+        const details =
+            dto.details ?? [];
+
         const headerTotal = Number(
-            Number(dto.totalAmount).toFixed(2)
+            Number(
+                dto.totalAmount
+            ).toFixed(2)
         );
 
-        let expectedTotal: number | null = null;
+        let expectedTotal:
+            | number
+            | null = null;
 
         /*
          * La validación del desglose solo se ejecuta cuando
          * se reciben detalles.
          */
         if (details.length > 0) {
-            const hasIncome = details.some(
-                (detail) =>
-                    detail.paymentLineType === "INCOME"
-            );
+            const hasIncome =
+                details.some(
+                    (detail) =>
+                        detail.paymentLineType ===
+                        "INCOME"
+                );
 
             if (!hasIncome) {
                 await queryRunner.rollbackTransaction();
@@ -234,39 +348,55 @@ export async function createHeaderWithDetails(
                 );
             }
 
-            const sumIncome = details
-                .filter(
-                    (detail) =>
-                        detail.paymentLineType ===
-                        "INCOME"
-                )
-                .reduce(
-                    (accumulator, detail) =>
-                        accumulator +
-                        Number(detail.amount),
-                    0
-                );
+            const sumIncome =
+                details
+                    .filter(
+                        (detail) =>
+                            detail.paymentLineType ===
+                            "INCOME"
+                    )
+                    .reduce(
+                        (
+                            accumulator,
+                            detail
+                        ) =>
+                            accumulator +
+                            Number(
+                                detail.amount
+                            ),
+                        0
+                    );
 
-            const sumCreditNotes = details
-                .filter(
-                    (detail) =>
-                        detail.paymentLineType ===
-                        "CREDIT_NOTE"
-                )
-                .reduce(
-                    (accumulator, detail) =>
-                        accumulator +
-                        Number(detail.amount),
-                    0
-                );
+            const sumCreditNotes =
+                details
+                    .filter(
+                        (detail) =>
+                            detail.paymentLineType ===
+                            "CREDIT_NOTE"
+                    )
+                    .reduce(
+                        (
+                            accumulator,
+                            detail
+                        ) =>
+                            accumulator +
+                            Number(
+                                detail.amount
+                            ),
+                        0
+                    );
 
             expectedTotal = Number(
                 (
-                    sumIncome - sumCreditNotes
+                    sumIncome -
+                    sumCreditNotes
                 ).toFixed(2)
             );
 
-            if (headerTotal !== expectedTotal) {
+            if (
+                headerTotal !==
+                expectedTotal
+            ) {
                 await queryRunner.rollbackTransaction();
 
                 return ResponseHandler.responseBuilder(
@@ -288,12 +418,15 @@ export async function createHeaderWithDetails(
          * Si no llega, conserva el comportamiento anterior y genera uno.
          */
         const paymentHeaderUuid =
-            dto.paymentHeaderUuid ?? randomUUID();
+            dto.paymentHeaderUuid ??
+            randomUUID();
 
         const existingHeader =
-            await headerRepository.findOneBy({
-                paymentHeaderUuid,
-            });
+            await headerRepository.findOneBy(
+                {
+                    paymentHeaderUuid,
+                }
+            );
 
         if (existingHeader) {
             await queryRunner.rollbackTransaction();
@@ -313,70 +446,113 @@ export async function createHeaderWithDetails(
         }
 
         const now = new Date();
-        const status = dto.status ?? 0;
+        const status =
+            dto.status ?? 0;
 
         const header =
             headerRepository.create({
                 paymentHeaderUuid,
                 company: dto.company,
                 anio: dto.anio,
-                vendorNumber: dto.vendorNumber,
-                currency: dto.currency ?? "MXN",
+                vendorNumber:
+                    dto.vendorNumber,
+                documentReference:
+                    dto.documentReference,
+                currency:
+                    dto.currency ??
+                    "MXN",
                 totalAmount:
-                    headerTotal.toFixed(2),
-                paymentDate: dto.paymentDate,
+                    headerTotal.toFixed(
+                        2
+                    ),
+                paymentDate:
+                    dto.paymentDate,
                 status,
-                createdBy: dto.createdBy ?? null,
+                createdBy:
+                    dto.createdBy ??
+                    null,
                 createdAt: now,
                 updatedBy: null,
                 updatedAt: null,
             });
 
         const headerSaved =
-            await headerRepository.save(header);
+            await headerRepository.save(
+                header
+            );
 
         /*
          * Cuando no se reciben detalles, no se realiza un insert
          * vacío en el repositorio.
          */
-        let detailsSaved: FinanzasPayment[] = [];
+        let detailsSaved:
+            FinanzasPayment[] = [];
 
         if (details.length > 0) {
-            const detailsToSave = details.map(
-                (item) =>
-                    detailRepository.create({
-                        company: dto.company,
-                        documentNumber:
-                            item.documentNumber,
-                        documentReference:
-                            item.documentReference,
-                        vendorNumber:
-                            dto.vendorNumber,
-                        amount: item.amount,
-                        currency:
-                            dto.currency ?? "MXN",
-                        documentType:
-                            item.documentType,
-                        sapDocument:
-                            item.sapDocument,
-                        paymentDate:
-                            dto.paymentDate,
+            const detailsToSave =
+                details.map((item) =>
+                    detailRepository.create(
+                        {
+                            company:
+                                dto.company,
 
-                        /*
-                         * El detalle puede traer status propio.
-                         * Si no llega, hereda el de la cabecera.
-                         */
-                        status:
-                            item.status ?? status,
+                            documentNumber:
+                                item.documentNumber,
 
-                        paymentHeaderUuid,
-                        createdAt: now,
-                        createdBy:
-                            dto.createdBy ?? null,
-                        updatedAt: null,
-                        updatedBy: null,
-                    })
-            );
+                            documentReference:
+                                item.documentReference,
+
+                            /*
+                             * UUID fiscal real de la factura / nota de crédito.
+                             */
+                            uuid:
+                                item.uuid ??
+                                null,
+
+                            vendorNumber:
+                                dto.vendorNumber,
+
+                            amount:
+                                item.amount,
+
+                            currency:
+                                dto.currency ??
+                                "MXN",
+
+                            documentType:
+                                item.documentType,
+
+                            sapDocument:
+                                item.sapDocument,
+
+                            paymentDate:
+                                dto.paymentDate,
+
+                            /*
+                             * El detalle puede traer status propio.
+                             * Si no llega, hereda el de la cabecera.
+                             */
+                            status:
+                                item.status ??
+                                status,
+
+                            paymentHeaderUuid,
+
+                            createdAt:
+                                now,
+
+                            createdBy:
+                                dto.createdBy ??
+                                null,
+
+                            updatedAt:
+                                null,
+
+                            updatedBy:
+                                null,
+                        }
+                    )
+                );
 
             detailsSaved =
                 await detailRepository.save(
@@ -389,21 +565,26 @@ export async function createHeaderWithDetails(
         return ResponseHandler.responseBuilder(
             "",
             {
-                header: headerSaved,
-                details: detailsSaved,
+                header:
+                    headerSaved,
+                details:
+                    detailsSaved,
                 summary: {
                     paymentHeaderUuid,
                     totalDetails:
                         detailsSaved.length,
                     headerTotal:
-                        headerTotal.toFixed(2),
+                        headerTotal.toFixed(
+                            2
+                        ),
 
                     /*
                      * Si no hubo detalles todavía no existe
                      * un total calculado de desglose.
                      */
                     expectedTotal:
-                        expectedTotal === null
+                        expectedTotal ===
+                            null
                             ? null
                             : expectedTotal.toFixed(
                                 2
@@ -416,7 +597,9 @@ export async function createHeaderWithDetails(
             ""
         );
     } catch (error) {
-        if (queryRunner.isTransactionActive) {
+        if (
+            queryRunner.isTransactionActive
+        ) {
             await queryRunner.rollbackTransaction();
         }
 
@@ -437,7 +620,9 @@ export async function getHeaderWithDetails(
     q?: ListFinanzasPaymentDetailsByHeaderQueryDto
 ) {
     const header =
-        await headerRepo.findById(paymentHeaderUuid);
+        await headerRepo.findById(
+            paymentHeaderUuid
+        );
 
     if (!header) {
         return ResponseHandler.responseBuilder(
@@ -456,18 +641,20 @@ export async function getHeaderWithDetails(
                 paymentHeaderUuid
             );
 
-        /*
-         * Se conserva el cálculo anterior para no cambiar
-         * el contrato actual de este endpoint.
-         */
-        const totalAmountDetail = details
-            .reduce(
-                (accumulator, item) =>
-                    accumulator +
-                    Number(item.amount),
-                0
-            )
-            .toFixed(2);
+        const totalAmountDetail =
+            details
+                .reduce(
+                    (
+                        accumulator,
+                        item
+                    ) =>
+                        accumulator +
+                        Number(
+                            item.amount
+                        ),
+                    0
+                )
+                .toFixed(2);
 
         return ResponseHandler.responseBuilder(
             "",
@@ -476,7 +663,8 @@ export async function getHeaderWithDetails(
                 details,
                 summary: {
                     paymentHeaderUuid,
-                    totalDetails: details.length,
+                    totalDetails:
+                        details.length,
                     totalAmountHeader:
                         header.totalAmount,
                     totalAmountDetail,
@@ -484,7 +672,9 @@ export async function getHeaderWithDetails(
                         Number(
                             header.totalAmount
                         ) ===
-                        Number(totalAmountDetail),
+                        Number(
+                            totalAmountDetail
+                        ),
                 },
             },
             0,
@@ -505,24 +695,37 @@ export async function getHeaderWithDetails(
             q.pageNumber
         );
 
-    let totalPages = total / q.pageSize;
+    let totalPages =
+        total / q.pageSize;
 
     totalPages =
-        totalPages - Math.trunc(totalPages) > 0
-            ? Math.trunc(totalPages) + 1
-            : Math.trunc(totalPages);
+        totalPages -
+            Math.trunc(
+                totalPages
+            ) >
+            0
+            ? Math.trunc(
+                totalPages
+            ) + 1
+            : Math.trunc(
+                totalPages
+            );
 
     return ResponseHandler.responseBuilder(
         "",
         {
             header,
             detailsPage: {
-                content: details,
-                totalElements: total,
+                content:
+                    details,
+                totalElements:
+                    total,
                 numberOfElements,
                 totalPages,
-                pageNumber: q.pageNumber,
-                pageSize: q.pageSize,
+                pageNumber:
+                    q.pageNumber,
+                pageSize:
+                    q.pageSize,
             },
             summary: {
                 paymentHeaderUuid,
@@ -550,7 +753,9 @@ export async function update(
     dto: UpdateFinanzasPaymentPatchDto
 ) {
     const existing =
-        await r.findById(finanzasPaymentUuid);
+        await r.findById(
+            finanzasPaymentUuid
+        );
 
     if (!existing) {
         return ResponseHandler.responseBuilder(
@@ -563,50 +768,80 @@ export async function update(
         );
     }
 
-    const patch: Partial<FinanzasPayment> = {
-        updatedAt: new Date(),
+    const patch:
+        Partial<FinanzasPayment> = {
+        updatedAt:
+            new Date(),
     };
 
-    if (dto.company !== undefined) {
-        patch.company = dto.company;
+    if (
+        dto.company !==
+        undefined
+    ) {
+        patch.company =
+            dto.company;
     }
 
-    if (dto.documentNumber !== undefined) {
+    if (
+        dto.documentNumber !==
+        undefined
+    ) {
         patch.documentNumber =
             dto.documentNumber;
     }
 
     if (
-        dto.documentReference !== undefined
+        dto.documentReference !==
+        undefined
     ) {
         patch.documentReference =
             dto.documentReference;
     }
 
-    if (dto.vendorNumber !== undefined) {
+    if (
+        dto.vendorNumber !==
+        undefined
+    ) {
         patch.vendorNumber =
             dto.vendorNumber;
     }
 
-    if (dto.amount !== undefined) {
-        patch.amount = dto.amount;
+    if (
+        dto.amount !==
+        undefined
+    ) {
+        patch.amount =
+            dto.amount;
     }
 
-    if (dto.currency !== undefined) {
-        patch.currency = dto.currency;
+    if (
+        dto.currency !==
+        undefined
+    ) {
+        patch.currency =
+            dto.currency;
     }
 
-    if (dto.documentType !== undefined) {
+    if (
+        dto.documentType !==
+        undefined
+    ) {
         patch.documentType =
             dto.documentType;
     }
 
-    if (dto.sapDocument !== undefined) {
+    if (
+        dto.sapDocument !==
+        undefined
+    ) {
         patch.sapDocument =
             dto.sapDocument;
     }
 
-    if (dto.paymentDate !== undefined) {
+    if (
+        dto.paymentDate !==
+        undefined
+    ) {
         patch.paymentDate =
             dto.paymentDate;
     }
@@ -614,28 +849,38 @@ export async function update(
     /*
      * Se compara contra undefined para permitir status = 0.
      */
-    if (dto.status !== undefined) {
-        patch.status = dto.status;
+    if (
+        dto.status !==
+        undefined
+    ) {
+        patch.status =
+            dto.status;
     }
 
     /*
      * Permite asignar, cambiar o quitar la relación lógica.
      */
     if (
-        dto.paymentHeaderUuid !== undefined
+        dto.paymentHeaderUuid !==
+        undefined
     ) {
         patch.paymentHeaderUuid =
             dto.paymentHeaderUuid;
     }
 
-    if (dto.updatedBy !== undefined) {
-        patch.updatedBy = dto.updatedBy;
+    if (
+        dto.updatedBy !==
+        undefined
+    ) {
+        patch.updatedBy =
+            dto.updatedBy;
     }
 
-    const entityUpdated = await r.updateOne(
-        finanzasPaymentUuid,
-        patch
-    );
+    const entityUpdated =
+        await r.updateOne(
+            finanzasPaymentUuid,
+            patch
+        );
 
     if (!entityUpdated) {
         return ResponseHandler.responseBuilder(

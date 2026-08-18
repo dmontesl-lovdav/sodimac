@@ -153,6 +153,7 @@ export function resolveDatePlaceholder(field: FilterField): string {
   if (field.key === "fechaRecepcion") return "Fecha de recepción";
   if (field.key === "fechaPago") return "Fecha de pago";
   if (field.key === "fechaEmision") return "Fecha de emisión";
+  if (field.key === "fechaRegistro") return "Fecha de registro";
   return field.label ?? "Fecha desde – hasta";
 }
 

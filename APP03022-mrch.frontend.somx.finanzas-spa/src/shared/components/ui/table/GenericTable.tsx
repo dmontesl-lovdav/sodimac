@@ -2,6 +2,7 @@
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import './styles/GenericTable.css';
+import RowActionsMenu, { toRowActionMenuItems } from './RowActionsMenu';
 
 /* ========================================================= */
 /* TYPES                               */
@@ -292,26 +293,10 @@ export default function GenericTable<T = any>({
                                     ))}
 
                                     {actions.length > 0 && (
-                                        <td>
-                                            <div className="table-actions">
-                                                {actions.map(({ title, icon, onClick, isDisabled }) => {
-                                                    const disabled = isDisabled ? isDisabled(row) : false;
-                                                    return (
-                                                        <button
-                                                            key={title}
-                                                            title={title}
-                                                            onClick={() => !disabled && onClick(row, nav)}
-                                                            disabled={disabled}
-                                                            style={{
-                                                                cursor: disabled ? 'not-allowed' : 'pointer',
-                                                                opacity: disabled ? 0.4 : 1
-                                                            }}
-                                                        >
-                                                            <img src={icon} alt={title} width={20} height={20} />
-                                                        </button>
-                                                    )
-                                                })}
-                                            </div>
+                                        <td className="table-actions-cell">
+                                            <RowActionsMenu
+                                                items={toRowActionMenuItems(row, actions, nav)}
+                                            />
                                         </td>
                                     )}
                                 </tr>

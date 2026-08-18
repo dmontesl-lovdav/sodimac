@@ -98,6 +98,7 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
                 .receiverUuid(entity.getReceiverUuid())
                 .receiverRfc(entity.getReceiver() != null ? entity.getReceiver().getRfc() : null)
                 .receiverName(entity.getReceiver() != null ? entity.getReceiver().getName() : null)
+                .subtotalAmount(totalAmount)
                 .totalAmount(totalAmount)
                 .relatedDocumentsCount(relatedDocsCount)
                 .tipoProveedor(tipoProveedorId)

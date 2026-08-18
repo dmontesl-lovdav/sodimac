@@ -1017,6 +1017,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     /**
      * Valida que no exista documento duplicado por serie+folio del mismo proveedor (STM-395/STM-397 CA02).
+     * Excepción: registros en Rechazo Comercial no bloquean un nuevo intento de publicación.
      *
      * @param serie Serie del documento
      * @param folio Folio del documento
@@ -1026,9 +1027,10 @@ public class InvoiceServiceImpl implements InvoiceService {
     private void validateNoDuplicateBySeriesAndFolio(String serie, String folio,
             UUID issuerUuid, TipoDocumentoFiscal tipoDocumento) {
         String docType = tipoDocumento.getCodigo();
+        int rechazoComercial = rechazoComercialStatus(tipoDocumento);
 
-        if (invoiceRepository.existsBySeriesAndFolioAndIssuerUuidAndDocumentType(
-                serie, folio, issuerUuid, docType)) {
+        if (invoiceRepository.existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatus(
+                serie, folio, issuerUuid, docType, rechazoComercial)) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
                     ? FiscalMessageCode.WRN7013
                     : FiscalMessageCode.WRN7016;
@@ -1040,6 +1042,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     /**
      * Valida que no exista documento duplicado por UUID del mismo proveedor (STM-395/STM-397 CA03).
+     * Excepción: si el único registro con ese UUID fiscal está en Rechazo Comercial, se permite
+     * reintentar (se reutilizará el mismo invoice_uuid al persistir por uq_invoice_fiscal_uuid).
      *
      * @param fiscalUuid UUID fiscal del documento
      * @param issuerUuid UUID del emisor (proveedor)
@@ -1048,14 +1052,14 @@ public class InvoiceServiceImpl implements InvoiceService {
     private void validateNoDuplicateByUuid(UUID fiscalUuid, UUID issuerUuid,
             TipoDocumentoFiscal tipoDocumento) {
         String docType = tipoDocumento.getCodigo();
+        int rechazoComercial = rechazoComercialStatus(tipoDocumento);
 
-        // El constraint único en BD es por fiscal_uuid SOLO (uq_invoice_fiscal_uuid):
-        // el folio fiscal del SAT (TimbreFiscalDigital UUID) es único global. Validar por
-        // fiscal_uuid evita que un duplicado con distinto emisor/tipo escape el check
-        // compuesto y reviente el constraint al persistir (500 no manejado). Bug QA jun-2026.
-        boolean duplicado = invoiceRepository.findByFiscalUuid(fiscalUuid).isPresent()
-                || invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentType(
-                        fiscalUuid, issuerUuid, docType);
+        // El constraint único en BD es por fiscal_uuid SOLO (uq_invoice_fiscal_uuid).
+        // Se ignoran registros en Rechazo Comercial para permitir re-publicación.
+        boolean duplicado = invoiceRepository.existsByFiscalUuidExcludingStatus(
+                        fiscalUuid, rechazoComercial)
+                || invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatus(
+                        fiscalUuid, issuerUuid, docType, rechazoComercial);
 
         if (duplicado) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
@@ -1065,6 +1069,13 @@ public class InvoiceServiceImpl implements InvoiceService {
                     docType, fiscalUuid, issuerUuid);
             messageCatalog.throwException(code);
         }
+    }
+
+    /** Código de estatus "Rechazo Comercial" según tipo de documento (I=1, E=0). */
+    private static int rechazoComercialStatus(TipoDocumentoFiscal tipoDocumento) {
+        return tipoDocumento == TipoDocumentoFiscal.FACTURA
+                ? InvoiceStatus.RECHAZO_COMERCIAL.getCodigo()
+                : CreditNoteStatus.RECHAZO_COMERCIAL.getCodigo();
     }
 
     /**
@@ -1099,9 +1110,19 @@ public class InvoiceServiceImpl implements InvoiceService {
             );
             log.debug("Receptor obtenido. UUID: {}", receiver.getReceiverUuid());
 
-            // 3. Crear entidad Invoice
+            // 3. Crear entidad Invoice (o reutilizar si ya existe en Rechazo Comercial
+            //    con el mismo fiscal_uuid — uq_invoice_fiscal_uuid impide un INSERT nuevo).
             log.debug("Creando entidad Invoice");
-            InvoiceEntity invoice = new InvoiceEntity();
+            int rechazoComercial = rechazoComercialStatus(tipoDocumento);
+            InvoiceEntity invoice = invoiceRepository.findByFiscalUuid(fiscalUuid)
+                    .filter(existing -> existing.getStatus() != null
+                            && existing.getStatus() == rechazoComercial)
+                    .orElseGet(InvoiceEntity::new);
+            if (invoice.getInvoiceUuid() != null) {
+                log.info(
+                        "Reutilizando invoice en Rechazo Comercial para re-publicación. invoiceUuid={}, fiscalUuid={}",
+                        invoice.getInvoiceUuid(), fiscalUuid);
+            }
             invoice.setFiscalUuid(fiscalUuid);
             invoice.setDocumentType(tipoDocumento.getCodigo());
             invoice.setSeries(invoiceDto.getSerie());
@@ -1137,10 +1158,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             boolean esRechazoComercial = tipoDocumento == TipoDocumentoFiscal.FACTURA
                     && statusFactura == InvoiceStatus.RECHAZO_COMERCIAL.getCodigo();
             invoice.setXmlContent(esRechazoComercial ? null : xmlContent);
-            // v1.0: el estatus de la factura lo determina la evaluación de tolerancia
-            // (3 Recibida / 2 Recibido Parcial / 1 Rechazo Comercial). La NC nace en 3 (En proceso de
-            // envío, catálogo NC nuevo E/F); reevaluarFacturaTrasNc la ajusta a 2/3/11 según el neto.
-            invoice.setStatus(tipoDocumento == TipoDocumentoFiscal.FACTURA ? statusFactura : NC_EN_PROCESO_ENVIO);
+            // Factura: estatus por tolerancia. NC: 3 En proceso de envío; si es Descuento Comercial
+            // (tipoNotaCredito=2) nace en 8 Contabilizada.
+            invoice.setStatus(resolveInitialDocumentStatus(tipoDocumento, statusFactura, tipoNotaCredito));
             invoice.setIssuerUuid(issuer.getIssuerUuid());
             invoice.setReceiverUuid(receiver.getReceiverUuid());
 
@@ -1263,6 +1283,9 @@ public class InvoiceServiceImpl implements InvoiceService {
      * Marca la recepción asociada como Consumida (CatEstatusRecepcion = 1). Se invoca al publicar
      * una factura que cuadra con la recepción (dentro de tolerancia o mayor). No falla el registro
      * si la recepción no existe o el id no es válido (solo log). QA filas 54-57 (2026-06-22).
+     * <p>
+     * Si la recepción tiene {@code guide_number} (transporte), también marca las guías de embarque
+     * ligadas a estatus 3 (Por Contabilizar), solo cuando están en 2.
      */
     private void marcarRecepcionConsumida(String receptionId, String idTransaccion, String serviceName) {
         final java.math.BigDecimal consumida = java.math.BigDecimal.valueOf(1);
@@ -1279,9 +1302,39 @@ public class InvoiceServiceImpl implements InvoiceService {
                 auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
                         K_SYSTEM, false, "Recepción marcada como Consumida",
                         "receptionId: " + uuid, null, null);
+                marcarGuiasEmbarquePorContabilizar(reception.getGuideNumber(), uuid, idTransaccion, serviceName);
             }, () -> log.warn("Recepción {} no encontrada: no se actualiza estatus", uuid));
         } catch (IllegalArgumentException e) {
             log.warn("receptionId '{}' no es UUID válido: no se actualiza estatus de recepción", receptionId);
+        }
+    }
+
+    /**
+     * Best-effort: guía(s) con el mismo {@code guide_number} de la recepción → estatus 3.
+     * No falla el registro de factura si no hay guía o el UPDATE no afecta filas.
+     */
+    private void marcarGuiasEmbarquePorContabilizar(
+            String guideNumber, UUID receptionUuid, String idTransaccion, String serviceName) {
+        if (guideNumber == null || guideNumber.isBlank()) {
+            log.debug("Recepción {} sin guide_number: no se actualizan guías de embarque", receptionUuid);
+            return;
+        }
+        try {
+            int updated = receptionRepository.markShippingGuidesPorContabilizar(guideNumber.trim());
+            if (updated > 0) {
+                log.info("Guías de embarque guideNumber={} → status=3 ({} fila(s)); recepción {}",
+                        guideNumber.trim(), updated, receptionUuid);
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                        K_SYSTEM, false, "Guías de embarque marcadas a estatus 3 (Por Contabilizar)",
+                        "receptionId: " + receptionUuid + ", guideNumber: " + guideNumber.trim()
+                                + ", updated: " + updated, null, null);
+            } else {
+                log.info("Sin guías en status=2 para guideNumber={} (recepción {})",
+                        guideNumber.trim(), receptionUuid);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudieron actualizar guías guideNumber={} (recepción {}): {} — no crítico",
+                    guideNumber.trim(), receptionUuid, e.getMessage());
         }
     }
 
@@ -1297,10 +1350,27 @@ public class InvoiceServiceImpl implements InvoiceService {
      * </ul>
      */
     // Estatus de NC según catálogo CatEstatusNotaCredito NUEVO (modelo E/F, alineado con factura):
-    // 2 = Recibido Parcial, 3 = En proceso de envío, 11 = Cancelada. Fila 122 / decisión Ivan jul-2026.
+    // 2 = Recibido Parcial, 3 = En proceso de envío, 8 = Contabilizada (NC descuento comercial),
+    // 9 = Descontada, 11 = Cancelada. Fila 122 / decisión Ivan jul-2026.
     private static final int NC_RECIBIDO_PARCIAL = 2;
     private static final int NC_EN_PROCESO_ENVIO = 3;
+    private static final int NC_CONTABILIZADA = 8;
     private static final int NC_CANCELADA = 11;
+
+    /**
+     * Estatus inicial al persistir: factura por tolerancia; NC descuento comercial (tipo 2) → 8;
+     * resto de NC → 3.
+     */
+    private static int resolveInitialDocumentStatus(
+            TipoDocumentoFiscal tipoDocumento, int statusFactura, String tipoNotaCredito) {
+        if (tipoDocumento == TipoDocumentoFiscal.FACTURA) {
+            return statusFactura;
+        }
+        if (TIPO_NC_DESCUENTO_COMERCIAL.equals(tipoNotaCredito)) {
+            return NC_CONTABILIZADA;
+        }
+        return NC_EN_PROCESO_ENVIO;
+    }
 
     /**
      * Setea el estatus de TODAS las NCs vinculadas a una factura (la NC acompaña el estado de la

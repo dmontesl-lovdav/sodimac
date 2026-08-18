@@ -19,6 +19,9 @@ public class RelatedDocumentsMapper {
         dto.setRelatedDocumentUuid(entity.getRelatedDocumentUuid());
         dto.setPaymentUuid(entity.getPaymentUuid());
         dto.setDocumentUuid(entity.getDocumentUuid());
+        if (entity.getDocument() != null) {
+            dto.setFiscalUuid(entity.getDocument().getFiscalUuid());
+        }
         dto.setAmountPaid(entity.getAmountPaid());
         dto.setPreviousBalance(entity.getPreviousBalance());
         dto.setRemainingBalance(entity.getRemainingBalance());

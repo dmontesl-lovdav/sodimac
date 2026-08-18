@@ -51,11 +51,17 @@
   color: #6b7280;
 }
 
+.fiscal-table-actions-cell {
+  min-width: 48px;
+  width: 48px;
+}
+
 .fiscal-table-actions {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  align-items: center;
   color: #002d4c;
+  position: relative;
 }
 
 .fiscal-table-action-btn {
@@ -68,11 +74,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: #002d4c;
 }
 
 .fiscal-table-action-icon {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .fiscal-table-action-btn:hover {
@@ -82,6 +90,55 @@
 .fiscal-table-action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.fiscal-table-kebab-btn[aria-expanded="true"] {
+  background: #e0f2fe;
+}
+
+.fiscal-table-kebab-icon {
+  display: block;
+}
+
+.fiscal-table-actions-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 45, 76, 0.12);
+}
+
+.fiscal-table-actions-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #002d4c;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.fiscal-table-actions-menu-item:hover:not(:disabled) {
+  background: #f0f9ff;
+}
+
+.fiscal-table-actions-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fiscal-table-actions-menu-item span {
+  line-height: 1.3;
 }
 
 .fiscal-table-pagination {
@@ -263,7 +320,7 @@
 }
 
 .fiscal-table-lg {
-  min-width: 200px;
+  min-width: 48px;
 }
 
 /* Responsive improvements */

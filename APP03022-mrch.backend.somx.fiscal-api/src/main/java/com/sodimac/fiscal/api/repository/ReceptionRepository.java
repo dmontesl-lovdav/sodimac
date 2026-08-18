@@ -2,6 +2,7 @@ package com.sodimac.fiscal.api.repository;
 
 import com.sodimac.fiscal.api.model.entity.ReceptionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -43,4 +44,19 @@ public interface ReceptionRepository extends JpaRepository<ReceptionEntity, UUID
             + "ORDER BY r.created_at DESC",
             nativeQuery = true)
     List<ReceptionEntity> findByReceptionNumberOrdered(@Param("receptionNumber") String receptionNumber);
+
+    /**
+     * Al consumir una recepción de transporte, las guías ligadas por {@code guide_number} pasan a
+     * estatus 3 (CatEstatusCartaPorteFBC: relacionada con OC y factura / Por Contabilizar).
+     * Solo desde estatus 2 (con OC / Pendiente de Facturar) para no pisar 4+.
+     *
+     * @return filas actualizadas (0 si no hay guía o ya no está en 2)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value =
+            "UPDATE tenant_finance.shipping_guide "
+            + "SET status = 3, is_status_updated = true, updated_at = CURRENT_TIMESTAMP "
+            + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status = 2",
+            nativeQuery = true)
+    int markShippingGuidesPorContabilizar(@Param("guideNumber") String guideNumber);
 }

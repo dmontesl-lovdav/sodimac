@@ -20,6 +20,11 @@ public class RelatedDocumentsDto {
     @NotNull(message = "El UUID del documento es obligatorio")
     private UUID documentUuid;
 
+    /**
+     * Folio fiscal SAT de la factura/NC relacionada ({@code invoice.fiscal_uuid}).
+     */
+    private UUID fiscalUuid;
+
     @NotNull(message = "El monto pagado es obligatorio")
     @DecimalMin(value = "0.0", inclusive = false, message = "El monto pagado debe ser mayor que 0")
     @Digits(integer = 14, fraction = 2, message = "El monto pagado no puede tener más de 14 dígitos enteros y 2 decimales")

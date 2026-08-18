@@ -2,6 +2,7 @@ package com.sodimac.fiscal.api.service;
 
 import com.sodimac.fiscal.api.model.dto.ParsedPaymentXmlDto;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -47,12 +48,15 @@ public interface PaymentValidationService {
     void validateAddendaType(Integer tipoAddenda);
 
     /**
-     * Valida que todos los documentos relacionados existan en el sistema.
+     * Valida que todos los DoctoRelacionado (IdDocumento = UUID fiscal SAT)
+     * existan en {@code invoice} y resuelve el PK interno ({@code invoice_uuid})
+     * requerido por el FK {@code related_documents.document_uuid}.
      *
      * @param parsedXml Datos parseados del XML
-     * @throws RuntimeException si algún documento relacionado no existe
+     * @return mapa fiscalUuid → invoiceUuid
+     * @throws RuntimeException si algún documento relacionado no existe (ERR031)
      */
-    void validateRelatedDocumentsExist(ParsedPaymentXmlDto parsedXml);
+    Map<UUID, UUID> validateAndResolveRelatedDocuments(ParsedPaymentXmlDto parsedXml);
 
     /**
      * Valida el tipo de comprobante (debe ser 'P').

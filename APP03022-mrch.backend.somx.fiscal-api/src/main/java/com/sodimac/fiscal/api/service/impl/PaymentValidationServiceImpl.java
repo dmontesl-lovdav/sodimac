@@ -1,10 +1,14 @@
 package com.sodimac.fiscal.api.service.impl;
 
 import com.sodimac.fiscal.api.model.dto.ParsedPaymentXmlDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.DoctoRelacionadoDto;
+import com.sodimac.fiscal.api.model.dto.invoicexml.PagoDto;
+import com.sodimac.fiscal.api.model.entity.InvoiceEntity;
 import com.sodimac.fiscal.api.model.entity.PaymentsEntity;
 import com.sodimac.fiscal.api.model.entity.VersionCatalogEntity;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.repository.AddendumRepository;
+import com.sodimac.fiscal.api.repository.InvoiceRepository;
 import com.sodimac.fiscal.api.repository.PaymentsRepository;
 import com.sodimac.fiscal.api.repository.VersionCatalogRepository;
 import com.sodimac.fiscal.api.service.MessageCatalogService;
@@ -14,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,6 +39,7 @@ public class PaymentValidationServiceImpl implements PaymentValidationService {
     private final AddendumRepository addendumRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final PaymentsRepository paymentsRepository;
+    private final InvoiceRepository invoiceRepository;
 
     @Override
     public void validateAuthorizedReceiver(String rfcReceptor) {
@@ -109,14 +116,63 @@ public class PaymentValidationServiceImpl implements PaymentValidationService {
     }
 
     @Override
-    public void validateRelatedDocumentsExist(ParsedPaymentXmlDto parsedXml) {
-        log.debug("Validando existencia de documentos relacionados");
+    public Map<UUID, UUID> validateAndResolveRelatedDocuments(ParsedPaymentXmlDto parsedXml) {
+        log.debug("Validando existencia de documentos relacionados (DoctoRelacionado.IdDocumento)");
 
-        // TODO: Implementar validación de documentos relacionados
-        // Requiere parsear el nodo Pagos completo con PagosXmlProcessorService
-        // y luego verificar cada DoctoRelacionado.IdDocumento contra la tabla invoice
+        Map<UUID, UUID> fiscalToInvoiceUuid = new HashMap<>();
 
-        log.debug("Validación de documentos relacionados pendiente de implementación completa");
+        if (parsedXml.getPagos() == null || parsedXml.getPagos().getPagos() == null) {
+            log.warn("El complemento no trae nodos Pago; no hay documentos relacionados que validar");
+            return fiscalToInvoiceUuid;
+        }
+
+        for (PagoDto pago : parsedXml.getPagos().getPagos()) {
+            if (pago.getDoctosRelacionados() == null) {
+                continue;
+            }
+            for (DoctoRelacionadoDto docto : pago.getDoctosRelacionados()) {
+                String idDocumento = docto.getIdDocumento();
+                if (idDocumento == null || idDocumento.isBlank()) {
+                    log.error("DoctoRelacionado sin IdDocumento (Serie={}, Folio={})",
+                            docto.getSerie(), docto.getFolio());
+                    messageCatalog.throwError(FiscalMessageCode.ERR031,
+                            String.format("Serie: %s, Folio: %s", docto.getSerie(), docto.getFolio()));
+                }
+
+                UUID fiscalUuid;
+                try {
+                    fiscalUuid = UUID.fromString(idDocumento.trim());
+                } catch (IllegalArgumentException ex) {
+                    log.error("IdDocumento no es un UUID válido: {}", idDocumento);
+                    messageCatalog.throwError(FiscalMessageCode.ERR031,
+                            String.format("IdDocumento inválido: %s", idDocumento));
+                    return fiscalToInvoiceUuid;
+                }
+
+                if (fiscalToInvoiceUuid.containsKey(fiscalUuid)) {
+                    continue;
+                }
+
+                // IdDocumento del SAT = fiscal_uuid; el FK related_documents.document_uuid
+                // apunta a invoice.invoice_uuid (PK interno).
+                Optional<InvoiceEntity> invoice = invoiceRepository.findByFiscalUuid(fiscalUuid);
+                if (invoice.isEmpty()) {
+                    log.error(
+                            "Documento relacionado no registrado en invoice. fiscal_uuid={}, serie={}, folio={}",
+                            fiscalUuid, docto.getSerie(), docto.getFolio());
+                    messageCatalog.throwError(FiscalMessageCode.ERR031,
+                            String.format("UUID fiscal: %s, Serie: %s, Folio: %s",
+                                    fiscalUuid, docto.getSerie(), docto.getFolio()));
+                }
+
+                fiscalToInvoiceUuid.put(fiscalUuid, invoice.get().getInvoiceUuid());
+                log.debug("Documento relacionado resuelto: fiscalUuid={} → invoiceUuid={}",
+                        fiscalUuid, invoice.get().getInvoiceUuid());
+            }
+        }
+
+        log.debug("Documentos relacionados validados: {}", fiscalToInvoiceUuid.size());
+        return fiscalToInvoiceUuid;
     }
 
     @Override

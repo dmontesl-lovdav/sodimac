@@ -124,7 +124,12 @@ class PaymentsClient {
             documentNumber: item.documentNumber ?? "",
             documentReference: item.documentReference ?? "",
             providerNumber: String(item.vendorNumber ?? ""),
-            providerName: item.vendorName ?? "",
+            providerName:
+                item.vendorName ??
+                item.providerName ??
+                item.businessName ??
+                item.supplierName ??
+                "",
             currency: item.currency ?? "MXN",
             amount: ((numberValue) =>
                 Number.isFinite(numberValue) ? numberValue : 0)(
@@ -488,19 +493,23 @@ class PaymentsClient {
      */
     exportDetailCsv(
         documents: PaymentDocument[],
-        providerName = ""
+        providerName = "",
+        providerNumber = "",
+        paymentReference = ""
     ): Blob {
         const orderedDocuments =
             sortPaymentDocuments(documents);
 
         const headers = [
+            "Número Proveedor",
             "Nombre Proveedor",
+            "Referencia Pago",
             "Número Documento",
+            "Documento SAP",
             "UUID",
             "Moneda",
             "Importe",
             "Tipo Documento",
-            "Referencia Pago",
             "Fecha Pago",
             "Fecha Registro",
             "Fecha de Actualización",
@@ -509,15 +518,15 @@ class PaymentsClient {
 
         const csvRows = orderedDocuments.map(
             (document) => [
+                providerNumber,
                 providerName,
+                paymentReference,
                 document.documentNumber,
-                document.uuid ??
-                document.finanzasPaymentUuid ??
-                "",
+                document.sapDocument ?? "",
+                document.uuid ?? "",
                 document.currency,
                 formatPaymentAmount(document.amount),
                 document.documentType,
-                document.reference ?? "",
                 document.paymentDate ??
                 document.documentDate ??
                 "",

@@ -78,36 +78,17 @@
 
 /* ====== ACTIONS ====== */
 
+.table-actions-cell {
+    min-width: 48px;
+    width: 48px;
+    text-align: center;
+}
+
 .table-actions {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    color: #002d4c;
-}
-
-
-.table-actions button {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.table-actions button img {
-    width: 20px;
-    height: 20px;
-    display: block;
-    cursor: pointer;
-}
-
-
-.table-actions button:hover {
-    opacity: 0.8;
+    color: #002d4c;
 }
 
 /* ========================= */

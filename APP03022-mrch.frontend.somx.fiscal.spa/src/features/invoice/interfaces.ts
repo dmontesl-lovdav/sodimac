@@ -1,5 +1,5 @@
 /** Estatus: rechazo contable (solo en este estado se permite reprocesar) */
-export const INVOICE_STATUS_RECHAZO_CONTABLE = 11;
+export const INVOICE_STATUS_RECHAZO_CONTABLE = 14;
 /** Estatus: pendiente de contabilización (resultado del reproceso) */
 export const INVOICE_STATUS_PENDIENTE_CONTABILIZACION = 3;
 /** Estatus: disponibles para cancelación */

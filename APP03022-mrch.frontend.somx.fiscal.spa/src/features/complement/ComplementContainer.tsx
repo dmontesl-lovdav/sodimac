@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
-import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
+import { APP_EVENT, PermissionGate } from "@shared/security";
 import { formatDate, formatAmount, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
@@ -8,7 +8,6 @@ import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters"
 import { createComplementPaymentClient } from "./api/ComplementPaymentClient";
 import { ComplementPaymentFilters, EMPTY_COMPLEMENT_PAYMENT, type ComplementPayment } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
-import { createCreditsClient } from "../creditNote/api/CreditsClient";
 import viewIcon from "@assets/eye-show.svg";
 import {
   FISCAL_LIST_KEYS,
@@ -25,16 +24,15 @@ const breadcrumb: BreadcrumbItem[] = [
 const columns: DataGridColumn<ComplementPayment>[] = [
   { header: "Serie", accessor: r => r.series ?? "--", exportAccessor: r => r.series },
   { header: "Folio", accessor: r => r.folio ?? "--", exportAccessor: r => r.folio },
-  { header: "UUID", accessor: r => r.paymentsUuid ?? "--", exportAccessor: r => r.paymentsUuid },
+  { header: "UUID", accessor: r => r.fiscalUuid ?? "--", exportAccessor: r => r.fiscalUuid },
+  { header: "Subtotal", accessor: r => r.subtotalAmount != null ? formatAmount(r.subtotalAmount) : "--", exportAccessor: r => r.subtotalAmount },
   { header: "Total", accessor: r => r.totalAmount != null ? formatAmount(r.totalAmount) : "--", exportAccessor: r => r.totalAmount },
-  { header: "Fecha de Emisión", accessor: r => r.createdAt ? formatDate(r.createdAt) : "N/D", exportAccessor: r => r.createdAt },
+  { header: "Fecha Registro", accessor: r => r.createdAt ? formatDate(r.createdAt) : "N/D", exportAccessor: r => r.createdAt },
   { header: "RFC Emisor", accessor: r => r.issuerRfc ?? "--", exportAccessor: r => r.issuerRfc },
   { header: "Nombre Emisor", accessor: r => r.issuerName ?? "--", exportAccessor: r => r.issuerName },
-  { header: "Fecha de Pago", accessor: r => r.paymentDate ? formatDate(r.paymentDate) : "N/D", exportAccessor: r => r.paymentDate },
   { header: "Facturas Relacionadas", accessor: r => r.relatedDocumentsCount ?? "--", exportAccessor: r => r.relatedDocumentsCount },
   { header: "Estatus", accessor: r => r.statusDescription ?? "--", exportAccessor: r => r.statusDescription },
- 
-  ];
+];
 
 export default function ComplementContainer() {
   const returningFromDetail = useFiscalListScreenSession(
@@ -45,11 +43,9 @@ export default function ComplementContainer() {
   const [hasSearched, setHasSearched] = useState(false);
   const [statusPaymentComplement, setStatusPaymentComplement] = useState<{ label: string; value: string }[]>([]);
   const [providerTypeOptions, setProviderTypeOptions] = useState<SelectableOption<string>[]>([]);
-  const client = createComplementPaymentClient();
-  const invoiceClient = createCreditsClient();
-  const gridRef = useRef<DataGridHandle>(null);
   const [canExportCsv, setCanExportCsv] = useState(false);
-  const { can } = useSecurityContext();
+  const client = createComplementPaymentClient();
+  const gridRef = useRef<DataGridHandle>(null);
 
   const rowActionDescriptors: { gate: { app: string; event: string }; action: RowAction<ComplementPayment> }[] = [
     {
@@ -63,13 +59,18 @@ export default function ComplementContainer() {
     },
   ];
   const rowActions: RowAction<ComplementPayment>[] = rowActionDescriptors
-    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const handleGetXmlContent = useCallback(async (row: ComplementPayment) => {
-    const { data } = await invoiceClient.getXmlDocument(row.paymentsUuid);
+    const uuid = row.fiscalUuid || row.paymentsUuid;
+    const { data } = await client.getXmlDocument(uuid);
     return data;
-  }, [invoiceClient]);
+  }, [client]);
+
+  const getPdfUrl = useCallback((row: ComplementPayment) => {
+    const uuid = row.fiscalUuid || row.paymentsUuid;
+    return client.getPaymentPdfUrl(uuid);
+  }, [client]);
 
   const handleFetch = useCallback(async (f: ComplementPaymentFilters) => {
     const result = await client.getComplementPayments(f);
@@ -84,9 +85,12 @@ export default function ComplementContainer() {
   const areFiltersEmpty = useCallback((f: ComplementPaymentFilters) => {
     const v = (x: unknown) => x == null || x === "" || (typeof x === "string" && !x.trim());
     return (
+      v(f?.fechaRegistroInicio) &&
+      v(f?.fechaRegistroFin) &&
       v(f?.fechaPagoInicio) &&
       v(f?.fechaPagoFin) &&
       v(f?.numeroProveedor) &&
+      v(f?.tipoProveedor) &&
       v(f?.status) &&
       v(f?.serie) &&
       v(f?.folio) &&
@@ -105,14 +109,12 @@ export default function ComplementContainer() {
   useEffect(() => {
     const fetchStatus = async () => {
       const statusCatalog = await fetchCatalogDetails("CATESTATUSCOMPLEMENTO");
-      if(statusCatalog){
+      if (statusCatalog) {
         setStatusPaymentComplement(fetchCatalogAsSelectableOptions(statusCatalog, "Todos los estados"));
       }
     };
     fetchStatus();
   }, []);
-
-  
 
   useEffect(() => {
     const fetchProviderType = async () => {
@@ -120,7 +122,7 @@ export default function ComplementContainer() {
       if (options) {
         setProviderTypeOptions(fetchCatalogAsSelectableOptions(options, "Todos los tipos"));
       }
-    }
+    };
     fetchProviderType();
   }, []);
 
@@ -175,8 +177,8 @@ export default function ComplementContainer() {
       options: statusPaymentComplement,
     },
     {
-      key: "fechaPago",
-      label: "Fecha búsqueda",
+      key: "fechaRegistro",
+      label: "Fecha Registro",
       type: "dateRange",
     },
   ];
@@ -232,6 +234,8 @@ export default function ComplementContainer() {
           xmlAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_XML}
           pdfAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
+          getPdfUrl={getPdfUrl}
+          getFilename={(row) => row.fiscalUuid || row.paymentsUuid || "complemento"}
           rowActions={rowActions}
           filtersEmpty={!hasSearched || areFiltersEmpty(filters)}
         />

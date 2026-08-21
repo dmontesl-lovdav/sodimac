@@ -1838,8 +1838,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if (!permitido) {
                     messageCatalog.throwException(FiscalMessageCode.BUS051,
                             String.format("De: %d (%s) a: %d (%s)",
-                                    currentStatusCode, currentStatus.getNombre(),
-                                    newStatusCode, newStatus.getNombre()));
+                                    currentStatusCode, resolveStatusName(documentType, currentStatusCode),
+                                    newStatusCode, resolveStatusName(documentType, newStatusCode)));
                 }
             } catch (IllegalArgumentException e) {
                 messageCatalog.throwException(FiscalMessageCode.BUS049,
@@ -1862,8 +1862,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                     } else {
                         messageCatalog.throwException(FiscalMessageCode.BUS051,
                                 String.format("De: %d (%s) a: %d (%s)",
-                                        currentStatusCode, currentStatus.getNombre(),
-                                        newStatusCode, newStatus.getNombre()));
+                                        currentStatusCode, resolveStatusName(documentType, currentStatusCode),
+                                        newStatusCode, resolveStatusName(documentType, newStatusCode)));
                     }
                 }
             } catch (IllegalArgumentException e) {
@@ -2023,11 +2023,11 @@ public class InvoiceServiceImpl implements InvoiceService {
         // Determinar código de éxito según tipo de documento y si hubo actualización de addenda
         if ("I".equals(documentType)) {
             successCode = addendaActualizada ? FiscalSuccessCode.RES010 : FiscalSuccessCode.RES009;
-            estatusNuevoNombre = InvoiceStatus.fromCodigo(estatusNuevo).getNombre();
         } else { // "E"
             successCode = addendaActualizada ? FiscalSuccessCode.RES012 : FiscalSuccessCode.RES011;
-            estatusNuevoNombre = CreditNoteStatus.fromCodigo(estatusNuevo).getNombre();
         }
+        // Nombre del estatus desde el catálogo de BD (resolveStatusName), no del enum.
+        estatusNuevoNombre = resolveStatusName(documentType, estatusNuevo);
 
         return InvoiceUpdateResponse.success(
                 successCode.getCode(),
@@ -3192,40 +3192,28 @@ public class InvoiceServiceImpl implements InvoiceService {
             // === PASO 3: DETERMINAR OPTION_ID ===
             int optionId = determineOptionId(invoice.getDocumentType());
 
-            // === PASO 4: VALIDAR TRANSICIÓN CON TREN DE ESTATUS ===
-            log.info("Validando transición con servicio de tren de estatus...");
-            StatusTrainValidationResult validationResult = statusTrainApiService.validateTransition(
-                    optionId,
-                    request.getEstatusOrigen(),
-                    request.getEstatusDestino()
-            );
+            // === PASO 4: VALIDAR TRANSICIÓN CONTRA status_train (BD directo, sin util-api) ===
+            log.info("Validando transición contra status_train (BD): opt={}, {} -> {}",
+                    optionId, request.getEstatusOrigen(), request.getEstatusDestino());
+            boolean transicionPermitida = statusTrainRepository.existsByOptionIdAndSourceStatusAndTargetStatus(
+                    optionId, request.getEstatusOrigen(), request.getEstatusDestino());
 
-            if (!validationResult.isValid()) {
-                log.warn("Transición no válida. Código: {}, Mensaje: {}",
-                        validationResult.getErrorCode(), validationResult.getErrorMessage());
-
-                if ("WRN7010".equals(validationResult.getErrorCode())) {
+            if (!transicionPermitida) {
+                // ¿El estatus origen está catalogado en el tren? Si no, WRN7010.
+                if (!statusTrainRepository.existsByOptionIdAndSourceStatus(optionId, request.getEstatusOrigen())) {
                     return InvoiceStatusUpdateResponse.sourceNotCataloged(request.getEstatusOrigen());
-                } else if ("WRN7011".equals(validationResult.getErrorCode())) {
-                    // STM-335: Mensaje específico para cancelación de NC
-                    if ("E".equals(invoice.getDocumentType())
-                            && CreditNoteStatus.CANCELADA.getCodigo().equals(request.getEstatusDestino())) {
-                        return InvoiceStatusUpdateResponse.error("WRN7023",
-                                "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable.");
-                    }
-                    return InvoiceStatusUpdateResponse.transitionNotAllowed(
-                            request.getEstatusOrigen(), request.getEstatusDestino());
-                } else if ("ERR5001".equals(validationResult.getErrorCode())) {
-                    return InvoiceStatusUpdateResponse.error("SVC5001",
-                            "Servicio de tren de estatus no disponible: " + validationResult.getErrorMessage());
                 }
-
-                return InvoiceStatusUpdateResponse.error(
-                        validationResult.getErrorCode(),
-                        validationResult.getErrorMessage());
+                // STM-335: mensaje específico para cancelación de NC con afectación contable.
+                if ("E".equals(invoice.getDocumentType())
+                        && CreditNoteStatus.CANCELADA.getCodigo().equals(request.getEstatusDestino())) {
+                    return InvoiceStatusUpdateResponse.error("WRN7023",
+                            "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable.");
+                }
+                return InvoiceStatusUpdateResponse.transitionNotAllowed(
+                        request.getEstatusOrigen(), request.getEstatusDestino());
             }
 
-            log.info("Transición validada correctamente");
+            log.info("Transición validada correctamente (status_train BD)");
 
             // === PASO 5: ACTUALIZAR ESTATUS ===
             Integer estatusAnterior = invoice.getStatus();

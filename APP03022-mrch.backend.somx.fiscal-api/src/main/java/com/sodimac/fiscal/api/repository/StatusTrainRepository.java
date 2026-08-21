@@ -12,4 +12,7 @@ import org.springframework.stereotype.Repository;
 public interface StatusTrainRepository extends JpaRepository<StatusTrainEntity, Integer> {
 
     boolean existsByOptionIdAndSourceStatusAndTargetStatus(Integer optionId, Integer sourceStatus, Integer targetStatus);
+
+    /** True si el estatus origen tiene AL MENOS una transición en el tren (para distinguir "origen no catalogado"). */
+    boolean existsByOptionIdAndSourceStatus(Integer optionId, Integer sourceStatus);
 }

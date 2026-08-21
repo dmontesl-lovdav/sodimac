@@ -14,6 +14,7 @@ import com.sodimac.fiscal.api.model.enums.InvoiceStatus;
 import com.sodimac.fiscal.api.model.enums.AuditAction;
 import com.sodimac.fiscal.api.model.enums.TipoDocumentoFiscal;
 import com.sodimac.fiscal.api.pdf.PdfRenderService;
+import com.sodimac.fiscal.api.pdf.PaymentPdfService;
 import com.sodimac.fiscal.api.repository.*;
 import com.sodimac.fiscal.api.repository.InvoiceStatusHistoryRepository;
 import com.sodimac.fiscal.api.repository.specification.InvoiceSpecification;
@@ -109,6 +110,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final MessageCatalogService messageCatalog;
     private final SatCatalogService satCatalogService;
     private final PdfRenderService pdfRenderService;
+    private final PaymentPdfService paymentPdfService;
     private final UtilsApiService utilsApiService;
     private final StatusTrainApiService statusTrainApiService;
     private final SupplierBlockApiService supplierBlockApiService;
@@ -3008,8 +3010,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.warn("Factura encontrada pero sin contenido XML. UUID: {}", fiscalUuid);
         }
 
-        // Buscar en complementos de pago
-        Optional<PaymentsEntity> payment = paymentsRepository.findByFiscalUuid(uuid);
+        // Buscar en complementos de pago (folio fiscal o payments_uuid)
+        Optional<PaymentsEntity> payment = paymentsRepository.findByFiscalUuid(uuid)
+                .or(() -> paymentsRepository.findById(uuid));
         if (payment.isPresent()) {
             String xmlContent = payment.get().getXmlContent();
             if (xmlContent != null && !xmlContent.isEmpty()) {
@@ -3026,7 +3029,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional(readOnly = true)
     public byte[] getPdfByInvoiceUuid(String invoiceUuid) {
-        log.info("Buscando PDF por invoice UUID: {}", invoiceUuid);
+        log.info("Buscando PDF por UUID: {}", invoiceUuid);
 
         UUID uuid;
         try {
@@ -3035,22 +3038,32 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new FiscalException(FiscalMessageCode.ERR001, "UUID inválido: " + invoiceUuid);
         }
 
-        InvoiceEntity invoice = invoiceRepository.findById(uuid)
-                .orElseThrow(() -> new FiscalException(FiscalMessageCode.ERR001, "Factura no encontrada: " + invoiceUuid));
+        Optional<InvoiceEntity> invoiceOpt = invoiceRepository.findById(uuid)
+                .or(() -> invoiceRepository.findByFiscalUuid(uuid));
+        if (invoiceOpt.isPresent()) {
+            return renderInvoicePdf(invoiceOpt.get());
+        }
 
-        // 1) Si el PDF está en el bucket, se descarga directo.
+        Optional<PaymentsEntity> paymentOpt = paymentsRepository.findByFiscalUuid(uuid)
+                .or(() -> paymentsRepository.findById(uuid));
+        if (paymentOpt.isPresent()) {
+            return renderPaymentPdf(paymentOpt.get());
+        }
+
+        throw new FiscalException(FiscalMessageCode.ERR001, "Documento no encontrado: " + invoiceUuid);
+    }
+
+    private byte[] renderInvoicePdf(InvoiceEntity invoice) {
+        UUID invoiceUuid = invoice.getInvoiceUuid();
         if (invoice.getPdfGcsObject() != null && !invoice.getPdfGcsObject().isBlank()) {
             try {
                 return gcsStorageService.downloadPdf(invoice.getPdfGcsObject());
             } catch (Exception e) {
-                // No se aborta: si el bucket falla se intenta generar el PDF desde el XML (fallback).
                 log.warn("PDF en bucket no disponible (object={}); se generará desde el XML. {}",
                         invoice.getPdfGcsObject(), e.getMessage());
             }
         }
 
-        // 2) Fallback: el PDF no se subió (o el bucket falló) -> se genera a partir del XML (xml_content)
-        // con el renderizador XSLT (Formato4.0.xsl). Decisión Ivan 2026-06-26.
         String xmlContent = invoice.getXmlContent();
         if (xmlContent == null || xmlContent.isBlank()) {
             throw new FiscalException(FiscalMessageCode.ERR001,
@@ -3063,6 +3076,25 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.error("Error generando PDF desde XML. invoice={} error={}", invoiceUuid, e.getMessage());
             throw new FiscalException(FiscalMessageCode.ERR001,
                     "Error al generar el PDF desde el XML: " + e.getMessage());
+        }
+    }
+
+    private byte[] renderPaymentPdf(PaymentsEntity payment) {
+        String xmlContent = payment.getXmlContent();
+        if (xmlContent == null || xmlContent.isBlank()) {
+            throw new FiscalException(FiscalMessageCode.ERR001,
+                    "No hay XML disponible para el complemento: " + payment.getPaymentsUuid());
+        }
+        try {
+            log.info("Generando PDF de complemento desde XML. paymentsUuid={}", payment.getPaymentsUuid());
+            return paymentPdfService.renderFromXml(xmlContent);
+        } catch (FiscalException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error generando PDF de complemento. paymentsUuid={} error={}",
+                    payment.getPaymentsUuid(), e.getMessage());
+            throw new FiscalException(FiscalMessageCode.ERR001,
+                    "Error al generar el PDF del complemento: " + e.getMessage());
         }
     }
 

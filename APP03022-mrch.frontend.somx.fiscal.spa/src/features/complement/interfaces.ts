@@ -48,6 +48,7 @@ export interface ComplementPayment {
   status?: number;
   statusDescription: string;
   relatedDocumentsCount?: number;
+  xmlContent?: string | null;
 }
 
 export interface RelatedInvoice {

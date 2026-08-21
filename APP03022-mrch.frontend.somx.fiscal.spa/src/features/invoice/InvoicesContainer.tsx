@@ -20,6 +20,7 @@ import {
   INVOICE_WRONG_DATA,
   INVOICE_ERROR_DATA,
   INVOICE_PROCESS_SENDED,
+  StatusReprocesoContable,
 } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import {
@@ -213,7 +214,7 @@ export default function InvoicesGrid() {
         setErrorMsg("No se puede reprocesar la factura sin número de proveedor");
         return;
       }
-      await client.reprocessInvoice(row.invoiceUuid ?? "", row.numeroProveedor);
+      await client.reprocessInvoice(row.fiscalUuid ?? "", row.numeroProveedor);
       setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al reprocesar la factura"));
@@ -247,7 +248,7 @@ export default function InvoicesGrid() {
         title: "Reproceso contable",
         icon: reprocessIcon,
         onClick: (_row) => { openReprocessConfirm(_row); },
-        isDisabled: (row) => row.status !== INVOICE_STATUS_RECHAZO_CONTABLE,
+        isDisabled: (row) => !StatusReprocesoContable.includes(row.status ?? 0),
       },
     },
     {

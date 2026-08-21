@@ -46,7 +46,6 @@ const buildSearchParams = (filters: ComplementPaymentFilters): URLSearchParams =
   return params;
 };
 
-const textResponse: AxiosRequestConfig = { responseType: "text" };
 const blobResponse: AxiosRequestConfig = { responseType: "blob" };
 
 const apiBase = () =>
@@ -82,30 +81,50 @@ export const createComplementPaymentClient = (api?: ApiClient) => {
         "get"
       ),
 
+    /** XML del GET buscar; si no viene, GET /invoices/{uuid}/xml */
+    getXmlFromContent: (xmlContent: string | null | undefined): Promise<{ data: string }> => {
+      const data = typeof xmlContent === "string" ? xmlContent.trim() : "";
+      if (!data) {
+        return Promise.reject(new Error("XML no disponible en el registro"));
+      }
+      return Promise.resolve({ data });
+    },
+
+    /** XML de factura/NC o complemento: GET /invoices/{uuid}/xml (texto plano). */
     getXmlDocument: async (fiscalUuid: string): Promise<{ data: string }> => {
       const data = await client.request<string>(
         `invoices/${encodeURIComponent(fiscalUuid)}/xml`,
         "get",
         undefined,
-        textResponse
+        {
+          responseType: "text",
+          headers: {
+            Accept: "application/xml, text/xml, text/plain, */*",
+          },
+        }
       );
-      return { data };
+      const xml = typeof data === "string" ? data.trim() : "";
+      if (!xml) {
+        return Promise.reject(new Error("XML no disponible para este documento"));
+      }
+      return { data: xml };
     },
 
-    /** PDF del complemento de pago (busca en payments por fiscal o payments_uuid). */
-    getPaymentPdfUrl: (uuid: string) =>
-      `${apiBase()}/api/payment/pdf/from-uuid/${encodeURIComponent(uuid)}?inline=true`,
-
-    /** PDF de factura/NC relacionada (invoice_uuid interno). */
+    /** PDF factura/NC/complemento: GET /invoices/{uuid}/pdf */
     getInvoicePdfUrl: (invoiceUuid: string) =>
       `${apiBase()}/invoices/${encodeURIComponent(invoiceUuid)}/pdf`,
 
     getPdfDocument: (uuid: string) =>
       client.request<Blob>(
-        `api/payment/pdf/from-uuid/${encodeURIComponent(uuid)}?inline=true`,
+        `invoices/${encodeURIComponent(uuid)}/pdf`,
         "get",
         undefined,
-        blobResponse
+        {
+          ...blobResponse,
+          headers: {
+            Accept: "application/pdf, application/octet-stream, */*",
+          },
+        }
       ),
 
     publishComplement: (formData: FormData) =>

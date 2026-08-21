@@ -93,8 +93,14 @@ export function createApiClient(options?: {
         const isFormData =
             typeof FormData !== "undefined" && data instanceof FormData;
 
+        const extraHeaders =
+            extra?.headers && typeof extra.headers === "object" && !Array.isArray(extra.headers)
+                ? (extra.headers as Record<string, string>)
+                : {};
+
         const headers: Record<string, string> = {
             Accept: "application/json",
+            ...extraHeaders,
         };
 
         if (token) {
@@ -102,16 +108,17 @@ export function createApiClient(options?: {
         }
 
         if (!isFormData && method !== "get") {
-            headers["Content-Type"] = "application/json";
+            headers["Content-Type"] = extraHeaders["Content-Type"] ?? "application/json";
         }
+
+        const { headers: _ignoredHeaders, ...restExtra } = extra ?? {};
 
         const res: AxiosResponse<T> = await instance.request({
             url: `/${path.replace(/^\/+/, "")}`,
             method,
             data: isFormData ? data : data ?? undefined,
             headers,
-            responseType: extra?.responseType,
-            ...extra,
+            ...restExtra,
         });
 
         return res.data as T;

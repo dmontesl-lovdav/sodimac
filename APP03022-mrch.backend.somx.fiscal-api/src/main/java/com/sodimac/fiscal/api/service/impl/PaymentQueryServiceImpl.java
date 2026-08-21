@@ -105,6 +105,7 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
                 .tipoProveedorDescripcion(tipoProveedorDescripcion)
                 .createdAt(entity.getCreatedAt())
                 .createdBy(entity.getCreatedBy())
+                .xmlContent(entity.getXmlContent())
                 .build();
     }
 

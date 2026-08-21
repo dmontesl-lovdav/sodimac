@@ -62,6 +62,7 @@ type DataGridProps<T, F = any> = {
   enableCsv?: boolean;                 // default: true
   enablePdf?: boolean;                 // default: false
   getPdfUrl?: (row: T) => string | null | undefined; // URL del PDF
+  getPdfContent?: (row: T) => Blob | null | undefined | Promise<Blob | null | undefined>;
   csvFilename?: string;                // default: "Export"
   /** Oculta el botón CSV sobre la tabla (usar ExportCsvButton en el encabezado). */
   hideCsvToolbar?: boolean;
@@ -110,6 +111,21 @@ export function parseFiscalXmlError(xmlText: string): string {
  * Descarga el PDF haciendo un fetch real para poder detectar
  * respuestas de error (XML) en lugar de abrir el link directo.
  * ------------------------------------------------------------ */
+function downloadPdfBlob(blob: Blob, filename: string) {
+  const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = safeName;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  requestAnimationFrame(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  });
+}
+
 async function fetchAndDownloadPdf(
   pdfUrl: string | null | undefined,
   filename: string,
@@ -132,17 +148,7 @@ async function fetchAndDownloadPdf(
     }
 
     const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = safeName;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    requestAnimationFrame(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    });
+    downloadPdfBlob(blob, safeName);
   } catch {
     onError("Error al descargar el PDF. Inténtalo nuevamente.");
   }
@@ -281,6 +287,7 @@ function buildXmlRowAction<T>(
 
 function buildPdfRowAction<T>(
   getPdfUrl: ((row: T) => string | null | undefined) | undefined,
+  getPdfContent: ((row: T) => Blob | null | undefined | Promise<Blob | null | undefined>) | undefined,
   setPdfErrorMsg: (msg: string | undefined) => void,
 ): GenericRowAction<T> {
   const pdfUrlGetter: (row: T) => string | null | undefined = getPdfUrl ?? ((row: any) => {
@@ -293,6 +300,22 @@ function buildPdfRowAction<T>(
     title: "Descargar PDF",
     icon: pdfIconUrl,
     onClick: (row: T) => {
+      if (getPdfContent) {
+        Promise.resolve(getPdfContent(row))
+          .then((blob) => {
+            if (!blob || blob.size === 0) {
+              setPdfErrorMsg("Error al obtener el PDF");
+              return;
+            }
+            downloadPdfBlob(blob, `${getStandardFilename(row)}.pdf`);
+          })
+          .catch((err: unknown) => {
+            console.error(err);
+            const payload = parseFetchError(err) ?? { message: "Error al obtener el PDF" };
+            setPdfErrorMsg([payload.errorCode, payload.message].filter(Boolean).join(" - "));
+          });
+        return;
+      }
       fetchAndDownloadPdf(pdfUrlGetter(row), `${getStandardFilename(row)}.pdf`, setPdfErrorMsg);
     },
   };
@@ -327,6 +350,7 @@ function DataGridInner<T, F = any>(
     enableXml = false,
     enablePdf = false,
     getPdfUrl,
+    getPdfContent,
     getXmlContent,
     getFilename,
     rowActions: customRowActions,
@@ -514,9 +538,9 @@ function DataGridInner<T, F = any>(
   const internalRowActions: GenericRowAction<T>[] = useMemo(() => {
     const actions: GenericRowAction<T>[] = [];
     if (enableXml && canXml) actions.push(buildXmlRowAction(getXmlContent, getFilename, setXmlErrorMsg));
-    if (enablePdf && canPdf) actions.push(buildPdfRowAction(getPdfUrl, setPdfErrorMsg));
+    if (enablePdf && canPdf) actions.push(buildPdfRowAction(getPdfUrl, getPdfContent, setPdfErrorMsg));
     return actions;
-  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl]);
+  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl, getPdfContent]);
 
   const allRowActions = useMemo(
     () => [...(customRowActions ?? []), ...internalRowActions],

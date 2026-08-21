@@ -62,14 +62,24 @@ export default function ComplementContainer() {
     .map(({ action }) => action);
 
   const handleGetXmlContent = useCallback(async (row: ComplementPayment) => {
+    if (row.xmlContent?.trim()) {
+      const { data } = await client.getXmlFromContent(row.xmlContent);
+      return data;
+    }
     const uuid = row.fiscalUuid || row.paymentsUuid;
+    if (!uuid) {
+      throw new Error("XML no disponible en el registro");
+    }
     const { data } = await client.getXmlDocument(uuid);
     return data;
   }, [client]);
 
-  const getPdfUrl = useCallback((row: ComplementPayment) => {
+  const handleGetPdfContent = useCallback(async (row: ComplementPayment) => {
     const uuid = row.fiscalUuid || row.paymentsUuid;
-    return client.getPaymentPdfUrl(uuid);
+    if (!uuid) {
+      throw new Error("UUID no disponible para descargar el PDF");
+    }
+    return client.getPdfDocument(uuid);
   }, [client]);
 
   const handleFetch = useCallback(async (f: ComplementPaymentFilters) => {
@@ -234,7 +244,7 @@ export default function ComplementContainer() {
           xmlAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_XML}
           pdfAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
-          getPdfUrl={getPdfUrl}
+          getPdfContent={handleGetPdfContent}
           getFilename={(row) => row.fiscalUuid || row.paymentsUuid || "complemento"}
           rowActions={rowActions}
           filtersEmpty={!hasSearched || areFiltersEmpty(filters)}

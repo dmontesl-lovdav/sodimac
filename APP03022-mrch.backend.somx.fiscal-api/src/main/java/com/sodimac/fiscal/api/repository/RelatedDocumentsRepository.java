@@ -15,13 +15,14 @@ public interface RelatedDocumentsRepository extends JpaRepository<RelatedDocumen
 
     /**
      * Busca documentos relacionados por UUID del complemento de pago (payments).
-     *
-     * @param paymentsUuid UUID del complemento de pago
-     * @param pageable Configuración de paginación
-     * @return Página de documentos relacionados
+     * Trae la factura/NC ligada para exponer {@code fiscalUuid} (GET /invoices/{uuid}/xml).
      */
-    @Query("SELECT rd FROM RelatedDocumentsEntity rd " +
-           "WHERE rd.paymentUuid IN (SELECT p.paymentUuid FROM PaymentEntity p WHERE p.paymentsUuid = :paymentsUuid)")
+    @Query(
+            value = "SELECT rd FROM RelatedDocumentsEntity rd LEFT JOIN FETCH rd.document "
+                    + "WHERE rd.paymentUuid IN (SELECT p.paymentUuid FROM PaymentEntity p WHERE p.paymentsUuid = :paymentsUuid)",
+            countQuery = "SELECT COUNT(rd) FROM RelatedDocumentsEntity rd "
+                    + "WHERE rd.paymentUuid IN (SELECT p.paymentUuid FROM PaymentEntity p WHERE p.paymentsUuid = :paymentsUuid)"
+    )
     Page<RelatedDocumentsEntity> findByPaymentsUuid(@Param("paymentsUuid") UUID paymentsUuid, Pageable pageable);
 
 }

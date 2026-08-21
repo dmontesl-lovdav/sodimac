@@ -114,4 +114,10 @@ public class PaymentSearchResponse {
      * Usuario que creó el registro (UUID del sub del token).
      */
     private UUID createdBy;
+
+    /**
+     * XML del complemento (mismo patrón que InvoiceSearchResponse / STM-771).
+     * El grid de consulta descarga el XML desde este campo, sin un GET extra.
+     */
+    private String xmlContent;
 }

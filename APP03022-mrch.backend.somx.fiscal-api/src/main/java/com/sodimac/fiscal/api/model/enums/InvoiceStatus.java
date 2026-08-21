@@ -78,11 +78,11 @@ public enum InvoiceStatus {
 
     ERROR_ENVIO_DMS(16, "Error envío DMS",
             "Error al intentar enviar la factura de SAPITO a i213 (DMS)",
-            true, new Integer[]{7}),
+            true, new Integer[]{3}),
 
     ERROR_ENVIO_I213(17, "Error envío i213",
             "Error al enviar la factura a i213, regresa a proceso de envío",
-            true, new Integer[]{8}),
+            true, new Integer[]{3}),
 
     PAGO_MANUAL(18, "Pago Manual",
             "Orden de compra pagada manualmente",
@@ -90,11 +90,11 @@ public enum InvoiceStatus {
 
     ERROR_ENVIO_SAPITO(19, "Error envío SAPITO",
             "Error al intentar enviar el movimiento contable a la BD SAPITO",
-            false, new Integer[]{4}),
+            false, new Integer[]{3}),
 
     ERROR_CONTABILIZACION(20, "Error en la contabilización",
             "Error al intentar contabilizar la factura en SAP",
-            false, new Integer[]{4}),
+            false, new Integer[]{3}),
 
     PENDIENTE_MOV_CONTABLE(21, "Pendiente movimiento contable",
             "Factura pendiente de generar el envío de AP desde la BD Sodimac SAP",
@@ -102,7 +102,7 @@ public enum InvoiceStatus {
 
     ERROR_DESGLOSE_CONTABLE(22, "Error en el desglose contable",
             "Error al intentar contabilizar la factura por un error en la interfase",
-            true, new Integer[]{4});
+            true, new Integer[]{3});
 
     private final Integer codigo;
     private final String nombre;

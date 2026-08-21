@@ -123,6 +123,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final AddendumRepository addendumRepository;
     private final ReceptionRepository receptionRepository;
     private final RebateRepository rebateRepository;
+    private final StatusTrainRepository statusTrainRepository;
     private final VersionCatalogRepository versionCatalogRepository;
     private final RelatedCfdiRepository relatedCfdiRepository;
     private final InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
@@ -1829,7 +1830,12 @@ public class InvoiceServiceImpl implements InvoiceService {
                 InvoiceStatus currentStatus = InvoiceStatus.fromCodigo(currentStatusCode);
                 InvoiceStatus newStatus = InvoiceStatus.fromCodigo(newStatusCode);
 
-                if (!currentStatus.puedeTransicionarA(newStatusCode)) {
+                // Validación de la transición DIRECTO contra shared_catalogs.status_train (misma BD,
+                // sin util-api ni el enum): así los cambios que hace Ivan en el tren aplican sin
+                // redeploy. El enum solo se usa para los NOMBRES del mensaje.
+                boolean permitido = statusTrainRepository
+                        .existsByOptionIdAndSourceStatusAndTargetStatus(OPTION_FACTURA, currentStatusCode, newStatusCode);
+                if (!permitido) {
                     messageCatalog.throwException(FiscalMessageCode.BUS051,
                             String.format("De: %d (%s) a: %d (%s)",
                                     currentStatusCode, currentStatus.getNombre(),
@@ -1846,8 +1852,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                 CreditNoteStatus currentStatus = CreditNoteStatus.fromCodigo(currentStatusCode);
                 CreditNoteStatus newStatus = CreditNoteStatus.fromCodigo(newStatusCode);
 
-                // STM-335: Validar transición usando enum (incluye cancelación)
-                if (!currentStatus.puedeTransicionarA(newStatusCode)) {
+                // Validación DIRECTO contra shared_catalogs.status_train (option_id=2 NC), sin util-api
+                // ni el enum: los cambios del tren de Ivan aplican sin redeploy. El enum solo da nombres.
+                boolean permitido = statusTrainRepository
+                        .existsByOptionIdAndSourceStatusAndTargetStatus(OPTION_NOTA_CREDITO, currentStatusCode, newStatusCode);
+                if (!permitido) {
                     if (newStatus == CreditNoteStatus.CANCELADA) {
                         messageCatalog.throwException(FiscalMessageCode.WRN7023);
                     } else {

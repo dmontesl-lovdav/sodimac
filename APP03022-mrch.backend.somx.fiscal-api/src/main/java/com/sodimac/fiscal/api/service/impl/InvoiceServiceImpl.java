@@ -1825,6 +1825,48 @@ public class InvoiceServiceImpl implements InvoiceService {
         // Validación DIRECTO contra shared_catalogs.status_train (misma BD, sin util-api ni enum):
         // los cambios que hace Ivan en el tren aplican sin redeploy. Los nombres salen del catálogo.
         if ("I".equals(documentType)) {
+<<<<<<< HEAD
+            // Factura
+            try {
+                InvoiceStatus currentStatus = InvoiceStatus.fromCodigo(currentStatusCode);
+                InvoiceStatus newStatus = InvoiceStatus.fromCodigo(newStatusCode);
+
+                // Validación de la transición DIRECTO contra shared_catalogs.status_train (misma BD,
+                // sin util-api ni el enum): así los cambios que hace Ivan en el tren aplican sin
+                // redeploy. El enum solo se usa para los NOMBRES del mensaje.
+                boolean permitido = statusTrainRepository
+                        .existsByOptionIdAndSourceStatusAndTargetStatus(OPTION_FACTURA, currentStatusCode, newStatusCode);
+                if (!permitido) {
+                    messageCatalog.throwException(FiscalMessageCode.BUS051,
+                            String.format("De: %d (%s) a: %d (%s)",
+                                    currentStatusCode, resolveStatusName(documentType, currentStatusCode),
+                                    newStatusCode, resolveStatusName(documentType, newStatusCode)));
+                }
+            } catch (IllegalArgumentException e) {
+                messageCatalog.throwException(FiscalMessageCode.BUS049,
+                        LBL_ESTATUS + newStatusCode + ", Tipo: Factura (I)");
+            }
+
+        } else if ("E".equals(documentType)) {
+            // Nota de Crédito
+            try {
+                CreditNoteStatus currentStatus = CreditNoteStatus.fromCodigo(currentStatusCode);
+                CreditNoteStatus newStatus = CreditNoteStatus.fromCodigo(newStatusCode);
+
+                // Validación DIRECTO contra shared_catalogs.status_train (option_id=2 NC), sin util-api
+                // ni el enum: los cambios del tren de Ivan aplican sin redeploy. El enum solo da nombres.
+                boolean permitido = statusTrainRepository
+                        .existsByOptionIdAndSourceStatusAndTargetStatus(OPTION_NOTA_CREDITO, currentStatusCode, newStatusCode);
+                if (!permitido) {
+                    if (newStatus == CreditNoteStatus.CANCELADA) {
+                        messageCatalog.throwException(FiscalMessageCode.WRN7023);
+                    } else {
+                        messageCatalog.throwException(FiscalMessageCode.BUS051,
+                                String.format("De: %d (%s) a: %d (%s)",
+                                        currentStatusCode, resolveStatusName(documentType, currentStatusCode),
+                                        newStatusCode, resolveStatusName(documentType, newStatusCode)));
+                    }
+=======
             if (!statusTrainRepository.existsByOptionIdAndSourceStatusAndTargetStatus(
                     OPTION_FACTURA, currentStatusCode, newStatusCode)) {
                 messageCatalog.throwException(FiscalMessageCode.BUS051,
@@ -1845,6 +1887,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                             String.format("De: %d (%s) a: %d (%s)",
                                     currentStatusCode, resolveStatusName(documentType, currentStatusCode),
                                     newStatusCode, resolveStatusName(documentType, newStatusCode)));
+>>>>>>> develop
                 }
             }
 
@@ -3182,7 +3225,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
                 // STM-335: mensaje específico para cancelación de NC con afectación contable.
                 if ("E".equals(invoice.getDocumentType())
+<<<<<<< HEAD
+                        && CreditNoteStatus.CANCELADA.getCodigo().equals(request.getEstatusDestino())) {
+=======
                         && Integer.valueOf(NC_CANCELADA).equals(request.getEstatusDestino())) {
+>>>>>>> develop
                     return InvoiceStatusUpdateResponse.error("WRN7023",
                             "La nota de crédito no puede cancelarse porque ya cuenta con una afectación contable.");
                 }

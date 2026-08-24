@@ -1351,13 +1351,16 @@ public class InvoiceServiceImpl implements InvoiceService {
      *   <li>neto &gt; recepción y fuera de tolerancia -> sigue en 2 (faltan más NCs).</li>
      * </ul>
      */
-    // Estatus de NC según catálogo CatEstatusNotaCredito NUEVO (modelo E/F, alineado con factura):
-    // 2 = Recibido Parcial, 3 = En proceso de envío, 8 = Contabilizada (NC descuento comercial),
-    // 9 = Descontada, 11 = Cancelada. Fila 122 / decisión Ivan jul-2026.
+    // Estatus de NC según catálogo CatEstatusNotaCredito. Tren v1.0(5) (Ivan 2026-08-24):
+    // 2 = Recibida Parcial, 3 = En proceso de envío, 20 = Cancelada.
+    // OJO: NC_CONTABILIZADA (8) quedó DESALINEADO — en v1.0(5) el código 8 pasó a "Enviada" y
+    // "Contabilizada" ya no existe en el catálogo NC. El flujo de descuento comercial que usa este
+    // código (y el batch 3->9) requiere el nuevo mapeo de negocio de Ivan/Robert antes de tocarse.
     private static final int NC_RECIBIDO_PARCIAL = 2;
     private static final int NC_EN_PROCESO_ENVIO = 3;
     private static final int NC_CONTABILIZADA = 8;
-    private static final int NC_CANCELADA = 11;
+    // Tren v1.0(5) (Ivan 2026-08-24): NC "Cancelada" pasa de 11 a 20.
+    private static final int NC_CANCELADA = 20;
 
     /**
      * Estatus inicial al persistir: factura por tolerancia; NC descuento comercial (tipo 2) → 8;

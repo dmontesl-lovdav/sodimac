@@ -26,16 +26,16 @@ DELETE FROM shared_catalogs.status_train WHERE option_id IN (1, 2);
 
 WITH base AS (SELECT COALESCE(MAX(id), 0) AS m FROM shared_catalogs.status_train),
 t(opt, src, tgt) AS (VALUES
-  -- Factura (option_id 1)
+  -- Factura (option_id 1). 17->19: complemento de pago cierra el ciclo (Ivan 2026-08-25).
   (1,2,3),(1,2,20),(1,3,4),(1,3,5),(1,3,6),(1,3,20),(1,4,5),(1,4,6),
   (1,5,7),(1,5,8),(1,5,9),(1,5,10),(1,6,3),(1,7,8),(1,7,10),(1,8,11),
   (1,8,12),(1,8,13),(1,9,3),(1,10,3),(1,11,12),(1,11,13),(1,12,14),(1,12,15),
-  (1,12,16),(1,13,3),(1,14,15),(1,14,16),(1,15,18),(1,16,3),(1,18,19),
-  -- Nota de Crédito (option_id 2) — mismo set de transiciones que Factura
+  (1,12,16),(1,13,3),(1,14,15),(1,14,16),(1,15,18),(1,16,3),(1,17,19),(1,18,19),
+  -- Nota de Crédito (option_id 2) — mismo set + 17->19 (rebate cierra con complemento)
   (2,2,3),(2,2,20),(2,3,4),(2,3,5),(2,3,6),(2,3,20),(2,4,5),(2,4,6),
   (2,5,7),(2,5,8),(2,5,9),(2,5,10),(2,6,3),(2,7,8),(2,7,10),(2,8,11),
   (2,8,12),(2,8,13),(2,9,3),(2,10,3),(2,11,12),(2,11,13),(2,12,14),(2,12,15),
-  (2,12,16),(2,13,3),(2,14,15),(2,14,16),(2,15,18),(2,16,3),(2,18,19)
+  (2,12,16),(2,13,3),(2,14,15),(2,14,16),(2,15,18),(2,16,3),(2,17,19),(2,18,19)
 )
 INSERT INTO shared_catalogs.status_train (id, option_id, source_status, target_status, created_by, created_at)
 SELECT base.m + row_number() OVER (), t.opt, t.src, t.tgt, 1, now()

@@ -65,9 +65,19 @@ const exportColumns = [
         width: 20,
     },
     {
+        header: "Estatus OC",
+        key: "estatusOrdenCompra",
+        width: 18,
+    },
+    {
         header: "Recepción",
         key: "recepcion",
         width: 20,
+    },
+    {
+        header: "Estatus Recepción",
+        key: "estatusRecepcion",
+        width: 22,
     },
     {
         header: "Monto Recepción",

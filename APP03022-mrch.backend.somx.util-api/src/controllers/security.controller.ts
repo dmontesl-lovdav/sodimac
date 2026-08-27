@@ -190,6 +190,52 @@ export async function removeUserAttribute(req: Request, res: Response, next: Nex
     }
 }
 
+export async function searchRoleAttributes(req: Request, res: Response, next: NextFunction) {
+    try {
+        const data = await securityService.searchRoleAttributes(parseSearchFilters(req));
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function listRoleAttributes(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = Number(req.params.id);
+        const page = req.query.page ? Number(req.query.page) : 1;
+        const limit = req.query.limit ? Number(req.query.limit) : 10;
+        const data = await securityService.listRoleAttributes(id, page, limit, parseLangId(req));
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function createRoleAttribute(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = Number(req.params.id);
+        await securityService.createRoleAttribute(id, {
+            attributeTypeId: Number(req.body?.attributeTypeId),
+            attributeValueId: Number(req.body?.attributeValueId),
+            actorId: parseActorId(req),
+        });
+        res.status(201).json({ success: true, message: 'Atributo registrado correctamente' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function removeRoleAttribute(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = Number(req.params.id);
+        const attributeId = Number(req.params.attributeId);
+        await securityService.removeRoleAttribute(id, attributeId, parseActorId(req));
+        res.json({ success: true, message: 'Atributo eliminado correctamente' });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function listAttributeTypes(req: Request, res: Response, next: NextFunction) {
     try {
         const data = await securityService.listAttributeTypes(parseLangId(req));

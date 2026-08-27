@@ -23,6 +23,7 @@ import {
   UserRolePage,
   RolePermissionPage,
   UserAttributePage,
+  RoleAttributePage,
 } from '@/features/security';
 import { UserCatalogPage } from './features/security/UserCatalogPage';
 import { UserCatalogDetailPage } from './features/security/UserCatalogDetailPage';
@@ -142,6 +143,7 @@ const App: React.FC = () => {
               <Route path="/seguridad/rol-usuario" element={<UserRolePage />} />
               <Route path="/seguridad/rol-permiso" element={<RolePermissionPage />} />
               <Route path="/seguridad/usuario-atributo" element={<UserAttributePage />} />
+              <Route path="/seguridad/rol-atributo" element={<RoleAttributePage />} />
 
               <Route path="/util/catalogos" element={<CatalogosHubPage />} />
               <Route path="/util/catalogos/proveedores" element={<SuppliersContainer />} />

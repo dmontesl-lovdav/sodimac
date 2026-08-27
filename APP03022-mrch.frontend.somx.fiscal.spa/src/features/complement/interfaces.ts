@@ -41,6 +41,7 @@ export interface ComplementPayment {
   issuerRfc: string;
   issuerName: string;
   receiverRfc: string;
+  tipoProveedorDescripcion: string;
   receiverName: string;
   paymentDate: string;
   certificationDate?: string;

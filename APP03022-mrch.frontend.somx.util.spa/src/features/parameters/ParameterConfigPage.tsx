@@ -166,7 +166,6 @@ export const ParameterConfigPage = () => {
   const [appliedFilters, setAppliedFilters] = useState<ParameterFilters>(INITIAL_FILTERS);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -306,7 +305,6 @@ export const ParameterConfigPage = () => {
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
-    setIsExportDropdownOpen(false);
     if (appliedFilters.includeHistory && totalPages > 1) {
       setIsExporting(true);
       try {
@@ -385,9 +383,21 @@ export const ParameterConfigPage = () => {
                   obtén información detallada sobre los cambios realizados en cada uno de ellos.
                 </p>
               </div>
-              <GenericButton variant="primary" onClick={() => setIsCreating(true)}>
-                + Nuevo Parámetro
-              </GenericButton>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {hasSearched && filteredItems.length > 0 && (
+                  <>
+                    <GenericButton variant="outline" disabled={isExporting} onClick={() => handleExport('csv')}>
+                      {isExporting ? 'Exportando...' : 'Exportar CSV'}
+                    </GenericButton>
+                    <GenericButton variant="outline" disabled={isExporting} onClick={() => handleExport('xlsx')}>
+                      {isExporting ? 'Exportando...' : 'Exportar Excel'}
+                    </GenericButton>
+                  </>
+                )}
+                <GenericButton variant="primary" onClick={() => setIsCreating(true)}>
+                  + Nuevo Parámetro
+                </GenericButton>
+              </div>
             </div>
 
             <ToolbarFilters
@@ -443,23 +453,6 @@ export const ParameterConfigPage = () => {
                 <GenericButton variant="link" onClick={handleBack}>
                   Volver
                 </GenericButton>
-                {hasSearched && filteredItems.length > 0 && (
-                  <div className="param-export-dropdown">
-                    <GenericButton
-                      variant="outline"
-                      disabled={isExporting}
-                      onClick={() => !isExporting && setIsExportDropdownOpen(!isExportDropdownOpen)}
-                    >
-                      {isExporting ? 'Exportando...' : 'Exportar como ▾'}
-                    </GenericButton>
-                    {isExportDropdownOpen && (
-                      <div className="param-export-menu">
-                        <button className="param-export-item" onClick={() => handleExport('csv')}>Archivo CSV</button>
-                        <button className="param-export-item" onClick={() => handleExport('xlsx')}>Archivo XLSX</button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </>

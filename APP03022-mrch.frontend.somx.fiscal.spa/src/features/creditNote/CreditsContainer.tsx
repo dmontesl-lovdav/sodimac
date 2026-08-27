@@ -7,10 +7,11 @@ import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
 import { createCreditsClient } from "./api/CreditsClient";
-import { CREDIT_NOTE_PENDIENTE_CONTABILIZAR, CREDIT_NOTE_PROCESS_SENDED, CREDIT_NOTE_RECHAZO_CONTABLE, CreditNoteFilters, EMPTY_CREDIT_NOTE, type CreditNote } from "./interfaces";
+import { CREDIT_NOTE_PROCESS_SENDED, CreditNoteFilters, EMPTY_CREDIT_NOTE, StatusReprocesoContable, type CreditNote } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import viewIcon from '@assets/eye-show.svg';
 import trashIcon from '@assets/delete.svg';
+import reprocessIcon from '@assets/reprocess.svg';
 import { GenericModal } from "@/shared/components/ui";
 import { GenericButton } from "@/shared/components/ui";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -46,6 +47,8 @@ const columns: DataGridColumn<CreditNote>[] = [
   { header: "Estado", accessor: r => r.statusName ?? "--", exportAccessor: r => r.statusName },
 ];
 
+const MSG_REPROCESO_DEFAULT = "¿Desea volver a procesar esta nota de crédito para intentar contabilizarla nuevamente? Esta acción reemplazará el intento anterior.";
+
 export default function CreditsGrid() {
   const returningFromDetail = useFiscalListScreenSession(FISCAL_LIST_KEYS.creditNotes);
   const [filters, setFilters] = useState<CreditNoteFilters>(EMPTY_CREDIT_NOTE);
@@ -57,6 +60,9 @@ export default function CreditsGrid() {
   const [cancelConfirmRow, setCancelConfirmRow] = useState<CreditNote | null>(null);
   const [cancelConfirmMessage, setCancelConfirmMessage] = useState("");
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [reprocessConfirmOpen, setReprocessConfirmOpen] = useState(false);
+  const [reprocessConfirmRow, setReprocessConfirmRow] = useState<CreditNote | null>(null);
+  const [reprocessConfirmMessage, setReprocessConfirmMessage] = useState(MSG_REPROCESO_DEFAULT);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [processLoading, setProcessLoading] = useState(false);
   const client = createCreditsClient<{
@@ -147,6 +153,34 @@ export default function CreditsGrid() {
     if (msg) setCancelConfirmMessage(msg);
   };
 
+  const openReprocessConfirm = async (row: CreditNote) => {
+    setReprocessConfirmRow(row);
+    setReprocessConfirmOpen(true);
+    const msg = await fetchCatalogMessage("CatMsgAdvertencia", "WRN7008");
+    if (msg) setReprocessConfirmMessage(msg);
+  };
+
+  const handleReprocessConfirm = async () => {
+    if (!reprocessConfirmRow) return;
+    setReprocessConfirmOpen(false);
+    const row = reprocessConfirmRow;
+    setReprocessConfirmRow(null);
+    setProcessLoading(true);
+    setErrorMsg(null);
+    try {
+      if (!row.numeroProveedor) {
+        setErrorMsg("No se puede reprocesar la nota de crédito sin número de proveedor");
+        return;
+      }
+      await client.reprocessCreditNote(row.fiscalUuid ?? "", row.numeroProveedor);
+      setSearchToken((t) => t + 1);
+    } catch (error: unknown) {
+      setErrorMsg(getErrorMessage(error, "Error al reprocesar la nota de crédito"));
+    } finally {
+      setProcessLoading(false);
+    }
+  };
+
   const handleFetch = useCallback(async (f: CreditNoteFilters) => {
     const result = await client.getCreditNotes({ ...f, tipoDocumento: "E" });
     return result;
@@ -206,6 +240,15 @@ export default function CreditsGrid() {
           );
         },
         isDisabled: (row) => !row.relatedInvoiceUuid,
+      },
+    },
+    {
+      gate: APP_EVENT.CREDIT_NOTES.UPDATE_STATUS,
+      action: {
+        title: "Reproceso contable",
+        icon: reprocessIcon,
+        onClick: (_row) => { openReprocessConfirm(_row); },
+        isDisabled: (row) => !StatusReprocesoContable.includes(row.status ?? 0),
       },
     },
     {
@@ -302,6 +345,19 @@ export default function CreditsGrid() {
           </div>
         }
       />
+      <GenericModal
+        visible={reprocessConfirmOpen}
+        variant="confirm"
+        message={reprocessConfirmMessage}
+        confirmText="Aceptar"
+        cancelText="Cancelar"
+        onConfirm={handleReprocessConfirm}
+        onCancel={() => {
+          setReprocessConfirmOpen(false);
+          setReprocessConfirmRow(null);
+        }}
+      />
+
       <GenericModal
         visible={cancelConfirmOpen}
         variant="confirm"

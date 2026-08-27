@@ -7,6 +7,7 @@ import {
     ProfileModule,
     ProfileModuleProcess,
     ProfileUser,
+    RoleAttribute,
     RolePermission,
     RoleProvider,
     RoleUser,
@@ -58,6 +59,24 @@ export interface UserAttributeRow {
     /** user_attribute_id (unico por fila) */
     id: number;
     userId: number;
+    name: string;
+    attributeTypeId: number;
+    attributeTypeKey: string;
+    attributeTypeName: string;
+    attributeValueId: number | null;
+    attributeValueName: string | null;
+    attributeValueKey: string | null;
+    status: number;
+    createdBy: string;
+    createdAt: Date;
+    updatedBy?: string | null;
+    updatedAt?: Date | null;
+}
+
+export interface RoleAttributeRow {
+    /** role_attribute_id (unico por fila) */
+    id: number;
+    roleId: number;
     name: string;
     attributeTypeId: number;
     attributeTypeKey: string;
@@ -809,6 +828,165 @@ export async function deleteUserAttribute(idUser: number, idUserAttribute: numbe
         .andWhere('user_data_id = :userId', { userId: idUser })
         .andWhere('status = 1')
         .execute();
+}
+
+export async function listRolesWithAttributes(filters: SecuritySearchFilter): Promise<SecuritySummaryRow[]> {
+    const langId = resolveLangId(filters.langId);
+    const qb = datasource
+        .getRepository(CatalogDetail)
+        .createQueryBuilder('role')
+        .innerJoin(CatalogHeader, 'hRol', joinHeader('role', 'hRol', SECURITY_CATALOG_HEADER.rol))
+        .leftJoin(
+            RoleAttribute,
+            'roleAttribute',
+            'roleAttribute.catalog_detail_role_id = role.id AND roleAttribute.status = 1',
+        )
+        .select('role.id', 'id')
+        .addSelect(dictionaryLabelExpr('role', langId), 'name')
+        .addSelect(`''`, 'description')
+        .addSelect('role.status', 'status')
+        .addSelect('COUNT(DISTINCT roleAttribute.catalog_detail_attribute_type_id)', 'totalAssigned')
+        .addSelect('role.updated_at', 'updatedAt')
+        .addSelect('role.key', 'catalogKey')
+        .groupBy('role.id');
+
+    applyCatalogDetailFilters(qb, 'role', filters);
+    qb.addGroupBy('role.value')
+        .addGroupBy('role.key')
+        .addGroupBy('role.status')
+        .addGroupBy('role.updated_at')
+        .orderBy(dictionaryLabelExpr('role', langId), 'ASC');
+
+    return toSummaryRows(await qb.getRawMany());
+}
+
+export async function listRoleAttributes(
+    roleId: number,
+    page: number,
+    limit: number,
+    langIdParam?: number,
+): Promise<{ items: RoleAttributeRow[]; total: number }> {
+    const langId = resolveLangId(langIdParam);
+    const repo = datasource.getRepository(RoleAttribute);
+    const raw = await repo
+        .createQueryBuilder('roleAttribute')
+        .innerJoin(
+            CatalogDetail,
+            'attributeType',
+            'attributeType.id = roleAttribute.catalog_detail_attribute_type_id',
+        )
+        .innerJoin(CatalogHeader, 'hAtt', joinHeader('attributeType', 'hAtt', SECURITY_CATALOG_HEADER.tipoAtributo))
+        .leftJoin(
+            CatalogDetail,
+            'attributeValue',
+            'attributeValue.id = roleAttribute.catalog_detail_attribute_value_id',
+        )
+        .where('roleAttribute.catalog_detail_role_id = :roleId', { roleId })
+        .andWhere('roleAttribute.status = 1')
+        .select('roleAttribute.role_attribute_id', 'id')
+        .addSelect('roleAttribute.catalog_detail_role_id', 'roleId')
+        .addSelect(dictionaryLabelExpr('attributeType', langId), 'name')
+        .addSelect('roleAttribute.catalog_detail_attribute_type_id', 'attributeTypeId')
+        .addSelect('attributeType.key', 'attributeTypeKey')
+        .addSelect(dictionaryLabelExpr('attributeType', langId), 'attributeTypeName')
+        .addSelect('roleAttribute.catalog_detail_attribute_value_id', 'attributeValueId')
+        .addSelect(dictionaryLabelExpr('attributeValue', langId), 'attributeValueName')
+        .addSelect('attributeValue.key', 'attributeValueKey')
+        .addSelect('roleAttribute.status', 'status')
+        .addSelect('roleAttribute.created_by', 'createdBy')
+        .addSelect('roleAttribute.created_at', 'createdAt')
+        .addSelect('roleAttribute.updated_by', 'updatedBy')
+        .addSelect('roleAttribute.updated_at', 'updatedAt')
+        .orderBy(dictionaryLabelExpr('attributeType', langId), 'DESC')
+        .addOrderBy('roleAttribute.role_attribute_id', 'DESC')
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany<Record<string, unknown>>();
+
+    const total = await repo
+        .createQueryBuilder('roleAttribute')
+        .where('roleAttribute.catalog_detail_role_id = :roleId', { roleId })
+        .andWhere('roleAttribute.status = 1')
+        .getCount();
+
+    return {
+        items: raw.map((item) => ({
+            id: Number(item.id),
+            roleId: Number(item.roleId),
+            name: String(item.name),
+            attributeTypeId: Number(item.attributeTypeId),
+            attributeTypeKey: String(item.attributeTypeKey),
+            attributeTypeName: String(item.attributeTypeName),
+            attributeValueId: item.attributeValueId == null ? null : Number(item.attributeValueId),
+            attributeValueName: item.attributeValueName == null ? null : String(item.attributeValueName),
+            attributeValueKey: item.attributeValueKey == null ? null : String(item.attributeValueKey),
+            status: Number(item.status),
+            createdBy: String(item.createdBy),
+            createdAt: new Date(String(item.createdAt)),
+            updatedBy: item.updatedBy == null ? null : String(item.updatedBy),
+            updatedAt: item.updatedAt ? new Date(String(item.updatedAt)) : null,
+        })),
+        total,
+    };
+}
+
+export async function createRoleAttributes(
+    roleId: number,
+    attributeTypeId: number,
+    attributeValueId: number,
+    actorId: string,
+): Promise<void> {
+    const repo = datasource.getRepository(RoleAttribute);
+    const existing = await repo.findOneBy({
+        idCatalogDetailRole: roleId,
+        idCatalogDetailAttributeType: attributeTypeId,
+    });
+    if (existing) {
+        await repo.update(
+            { idRoleAttribute: existing.idRoleAttribute },
+            {
+                status: 1,
+                idCatalogDetailAttributeValue: attributeValueId,
+                updatedBy: actorId,
+                updatedAt: new Date(),
+            },
+        );
+        return;
+    }
+    await repo.save(
+        repo.create({
+            idCatalogDetailRole: roleId,
+            idCatalogDetailAttributeType: attributeTypeId,
+            idCatalogDetailAttributeValue: attributeValueId,
+            status: 1,
+            createdBy: actorId,
+        }),
+    );
+}
+
+export async function deleteRoleAttribute(idRole: number, idRoleAttribute: number, actorId: string): Promise<void> {
+    const repo = datasource.getRepository(RoleAttribute);
+    await repo
+        .createQueryBuilder()
+        .update(RoleAttribute)
+        .set({ status: 0, updatedBy: actorId, updatedAt: new Date() })
+        .where('role_attribute_id = :id', { id: idRoleAttribute })
+        .andWhere('catalog_detail_role_id = :roleId', { roleId: idRole })
+        .andWhere('status = 1')
+        .execute();
+}
+
+export async function findActiveRoleAttributeForRole(
+    idRole: number,
+    idRoleAttribute: number,
+): Promise<RoleAttribute | null> {
+    return datasource
+        .getRepository(RoleAttribute)
+        .createQueryBuilder('ra')
+        .where('ra.role_attribute_id = :id', { id: idRoleAttribute })
+        .andWhere('ra.status = 1')
+        .andWhere('ra.catalog_detail_role_id = :roleId', { roleId: idRole })
+        .getOne();
 }
 
 export async function listProfileModules(filters: SecuritySearchFilter): Promise<SecuritySummaryRow[]> {

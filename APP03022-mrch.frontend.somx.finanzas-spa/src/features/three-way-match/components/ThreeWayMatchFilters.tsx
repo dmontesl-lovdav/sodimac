@@ -56,6 +56,18 @@ type SavedTwmFilters = {
     reception?: string;
 };
 
+function isLocalBypassEnabled(): boolean {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    return [
+        'localhost',
+        '127.0.0.1',
+        '0.0.0.0',
+    ].includes(window.location.hostname);
+}
+
 /**
  * Regresa el rango completo del día hábil anterior.
  *
@@ -107,6 +119,36 @@ function previousBusinessDayRange(): DateRange {
     ];
 }
 
+function SearchButton({
+    onClick,
+}: {
+    onClick: () => void;
+}) {
+    return (
+        <GenericButton
+            variant="outlineFill"
+            onClick={onClick}
+        >
+            Buscar
+        </GenericButton>
+    );
+}
+
+function ClearButton({
+    onClick,
+}: {
+    onClick: () => void;
+}) {
+    return (
+        <GenericButton
+            variant="outlineFill"
+            onClick={onClick}
+        >
+            Limpiar
+        </GenericButton>
+    );
+}
+
 export default function ThreeWayMatchFilters({
     isAdmin,
     onSearch,
@@ -114,6 +156,9 @@ export default function ThreeWayMatchFilters({
 }: ThreeWayMatchFiltersProps) {
     const hydratedRef =
         useRef(false);
+
+    const localBypassEnabled =
+        isLocalBypassEnabled();
 
     const [dateRange, setDateRange] =
         useState<DateRange>(
@@ -334,13 +379,41 @@ export default function ThreeWayMatchFilters({
                         )
                         : '',
 
-                supplier: (() => { const v = supplier.trim(); return v === "" ? undefined : v; })(),
+                supplier: (() => {
+                    const value =
+                        supplier.trim();
 
-                supplierType: (() => { const v = supplierType.trim(); return v === "" ? undefined : v; })(),
+                    return value === ''
+                        ? undefined
+                        : value;
+                })(),
 
-                po: (() => { const v = po.trim(); return v === "" ? undefined : v; })(),
+                supplierType: (() => {
+                    const value =
+                        supplierType.trim();
 
-                reception: (() => { const v = reception.trim(); return v === "" ? undefined : v; })(),
+                    return value === ''
+                        ? undefined
+                        : value;
+                })(),
+
+                po: (() => {
+                    const value =
+                        po.trim();
+
+                    return value === ''
+                        ? undefined
+                        : value;
+                })(),
+
+                reception: (() => {
+                    const value =
+                        reception.trim();
+
+                    return value === ''
+                        ? undefined
+                        : value;
+                })(),
             });
         };
 
@@ -438,35 +511,43 @@ export default function ThreeWayMatchFilters({
                     </div>
 
                     <div className="finz-filter-actions">
-                        <PermissionGate
-                            appEvent={
-                                APP_EVENT
-                                    .THREE_WAY_MATCH
-                                    .SEARCH
-                            }
-                        >
-                            <GenericButton
-                                variant="outlineFill"
-                                onClick={handleSearch}
-                            >
-                                Buscar
-                            </GenericButton>
-                        </PermissionGate>
+                        {localBypassEnabled ? (
+                            <>
+                                <SearchButton
+                                    onClick={handleSearch}
+                                />
 
-                        <PermissionGate
-                            appEvent={
-                                APP_EVENT
-                                    .THREE_WAY_MATCH
-                                    .CLEAR_FILTERS
-                            }
-                        >
-                            <GenericButton
-                                variant="outlineFill"
-                                onClick={handleClear}
-                            >
-                                Limpiar
-                            </GenericButton>
-                        </PermissionGate>
+                                <ClearButton
+                                    onClick={handleClear}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <PermissionGate
+                                    appEvent={
+                                        APP_EVENT
+                                            .THREE_WAY_MATCH
+                                            .SEARCH
+                                    }
+                                >
+                                    <SearchButton
+                                        onClick={handleSearch}
+                                    />
+                                </PermissionGate>
+
+                                <PermissionGate
+                                    appEvent={
+                                        APP_EVENT
+                                            .THREE_WAY_MATCH
+                                            .CLEAR_FILTERS
+                                    }
+                                >
+                                    <ClearButton
+                                        onClick={handleClear}
+                                    />
+                                </PermissionGate>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

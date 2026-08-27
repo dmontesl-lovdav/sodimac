@@ -3,6 +3,12 @@ export const CREDIT_NOTE_PENDIENTE_CONTABILIZAR = 2;
 export const CREDIT_NOTE_RECHAZO_CONTABLE = 11;
 export const CREDIT_NOTE_PROCESS_SENDED = 3;
 
+/** Estatus en los que se permite reproceso contable (6, 9, 10, 13, 16). */
+export const StatusReprocesoContable = [6, 9, 10, 13, 16];
+
+/** Destino del reproceso: pendiente de contabilizar / en proceso de envío. */
+export const CREDIT_NOTE_STATUS_PENDIENTE_CONTABILIZACION = 3;
+
 export interface CreditNoteFilters {
   relatedInvoiceUuid: string;
   rfcEmisor: string;

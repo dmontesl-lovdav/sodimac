@@ -134,11 +134,16 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
 
     const supplierList = await sharedCatalogService.getAllSuppliers(tipoProveedorList);
 
-    const activeSupplierNumbers = await sharedCatalogService.getActiveSupplierNumbers();
+    const activeSupplierNumbers = await sharedCatalogService.getActiveSupplierNumbers(
+        sharedCatalogService.SUPPLIER_TYPE_TRANSPORTE_ID,
+    );
     let vendorFilter = activeSupplierNumbers;
     if (allowedVendors && allowedVendors.length > 0) {
         const allowed = new Set(allowedVendors);
-        vendorFilter = activeSupplierNumbers.filter((n) => allowed.has(n));
+        vendorFilter = vendorFilter.filter((n) => allowed.has(n));
+    }
+    if (q.vendorNumber !== undefined) {
+        vendorFilter = vendorFilter.filter((n) => n === q.vendorNumber);
     }
 
     const filter: FindOptionsWhere<ShippingGuide> = buildCriteria(q);

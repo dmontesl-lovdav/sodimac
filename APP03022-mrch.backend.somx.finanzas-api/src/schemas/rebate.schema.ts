@@ -254,10 +254,19 @@ export const RebateFilterSchema =
                 .default(0),
     });
 
-export const IdParamSchema =
-    z.object({
-        id: UUID,
-    });
+/**
+ * OpenAPI documenta el path como `id`. Express monta `/:uuid`.
+ * Internamente siempre se expone `uuid`.
+ */
+export const IdParamSchema = z
+    .object({
+        id: UUID.optional(),
+        uuid: UUID.optional(),
+    })
+    .transform((params) => ({
+        uuid: params.uuid ?? params.id,
+    }))
+    .pipe(z.object({ uuid: UUID }));
 
 export type CreateRebateDto =
     z.infer<

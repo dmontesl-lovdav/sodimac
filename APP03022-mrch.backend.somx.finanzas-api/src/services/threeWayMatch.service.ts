@@ -48,6 +48,18 @@ type InvoiceStepStats = {
     amount: number;
 };
 
+type BaseRecordData = {
+    numeroProveedor: string;
+    ordenCompra: string;
+    fechaOrdenCompra: Date;
+    montoOrdenCompra: number | null;
+    estatusOrdenCompra: number | null;
+    recepcion: string;
+    fechaRecepcion: Date;
+    montoRecepcion: number | null;
+    estatusRecepcion: number | null;
+};
+
 function createStepStats(): StepStats {
     return {
         total: 0,
@@ -83,6 +95,277 @@ async function saveControlFigures(
     );
 }
 
+function buildBaseRecordData(
+    reception: Reception,
+): BaseRecordData | null {
+    if (!reception.purchaseOrder) {
+        return null;
+    }
+
+    return {
+        numeroProveedor:
+            reception.purchaseOrder.supplierNumber.toString(),
+
+        ordenCompra:
+            reception.purchaseOrder.orderNumber,
+
+        fechaOrdenCompra:
+            reception.purchaseOrder.purchaseOrderDate ??
+            reception.purchaseOrder.createdAt,
+
+        montoOrdenCompra:
+            reception.purchaseOrder.amount ?? null,
+
+        estatusOrdenCompra:
+            reception.purchaseOrder.status != null
+                ? Number(reception.purchaseOrder.status)
+                : null,
+
+        recepcion:
+            reception.receptionNumber,
+
+        fechaRecepcion:
+            reception.receptionDate ??
+            reception.createdAt,
+
+        montoRecepcion:
+            reception.amount ?? null,
+
+        estatusRecepcion:
+            reception.status != null
+                ? Number(reception.status)
+                : null,
+    };
+}
+
+async function findExistingRecords(
+    manager: EntityManager,
+    data: BaseRecordData,
+): Promise<ThreeWayMatch[]> {
+    return manager.find(
+        ThreeWayMatch,
+        {
+            where: {
+                numeroProveedor:
+                    data.numeroProveedor,
+                ordenCompra:
+                    data.ordenCompra,
+                recepcion:
+                    data.recepcion,
+            },
+            order: {
+                estatus: "DESC",
+                updatedAt: "DESC",
+                createdAt: "DESC",
+            },
+        },
+    );
+}
+
+/**
+ * Conserva el registro más importante para la misma llave de negocio.
+ *
+ * Prioridad:
+ * 1. Registro pagado.
+ * 2. Registro más reciente.
+ *
+ * Si encuentra duplicados no pagados, los elimina para evitar que
+ * la pantalla tome un registro incompleto.
+ */
+async function resolveExistingRecord(
+    runner: QueryRunner,
+    executionId: string,
+    records: ThreeWayMatch[],
+): Promise<ThreeWayMatch | null> {
+    if (records.length === 0) {
+        return null;
+    }
+
+    const firstRecord = records[0];
+
+    if (!firstRecord) {
+        return null;
+    }
+
+    const paidRecord =
+        records.find(
+            (record) =>
+                record.estatus ===
+                TwmStatus.PAGADA,
+        );
+
+    const selectedRecord: ThreeWayMatch =
+        paidRecord ?? firstRecord;
+
+    const duplicateRecords =
+        records.filter(
+            (record) =>
+                record.id !== selectedRecord.id &&
+                record.estatus !== TwmStatus.PAGADA,
+        );
+
+    for (const duplicate of duplicateRecords) {
+        await runner.manager.delete(
+            ThreeWayMatch,
+            {
+                id: duplicate.id,
+            },
+        );
+
+        await logs.log(
+            executionId,
+            "WARN",
+            "TWM_DUPLICATE_REMOVED",
+            {
+                proveedor:
+                    duplicate.numeroProveedor,
+                oc:
+                    duplicate.ordenCompra,
+                recepcion:
+                    duplicate.recepcion,
+                estatus:
+                    duplicate.estatus,
+                duplicateId:
+                    duplicate.id,
+                keptId:
+                    selectedRecord.id,
+            },
+        );
+    }
+
+    return selectedRecord;
+}
+
+/**
+ * Actualiza datos base sin perder datos de factura,
+ * contabilización o pago ya relacionados.
+ */
+function applyBaseRecordData(
+    target: ThreeWayMatch,
+    data: BaseRecordData,
+): void {
+    target.numeroProveedor =
+        data.numeroProveedor;
+
+    target.ordenCompra =
+        data.ordenCompra;
+
+    target.fechaOrdenCompra =
+        data.fechaOrdenCompra;
+
+    target.montoOrdenCompra =
+        data.montoOrdenCompra;
+
+    target.estatusOrdenCompra =
+        data.estatusOrdenCompra;
+
+    target.recepcion =
+        data.recepcion;
+
+    target.fechaRecepcion =
+        data.fechaRecepcion;
+
+    target.montoRecepcion =
+        data.montoRecepcion;
+
+    target.estatusRecepcion =
+        data.estatusRecepcion;
+
+    if (
+        target.estatus === null ||
+        target.estatus === undefined
+    ) {
+        target.estatus =
+            TwmStatus.BASE;
+    }
+}
+
+async function saveBaseReception(
+    runner: QueryRunner,
+    executionId: string,
+    data: BaseRecordData,
+): Promise<ThreeWayMatch> {
+    const existingRecords =
+        await findExistingRecords(
+            runner.manager,
+            data,
+        );
+
+    const existingRecord =
+        await resolveExistingRecord(
+            runner,
+            executionId,
+            existingRecords,
+        );
+
+    if (existingRecord) {
+        applyBaseRecordData(
+            existingRecord,
+            data,
+        );
+
+        await runner.manager.save(
+            existingRecord,
+        );
+
+        await logs.log(
+            executionId,
+            "INFO",
+            "TWM_BASE_ALREADY_EXISTS",
+            {
+                proveedor:
+                    existingRecord.numeroProveedor,
+                oc:
+                    existingRecord.ordenCompra,
+                recepcion:
+                    existingRecord.recepcion,
+                estatus:
+                    existingRecord.estatus,
+                id:
+                    existingRecord.id,
+            },
+        );
+
+        return existingRecord;
+    }
+
+    const record =
+        runner.manager.create(
+            ThreeWayMatch,
+            {
+                ...data,
+                estatus:
+                    TwmStatus.BASE,
+                fechaRegistro:
+                    new Date(),
+            },
+        );
+
+    await runner.manager.save(record);
+
+    await logs.log(
+        executionId,
+        "INFO",
+        "TWM_CREATED_BASE",
+        {
+            proveedor:
+                record.numeroProveedor,
+            oc:
+                record.ordenCompra,
+            recepcion:
+                record.recepcion,
+            estatus:
+                record.estatus,
+            estatusOrdenCompra:
+                record.estatusOrdenCompra,
+            estatusRecepcion:
+                record.estatusRecepcion,
+        },
+    );
+
+    return record;
+}
+
 async function publishBaseReceptions(
     runner: QueryRunner,
     executionId: string,
@@ -99,49 +382,19 @@ async function publishBaseReceptions(
         .getMany();
 
     for (const reception of receptions) {
-        if (!reception.purchaseOrder) {
+        const baseData =
+            buildBaseRecordData(reception);
+
+        if (!baseData) {
             continue;
         }
 
-        const record = runner.manager.create(
-            ThreeWayMatch,
-            {
-                numeroProveedor:
-                    reception.purchaseOrder.supplierNumber.toString(),
-                ordenCompra:
-                    reception.purchaseOrder.orderNumber,
-                fechaOrdenCompra:
-                    reception.purchaseOrder.purchaseOrderDate ??
-                    reception.purchaseOrder.createdAt,
-                montoOrdenCompra:
-                    reception.purchaseOrder.amount ?? null,
-                recepcion:
-                    reception.receptionNumber,
-                fechaRecepcion:
-                    reception.receptionDate ??
-                    reception.createdAt,
-                montoRecepcion:
-                    reception.amount ?? null,
-                estatus:
-                    TwmStatus.BASE,
-                fechaRegistro:
-                    new Date(),
-            },
-        );
-
-        await runner.manager.save(record);
-
-        await logs.log(
-            executionId,
-            "INFO",
-            "TWM_CREATED_BASE",
-            {
-                proveedor: record.numeroProveedor,
-                oc: record.ordenCompra,
-                recepcion: record.recepcion,
-                estatus: record.estatus,
-            },
-        );
+        const record =
+            await saveBaseReception(
+                runner,
+                executionId,
+                baseData,
+            );
 
         stats.total++;
         stats.amount += Number(
@@ -249,7 +502,8 @@ async function markWithoutInvoice(
             id: base.id,
         },
         {
-            estatus: TwmStatus.SIN_FACTURA,
+            estatus:
+                TwmStatus.SIN_FACTURA,
         },
     );
 
@@ -258,9 +512,12 @@ async function markWithoutInvoice(
         "WARN",
         eventName,
         {
-            recepcion: base.recepcion,
-            oc: base.ordenCompra,
-            proveedor: base.numeroProveedor,
+            recepcion:
+                base.recepcion,
+            oc:
+                base.ordenCompra,
+            proveedor:
+                base.numeroProveedor,
             ...extraData,
         },
     );
@@ -304,7 +561,8 @@ async function attachInvoice(
     await runner.manager.update(
         ThreeWayMatch,
         {
-            id: base.id,
+            id:
+                base.id,
         },
         {
             serie:
@@ -347,22 +605,26 @@ async function relateInvoices(
     runner: QueryRunner,
     executionId: string,
 ): Promise<InvoiceStepStats> {
-    const stats = createInvoiceStepStats();
+    const stats =
+        createInvoiceStepStats();
 
-    const bases = await runner.manager.find(
-        ThreeWayMatch,
-        {
-            where: {
-                estatus: TwmStatus.BASE,
+    const bases =
+        await runner.manager.find(
+            ThreeWayMatch,
+            {
+                where: {
+                    estatus:
+                        TwmStatus.BASE,
+                },
             },
-        },
-    );
+        );
 
     for (const base of bases) {
-        const addendum = await findAddendum(
-            runner.manager,
-            base,
-        );
+        const addendum =
+            await findAddendum(
+                runner.manager,
+                base,
+            );
 
         if (!addendum?.invoiceUuid) {
             await markWithoutInvoice(
@@ -376,10 +638,11 @@ async function relateInvoices(
             continue;
         }
 
-        const invoice = await findInvoice(
-            runner.manager,
-            addendum.invoiceUuid,
-        );
+        const invoice =
+            await findInvoice(
+                runner.manager,
+                addendum.invoiceUuid,
+            );
 
         if (!invoice) {
             await markWithoutInvoice(
@@ -473,13 +736,17 @@ function applySapDocument(
 
     item.fechaContable =
         sapDocument.createdAt
-            ? new Date(sapDocument.createdAt)
+            ? new Date(
+                sapDocument.createdAt,
+            )
             : null;
 
     item.montoContable =
         sapDocument.amount !== null &&
             sapDocument.amount !== undefined
-            ? Number(sapDocument.amount)
+            ? Number(
+                sapDocument.amount,
+            )
             : null;
 
     item.estatus =
@@ -490,17 +757,19 @@ async function accountInvoices(
     runner: QueryRunner,
     executionId: string,
 ): Promise<StepStats> {
-    const stats = createStepStats();
+    const stats =
+        createStepStats();
 
-    const invoices = await runner.manager.find(
-        ThreeWayMatch,
-        {
-            where: {
-                estatus:
-                    TwmStatus.CON_FACTURA,
+    const invoices =
+        await runner.manager.find(
+            ThreeWayMatch,
+            {
+                where: {
+                    estatus:
+                        TwmStatus.CON_FACTURA,
+                },
             },
-        },
-    );
+        );
 
     for (const item of invoices) {
         const sapDocument =
@@ -518,7 +787,9 @@ async function accountInvoices(
             sapDocument,
         );
 
-        await runner.manager.save(item);
+        await runner.manager.save(
+            item,
+        );
 
         await logs.log(
             executionId,
@@ -549,12 +820,95 @@ function applyPayment(
 ): void {
     item.referenciaPago =
         payment.documentReference ?? null;
+
     item.fechaPago =
         payment.paymentDate ?? null;
+
     item.montoPago =
         Number(payment.amount);
+
+    if (
+        !item.documentoSap &&
+        payment.sapDocument
+    ) {
+        item.documentoSap =
+            payment.sapDocument;
+    }
+
     item.estatus =
         TwmStatus.PAGADA;
+}
+
+async function findPayment(
+    manager: EntityManager,
+    item: ThreeWayMatch,
+): Promise<FinanzasPayment | null> {
+    const vendorNumber =
+        Number(item.numeroProveedor);
+
+    const documentoSap =
+        item.documentoSap?.trim();
+
+    const uuid =
+        item.uuid?.trim();
+
+    if (!documentoSap && !uuid) {
+        return null;
+    }
+
+    const qb = manager
+        .createQueryBuilder(
+            FinanzasPayment,
+            "payment",
+        )
+        .where(
+            "payment.vendorNumber = :vendorNumber",
+            {
+                vendorNumber,
+            },
+        );
+
+    if (documentoSap && uuid) {
+        qb.andWhere(
+            `
+                (
+                    payment.documentNumber = :documentoSap
+                    OR payment.sapDocument = :documentoSap
+                    OR payment.uuid = :uuid
+                )
+            `,
+            {
+                documentoSap,
+                uuid,
+            },
+        );
+    } else if (documentoSap) {
+        qb.andWhere(
+            `
+                (
+                    payment.documentNumber = :documentoSap
+                    OR payment.sapDocument = :documentoSap
+                )
+            `,
+            {
+                documentoSap,
+            },
+        );
+    } else if (uuid) {
+        qb.andWhere(
+            "payment.uuid = :uuid",
+            {
+                uuid,
+            },
+        );
+    }
+
+    return qb
+        .orderBy(
+            "payment.createdAt",
+            "DESC",
+        )
+        .getOne();
 }
 
 async function registerPaymentStatus(
@@ -562,21 +916,11 @@ async function registerPaymentStatus(
     executionId: string,
     item: ThreeWayMatch,
 ): Promise<number | null> {
-    if (!item.documentoSap) {
-        return null;
-    }
-
-    const payment = await runner.manager.findOne(
-        FinanzasPayment,
-        {
-            where: {
-                vendorNumber:
-                    Number(item.numeroProveedor),
-                documentNumber:
-                    item.documentoSap,
-            },
-        },
-    );
+    const payment =
+        await findPayment(
+            runner.manager,
+            item,
+        );
 
     if (!payment) {
         await logs.log(
@@ -586,8 +930,14 @@ async function registerPaymentStatus(
             {
                 proveedor:
                     item.numeroProveedor,
+                oc:
+                    item.ordenCompra,
+                recepcion:
+                    item.recepcion,
                 documentoSap:
                     item.documentoSap,
+                uuid:
+                    item.uuid,
             },
         );
 
@@ -599,7 +949,9 @@ async function registerPaymentStatus(
         payment,
     );
 
-    await runner.manager.save(item);
+    await runner.manager.save(
+        item,
+    );
 
     await logs.log(
         executionId,
@@ -608,8 +960,14 @@ async function registerPaymentStatus(
         {
             proveedor:
                 item.numeroProveedor,
+            oc:
+                item.ordenCompra,
+            recepcion:
+                item.recepcion,
             documentoSap:
                 item.documentoSap,
+            uuid:
+                item.uuid,
             referenciaPago:
                 item.referenciaPago,
             montoPago:
@@ -624,20 +982,27 @@ async function registerPayments(
     runner: QueryRunner,
     executionId: string,
 ): Promise<StepStats> {
-    const stats = createStepStats();
+    const stats =
+        createStepStats();
 
-    const accountedInvoices =
+    const payableItems =
         await runner.manager.find(
             ThreeWayMatch,
             {
-                where: {
-                    estatus:
-                        TwmStatus.CONTABILIZADA,
-                },
+                where: [
+                    {
+                        estatus:
+                            TwmStatus.CONTABILIZADA,
+                    },
+                    {
+                        estatus:
+                            TwmStatus.CON_FACTURA,
+                    },
+                ],
             },
         );
 
-    for (const item of accountedInvoices) {
+    for (const item of payableItems) {
         const paymentAmount =
             await registerPaymentStatus(
                 runner,
@@ -650,7 +1015,9 @@ async function registerPayments(
         }
 
         stats.total++;
-        stats.amount += Number(paymentAmount);
+        stats.amount += Number(
+            paymentAmount,
+        );
     }
 
     return stats;
@@ -691,13 +1058,16 @@ async function executeSteps(
     executionId: string,
     fechaBase: Date,
 ): Promise<void> {
-    await repo.deleteNotPaid(fechaBase);
-
-    const step1 = await publishBaseReceptions(
-        runner,
-        executionId,
+    await repo.deleteNotPaid(
         fechaBase,
     );
+
+    const step1 =
+        await publishBaseReceptions(
+            runner,
+            executionId,
+            fechaBase,
+        );
 
     await saveControlFigures(
         runner.manager,
@@ -707,10 +1077,11 @@ async function executeSteps(
         step1.amount,
     );
 
-    const step2 = await relateInvoices(
-        runner,
-        executionId,
-    );
+    const step2 =
+        await relateInvoices(
+            runner,
+            executionId,
+        );
 
     await saveControlFigures(
         runner.manager,
@@ -721,10 +1092,11 @@ async function executeSteps(
         step2.amount,
     );
 
-    const step3 = await accountInvoices(
-        runner,
-        executionId,
-    );
+    const step3 =
+        await accountInvoices(
+            runner,
+            executionId,
+        );
 
     await saveControlFigures(
         runner.manager,
@@ -734,10 +1106,11 @@ async function executeSteps(
         step3.amount,
     );
 
-    const step4 = await registerPayments(
-        runner,
-        executionId,
-    );
+    const step4 =
+        await registerPayments(
+            runner,
+            executionId,
+        );
 
     await logFinalSummary(
         runner,
@@ -786,17 +1159,20 @@ export async function runThreeWayMatch(
     fechaBase: Date,
     intento: number = 1,
 ): Promise<void> {
-    const dataSource = getDataSource();
+    const dataSource =
+        getDataSource();
+
     const runner =
         dataSource.createQueryRunner();
 
     await runner.connect();
     await runner.startTransaction();
 
-    const execution = await ejec.createRun(
-        fechaBase,
-        intento,
-    );
+    const execution =
+        await ejec.createRun(
+            fechaBase,
+            intento,
+        );
 
     try {
         await executeSteps(

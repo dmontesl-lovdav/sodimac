@@ -842,7 +842,7 @@ export default function CatalogsContainer() {
               <div style={styles.footer}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {selectedIds.length > 0 && (
-                    <span style={{ fontSize: '0.8125rem', color: '#0066CC' }}>
+                    <span style={{ fontSize: '0.8125rem', color: '#002D4C' }}>
                       {selectedIds.length} seleccionado(s)
                     </span>
                   )}

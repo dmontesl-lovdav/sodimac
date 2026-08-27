@@ -37,6 +37,7 @@ function toDto(c: CatalogConversion): ConversionDto {
         valorElementoOrigen: src?.value ?? null,
         estatusElementoOrigen: src ? statusLabel(src.status) : null,
         catalogoElementoOrigen: src?.header?.name ?? null,
+        idCatalogoElementoOrigen: src?.header?.id ?? null,
         idElemento: tgt?.id ?? null,
         elemento: tgt?.key ?? null,
         valor: tgt?.value ?? null,

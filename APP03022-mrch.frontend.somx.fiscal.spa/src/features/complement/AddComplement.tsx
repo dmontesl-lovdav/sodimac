@@ -458,7 +458,9 @@ function AddComplementContent() {
               {isUploading && !published ? "Publicando…" : "Publicar"}
             </GenericButton>
           </PermissionGate>
-          <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
+         {
+          /*
+           <PermissionGate appEvent={APP_EVENT.PAYMENT_COMPLEMENTS.PUBLISH}>
             <GenericButton
               variant="outlineFill"
               disabled={!canRelate}
@@ -469,6 +471,8 @@ function AddComplementContent() {
               Relacionar
             </GenericButton>
           </PermissionGate>
+          */
+         }
           <GenericButton
             variant="outlineFill"
             disabled={isUploading || published}

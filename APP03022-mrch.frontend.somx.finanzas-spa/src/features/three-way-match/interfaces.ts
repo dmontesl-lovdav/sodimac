@@ -5,11 +5,15 @@ export interface ThreeWayMatchRecord {
 
     ordenCompra: string;
     fechaOrdenCompra: string;
-    montoOrdenCompra: string;
+    montoOrdenCompra: string | null;
+
+    estatusOrdenCompra?: number | string | null;
 
     recepcion: string;
     fechaRecepcion: string;
-    montoRecepcion: string;
+    montoRecepcion: string | null;
+
+    estatusRecepcion?: number | string | null;
 
     serie: string | null;
     folio: string | null;
@@ -31,11 +35,17 @@ export interface ThreeWayMatchRecord {
     fechaPago: string | null;
     montoPago: string | null;
 
-    /** Razón social del proveedor (si el backend la envía). */
+    /** Razón social del proveedor si el backend la envía. */
     nombreProveedor?: string | null;
 
-    currency: string;
-    exchangeRate: string;
+    /** Descripción del tipo de proveedor si el backend la envía. */
+    tipoProveedor?: string | null;
+
+    /** ID del tipo de proveedor como respaldo si el backend lo envía. */
+    tipoProveedorId?: string | number | null;
+
+    currency: string | null;
+    exchangeRate: string | null;
     estatus: number;
 
     createdBy: string | null;
@@ -43,6 +53,7 @@ export interface ThreeWayMatchRecord {
     updatedBy: string | null;
     updatedAt: string;
 }
+
 export interface ThreeWayMatchFiltersProps {
     isAdmin: boolean;
     onSearch: (filters: {

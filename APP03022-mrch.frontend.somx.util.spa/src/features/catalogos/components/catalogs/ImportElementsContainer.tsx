@@ -43,7 +43,7 @@ const styles = {
     marginBottom: '1.5rem',
   },
   breadcrumbLink: {
-    color: '#0066CC',
+    color: '#002D4C',
     textDecoration: 'none',
     cursor: 'pointer',
   },
@@ -79,7 +79,7 @@ const styles = {
   stepNumber: {
     width: '32px',
     height: '32px',
-    backgroundColor: '#0066CC',
+    backgroundColor: '#002D4C',
     color: '#ffffff',
     borderRadius: '50%',
     display: 'flex',
@@ -92,7 +92,7 @@ const styles = {
   stepLine: {
     width: '2px',
     flexGrow: 1,
-    backgroundColor: '#0066CC',
+    backgroundColor: '#002D4C',
     marginTop: '0.5rem',
   },
   stepContent: {
@@ -129,9 +129,9 @@ const styles = {
     padding: '0.625rem 1.25rem',
     fontSize: '0.875rem',
     fontWeight: 500,
-    color: '#0066CC',
+    color: '#002D4C',
     backgroundColor: 'transparent',
-    border: '1px solid #0066CC',
+    border: '1px solid #002D4C',
     borderRadius: '0.375rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -144,8 +144,8 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: 500,
     color: '#ffffff',
-    backgroundColor: '#0066CC',
-    border: '1px solid #0066CC',
+    backgroundColor: '#002D4C',
+    border: '1px solid #002D4C',
     borderRadius: '0.375rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -173,7 +173,7 @@ const styles = {
     marginTop: '1rem',
   },
   dropzoneActive: {
-    borderColor: '#0066CC',
+    borderColor: '#002D4C',
     backgroundColor: '#f0f9ff',
   },
   dropzoneDisabled: {
@@ -185,7 +185,7 @@ const styles = {
     width: '48px',
     height: '48px',
     margin: '0 auto 1rem',
-    color: '#0066CC',
+    color: '#002D4C',
   },
   dropzoneText: {
     fontSize: '0.875rem',
@@ -193,7 +193,7 @@ const styles = {
     marginBottom: '0.25rem',
   },
   dropzoneLink: {
-    color: '#0066CC',
+    color: '#002D4C',
     textDecoration: 'underline',
     cursor: 'pointer',
   },

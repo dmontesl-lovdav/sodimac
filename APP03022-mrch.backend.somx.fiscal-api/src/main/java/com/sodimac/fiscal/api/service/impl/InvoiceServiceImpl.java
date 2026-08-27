@@ -1351,19 +1351,17 @@ public class InvoiceServiceImpl implements InvoiceService {
      *   <li>neto &gt; recepción y fuera de tolerancia -> sigue en 2 (faltan más NCs).</li>
      * </ul>
      */
-    // Estatus de NC según catálogo CatEstatusNotaCredito. Tren v1.0(5) (Ivan 2026-08-24):
-    // 2 = Recibida Parcial, 3 = En proceso de envío, 17 = Pendiente de complemento, 20 = Cancelada.
+    // Estatus de NC según catálogo CatEstatusNotaCredito NUEVO (modelo E/F, alineado con factura):
+    // 2 = Recibido Parcial, 3 = En proceso de envío, 8 = Contabilizada (NC descuento comercial),
+    // 9 = Descontada, 11 = Cancelada. Fila 122 / decisión Ivan jul-2026.
     private static final int NC_RECIBIDO_PARCIAL = 2;
     private static final int NC_EN_PROCESO_ENVIO = 3;
-    // NC de descuento comercial (rebate) nace directo en "Pendiente de complemento" (Ivan v1.0(5)):
-    // no pasa por desglose/contabilización, solo espera el complemento de pago.
-    private static final int NC_DESCUENTO_PENDIENTE_COMPLEMENTO = 17;
-    // Tren v1.0(5) (Ivan 2026-08-24): NC "Cancelada" pasa de 11 a 20.
-    private static final int NC_CANCELADA = 20;
+    private static final int NC_CONTABILIZADA = 8;
+    private static final int NC_CANCELADA = 11;
 
     /**
-     * Estatus inicial al persistir: factura por tolerancia; NC descuento comercial (tipo 2) → 17
-     * (Pendiente de complemento, Ivan v1.0(5)); resto de NC → 3.
+     * Estatus inicial al persistir: factura por tolerancia; NC descuento comercial (tipo 2) → 8;
+     * resto de NC → 3.
      */
     private static int resolveInitialDocumentStatus(
             TipoDocumentoFiscal tipoDocumento, int statusFactura, String tipoNotaCredito) {
@@ -1371,7 +1369,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             return statusFactura;
         }
         if (TIPO_NC_DESCUENTO_COMERCIAL.equals(tipoNotaCredito)) {
-            return NC_DESCUENTO_PENDIENTE_COMPLEMENTO;
+            return NC_CONTABILIZADA;
         }
         return NC_EN_PROCESO_ENVIO;
     }

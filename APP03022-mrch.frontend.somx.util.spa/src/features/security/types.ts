@@ -88,6 +88,30 @@ export interface CreateUserAttributePayload {
   attributeValueId: number;
 }
 
+export interface RoleAttribute extends CatalogItem {
+  roleId: number;
+  attributeTypeId: number;
+  attributeTypeName: string;
+  attributeValueId?: number;
+  attributeValueName?: string;
+  attributeValueKey?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}
+
+export interface PagedRoleAttributes {
+  items: RoleAttribute[];
+  total: number;
+}
+
+export interface CreateRoleAttributePayload {
+  roleId: number;
+  attributeTypeId: number;
+  attributeValueId: number;
+}
+
 export interface UserCatalogSearchFilters {
   startDate: string;
   endDate: string;

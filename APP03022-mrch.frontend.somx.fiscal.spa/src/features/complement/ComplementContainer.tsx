@@ -30,6 +30,7 @@ const columns: DataGridColumn<ComplementPayment>[] = [
   { header: "Fecha Registro", accessor: r => r.createdAt ? formatDate(r.createdAt) : "N/D", exportAccessor: r => r.createdAt },
   { header: "RFC Emisor", accessor: r => r.issuerRfc ?? "--", exportAccessor: r => r.issuerRfc },
   { header: "Nombre Emisor", accessor: r => r.issuerName ?? "--", exportAccessor: r => r.issuerName },
+  { header: "Tipo Proveedor", accessor: r => r.tipoProveedorDescripcion ?? "--", exportAccessor: r => r.tipoProveedorDescripcion },
   { header: "Facturas Relacionadas", accessor: r => r.relatedDocumentsCount ?? "--", exportAccessor: r => r.relatedDocumentsCount },
   { header: "Estatus", accessor: r => r.statusDescription ?? "--", exportAccessor: r => r.statusDescription },
 ];

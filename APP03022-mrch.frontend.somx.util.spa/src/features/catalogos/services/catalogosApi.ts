@@ -372,6 +372,7 @@ export interface Conversion {
   estatusElementoOrigen: string;
   fechaRegistroElementoOrigen: string;
   catalogoElementoOrigen: string;
+  idCatalogoElementoOrigen?: number | null;
   idElementoDestino: number;
   idElemento: number;
   elemento: string;

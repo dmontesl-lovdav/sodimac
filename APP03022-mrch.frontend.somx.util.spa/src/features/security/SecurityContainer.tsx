@@ -65,11 +65,11 @@ const cards: AccessCard[] = [
     requiredAnyApp: [APP_KEYS.ROLES_ADMIN, APP_KEYS.PERMISSIONS_ADMIN],
   },
   {
-    title: 'Usuario Atributo',
-    desc: 'Relación entre usuarios y atributos existentes en el sistema.',
-    to: '/seguridad/usuario-atributo',
+    title: 'Rol Atributo',
+    desc: 'Relación entre roles y atributos existentes en el sistema.',
+    to: '/seguridad/rol-atributo',
     icon: iconSecurity,
-    requiredAnyApp: [APP_KEYS.PROFILE_ADMIN],
+    requiredAnyApp: [APP_KEYS.ROLES_ADMIN, APP_KEYS.PROFILE_ADMIN],
   },
 ];
 

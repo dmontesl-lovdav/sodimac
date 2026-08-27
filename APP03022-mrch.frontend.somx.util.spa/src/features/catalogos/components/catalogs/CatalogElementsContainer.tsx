@@ -55,7 +55,7 @@ const styles = {
     marginBottom: '1.5rem',
   },
   breadcrumbLink: {
-    color: '#0066CC',
+    color: '#002D4C',
     textDecoration: 'none',
     cursor: 'pointer',
   },
@@ -159,9 +159,9 @@ const styles = {
     padding: '0.5rem 1rem',
     fontSize: '0.875rem',
     fontWeight: 500,
-    color: '#0066CC',
+    color: '#002D4C',
     backgroundColor: 'transparent',
-    border: '1px solid #0066CC',
+    border: '1px solid #002D4C',
     borderRadius: '0.375rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -174,11 +174,24 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: 500,
     color: '#ffffff',
-    backgroundColor: '#0066CC',
-    border: '1px solid #0066CC',
+    backgroundColor: '#002D4C',
+    border: '1px solid #002D4C',
     borderRadius: '0.375rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
+  },
+  secondaryBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.625rem 1rem',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
   },
   ghostBtn: {
     display: 'inline-flex',
@@ -314,7 +327,7 @@ const styles = {
     borderRadius: '20px',
   },
   toggleSliderActive: {
-    backgroundColor: '#0066CC',
+    backgroundColor: '#002D4C',
   },
   toggleSliderBefore: {
     position: 'absolute' as const,
@@ -361,9 +374,9 @@ const styles = {
     color: '#374151',
   },
   paginationBtnActive: {
-    backgroundColor: '#0066CC',
+    backgroundColor: '#002D4C',
     color: '#ffffff',
-    borderColor: '#0066CC',
+    borderColor: '#002D4C',
   },
   paginationBtnDisabled: {
     opacity: 0.5,
@@ -422,6 +435,15 @@ const ElementsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
     <path d="M9 12h6M9 16h6" />
+  </svg>
+);
+
+const ExportFileIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="12" y1="18" x2="12" y2="12" />
+    <polyline points="9 15 12 18 15 15" />
   </svg>
 );
 
@@ -840,6 +862,28 @@ export default function CatalogElementsContainer() {
             que se realicen a los mismos.
           </p>
           <div style={styles.buttonsGroup}>
+            {showResults && filteredElements.length > 0 && (
+              <>
+                <button
+                  style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                  onClick={() => handleExport('csv')}
+                  disabled={isExporting}
+                  title="Exportar a CSV"
+                >
+                  <ExportFileIcon />
+                  Exportar CSV
+                </button>
+                <button
+                  style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                  onClick={() => handleExport('xlsx')}
+                  disabled={isExporting}
+                  title="Exportar a Excel"
+                >
+                  <ExportFileIcon />
+                  Exportar Excel
+                </button>
+              </>
+            )}
             <button
               style={styles.outlineBtn}
               onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/importar`)}
@@ -1094,7 +1138,7 @@ export default function CatalogElementsContainer() {
                         <button
                           style={styles.actionBtn}
                           title="Ver Conversión"
-                          onClick={() => navigate(`/util/catalogos/elementos/${el.id}/conversiones`)}
+                          onClick={() => navigate(`/util/catalogos/elementos/${el.id}/conversiones`, { state: { catalogId: id } })}
                         >
                           <ViewIcon />
                         </button>
@@ -1172,30 +1216,6 @@ export default function CatalogElementsContainer() {
           >
             Volver
           </button>
-          {showResults && filteredElements.length > 0 && (
-            <select
-              style={{
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.25rem',
-                fontSize: '0.875rem',
-                backgroundColor: '#ffffff',
-                cursor: isExporting ? 'not-allowed' : 'pointer',
-                opacity: isExporting ? 0.6 : 1,
-              }}
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleExport(e.target.value as 'xlsx' | 'csv');
-                }
-              }}
-              disabled={isExporting}
-            >
-              <option value="">{isExporting ? '⏳ Exportando...' : '📋 Exportar como'}</option>
-              <option value="xlsx">Hoja de cálculo (XLSX)</option>
-              <option value="csv">CSV</option>
-            </select>
-          )}
         </div>
       </div>
       {ModalNode}

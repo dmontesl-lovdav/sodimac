@@ -5,6 +5,7 @@ interface BreadcrumbItem {
     to?: string;
     state?: unknown;
     external?: boolean;
+    onClick?: () => void;
 }
 
 interface BreadcrumbProps {

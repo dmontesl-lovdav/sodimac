@@ -3,6 +3,7 @@ interface BreadcrumbItem {
     to?: string;
     state?: unknown;
     external?: boolean;
+    onClick?: () => void;
 }
 
 const HOME_PATH = (typeof process !== 'undefined' && process.env?.FBC_HOME) || '/';

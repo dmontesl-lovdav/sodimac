@@ -1,4 +1,3 @@
-// src/entities/ThreeWayMatch.entity.ts
 import {
     Entity,
     Column,
@@ -14,7 +13,6 @@ import {
     { unique: true }
 )
 export class ThreeWayMatch {
-
     @PrimaryGeneratedColumn("uuid", { name: "three_way_match_uuid" })
     id!: string;
 
@@ -27,8 +25,17 @@ export class ThreeWayMatch {
     @Column({ name: "purchase_order_date", type: "date" })
     fechaOrdenCompra!: Date;
 
-    @Column({ name: "purchase_order_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "purchase_order_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoOrdenCompra!: number | null;
+
+    @Column({ name: "purchase_order_status", type: "int", nullable: true })
+    estatusOrdenCompra!: number | null;
 
     @Column({ name: "reception_number", type: "varchar", length: 50 })
     recepcion!: string;
@@ -36,8 +43,17 @@ export class ThreeWayMatch {
     @Column({ name: "reception_date", type: "date" })
     fechaRecepcion!: Date;
 
-    @Column({ name: "reception_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "reception_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoRecepcion!: number | null;
+
+    @Column({ name: "reception_status", type: "int", nullable: true })
+    estatusRecepcion!: number | null;
 
     @Column({ name: "invoice_series", type: "varchar", length: 20, nullable: true })
     serie!: string | null;
@@ -51,13 +67,25 @@ export class ThreeWayMatch {
     @Column({ name: "invoice_stamp_date", type: "date", nullable: true })
     fechaTimbrado!: Date | null;
 
-    @Column({ name: "invoice_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "invoice_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoFactura!: number | null;
 
     @Column({ name: "credit_note_number", type: "varchar", length: 50, nullable: true })
     numeroNotaCredito!: string | null;
 
-    @Column({ name: "credit_note_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "credit_note_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoNotaCredito!: number | null;
 
     @Column({ name: "document_number", type: "varchar", length: 50, nullable: true })
@@ -69,7 +97,13 @@ export class ThreeWayMatch {
     @Column({ name: "accounting_date", type: "date", nullable: true })
     fechaContable!: Date | null;
 
-    @Column({ name: "accounting_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "accounting_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoContable!: number | null;
 
     @Column({ name: "payment_reference", type: "varchar", length: 50, nullable: true })
@@ -78,13 +112,25 @@ export class ThreeWayMatch {
     @Column({ name: "payment_date", type: "date", nullable: true })
     fechaPago!: Date | null;
 
-    @Column({ name: "payment_amount", type: "numeric", precision: 18, scale: 2, nullable: true })
+    @Column({
+        name: "payment_amount",
+        type: "numeric",
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
     montoPago!: number | null;
 
     @Column({ name: "currency", type: "varchar", length: 10, nullable: true })
     currency!: string | null;
 
-    @Column({ name: "exchange_rate", type: "numeric", precision: 18, scale: 6, nullable: true })
+    @Column({
+        name: "exchange_rate",
+        type: "numeric",
+        precision: 18,
+        scale: 6,
+        nullable: true,
+    })
     exchangeRate!: number | null;
 
     @Column({ name: "status", type: "int" })

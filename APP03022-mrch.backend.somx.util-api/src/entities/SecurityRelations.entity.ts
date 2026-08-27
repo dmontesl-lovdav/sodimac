@@ -237,3 +237,33 @@ export class UserAttribute {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date;
 }
+
+@Entity({ schema: 'core_security', name: 'role_attribute' })
+export class RoleAttribute {
+    @PrimaryGeneratedColumn({ name: 'role_attribute_id' })
+    idRoleAttribute!: number;
+
+    @Column({ name: 'catalog_detail_role_id', type: 'integer' })
+    idCatalogDetailRole!: number;
+
+    @Column({ name: 'catalog_detail_attribute_type_id', type: 'integer' })
+    idCatalogDetailAttributeType!: number;
+
+    @Column({ name: 'catalog_detail_attribute_value_id', type: 'integer', nullable: true })
+    idCatalogDetailAttributeValue?: number | null;
+
+    @Column({ name: 'status', type: 'smallint', default: 1 })
+    status!: number;
+
+    @Column({ name: 'created_by', type: 'varchar', length: 80, default: () => "'SYSTEM'" })
+    createdBy!: string;
+
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+    createdAt!: Date;
+
+    @Column({ name: 'updated_by', type: 'varchar', length: 80, nullable: true })
+    updatedBy?: string;
+
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
+    updatedAt?: Date;
+}

@@ -131,9 +131,9 @@ export default function NewConversionForm() {
     card: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '2rem', maxWidth: '700px' },
     stepContainer: { display: 'flex', marginBottom: '1.5rem' },
     stepIndicator: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginRight: '1rem' },
-    stepNumber: { width: 32, height: 32, backgroundColor: '#0066CC', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem', flexShrink: 0 },
+    stepNumber: { width: 32, height: 32, backgroundColor: '#002D4C', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem', flexShrink: 0 },
     stepNumberDisabled: { backgroundColor: '#cbd5e1' },
-    stepLine: { width: 2, flexGrow: 1, backgroundColor: '#0066CC', marginTop: '0.5rem' },
+    stepLine: { width: 2, flexGrow: 1, backgroundColor: '#002D4C', marginTop: '0.5rem' },
     stepLineDisabled: { backgroundColor: '#cbd5e1' },
     stepContent: { flex: 1, paddingBottom: '1rem' },
     stepTitle: { fontSize: '1rem', fontWeight: 600, color: '#1e293b', cursor: 'pointer', marginBottom: '0.25rem' },
@@ -150,7 +150,7 @@ export default function NewConversionForm() {
     fieldError: { fontSize: '0.75rem', color: '#dc2626', marginTop: '0.25rem' },
     footer: { display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' },
     btn: { padding: '0.5rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', border: 'none' },
-    primaryBtn: { backgroundColor: '#0066CC', color: '#fff' },
+    primaryBtn: { backgroundColor: '#002D4C', color: '#fff' },
     ghostBtn: { backgroundColor: 'transparent', color: '#64748b', textDecoration: 'underline', border: 'none' },
     modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
     modalBox: { backgroundColor: '#fff', borderRadius: '0.75rem', padding: '1.5rem', maxWidth: '400px', width: '90%' },
@@ -275,9 +275,10 @@ export default function NewConversionForm() {
       {showExitModal && (
         <div style={S.modal}>
           <div style={S.modalBox}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.5rem' }}>¿Desea salir?</h3>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>
               La información ingresada para registrar la conversión se perderá. ¿Desea continuar?
-            </h3>
+            </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button style={{ ...S.btn, border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151' }} onClick={() => setShowExitModal(false)}>No</button>
               <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones`)}>Sí</button>

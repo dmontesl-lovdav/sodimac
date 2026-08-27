@@ -233,7 +233,7 @@ const styles: Record<string, React.CSSProperties> = {
         borderRadius: '0.25rem',
         cursor: 'pointer',
         fontSize: '0.875rem',
-        color: '#0066CC',
+        color: '#002D4C',
     },
     navBtnDisabled: {
         cursor: 'not-allowed',
@@ -249,7 +249,7 @@ const styles: Record<string, React.CSSProperties> = {
         borderRadius: '0.25rem',
         cursor: 'pointer',
         fontSize: '0.8125rem',
-        color: '#0066CC',
+        color: '#002D4C',
     },
     pageBtnActive: {
         background: '#003865',

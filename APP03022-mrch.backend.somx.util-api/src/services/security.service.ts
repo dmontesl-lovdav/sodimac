@@ -294,6 +294,62 @@ export async function removeUserAttribute(idUser: number, attributeId: number, a
     await securityRepo.deleteUserAttribute(idUser, attributeId, String(actorId));
 }
 
+export async function searchRoleAttributes(filters: SecurityFilters) {
+    ensureDateRange(filters);
+    const items = await securityRepo.listRolesWithAttributes(withDefaultActiveStatus(filters));
+    return {
+        items,
+        warningCode: items.length ? undefined : 'WRN7002',
+        warningMessage: items.length ? undefined : 'No existe informacion con los filtros de busqueda capturados.',
+    };
+}
+
+export async function listRoleAttributes(idRole: number, page = 1, limit = 10, langId?: number) {
+    const role = await securityRepo.findActiveRoleById(idRole);
+    if (!role) {
+        throw new HttpException(404, `No existe el rol ${idRole}`);
+    }
+
+    return securityRepo.listRoleAttributes(idRole, page, limit, langId);
+}
+
+export async function createRoleAttribute(idRole: number, payload: CreateUserAttributePayload) {
+    const role = await securityRepo.findActiveRoleById(idRole);
+    if (!role) {
+        throw new HttpException(404, `No existe el rol ${idRole}`);
+    }
+
+    const attributeType = await securityRepo.findActiveAttributeTypeById(payload.attributeTypeId);
+    if (!attributeType) {
+        throw new HttpException(404, `No existe el tipo de atributo ${payload.attributeTypeId}`);
+    }
+
+    if (!Number.isInteger(payload.attributeValueId) || Number(payload.attributeValueId) <= 0) {
+        throw new HttpException(400, 'attributeValueId debe ser un entero positivo');
+    }
+
+    const attributeValue = await securityRepo.findActiveCatalogDetailById(payload.attributeValueId);
+    if (!attributeValue) {
+        throw new HttpException(404, `No existe el valor de atributo ${payload.attributeValueId}`);
+    }
+
+    await securityRepo.createRoleAttributes(idRole, payload.attributeTypeId, payload.attributeValueId, payload.actorId);
+}
+
+export async function removeRoleAttribute(idRole: number, attributeId: number, actorId: string) {
+    const role = await securityRepo.findActiveRoleById(idRole);
+    if (!role) {
+        throw new HttpException(404, `No existe el rol ${idRole}`);
+    }
+
+    const attributeRow = await securityRepo.findActiveRoleAttributeForRole(idRole, attributeId);
+    if (!attributeRow) {
+        throw new HttpException(404, `No existe el atributo ${attributeId} para el rol ${idRole}`);
+    }
+
+    await securityRepo.deleteRoleAttribute(idRole, attributeId, String(actorId));
+}
+
 export async function listAttributeTypes(langId?: number) {
     return securityRepo.getAttributeTypes(langId);
 }

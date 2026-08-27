@@ -7,6 +7,7 @@ export interface ConversionDto {
     valorElementoOrigen?: string | null;
     estatusElementoOrigen?: string | null;
     catalogoElementoOrigen?: string | null;
+    idCatalogoElementoOrigen?: number | null;
     idElemento?: number | null;
     elemento?: string | null;
     valor?: string | null;

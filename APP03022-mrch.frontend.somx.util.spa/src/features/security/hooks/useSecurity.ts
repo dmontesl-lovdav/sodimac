@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { securityService } from '../services/securityService';
-import type { CreateUserAttributePayload, SecurityFilters } from '../types';
+import type { CreateRoleAttributePayload, CreateUserAttributePayload, SecurityFilters } from '../types';
 
 export const securityKeys = {
   all: ['security'] as const,
@@ -8,6 +8,9 @@ export const securityKeys = {
   roleUser: (filters: SecurityFilters) => [...securityKeys.all, 'role-user', filters] as const,
   rolePermission: (filters: SecurityFilters) => [...securityKeys.all, 'role-permission', filters] as const,
   userAttribute: (filters: SecurityFilters) => [...securityKeys.all, 'user-attribute', filters] as const,
+  roleAttribute: (filters: SecurityFilters) => [...securityKeys.all, 'role-attribute', filters] as const,
+  roleAttributes: (id: number, page: number, pageSize: number) =>
+    [...securityKeys.all, 'role-attributes', id, page, pageSize] as const,
   profileModule: (filters: SecurityFilters) => [...securityKeys.all, 'profile-module', filters] as const,
   profileModuleProcess: (filters: SecurityFilters) => [...securityKeys.all, 'profile-module-process', filters] as const,
   applicationEvent: (filters: SecurityFilters) => [...securityKeys.all, 'application-event', filters] as const,
@@ -219,6 +222,45 @@ export const useDeleteUserAttribute = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: securityKeys.all });
       queryClient.invalidateQueries({ queryKey: [...securityKeys.all, 'user-attributes', variables.userId] });
+    },
+  });
+};
+
+export const useRoleAttributeSearch = (filters: SecurityFilters, enabled: boolean) =>
+  useQuery({
+    queryKey: securityKeys.roleAttribute(filters),
+    queryFn: () => securityService.searchRoleAttributes(filters),
+    enabled,
+  });
+
+export const useRoleAttributes = (roleId: number, page: number, pageSize: number, enabled: boolean) =>
+  useQuery({
+    queryKey: securityKeys.roleAttributes(roleId, page, pageSize),
+    queryFn: () => securityService.getRoleAttributes(roleId, page, pageSize),
+    enabled,
+  });
+
+export const useCreateRoleAttribute = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateRoleAttributePayload) => securityService.createRoleAttribute(payload),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: securityKeys.all });
+      await queryClient.invalidateQueries({
+        queryKey: [...securityKeys.all, 'role-attributes', variables.roleId],
+      });
+    },
+  });
+};
+
+export const useDeleteRoleAttribute = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roleId, attributeId }: { roleId: number; attributeId: number }) =>
+      securityService.deleteRoleAttribute(roleId, attributeId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: securityKeys.all });
+      queryClient.invalidateQueries({ queryKey: [...securityKeys.all, 'role-attributes', variables.roleId] });
     },
   });
 };

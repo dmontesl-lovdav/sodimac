@@ -1,4 +1,4 @@
-import { In } from "typeorm";
+import { In, type FindOptionsWhere } from "typeorm";
 import { getDataSource } from "@/config/typeorm-datasource.js";
 import { SharedCatalogHeader } from "@/entities/SharedCatalogHeader.entity.js";
 import { SharedCatalogDetail } from "@/entities/SharedCatalogDetail.entity.js";
@@ -135,11 +135,21 @@ export async function getShippingGuideCatalogContext() {
     };
 }
 
+/** Catálogo `shared_catalogs.supplier_type`: código TRANSPORTE. */
+export const SUPPLIER_TYPE_TRANSPORTE_ID = 2;
+
 /** Proveedores activos (`status = 1`). Excluye eliminados (`status = 2`). */
-export async function getActiveSupplierNumbers(): Promise<number[]> {
+export async function getActiveSupplierNumbers(
+    supplierTypeId?: number,
+): Promise<number[]> {
     const supplierRepo = getDataSource().getRepository(SharedSupplier);
+    const where: FindOptionsWhere<SharedSupplier> = { status: 1 };
+    if (supplierTypeId !== undefined) {
+        where.supplierTypeId = supplierTypeId;
+    }
+
     const suppliers = await supplierRepo.find({
-        where: { status: 1 },
+        where,
         select: ["supplierNumber"],
         order: { id: "ASC" },
     });

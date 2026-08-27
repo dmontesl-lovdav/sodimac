@@ -126,8 +126,8 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 // GET /rebates/:id
 export async function getById(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
-        const row = await svc.get(id);
+        const { uuid } = IdParamSchema.parse(req.params);
+        const row = await svc.get(uuid);
         if (!row) return res.status(404).json({ message: "Not found" });
         res.json(row);
     } catch (e) { next(e); }
@@ -145,9 +145,9 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 // PUT /rebates/:id
 export async function update(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
+        const { uuid } = IdParamSchema.parse(req.params);
         const dto: UpdateRebateDto = UpdateRebateSchema.parse(req.body);
-        const updated = await svc.update(id, dto);
+        const updated = await svc.update(uuid, dto);
         if (!updated) return res.status(404).json({ message: "Not found" });
         res.json(updated);
     } catch (e) { next(e); }
@@ -156,8 +156,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 // DELETE /rebates/:id
 export async function remove(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
-        await svc.remove(id);
+        const { uuid } = IdParamSchema.parse(req.params);
+        await svc.remove(uuid);
         res.status(204).end();
     } catch (e) { next(e); }
 }

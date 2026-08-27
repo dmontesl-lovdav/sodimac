@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { conversionService } from '@features/catalogos/services/catalogosApi';
 import { exportToCSV, exportToExcel } from '@features/catalogos/utils/export';
 import { Pagination } from '@shared/components/ui/pagination';
@@ -43,17 +43,46 @@ const buildExportTimestamp = (): string => {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 };
 
+const ExportFileIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="12" y1="18" x2="12" y2="12" />
+    <polyline points="9 15 12 18 15 15" />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+
 export default function ConversionsContainer() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const catalogId = (location.state as { catalogId?: string | number } | null)?.catalogId;
   const { elementId } = useParams<{ elementId: string }>();
 
   const [conversions, setConversions] = useState<any[]>([]);
   const [sourceInfo, setSourceInfo] = useState<any>(null);
+  const [sourceCatalogId, setSourceCatalogId] = useState<string | number | undefined>(undefined);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<{ type: string; data?: any } | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -65,6 +94,7 @@ export default function ConversionsContainer() {
   const performSearch = useCallback(async (page = 1, overridePageSize?: number) => {
     if (!elementId) return;
     setIsLoading(true);
+    setHasSearched(true);
     try {
       const effectivePageSize = overridePageSize ?? pageSize;
       const params: any = { idElementoOrigen: parseInt(elementId), page, pageSize: effectivePageSize, sortBy: 'createdAt', sortDir: 'desc' };
@@ -74,6 +104,8 @@ export default function ConversionsContainer() {
       if (filters.catalogoOrigen) params.catalogoOrigen = filters.catalogoOrigen;
       if (filters.estatus) params.estatus = filters.estatus === 'Activo' ? 1 : 0;
       const res = await conversionService.search(params);
+      const firstItem = res.items?.[0] as { idCatalogoElementoOrigen?: number | null } | undefined;
+      if (firstItem?.idCatalogoElementoOrigen != null) setSourceCatalogId(firstItem.idCatalogoElementoOrigen);
       setConversions(res.items || []);
       setTotalResults(res.total || 0);
       setTotalPages(res.totalPages || 0);
@@ -87,6 +119,8 @@ export default function ConversionsContainer() {
     if (elementId) {
       conversionService.search({ idElementoOrigen: parseInt(elementId), page: 1, pageSize: 1 })
         .then((res: any) => {
+          const firstItem = res.items?.[0];
+          if (firstItem?.idCatalogoElementoOrigen != null) setSourceCatalogId(firstItem.idCatalogoElementoOrigen);
           if (res.sourceElement) {
             setSourceInfo(res.sourceElement);
           } else if (res.items && res.items.length > 0) {
@@ -104,11 +138,14 @@ export default function ConversionsContainer() {
     }
   }, [elementId]);
 
-  useEffect(() => { performSearch(1); }, [elementId]);
-
   const handleClear = () => {
     setFilters({ idElemento: '', elemento: '', valor: '', catalogoOrigen: '', estatus: '' });
-    performSearch(1);
+    setConversions([]);
+    setTotalResults(0);
+    setTotalPages(0);
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+    setHasSearched(false);
   };
 
   const handleDelete = async (id: number) => {
@@ -216,9 +253,13 @@ export default function ConversionsContainer() {
     input: { padding: '0.4rem 0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.8rem' },
     select: { padding: '0.4rem 0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.8rem', backgroundColor: '#fff' },
     btn: { padding: '0.5rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', border: 'none' },
-    primaryBtn: { backgroundColor: '#0066CC', color: '#fff' },
-    outlineBtn: { backgroundColor: '#fff', color: '#0066CC', border: '1px solid #0066CC' },
+    primaryBtn: { backgroundColor: '#002D4C', color: '#fff' },
+    outlineBtn: { backgroundColor: '#fff', color: '#002D4C', border: '1px solid #002D4C' },
+    secondaryBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', backgroundColor: '#fff', color: '#1f2937', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' },
     dangerBtn: { backgroundColor: '#fff', color: '#dc2626', border: '1px solid #dc2626' },
+    modalTitle: { fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.5rem' },
+    modalSubtitle: { fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' },
+    emptyState: { padding: '3rem', textAlign: 'center', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e5e7eb' },
     ghostBtn: { backgroundColor: 'transparent', color: '#64748b', textDecoration: 'underline', border: 'none' },
     table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' },
     th: { padding: '0.4rem 0.3rem', textAlign: 'left', fontWeight: 500, color: '#002d4c', backgroundColor: '#eaf5fc', borderBottom: '1px solid #e5e7eb', fontSize: '0.65rem', whiteSpace: 'nowrap' },
@@ -229,7 +270,7 @@ export default function ConversionsContainer() {
     footer: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' },
     pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' },
     pageBtn: { padding: '0.25rem 0.5rem', border: '1px solid #d1d5db', borderRadius: '0.25rem', fontSize: '0.8rem', cursor: 'pointer', backgroundColor: '#fff' },
-    pageBtnActive: { backgroundColor: '#0066CC', color: '#fff', borderColor: '#0066CC' },
+    pageBtnActive: { backgroundColor: '#002D4C', color: '#fff', borderColor: '#002D4C' },
     modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
     modalBox: { backgroundColor: '#fff', borderRadius: '0.75rem', padding: '1.5rem', maxWidth: '420px', width: '90%' },
     msg: { padding: '0.75rem 1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' },
@@ -237,13 +278,24 @@ export default function ConversionsContainer() {
 
   const formatDate = (d: any) => d ? new Date(d).toLocaleDateString('es-MX') : '-';
 
+  const effectiveCatalogId = catalogId ?? sourceCatalogId;
+  const goToElementos = () => {
+    if (effectiveCatalogId != null) {
+      navigate(`/util/catalogos/catalogs/${effectiveCatalogId}/elementos`);
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <div style={S.container}>
       <Breadcrumb
         items={withFinanceBreadcrumb([
           { label: 'Gestión de Catálogos', to: '/util/catalogos' },
           { label: 'Catálogos', to: '/util/catalogos/catalogs' },
-          { label: 'Elementos' },
+          effectiveCatalogId != null
+            ? { label: 'Elementos', to: `/util/catalogos/catalogs/${effectiveCatalogId}/elementos` }
+            : { label: 'Elementos', onClick: goToElementos },
           { label: 'Conversiones' },
         ])}
       />
@@ -254,6 +306,8 @@ export default function ConversionsContainer() {
           <button style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }} onClick={() => setMessage(null)}>✕</button>
         </div>
       )}
+
+      <h1 style={S.title}>Conversiones</h1>
 
       {sourceInfo && (
         <div style={S.card}>
@@ -269,13 +323,35 @@ export default function ConversionsContainer() {
         </div>
       )}
 
-      <h1 style={S.title}>Conversiones</h1>
-      <p style={S.desc}>Busca y agrega o elimina elementos de conversión, define sus valores y obtén información sobre cambios que se realicen a los mismos.</p>
-
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/nueva`)}>+ Nueva Conversión</button>
-        <button style={{ ...S.btn, ...S.dangerBtn, opacity: selectedIds.size === 0 ? 0.5 : 1 }} disabled={selectedIds.size === 0}
-          onClick={() => setModal({ type: 'deleteMultiple' })}>🗑 Borrar Seleccionados ({selectedIds.size})</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <p style={{ ...S.desc, marginBottom: 0, maxWidth: '520px' }}>Busca y agrega o elimina elementos de conversión, define sus valores y obtén información sobre cambios que se realicen a los mismos.</p>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {hasSearched && conversions.length > 0 && (
+            <>
+              <button
+                style={{ ...S.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                onClick={() => handleExport('csv')}
+                disabled={isExporting}
+                title="Exportar a CSV"
+              >
+                <ExportFileIcon />
+                Exportar CSV
+              </button>
+              <button
+                style={{ ...S.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                onClick={() => handleExport('xlsx')}
+                disabled={isExporting}
+                title="Exportar a Excel"
+              >
+                <ExportFileIcon />
+                Exportar Excel
+              </button>
+            </>
+          )}
+          <button style={{ ...S.btn, ...S.outlineBtn, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', opacity: selectedIds.size === 0 ? 0.5 : 1, cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer' }} disabled={selectedIds.size === 0}
+            onClick={() => setModal({ type: 'deleteMultiple' })}><TrashIcon /> Borrar Seleccionados ({selectedIds.size})</button>
+          <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/nueva`)}>+ Nueva Conversión</button>
+        </div>
       </div>
 
       <div style={S.filterRow}>
@@ -293,6 +369,9 @@ export default function ConversionsContainer() {
       </div>
 
       {(() => {
+        if (!hasSearched) {
+          return <div style={S.emptyState}>Utiliza el filtro para realizar una búsqueda de conversiones.</div>;
+        }
         if (isLoading) {
           return <p style={{ textAlign: 'center', color: '#64748b' }}>Cargando...</p>;
         }
@@ -328,16 +407,16 @@ export default function ConversionsContainer() {
                     <td style={S.td}>{c.idUsuarioActualizacion || '-'}</td>
                     <td style={S.td}>{formatDate(c.fechaActualizacion)}</td>
                     <td style={S.td}>
-                      <button type="button" style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#0066CC' : '#cbd5e1', cursor: 'pointer', position: 'relative', border: 'none', padding: 0, appearance: 'none' }}
+                      <button type="button" style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#002D4C' : '#cbd5e1', cursor: 'pointer', position: 'relative', border: 'none', padding: 0, appearance: 'none' }}
                         aria-label="Cambiar conversión principal"
                         onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}>
                         <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 2, left: c.esPrincipal ? 18 : 2, transition: '0.2s' }} />
                       </button>
                     </td>
-                    <td style={S.td}><button style={{ ...S.btn, ...S.ghostBtn, padding: '0.25rem', fontSize: '0.7rem' }}
-                      onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}>✏️</button></td>
-                    <td style={S.td}><button style={{ ...S.btn, ...S.ghostBtn, padding: '0.25rem', fontSize: '0.7rem', color: '#dc2626' }}
-                      onClick={() => setModal({ type: 'delete', data: c })}>🗑</button></td>
+                    <td style={S.td}><button type="button" title="Editar" aria-label="Editar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#002D4C', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}><EditIcon /></button></td>
+                    <td style={S.td}><button type="button" title="Borrar" aria-label="Borrar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#dc2626', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      onClick={() => setModal({ type: 'delete', data: c })}><TrashIcon /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -363,50 +442,42 @@ export default function ConversionsContainer() {
         {exportError && (
           <span style={{ fontSize: '0.75rem', color: '#dc2626', marginRight: 'auto' }}>{exportError}</span>
         )}
-        <button style={{ ...S.btn, ...S.ghostBtn }} onClick={() => navigate(-1)}>Volver</button>
-        {conversions.length > 0 && (
-          <select
-            style={{
-              padding: '0.5rem 0.75rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '0.25rem',
-              fontSize: '0.875rem',
-              backgroundColor: '#fff',
-              cursor: isExporting ? 'not-allowed' : 'pointer',
-              opacity: isExporting ? 0.6 : 1,
-            }}
-            value=""
-            onChange={(e) => { if (e.target.value) handleExport(e.target.value as 'xlsx' | 'csv'); }}
-            disabled={isExporting}
-          >
-            <option value="">{isExporting ? '⏳ Exportando...' : '📋 Exportar como'}</option>
-            <option value="xlsx">Hoja de cálculo (XLSX)</option>
-            <option value="csv">CSV</option>
-          </select>
-        )}
+        <button style={{ ...S.btn, ...S.ghostBtn }} onClick={goToElementos}>Volver</button>
       </div>
 
-      {modal && (
-        <div style={S.modal}>
-          <div style={S.modalBox}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
-              {modal.type === 'delete' && '¿Está seguro de eliminar la conversión ' + modal.data?.idConversion + '?'}
-              {modal.type === 'deleteMultiple' && `¿Está seguro de eliminar ${selectedIds.size} conversiones seleccionadas?`}
-              {modal.type === 'setPrincipal' && `¿Desea marcar la conversión ${modal.data?.idConversion} como principal? Esta acción reemplazará la conversión principal actual.`}
-              {modal.type === 'unsetPrincipal' && `¿Desea desactivar la conversión ${modal.data?.idConversion} como principal? Esta acción desactivará la conversión principal actual.`}
-            </h3>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button style={{ ...S.btn, border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151' }} onClick={() => setModal(null)}>No</button>
-              <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => {
-                if (modal.type === 'delete') handleDelete(modal.data.idConversion);
-                else if (modal.type === 'deleteMultiple') handleDeleteMultiple();
-                else if (modal.type === 'setPrincipal') handleSetPrincipal(modal.data.idConversion, true);
-                else if (modal.type === 'unsetPrincipal') handleSetPrincipal(modal.data.idConversion, false);
-              }}>Sí</button>
+      {modal && (() => {
+        const titleByType: Record<string, string> = {
+          delete: `¿Está seguro de eliminar la conversión ${modal.data?.idConversion}?`,
+          deleteMultiple: `¿Está seguro de eliminar ${selectedIds.size} conversiones seleccionadas?`,
+          setPrincipal: `¿Desea marcar la conversión ${modal.data?.idConversion} como principal?`,
+          unsetPrincipal: `¿Desea desactivar la conversión ${modal.data?.idConversion} como principal?`,
+        };
+        const subtitleByType: Record<string, string> = {
+          delete: 'Esta acción eliminará la conversión y no podrá ser recuperada. ¿Desea continuar?',
+          deleteMultiple: 'Esta acción eliminará las conversiones seleccionadas y no podrán ser recuperadas. ¿Desea continuar?',
+          setPrincipal: 'Esta acción reemplazará la conversión principal actual.',
+          unsetPrincipal: 'Esta acción desactivará la conversión principal actual.',
+        };
+        const modalTitle = titleByType[modal.type] ?? '';
+        const modalSubtitle = subtitleByType[modal.type] ?? '';
+        return (
+          <div style={S.modal}>
+            <div style={S.modalBox}>
+              <h3 style={S.modalTitle}>{modalTitle}</h3>
+              {modalSubtitle && <p style={S.modalSubtitle}>{modalSubtitle}</p>}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                <button style={{ ...S.btn, border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151' }} onClick={() => setModal(null)}>No</button>
+                <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => {
+                  if (modal.type === 'delete') handleDelete(modal.data.idConversion);
+                  else if (modal.type === 'deleteMultiple') handleDeleteMultiple();
+                  else if (modal.type === 'setPrincipal') handleSetPrincipal(modal.data.idConversion, true);
+                  else if (modal.type === 'unsetPrincipal') handleSetPrincipal(modal.data.idConversion, false);
+                }}>Sí</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

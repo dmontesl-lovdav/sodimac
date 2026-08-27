@@ -30,6 +30,11 @@ router.get('/users/:id/attributes', securityController.listUserAttributes);
 router.post('/users/:id/attributes', securityController.createUserAttribute);
 router.delete('/users/:id/attributes/:attributeId', securityController.removeUserAttribute);
 
+router.get('/role-attributes', securityController.searchRoleAttributes);
+router.get('/roles/:id/attributes', securityController.listRoleAttributes);
+router.post('/roles/:id/attributes', securityController.createRoleAttribute);
+router.delete('/roles/:id/attributes/:attributeId', securityController.removeRoleAttribute);
+
 router.get('/catalogs/attribute-types', securityController.listAttributeTypes);
 router.get('/catalogs/attribute-values', securityController.listAttributeValuesByType);
 

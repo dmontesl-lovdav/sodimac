@@ -6,3 +6,4 @@ export { ApplicationEventPage } from './ApplicationEventPage';
 export { UserRolePage } from './UserRolePage';
 export { RolePermissionPage } from './RolePermissionPage';
 export { UserAttributePage } from './UserAttributePage';
+export { RoleAttributePage } from './RoleAttributePage';

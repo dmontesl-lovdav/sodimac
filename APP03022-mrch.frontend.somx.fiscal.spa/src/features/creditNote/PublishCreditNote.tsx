@@ -62,7 +62,7 @@ export function resolveLoadingMessage(isUploading: boolean, isValidating: boolea
 
 export default function PublishCreditNote() {
   const location = useLocation();
-  const FBC_URL = process.env.FBC_HOME;
+  const FBC_URL = `${window.location.origin}/`;
   const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
   const isDiscountFlow = isCommercialDiscountFlow(query);
   const traceFolioPayload = useMemo<TraceFolioPayload>(

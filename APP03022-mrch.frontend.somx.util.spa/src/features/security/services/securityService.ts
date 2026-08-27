@@ -6,7 +6,10 @@ import type {
   AttributeValueOption,
   AttributeTypeOption,
   CreateUserAttributePayload,
+  CreateRoleAttributePayload,
   PagedUserAttributes,
+  PagedRoleAttributes,
+  RoleAttribute,
   SearchResponse,
   SecurityFilters,
   SecurityRow,
@@ -64,6 +67,22 @@ interface BackendUserAttribute {
   updatedAt?: string | null;
 }
 
+interface BackendRoleAttribute {
+  id: number;
+  roleId: number;
+  name: string;
+  attributeTypeId: number;
+  attributeTypeName: string;
+  attributeValueId?: number | null;
+  attributeValueName?: string | null;
+  attributeValueKey?: string | null;
+  status: number;
+  createdBy: number;
+  createdAt: string;
+  updatedBy?: number | null;
+  updatedAt?: string | null;
+}
+
 interface BackendAttributeValueOption {
   id: number;
   catalogKey: string;
@@ -83,6 +102,22 @@ const mapSearchRow = (row: BackendSearchRow): SecurityRow => ({
 const mapUserAttribute = (row: BackendUserAttribute): UserAttribute => ({
   id: row.id,
   userId: row.userId,
+  name: row.name,
+  attributeTypeId: row.attributeTypeId,
+  attributeTypeName: row.attributeTypeName,
+  attributeValueId: row.attributeValueId == null ? undefined : Number(row.attributeValueId),
+  attributeValueName: row.attributeValueName ?? undefined,
+  attributeValueKey: row.attributeValueKey ?? undefined,
+  status: Number(row.status) === 1 ? 1 : 0,
+  createdBy: String(row.createdBy),
+  createdAt: row.createdAt?.split('T')[0] ?? '',
+  updatedBy: row.updatedBy == null ? undefined : String(row.updatedBy),
+  updatedAt: row.updatedAt ? row.updatedAt.split('T')[0] : undefined,
+});
+
+const mapRoleAttribute = (row: BackendRoleAttribute): RoleAttribute => ({
+  id: row.id,
+  roleId: row.roleId,
   name: row.name,
   attributeTypeId: row.attributeTypeId,
   attributeTypeName: row.attributeTypeName,
@@ -240,6 +275,33 @@ export const securityService = {
 
   deleteUserAttribute: async (userId: number, attributeId: number): Promise<void> => {
     await apiClient.request(`/security/users/${userId}/attributes/${attributeId}`, 'delete');
+  },
+
+  searchRoleAttributes: (filters: SecurityFilters) => fetchSearch('/security/role-attributes', filters),
+
+  getRoleAttributes: async (roleId: number, page: number, pageSize: number): Promise<PagedRoleAttributes> => {
+    const response = await apiClient.request<ApiEnvelope<{ items: BackendRoleAttribute[]; total: number }>>(
+      `/security/roles/${roleId}/attributes`,
+      'get',
+      undefined,
+      { params: { page, limit: pageSize } },
+    );
+
+    return {
+      items: (response.data.items ?? []).map(mapRoleAttribute),
+      total: response.data.total ?? 0,
+    };
+  },
+
+  createRoleAttribute: async (payload: CreateRoleAttributePayload): Promise<void> => {
+    await apiClient.request(`/security/roles/${payload.roleId}/attributes`, 'post', {
+      attributeTypeId: payload.attributeTypeId,
+      attributeValueId: payload.attributeValueId,
+    });
+  },
+
+  deleteRoleAttribute: async (roleId: number, attributeId: number): Promise<void> => {
+    await apiClient.request(`/security/roles/${roleId}/attributes/${attributeId}`, 'delete');
   },
 
   getAttributeCatalog: async (): Promise<AttributeTypeOption[]> => {

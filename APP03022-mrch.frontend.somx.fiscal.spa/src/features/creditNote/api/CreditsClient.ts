@@ -1,7 +1,10 @@
 import type { AxiosRequestConfig } from "axios";
 import { createApiClient, type ApiClient } from "@/services/ApiClient";
 import { getUserIdFromStore } from "@/utils/getUserIdFromStore";
-import type { CreditNoteFilters } from "../interfaces";
+import {
+  CREDIT_NOTE_STATUS_PENDIENTE_CONTABILIZACION,
+  type CreditNoteFilters,
+} from "../interfaces";
 
 const blobResponse: AxiosRequestConfig = { responseType: "blob" };
 
@@ -18,6 +21,14 @@ export const createCreditsClient = <T = unknown>(api?: ApiClient) => {
         numeroProveedor,
         estatus: 0,
         idUsuarioActualizacion: 1,
+      }),
+
+    reprocessCreditNote: (uuid: string, numeroProveedor: string) =>
+      client.request("invoices", "put", {
+        uuid,
+        numeroProveedor,
+        estatus: CREDIT_NOTE_STATUS_PENDIENTE_CONTABILIZACION,
+        idUsuarioActualizacion: getUserIdFromStore() ?? "1",
       }),
 
     getCreditNotes: (filters: CreditNoteFilters & { tipoDocumento?: string }) =>

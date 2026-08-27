@@ -299,7 +299,7 @@ const styles = {
     borderRadius: '20px',
   },
   toggleSliderActive: {
-    backgroundColor: '#0066CC',
+    backgroundColor: '#002D4C',
   },
   toggleKnob: {
     position: 'absolute' as const,

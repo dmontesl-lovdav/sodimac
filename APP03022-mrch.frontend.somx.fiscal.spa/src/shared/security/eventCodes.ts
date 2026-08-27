@@ -43,6 +43,7 @@ export const APP_EVENT = {
         DOWNLOAD_XML:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_XML, label: 'Ver XML' },
         DOWNLOAD_PDF:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF, label: 'Ver PDF' },
         CANCEL:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.CANCEL, label: 'Cancelar Nota Crédito' },
+        UPDATE_STATUS:       { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.UPDATE_STATUS, label: 'Reproceso Contable' },
         PUBLISH:             { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.PUBLISH, label: 'Agregar Nota de Crédito' },
         LINK_INVOICE:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.LINK_INVOICE, label: 'Ver Factura' },
     },

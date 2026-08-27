@@ -37,9 +37,6 @@ public class CreditNoteDownloadBatchService {
 
     @Value("${batch.status.error-desglose-nc:6}")
     private int statusErrorDesglose;
-    // Regla MXSTM (Ivan 2026-07-31): NC Descuento Comercial (Addenda TipoNC=2) no se
-    // descarga a SODIMAC_SAP_DEV; solo se avanza 3 -> 9 en el portal.
-    private static final int STATUS_NC_DESCUENTO_COMERCIAL = 9;
 
     private static final String PROCESS_NAME = "CreditNote Download";
     private static final String DOC_TYPE = "E";
@@ -166,11 +163,13 @@ public class CreditNoteDownloadBatchService {
             esDescuentoComercial = tipoNcXml != null && tipoNcXml.replaceFirst("^0+", "").equals("2");
         }
         if (esDescuentoComercial) {
-            log.info("NC {} TipoNC=2 (Descuento Comercial): no se descarga, estatus {} -> 9", uuid, estatusEntrada);
-            avanzarEstatus(uuid, numProveedor, estatusEntrada, STATUS_NC_DESCUENTO_COMERCIAL,
-                    "NC Descuento Comercial (TipoNC=2): no aplica descarga");
+            // Tren v1.0(5) (Ivan 2026-08): la NC de Descuento Comercial (rebate) nace en 17
+            // "Pendiente de complemento" en el registro y NO pasa por este batch (que toma
+            // estatus 3/4). Si por dato legado apareciera aquí, se omite SIN cambiar estatus:
+            // el viejo 3->9 ya no existe en el tren (el 9 hoy es "Error registro contable").
+            log.info("NC {} TipoNC=2 (Descuento Comercial): no se descarga (rebate nace en 17), se omite", uuid);
             traceService.addElement(idEjecucion, uuid, serieFolio,
-                    secuencia, "SKIPPED", "TipoNC=2 Descuento Comercial: no se descarga");
+                    secuencia, "SKIPPED", "TipoNC=2 Descuento Comercial: no se descarga (rebate en 17)");
             return;
         }
 

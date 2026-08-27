@@ -6,6 +6,7 @@ import com.sodimac.batch.fiscal.download.model.dto.StatusUpdateResponseDto;
 import com.sodimac.batch.fiscal.download.model.entity.batch.CtrlProcesoCabEntity;
 import com.sodimac.batch.fiscal.download.service.BatchTraceService;
 import com.sodimac.batch.fiscal.download.service.CfdiDesgloseService;
+import com.sodimac.batch.fiscal.download.service.CfdiEstructuraException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,13 +29,15 @@ public class InvoiceDownloadBatchService {
     @Value("${batch.search.months-back:6}")
     private int monthsBack;
 
-    // Tren de Estatus v1.0 (status_train option_id=1). Recalibrado: antes 14=error desglose
-    // y 1=pendiente addenda (obsoleto). En v1.0 el error de desglose es 16 (Estructura inválida,
-    // 5->16, reintenta 16->5); el estatus 6 (Error desglose) es huérfano en el tren (no usar).
+    // STM-719 (actualización 26/ago/2026): el batch toma como base estatus 3 Y 4, y el
+    // error de desglose va a 6 "Error en el desglose XML" (tren definitivo; antes 16 del
+    // tren v1.0 vía 5->16). El 4->6 ya está cargado en el tren del portal.
     private static final int STATUS_RECIBIDA = 3;             // entrada del batch
-    private static final int STATUS_PROCESO_DESCARGA = 4;
+    private static final int STATUS_PROCESO_DESCARGA = 4;     // también entrada (reanudación)
     private static final int STATUS_DESGLOSE_FACTURA = 5;
-    private static final int STATUS_ESTRUCTURA_INVALIDA = 16; // error de desglose
+
+    @Value("${batch.status.error-desglose-factura:6}")
+    private int statusErrorDesglose;
 
     private static final String PROCESS_NAME = "Invoice Download";
     private static final String DOC_TYPE = "I";
@@ -65,15 +69,18 @@ public class InvoiceDownloadBatchService {
             LocalDate dateTo = LocalDate.now();
             LocalDate dateFrom = dateTo.minusMonths(monthsBack);
 
-            traceService.addStep(idEjecucion, "Buscar facturas estatus 3 (Recibida)", ++secuencia,
+            traceService.addStep(idEjecucion, "Buscar facturas estatus 3 y 4", ++secuencia,
                     "dateFrom=" + dateFrom + " dateTo=" + dateTo, null, 0, "IN_PROGRESS");
 
-            List<InvoiceSearchResponseDto> facturas = fiscalApiClient.searchAllByStatusAndType(
-                    STATUS_RECIBIDA, DOC_TYPE, dateFrom, dateTo);
+            List<InvoiceSearchResponseDto> facturas = new ArrayList<>();
+            facturas.addAll(fiscalApiClient.searchAllByStatusAndType(
+                    STATUS_RECIBIDA, DOC_TYPE, dateFrom, dateTo));
+            facturas.addAll(fiscalApiClient.searchAllByStatusAndType(
+                    STATUS_PROCESO_DESCARGA, DOC_TYPE, dateFrom, dateTo));
 
             totalOrigen = facturas.size();
             traceService.logInfo(idEjecucion, PROCESS_NAME,
-                    "Encontradas " + totalOrigen + " facturas en estatus 3 (Recibida)", "EXTRACT");
+                    "Encontradas " + totalOrigen + " facturas en estatus 3 y 4", "EXTRACT");
 
             if (facturas.isEmpty()) {
                 log.info("No hay facturas pendientes de procesar");
@@ -126,55 +133,82 @@ public class InvoiceDownloadBatchService {
                 totalOrigen, totalDestino, totalErrores);
     }
 
+    /**
+     * Orden resiliente: primero el trabajo local (desglose transaccional e idempotente
+     * por Uuid), y el estatus en el portal se avanza SOLO tras confirmar el commit.
+     * - Falla transitoria (BD SAP caída, etc.): el documento permanece en su estatus de
+     *   entrada y la siguiente corrida lo reintenta sola; no hay nada que compensar.
+     * - Falla de estructura (permanente): sí se marca en el tren (3->)4->6.
+     * - Desglose OK pero falla la confirmación de estatus: permanece en 3 o 4; la siguiente
+     *   corrida detecta el comprobante ya insertado (dedup), omite el desglose y solo
+     *   reintenta la confirmación (entrada en 4).
+     */
     private void procesarFactura(InvoiceSearchResponseDto factura, int idEjecucion,
                                   String uuid, BigDecimal numProveedor, int secuencia) throws Exception {
 
-        // 3 Recibida -> 4 En proceso de descarga
-        StatusUpdateResponseDto statusResp = fiscalApiClient.updateStatus(
-                uuid, numProveedor, STATUS_RECIBIDA, STATUS_PROCESO_DESCARGA,
-                "Proceso batch: inicio de descarga");
-
-        if (statusResp == null || !Boolean.TRUE.equals(statusResp.getSuccess())) {
-            throw new RuntimeException("No se pudo actualizar estatus 3->4: " +
-                    (statusResp != null ? statusResp.getMessage() : "sin respuesta"));
-        }
+        String serieFolio = factura.getSeries() + "-" + factura.getFolio();
+        int estatusEntrada = factura.getStatus() != null ? factura.getStatus() : STATUS_RECIBIDA;
 
         String xmlContent = factura.getXmlContent();
         if (xmlContent == null || xmlContent.isEmpty()) {
-            // XML faltante: se deja en estatus 4 (En proceso de descarga) para reintento.
-            // El tren v1.0 no tiene transición de error desde 4; no se fabrica estatus.
-            traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
-                    secuencia, "RETRY", "XML no disponible (se reintenta)");
+            // Sin XML no se inicia nada: permanece en su estatus y se reintenta en la siguiente corrida.
+            traceService.addElement(idEjecucion, uuid, serieFolio,
+                    secuencia, "RETRY", "XML no disponible (permanece en " + estatusEntrada + ", se reintenta)");
             throw new RuntimeException("XML no disponible para factura " + uuid);
         }
 
         // v1.0: la addenda se registra junto con la factura (fiscal-api /register).
         // fiscal-download ya NO valida ni bloquea por addenda.
 
+        // 1) Trabajo local primero.
         try {
             cfdiDesgloseService.desglosar(xmlContent,
                     factura.getInvoiceUuid() != null ? factura.getInvoiceUuid().toString() : null);
-        } catch (Exception e) {
-            // Error de estructura en el desglose. El tren v1.0 sólo permite llegar a 16 desde 5:
-            // 4 -> 5 (entró a desglose) -> 16 (Estructura inválida). 16 -> 5 permite reintento.
+        } catch (CfdiEstructuraException e) {
+            // Permanente: reprocesar no lo arregla. Se marca en el tren: (3->)4->6.
+            if (estatusEntrada == STATUS_RECIBIDA) {
+                fiscalApiClient.updateStatus(uuid, numProveedor,
+                        STATUS_RECIBIDA, STATUS_PROCESO_DESCARGA, "Desglose con error de estructura");
+            }
             fiscalApiClient.updateStatus(uuid, numProveedor,
-                    STATUS_PROCESO_DESCARGA, STATUS_DESGLOSE_FACTURA, "Desglose con error de estructura");
-            fiscalApiClient.updateStatus(uuid, numProveedor,
-                    STATUS_DESGLOSE_FACTURA, STATUS_ESTRUCTURA_INVALIDA,
+                    STATUS_PROCESO_DESCARGA, statusErrorDesglose,
                     "Estructura inválida: " + e.getMessage());
-            traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
+            traceService.addElement(idEjecucion, uuid, serieFolio,
                     secuencia, "REJECTED", "Estructura inválida: " + e.getMessage());
             throw new RuntimeException("Error en desglose CFDI (estructura inválida): " + e.getMessage(), e);
+        } catch (Exception e) {
+            // Transitoria: no se toca el estatus, permanece en su entrada para reintento automático.
+            traceService.addElement(idEjecucion, uuid, serieFolio,
+                    secuencia, "RETRY", "Error transitorio en desglose (permanece en "
+                            + estatusEntrada + "): " + e.getMessage());
+            throw new RuntimeException("Error transitorio en desglose (permanece en "
+                    + estatusEntrada + "): " + e.getMessage(), e);
         }
 
-        // 4 -> 5 Desglose de factura
-        fiscalApiClient.updateStatus(uuid, numProveedor,
-                STATUS_PROCESO_DESCARGA, STATUS_DESGLOSE_FACTURA,
+        // 2) Confirmación en el portal, sólo tras commit local: (3 ->) 4 -> 5.
+        if (estatusEntrada == STATUS_RECIBIDA) {
+            avanzarEstatus(uuid, numProveedor, STATUS_RECIBIDA, STATUS_PROCESO_DESCARGA,
+                    "Proceso batch: descarga y desglose confirmados");
+        }
+        avanzarEstatus(uuid, numProveedor, STATUS_PROCESO_DESCARGA, STATUS_DESGLOSE_FACTURA,
                 "Desglose completado exitosamente");
 
-        traceService.addElement(idEjecucion, uuid, factura.getSeries() + "-" + factura.getFolio(),
+        traceService.addElement(idEjecucion, uuid, serieFolio,
                 secuencia, "PROCESSED", null);
 
         log.debug("Factura procesada exitosamente: {}", uuid);
+    }
+
+    private void avanzarEstatus(String uuid, BigDecimal numProveedor,
+                                 int origen, int destino, String comentario) {
+        StatusUpdateResponseDto resp = fiscalApiClient.updateStatus(
+                uuid, numProveedor, origen, destino, comentario);
+        if (resp == null || !Boolean.TRUE.equals(resp.getSuccess())) {
+            // Desglose ya confirmado en SAP; el documento queda en el estatus previo y la
+            // siguiente corrida reintenta sólo esta confirmación (el desglose se omite por dedup).
+            throw new RuntimeException("Desglose OK pero fallo la confirmacion de estatus " +
+                    origen + "->" + destino + ": " +
+                    (resp != null ? resp.getMessage() : "sin respuesta"));
+        }
     }
 }

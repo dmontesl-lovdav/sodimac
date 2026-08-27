@@ -67,7 +67,10 @@ public class FiscalApiClient {
             } catch (Exception e) {
                 log.error("Error buscando documentos tipo={} estatus={} pagina={}: {}",
                         documentType, status, page, e.getMessage());
-                hasMore = false;
+                // Un fallo de conexión NO significa "0 documentos": se propaga para que
+                // la ejecución termine en FAILED y no en un SUCCESS engañoso con origen=0.
+                throw new RuntimeException("Error buscando documentos tipo=" + documentType +
+                        " estatus=" + status + " pagina=" + page + ": " + e.getMessage(), e);
             }
         }
 

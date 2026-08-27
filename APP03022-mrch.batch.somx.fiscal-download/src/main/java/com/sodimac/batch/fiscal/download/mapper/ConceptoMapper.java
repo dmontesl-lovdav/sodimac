@@ -6,24 +6,18 @@ import java.math.BigDecimal;
 
 public class ConceptoMapper {
 
-    public static ConceptoEntity toEntity(int idComprobante, String claveProdServ,
-                                           String noIdentificacion, BigDecimal cantidad,
-                                           String claveUnidad, String unidad,
-                                           String descripcion, BigDecimal valorUnitario,
-                                           BigDecimal importe, BigDecimal descuento,
-                                           String objetoImp) {
-        ConceptoEntity entity = new ConceptoEntity();
-        entity.setIdComprobante(idComprobante);
-        entity.setClaveProdServ(claveProdServ);
-        entity.setNoIdentificacion(noIdentificacion);
-        entity.setCantidad(cantidad);
-        entity.setClaveUnidad(claveUnidad);
-        entity.setUnidad(unidad);
-        entity.setDescripcion(descripcion);
-        entity.setValorUnitario(valorUnitario);
-        entity.setImporte(importe);
-        entity.setDescuento(descuento);
-        entity.setObjetoImp(objetoImp);
-        return entity;
+    public static ConceptoEntity toEntity(String uuid, String claveProdServ, String cantidad,
+            String claveUnidad, String unidad, String descripcion,
+            BigDecimal valorUnitario, BigDecimal importe) {
+        ConceptoEntity e = new ConceptoEntity();
+        e.setUuid(uuid);
+        e.setClaveProdServ(claveProdServ);
+        e.setCantidad(cantidad);
+        e.setClaveUnidad(claveUnidad);
+        e.setUnidad(unidad);
+        e.setDescripcion(descripcion);
+        e.setValorUnitario(valorUnitario);
+        e.setImporte(importe);
+        return e;
     }
 }

@@ -6,18 +6,19 @@ import java.math.BigDecimal;
 
 public class DetalleImpuestoMapper {
 
-    public static DetalleImpuestoEntity toEntity(int idConcepto, String tipo,
-                                                  BigDecimal base, String impuesto,
-                                                  String tipoFactor, BigDecimal tasaOCuota,
-                                                  BigDecimal importe) {
-        DetalleImpuestoEntity entity = new DetalleImpuestoEntity();
-        entity.setIdConcepto(idConcepto);
-        entity.setTipo(tipo);
-        entity.setBase(base);
-        entity.setImpuesto(impuesto);
-        entity.setTipoFactor(tipoFactor);
-        entity.setTasaOCuota(tasaOCuota);
-        entity.setImporte(importe);
-        return entity;
+    public static DetalleImpuestoEntity toEntity(String uuid, long idPadre, String claveProdServ,
+            String tipoImpuesto, BigDecimal base, String impuesto, String tipoFactor,
+            BigDecimal tasaOCuota, BigDecimal importe) {
+        DetalleImpuestoEntity e = new DetalleImpuestoEntity();
+        e.setUuid(uuid);
+        e.setIdPadre(idPadre);
+        e.setClaveProdServ(claveProdServ);
+        e.setTipoImpuesto(tipoImpuesto);
+        e.setBase(base);
+        e.setImpuesto(impuesto);
+        e.setTipoFactor(tipoFactor);
+        e.setTasaOCuota(tasaOCuota);
+        e.setImporte(importe);
+        return e;
     }
 }

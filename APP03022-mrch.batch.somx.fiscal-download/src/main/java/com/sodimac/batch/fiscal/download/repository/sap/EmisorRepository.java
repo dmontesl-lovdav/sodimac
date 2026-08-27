@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EmisorRepository extends JpaRepository<EmisorEntity, Integer> {
+public interface EmisorRepository extends JpaRepository<EmisorEntity, String> {
 }

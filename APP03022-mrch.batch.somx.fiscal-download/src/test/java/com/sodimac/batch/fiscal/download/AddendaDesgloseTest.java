@@ -51,22 +51,13 @@ class AddendaDesgloseTest {
     @BeforeEach
     void limpiar() {
         jdbc = new JdbcTemplate(sapDataSource);
+        // Esquema legado: todas las tablas se ligan por Uuid (no hay FKs de identidad).
         for (String uuid : new String[]{UUID_MERC, UUID_TRAN, UUID_NC}) {
             jdbc.update("DELETE FROM dbo.Addenda WHERE Uuid = ?", uuid);
-            jdbc.update("DELETE dc FROM dbo.DetalleImpuesto dc "
-                    + "JOIN dbo.Concepto co ON co.id_concepto = dc.id_concepto "
-                    + "JOIN dbo.Comprobante c ON c.id_comprobante = co.id_comprobante "
-                    + "WHERE c.fiscal_uuid = ?", uuid);
-            jdbc.update("DELETE co FROM dbo.Concepto co "
-                    + "JOIN dbo.Comprobante c ON c.id_comprobante = co.id_comprobante "
-                    + "WHERE c.fiscal_uuid = ?", uuid);
-            jdbc.update("DELETE e FROM dbo.Emisor e "
-                    + "JOIN dbo.Comprobante c ON c.id_comprobante = e.id_comprobante "
-                    + "WHERE c.fiscal_uuid = ?", uuid);
-            jdbc.update("DELETE r FROM dbo.Receptor r "
-                    + "JOIN dbo.Comprobante c ON c.id_comprobante = r.id_comprobante "
-                    + "WHERE c.fiscal_uuid = ?", uuid);
-            jdbc.update("DELETE FROM dbo.Comprobante WHERE fiscal_uuid = ?", uuid);
+            jdbc.update("DELETE FROM dbo.DetalleImpuesto WHERE Uuid = ?", uuid);
+            jdbc.update("DELETE FROM dbo.Concepto WHERE Uuid = ?", uuid);
+            jdbc.update("DELETE FROM dbo.Emisor WHERE Uuid = ?", uuid);
+            jdbc.update("DELETE FROM dbo.Comprobante WHERE Uuid = ?", uuid);
         }
     }
 
@@ -118,9 +109,11 @@ class AddendaDesgloseTest {
     // ── XML de prueba (atributos con comilla simple para no escapar en Java) ──
 
     private String cabecera(String tipoComprobante) {
+        // MetodoPago y LugarExpedicion son NOT NULL en dbo.Comprobante (esquema legado).
         return "<cfdi:Comprobante xmlns:cfdi='http://www.sat.gob.mx/cfd/4' "
                 + "Version='4.0' Serie='TST' Folio='1001' Fecha='2026-07-07T10:00:00' "
-                + "SubTotal='100.00' Total='116.00' Moneda='MXN' TipoDeComprobante='" + tipoComprobante + "'>"
+                + "SubTotal='100.00' Total='116.00' Moneda='MXN' MetodoPago='PUE' "
+                + "LugarExpedicion='06600' TipoDeComprobante='" + tipoComprobante + "'>"
                 + "<cfdi:Emisor Rfc='AAA010101AAA' Nombre='TEST' RegimenFiscal='601'/>"
                 + "<cfdi:Receptor Rfc='CSD161207R2A' Nombre='SDMHC' UsoCFDI='G01'/>";
     }

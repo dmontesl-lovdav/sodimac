@@ -4,15 +4,15 @@ import com.sodimac.batch.fiscal.download.model.entity.sap.ReceptorEntity;
 
 public class ReceptorMapper {
 
-    public static ReceptorEntity toEntity(int idComprobante, String rfc, String nombre,
-                                           String usoCfdi, String regimenFiscal,
+    public static ReceptorEntity toEntity(String uuid, String rfc, String nombre,
+                                           String usoCfdi, String regimen,
                                            String domicilioFiscal) {
         ReceptorEntity entity = new ReceptorEntity();
-        entity.setIdComprobante(idComprobante);
+        entity.setUuid(uuid);
         entity.setRfc(rfc);
         entity.setNombre(nombre);
         entity.setUsoCfdi(usoCfdi);
-        entity.setRegimenFiscal(regimenFiscal);
+        entity.setRegimen(regimen);
         entity.setDomicilioFiscal(domicilioFiscal);
         return entity;
     }

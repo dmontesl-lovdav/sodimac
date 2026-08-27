@@ -19,6 +19,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Desglose de CFDI hacia el esquema SAP legado (SODIMAC_SAP_DEV, Detecno).
+ *
+ * Modelo legado: todas las tablas se ligan por Uuid (folio fiscal SAT); no hay FKs de
+ * identidad entre Comprobante/Emisor/Addenda. Concepto genera IdPadre (identity) y
+ * DetalleImpuesto referencia ese IdPadre junto con Uuid y ClaveProdServ. No existe tabla
+ * Receptor (el receptor siempre es Sodimac) ni tablas de impuestos a nivel comprobante:
+ * los totales se derivan de DetalleImpuesto o del Xml completo.
+ */
 @Service
 public class CfdiDesgloseService {
 
@@ -26,32 +35,18 @@ public class CfdiDesgloseService {
 
     private final ComprobanteRepository comprobanteRepository;
     private final EmisorRepository emisorRepository;
-    private final ReceptorRepository receptorRepository;
     private final ConceptoRepository conceptoRepository;
-    // STM-719: comentado - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac (pendiente decision Ivan/Bonelli)
-    // private final ImpuestosRepository impuestosRepository;
-    // private final TrasladoRepository trasladoRepository;
-    // private final RetencionRepository retencionRepository;
     private final DetalleImpuestoRepository detalleImpuestoRepository;
     private final AddendaRepository addendaRepository;
 
     public CfdiDesgloseService(ComprobanteRepository comprobanteRepository,
                                 EmisorRepository emisorRepository,
-                                ReceptorRepository receptorRepository,
                                 ConceptoRepository conceptoRepository,
-                                // STM-719: params comentados - repos no inyectados temporalmente
-                                // ImpuestosRepository impuestosRepository,
-                                // TrasladoRepository trasladoRepository,
-                                // RetencionRepository retencionRepository,
                                 DetalleImpuestoRepository detalleImpuestoRepository,
                                 AddendaRepository addendaRepository) {
         this.comprobanteRepository = comprobanteRepository;
         this.emisorRepository = emisorRepository;
-        this.receptorRepository = receptorRepository;
         this.conceptoRepository = conceptoRepository;
-        // this.impuestosRepository = impuestosRepository;
-        // this.trasladoRepository = trasladoRepository;
-        // this.retencionRepository = retencionRepository;
         this.detalleImpuestoRepository = detalleImpuestoRepository;
         this.addendaRepository = addendaRepository;
     }
@@ -62,71 +57,62 @@ public class CfdiDesgloseService {
 
     @Transactional("sapTransactionManager")
     public ComprobanteEntity desglosar(String xmlContent, String invoiceUuid) throws Exception {
-        Document doc = parseXml(xmlContent);
+        Document doc;
+        try {
+            doc = parseXml(xmlContent);
+        } catch (Exception e) {
+            throw new CfdiEstructuraException("XML no parseable: " + e.getMessage(), e);
+        }
         Element root = doc.getDocumentElement();
 
+        // UUID del TimbreFiscalDigital: es la PK del esquema legado; sin él no hay desglose posible.
+        String uuid = extractTfdUuid(doc);
+        if (uuid == null || uuid.isEmpty()) {
+            throw new CfdiEstructuraException("CFDI sin UUID de TimbreFiscalDigital");
+        }
+
+        // Verificar si ya existe (idempotencia por Uuid)
+        if (comprobanteRepository.existsById(uuid)) {
+            log.warn("Comprobante ya existe en SAP_DEV: {}", uuid);
+            return comprobanteRepository.findById(uuid).orElse(null);
+        }
+
         // 1. Comprobante
-        ComprobanteEntity comprobante = extractComprobante(root, xmlContent, invoiceUuid);
-
-        // Extraer TimbreFiscalDigital
-        NodeList tfdNodes = doc.getElementsByTagNameNS(NS_TFD, "TimbreFiscalDigital");
-        if (tfdNodes.getLength() > 0) {
-            Element tfd = (Element) tfdNodes.item(0);
-            comprobante.setFiscalUuid(attr(tfd, "UUID"));
-            comprobante.setFechaTimbrado(parseDateTime(attr(tfd, "FechaTimbrado")));
-            comprobante.setRfcProvCertif(attr(tfd, "RfcProvCertif"));
-            comprobante.setNoCertificadoSat(attr(tfd, "NoCertificadoSAT"));
-        }
-
-        // Verificar si ya existe
-        if (comprobanteRepository.existsByFiscalUuid(comprobante.getFiscalUuid())) {
-            log.warn("Comprobante ya existe en SAP_DEV: {}", comprobante.getFiscalUuid());
-            return comprobanteRepository.findByFiscalUuid(comprobante.getFiscalUuid()).orElse(null);
-        }
-
+        ComprobanteEntity comprobante = extractComprobante(root, uuid, xmlContent, invoiceUuid);
         comprobante = comprobanteRepository.save(comprobante);
-        int idComp = comprobante.getIdComprobante();
 
         // 2. Emisor
         NodeList emisorNodes = doc.getElementsByTagNameNS(NS_CFDI, "Emisor");
         if (emisorNodes.getLength() > 0) {
-            extractEmisor((Element) emisorNodes.item(0), idComp);
+            extractEmisor((Element) emisorNodes.item(0), uuid);
         }
 
-        // 3. Receptor
-        NodeList receptorNodes = doc.getElementsByTagNameNS(NS_CFDI, "Receptor");
-        if (receptorNodes.getLength() > 0) {
-            extractReceptor((Element) receptorNodes.item(0), idComp);
-        }
-
-        // 4. Conceptos
+        // 3. Conceptos (el receptor no se persiste: no existe tabla Receptor en el esquema legado)
         NodeList conceptoNodes = doc.getElementsByTagNameNS(NS_CFDI, "Concepto");
         for (int i = 0; i < conceptoNodes.getLength(); i++) {
-            extractConcepto((Element) conceptoNodes.item(i), idComp);
+            extractConcepto((Element) conceptoNodes.item(i), uuid);
         }
 
-        // 4.1 Addenda (dentro de cfdi:Addenda). Se liga por fiscal_uuid (Uuid), NO por id_comprobante.
+        // 4. Addenda (dentro de cfdi:Addenda). Se liga por fiscal_uuid (Uuid).
         // 3 variantes según el nodo: Tipo 1 mercancía, Tipo 2 transporte, Tipo 3 NC.
-        extractAddenda(doc, comprobante.getFiscalUuid());
+        extractAddenda(doc, uuid);
 
-        // 5. Impuestos (nivel comprobante)
-        // STM-719: comentado - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac
-        // Los totales a nivel comprobante se pueden derivar de DetalleImpuesto (nivel concepto) o del xml_completo
-        // Pendiente decision con Ivan/Bonelli en daily
-        // NodeList impuestosNodes = root.getElementsByTagNameNS(NS_CFDI, "Impuestos");
-        // for (int i = 0; i < impuestosNodes.getLength(); i++) {
-        //     Element impNode = (Element) impuestosNodes.item(i);
-        //     if (impNode.getParentNode().getLocalName().equals("Comprobante")) {
-        //         extractImpuestos(impNode, idComp);
-        //     }
-        // }
-
-        log.info("Desglose completado: uuid={} comprobante_id={}", comprobante.getFiscalUuid(), idComp);
+        log.info("Desglose completado: uuid={}", uuid);
         return comprobante;
     }
 
-    private ComprobanteEntity extractComprobante(Element root, String xmlContent, String invoiceUuid) {
+    private String extractTfdUuid(Document doc) {
+        NodeList tfdNodes = doc.getElementsByTagNameNS(NS_TFD, "TimbreFiscalDigital");
+        if (tfdNodes.getLength() == 0) {
+            return null;
+        }
+        return attr((Element) tfdNodes.item(0), "UUID");
+    }
+
+    private ComprobanteEntity extractComprobante(Element root, String uuid,
+                                                  String xmlContent, String invoiceUuid) {
         return ComprobanteMapper.toEntity(
+                uuid,
                 invoiceUuid,
                 attr(root, "Version"),
                 attr(root, "Serie"),
@@ -136,123 +122,72 @@ public class CfdiDesgloseService {
                 decimal(attr(root, "Total")),
                 decimal(attr(root, "Descuento")),
                 attrOr(root, "Moneda", "MXN"),
-                decimal(attr(root, "TipoCambio")),
+                attr(root, "TipoCambio"),
                 attr(root, "TipoDeComprobante"),
                 attr(root, "MetodoPago"),
                 attr(root, "FormaPago"),
                 attr(root, "CondicionesDePago"),
                 attr(root, "LugarExpedicion"),
-                attr(root, "Exportacion"),
-                attr(root, "NoCertificado"),
-                attr(root, "Sello"),
-                attr(root, "Certificado"),
                 xmlContent);
     }
 
-    private void extractEmisor(Element node, int idComprobante) {
+    private void extractEmisor(Element node, String uuid) {
         EmisorEntity emisor = EmisorMapper.toEntity(
-                idComprobante, attr(node, "Rfc"),
+                uuid, attr(node, "Rfc"),
                 attr(node, "Nombre"), attr(node, "RegimenFiscal"));
         emisorRepository.save(emisor);
     }
 
-    private void extractReceptor(Element node, int idComprobante) {
-        ReceptorEntity receptor = ReceptorMapper.toEntity(
-                idComprobante, attr(node, "Rfc"),
-                attr(node, "Nombre"), attr(node, "UsoCFDI"),
-                attr(node, "RegimenFiscalReceptor"),
-                attr(node, "DomicilioFiscalReceptor"));
-        receptorRepository.save(receptor);
-    }
-
-    private void extractConcepto(Element node, int idComprobante) {
+    private void extractConcepto(Element node, String uuid) {
         ConceptoEntity concepto = ConceptoMapper.toEntity(
-                idComprobante,
+                uuid,
                 attr(node, "ClaveProdServ"),
-                attr(node, "NoIdentificacion"),
-                decimal(attr(node, "Cantidad")),
+                attr(node, "Cantidad"),
                 attr(node, "ClaveUnidad"),
-                attr(node, "Unidad"),
+                // Unidad es NOT NULL en el esquema legado pero opcional en CFDI 4.0.
+                attrOr(node, "Unidad", attr(node, "ClaveUnidad")),
                 attr(node, "Descripcion"),
                 decimal(attr(node, "ValorUnitario")),
-                decimal(attr(node, "Importe")),
-                decimal(attr(node, "Descuento")),
-                attr(node, "ObjetoImp"));
+                decimal(attr(node, "Importe")));
         concepto = conceptoRepository.save(concepto);
 
-        // Impuestos a nivel concepto (DetalleImpuesto)
+        // Impuestos a nivel concepto (DetalleImpuesto), ligados por Uuid + IdPadre + ClaveProdServ
         NodeList impuestosNodes = node.getElementsByTagNameNS(NS_CFDI, "Impuestos");
         if (impuestosNodes.getLength() > 0) {
             Element impuestos = (Element) impuestosNodes.item(0);
 
             NodeList traslados = impuestos.getElementsByTagNameNS(NS_CFDI, "Traslado");
             for (int i = 0; i < traslados.getLength(); i++) {
-                saveDetalleImpuesto((Element) traslados.item(i), concepto.getIdConcepto(), "TRASLADO");
+                saveDetalleImpuesto((Element) traslados.item(i), concepto,
+                        DetalleImpuestoEntity.TIPO_TRASLADO);
             }
 
             NodeList retenciones = impuestos.getElementsByTagNameNS(NS_CFDI, "Retencion");
             for (int i = 0; i < retenciones.getLength(); i++) {
-                saveDetalleImpuesto((Element) retenciones.item(i), concepto.getIdConcepto(), "RETENCION");
+                saveDetalleImpuesto((Element) retenciones.item(i), concepto,
+                        DetalleImpuestoEntity.TIPO_RETENCION);
             }
         }
     }
 
-    private void saveDetalleImpuesto(Element node, int idConcepto, String tipo) {
+    private void saveDetalleImpuesto(Element node, ConceptoEntity concepto, String tipoImpuesto) {
+        BigDecimal base = decimal(attr(node, "Base"));
+        BigDecimal tasaOCuota = decimal(attr(node, "TasaOCuota"));
+        BigDecimal importe = decimal(attr(node, "Importe"));
+        // Columnas NOT NULL en el esquema legado; los traslados Exentos no traen tasa ni importe.
+        if (base == null || tasaOCuota == null || importe == null) {
+            log.warn("Impuesto sin Base/TasaOCuota/Importe (¿Exento?) omitido: uuid={} claveProdServ={}",
+                    concepto.getUuid(), concepto.getClaveProdServ());
+            return;
+        }
         DetalleImpuestoEntity detalle = DetalleImpuestoMapper.toEntity(
-                idConcepto, tipo,
-                decimal(attr(node, "Base")),
+                concepto.getUuid(), concepto.getIdPadre(), concepto.getClaveProdServ(),
+                tipoImpuesto, base,
                 attr(node, "Impuesto"),
                 attr(node, "TipoFactor"),
-                decimal(attr(node, "TasaOCuota")),
-                decimal(attr(node, "Importe")));
+                tasaOCuota, importe);
         detalleImpuestoRepository.save(detalle);
     }
-
-    // STM-719: metodos comentados - tablas Impuestos/Traslado/Retencion no existen en SAP_DEV Sodimac
-    // Pendiente decision con Ivan/Bonelli en daily
-    // private void extractImpuestos(Element node, int idComprobante) {
-    //     ImpuestosEntity impuestos = ImpuestosMapper.toEntity(
-    //             idComprobante,
-    //             decimal(attr(node, "TotalImpuestosTrasladados")),
-    //             decimal(attr(node, "TotalImpuestosRetenidos")));
-    //     impuestos = impuestosRepository.save(impuestos);
-    //
-    //     // Traslados a nivel comprobante
-    //     NodeList trasladosWrapper = node.getElementsByTagNameNS(NS_CFDI, "Traslados");
-    //     if (trasladosWrapper.getLength() > 0) {
-    //         NodeList traslados = ((Element) trasladosWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Traslado");
-    //         for (int i = 0; i < traslados.getLength(); i++) {
-    //             saveTraslado((Element) traslados.item(i), impuestos.getIdImpuesto());
-    //         }
-    //     }
-    //
-    //     // Retenciones a nivel comprobante
-    //     NodeList retencionesWrapper = node.getElementsByTagNameNS(NS_CFDI, "Retenciones");
-    //     if (retencionesWrapper.getLength() > 0) {
-    //         NodeList retenciones = ((Element) retencionesWrapper.item(0)).getElementsByTagNameNS(NS_CFDI, "Retencion");
-    //         for (int i = 0; i < retenciones.getLength(); i++) {
-    //             saveRetencion((Element) retenciones.item(i), impuestos.getIdImpuesto());
-    //         }
-    //     }
-    // }
-
-    // private void saveTraslado(Element node, int idImpuesto) {
-    //     TrasladoEntity traslado = TrasladoMapper.toEntity(
-    //             idImpuesto, decimal(attr(node, "Base")),
-    //             attr(node, "Impuesto"), attr(node, "TipoFactor"),
-    //             decimal(attr(node, "TasaOCuota")),
-    //             decimal(attr(node, "Importe")));
-    //     trasladoRepository.save(traslado);
-    // }
-
-    // private void saveRetencion(Element node, int idImpuesto) {
-    //     RetencionEntity retencion = RetencionMapper.toEntity(
-    //             idImpuesto, decimal(attr(node, "Base")),
-    //             attr(node, "Impuesto"), attr(node, "TipoFactor"),
-    //             decimal(attr(node, "TasaOCuota")),
-    //             decimal(attr(node, "Importe")));
-    //     retencionRepository.save(retencion);
-    // }
 
     // ── Persistencia de Addenda (Addenda_Sodimac_Detecno, Tipo=1) ──
 
@@ -355,6 +290,32 @@ public class CfdiDesgloseService {
         return true;
     }
 
+    /**
+     * Genera y guarda la Addenda de NC (Tipo 3) a partir de los datos registrados en el
+     * portal, para NC cuyo XML no trae el nodo Addenda (Iván 2026-07-31: "el XML no
+     * requiere Addenda, tú la generas"; mismo criterio que ya aplica a facturas).
+     * Mismo mapeo posicional que extractAddendaNc. Idempotente por uuid.
+     */
+    public void guardarAddendaNcDesdePortal(String fiscalUuid, String idProveedor, String tipoNc) {
+        String uuid = fiscalUuid != null ? fiscalUuid.toUpperCase() : null;
+        if (uuid == null || addendaRepository.existsById(uuid)) {
+            log.debug("Addenda ya existente o uuid nulo ({}), no se regenera", uuid);
+            return;
+        }
+        AddendaEntity addenda = AddendaMapper.toEntity(
+                uuid,
+                idProveedor,   // Extra1 = IdProveedor
+                null,          // Extra2
+                null,          // Extra3
+                "1.0",         // Extra4 = Version
+                null,          // Extra5
+                tipoNc,        // Extra6 = TipoNC (descripción, ej. "Ajuste por Recepción")
+                3);
+        addendaRepository.save(addenda);
+        log.info("Addenda Tipo 3 (NC) generada desde datos del portal: uuid={} idProveedor={} tipoNC={}",
+                uuid, idProveedor, tipoNc);
+    }
+
     /** Lee el texto del primer hijo con ese nombre dentro del nodo addenda (sin namespace). */
     private String addendaChild(Element parent, String name) {
         NodeList nl = parent.getElementsByTagName(name);
@@ -421,6 +382,53 @@ public class CfdiDesgloseService {
             }
         }
         return false;
+    }
+
+    /**
+     * Lee el valor de TipoNC (o TipoNotaCredito, variante de addenda) como elemento o
+     * atributo. Regla MXSTM (Ivan 2026-07-31): TipoNC=2 (Descuento Comercial) no se
+     * descarga. Devuelve null si el documento no trae addenda o no incluye el campo.
+     */
+    public String getTipoNotaCredito(String xmlContent) {
+        try {
+            Document doc = parseXml(xmlContent);
+            NodeList addendas = doc.getElementsByTagNameNS(NS_CFDI, "Addenda");
+            if (addendas.getLength() == 0) {
+                addendas = doc.getElementsByTagName("cfdi:Addenda");
+            }
+            if (addendas.getLength() == 0) {
+                return null;
+            }
+            String valor = getAddendaFieldValue(addendas.item(0), "TipoNC");
+            if (valor == null) {
+                valor = getAddendaFieldValue(addendas.item(0), "TipoNotaCredito");
+            }
+            return valor;
+        } catch (Exception e) {
+            log.warn("No se pudo leer TipoNC de la addenda: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String getAddendaFieldValue(Node addendaNode, String fieldName) {
+        if (addendaNode instanceof Element) {
+            Element elem = (Element) addendaNode;
+            NodeList children = elem.getElementsByTagName("*");
+            for (int i = 0; i < children.getLength(); i++) {
+                Element child = (Element) children.item(i);
+                if ((child.getLocalName() != null && child.getLocalName().equalsIgnoreCase(fieldName))
+                        || child.getTagName().endsWith(":" + fieldName)) {
+                    String text = child.getTextContent();
+                    if (text != null && !text.trim().isEmpty()) {
+                        return text.trim();
+                    }
+                }
+                if (child.hasAttribute(fieldName) && !child.getAttribute(fieldName).isEmpty()) {
+                    return child.getAttribute(fieldName).trim();
+                }
+            }
+        }
+        return null;
     }
 
     // ── Utilidades ──────────────────────────────────────────────

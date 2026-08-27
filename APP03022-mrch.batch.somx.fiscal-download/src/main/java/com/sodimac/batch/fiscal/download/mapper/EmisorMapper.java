@@ -4,13 +4,12 @@ import com.sodimac.batch.fiscal.download.model.entity.sap.EmisorEntity;
 
 public class EmisorMapper {
 
-    public static EmisorEntity toEntity(int idComprobante, String rfc,
-                                         String nombre, String regimenFiscal) {
-        EmisorEntity entity = new EmisorEntity();
-        entity.setIdComprobante(idComprobante);
-        entity.setRfc(rfc);
-        entity.setNombre(nombre);
-        entity.setRegimenFiscal(regimenFiscal);
-        return entity;
+    public static EmisorEntity toEntity(String uuid, String rfc, String nombre, String regimen) {
+        EmisorEntity e = new EmisorEntity();
+        e.setUuid(uuid);
+        e.setRfc(rfc);
+        e.setNombre(nombre);
+        e.setRegimen(regimen);
+        return e;
     }
 }

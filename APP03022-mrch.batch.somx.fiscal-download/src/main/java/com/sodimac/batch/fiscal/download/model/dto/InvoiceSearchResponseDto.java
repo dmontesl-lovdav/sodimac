@@ -53,6 +53,9 @@ public class InvoiceSearchResponseDto {
     private BigDecimal numeroProveedor;
     private String tipoProveedor;
     private String guiaEntrega;
+    // Catálogo del portal (tabla Addenda de FBC): 1=se descarga, 2=Descuento Comercial (no se descarga)
+    private Integer tipoNotaCredito;
+    private String tipoNotaCreditoDescripcion;
 
     // XML completo
     private String xmlContent;
@@ -166,6 +169,12 @@ public class InvoiceSearchResponseDto {
 
     public String getGuiaEntrega() { return guiaEntrega; }
     public void setGuiaEntrega(String guiaEntrega) { this.guiaEntrega = guiaEntrega; }
+
+    public Integer getTipoNotaCredito() { return tipoNotaCredito; }
+    public void setTipoNotaCredito(Integer tipoNotaCredito) { this.tipoNotaCredito = tipoNotaCredito; }
+
+    public String getTipoNotaCreditoDescripcion() { return tipoNotaCreditoDescripcion; }
+    public void setTipoNotaCreditoDescripcion(String tipoNotaCreditoDescripcion) { this.tipoNotaCreditoDescripcion = tipoNotaCreditoDescripcion; }
 
     public String getXmlContent() { return xmlContent; }
     public void setXmlContent(String xmlContent) { this.xmlContent = xmlContent; }

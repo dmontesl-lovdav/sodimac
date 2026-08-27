@@ -1,67 +1,60 @@
 package com.sodimac.batch.fiscal.download.model.entity.sap;
 
 import javax.persistence.*;
-
 import java.math.BigDecimal;
 
+/**
+ * Concepto en el destino SAP legado (SODIMAC_SAP_DEV.dbo.Concepto).
+ * Ligado al comprobante por Uuid. IdPadre es identity y es la referencia que usa
+ * DetalleImpuesto (junto con Uuid y ClaveProdServ) para ligar los impuestos del concepto.
+ * Cantidad es varchar en el esquema legado: se guarda la cadena cruda del atributo CFDI.
+ */
 @Entity
 @Table(name = "Concepto")
 public class ConceptoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_concepto")
-    private Integer idConcepto;
+    @Column(name = "IdPadre")
+    private long idPadre;
 
-    @Column(name = "id_comprobante", nullable = false)
-    private Integer idComprobante;
+    @Column(name = "Uuid", length = 36)
+    private String uuid;
 
-    @Column(name = "clave_prod_serv", nullable = false, length = 10)
+    @Column(name = "ClaveProdServ", length = 8)
     private String claveProdServ;
 
-    @Column(name = "no_identificacion", length = 100)
-    private String noIdentificacion;
+    @Column(name = "Cantidad", length = 20)
+    private String cantidad;
 
-    @Column(name = "cantidad", nullable = false, precision = 18, scale = 6)
-    private BigDecimal cantidad;
-
-    @Column(name = "clave_unidad", nullable = false, length = 5)
+    @Column(name = "ClaveUnidad", length = 3)
     private String claveUnidad;
 
-    @Column(name = "unidad", length = 50)
+    @Column(name = "Unidad", length = 20)
     private String unidad;
 
-    @Column(name = "descripcion", nullable = false, length = 1000)
+    @Column(name = "Descripcion", length = 1000)
     private String descripcion;
 
-    @Column(name = "valor_unitario", nullable = false, precision = 18, scale = 6)
+    @Column(name = "ValorUnitario", precision = 18, scale = 6)
     private BigDecimal valorUnitario;
 
-    @Column(name = "importe", nullable = false, precision = 18, scale = 6)
+    @Column(name = "Importe", precision = 18, scale = 6)
     private BigDecimal importe;
-
-    @Column(name = "descuento", precision = 18, scale = 6)
-    private BigDecimal descuento;
-
-    @Column(name = "objeto_imp", length = 5)
-    private String objetoImp;
 
     public ConceptoEntity() {}
 
-    public Integer getIdConcepto() { return idConcepto; }
-    public void setIdConcepto(Integer idConcepto) { this.idConcepto = idConcepto; }
+    public long getIdPadre() { return idPadre; }
+    public void setIdPadre(long idPadre) { this.idPadre = idPadre; }
 
-    public Integer getIdComprobante() { return idComprobante; }
-    public void setIdComprobante(Integer idComprobante) { this.idComprobante = idComprobante; }
+    public String getUuid() { return uuid; }
+    public void setUuid(String uuid) { this.uuid = uuid; }
 
     public String getClaveProdServ() { return claveProdServ; }
     public void setClaveProdServ(String claveProdServ) { this.claveProdServ = claveProdServ; }
 
-    public String getNoIdentificacion() { return noIdentificacion; }
-    public void setNoIdentificacion(String noIdentificacion) { this.noIdentificacion = noIdentificacion; }
-
-    public BigDecimal getCantidad() { return cantidad; }
-    public void setCantidad(BigDecimal cantidad) { this.cantidad = cantidad; }
+    public String getCantidad() { return cantidad; }
+    public void setCantidad(String cantidad) { this.cantidad = cantidad; }
 
     public String getClaveUnidad() { return claveUnidad; }
     public void setClaveUnidad(String claveUnidad) { this.claveUnidad = claveUnidad; }
@@ -77,10 +70,4 @@ public class ConceptoEntity {
 
     public BigDecimal getImporte() { return importe; }
     public void setImporte(BigDecimal importe) { this.importe = importe; }
-
-    public BigDecimal getDescuento() { return descuento; }
-    public void setDescuento(BigDecimal descuento) { this.descuento = descuento; }
-
-    public String getObjetoImp() { return objetoImp; }
-    public void setObjetoImp(String objetoImp) { this.objetoImp = objetoImp; }
 }

@@ -1,55 +1,72 @@
 package com.sodimac.batch.fiscal.download.model.entity.sap;
 
 import javax.persistence.*;
-
 import java.math.BigDecimal;
 
+/**
+ * Impuesto a nivel concepto en el destino SAP legado (SODIMAC_SAP_DEV.dbo.DetalleImpuesto).
+ * PK compuesta (Uuid, IdPadre, ClaveProdServ, TipoImpuesto, Impuesto); IdPadre referencia
+ * el IdPadre identity del Concepto. TipoImpuesto: 1 = traslado, 2 = retención.
+ */
 @Entity
 @Table(name = "DetalleImpuesto")
+@IdClass(DetalleImpuestoId.class)
 public class DetalleImpuestoEntity {
 
+    public static final String TIPO_TRASLADO = "1";
+    public static final String TIPO_RETENCION = "2";
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_detalle")
-    private Integer idDetalle;
+    @Column(name = "Uuid", length = 36)
+    private String uuid;
 
-    @Column(name = "id_concepto", nullable = false)
-    private Integer idConcepto;
+    @Id
+    @Column(name = "IdPadre")
+    private long idPadre;
 
-    @Column(name = "tipo", nullable = false, length = 10)
-    private String tipo; // TRASLADO o RETENCION
+    @Id
+    @Column(name = "ClaveProdServ", length = 8)
+    private String claveProdServ;
 
-    @Column(name = "base", precision = 18, scale = 6)
-    private BigDecimal base;
+    @Id
+    @Column(name = "TipoImpuesto", length = 1)
+    private String tipoImpuesto;
 
-    @Column(name = "impuesto", nullable = false, length = 5)
+    @Id
+    @Column(name = "Impuesto", length = 3)
     private String impuesto;
 
-    @Column(name = "tipo_factor", nullable = false, length = 10)
+    @Column(name = "Base", precision = 18, scale = 6)
+    private BigDecimal base;
+
+    @Column(name = "TipoFactor", length = 10)
     private String tipoFactor;
 
-    @Column(name = "tasa_o_cuota", precision = 18, scale = 6)
+    @Column(name = "TasaOCuota", precision = 18, scale = 6)
     private BigDecimal tasaOCuota;
 
-    @Column(name = "importe", precision = 18, scale = 6)
+    @Column(name = "Importe", precision = 18, scale = 6)
     private BigDecimal importe;
 
     public DetalleImpuestoEntity() {}
 
-    public Integer getIdDetalle() { return idDetalle; }
-    public void setIdDetalle(Integer idDetalle) { this.idDetalle = idDetalle; }
+    public String getUuid() { return uuid; }
+    public void setUuid(String uuid) { this.uuid = uuid; }
 
-    public Integer getIdConcepto() { return idConcepto; }
-    public void setIdConcepto(Integer idConcepto) { this.idConcepto = idConcepto; }
+    public long getIdPadre() { return idPadre; }
+    public void setIdPadre(long idPadre) { this.idPadre = idPadre; }
 
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public String getClaveProdServ() { return claveProdServ; }
+    public void setClaveProdServ(String claveProdServ) { this.claveProdServ = claveProdServ; }
 
-    public BigDecimal getBase() { return base; }
-    public void setBase(BigDecimal base) { this.base = base; }
+    public String getTipoImpuesto() { return tipoImpuesto; }
+    public void setTipoImpuesto(String tipoImpuesto) { this.tipoImpuesto = tipoImpuesto; }
 
     public String getImpuesto() { return impuesto; }
     public void setImpuesto(String impuesto) { this.impuesto = impuesto; }
+
+    public BigDecimal getBase() { return base; }
+    public void setBase(BigDecimal base) { this.base = base; }
 
     public String getTipoFactor() { return tipoFactor; }
     public void setTipoFactor(String tipoFactor) { this.tipoFactor = tipoFactor; }

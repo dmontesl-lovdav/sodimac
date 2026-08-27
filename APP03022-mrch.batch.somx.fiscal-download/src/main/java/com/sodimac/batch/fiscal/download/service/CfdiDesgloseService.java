@@ -316,6 +316,36 @@ public class CfdiDesgloseService {
                 uuid, idProveedor, tipoNc);
     }
 
+    /**
+     * Genera y guarda la Addenda de FACTURA a partir de los datos del portal, para facturas
+     * cuyo XML no trae addenda válida (mismo criterio que NC: "el XML no requiere addenda, tú
+     * la generas"). Clasifica por presencia de guía de entrega: con guía = transporte (Tipo 2),
+     * sin guía = mercancía (Tipo 1). El IdViaje (Extra6 de transporte) ya NO se usa
+     * (Ivan 2026-08-27). Idempotente por uuid.
+     */
+    public void guardarAddendaFacturaDesdePortal(String fiscalUuid, String proveedor, String noOC,
+            String noRecepcion, String serieFolio, String rfc, String guiaEntrega) {
+        String uuid = fiscalUuid != null ? fiscalUuid.toUpperCase() : null;
+        if (uuid == null || addendaRepository.existsById(uuid)) {
+            log.debug("Addenda ya existente o uuid nulo ({}), no se regenera", uuid);
+            return;
+        }
+        boolean esTransporte = guiaEntrega != null && !guiaEntrega.trim().isEmpty();
+        AddendaEntity addenda;
+        if (esTransporte) {
+            // Tipo 2 transporte: Extra1=IdProveedor, Extra4=Version, Extra5=IdGuiaEntrega, Extra6=IdViaje (descartado).
+            addenda = AddendaMapper.toEntity(uuid, proveedor, null, null, "1.0", guiaEntrega, null, 2);
+            log.info("Addenda Tipo 2 (transporte) generada desde portal: uuid={} proveedor={} guia={}",
+                    uuid, proveedor, guiaEntrega);
+        } else {
+            // Tipo 1 mercancía: Extra1=Proveedor, Extra2=NoOC, Extra3=NoRecepcion, Extra4=SerieFolio, Extra5=UUID, Extra6=RFC.
+            addenda = AddendaMapper.toEntity(uuid, proveedor, noOC, noRecepcion, serieFolio, uuid, rfc, 1);
+            log.info("Addenda Tipo 1 (mercancía) generada desde portal: uuid={} proveedor={} noOC={} noRecepcion={}",
+                    uuid, proveedor, noOC, noRecepcion);
+        }
+        addendaRepository.save(addenda);
+    }
+
     /** Lee el texto del primer hijo con ese nombre dentro del nodo addenda (sin namespace). */
     private String addendaChild(Element parent, String name) {
         NodeList nl = parent.getElementsByTagName(name);

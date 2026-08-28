@@ -163,7 +163,7 @@ public class CreditNoteDownloadBatchService {
             esDescuentoComercial = tipoNcXml != null && tipoNcXml.replaceFirst("^0+", "").equals("2");
         }
         if (esDescuentoComercial) {
-            // Tren v1.0(5) (Ivan 2026-08): la NC de Descuento Comercial (rebate) nace en 17
+            // Tren v1.0 (Ivan 2026-08): la NC de Descuento Comercial (rebate) nace en 17
             // "Pendiente de complemento" en el registro y NO pasa por este batch (que toma
             // estatus 3/4). Si por dato legado apareciera aquí, se omite SIN cambiar estatus:
             // el viejo 3->9 ya no existe en el tren (el 9 hoy es "Error registro contable").

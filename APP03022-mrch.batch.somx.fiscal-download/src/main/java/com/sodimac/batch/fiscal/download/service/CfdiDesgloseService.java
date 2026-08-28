@@ -318,10 +318,10 @@ public class CfdiDesgloseService {
 
     /**
      * Genera y guarda la Addenda de FACTURA a partir de los datos del portal, para facturas
-     * cuyo XML no trae addenda válida (mismo criterio que NC: "el XML no requiere addenda, tú
-     * la generas"). Clasifica por presencia de guía de entrega: con guía = transporte (Tipo 2),
+     * cuyo XML no trae addenda válida (mismo criterio que NC: "el XML no requiere addenda.
+     * Clasifica por presencia de guía de entrega: con guía = transporte (Tipo 2),
      * sin guía = mercancía (Tipo 1). El IdViaje (Extra6 de transporte) ya NO se usa
-     * (Ivan 2026-08-27). Idempotente por uuid.
+     * (Ivan 2026-08-27).
      */
     public void guardarAddendaFacturaDesdePortal(String fiscalUuid, String proveedor, String noOC,
             String noRecepcion, String serieFolio, String rfc, String guiaEntrega) {

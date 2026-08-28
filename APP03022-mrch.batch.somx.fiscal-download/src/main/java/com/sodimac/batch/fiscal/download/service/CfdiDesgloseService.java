@@ -93,11 +93,9 @@ public class CfdiDesgloseService {
             extractConcepto((Element) conceptoNodes.item(i), uuid);
         }
 
-        // 4. Addenda: NO se toma del XML. Por directiva de Ivan (2026-08) la addenda se arma
-        // SIEMPRE desde los datos del portal (tabla Addenda de FBC, que incluye ligas manuales
-        // de finanzas y facturas que llegan sin addenda en el XML). Los servicios de batch la
-        // generan con guardarAddendaFacturaDesdePortal / guardarAddendaNcDesdePortal.
-        // (extractAddenda del XML queda disponible pero ya NO se invoca aquí.)
+        // 4. Addenda (dentro de cfdi:Addenda). Se liga por fiscal_uuid (Uuid).
+        // 3 variantes según el nodo: Tipo 1 mercancía, Tipo 2 transporte, Tipo 3 NC.
+        extractAddenda(doc, uuid);
 
         log.info("Desglose completado: uuid={}", uuid);
         return comprobante;
@@ -316,36 +314,6 @@ public class CfdiDesgloseService {
         addendaRepository.save(addenda);
         log.info("Addenda Tipo 3 (NC) generada desde datos del portal: uuid={} idProveedor={} tipoNC={}",
                 uuid, idProveedor, tipoNc);
-    }
-
-    /**
-     * Genera y guarda la Addenda de FACTURA a partir de los datos del portal, para facturas
-     * cuyo XML no trae addenda válida (mismo criterio que NC: "el XML no requiere addenda, tú
-     * la generas"). Clasifica por presencia de guía de entrega: con guía = transporte (Tipo 2),
-     * sin guía = mercancía (Tipo 1). El IdViaje (Extra6 de transporte) ya NO se usa
-     * (Ivan 2026-08-27). Idempotente por uuid.
-     */
-    public void guardarAddendaFacturaDesdePortal(String fiscalUuid, String proveedor, String noOC,
-            String noRecepcion, String serieFolio, String rfc, String guiaEntrega) {
-        String uuid = fiscalUuid != null ? fiscalUuid.toUpperCase() : null;
-        if (uuid == null || addendaRepository.existsById(uuid)) {
-            log.debug("Addenda ya existente o uuid nulo ({}), no se regenera", uuid);
-            return;
-        }
-        boolean esTransporte = guiaEntrega != null && !guiaEntrega.trim().isEmpty();
-        AddendaEntity addenda;
-        if (esTransporte) {
-            // Tipo 2 transporte: Extra1=IdProveedor, Extra4=Version, Extra5=IdGuiaEntrega, Extra6=IdViaje (descartado).
-            addenda = AddendaMapper.toEntity(uuid, proveedor, null, null, "1.0", guiaEntrega, null, 2);
-            log.info("Addenda Tipo 2 (transporte) generada desde portal: uuid={} proveedor={} guia={}",
-                    uuid, proveedor, guiaEntrega);
-        } else {
-            // Tipo 1 mercancía: Extra1=Proveedor, Extra2=NoOC, Extra3=NoRecepcion, Extra4=SerieFolio, Extra5=UUID, Extra6=RFC.
-            addenda = AddendaMapper.toEntity(uuid, proveedor, noOC, noRecepcion, serieFolio, uuid, rfc, 1);
-            log.info("Addenda Tipo 1 (mercancía) generada desde portal: uuid={} proveedor={} noOC={} noRecepcion={}",
-                    uuid, proveedor, noOC, noRecepcion);
-        }
-        addendaRepository.save(addenda);
     }
 
     /** Lee el texto del primer hijo con ese nombre dentro del nodo addenda (sin namespace). */

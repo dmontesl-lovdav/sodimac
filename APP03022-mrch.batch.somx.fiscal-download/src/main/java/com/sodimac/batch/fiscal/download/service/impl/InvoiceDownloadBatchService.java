@@ -157,8 +157,8 @@ public class InvoiceDownloadBatchService {
             throw new RuntimeException("XML no disponible para factura " + uuid);
         }
 
-        // Addenda: SIEMPRE se arma desde los datos del portal, NO del XML (directiva Ivan 2026-08).
-        // No bloquea ni cambia estatus.
+        // v1.0: la addenda se registra junto con la factura (fiscal-api /register).
+        // fiscal-download ya NO valida ni bloquea por addenda.
 
         // 1) Trabajo local primero.
         try {
@@ -184,14 +184,6 @@ public class InvoiceDownloadBatchService {
             throw new RuntimeException("Error transitorio en desglose (permanece en "
                     + estatusEntrada + "): " + e.getMessage(), e);
         }
-
-        // 1b) Addenda armada SIEMPRE desde el portal (parte del trabajo local, idempotente por uuid).
-        cfdiDesgloseService.guardarAddendaFacturaDesdePortal(uuid,
-                numProveedor != null ? numProveedor.toBigInteger().toString() : null,
-                factura.getNoOrdenCompra(), factura.getNoRecepcion(),
-                (factura.getSeries() != null ? factura.getSeries() : "")
-                        + (factura.getFolio() != null ? factura.getFolio() : ""),
-                factura.getReceptorRfc(), factura.getGuiaEntrega());
 
         // 2) Confirmación en el portal, sólo tras commit local: (3 ->) 4 -> 5.
         if (estatusEntrada == STATUS_RECIBIDA) {

@@ -37,6 +37,9 @@ public class CreditNoteDownloadBatchService {
 
     @Value("${batch.status.error-desglose-nc:6}")
     private int statusErrorDesglose;
+    // Regla MXSTM (Ivan 2026-07-31): NC Descuento Comercial (Addenda TipoNC=2) no se
+    // descarga a SODIMAC_SAP_DEV; solo se avanza 3 -> 9 en el portal.
+    private static final int STATUS_NC_DESCUENTO_COMERCIAL = 9;
 
     private static final String PROCESS_NAME = "CreditNote Download";
     private static final String DOC_TYPE = "E";
@@ -163,18 +166,24 @@ public class CreditNoteDownloadBatchService {
             esDescuentoComercial = tipoNcXml != null && tipoNcXml.replaceFirst("^0+", "").equals("2");
         }
         if (esDescuentoComercial) {
-            // Tren v1.0(5) (Ivan 2026-08): la NC de Descuento Comercial (rebate) nace en 17
-            // "Pendiente de complemento" en el registro y NO pasa por este batch (que toma
-            // estatus 3/4). Si por dato legado apareciera aquí, se omite SIN cambiar estatus:
-            // el viejo 3->9 ya no existe en el tren (el 9 hoy es "Error registro contable").
-            log.info("NC {} TipoNC=2 (Descuento Comercial): no se descarga (rebate nace en 17), se omite", uuid);
+            log.info("NC {} TipoNC=2 (Descuento Comercial): no se descarga, estatus {} -> 9", uuid, estatusEntrada);
+            avanzarEstatus(uuid, numProveedor, estatusEntrada, STATUS_NC_DESCUENTO_COMERCIAL,
+                    "NC Descuento Comercial (TipoNC=2): no aplica descarga");
             traceService.addElement(idEjecucion, uuid, serieFolio,
-                    secuencia, "SKIPPED", "TipoNC=2 Descuento Comercial: no se descarga (rebate en 17)");
+                    secuencia, "SKIPPED", "TipoNC=2 Descuento Comercial: no se descarga");
             return;
         }
 
-        // Addenda: SIEMPRE se arma desde los datos del portal, NO del XML (directiva Ivan 2026-08).
-        // "Sí o sí se registra una Addenda"; sin cambio de estatus a 1.
+        // Iván 26/ago/2026 (STM-719): el rechazo por addenda YA NO APLICA — "sí o sí se
+        // registra una Addenda", sin cambio de estatus a 1. Si el XML no la trae válida,
+        // se genera desde los datos del portal como parte del trabajo local.
+        List<String> erroresAddenda = cfdiDesgloseService.validarAddenda(xmlContent, DOC_TYPE);
+        boolean addendaDesdePortal = !erroresAddenda.isEmpty();
+        if (addendaDesdePortal) {
+            log.info("NC {} sin addenda valida en XML ({}); se genera desde datos del portal (tipoNC={} - {})",
+                    uuid, String.join("; ", erroresAddenda),
+                    nc.getTipoNotaCredito(), nc.getTipoNotaCreditoDescripcion());
+        }
 
         // 1) Trabajo local primero.
         try {
@@ -202,10 +211,12 @@ public class CreditNoteDownloadBatchService {
                     + estatusEntrada + "): " + e.getMessage(), e);
         }
 
-        // 1b) Addenda armada SIEMPRE desde el portal (parte del trabajo local, idempotente por uuid).
-        cfdiDesgloseService.guardarAddendaNcDesdePortal(uuid,
-                numProveedor != null ? numProveedor.toBigInteger().toString() : null,
-                nc.getTipoNotaCreditoDescripcion());
+        // 1b) Addenda generada desde el portal cuando el XML no la trae (parte del trabajo local).
+        if (addendaDesdePortal) {
+            cfdiDesgloseService.guardarAddendaNcDesdePortal(uuid,
+                    numProveedor != null ? numProveedor.toBigInteger().toString() : null,
+                    nc.getTipoNotaCreditoDescripcion());
+        }
 
         // 2) Confirmación en el portal, sólo tras commit local: (3 ->) 4 -> 5.
         if (estatusEntrada == STATUS_PENDIENTE_CONTABILIZAR) {

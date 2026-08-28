@@ -93,11 +93,9 @@ public class CfdiDesgloseService {
             extractConcepto((Element) conceptoNodes.item(i), uuid);
         }
 
-        // 4. Addenda: NO se toma del XML. Por directiva de Ivan (2026-08) la addenda se arma
-        // SIEMPRE desde los datos del portal (tabla Addenda de FBC, que incluye ligas manuales
-        // de finanzas y facturas que llegan sin addenda en el XML). Los servicios de batch la
-        // generan con guardarAddendaFacturaDesdePortal / guardarAddendaNcDesdePortal.
-        // (extractAddenda del XML queda disponible pero ya NO se invoca aquí.)
+        // 4. Addenda (dentro de cfdi:Addenda). Se liga por fiscal_uuid (Uuid).
+        // 3 variantes según el nodo: Tipo 1 mercancía, Tipo 2 transporte, Tipo 3 NC.
+        extractAddenda(doc, uuid);
 
         log.info("Desglose completado: uuid={}", uuid);
         return comprobante;

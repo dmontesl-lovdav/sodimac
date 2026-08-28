@@ -173,8 +173,16 @@ public class CreditNoteDownloadBatchService {
             return;
         }
 
-        // Addenda: SIEMPRE se arma desde los datos del portal, NO del XML (directiva Ivan 2026-08).
-        // "Sí o sí se registra una Addenda"; sin cambio de estatus a 1.
+        // Iván 26/ago/2026 (STM-719): el rechazo por addenda YA NO APLICA — "sí o sí se
+        // registra una Addenda", sin cambio de estatus a 1. Si el XML no la trae válida,
+        // se genera desde los datos del portal como parte del trabajo local.
+        List<String> erroresAddenda = cfdiDesgloseService.validarAddenda(xmlContent, DOC_TYPE);
+        boolean addendaDesdePortal = !erroresAddenda.isEmpty();
+        if (addendaDesdePortal) {
+            log.info("NC {} sin addenda valida en XML ({}); se genera desde datos del portal (tipoNC={} - {})",
+                    uuid, String.join("; ", erroresAddenda),
+                    nc.getTipoNotaCredito(), nc.getTipoNotaCreditoDescripcion());
+        }
 
         // 1) Trabajo local primero.
         try {
@@ -202,10 +210,12 @@ public class CreditNoteDownloadBatchService {
                     + estatusEntrada + "): " + e.getMessage(), e);
         }
 
-        // 1b) Addenda armada SIEMPRE desde el portal (parte del trabajo local, idempotente por uuid).
-        cfdiDesgloseService.guardarAddendaNcDesdePortal(uuid,
-                numProveedor != null ? numProveedor.toBigInteger().toString() : null,
-                nc.getTipoNotaCreditoDescripcion());
+        // 1b) Addenda generada desde el portal cuando el XML no la trae (parte del trabajo local).
+        if (addendaDesdePortal) {
+            cfdiDesgloseService.guardarAddendaNcDesdePortal(uuid,
+                    numProveedor != null ? numProveedor.toBigInteger().toString() : null,
+                    nc.getTipoNotaCreditoDescripcion());
+        }
 
         // 2) Confirmación en el portal, sólo tras commit local: (3 ->) 4 -> 5.
         if (estatusEntrada == STATUS_PENDIENTE_CONTABILIZAR) {

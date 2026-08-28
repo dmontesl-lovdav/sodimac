@@ -157,8 +157,14 @@ public class InvoiceDownloadBatchService {
             throw new RuntimeException("XML no disponible para factura " + uuid);
         }
 
-        // Addenda: SIEMPRE se arma desde los datos del portal, NO del XML (directiva Ivan 2026-08).
-        // No bloquea ni cambia estatus.
+        // Addenda: si el XML no la trae válida, se genera desde los datos del portal (mismo
+        // criterio que NC, Ivan 2026-08). No bloquea ni cambia estatus.
+        List<String> erroresAddenda = cfdiDesgloseService.validarAddenda(xmlContent, DOC_TYPE);
+        boolean addendaDesdePortal = !erroresAddenda.isEmpty();
+        if (addendaDesdePortal) {
+            log.info("Factura {} sin addenda valida en XML ({}); se genera desde datos del portal",
+                    uuid, String.join("; ", erroresAddenda));
+        }
 
         // 1) Trabajo local primero.
         try {
@@ -185,13 +191,15 @@ public class InvoiceDownloadBatchService {
                     + estatusEntrada + "): " + e.getMessage(), e);
         }
 
-        // 1b) Addenda armada SIEMPRE desde el portal (parte del trabajo local, idempotente por uuid).
-        cfdiDesgloseService.guardarAddendaFacturaDesdePortal(uuid,
-                numProveedor != null ? numProveedor.toBigInteger().toString() : null,
-                factura.getNoOrdenCompra(), factura.getNoRecepcion(),
-                (factura.getSeries() != null ? factura.getSeries() : "")
-                        + (factura.getFolio() != null ? factura.getFolio() : ""),
-                factura.getReceptorRfc(), factura.getGuiaEntrega());
+        // 1b) Addenda generada desde el portal cuando el XML no la trae (parte del trabajo local).
+        if (addendaDesdePortal) {
+            cfdiDesgloseService.guardarAddendaFacturaDesdePortal(uuid,
+                    numProveedor != null ? numProveedor.toBigInteger().toString() : null,
+                    factura.getNoOrdenCompra(), factura.getNoRecepcion(),
+                    (factura.getSeries() != null ? factura.getSeries() : "")
+                            + (factura.getFolio() != null ? factura.getFolio() : ""),
+                    factura.getReceptorRfc(), factura.getGuiaEntrega());
+        }
 
         // 2) Confirmación en el portal, sólo tras commit local: (3 ->) 4 -> 5.
         if (estatusEntrada == STATUS_RECIBIDA) {

@@ -1019,7 +1019,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     /**
      * Valida que no exista documento duplicado por serie+folio del mismo proveedor (STM-395/STM-397 CA02).
-     * Excepción: registros en Rechazo Comercial no bloquean un nuevo intento de publicación.
+     * Excepción: Rechazo Comercial y Rechazo Contable no bloquean un nuevo intento de publicación.
      *
      * @param serie Serie del documento
      * @param folio Folio del documento
@@ -1029,10 +1029,10 @@ public class InvoiceServiceImpl implements InvoiceService {
     private void validateNoDuplicateBySeriesAndFolio(String serie, String folio,
             UUID issuerUuid, TipoDocumentoFiscal tipoDocumento) {
         String docType = tipoDocumento.getCodigo();
-        int rechazoComercial = rechazoComercialStatus(tipoDocumento);
+        var ignorados = statusesIgnoredForDuplicate(tipoDocumento);
 
-        if (invoiceRepository.existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatus(
-                serie, folio, issuerUuid, docType, rechazoComercial)) {
+        if (invoiceRepository.existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatuses(
+                serie, folio, issuerUuid, docType, ignorados)) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
                     ? FiscalMessageCode.WRN7013
                     : FiscalMessageCode.WRN7016;
@@ -1044,8 +1044,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     /**
      * Valida que no exista documento duplicado por UUID del mismo proveedor (STM-395/STM-397 CA03).
-     * Excepción: si el único registro con ese UUID fiscal está en Rechazo Comercial, se permite
-     * reintentar (se reutilizará el mismo invoice_uuid al persistir por uq_invoice_fiscal_uuid).
+     * Excepción: si el registro con ese UUID fiscal está en Rechazo Comercial o Rechazo Contable,
+     * se permite reintentar (se reutilizará el mismo invoice_uuid por uq_invoice_fiscal_uuid).
      *
      * @param fiscalUuid UUID fiscal del documento
      * @param issuerUuid UUID del emisor (proveedor)
@@ -1054,14 +1054,13 @@ public class InvoiceServiceImpl implements InvoiceService {
     private void validateNoDuplicateByUuid(UUID fiscalUuid, UUID issuerUuid,
             TipoDocumentoFiscal tipoDocumento) {
         String docType = tipoDocumento.getCodigo();
-        int rechazoComercial = rechazoComercialStatus(tipoDocumento);
+        var ignorados = statusesIgnoredForDuplicate(tipoDocumento);
 
         // El constraint único en BD es por fiscal_uuid SOLO (uq_invoice_fiscal_uuid).
-        // Se ignoran registros en Rechazo Comercial para permitir re-publicación.
-        boolean duplicado = invoiceRepository.existsByFiscalUuidExcludingStatus(
-                        fiscalUuid, rechazoComercial)
-                || invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatus(
-                        fiscalUuid, issuerUuid, docType, rechazoComercial);
+        boolean duplicado = invoiceRepository.existsByFiscalUuidExcludingStatuses(
+                        fiscalUuid, ignorados)
+                || invoiceRepository.existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatuses(
+                        fiscalUuid, issuerUuid, docType, ignorados);
 
         if (duplicado) {
             FiscalMessageCode code = (tipoDocumento == TipoDocumentoFiscal.FACTURA)
@@ -1073,11 +1072,20 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
     }
 
-    /** Código de estatus "Rechazo Comercial" según tipo de documento (I=1, E=0). */
-    private static int rechazoComercialStatus(TipoDocumentoFiscal tipoDocumento) {
-        return tipoDocumento == TipoDocumentoFiscal.FACTURA
-                ? InvoiceStatus.RECHAZO_COMERCIAL.getCodigo()
-                : CreditNoteStatus.RECHAZO_COMERCIAL.getCodigo();
+    /**
+     * Estatus que no cuentan como duplicado al republicar.
+     * Factura (CatEstatusFactura): Rechazo Comercial value=1 (EFA001), Rechazo Contable value=14 (EFA012).
+     * NC: Rechazo Comercial=0, Rechazo Contable=11.
+     */
+    private static List<Integer> statusesIgnoredForDuplicate(TipoDocumentoFiscal tipoDocumento) {
+        if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
+            return List.of(
+                    CreditNoteStatus.RECHAZO_COMERCIAL.getCodigo(),
+                    CreditNoteStatus.RECHAZO_CONTABLE.getCodigo());
+        }
+        return List.of(
+                InvoiceStatus.RECHAZO_COMERCIAL.getCodigo(),
+                InvoiceStatus.RECHAZO_CONTABLE.getCodigo());
     }
 
     /**
@@ -1113,17 +1121,17 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.debug("Receptor obtenido. UUID: {}", receiver.getReceiverUuid());
 
             // 3. Crear entidad Invoice (o reutilizar si ya existe en Rechazo Comercial
-            //    con el mismo fiscal_uuid — uq_invoice_fiscal_uuid impide un INSERT nuevo).
+            //    o Rechazo Contable — uq_invoice_fiscal_uuid impide un INSERT nuevo).
             log.debug("Creando entidad Invoice");
-            int rechazoComercial = rechazoComercialStatus(tipoDocumento);
+            var ignorados = statusesIgnoredForDuplicate(tipoDocumento);
             InvoiceEntity invoice = invoiceRepository.findByFiscalUuid(fiscalUuid)
                     .filter(existing -> existing.getStatus() != null
-                            && existing.getStatus() == rechazoComercial)
+                            && ignorados.contains(existing.getStatus()))
                     .orElseGet(InvoiceEntity::new);
             if (invoice.getInvoiceUuid() != null) {
                 log.info(
-                        "Reutilizando invoice en Rechazo Comercial para re-publicación. invoiceUuid={}, fiscalUuid={}",
-                        invoice.getInvoiceUuid(), fiscalUuid);
+                        "Reutilizando invoice en rechazo comercial/contable para re-publicación. invoiceUuid={}, fiscalUuid={}, status={}",
+                        invoice.getInvoiceUuid(), fiscalUuid, invoice.getStatus());
             }
             invoice.setFiscalUuid(fiscalUuid);
             invoice.setDocumentType(tipoDocumento.getCodigo());

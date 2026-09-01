@@ -1,0 +1,36 @@
+# Plantilla pendiente de integración al kustomization del proyecto.
+# NO activar hasta implementar los adaptadores y las garantías de idempotencia.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rebate-sync-batch
+spec:
+  schedule: "0 5 * * *"
+  timeZone: America/Mexico_City
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # Los reintentos de negocio a una hora requieren control persistente.
+      backoffLimit: 0
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          containers:
+            - name: rebate-sync-batch
+              image: ${CI_APPLICATION_IMAGE}
+              imagePullPolicy: IfNotPresent
+              command: ["node"]
+              # Esta versión falla deliberadamente sin --dry-run.
+              args: ["dist/workers/rebateSync.batch.js", "--run"]
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]

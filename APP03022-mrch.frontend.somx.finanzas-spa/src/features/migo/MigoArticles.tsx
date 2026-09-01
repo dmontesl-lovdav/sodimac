@@ -12,7 +12,7 @@ import type { Column } from '@/shared/components/ui/table/GenericTable';
 import BackLinkButton from '@shared/components/ui/button/BackLinkButton';
 import { APP_EVENT, PermissionGate } from '@shared/security';
 
-import { formatDate } from '@/utils/utils';
+import { formatDate, exportToCSV } from '@/utils/utils';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoReception } from './interfaces';
 
@@ -105,25 +105,17 @@ export default function MigoArticles(): ReactElement {
     const handleExportCsv = () => {
         if (articles.length === 0) return;
 
-        const headers = ['SKU', 'Descripcion_Sku', 'Cantidad', 'Importe_Unitario', 'Importe_Total'];
-        const rows = articles.map(a => [
-            a.sku ?? '',
-            `"${(a.descripcionSku ?? '').replace(/"/g, '""')}"`,
-            String(a.cantidad),
-            String(a.importeUnitario),
-            String(a.importeSinImpuestoDet),
-        ]);
-
-        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `articulos-OC${nroOc}-REC${nroRecepcion}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        exportToCSV(
+            ['SKU', 'Descripción SKU', 'Cantidad', 'Importe Unitario', 'Importe Total'],
+            articles.map((a) => [
+                a.sku ?? '-',
+                a.descripcionSku ?? '-',
+                String(a.cantidad),
+                formatCurrency(a.importeUnitario),
+                formatCurrency(a.importeSinImpuestoDet),
+            ]),
+            `articulos-OC${nroOc}-REC${nroRecepcion}`,
+        );
     };
 
     const columns: Column<MigoReception>[] = [

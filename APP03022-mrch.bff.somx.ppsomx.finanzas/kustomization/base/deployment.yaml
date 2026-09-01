@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: ${PROJECT_NAME}
-          image: foo/bar
+          image: "foo/bar:${CI_JOB_ID}"
 
           ports:
             - name: http

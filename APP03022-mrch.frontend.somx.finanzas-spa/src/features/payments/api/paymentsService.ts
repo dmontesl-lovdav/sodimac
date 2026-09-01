@@ -6,7 +6,14 @@ import {
     PaymentDocument,
 } from "../interfaces";
 import { createApiClient } from "@/services/ApiClient";
-import { formatDate, parseDisplayDate } from "@/utils/utils";
+import { capitalizeWord, formatDate, parseDisplayDate } from "@/utils/utils";
+import { resolvePaymentStatusDisplay } from "../paymentStatusDisplay";
+
+type PaymentExportProvider = {
+    supplierNumber?: string | number;
+    businessName?: string;
+    supplierType?: { code?: string };
+};
 
 const api = createApiClient();
 
@@ -347,32 +354,44 @@ class PaymentsClient {
         };
     }
 
-    exportPaymentsCsv(rows: PaymentRecord[]): Blob {
+    exportPaymentsCsv(
+        rows: PaymentRecord[],
+        providers: PaymentExportProvider[] = []
+    ): Blob {
+        const findProvider = (providerNumber: string) =>
+            providers.find(
+                (item) =>
+                    String(item.supplierNumber) === String(providerNumber)
+            );
+
         const headers = [
             "Referencia Pago",
+            "Año Pago",
             "Importe",
             "Moneda",
-            "Año Pago",
-            "Fecha Pago",
+            "Tipo Proveedor",
             "Número Proveedor",
             "Nombre Proveedor",
             "Fecha Registro",
-            "Fecha Actualización",
             "Estatus",
         ];
 
-        const csvRows = rows.map((item) => [
-            item.documentReference,
-            formatPaymentAmount(item.amount),
-            item.currency,
-            item.paymentYear,
-            formatDate(item.paymentDate),
-            item.providerNumber,
-            item.providerName,
-            item.createdAt,
-            item.updatedAt,
-            item.status,
-        ]);
+        const csvRows = rows.map((item) => {
+            const provider = findProvider(item.providerNumber);
+            const typeCode = provider?.supplierType?.code;
+
+            return [
+                item.documentReference ?? "--",
+                item.paymentYear ?? "--",
+                formatPaymentAmount(item.amount),
+                item.currency ?? "--",
+                typeCode ? capitalizeWord(typeCode) : "--",
+                item.providerNumber ?? "--",
+                provider?.businessName ?? item.providerName ?? "--",
+                item.createdAt || "--",
+                resolvePaymentStatusDisplay(item.statusId).label,
+            ];
+        });
 
         const csvContent =
             "\uFEFF" +

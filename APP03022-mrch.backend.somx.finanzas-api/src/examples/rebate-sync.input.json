@@ -1,0 +1,63 @@
+{
+    "rules": {
+        "subtotalAccounts": [
+            "5801010001",
+            "7702000027",
+            "6905020024"
+        ],
+        "fromDate": "2026-07-01"
+    },
+    "records": [
+        {
+            "sourceKey": "DEMO-ONLY-001",
+            "sapPosted": true,
+            "account": "5801010001",
+            "eligibilityDate": "2026-07-02",
+            "data": {
+                "NUMERO_DOCUMENTO": "DEMO-REBATE-001",
+                "REFERENCIA_DOCUMENTO": "DEMO-ACUERDO-001",
+                "DOC_SAP": "DEMO-SAP-001",
+                "CODIGO_PROVEEDOR": "34786",
+                "IMPORTE": "5800.00",
+                "TipoRebate": "1",
+                "IdPeriodo": "202607",
+                "FECHA_VENCIMIENTO": "2026-07-31",
+                "FECHA_RECEPCION": "2026-07-02"
+            }
+        },
+        {
+            "sourceKey": "DEMO-ONLY-001",
+            "sapPosted": true,
+            "account": "5801010001",
+            "eligibilityDate": "2026-07-02",
+            "data": {
+                "NUMERO_DOCUMENTO": "DEMO-REBATE-001",
+                "REFERENCIA_DOCUMENTO": "DEMO-ACUERDO-001",
+                "DOC_SAP": "DEMO-SAP-001",
+                "CODIGO_PROVEEDOR": "34786",
+                "IMPORTE": "5800.00",
+                "TipoRebate": "1",
+                "IdPeriodo": "202607",
+                "FECHA_VENCIMIENTO": "2026-07-31",
+                "FECHA_RECEPCION": "2026-07-02"
+            }
+        },
+        {
+            "sourceKey": "DEMO-ONLY-002",
+            "sapPosted": false,
+            "account": "5801010001",
+            "eligibilityDate": "2026-07-02",
+            "data": {
+                "NUMERO_DOCUMENTO": "DEMO-REBATE-001",
+                "REFERENCIA_DOCUMENTO": "DEMO-ACUERDO-001",
+                "DOC_SAP": "DEMO-SAP-001",
+                "CODIGO_PROVEEDOR": "34786",
+                "IMPORTE": "5800.00",
+                "TipoRebate": "1",
+                "IdPeriodo": "202607",
+                "FECHA_VENCIMIENTO": "2026-07-31",
+                "FECHA_RECEPCION": "2026-07-02"
+            }
+        }
+    ]
+}

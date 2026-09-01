@@ -115,6 +115,8 @@ const styles = {
     justifyContent: 'space-between',
     cursor: 'pointer',
     padding: '0.5rem 0',
+    width: '100%',
+    textAlign: 'left' as const,
   },
   stepTitle: {
     fontSize: '1rem',

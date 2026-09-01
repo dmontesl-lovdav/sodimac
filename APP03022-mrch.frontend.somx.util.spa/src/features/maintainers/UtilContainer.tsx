@@ -83,7 +83,6 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
     const finalCards = sec.isLoading
         ? rawCards.filter((c) => !c.requiredApp && !c.requiredAnyApp)
         : rawCards.filter((c) => {
-              if (sec.isAdmin) return true;
               if (c.requiredApp && !sec.hasApp(c.requiredApp)) return false;
               if (c.requiredAnyApp && !sec.hasAnyApp(c.requiredAnyApp)) return false;
               return true;

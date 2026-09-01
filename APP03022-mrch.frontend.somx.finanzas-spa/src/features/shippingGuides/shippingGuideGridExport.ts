@@ -10,7 +10,6 @@ import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
 export const SHIPPING_GUIDE_GRID_EXPORT_HEADERS = [
     "Guía Embarque",
     "Placa",
-    "Placa Remolque",
     "Origen",
     "Tipo Entrega",
     "Orden Compra",
@@ -51,10 +50,9 @@ export function mapShippingGuideToGridExportRow(
     return [
         guide.guideNumber ?? guide.shippingGuideId ?? "",
         guide.truckPlate ?? "N/D",
-        guide.trailerPlate ?? "N/D",
-        getCatalogDisplay(guide.OrigenCartaPorte),
+        guide.originId != null ? String(guide.originId) : "",
         getCatalogDisplay(guide.deliveryType),
-        guide.orderNumber ?? "N/D",
+        guide?.orderNumber == "undefined" ? "N/D" : (guide?.orderNumber ?? "N/D"),
         String(guide.vendorNumber ?? guide.supplier?.supplierNumber ?? ""),
         guide.supplier?.businessName ?? "N/D",
         formatGuideDate(guide.deliveryDate),

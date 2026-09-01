@@ -43,7 +43,7 @@ const styles = {
   stepLine: { width: '2px', flexGrow: 1, backgroundColor: '#002D4C', marginTop: '0.5rem' },
   stepLineDisabled: { backgroundColor: '#cbd5e1' },
   stepContent: { flex: 1, paddingBottom: '1rem' },
-  stepHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer', marginBottom: '0.5rem' },
+  stepHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer', marginBottom: '0.5rem', width: '100%', textAlign: 'left' as const },
   stepTitle: { fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' },
   stepTitleDisabled: { color: '#94a3b8' },
   stepDescription: { fontSize: '0.875rem', color: '#64748b', lineHeight: 1.5 },

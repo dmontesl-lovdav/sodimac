@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,7 +56,7 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
 
     /**
      * Igual que {@link #existsBySeriesAndFolioAndIssuerUuidAndDocumentType}, pero ignora
-     * registros con el estatus indicado (p. ej. Rechazo Comercial).
+     * registros cuyo estatus esté en la lista (Rechazo Comercial y Rechazo Contable).
      */
     @Query("""
             SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
@@ -64,14 +65,14 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
               AND i.folio = :folio
               AND i.issuerUuid = :issuerUuid
               AND i.documentType = :documentType
-              AND i.status <> :excludedStatus
+              AND i.status NOT IN :excludedStatuses
             """)
-    boolean existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatus(
+    boolean existsBySeriesAndFolioAndIssuerUuidAndDocumentTypeExcludingStatuses(
             @Param("series") String series,
             @Param("folio") String folio,
             @Param("issuerUuid") UUID issuerUuid,
             @Param("documentType") String documentType,
-            @Param("excludedStatus") Integer excludedStatus);
+            @Param("excludedStatuses") Collection<Integer> excludedStatuses);
 
     /**
      * Verifica si existe un documento con el mismo UUID fiscal, emisor y tipo.
@@ -86,21 +87,21 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
             UUID fiscalUuid, UUID issuerUuid, String documentType);
 
     /**
-     * Existe algún documento con el UUID fiscal cuyo estatus NO sea el excluido
-     * (p. ej. permite reintentar si el único registro es Rechazo Comercial).
+     * Existe algún documento con el UUID fiscal cuyo estatus no esté en la lista
+     * (permite reintentar si solo hay Rechazo Comercial y/o Rechazo Contable).
      */
     @Query("""
             SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
             FROM InvoiceEntity i
             WHERE i.fiscalUuid = :fiscalUuid
-              AND i.status <> :excludedStatus
+              AND i.status NOT IN :excludedStatuses
             """)
-    boolean existsByFiscalUuidExcludingStatus(
+    boolean existsByFiscalUuidExcludingStatuses(
             @Param("fiscalUuid") UUID fiscalUuid,
-            @Param("excludedStatus") Integer excludedStatus);
+            @Param("excludedStatuses") Collection<Integer> excludedStatuses);
 
     /**
-     * Existe documento con UUID fiscal + emisor + tipo, excluyendo un estatus.
+     * Existe documento con UUID fiscal + emisor + tipo, excluyendo los estatus indicados.
      */
     @Query("""
             SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
@@ -108,11 +109,11 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID>, J
             WHERE i.fiscalUuid = :fiscalUuid
               AND i.issuerUuid = :issuerUuid
               AND i.documentType = :documentType
-              AND i.status <> :excludedStatus
+              AND i.status NOT IN :excludedStatuses
             """)
-    boolean existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatus(
+    boolean existsByFiscalUuidAndIssuerUuidAndDocumentTypeExcludingStatuses(
             @Param("fiscalUuid") UUID fiscalUuid,
             @Param("issuerUuid") UUID issuerUuid,
             @Param("documentType") String documentType,
-            @Param("excludedStatus") Integer excludedStatus);
+            @Param("excludedStatuses") Collection<Integer> excludedStatuses);
 }

@@ -16,20 +16,25 @@ type DisplayCrumb = BreadcrumbItem & {
 };
 
 function getFbcHomeUrl(): string {
-  const raw = process.env.FBC_HOME ?? '';
-  return ((t) => (t === "" ? '/' : t))(raw.trim());
+  return process.env.FBC_HOME?.trim() || '/';
 }
 
 function isHomeCrumb(item: BreadcrumbItem): boolean {
   const normalized = item.label.trim().toLowerCase();
+
   return normalized === 'home' || normalized === 'inicio';
 }
 
 function buildDisplayItems(items: BreadcrumbItem[]): DisplayCrumb[] {
   const rest =
-    items.length > 0 && isHomeCrumb(items[0]) ? items.slice(1) : items;
+    items.length > 0 && isHomeCrumb(items[0])
+      ? items.slice(1)
+      : items;
 
-  return [{ label: 'Inicio', externalHref: getFbcHomeUrl() }, ...rest];
+  return [
+    { label: 'Inicio', externalHref: getFbcHomeUrl() },
+    ...rest,
+  ];
 }
 
 function renderCrumbContent(item: DisplayCrumb, isLast: boolean) {
@@ -47,7 +52,7 @@ function renderCrumbContent(item: DisplayCrumb, isLast: boolean) {
     );
   }
 
-  if (isLast) {
+  if (isLast || (!onClick && !to)) {
     return <span className="breadcrumb-current">{label}</span>;
   }
 
@@ -70,21 +75,18 @@ function renderCrumbContent(item: DisplayCrumb, isLast: boolean) {
     );
   }
 
-  if (to) {
-    return (
-      <Link to={to} className="breadcrumb-link">
-        {label}
-      </Link>
-    );
-  }
-
-  return <span className="breadcrumb-current">{label}</span>;
+  return (
+    <Link to={to ?? '/'} className="breadcrumb-link">
+      {label}
+    </Link>
+  );
 }
 
 /**
  * El primer ítem siempre es "Inicio" y enlaza a FBC_HOME (.env).
- * El último ítem no recibe enlace porque es el paso activo.
- * Si un ítem trae `onClick`, se renderiza como botón (útil para navegar con state).
+ * Inicio conserva su enlace incluso cuando es el único ítem.
+ * El último ítem del resto de la ruta se muestra sin enlace.
+ * En los ítems intermedios, onClick tiene prioridad sobre to.
  */
 export default function Breadcrumb({ items }: BreadcrumbProps) {
   const displayItems = buildDisplayItems(items);
@@ -95,7 +97,10 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
         const isLast = idx === displayItems.length - 1;
 
         return (
-          <span key={`${item.label}-${idx}`} className="breadcrumb-item">
+          <span
+            key={`${item.label}-${idx}`}
+            className="breadcrumb-item"
+          >
             {idx > 0 && (
               <span className="breadcrumb-separator">{'>'}</span>
             )}

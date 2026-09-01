@@ -2,6 +2,7 @@ package com.sodimac.fiscal.api.service;
 
 import com.sodimac.fiscal.api.model.dto.InvoiceRegistrationResponse;
 import com.sodimac.fiscal.api.model.entity.*;
+import com.sodimac.fiscal.api.model.enums.InvoiceStatus;
 import com.sodimac.fiscal.api.repository.*;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -194,11 +195,15 @@ public class InvoiceRegistrationServiceIntegrationTest {
                 xmlContent
         );
 
-        // Primer registro exitoso
+        // Primer registro exitoso (este servicio persiste status=1 = Rechazo Comercial).
         InvoiceRegistrationResponse firstResponse = invoiceRegistrationService.registerInvoice(file);
         assertThat(firstResponse.isSuccess()).isTrue();
 
-        // When: Intentar registrar la misma factura nuevamente
+        InvoiceEntity firstInvoice = invoiceRepository.findByFiscalUuid(firstResponse.getFiscalUuid()).orElseThrow();
+        firstInvoice.setStatus(InvoiceStatus.RECIBIDA.getCodigo());
+        invoiceRepository.save(firstInvoice);
+
+        // When: Intentar registrar la misma factura nuevamente (ya no está en rechazo)
         InvoiceRegistrationResponse secondResponse = invoiceRegistrationService.registerInvoice(file);
 
         // Then: Verifica rechazo por duplicado

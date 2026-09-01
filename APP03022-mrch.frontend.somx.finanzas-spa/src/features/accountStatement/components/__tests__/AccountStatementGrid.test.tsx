@@ -3,7 +3,8 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 jest.mock("@shared/components/ui", () => {
-  const ReactLocal = require("react");
+  const ReactLocal = jest.requireActual<typeof import("react")>("react");
+
   return {
     GenericTable: ({ rows }: any) =>
       ReactLocal.createElement(
@@ -22,6 +23,12 @@ jest.mock("@shared/security", () => ({
       REQUEST_REVIEW: {},
     },
   },
+
+  // Simula permisos únicamente dentro de esta prueba.
+  useSecurityContext: () => ({
+    can: () => true,
+  }),
+
   PermissionGate: ({ children }: any) => children,
 }));
 
@@ -52,6 +59,7 @@ describe("AccountStatementGrid", () => {
         onReject: jest.fn(),
       })
     );
+
     expect(html).toContain('data-testid="table"');
     expect(html).toContain(">1<");
   });

@@ -4,8 +4,10 @@ import com.sodimac.fiscal.api.exception.FiscalException;
 import com.sodimac.fiscal.api.model.dto.InvoiceRegistrationResponse;
 import com.sodimac.fiscal.api.model.dto.invoicexml.InvoiceXmlDto;
 import com.sodimac.fiscal.api.model.entity.*;
+import com.sodimac.fiscal.api.model.enums.CreditNoteStatus;
 import com.sodimac.fiscal.api.model.enums.FiscalMessageCode;
 import com.sodimac.fiscal.api.model.enums.FiscalSuccessCode;
+import com.sodimac.fiscal.api.model.enums.InvoiceStatus;
 import com.sodimac.fiscal.api.model.enums.TipoDocumentoFiscal;
 import com.sodimac.fiscal.api.repository.AddendumRepository;
 import com.sodimac.fiscal.api.repository.InvoiceRepository;
@@ -25,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -121,7 +124,7 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
             UUID fiscalUuid = extractFiscalUuid(invoiceDto);
             log.debug("UUID fiscal extraido: {}", fiscalUuid);
 
-            validateNoDuplicate(fiscalUuid, invoiceDto);
+            validateNoDuplicate(fiscalUuid, tipoDocumento);
             log.info("Documento no duplicado. UUID unico: {}", fiscalUuid);
 
             // === PASO 7: VALIDAR ADDENDA ===
@@ -288,16 +291,30 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
 
     /**
      * Valida que el documento no esté duplicado.
+     * No cuenta facturas/NC en Rechazo Comercial ni Rechazo Contable (CatEstatusFactura
+     * value 1 y 14; NC 0 y 11).
      */
-    private void validateNoDuplicate(UUID fiscalUuid, InvoiceXmlDto invoiceDto) {
+    private void validateNoDuplicate(UUID fiscalUuid, TipoDocumentoFiscal tipoDocumento) {
         log.debug("Validando que el UUID fiscal no este duplicado: {}", fiscalUuid);
 
-        if (invoiceRepository.findByFiscalUuid(fiscalUuid).isPresent()) {
+        if (invoiceRepository.existsByFiscalUuidExcludingStatuses(
+                fiscalUuid, statusesIgnoredForDuplicate(tipoDocumento))) {
             log.error("Documento duplicado encontrado. UUID fiscal: {}", fiscalUuid);
             messageCatalog.throwException(FiscalMessageCode.BUS034, "UUID: " + fiscalUuid);
         }
 
-        log.debug("UUID fiscal no duplicado");
+        log.debug("UUID fiscal no duplicado (o solo existe en rechazo comercial/contable)");
+    }
+
+    private static List<Integer> statusesIgnoredForDuplicate(TipoDocumentoFiscal tipoDocumento) {
+        if (tipoDocumento == TipoDocumentoFiscal.NOTA_CREDITO) {
+            return List.of(
+                    CreditNoteStatus.RECHAZO_COMERCIAL.getCodigo(),
+                    CreditNoteStatus.RECHAZO_CONTABLE.getCodigo());
+        }
+        return List.of(
+                InvoiceStatus.RECHAZO_COMERCIAL.getCodigo(),
+                InvoiceStatus.RECHAZO_CONTABLE.getCodigo());
     }
 
     /**
@@ -331,9 +348,13 @@ public class InvoiceRegistrationServiceImpl implements InvoiceRegistrationServic
             );
             log.debug("Receptor obtenido. UUID: {}", receiver.getReceiverUuid());
 
-            // 3. Crear entidad Invoice
+            // 3. Crear entidad Invoice (reutilizar si ya existe en rechazo comercial/contable)
             log.debug("Creando entidad Invoice");
-            InvoiceEntity invoice = new InvoiceEntity();
+            var ignorados = statusesIgnoredForDuplicate(tipoDocumento);
+            InvoiceEntity invoice = invoiceRepository.findByFiscalUuid(fiscalUuid)
+                    .filter(existing -> existing.getStatus() != null
+                            && ignorados.contains(existing.getStatus()))
+                    .orElseGet(InvoiceEntity::new);
             invoice.setFiscalUuid(fiscalUuid);
             invoice.setDocumentType(tipoDocumento.getCodigo());
             invoice.setSeries(invoiceDto.getSerie());

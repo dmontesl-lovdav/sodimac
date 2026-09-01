@@ -4,7 +4,16 @@ import { withFinanceBreadcrumb } from "@shared/components/ui/navigation/financeB
 import { useFinanceAlertModal } from "@/shared/hooks/useFinanceAlertModal";
 import { OrderClient } from "./api/OrderClient";
 import { Title, Divider } from "@/shared/components/ui/misc";
-import { toNumber, exportToCSV, formatDate, formatFilenameTimestamp, capitalizeWord } from "@/utils/utils";
+import {
+  toNumber,
+  exportToCSV,
+  formatDate,
+  formatAmount,
+  formatFilenameTimestamp,
+  capitalizeWord,
+  fetchCatalog,
+  mapCatalogResponseToFilterOptions,
+} from "@/utils/utils";
 import { APP_EVENT, EVENT_KEYS, PermissionGate } from "@shared/security";
 
 import FiltersBar from "./components/parts/FiltersBar";
@@ -247,47 +256,77 @@ export default function ReceptionContainer(): ReactElement {
     setTotalPages(1);
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     if (allFiltered.length === 0) return;
+
+    const [tipoCatalog, statusCatalogRaw] = await Promise.all([
+      fetchCatalog("CatTipoProveedor"),
+      fetchCatalog("CatEstatusRecepcion"),
+    ]);
+
+    const tipoRaw = tipoCatalog as { details?: unknown[] } | null;
+    const tipoRows = Array.isArray(tipoRaw?.details) ? tipoRaw.details : tipoCatalog;
+    const providerTypeCatalog =
+      mapCatalogResponseToFilterOptions(tipoRows)?.filter(
+        (opt) => String(opt.value).trim() !== ""
+      ) ?? [];
+
+    const statusRaw = statusCatalogRaw as { details?: unknown[] } | null;
+    const statusCatalog =
+      statusRaw?.details?.map((item: any) => ({
+        label: String(item.description ?? ""),
+        value: String(item.value ?? ""),
+      })) ?? [];
+
     const headers = [
       "Recepción",
       "Orden Compra",
-      "Guía",
+      "Número Proveedor",
+      "Nombre Proveedor",
       "Tipo Proveedor",
-      "Documento",
       "Importe",
       "Serie",
       "Folio",
       "UUID",
-      "Número Proveedor",
-      "Nombre Proveedor",
       "Fecha Recepción",
       "Fecha Registro",
       "Estatus",
     ];
     const body = allFiltered.map((r) => {
       const inv = getAdendumInvoice(r);
-      const doc = inv
-        ? inv.document_type ?? inv.documentType ?? "--"
-        : "--";
-      const serie = inv?.series ?? "--";
-      const folio = inv?.folio ?? "--";
-      const uuid = resolveReceptionInvoiceUuid(r) ?? "--";
-      const statusLabel = resolveReceptionStatusDisplay(r.status).label;
+      const typeId = r.supplier?.supplierType?.id;
+      const providerType =
+        typeId == null
+          ? "--"
+          : providerTypeCatalog.find((item) => item.value === String(typeId))
+              ?.label ??
+            (r.supplier?.supplierType?.code
+              ? capitalizeWord(r.supplier.supplierType.code)
+              : "--");
+      const uuid = [
+        inv?.fiscalUuid,
+        inv?.fiscal_uuid,
+        r.invoiceUuid,
+        r.order?.invoiceUuid,
+        inv?.invoiceUuid,
+        inv?.invoice_uuid,
+      ].find((v) => Boolean(v?.toString().trim())) ?? "--";
+      const statusLabel =
+        statusCatalog.find((item) => item.value == String(r.status))?.label ??
+        resolveReceptionStatusDisplay(r.status).label;
+
       return [
-        r.receptionNumber ?? r.receptionId ?? "",
-        r.order?.orderNumber ?? r.orderNumber ?? "",
-        mergeShippingNumbers(r.shippingGuidePurchaseOrders),
-        capitalizeWord(r.supplier?.supplierType?.code ?? ""),
-        String(doc),
-        String(r.amount ?? ""),
-        String(serie),
-        String(folio),
-        String(uuid),
-        String(r.order?.supplierNumber ?? r.supplierNumber ?? ""),
-        r.supplier?.businessName ?? r.vendorName ?? "",
-        r.receptionDate ? formatDate(String(r.receptionDate)) : "",
-        r.createdAt ? formatDate(String(r.createdAt), true) : "",
+        r.receptionNumber ?? r.receptionId ?? "--",
+        r.order?.orderNumber ?? r.orderNumber ?? "--",
+        String(r.supplier?.supplierNumber ?? r.supplierNumber ?? "--"),
+        r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
+        providerType,
+        formatAmount(r.amount),
+        inv?.series ?? "--",
+        inv?.folio ?? "--",
+        uuid,
+        r.receptionDate ? formatDate(String(r.receptionDate)) : "N/D",
+        r.createdAt ? formatDate(String(r.createdAt)) : "--",
         statusLabel,
       ];
     });

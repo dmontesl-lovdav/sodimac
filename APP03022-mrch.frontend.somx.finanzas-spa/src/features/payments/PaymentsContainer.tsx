@@ -653,7 +653,8 @@ export default function PaymentsContainer(): ReactElement {
 
         const blob =
             paymentsService.exportPaymentsCsv(
-                paymentsForExport
+                paymentsForExport,
+                providers
             );
 
         const url =

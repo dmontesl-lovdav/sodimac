@@ -1,4 +1,4 @@
-import { X509Certificate } from "crypto";
+
 import dotenv from 'dotenv';
 import app from 'express';
 import proxy from 'express-http-proxy';
@@ -111,12 +111,12 @@ function buildSecurityHeaders(context) {
     const attrs = context.attributes ?? [];
     const valuesFor = (typeKey) => attrs.filter(a => a.typeKey === typeKey).map(a => a.valueKey).filter(Boolean);
     const vendors = valuesFor("ATR001");
-    const types   = valuesFor("ATR002");
-    const groups  = valuesFor("ATR004");
+    const types = valuesFor("ATR002");
+    const groups = valuesFor("ATR004");
     return {
         "x-user-vendors": vendors.length ? vendors.join(",") : "",
-        "x-user-types":   types.length   ? types.join(",")   : "",
-        "x-user-groups":  groups.length  ? groups.join(",")  : "",
+        "x-user-types": types.length ? types.join(",") : "",
+        "x-user-groups": groups.length ? groups.join(",") : "",
     };
 }
 
@@ -261,7 +261,7 @@ const remoteResolver = proxy(remoteUrl, {
         return options;
     },
     proxyErrorHandler: (error, response, nextFilter) => {
-        if (error && error.code) {
+        if (error?.code) {
             logger.warn(`ABORTING REQUEST WITH CODE ${error.code}`);
         } else {
             logger.warn(`ABORTING REQUEST WITH UNKNOWN CODE: ${error}`);

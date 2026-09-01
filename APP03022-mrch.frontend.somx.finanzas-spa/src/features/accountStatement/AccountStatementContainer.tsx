@@ -31,6 +31,7 @@ import {
     withAccountStatementStatus,
 } from "./accountStatementActions";
 import { fetchCatalogAsSelectableOptions, fetchCatalogDetails, fetchProvidersAsCatalog } from "@/utils/utils";
+import { authenticator } from "@/configuration/ConfigurationBuilder";
 
 const breadcrumb = withFinanceBreadcrumb([{ label: "Estado de Cuenta" }]);
 
@@ -53,7 +54,10 @@ export default function AccountStatementContainer() {
     const [confirmReject, setConfirmReject] =
         useState<AccountStatementRecord | null>(null);
 
-    const [isAdmin] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
+    useEffect(() => {
+        authenticator.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    }, []);
     const [lastCriteria, setLastCriteria] =
         useState<AccountStatementFilters | null>(null);
 

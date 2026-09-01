@@ -11,9 +11,6 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
-const ADMIN_PROFILE_KEYS = ['PER009'];
-const ADMIN_ROLE_KEYS = ['ROL010'];
-
 const normalizeLabel = (s: string): string =>
     s
         .normalize('NFD')
@@ -69,11 +66,6 @@ async function loadAccessContext(
     return { data, error: cache.get(userKey)?.error };
 }
 
-function resolveIsAdmin(profiles: { key: string }[], roles: { key: string }[]): boolean {
-    if (profiles.some((p) => ADMIN_PROFILE_KEYS.includes(p.key))) return true;
-    return roles.some((r) => ADMIN_ROLE_KEYS.includes(r.key));
-}
-
 type AppEntry = { key: string; events?: { key: string; name?: string }[] };
 
 interface AppIndexes {
@@ -116,11 +108,9 @@ function buildAppIndexes(apps: AppEntry[]): AppIndexes {
 
 function evaluateCan(
     appEvent: { app: string; event: string; label?: string },
-    isAdmin: boolean,
     eventByApp: Map<string, Set<string>>,
     labelByApp: Map<string, Set<string>>,
 ): boolean {
-    if (isAdmin) return true;
     if (!appEvent.app) return false;
     if (eventByApp.get(appEvent.app)?.has(appEvent.event)) return true;
     if (!appEvent.label) return false;
@@ -131,7 +121,6 @@ export interface SecurityContextResult {
     isLoading: boolean;
     error: unknown;
     userKey: string;
-    isAdmin: boolean;
     raw: AccessContext | null;
     apps: { key: string; events?: { key: string; name?: string }[] }[];
     profiles: { key: string }[];
@@ -193,7 +182,6 @@ export function useSecurityContext(): SecurityContextResult {
     );
     const permSet = useMemo(() => new Set(permissions.map((p) => p.key)), [permissions]);
     const profileSet = useMemo(() => new Set(profiles.map((p) => p.key)), [profiles]);
-    const isAdmin = useMemo(() => resolveIsAdmin(profiles, roles), [profiles, roles]);
 
     const hasApp = useCallback((key: string) => appKeySet.has(key), [appKeySet]);
     const hasAnyApp = useCallback(
@@ -211,8 +199,8 @@ export function useSecurityContext(): SecurityContextResult {
     );
     const can = useCallback(
         (appEvent: { app: string; event: string; label?: string }) =>
-            evaluateCan(appEvent, isAdmin, eventByApp, labelByApp),
-        [eventByApp, labelByApp, isAdmin],
+            evaluateCan(appEvent, eventByApp, labelByApp),
+        [eventByApp, labelByApp],
     );
     const hasEventInAnyApp = useCallback(
         (eventKey: string) => eventGlobal.has(eventKey),
@@ -228,7 +216,6 @@ export function useSecurityContext(): SecurityContextResult {
         isLoading,
         error,
         userKey,
-        isAdmin,
         raw: data,
         apps,
         profiles,

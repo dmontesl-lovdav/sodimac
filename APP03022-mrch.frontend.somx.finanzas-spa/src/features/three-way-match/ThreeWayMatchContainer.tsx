@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     useFinanceListScreenSession,
     useFinanceListRefetchOnReturn,
@@ -21,6 +21,7 @@ import type { ThreeWayMatchRecord } from './interfaces';
 
 import './styles/ThreeWayMatchContainer.css';
 import { getErrorMessage } from '@/utils/errorMessage';
+import { authenticator } from '@/configuration/ConfigurationBuilder';
 
 export default function ThreeWayMatchContainer() {
 
@@ -44,7 +45,10 @@ export default function ThreeWayMatchContainer() {
         severity: 'error' as 'error' | 'warning' | 'info' | 'success',
     });
 
-    const isAdmin = true;
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
+    useEffect(() => {
+        authenticator.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    }, []);
     const hasData = rows.length > 0;
 
     const fetchPage = async (

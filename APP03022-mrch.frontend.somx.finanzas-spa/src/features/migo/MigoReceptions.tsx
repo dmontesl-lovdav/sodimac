@@ -19,33 +19,20 @@ import { formatDate } from '@/utils/utils';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoReception } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
+import {
+    exportGroupedMigoReceptionsCsv,
+    formatMigoCurrency,
+    groupMigoReceptions,
+    migoReceptionsCsvFileName,
+    type GroupedMigoReception,
+} from './migoReceptionsExport';
 
 import './styles/MigoContainer.css';
-
-interface GroupedReception {
-    key: string;
-    nroOc: number;
-    nroRecepcion: number;
-    sucursal: number;
-    numeroProveedor: string;
-    nroGuia: string;
-    origen: string;
-    fechaRecepcion: string;
-    importeSinImpuesto: number;
-    montoOc: number;
-    vendorName: string;
-    emailFinancial: string;
-}
 
 function statusPillType(status: number): string {
     if (status === 0) return 'success';
     if (status === 8) return 'error';
     return 'info';
-}
-
-function formatCurrency(val: number | undefined | null): string {
-    if (val == null) return '-';
-    return Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2 });
 }
 
 export default function MigoReceptions(): ReactElement {
@@ -109,51 +96,33 @@ export default function MigoReceptions(): ReactElement {
         loadAllReceptions();
     }, [loadDocument, loadAllReceptions]);
 
-    const groupedReceptions: GroupedReception[] = useMemo(() => {
-        const groups = new Map<string, GroupedReception>();
-        for (const r of allReceptions) {
-            const key = `${r.nroOc}-${r.nroRecepcion}`;
-            if (!groups.has(key)) {
-                groups.set(key, {
-                    key,
-                    nroOc: r.nroOc,
-                    nroRecepcion: r.nroRecepcion,
-                    sucursal: r.sucursal,
-                    numeroProveedor: (r.numeroProveedor ?? '').toString().trim(),
-                    nroGuia: r.nroGuia ?? '-',
-                    origen: r.origen ?? '-',
-                    fechaRecepcion: r.fechaRecepcion,
-                    importeSinImpuesto: r.importeSinImpuesto,
-                    montoOc: r.montoOc ?? 0,
-                    vendorName: (r.vendorName ?? '').trim(),
-                    emailFinancial: (r.emailFinancial ?? '').trim(),
-                });
-            }
-        }
-        return Array.from(groups.values());
-    }, [allReceptions]);
+    const groupedReceptions: GroupedMigoReception[] = useMemo(
+        () => groupMigoReceptions(allReceptions),
+        [allReceptions],
+    );
 
     const totalItems = groupedReceptions.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
     const clampedPage = Math.min(page, totalPages);
     const pageItems = groupedReceptions.slice((clampedPage - 1) * perPage, clampedPage * perPage);
 
-    const handleExportCsv = async () => {
-        if (!id) return;
-        try {
-            await migoService.exportCsv(id);
-        } catch (err) {
-            financeAlert.showErrorFrom(
-                'Error',
-                err,
-                'Error al exportar las recepciones.',
+    const handleExportCsv = () => {
+        if (!id || groupedReceptions.length === 0) {
+            financeAlert.showWarning(
+                'Sin registros',
+                'No hay recepciones para exportar.',
             );
+            return;
         }
+        exportGroupedMigoReceptionsCsv(
+            groupedReceptions,
+            migoReceptionsCsvFileName(doc?.folio ?? id),
+        );
     };
 
     const st = doc ? MIGO_STATUS_MAP[doc.status] : null;
 
-    const columns: Column<GroupedReception>[] = [
+    const columns: Column<GroupedMigoReception>[] = [
         { header: 'Orden Compra', render: (r) => r.nroOc },
         { header: 'Recepción', render: (r) => r.nroRecepcion },
         { header: 'Sucursal', align: 'center', render: (r) => r.sucursal },
@@ -163,11 +132,11 @@ export default function MigoReceptions(): ReactElement {
         { header: 'Guía', render: (r) => r.nroGuia },
         { header: 'Origen', render: (r) => r.origen },
         { header: 'Fecha Recepción', render: (r) => formatDate(r.fechaRecepcion) },
-        { header: 'Importe', align: 'right', render: (r) => formatCurrency(r.importeSinImpuesto) },
-        { header: 'Monto OC', align: 'right', render: (r) => formatCurrency(r.montoOc) },
+        { header: 'Importe', align: 'right', render: (r) => formatMigoCurrency(r.importeSinImpuesto) },
+        { header: 'Monto OC', align: 'right', render: (r) => formatMigoCurrency(r.montoOc) },
     ];
 
-    const rowActions: RowAction<GroupedReception>[] = [
+    const rowActions: RowAction<GroupedMigoReception>[] = [
         {
             title: 'Ver artículos relacionados',
             icon: eyeIcon,
@@ -233,7 +202,7 @@ export default function MigoReceptions(): ReactElement {
                 )}
 
                 <div className="migo-grid-section">
-                    <GenericTable<GroupedReception>
+                    <GenericTable<GroupedMigoReception>
                         rows={pageItems}
                         columns={columns}
                         actions={rowActions}

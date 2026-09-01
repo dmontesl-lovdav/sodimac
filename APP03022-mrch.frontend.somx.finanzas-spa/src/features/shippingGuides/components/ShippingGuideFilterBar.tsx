@@ -76,7 +76,7 @@ function applySavedFilters(saved: ShippingGuideFilter): {
 export default function ShippingGuideFilterBar({
   onSearch,
   onClear,
-  isAdmin = true,
+  isAdmin = false,
 }: ShippingGuideFilterBarProps): ReactElement {
   const [providers, setProviders] = useState<
     { label: string; value: string }[]

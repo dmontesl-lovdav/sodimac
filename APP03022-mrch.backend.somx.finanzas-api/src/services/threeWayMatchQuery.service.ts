@@ -110,6 +110,11 @@ const exportColumns = [
         width: 20,
     },
     {
+        header: "Subtotal Factura",
+        key: "subtotalFactura",
+        width: 22,
+    },
+    {
         header: "Fecha Recepción Factura",
         key: "fechaTimbrado",
         width: 25,
@@ -199,6 +204,15 @@ function getExportValue(
             row.referenciaPago ??
             ""
         );
+    }
+
+    /*
+     * Subtotal Factura se toma del monto de factura actual.
+     * En el batch este valor se llena con invoice.subtotal
+     * y usa invoice.total como respaldo.
+     */
+    if (key === "subtotalFactura") {
+        return row.montoFactura ?? "";
     }
 
     /*

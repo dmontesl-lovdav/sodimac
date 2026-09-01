@@ -1,0 +1,77 @@
+{
+  "executionId": "17786a84-d16f-4de1-8a08-8cac185e6e89",
+  "mode": "DRY_RUN",
+  "startedAt": "2026-08-31T01:58:41.955Z",
+  "finishedAt": "2026-08-31T01:58:41.956Z",
+  "durationMs": 1,
+  "rules": {
+    "subtotalAccounts": [
+      "5801010001",
+      "7702000027",
+      "6905020024"
+    ],
+    "fromDate": "2026-07-01"
+  },
+  "totals": {
+    "read": 3,
+    "pages": 1,
+    "sent": 0,
+    "READY": 1,
+    "EXCLUDED": 1,
+    "DUPLICATE": 1,
+    "INVALID": 0,
+    "CONFLICT": 0
+  },
+  "readyAmount": "5800.00",
+  "items": [
+    {
+      "index": 0,
+      "sourceKey": "DEMO-ONLY-001",
+      "status": "READY",
+      "reason": "VALIDATED_LOCAL_ONLY",
+      "payload": {
+        "documentNumber": "DEMO-REBATE-001",
+        "referenceNumber": "DEMO-ACUERDO-001",
+        "sapDocument": "DEMO-SAP-001",
+        "vendorNumber": 34786,
+        "amount": "5800.00",
+        "source": 1,
+        "periodId": 202607,
+        "dueDate": "2026-07-31",
+        "postingDate": "2026-07-02",
+        "status": 1
+      }
+    },
+    {
+      "index": 1,
+      "sourceKey": "DEMO-ONLY-001",
+      "status": "DUPLICATE",
+      "reason": "REPEATED_IN_THIS_INPUT_ONLY",
+      "payload": {
+        "documentNumber": "DEMO-REBATE-001",
+        "referenceNumber": "DEMO-ACUERDO-001",
+        "sapDocument": "DEMO-SAP-001",
+        "vendorNumber": 34786,
+        "amount": "5800.00",
+        "source": 1,
+        "periodId": 202607,
+        "dueDate": "2026-07-31",
+        "postingDate": "2026-07-02",
+        "status": 1
+      }
+    },
+    {
+      "index": 2,
+      "sourceKey": "DEMO-ONLY-002",
+      "status": "EXCLUDED",
+      "reason": "SAP_NOT_POSTED"
+    }
+  ],
+  "limitations": [
+    "No extracción SQL, autenticación HTTP ni envío real.",
+    "sourceKey, sapPosted, account y eligibilityDate son datos normalizados del adaptador pendiente.",
+    "READY significa validado localmente, no elegible confirmado en SAP ni ausente en FBC.",
+    "DUPLICATE solo aplica a esta entrada; no es idempotencia persistente.",
+    "Sin auditoría SQL, reintentos automáticos ni alertas externas."
+  ]
+}

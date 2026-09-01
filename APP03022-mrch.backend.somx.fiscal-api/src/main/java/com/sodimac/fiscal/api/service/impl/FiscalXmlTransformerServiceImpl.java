@@ -1,4 +1,3 @@
-package com.sodimac.fiscal.api.service.impl;
 
 import com.sodimac.fiscal.api.model.dto.response.*;
 import com.sodimac.fiscal.api.model.enums.TipoDocumentoFiscal;
@@ -15,12 +14,17 @@ import com.sodimac.fiscal.api.util.XmlSecureFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
+import org.xml.sax.SAXException;
+
 /**
- * Implementación del servicio para transformar documentos XML fiscales a respuesta JSON estructurada.
+ * Implementación del servicio para transformar documentos XML fiscales a
+ * respuesta JSON estructurada.
  *
  * Extrae específicamente los nodos: Comprobante, Emisor, Receptor y
  * Complemento->TimbreFiscalDigital con todos sus campos relacionados.
@@ -34,269 +38,291 @@ import java.time.LocalDateTime;
 @Slf4j
 public class FiscalXmlTransformerServiceImpl implements FiscalXmlTransformerService {
 
-    private final XmlDocumentTypeDetector xmlDocumentTypeDetector;
-    private final com.sodimac.fiscal.api.repository.AddendumRepository addendumRepository;
+        private final XmlDocumentTypeDetector xmlDocumentTypeDetector;
+        private final com.sodimac.fiscal.api.repository.AddendumRepository addendumRepository;
 
-    // Catálogo con los TipoRelacion permitidos para ligar una NC con su factura (hoy 01 y 03).
-    // Se lee directo de shared_catalogs (solo estatus activo). Regla Ivan 2026-07-20.
-    private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
+        // Catálogo con los TipoRelacion permitidos para ligar una NC con su factura
+        // (hoy 01 y 03).
+        // Se lee directo de shared_catalogs (solo estatus activo). Regla Ivan
+        // 2026-07-20.
+        private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public FiscalXmlResponse transformToStructuredResponse(String xmlContent) {
-        log.info("Iniciando transformación de XML fiscal a respuesta estructurada");
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public FiscalXmlResponse transformToStructuredResponse(String xmlContent) {
+                log.info("Iniciando transformación de XML fiscal a respuesta estructurada");
 
-        try {
-            // 1. Detectar tipo de documento usando detector
-            TipoDocumentoFiscal tipoDocumento = xmlDocumentTypeDetector.detectDocumentType(xmlContent);
+                try {
+                        // 1. Detectar tipo de documento usando detector
+                        TipoDocumentoFiscal tipoDocumento = xmlDocumentTypeDetector.detectDocumentType(xmlContent);
 
-            // 2. Parsear XML
-            Document document = parseXml(xmlContent);
+                        // 2. Parsear XML
+                        Document document = parseXml(xmlContent);
 
-            // 3. Extraer nodos específicos
-            FiscalXmlResponse response = FiscalXmlResponse.builder()
-                    .comprobante(extractComprobanteInfo(document))
-                    .emisor(extractEmisorInfo(document))
-                    .receptor(extractReceptorInfo(document))
-                    .timbreFiscalDigital(extractTimbreFiscalDigital(document))
-                    .metadatos(buildMetadatos(tipoDocumento, document))
-                    .build();
+                        // 3. Extraer nodos específicos
+                        FiscalXmlResponse response = FiscalXmlResponse.builder()
+                                        .comprobante(extractComprobanteInfo(document))
+                                        .emisor(extractEmisorInfo(document))
+                                        .receptor(extractReceptorInfo(document))
+                                        .timbreFiscalDigital(extractTimbreFiscalDigital(document))
+                                        .metadatos(buildMetadatos(tipoDocumento, document))
+                                        .build();
 
-            log.info("Transformación completada exitosamente para tipo: {}", tipoDocumento);
-            return response;
+                        log.info("Transformación completada exitosamente para tipo: {}", tipoDocumento);
+                        return response;
 
-        } catch (Exception e) {
-            log.error("Error transformando XML fiscal", e);
-            throw new RuntimeException("Error en la transformación del XML: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Extrae información del nodo Comprobante.
-     */
-    private ComprobanteResponse extractComprobanteInfo(Document document) {
-        Element comprobante = getFirstElementByTagName(document, "Comprobante", "cfdi:Comprobante");
-
-        if (comprobante == null) {
-            log.warn("No se encontró el nodo Comprobante");
-            return null;
+                } catch (Exception e) {
+                        log.error("Error transformando XML fiscal", e);
+                        throw new FiscalXmlTransformationException(
+                                        "Error en la transformación del XML: " + e.getMessage(), e);
+                }
         }
 
-        // CfdiRelacionados (NC): solo se toma el bloque cuyo TipoRelacion esté permitido en el catálogo
-        // CatTipoRelacionFacturaNC (hoy 01 y 03). Puede haber varios bloques; los no permitidos se ignoran.
-        // Regla Ivan 2026-07-20.
-        String tipoRelacion = null;
-        String uuidRelacionado = null;
-        java.util.Set<String> tiposPermitidos =
-                new java.util.HashSet<>(addendumRepository.findActiveCatalogValues(CAT_TIPO_RELACION_NC));
-        Element cfdiRelacionados = getCfdiRelacionadosPermitido(document, tiposPermitidos);
-        if (cfdiRelacionados != null) {
-            tipoRelacion = getAttribute(cfdiRelacionados, "TipoRelacion");
-            Element cfdiRelacionado = getFirstElementByTagName(cfdiRelacionados, "cfdi:CfdiRelacionado", "CfdiRelacionado");
-            if (cfdiRelacionado != null) {
-                uuidRelacionado = getAttribute(cfdiRelacionado, "UUID");
-            }
+        /**
+         * Extrae información del nodo Comprobante.
+         */
+        private ComprobanteResponse extractComprobanteInfo(Document document) {
+                Element comprobante = getFirstElementByTagName(document, "Comprobante", "cfdi:Comprobante");
+
+                if (comprobante == null) {
+                        log.warn("No se encontró el nodo Comprobante");
+                        return null;
+                }
+
+                // CfdiRelacionados (NC): solo se toma el bloque cuyo TipoRelacion esté
+                // permitido en el catálogo
+                // CatTipoRelacionFacturaNC (hoy 01 y 03). Puede haber varios bloques; los no
+                // permitidos se ignoran.
+                // Regla Ivan 2026-07-20.
+                String tipoRelacion = null;
+                String uuidRelacionado = null;
+                java.util.Set<String> tiposPermitidos = new java.util.HashSet<>(
+                                addendumRepository.findActiveCatalogValues(CAT_TIPO_RELACION_NC));
+                Element cfdiRelacionados = getCfdiRelacionadosPermitido(document, tiposPermitidos);
+                if (cfdiRelacionados != null) {
+                        tipoRelacion = getAttribute(cfdiRelacionados, "TipoRelacion");
+                        Element cfdiRelacionado = getFirstElementByTagName(cfdiRelacionados, "cfdi:CfdiRelacionado",
+                                        "CfdiRelacionado");
+                        if (cfdiRelacionado != null) {
+                                uuidRelacionado = getAttribute(cfdiRelacionado, "UUID");
+                        }
+                }
+
+                return ComprobanteResponse.builder()
+                                .tipoRelacion(tipoRelacion)
+                                .uuidRelacionado(uuidRelacionado)
+                                .version(getAttribute(comprobante, "Version"))
+                                .serie(getAttribute(comprobante, "Serie"))
+                                .folio(getAttribute(comprobante, "Folio"))
+                                .fecha(getAttribute(comprobante, "Fecha"))
+                                .subTotal(getAttribute(comprobante, "SubTotal"))
+                                .total(getAttribute(comprobante, "Total"))
+                                .tipoDeComprobante(getAttribute(comprobante, "TipoDeComprobante"))
+                                .metodoPago(getAttribute(comprobante, "MetodoPago"))
+                                .formaPago(getAttribute(comprobante, "FormaPago"))
+                                .condicionesDePago(getAttribute(comprobante, "CondicionesDePago"))
+                                .moneda(getAttribute(comprobante, "Moneda"))
+                                .tipoCambio(getAttribute(comprobante, "TipoCambio"))
+                                .noCertificado(getAttribute(comprobante, "NoCertificado"))
+                                .certificado(getAttribute(comprobante, "Certificado"))
+                                .sello(getAttribute(comprobante, "Sello"))
+                                .lugarExpedicion(getAttribute(comprobante, "LugarExpedicion"))
+                                .exportacion(getAttribute(comprobante, "Exportacion"))
+                                .descuento(getAttribute(comprobante, "Descuento"))
+                                .build();
         }
 
-        return ComprobanteResponse.builder()
-                .tipoRelacion(tipoRelacion)
-                .uuidRelacionado(uuidRelacionado)
-                .version(getAttribute(comprobante, "Version"))
-                .serie(getAttribute(comprobante, "Serie"))
-                .folio(getAttribute(comprobante, "Folio"))
-                .fecha(getAttribute(comprobante, "Fecha"))
-                .subTotal(getAttribute(comprobante, "SubTotal"))
-                .total(getAttribute(comprobante, "Total"))
-                .tipoDeComprobante(getAttribute(comprobante, "TipoDeComprobante"))
-                .metodoPago(getAttribute(comprobante, "MetodoPago"))
-                .formaPago(getAttribute(comprobante, "FormaPago"))
-                .condicionesDePago(getAttribute(comprobante, "CondicionesDePago"))
-                .moneda(getAttribute(comprobante, "Moneda"))
-                .tipoCambio(getAttribute(comprobante, "TipoCambio"))
-                .noCertificado(getAttribute(comprobante, "NoCertificado"))
-                .certificado(getAttribute(comprobante, "Certificado"))
-                .sello(getAttribute(comprobante, "Sello"))
-                .lugarExpedicion(getAttribute(comprobante, "LugarExpedicion"))
-                .exportacion(getAttribute(comprobante, "Exportacion"))
-                .descuento(getAttribute(comprobante, "Descuento"))
-                .build();
-    }
+        /**
+         * Extrae información del nodo Emisor.
+         */
+        private EmisorResponse extractEmisorInfo(Document document) {
+                Element emisor = getFirstElementByTagName(document, "Emisor", "cfdi:Emisor");
 
-    /**
-     * Extrae información del nodo Emisor.
-     */
-    private EmisorResponse extractEmisorInfo(Document document) {
-        Element emisor = getFirstElementByTagName(document, "Emisor", "cfdi:Emisor");
+                if (emisor == null) {
+                        log.warn("No se encontró el nodo Emisor");
+                        return null;
+                }
 
-        if (emisor == null) {
-            log.warn("No se encontró el nodo Emisor");
-            return null;
+                return EmisorResponse.builder()
+                                .rfc(getAttribute(emisor, "Rfc"))
+                                .nombre(getAttribute(emisor, "Nombre"))
+                                .regimenFiscal(getAttribute(emisor, "RegimenFiscal"))
+                                .facAtrAdquirente(getAttribute(emisor, "FacAtrAdquirente"))
+                                .build();
         }
 
-        return EmisorResponse.builder()
-                .rfc(getAttribute(emisor, "Rfc"))
-                .nombre(getAttribute(emisor, "Nombre"))
-                .regimenFiscal(getAttribute(emisor, "RegimenFiscal"))
-                .facAtrAdquirente(getAttribute(emisor, "FacAtrAdquirente"))
-                .build();
-    }
+        /**
+         * Extrae información del nodo Receptor.
+         */
+        private ReceptorResponse extractReceptorInfo(Document document) {
+                Element receptor = getFirstElementByTagName(document, "Receptor", "cfdi:Receptor");
 
-    /**
-     * Extrae información del nodo Receptor.
-     */
-    private ReceptorResponse extractReceptorInfo(Document document) {
-        Element receptor = getFirstElementByTagName(document, "Receptor", "cfdi:Receptor");
+                if (receptor == null) {
+                        log.warn("No se encontró el nodo Receptor");
+                        return null;
+                }
 
-        if (receptor == null) {
-            log.warn("No se encontró el nodo Receptor");
-            return null;
+                return ReceptorResponse.builder()
+                                .rfc(getAttribute(receptor, "Rfc"))
+                                .nombre(getAttribute(receptor, "Nombre"))
+                                .domicilioFiscalReceptor(getAttribute(receptor, "DomicilioFiscalReceptor"))
+                                .regimenFiscalReceptor(getAttribute(receptor, "RegimenFiscalReceptor"))
+                                .usoCFDI(getAttribute(receptor, "UsoCFDI"))
+                                .residenciaFiscal(getAttribute(receptor, "ResidenciaFiscal"))
+                                .numRegIdTrib(getAttribute(receptor, "NumRegIdTrib"))
+                                .build();
         }
 
-        return ReceptorResponse.builder()
-                .rfc(getAttribute(receptor, "Rfc"))
-                .nombre(getAttribute(receptor, "Nombre"))
-                .domicilioFiscalReceptor(getAttribute(receptor, "DomicilioFiscalReceptor"))
-                .regimenFiscalReceptor(getAttribute(receptor, "RegimenFiscalReceptor"))
-                .usoCFDI(getAttribute(receptor, "UsoCFDI"))
-                .residenciaFiscal(getAttribute(receptor, "ResidenciaFiscal"))
-                .numRegIdTrib(getAttribute(receptor, "NumRegIdTrib"))
-                .build();
-    }
+        /**
+         * Extrae información del complemento TimbreFiscalDigital.
+         */
+        private TimbreFiscalDigitalResponse extractTimbreFiscalDigital(Document document) {
+                // Buscar en complementos
+                NodeList complementos = document.getElementsByTagName("cfdi:Complemento");
+                if (complementos.getLength() == 0) {
+                        complementos = document.getElementsByTagName("Complemento");
+                }
 
-    /**
-     * Extrae información del complemento TimbreFiscalDigital.
-     */
-    private TimbreFiscalDigitalResponse extractTimbreFiscalDigital(Document document) {
-        // Buscar en complementos
-        NodeList complementos = document.getElementsByTagName("cfdi:Complemento");
-        if (complementos.getLength() == 0) {
-            complementos = document.getElementsByTagName("Complemento");
+                for (int i = 0; i < complementos.getLength(); i++) {
+                        Element complemento = (Element) complementos.item(i);
+
+                        // Buscar TimbreFiscalDigital
+                        Element timbre = getFirstElementByTagName(complemento,
+                                        "TimbreFiscalDigital",
+                                        "tfd:TimbreFiscalDigital");
+
+                        if (timbre != null) {
+                                return TimbreFiscalDigitalResponse.builder()
+                                                .version(getAttribute(timbre, "Version"))
+                                                .uuid(getAttribute(timbre, "UUID"))
+                                                .fechaTimbrado(getAttribute(timbre, "FechaTimbrado"))
+                                                .rfcProvCertif(getAttribute(timbre, "RfcProvCertif"))
+                                                .leyenda(getAttribute(timbre, "Leyenda"))
+                                                .selloCFD(getAttribute(timbre, "SelloCFD"))
+                                                .noCertificadoSAT(getAttribute(timbre, "NoCertificadoSAT"))
+                                                .selloSAT(getAttribute(timbre, "SelloSAT"))
+                                                .build();
+                        }
+                }
+
+                log.warn("No se encontró el complemento TimbreFiscalDigital");
+                return null;
         }
 
-        for (int i = 0; i < complementos.getLength(); i++) {
-            Element complemento = (Element) complementos.item(i);
+        /**
+         * Construye los metadatos del procesamiento.
+         */
+        private MetadatosResponse buildMetadatos(TipoDocumentoFiscal tipoDocumento, Document document) {
+                boolean tieneComplementos = hasComplements(document);
 
-            // Buscar TimbreFiscalDigital
-            Element timbre = getFirstElementByTagName(complemento,
-                    "TimbreFiscalDigital",
-                    "tfd:TimbreFiscalDigital");
-
-            if (timbre != null) {
-                return TimbreFiscalDigitalResponse.builder()
-                        .version(getAttribute(timbre, "Version"))
-                        .uuid(getAttribute(timbre, "UUID"))
-                        .fechaTimbrado(getAttribute(timbre, "FechaTimbrado"))
-                        .rfcProvCertif(getAttribute(timbre, "RfcProvCertif"))
-                        .leyenda(getAttribute(timbre, "Leyenda"))
-                        .selloCFD(getAttribute(timbre, "SelloCFD"))
-                        .noCertificadoSAT(getAttribute(timbre, "NoCertificadoSAT"))
-                        .selloSAT(getAttribute(timbre, "SelloSAT"))
-                        .build();
-            }
+                return MetadatosResponse.builder()
+                                .tipoDocumento(tipoDocumento.name())
+                                .descripcionTipo(tipoDocumento.toString())
+                                .version("Automática")
+                                .xsdPath(null)
+                                .namespace(null)
+                                .tieneComplementos(tieneComplementos)
+                                .complementoPrincipal(tieneComplementos ? "Detectado" : null)
+                                .fechaProcesamiento(LocalDateTime.now())
+                                .estado("SUCCESS")
+                                .mensaje("XML procesado correctamente")
+                                .build();
         }
 
-        log.warn("No se encontró el complemento TimbreFiscalDigital");
-        return null;
-    }
-
-    /**
-     * Construye los metadatos del procesamiento.
-     */
-    private MetadatosResponse buildMetadatos(TipoDocumentoFiscal tipoDocumento, Document document) {
-        boolean tieneComplementos = hasComplements(document);
-
-        return MetadatosResponse.builder()
-                .tipoDocumento(tipoDocumento.name())
-                .descripcionTipo(tipoDocumento.toString())
-                .version("Automática")
-                .xsdPath(null)
-                .namespace(null)
-                .tieneComplementos(tieneComplementos)
-                .complementoPrincipal(tieneComplementos ? "Detectado" : null)
-                .fechaProcesamiento(LocalDateTime.now())
-                .estado("SUCCESS")
-                .mensaje("XML procesado correctamente")
-                .build();
-    }
-
-    /**
-     * Verifica si el documento tiene complementos.
-     */
-    private boolean hasComplements(Document document) {
-        NodeList complementos = document.getElementsByTagName("cfdi:Complemento");
-        if (complementos.getLength() == 0) {
-            complementos = document.getElementsByTagName("Complemento");
+        /**
+         * Verifica si el documento tiene complementos.
+         */
+        private boolean hasComplements(Document document) {
+                NodeList complementos = document.getElementsByTagName("cfdi:Complemento");
+                if (complementos.getLength() == 0) {
+                        complementos = document.getElementsByTagName("Complemento");
+                }
+                return complementos.getLength() > 0;
         }
-        return complementos.getLength() > 0;
-    }
 
-    /**
-     * Obtiene el primer elemento por nombre de tag (con fallbacks).
-     */
-    private Element getFirstElementByTagName(Document document, String... tagNames) {
-        for (String tagName : tagNames) {
-            NodeList elements = document.getElementsByTagName(tagName);
-            if (elements.getLength() > 0) {
-                return (Element) elements.item(0);
-            }
+        /**
+         * Obtiene el primer elemento por nombre de tag (con fallbacks).
+         */
+        private Element getFirstElementByTagName(Document document, String... tagNames) {
+                for (String tagName : tagNames) {
+                        NodeList elements = document.getElementsByTagName(tagName);
+                        if (elements.getLength() > 0) {
+                                return (Element) elements.item(0);
+                        }
+                }
+                return null;
         }
-        return null;
-    }
 
-    /**
-     * Devuelve el primer nodo CfdiRelacionados cuyo TipoRelacion esté en el conjunto permitido
-     * (catálogo CatTipoRelacionFacturaNC). Recorre todos los bloques; null si ninguno es permitido.
-     */
-    private Element getCfdiRelacionadosPermitido(Document document, java.util.Set<String> tiposPermitidos) {
-        NodeList nodes = document.getElementsByTagName("cfdi:CfdiRelacionados");
-        if (nodes.getLength() == 0) {
-            nodes = document.getElementsByTagName("CfdiRelacionados");
+        /**
+         * Devuelve el primer nodo CfdiRelacionados cuyo TipoRelacion esté en el
+         * conjunto permitido
+         * (catálogo CatTipoRelacionFacturaNC). Recorre todos los bloques; null si
+         * ninguno es permitido.
+         */
+        private Element getCfdiRelacionadosPermitido(Document document, java.util.Set<String> tiposPermitidos) {
+                NodeList nodes = document.getElementsByTagName("cfdi:CfdiRelacionados");
+                if (nodes.getLength() == 0) {
+                        nodes = document.getElementsByTagName("CfdiRelacionados");
+                }
+                for (int i = 0; i < nodes.getLength(); i++) {
+                        Element el = (Element) nodes.item(i);
+                        String tipo = getAttribute(el, "TipoRelacion");
+                        if (tipo != null && tiposPermitidos.contains(tipo.trim())) {
+                                return el;
+                        }
+                }
+                return null;
         }
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element el = (Element) nodes.item(i);
-            String tipo = getAttribute(el, "TipoRelacion");
-            if (tipo != null && tiposPermitidos.contains(tipo.trim())) {
-                return el;
-            }
+
+        /**
+         * Obtiene el primer elemento por nombre de tag dentro de un elemento padre.
+         */
+        private Element getFirstElementByTagName(Element parent, String... tagNames) {
+                for (String tagName : tagNames) {
+                        NodeList elements = parent.getElementsByTagName(tagName);
+                        if (elements.getLength() > 0) {
+                                return (Element) elements.item(0);
+                        }
+                }
+                return null;
         }
-        return null;
-    }
 
-    /**
-     * Obtiene el primer elemento por nombre de tag dentro de un elemento padre.
-     */
-    private Element getFirstElementByTagName(Element parent, String... tagNames) {
-        for (String tagName : tagNames) {
-            NodeList elements = parent.getElementsByTagName(tagName);
-            if (elements.getLength() > 0) {
-                return (Element) elements.item(0);
-            }
+        /**
+         * Obtiene un atributo de un elemento, retorna null si no existe.
+         */
+        private String getAttribute(Element element, String attributeName) {
+                if (element == null) {
+                        return null;
+                }
+                String value = element.getAttribute(attributeName);
+                return value.isEmpty() ? null : value;
         }
-        return null;
-    }
 
-    /**
-     * Obtiene un atributo de un elemento, retorna null si no existe.
-     */
-    private String getAttribute(Element element, String attributeName) {
-        if (element == null) {
-            return null;
+        /**
+         * Parsea el contenido XML a un Document.
+         */
+        private Document parseXml(String xmlContent)
+                        throws ParserConfigurationException, SAXException, IOException {
+                DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
+                factory.setNamespaceAware(true);
+                factory.setIgnoringElementContentWhitespace(true);
+
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                return builder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
         }
-        String value = element.getAttribute(attributeName);
-        return value.isEmpty() ? null : value;
-    }
 
-    /**
-     * Parsea el contenido XML a un Document.
-     */
-    private Document parseXml(String xmlContent) throws Exception {
-        DocumentBuilderFactory factory = XmlSecureFactory.newDocumentBuilderFactory();
-        factory.setNamespaceAware(true);
-        factory.setIgnoringElementContentWhitespace(true);
+        /**
+         * Excepción específica para errores ocurridos durante la transformación del XML
+         * fiscal.
+         */
+        private static final class FiscalXmlTransformationException extends RuntimeException {
 
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
-    }
+                private static final long serialVersionUID = 1L;
+
+                private FiscalXmlTransformationException(String message, Throwable cause) {
+                        super(message, cause);
+                }
+        }
 }

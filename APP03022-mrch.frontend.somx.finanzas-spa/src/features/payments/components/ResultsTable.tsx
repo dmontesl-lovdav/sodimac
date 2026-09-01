@@ -73,10 +73,10 @@ export default function ResultsTable({
     };
 
     /*
-     * Orden solicitado para la pantalla principal:
-     * Referencia Pago, Año Pago, Fecha Pago, Importe, Moneda,
+     * Columnas visibles (y del CSV de listado):
+     * Referencia Pago, Año Pago, Importe, Moneda,
      * Tipo Proveedor, Número Proveedor, Nombre Proveedor,
-     * Fecha Registro, Fecha Actualización, Estatus y Acción.
+     * Fecha Registro, Estatus y Acción.
      */
     const columns = [
         {

@@ -40,15 +40,13 @@ type ProviderRow = {
 
 const CSV_HEADERS = [
   "Documento",
-  "Referencia",
   "Tipo Rebate",
-  "Documento Sap",
+  "Documento SAP",
   "Importe",
   "Período",
   "Número Proveedor",
   "Nombre Proveedor",
   "Tipo Proveedor",
-  "Fecha Aplicación",
   "Fecha Vencimiento",
   "Estatus",
 ];
@@ -364,14 +362,7 @@ export default function DiscountsContainer(): ReactElement {
   const handleExportCsv = () => {
     if (!rows.length) return;
 
-    const exportRows = rows.filter((row) =>
-      filters
-        ? isPostingDateInFilterRange(row.postingDate, filters.from, filters.to)
-        : Boolean(row.postingDate)
-    );
-    if (!exportRows.length) return;
-
-    const body = exportRows.map((row) => {
+    const body = rows.map((row) => {
       const provider = findProvider(providers, row.vendorNumber);
       const rebateType =
         rebateTypeOptions.find((item) => item.value === String(row.source))
@@ -382,17 +373,15 @@ export default function DiscountsContainer(): ReactElement {
         : "--";
 
       return [
-        row.documentNumber ?? "",
-        row.documentReference ?? "",
+        row.documentNumber ?? "--",
         rebateType,
-        row.sapDocument ?? "",
+        row.sapDocument ?? "--",
         formatAmount(row.amount),
-        String(row.periodId ?? ""),
-        String(row.vendorNumber ?? ""),
+        row.periodId ?? "--",
+        row.vendorNumber ?? "--",
         provider?.businessName ?? "--",
         supplierType,
-        row.postingDate ? formatDate(String(row.postingDate)) : "",
-        row.dueDate ? formatDate(String(row.dueDate)) : "",
+        row.dueDate ? formatDate(String(row.dueDate)) : "--",
         renderStatus(row.status).label,
       ];
     });

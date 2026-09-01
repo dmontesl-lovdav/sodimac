@@ -15,6 +15,12 @@ import deleteIcon from '@assets/delete.svg';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoSearchFilters } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
+import {
+    exportGroupedMigoReceptionsCsv,
+    formatMigoCurrency,
+    groupMigoReceptions,
+    migoReceptionsCsvFileName,
+} from './migoReceptionsExport';
 import { APP_EVENT, PermissionGate, useSecurityContext } from '@shared/security';
 
 import './styles/MigoContainer.css';
@@ -48,10 +54,6 @@ function statusPillType(status: number): string {
     return 'info';
 }
 
-function formatCurrency(val: number | undefined | null): string {
-    if (val == null || Number.isNaN(Number(val))) return '-';
-    return Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-}
 
 export default function MigoContainer(): ReactElement {
     const navigate = useNavigate();
@@ -341,7 +343,21 @@ export default function MigoContainer(): ReactElement {
 
     const handleExportCsv = async (doc: MigoDocument) => {
         try {
-            await migoService.exportCsv(doc.migoDocumentId);
+            const res: any = await migoService.getReceptions(doc.migoDocumentId, 1, 5000);
+            const pageData = res?.data ?? res;
+            const list = pageData?.content ?? [];
+            const grouped = groupMigoReceptions(list);
+            if (!grouped.length) {
+                financeAlert.showWarning(
+                    'Sin registros',
+                    'Este documento no tiene recepciones para exportar.',
+                );
+                return;
+            }
+            exportGroupedMigoReceptionsCsv(
+                grouped,
+                migoReceptionsCsvFileName(doc.folio ?? doc.migoDocumentId),
+            );
         } catch (err) {
             financeAlert.showErrorFrom(
                 'Error',
@@ -371,7 +387,7 @@ export default function MigoContainer(): ReactElement {
         { header: 'Nombre Documento', render: (row) => row.fileName },
         { header: 'Número OC', align: 'center', render: (row) => row.numeroOc },
         { header: 'Núm. Recepción', align: 'center', render: (row) => row.numeroRecepcion },
-        { header: 'Monto OC', align: 'right', render: (row) => formatCurrency(row.montoOc) },
+        { header: 'Monto OC', align: 'right', render: (row) => formatMigoCurrency(row.montoOc) },
         { header: 'Núm. OC Rechazadas', align: 'center', render: (row) => row.numeroRechazoOc },
         { header: 'Id Usuario Pub.', align: 'center', render: (row) => row.createdBy ?? '-' },
         { header: 'Fecha Publicación', render: (row) => formatDate(row.publishedAt) },
@@ -477,7 +493,7 @@ export default function MigoContainer(): ReactElement {
                         </div>
                         <div>
                             <div className="migo-summary-label">Importe</div>
-                            <div className="migo-summary-value">{formatCurrency(paymentContext.amount)}</div>
+                            <div className="migo-summary-value">{formatMigoCurrency(paymentContext.amount)}</div>
                         </div>
                         <div>
                             <div className="migo-summary-label">Fecha de pago</div>

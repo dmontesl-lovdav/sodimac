@@ -11,15 +11,15 @@ import { getErrorMessage } from "@/utils/errorMessage";
 import {
   exportToCSV,
   exportToExcelSpreadsheet,
-  formatDate,
   formatFilenameTimestamp,
   parseDisplayDate,
   startOfLocalDay,
   endOfLocalDay,
 } from "@/utils/utils";
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { authenticator } from "@/configuration/ConfigurationBuilder";
 
 import { shippingGuideService } from "./api/ShippingGuideClient";
 import type { ShippingGuide, ShippingGuideFilter } from "./interfaces";
@@ -30,16 +30,12 @@ import ShippingGuideToolbar from "./components/ShippingGuideToolbar";
 
 import {
   SHIPPING_GUIDE_STATUS_BORRADO,
-  getRegisteredShippingGuideStatusLabels,
-  resolveShippingGuideStatusDescription,
 } from "./shippingGuideStatusCatalog";
 import { getShippingGuideStatusCode } from "./utils/shippingGuideStatus";
-
-
-const getCatalogDisplay = (item?: { description?: string; value?: string; key?: string; internalStatus?: number } | null) => {
-  if (!item) return "N/D";
-  return item.description ?? item.value ?? item.key ?? (item.internalStatus != null ? String(item.internalStatus) : "N/D");
-};
+import {
+  SHIPPING_GUIDE_GRID_EXPORT_HEADERS,
+  mapShippingGuideToGridExportRow,
+} from "./shippingGuideGridExport";
 
 function parseFilterDateBound(value?: string, asEndOfDay = false): number | null {
   if (!value?.trim()) return null;
@@ -80,6 +76,11 @@ export default function ShippingGuideContainer(): ReactElement {
   const [loading, setLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<ShippingGuide[]>([]);
   const [selectedGuides, setSelectedGuides] = useState<ShippingGuide[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  useEffect(() => {
+    authenticator.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+  }, []);
 
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [cancelTargets, setCancelTargets] = useState<ShippingGuide[]>([]);
@@ -178,39 +179,8 @@ export default function ShippingGuideContainer(): ReactElement {
       return;
     }
 
-    const headers = [
-      "Guía Embarque",
-      "Placa",
-      "Placa Remolque",
-      "Origen",
-      "Tipo Entrega",
-      "Orden Compra",
-      "Número Proveedor",
-      "Nombre Proveedor",
-      "Fecha Entrega",
-      "Fecha Envió",
-      "Fecha Registro",
-      "Estatus",
-    ];
-
-    const body = targets.map((guide) => [
-      guide.guideNumber,
-      guide.truckPlate ?? "N/D",
-      guide.trailerPlate ?? "N/D",
-      guide.originId,
-      getCatalogDisplay(guide.deliveryType),
-      guide?.orderNumber == "undefined" ? "N/D" : guide?.orderNumber,
-      guide.vendorNumber,
-      guide.supplier?.businessName ?? "N/D",
-      guide.deliveryDate ? formatDate(guide.deliveryDate) : "N/D",
-      guide.shippingDate ? formatDate(guide.shippingDate) : "N/D",
-      guide.createdAt ? formatDate(guide.createdAt) : "N/D",
-      resolveShippingGuideStatusDescription(
-        getShippingGuideStatusCode(guide),
-        guide.status,
-        getRegisteredShippingGuideStatusLabels() ?? undefined
-      ),
-    ]);
+    const headers = [...SHIPPING_GUIDE_GRID_EXPORT_HEADERS];
+    const body = targets.map((guide) => mapShippingGuideToGridExportRow(guide));
 
     const baseName = `guias_embarque_${formatFilenameTimestamp()}`;
 
@@ -404,6 +374,7 @@ export default function ShippingGuideContainer(): ReactElement {
           <ShippingGuideFilterBar
             onSearch={handleSearch}
             onClear={handleClearFilters}
+            isAdmin={isAdmin}
           />
         </div>
 

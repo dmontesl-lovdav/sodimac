@@ -214,6 +214,68 @@ export const securityPaths = {
             },
         },
     },
+    '/security/role-attributes': {
+        get: {
+            tags: ['Security'],
+            summary: 'Consultar rol atributo',
+            parameters: searchParameters,
+            responses: {
+                200: {
+                    description: 'Consulta de roles con total de atributos asignados',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/SecuritySearchResponse' } } },
+                },
+            },
+        },
+    },
+    '/security/roles/{id}/attributes': {
+        get: {
+            tags: ['Security'],
+            summary: 'Listar atributos de un rol',
+            parameters: [
+                pathIdParameter,
+                langIdParameter,
+                { name: 'page', in: 'query', schema: { type: 'integer' } },
+                { name: 'limit', in: 'query', schema: { type: 'integer' } },
+            ],
+            responses: {
+                200: {
+                    description: 'Atributos del rol',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/UserAttributeListResponse' } } },
+                },
+            },
+        },
+        post: {
+            tags: ['Security'],
+            summary: 'Asignar atributo y valor a un rol',
+            parameters: [pathIdParameter, langIdParameter],
+            requestBody: {
+                required: true,
+                content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateUserAttributeRequest' } } },
+            },
+            responses: {
+                201: { description: 'Atributo creado correctamente' },
+            },
+        },
+    },
+    '/security/roles/{id}/attributes/{attributeId}': {
+        delete: {
+            tags: ['Security'],
+            summary: 'Eliminar atributo de un rol',
+            parameters: [
+                pathIdParameter,
+                {
+                    name: 'attributeId',
+                    in: 'path',
+                    required: true,
+                    description: 'role_attribute_id del registro a eliminar',
+                    schema: { type: 'integer' },
+                },
+            ],
+            responses: {
+                200: { description: 'Atributo eliminado correctamente' },
+            },
+        },
+    },
     '/security/catalogs/attribute-types': {
         get: {
             tags: ['Security'],

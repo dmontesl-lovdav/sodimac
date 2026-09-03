@@ -185,6 +185,12 @@ paths:
     $ref: "./paths/security.yaml#/security-users-attributes"
   /security/users/{id}/attributes/{attributeId}:
     $ref: "./paths/security.yaml#/security-users-attributes-by-id"
+  /security/role-attributes:
+    $ref: "./paths/security.yaml#/security-role-attributes"
+  /security/roles/{id}/attributes:
+    $ref: "./paths/security.yaml#/security-roles-attributes"
+  /security/roles/{id}/attributes/{attributeId}:
+    $ref: "./paths/security.yaml#/security-roles-attributes-by-id"
   /security/catalogs/attribute-types:
     $ref: "./paths/security.yaml#/security-attribute-types"
   /security/catalogs/attribute-values:

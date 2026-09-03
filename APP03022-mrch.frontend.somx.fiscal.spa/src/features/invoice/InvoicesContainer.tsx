@@ -15,12 +15,10 @@ import reprocessIcon from "@/assets/reprocess.svg";
 import {
   InvoiceFilters,
   EMPTY_INVOICE,
-  INVOICE_STATUS_RECHAZO_CONTABLE,
   type Invoice,
-  INVOICE_WRONG_DATA,
-  INVOICE_ERROR_DATA,
-  INVOICE_PROCESS_SENDED,
   StatusReprocesoContable,
+  StatusCancelarFactura,
+  INVOICE_STATUS_CANCELADA,
 } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import {
@@ -239,7 +237,9 @@ export default function InvoicesGrid() {
             });
             _nav(`/fiscal/notas-credito?${qs.toString()}`);
           },
-        isDisabled: (row) => row.notasCreditoRelacionadas.length === 0,
+        isDisabled: (row) =>
+          row.status == INVOICE_STATUS_CANCELADA ||
+          row.notasCreditoRelacionadas.length === 0,
       },
     },
     {
@@ -248,7 +248,9 @@ export default function InvoicesGrid() {
         title: "Reproceso contable",
         icon: reprocessIcon,
         onClick: (_row) => { openReprocessConfirm(_row); },
-        isDisabled: (row) => !StatusReprocesoContable.includes(row.status ?? 0),
+        isDisabled: (row) =>
+          row.status == INVOICE_STATUS_CANCELADA ||
+          !StatusReprocesoContable.includes(row.status ?? 0),
       },
     },
     {
@@ -257,10 +259,9 @@ export default function InvoicesGrid() {
         title: "Cancelar factura",
         icon: deleteIcon,
        onClick: (_row) => { openCancelConfirm(_row); },
-          isDisabled: (row) =>
-            row.status != INVOICE_PROCESS_SENDED &&
-            row.status != INVOICE_WRONG_DATA &&
-            row.status != INVOICE_ERROR_DATA,
+        isDisabled: (row) =>
+          row.status == INVOICE_STATUS_CANCELADA ||
+          !StatusCancelarFactura.includes(row.status ?? 0),
       },
     },
   ];
@@ -413,6 +414,7 @@ export default function InvoicesGrid() {
             pdfAppEvent={APP_EVENT.INVOICES.DOWNLOAD_PDF}
             getXmlContent={async (row) => (await client.getXmlDocument(row.xmlContent)).data}
             getFilename={(row) => getStandardFilename(row)}
+            isDocumentExportDisabled={(row) => row.status == INVOICE_STATUS_CANCELADA}
             filtersEmpty={!hasSearched || !hasReceptionDates(filters)}
           />
         </div>

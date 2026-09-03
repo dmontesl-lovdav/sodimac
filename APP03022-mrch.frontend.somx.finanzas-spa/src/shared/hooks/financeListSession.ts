@@ -166,19 +166,47 @@ export function stripFinanceListResetParam(
     return next;
 }
 
+function isRestoreSearchParamTrue(params: URLSearchParams): boolean {
+    const v = params.get("restoreSearch")?.trim().toLowerCase();
+    return v === "true" || v === "1";
+}
+
+/** `?restoreSearch=1` (vuelta excepcional desde Fiscal / publicar NC). */
+export function isFinanceListUrlRestore(
+    searchParams: URLSearchParams
+): boolean {
+    if (isRestoreSearchParamTrue(searchParams)) return true;
+    if (typeof window === "undefined") return false;
+    const hash = window.location.hash ?? "";
+    const q = hash.indexOf("?");
+    if (q === -1) return false;
+    return isRestoreSearchParamTrue(new URLSearchParams(hash.slice(q)));
+}
+
+export function stripFinanceListRestoreParam(
+    searchParams: URLSearchParams
+): URLSearchParams {
+    const next = new URLSearchParams(searchParams);
+    next.delete("restoreSearch");
+    return next;
+}
+
 /**
  * Al montar el listado: limpia grid; si no se vuelve desde detalle interno, borra filtros.
  * @returns `true` si debe hidratarse el formulario desde sesión.
  */
 export function prepareFinanceListScreen(
     keys: FinanceListSessionKeys,
-    options?: { resetFromUrl?: boolean }
+    options?: { resetFromUrl?: boolean; restoreFromUrl?: boolean }
 ): boolean {
     clearFinanceListGridOnly(keys);
     if (options?.resetFromUrl) {
         clearFinanceListSession(keys);
         markPendingFinanceListReset(keys.moduleKey);
         return false;
+    }
+    if (options?.restoreFromUrl) {
+        return true;
     }
     const returning = consumeFinanceListReturnFromDetail(keys.moduleKey);
     if (!returning) {
@@ -275,11 +303,16 @@ export function useFinanceListScreenSession(keys: FinanceListSessionKeys): boole
     if (!initializedRef.current) {
         initializedRef.current = true;
         const resetFromUrl = isFinanceListUrlReset(searchParams);
+        const restoreFromUrl =
+            !resetFromUrl && isFinanceListUrlRestore(searchParams);
         restoreFiltersRef.current = prepareFinanceListScreen(keys, {
             resetFromUrl,
+            restoreFromUrl,
         });
-        if (resetFromUrl) {
-            const next = stripFinanceListResetParam(searchParams);
+        if (resetFromUrl || restoreFromUrl) {
+            let next = searchParams;
+            if (resetFromUrl) next = stripFinanceListResetParam(next);
+            if (restoreFromUrl) next = stripFinanceListRestoreParam(next);
             const q = next.toString();
             navigate(
                 {

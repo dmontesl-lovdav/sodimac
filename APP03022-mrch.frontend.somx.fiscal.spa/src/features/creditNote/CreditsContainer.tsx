@@ -7,7 +7,7 @@ import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
 import { createCreditsClient } from "./api/CreditsClient";
-import { CREDIT_NOTE_PROCESS_SENDED, CreditNoteFilters, EMPTY_CREDIT_NOTE, StatusReprocesoContable, type CreditNote } from "./interfaces";
+import { CreditNoteFilters, EMPTY_CREDIT_NOTE, StatusReprocesoContable, StatusCancelarNotaCredito, CREDIT_NOTE_STATUS_CANCELADA, type CreditNote } from "./interfaces";
 import { Divider, Title, ExportCsvButton } from "@/shared/components/ui/misc";
 import viewIcon from '@assets/eye-show.svg';
 import trashIcon from '@assets/delete.svg';
@@ -239,7 +239,9 @@ export default function CreditsGrid() {
             "noopener,noreferrer"
           );
         },
-        isDisabled: (row) => !row.relatedInvoiceUuid,
+        isDisabled: (row) =>
+          row.status === CREDIT_NOTE_STATUS_CANCELADA ||
+          !row.relatedInvoiceUuid,
       },
     },
     {
@@ -248,7 +250,9 @@ export default function CreditsGrid() {
         title: "Reproceso contable",
         icon: reprocessIcon,
         onClick: (_row) => { openReprocessConfirm(_row); },
-        isDisabled: (row) => !StatusReprocesoContable.includes(row.status ?? 0),
+        isDisabled: (row) =>
+          row.status === CREDIT_NOTE_STATUS_CANCELADA ||
+          !StatusReprocesoContable.includes(row.status ?? 0),
       },
     },
     {
@@ -257,15 +261,14 @@ export default function CreditsGrid() {
         title: "Cancelar nota de crédito",
         icon: trashIcon,
         onClick: (_row) => { openCancelConfirm(_row); },
-        //&& row.status != CREDIT_NOTE_PENDIENTE_CONTABILIZAR && row.status != CREDIT_NOTE_RECHAZO_CONTABLE
-        isDisabled: (row) => {
-          return row.status != CREDIT_NOTE_PROCESS_SENDED
-        },
+        isDisabled: (row) =>
+          row.status === CREDIT_NOTE_STATUS_CANCELADA ||
+          !StatusCancelarNotaCredito.includes(row.status ?? 0),
       },
     },
   ];
   const rowActions: RowAction<CreditNote>[] = rowActionDescriptors
-    //.filter(({ gate }) => can(gate))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
 
@@ -465,6 +468,9 @@ export default function CreditsGrid() {
           pdfAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
           getFilename={getXmlFileNameFromRow}
+          isDocumentExportDisabled={(row) =>
+            row.status === CREDIT_NOTE_STATUS_CANCELADA
+          }
           rowActions={rowActions}
           filtersEmpty={!hasSearched || areCreditNoteFiltersEmpty(filters)}
         />

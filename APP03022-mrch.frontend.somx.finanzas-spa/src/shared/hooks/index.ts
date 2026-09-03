@@ -12,6 +12,7 @@ export {
     clearFinanceListSession,
     markFinanceListReturnFromDetail,
     isFinanceListUrlReset,
+    isFinanceListUrlRestore,
     financeListTodayDateRange,
     formatFinanceListLocalDate,
     parseFinanceListLocalDate,

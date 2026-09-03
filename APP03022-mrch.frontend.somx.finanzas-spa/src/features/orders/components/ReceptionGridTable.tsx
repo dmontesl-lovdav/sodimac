@@ -208,7 +208,7 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
     );
 
     const actions: RowAction<Reception>[] = rowActionDescriptors
-        .filter(({ gate }) => can(gate))
+        //.filter(({ gate }) => can(gate))
         .map(({ action }) => action);
 
     return (

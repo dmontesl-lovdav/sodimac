@@ -121,6 +121,11 @@ export default function ThreeWayMatchGridTable({
                 fmtMoney(r.montoFactura),
         },
         {
+            header: "Subtotal Factura",
+            render: (r: ThreeWayMatchRecord) =>
+                fmtMoney(r.montoFactura),
+        },
+        {
             header: "Fecha Recepción Factura",
             render: (r: ThreeWayMatchRecord) =>
                 fmtDate(r.fechaTimbrado),

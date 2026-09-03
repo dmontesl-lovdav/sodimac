@@ -38,7 +38,7 @@ export const createInvoicesClient = <T = unknown>(api?: ApiClient) => {
       client.request("invoices", "put", {
         uuid,
         numeroProveedor,
-        estatus: 0,
+        estatus: 20,
         idUsuarioActualizacion: getUserIdFromStore() ?? "1",
       }),
   };

@@ -4,6 +4,19 @@ export const RebateStatusOptions = [
     { value: 3, type: "error", label: "Rechazado" },
 ];
 
+/** CatEstatusDescuento.value (CEDC). */
+export const REBATE_STATUS_PENDIENTE_NC = 1;
+export const REBATE_STATUS_NC_RELACIONADA = 2;
+export const REBATE_STATUS_COMPLETADO = 3;
+export const REBATE_STATUS_CANCELADO = 4;
+export const REBATE_STATUS_BORRADO = 5;
+
+/** Ver descuento: activo en 1, 2 y 3. */
+export const StatusVerDescuentoComercial = [1, 2, 3];
+
+/** Relacionar NC: activo solo en 1 Pendiente NC. */
+export const StatusRelacionarNotaCredito = [1];
+
 export const EMPTY_REBATE: Rebate = {
     dueDate: "",
     postingDate: "",

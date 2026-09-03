@@ -1645,3 +1645,195 @@ security-modules-processes:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
+security-role-attributes:
+  get:
+    tags:
+      - security
+    summary: Search roles with attributes summary
+    operationId: searchRoleAttributes
+    produces:
+      - application/json
+    parameters:
+      - name: startDate
+        in: query
+        required: true
+        type: string
+        format: date
+      - name: endDate
+        in: query
+        required: true
+        type: string
+        format: date
+      - name: entityId
+        in: query
+        required: false
+        type: string
+      - name: entityName
+        in: query
+        required: false
+        type: string
+      - name: status
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: langId
+        in: query
+        required: false
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Roles with attributes summary list
+        schema:
+          $ref: "../definitions/security.yaml#/SecuritySummaryListResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+security-roles-attributes:
+  get:
+    tags:
+      - security
+    summary: List role attributes
+    operationId: listRoleAttributes
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Role identifier
+        type: integer
+        format: int32
+      - name: page
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: langId
+        in: query
+        required: false
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Paged list of role attributes
+        schema:
+          $ref: "../definitions/security.yaml#/UserAttributeListResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Role not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+  post:
+    tags:
+      - security
+    summary: Create role attribute
+    operationId: createRoleAttribute
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Role identifier
+        type: integer
+        format: int32
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "../definitions/security.yaml#/CreateUserAttributePayload"
+    responses:
+      "201":
+        description: Attribute created
+        schema:
+          $ref: "../definitions/security.yaml#/GenericSuccessResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Role or attribute not found
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+security-roles-attributes-by-id:
+  delete:
+    tags:
+      - security
+    summary: Remove role attribute
+    operationId: removeRoleAttribute
+    produces:
+      - application/json
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Role identifier
+        type: integer
+        format: int32
+      - name: attributeId
+        in: path
+        required: true
+        description: Role attribute identifier
+        type: integer
+        format: int32
+    responses:
+      "200":
+        description: Attribute removed
+        schema:
+          $ref: "../definitions/security.yaml#/GenericSuccessResponse"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Attribute not found for role
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

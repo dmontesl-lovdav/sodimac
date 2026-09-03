@@ -1,16 +1,24 @@
-/** Estatus: rechazo contable (solo en este estado se permite reprocesar) */
-export const INVOICE_STATUS_RECHAZO_CONTABLE = 14;
-export const StatusReprocesoContable = [17, 14, 16, 19, 20, 22];
+/** CatEstatusFactura.value — Rechazo Contable (EFA0017). */
+export const INVOICE_STATUS_RECHAZO_CONTABLE = 16;
 
+/** Reproceso contable activo: 6, 9, 10, 13, 16. */
+export const StatusReprocesoContable = [6, 9, 10, 13, 16];
 
-/** Estatus: pendiente de contabilización (resultado del reproceso) */
+/** Cancelar factura activo: 2 Recibido Parcial, 3 En proceso de envío. */
+export const StatusCancelarFactura = [2, 3];
+
+/** Destino del PUT de reproceso (CatEstatusFactura.value 3 = En proceso de envío). */
 export const INVOICE_STATUS_PENDIENTE_CONTABILIZACION = 3;
-/** Estatus: disponibles para cancelación */
+/** value 1 = No válido fiscal */
 export const INVOICE_PENDIENTE_ADDENDA = 1;
+/** value 2 = Recibido Parcial */
 export const INVOICE_RECIBIDO_PARCIAL = 2;
+/** value 3 = En proceso de envío */
 export const INVOICE_PROCESS_SENDED = 3;
+/** value 6 = Error en el desglose xml */
 export const INVOICE_ERROR_DATA = 6;
-export const INVOICE_WRONG_DATA = 16;
+/** value 20 = Cancelada — ninguna acción del grid */
+export const INVOICE_STATUS_CANCELADA = 20;
 
 export interface InvoiceFilters {
   rfcEmisor: string;

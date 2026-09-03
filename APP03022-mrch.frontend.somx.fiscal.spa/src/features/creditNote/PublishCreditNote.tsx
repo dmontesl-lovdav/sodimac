@@ -65,6 +65,13 @@ export default function PublishCreditNote() {
   const FBC_URL = `${window.location.origin}/`;
   const query = useMemo(() => parsePublishQuery(location.search), [location.search]);
   const isDiscountFlow = isCommercialDiscountFlow(query);
+  const discountListReturnPath = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const restore = params.get("restoreSearch")?.trim().toLowerCase();
+    const withRestore = restore === "1" || restore === "true";
+    const listPath = `${FBC_URL}finanzas#/finanzas/descuentos-comerciales`;
+    return withRestore ? `${listPath}?restoreSearch=1` : listPath;
+  }, [FBC_URL, location.search]);
   const traceFolioPayload = useMemo<TraceFolioPayload>(
     () => ({
       idAplicativo: "fiscal-front",
@@ -80,7 +87,7 @@ export default function PublishCreditNote() {
 
   return decorate(
     BREADCRUMB,
-    isDiscountFlow ? `${FBC_URL}finanzas#/finanzas/descuentos-comerciales` : "/fiscal/notas-credito",
+    isDiscountFlow ? discountListReturnPath : "/fiscal/notas-credito",
     <TraceFolioProvider traceFolioPayload={traceFolioPayload}>
       <PublishCreditNoteContent />
     </TraceFolioProvider>

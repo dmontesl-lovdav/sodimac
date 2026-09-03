@@ -19,8 +19,8 @@ export const createCreditsClient = <T = unknown>(api?: ApiClient) => {
       client.request("invoices", "put", {
         uuid,
         numeroProveedor,
-        estatus: 0,
-        idUsuarioActualizacion: 1,
+        estatus: 20,
+        idUsuarioActualizacion: getUserIdFromStore() ?? "1",
       }),
 
     reprocessCreditNote: (uuid: string, numeroProveedor: string) =>

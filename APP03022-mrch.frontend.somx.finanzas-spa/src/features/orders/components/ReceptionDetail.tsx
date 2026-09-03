@@ -214,18 +214,24 @@ export function ReceptionDetail({ editable = false }: ReceptionDetailProps): Rea
                             "El UUID no es válido."
                         );
                         return;
+
+                        
                 }
 
-                //consumida manual primero validamos que no exista esa factura en la recepción
-                const invoiceClient = InvoiceClient;
-                const invoiceResponse = await invoiceClient.getInvoiceByUuid(uuid);
-                if (invoiceResponse.content.length > 0) {
-                    financeAlert.showWarning(
-                        "Datos incorrectos",
-                        "El UUID proporcionado se encuentra previamente registrado, por favor, validar con el área de finanzas."
-                    );
-                    return;
+                if(status==2){
+                    //consumida manual primero validamos que no exista esa factura en la recepción
+                    const invoiceClient = InvoiceClient;
+                    const invoiceResponse = await invoiceClient.getInvoiceByUuid(uuid);
+                    if (invoiceResponse.content.length > 0) {
+                        financeAlert.showWarning(
+                            "Datos incorrectos",
+                            "El UUID proporcionado se encuentra previamente registrado, por favor, validar con el área de finanzas."
+                        );
+                        return;
+                    }
                 }
+
+                
                 const payload = {
                     supplierNumber,
                     orderNumber,

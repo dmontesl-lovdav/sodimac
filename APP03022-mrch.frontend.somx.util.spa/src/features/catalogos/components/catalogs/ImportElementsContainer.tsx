@@ -105,6 +105,8 @@ const styles = {
     alignItems: 'flex-start',
     cursor: 'pointer',
     marginBottom: '0.5rem',
+    width: '100%',
+    textAlign: 'left' as const,
   },
   stepTitle: {
     fontSize: '1rem',

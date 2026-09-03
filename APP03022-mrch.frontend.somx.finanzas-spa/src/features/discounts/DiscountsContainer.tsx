@@ -6,6 +6,7 @@ import { Title, Divider } from "@/shared/components/ui/misc";
 import { APP_EVENT, PermissionGate } from "@shared/security";
 import {
   FINANCE_LIST_KEYS,
+  isFinanceListUrlRestore,
   useFinanceListScreenSession,
   useFinanceListRefetchOnReturn,
 } from "@/shared/hooks";
@@ -26,6 +27,10 @@ import {
 
 import { DiscountsClient } from "./api/DiscountsClient";
 import type { ProvidersOptions, Rebate, RebateFilters } from "./interfaces";
+import {
+  clearDiscountSearchRestore,
+  hydrateDiscountSearchRestoreIntoSession,
+} from "./utils/discountSearchRestore";
 import { RebateStatusOptions } from "./interfaces";
 import FiltersBar from "./components/FiltersBar";
 import DiscountsGridTable from "./components/DiscountsGridTable";
@@ -272,6 +277,17 @@ export default function DiscountsContainer(): ReactElement {
     };
   }, []);
 
+  const fiscalRestoreHydratedRef = useRef(false);
+  if (!fiscalRestoreHydratedRef.current) {
+    fiscalRestoreHydratedRef.current = true;
+    if (
+      typeof window !== "undefined" &&
+      isFinanceListUrlRestore(new URLSearchParams(window.location.search))
+    ) {
+      hydrateDiscountSearchRestoreIntoSession();
+    }
+  }
+
   const returningFromDetail = useFinanceListScreenSession(
     FINANCE_LIST_KEYS.discounts
   );
@@ -337,10 +353,13 @@ export default function DiscountsContainer(): ReactElement {
   useFinanceListRefetchOnReturn<RebateFilters>(
     FINANCE_LIST_KEYS.discounts,
     returningFromDetail,
-    (criteria) => {
+    async (criteria) => {
       warnIfEmptyRef.current = true;
-      setPage(1);
-      runSearch(criteria, 1, perPage);
+      const nextPage = criteria.pageNumber ?? 1;
+      const nextSize = criteria.pageSize ?? perPage;
+      setPage(nextPage);
+      await runSearch(criteria, nextPage, nextSize);
+      clearDiscountSearchRestore();
     }
   );
 
@@ -437,6 +456,7 @@ export default function DiscountsContainer(): ReactElement {
           <DiscountsGridTable
             providers={providers}
             rebateTypeOptions={rebateTypeOptions}
+            lastSearch={filters}
             rows={rows}
             page={page}
             perPage={perPage}

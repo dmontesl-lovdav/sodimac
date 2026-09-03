@@ -9,8 +9,8 @@ import {
     SelectableOption,
 } from "@/utils/utils";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
-import type { Rebate } from "../interfaces";
-import { getRebateVendorNumber } from "../interfaces";
+import type { Rebate, RebateFilters } from "../interfaces";
+import { getRebateVendorNumber, StatusVerDescuentoComercial, StatusRelacionarNotaCredito } from "../interfaces";
 import { REBATE_DETAIL_ROUTE } from "../constants";
 import { buildRebateDetailSearchParams } from "../utils/rebateDetailQuery";
 
@@ -19,8 +19,10 @@ import plusIconUrl from "@assets/icons/plus.svg";
 
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import { APP_EVENT, useSecurityContext } from "@shared/security";
+import { saveDiscountSearchRestore } from "../utils/discountSearchRestore";
 
 interface Props {
+    lastSearch?: RebateFilters | null;
     rows: Rebate[];
     page: number;
     perPage: number;
@@ -36,6 +38,7 @@ interface Props {
 
 export default function DiscountsGridTable({
     rows,
+    lastSearch,
     renderStatus,
     rebateTypeOptions,
     providers,
@@ -101,6 +104,8 @@ export default function DiscountsGridTable({
                             detailParams.set("tipoRebate", getTipoLabel(r));
                             nav(`${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`);
                         },
+                        isDisabled: (r: Rebate) =>
+                            !StatusVerDescuentoComercial.includes(r.status ?? 0),
                     } satisfies RowAction<Rebate>,
                 },
                 {
@@ -130,16 +135,26 @@ export default function DiscountsGridTable({
                             if (r.stampedRebate?.invoiceFiscalUuid) {
                                 fiscalParams.set("uuid", String(r.stampedRebate.invoiceFiscalUuid));
                             }
+                            fiscalParams.set("restoreSearch", "1");
+                            if (lastSearch) {
+                                saveDiscountSearchRestore({
+                                    ...lastSearch,
+                                    pageNumber: props.page,
+                                    pageSize: props.perPage,
+                                });
+                            }
                             window.location.href = buildFiscalSpaUrl(
                                 "publicar-nota-credito",
                                 fiscalParams
                             );
                         },
+                        isDisabled: (r: Rebate) =>
+                            !StatusRelacionarNotaCredito.includes(r.status ?? 0),
                     } satisfies RowAction<Rebate>,
                 },
             ] as const,
         // providers / rebateTypeOptions used inside handlers via closure; keep deps aligned
-        [providers, rebateTypeOptions]
+        [providers, rebateTypeOptions, lastSearch, props.page, props.perPage]
     );
 
     const actions: RowAction<Rebate>[] = rowActionDescriptors

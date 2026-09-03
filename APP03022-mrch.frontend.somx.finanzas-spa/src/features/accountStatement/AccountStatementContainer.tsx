@@ -153,6 +153,15 @@ export default function AccountStatementContainer() {
     const onFilter = async (criteria: AccountStatementFilters) => {
         const size = perPageRef.current;
 
+        if(criteria.year==0){
+            setInfoModal({
+                type: "error",
+                visible: true,
+                message: "Selecciona un año válido del listado para consultar el estado de cuenta.",
+            });
+            return;
+        }
+        
         setPage(1);
         await fetchData(criteria, 1, size);
     };

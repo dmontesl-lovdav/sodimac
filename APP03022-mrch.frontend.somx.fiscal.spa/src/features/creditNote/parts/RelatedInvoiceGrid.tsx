@@ -1,5 +1,6 @@
 import viewIcon from "@assets/eye-show.svg";
 import { GenericLinearProgress } from "@/shared/components/ui/progress";
+import { WarningMessage } from "@/shared/components/ui";
 import { formatAmount, formatDate } from "@/utils/utils";
 import type { Invoice } from "../../invoice/interfaces";
 
@@ -14,9 +15,10 @@ export default function RelatedInvoiceGrid({ invoice, loading, onViewInvoice }: 
 
   if (!invoice) {
     return (
-      <p className="pcn-invoice-grid-empty">
-        No se encontró la factura relacionada. Verifique el archivo XML.
-      </p>
+      <WarningMessage
+        className="pcn-invoice-grid-empty"
+        message="No se encontró la factura relacionada. Verifique el archivo XML."
+      />
     );
   }
 

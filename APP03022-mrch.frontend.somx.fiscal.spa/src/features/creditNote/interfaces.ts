@@ -1,12 +1,19 @@
-/** Estatus: disponibles para cancelación */
+/** CatEstatusNotaCredito.value — Recibida Parcial (ENC002). */
 export const CREDIT_NOTE_PENDIENTE_CONTABILIZAR = 2;
-export const CREDIT_NOTE_RECHAZO_CONTABLE = 11;
+/** value 16 = Rechazo Contable (ENC0016). */
+export const CREDIT_NOTE_RECHAZO_CONTABLE = 16;
+/** value 3 = En proceso de envío (ENC003). */
 export const CREDIT_NOTE_PROCESS_SENDED = 3;
+/** value 20 = Cancelada — ninguna acción del grid. */
+export const CREDIT_NOTE_STATUS_CANCELADA = 20;
 
-/** Estatus en los que se permite reproceso contable (6, 9, 10, 13, 16). */
+/** Reproceso contable activo: 6, 9, 10, 13, 16. */
 export const StatusReprocesoContable = [6, 9, 10, 13, 16];
 
-/** Destino del reproceso: pendiente de contabilizar / en proceso de envío. */
+/** Cancelar NC activo: 2 Recibida Parcial, 3 En proceso de envío. */
+export const StatusCancelarNotaCredito = [2, 3];
+
+/** Destino del PUT de reproceso (value 3 = En proceso de envío). */
 export const CREDIT_NOTE_STATUS_PENDIENTE_CONTABILIZACION = 3;
 
 export interface CreditNoteFilters {

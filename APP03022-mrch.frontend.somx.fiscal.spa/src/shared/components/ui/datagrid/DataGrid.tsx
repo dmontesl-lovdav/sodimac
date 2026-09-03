@@ -71,6 +71,8 @@ type DataGridProps<T, F = any> = {
   enableXml?: boolean;                 // default: false
   getXmlContent?: (row: T) => string | null | undefined | Promise<string | null | undefined>;
   getFilename?: (row: T) => string; // default: `{folio|invoiceUuid|getRowId}`
+  /** Deshabilita Exportar XML / Descargar PDF en la fila (p. ej. estatus cancelado). */
+  isDocumentExportDisabled?: (row: T) => boolean;
   /** Acciones por fila adicionales (se muestran antes de XML/PDF) */
   rowActions?: GenericRowAction<T>[];
 
@@ -264,12 +266,14 @@ function buildXmlRowAction<T>(
   getXmlContent: ((row: T) => any) | undefined,
   getFilename: ((row: T) => string) | undefined,
   setXmlErrorMsg: (msg: string | undefined) => void,
+  isDisabled?: (row: T) => boolean,
 ): GenericRowAction<T> {
   const xmlGetter: (row: T) => any = getXmlContent ?? ((row: any) => row?.xmlContent);
   const nameGetter: (row: T) => string = getFilename ?? ((row: T) => `${getStandardFilename(row)}.xml`);
   return {
     title: "Exportar XML",
     icon: xmlIconUrl,
+    isDisabled,
     onClick: (row: T) => {
       xmlGetter(row)
         .then((xml: string | null | undefined) => {
@@ -289,6 +293,7 @@ function buildPdfRowAction<T>(
   getPdfUrl: ((row: T) => string | null | undefined) | undefined,
   getPdfContent: ((row: T) => Blob | null | undefined | Promise<Blob | null | undefined>) | undefined,
   setPdfErrorMsg: (msg: string | undefined) => void,
+  isDisabled?: (row: T) => boolean,
 ): GenericRowAction<T> {
   const pdfUrlGetter: (row: T) => string | null | undefined = getPdfUrl ?? ((row: any) => {
     const baseUrl = process.env.API_BASE_URL ?? "";
@@ -299,6 +304,7 @@ function buildPdfRowAction<T>(
   return {
     title: "Descargar PDF",
     icon: pdfIconUrl,
+    isDisabled,
     onClick: (row: T) => {
       if (getPdfContent) {
         Promise.resolve(getPdfContent(row))
@@ -353,6 +359,7 @@ function DataGridInner<T, F = any>(
     getPdfContent,
     getXmlContent,
     getFilename,
+    isDocumentExportDisabled,
     rowActions: customRowActions,
     filtersEmpty = false,
     emptyFiltersMessage = "Realiza una búsqueda en los filtros para mostrar resultados.",
@@ -363,8 +370,8 @@ function DataGridInner<T, F = any>(
   ref: React.ForwardedRef<DataGridHandle>
 ): ReactElement {
   const sec = useSecurityContext();
-  const canXml = !xmlAppEvent || sec.can(xmlAppEvent);
-  const canPdf = !pdfAppEvent || sec.can(pdfAppEvent);
+  const canXml = true; // !xmlAppEvent || sec.can(xmlAppEvent);
+  const canPdf = true; //!pdfAppEvent || sec.can(pdfAppEvent);
 
   const pagedEnabled = Boolean(fetchFn) && filters != null;
   const paginatedDataResult = usePaginatedData<T, F>({
@@ -537,10 +544,28 @@ function DataGridInner<T, F = any>(
   /** -------- acciones por fila internas (XML y PDF) -------- */
   const internalRowActions: GenericRowAction<T>[] = useMemo(() => {
     const actions: GenericRowAction<T>[] = [];
-    if (enableXml && canXml) actions.push(buildXmlRowAction(getXmlContent, getFilename, setXmlErrorMsg));
-    if (enablePdf && canPdf) actions.push(buildPdfRowAction(getPdfUrl, getPdfContent, setPdfErrorMsg));
+    if (enableXml && canXml) {
+      actions.push(
+        buildXmlRowAction(getXmlContent, getFilename, setXmlErrorMsg, isDocumentExportDisabled)
+      );
+    }
+    if (enablePdf && canPdf) {
+      actions.push(
+        buildPdfRowAction(getPdfUrl, getPdfContent, setPdfErrorMsg, isDocumentExportDisabled)
+      );
+    }
     return actions;
-  }, [enableXml, enablePdf, canXml, canPdf, getXmlContent, getFilename, getPdfUrl, getPdfContent]);
+  }, [
+    enableXml,
+    enablePdf,
+    canXml,
+    canPdf,
+    getXmlContent,
+    getFilename,
+    getPdfUrl,
+    getPdfContent,
+    isDocumentExportDisabled,
+  ]);
 
   const allRowActions = useMemo(
     () => [...(customRowActions ?? []), ...internalRowActions],

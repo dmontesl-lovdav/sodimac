@@ -744,8 +744,10 @@ public class InvoiceServiceImpl implements InvoiceService {
     /**
      * Tolerancia del descuento comercial (NC tipo 2). Regla Ivan ago-2026:
      * el importe (subtotal) de la NC NO puede quedar por debajo del valor del descuento comercial
-     * (tenant_finance.rebate.amount, leído por rebate_uuid) más allá de la tolerancia PARAM-16
-     * (ToleranciaImporteRebate). Si se pasa, se RECHAZA con BUS2032.
+     * (tenant_finance.rebate.amount, leído por rebate_uuid) más allá de la tolerancia del parámetro
+     * "ToleranciaImporteRebate". Se toma la ÚLTIMA VERSIÓN ACTIVA del parámetro (Ivan 2026-09-02);
+     * si no hay ninguna versión activa, la comparación es EXACTA (tolerancia 0). Si se pasa, se
+     * RECHAZA con BUS2032.
      *
      * Es una validación de un solo sentido: solo rechaza cuando la NC es INFERIOR al descuento.
      * Si el rebateId no viene o el rebate no existe / no tiene monto, se omite (no bloquea).
@@ -781,9 +783,11 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
         BigDecimal descuento = rebate.getAmount();
 
-        BigDecimal tolerancia = readActiveParamValue(CatParameterKey.TOLERANCIA_IMPORTE_REBATE.getId());
+        // Última versión ACTIVA del parámetro (por nombre, no por id fijo): Ivan versiona el
+        // parámetro y cada versión tiene distinto id_parameter. Sin versión activa -> exacto.
+        BigDecimal tolerancia = readActiveParamValueByName(PARAM_TOLERANCIA_REBATE);
         if (tolerancia == null) {
-            tolerancia = BigDecimal.ZERO; // parámetro inactivo -> comparación exacta
+            tolerancia = BigDecimal.ZERO; // sin versión activa -> comparación exacta (100%)
         }
 
         // Rechaza solo si la NC queda por DEBAJO del descuento más allá de la tolerancia:
@@ -996,6 +1000,33 @@ public class InvoiceServiceImpl implements InvoiceService {
             return new BigDecimal(param.getValue().trim());
         } catch (Exception e) {
             log.warn("Error leyendo parámetro id={}: {}", parameterId, e.getMessage());
+            return null;
+        }
+    }
+
+    /** Nombre del parámetro de tolerancia del descuento comercial (versionado en cat_parameter). */
+    private static final String PARAM_TOLERANCIA_REBATE = "ToleranciaImporteRebate";
+
+    /**
+     * Lee el valor numérico de la ÚLTIMA VERSIÓN ACTIVA (mayor version, status=1) de un parámetro
+     * de cat_parameter por NOMBRE. Devuelve null si no hay versión activa, o el valor no es numérico
+     * -> el llamador aplica comparación exacta. Ivan 2026-09-02: el parámetro se versiona (cada
+     * versión con distinto id_parameter), así que NO se puede leer por id fijo.
+     */
+    private BigDecimal readActiveParamValueByName(String name) {
+        try {
+            CatParameterEntity param = catParameterRepository
+                    .findTopByNameAndStatusOrderByVersionDesc(name, 1).orElse(null);
+            if (param == null) {
+                log.debug("Parámetro '{}' sin versión activa", name);
+                return null;
+            }
+            if (param.getValue() == null || param.getValue().isBlank()) {
+                return null;
+            }
+            return new BigDecimal(param.getValue().trim());
+        } catch (Exception e) {
+            log.warn("Error leyendo parámetro '{}': {}", name, e.getMessage());
             return null;
         }
     }

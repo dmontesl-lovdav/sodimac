@@ -803,7 +803,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                     K_SYSTEM, true, "NC de descuento comercial fuera de tolerancia (BUS2032)",
                     "descuento=" + descuento.toPlainString() + ", subtotalNC=" + subtotalNc.toPlainString()
                             + ", tolerancia=" + tolerancia.toPlainString(), null, null);
-            messageCatalog.throwException(FiscalMessageCode.BUS2032);
+            // Muestra la tolerancia REAL usada (última versión activa), no un valor fijo.
+            messageCatalog.throwExceptionWithParams(FiscalMessageCode.BUS2032, maskMoney(tolerancia));
         }
     }
 

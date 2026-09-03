@@ -213,7 +213,7 @@ public enum FiscalMessageCode {
     // Tolerancia del descuento comercial (NC tipo 2): rechaza si el importe de la NC queda por
     // debajo del valor del descuento (rebate.amount) más allá de la tolerancia (PARAM-16). Ivan ago-2026.
     // El texto autoritativo vive en cat_message; este es el fallback.
-    BUS2032("BUS2032", "El importe de la nota de crédito es inferior al valor del descuento comercial, considerando la tolerancia permitida de $40.00 MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.");
+    BUS2032("BUS2032", "El importe de la nota de crédito es inferior al valor del descuento comercial, considerando la tolerancia permitida de {0} MXN. Por favor, valide la información y, en caso necesario, realice las correcciones correspondientes.");
 
     private final String code;
     private final String message;

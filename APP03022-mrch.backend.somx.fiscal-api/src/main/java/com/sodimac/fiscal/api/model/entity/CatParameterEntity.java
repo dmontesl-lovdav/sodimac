@@ -3,6 +3,8 @@ package com.sodimac.fiscal.api.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Entity
 @Table(name = "cat_parameter", schema = "core_utils")
@@ -17,6 +19,9 @@ public class CatParameterEntity {
 
     @Column(name = "value", length = 1000)
     private String value;
+
+    @Column(name = "version")
+    private BigDecimal version;
 
     @Column(name = "status")
     private Integer status;

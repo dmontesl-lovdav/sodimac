@@ -1,0 +1,702 @@
+<title>Tren de Estatus · fiscal-api</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#fbfbfc; --surface:#ffffff; --surface-2:#f4f5f7; --surface-3:#eceef1;
+    --ink:#191c22; --ink-soft:#5f6672; --ink-faint:#99a0ab; --line:#ecedf1; --line-2:#e2e4e9;
+    --accent:#0f9488; --accent-ink:#0b7268; --accent-soft:#e6f5f3;
+    --nav:#ffffff; --nav-line:#eef0f3;
+    /* semantic status colors */
+    --fac:#0f9488; --fac-bg:#e6f5f3; --rec:#1f7a52; --rec-bg:#e6f4ec;
+    --cp:#a1691a; --cp-bg:#f7efdd; --nc:#7a4fb0; --nc-bg:#f0e9f8;
+    --pago:#2b7a9e; --pago-bg:#e5f0f6; --oc:#3a5bb0; --oc-bg:#eaeef9;
+    --err:#b83a48; --err-bg:#fae8ea; --fin:#3a5bb0; --fin-bg:#eaeef9;
+    --ok:#1f7a52; --ok-bg:#e6f4ec; --warn:#a1691a; --warn-bg:#f7efdd;
+    --sys:#3a5bb0; --sys-bg:#eaeef9; --can:#6b7580; --can-bg:#f0f1f3; --pend:#b2532a; --pend-bg:#faece2;
+    --shadow:0 1px 2px rgba(20,25,40,.04),0 12px 30px -18px rgba(20,25,40,.16);
+    --shadow-sm:0 1px 2px rgba(20,25,40,.05);
+    --radius:14px;
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#0e1114; --surface:#171b1f; --surface-2:#1e2429; --surface-3:#262d33;
+    --ink:#e9edf0; --ink-soft:#9aa3ad; --ink-faint:#6d7680; --line:#242a30; --line-2:#2c333a;
+    --accent:#3fc8bb; --accent-ink:#6fdcd0; --accent-soft:#14302d;
+    --nav:#12161a; --nav-line:#212830;
+    --fac:#3fc8bb; --fac-bg:#14302d; --rec:#63cf97; --rec-bg:#13291d;
+    --cp:#e0b264; --cp-bg:#2f2610; --nc:#bea0e6; --nc-bg:#241b37;
+    --pago:#6bbdd8; --pago-bg:#12303a; --oc:#8ba6e8; --oc-bg:#1b2540;
+    --err:#e88d97; --err-bg:#331d21; --fin:#8ba6e8; --fin-bg:#1b2540;
+    --ok:#63cf97; --ok-bg:#13291d; --warn:#e0b264; --warn-bg:#2f2610;
+    --sys:#8ba6e8; --sys-bg:#1b2540; --can:#8a929c; --can-bg:#22282e; --pend:#e59b73; --pend-bg:#321f14;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -18px rgba(0,0,0,.7);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e1114; --surface:#171b1f; --surface-2:#1e2429; --surface-3:#262d33;
+    --ink:#e9edf0; --ink-soft:#9aa3ad; --ink-faint:#6d7680; --line:#242a30; --line-2:#2c333a;
+    --accent:#3fc8bb; --accent-ink:#6fdcd0; --accent-soft:#14302d;
+    --nav:#12161a; --nav-line:#212830;
+    --fac:#3fc8bb; --fac-bg:#14302d; --rec:#63cf97; --rec-bg:#13291d;
+    --cp:#e0b264; --cp-bg:#2f2610; --nc:#bea0e6; --nc-bg:#241b37;
+    --pago:#6bbdd8; --pago-bg:#12303a; --oc:#8ba6e8; --oc-bg:#1b2540;
+    --err:#e88d97; --err-bg:#331d21; --fin:#8ba6e8; --fin-bg:#1b2540;
+    --ok:#63cf97; --ok-bg:#13291d; --warn:#e0b264; --warn-bg:#2f2610;
+    --sys:#8ba6e8; --sys-bg:#1b2540; --can:#8a929c; --can-bg:#22282e; --pend:#e59b73; --pend-bg:#321f14;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -18px rgba(0,0,0,.7);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  code{font-family:"IBM Plex Mono",monospace}
+
+  /* ---------- app shell ---------- */
+  .app{display:grid; grid-template-columns:256px 1fr; min-height:100vh}
+  .sidebar{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    background:var(--nav); border-right:1px solid var(--nav-line); padding:1.3rem 1rem 1.5rem;
+    display:flex; flex-direction:column; gap:.2rem}
+  .brand{display:flex; align-items:center; gap:.6rem; padding:.2rem .5rem 1.1rem; margin-bottom:.4rem; border-bottom:1px solid var(--nav-line)}
+  .brand .mk{width:34px;height:34px;flex:none;border-radius:9px;display:grid;place-items:center;
+    background:var(--accent);color:#fff;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:1.05rem}
+  :root[data-theme="dark"] .brand .mk,:root:not([data-theme="light"]) .brand .mk{color:#08201e}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .mk{color:#08201e}}
+  .brand .bt{font-family:"Fraunces",serif; font-weight:600; font-size:1.05rem; line-height:1.05}
+  .brand .bs{font-family:"IBM Plex Mono",monospace; font-size:.66rem; color:var(--ink-faint); letter-spacing:.04em}
+  .grp{font-family:"IBM Plex Mono",monospace; font-size:.6rem; font-weight:600; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-faint); padding:.9rem .7rem .35rem}
+  .nav a{display:flex; align-items:center; gap:.6rem; text-decoration:none; color:var(--ink-soft);
+    font-size:.92rem; font-weight:500; padding:.5rem .7rem; border-radius:9px; transition:.13s; cursor:pointer}
+  .nav a:hover{background:var(--surface-2); color:var(--ink)}
+  .nav a.active{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+  .nav a .ic{width:16px; text-align:center; flex:none; opacity:.85; font-size:.95rem}
+  .nav a .dot{width:8px;height:8px;border-radius:3px;flex:none}
+  .side-foot{margin-top:auto; padding-top:1rem; display:flex; align-items:center; justify-content:space-between; gap:.5rem; border-top:1px solid var(--nav-line)}
+  .side-foot .ver{font-family:"IBM Plex Mono",monospace; font-size:.66rem; color:var(--ink-faint)}
+  .tgl{cursor:pointer; border:1px solid var(--line-2); background:var(--surface); color:var(--ink-soft);
+    border-radius:8px; padding:.35rem .5rem; font-size:.9rem; line-height:1; display:inline-flex; gap:.3rem; align-items:center}
+  .tgl:hover{border-color:var(--accent); color:var(--ink)}
+
+  /* topbar (mobile) */
+  .topbar{display:none; position:sticky; top:0; z-index:30; background:var(--nav); border-bottom:1px solid var(--nav-line);
+    padding:.7rem 1rem; align-items:center; gap:.7rem}
+  .topbar .mk{width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:"IBM Plex Mono",monospace;font-weight:600}
+  .topbar .tt{font-family:"Fraunces",serif;font-weight:600;font-size:1rem}
+  .burger{margin-left:auto; cursor:pointer; border:1px solid var(--line-2); background:var(--surface); color:var(--ink);
+    border-radius:8px; padding:.4rem .6rem; font-size:1rem; line-height:1}
+  .scrim{display:none; position:fixed; inset:0; background:rgba(10,15,20,.4); z-index:20}
+
+  .main{min-width:0}
+  .view{display:none; max-width:960px; margin:0 auto; padding:clamp(1.6rem,3.5vw,3rem) clamp(1rem,3vw,2.4rem) 4rem; animation:fade .2s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* ---------- shared bits ---------- */
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 .8rem}
+  .eyebrow::before{content:""; width:24px; height:1px; background:var(--accent)}
+  h1.t{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:clamp(1.9rem,4.5vw,2.8rem);
+    line-height:1.05; letter-spacing:-.015em; margin:0 0 .6rem; text-wrap:balance}
+  .lede{font-size:1.05rem; color:var(--ink-soft); max-width:64ch; margin:0 0 1.9rem}
+  h2.sec{font-family:"Fraunces",serif;font-weight:600;font-size:1.3rem;margin:2.3rem 0 1rem;letter-spacing:-.01em}
+
+  .pill{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:.76rem; padding:.2rem .55rem;
+    border-radius:999px; display:inline-flex; gap:.35rem; align-items:baseline; white-space:nowrap}
+  .pill .n{opacity:.62; font-variant-numeric:tabular-nums}
+  .pill.fac{background:var(--fac-bg);color:var(--fac)} .pill.rec{background:var(--rec-bg);color:var(--rec)}
+  .pill.cp{background:var(--cp-bg);color:var(--cp)} .pill.nc{background:var(--nc-bg);color:var(--nc)}
+  .pill.pago{background:var(--pago-bg);color:var(--pago)} .pill.oc{background:var(--oc-bg);color:var(--oc)}
+  .pill.err{background:var(--err-bg);color:var(--err)} .pill.fin{background:var(--fin-bg);color:var(--fin)}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.sys{background:var(--sys-bg);color:var(--sys)}
+  .arw{color:var(--ink-faint); font-size:.85rem}
+  .code{font-family:"IBM Plex Mono",monospace;font-size:.78rem;background:var(--surface-2);
+    border:1px solid var(--line-2);border-radius:5px;padding:.05rem .35rem;color:var(--accent-ink)}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.7rem; margin-bottom:1.8rem}
+  .cast .c{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:.75rem .85rem; box-shadow:var(--shadow-sm)}
+  .cast .k{font-family:"IBM Plex Mono",monospace; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 .2rem}
+  .cast .v{font-weight:600; font-size:.95rem}
+  .cast .v small{display:block; font-weight:400; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace; font-size:.7rem; margin-top:.1rem}
+
+  .callout{border-radius:var(--radius); padding:1.1rem 1.3rem; margin-bottom:2rem; border:1px solid var(--line-2); background:var(--surface-2)}
+  .callout .tag{font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin:0 0 .45rem; display:flex; gap:.5rem; align-items:center}
+  .callout h3{font-family:"Fraunces",serif; font-size:1.18rem; margin:0 0 .4rem}
+  .callout p{margin:.35rem 0 0; font-size:.94rem; color:var(--ink)}
+  .callout b{color:var(--ink)}
+  .callout.accent{background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 25%,transparent)}
+  .callout.accent .tag{color:var(--accent-ink)} .callout.accent h3{color:var(--accent-ink)}
+  .callout.nc{background:var(--nc-bg); border-color:color-mix(in srgb,var(--nc) 26%,transparent)}
+  .callout.nc .tag,.callout.nc h3{color:var(--nc)}
+  .callout.cp{background:var(--cp-bg); border-color:color-mix(in srgb,var(--cp) 26%,transparent)}
+  .callout.cp .tag,.callout.cp h3{color:var(--cp)}
+  .callout.pend{background:var(--pend-bg); border-color:color-mix(in srgb,var(--pend) 30%,transparent)}
+  .callout.pend .tag{color:var(--pend)} .callout.pend b{color:var(--pend)}
+
+  /* timeline */
+  .flow{display:flex; flex-direction:column}
+  .stg{display:grid; grid-template-columns:40px 1fr; gap:1rem}
+  .rail{display:flex; flex-direction:column; align-items:center}
+  .dot{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.9rem;color:#fff;background:var(--accent);
+    z-index:1;box-shadow:0 0 0 4px var(--bg)}
+  :root[data-theme="dark"] .dot,:root:not([data-theme="light"]) .dot{color:#08201e}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .dot{color:#08201e}}
+  .line{width:2px;flex:1;background:var(--line-2);margin:2px 0}
+  .stg:last-child .line{display:none}
+  .stepcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:1rem 1.15rem;box-shadow:var(--shadow-sm);margin-bottom:1.05rem}
+  .stepcard .mod{font-family:"IBM Plex Mono",monospace;font-size:.64rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:0 0 .3rem;color:var(--accent-ink)}
+  .stepcard h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.16rem;margin:0 0 .4rem;letter-spacing:-.01em}
+  .stepcard p{margin:0 0 .7rem;color:var(--ink-soft);font-size:.93rem;max-width:60ch}
+  .stepcard p:last-child{margin-bottom:0}
+  .stepcard b{color:var(--ink)}
+  .pills{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+  .branch{border:1px dashed var(--line-2); border-left:3px dashed var(--brc,var(--cp));
+    background:var(--surface-2); border-radius:10px; padding:.7rem .85rem; margin-top:.75rem}
+  .branch .btag{font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--brc,var(--cp));display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+  .branch p{font-size:.85rem;margin:0 0 .5rem;color:var(--ink-soft)}
+  .branch.cp{--brc:var(--cp)} .branch.nc{--brc:var(--nc)} .branch.err{--brc:var(--err)} .branch.pago{--brc:var(--pago)}
+
+  .calc{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
+    border-radius:12px;padding:.9rem 1.05rem;margin:.6rem 0 0}
+  .calc .r{display:flex;justify-content:space-between;gap:1rem;font-family:"IBM Plex Mono",monospace;
+    font-size:.82rem;padding:.2rem 0;border-bottom:1px dashed color-mix(in srgb,var(--warn) 24%,transparent)}
+  .calc .r:last-child{border-bottom:none;font-weight:600;color:var(--warn)}
+  .calc .r span:last-child{font-variant-numeric:tabular-nums}
+
+  .modkey{display:flex; flex-wrap:wrap; gap:.8rem; margin:0 0 1.8rem; padding-bottom:1.2rem; border-bottom:1px solid var(--line)}
+  .modkey span{display:inline-flex; align-items:center; gap:.42rem; font-size:.78rem; color:var(--ink-soft)}
+  .modkey i{width:11px; height:11px; border-radius:3px}
+
+  .foot{margin-top:2.4rem; padding-top:1.2rem; border-top:1px solid var(--line);
+    color:var(--ink-faint); font-size:.8rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem}
+  .foot code{color:var(--accent-ink)}
+
+  /* ---------- home ---------- */
+  .home-hero{margin-bottom:2.2rem}
+  .home-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1rem}
+  .hcard{display:flex; flex-direction:column; gap:.5rem; text-decoration:none; color:inherit; cursor:pointer;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:1.25rem 1.2rem;
+    box-shadow:var(--shadow-sm); transition:transform .14s, border-color .14s, box-shadow .14s; position:relative; overflow:hidden}
+  .hcard::before{content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--cc,var(--accent))}
+  .hcard:hover{transform:translateY(-3px); border-color:color-mix(in srgb,var(--cc,var(--accent)) 45%,var(--line)); box-shadow:var(--shadow)}
+  .hcard .tag{font-family:"IBM Plex Mono",monospace; font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--cc,var(--accent))}
+  .hcard h3{font-family:"Fraunces",serif; font-weight:600; font-size:1.28rem; margin:.05rem 0; letter-spacing:-.01em}
+  .hcard p{margin:0; color:var(--ink-soft); font-size:.9rem}
+  .hcard .go{margin-top:.4rem; font-family:"IBM Plex Mono",monospace; font-size:.74rem; font-weight:600; color:var(--cc,var(--accent)); display:inline-flex; gap:.35rem; align-items:center}
+  .hcard .go::after{content:"→"; transition:transform .14s}
+  .hcard:hover .go::after{transform:translateX(3px)}
+
+  /* ---------- explorer ---------- */
+  .ex-tabs{display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1.2rem}
+  .ex-tab{font-family:"Public Sans",sans-serif; font-size:.88rem; font-weight:600; cursor:pointer;
+    padding:.5rem .95rem; border-radius:999px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink-soft); transition:.15s}
+  .ex-tab:hover{border-color:var(--accent); color:var(--ink)}
+  .ex-tab[aria-selected="true"]{background:var(--accent); color:#fff; border-color:var(--accent)}
+  :root[data-theme="dark"] .ex-tab[aria-selected="true"],:root:not([data-theme="light"]) .ex-tab[aria-selected="true"]{color:#08201e}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ex-tab[aria-selected="true"]{color:#08201e}}
+  .ex-hint{font-size:.84rem; color:var(--ink-faint); margin:0 0 1rem}
+  .ex-layout{display:grid; grid-template-columns:1.5fr 1fr; gap:1.4rem; align-items:start}
+  @media(max-width:820px){.ex-layout{grid-template-columns:1fr}}
+  .ex-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.55rem}
+  .ex-node{position:relative; text-align:left; cursor:pointer; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:.65rem .75rem .7rem; display:flex; flex-direction:column; gap:.22rem;
+    transition:transform .12s, box-shadow .12s, border-color .12s, opacity .12s; font:inherit; color:inherit}
+  .ex-node:hover{transform:translateY(-2px); box-shadow:var(--shadow-sm)}
+  .ex-node .ec{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:1.1rem; font-variant-numeric:tabular-nums; line-height:1}
+  .ex-node .en{font-size:.8rem; color:var(--ink-soft); line-height:1.25}
+  .ex-node .cd{position:absolute; top:.65rem; right:.65rem; width:9px; height:9px; border-radius:3px}
+  .ex-node:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  .ex-node[data-cat="ini"]{border-left:3px solid var(--rec)} .ex-node[data-cat="ini"] .cd{background:var(--rec)}
+  .ex-node[data-cat="proc"]{border-left:3px solid var(--fac)} .ex-node[data-cat="proc"] .cd{background:var(--fac)}
+  .ex-node[data-cat="err"]{border-left:3px solid var(--err)} .ex-node[data-cat="err"] .cd{background:var(--err)}
+  .ex-node[data-cat="fin"]{border-left:3px solid var(--fin)} .ex-node[data-cat="fin"] .cd{background:var(--fin)}
+  .ex-node[data-cat="can"]{border-left:3px solid var(--can)} .ex-node[data-cat="can"] .cd{background:var(--can)}
+  .ex-grid.has-sel .ex-node:not(.is-sel):not(.is-target):not(.is-source){opacity:.38}
+  .ex-node.is-sel{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent); transform:translateY(-2px)}
+  .ex-node.is-target{box-shadow:0 0 0 3px var(--rec)}
+  .ex-node.is-target::after{content:"↳ destino"; position:absolute; bottom:.45rem; right:.55rem; font-family:"IBM Plex Mono",monospace; font-size:.58rem; font-weight:600; color:var(--rec)}
+  .ex-node.is-source{box-shadow:0 0 0 3px var(--fin)}
+  .ex-node.is-source::after{content:"↰ origen"; position:absolute; bottom:.45rem; right:.55rem; font-family:"IBM Plex Mono",monospace; font-size:.58rem; font-weight:600; color:var(--fin)}
+  .ex-panel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.2rem; box-shadow:var(--shadow-sm); position:sticky; top:1rem}
+  .ex-panel .empty{color:var(--ink-faint); font-size:.9rem; text-align:center; padding:1.5rem 0}
+  .ex-panel .sh{display:flex; align-items:center; gap:.6rem; margin-bottom:.2rem}
+  .ex-panel .sc{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:1.55rem; font-variant-numeric:tabular-nums}
+  .ex-panel .sn{font-family:"Fraunces",serif; font-weight:600; font-size:1.12rem; line-height:1.1}
+  .ex-panel .scat{font-family:"IBM Plex Mono",monospace; font-size:.64rem; text-transform:uppercase; letter-spacing:.1em; padding:.1rem .45rem; border-radius:6px}
+  .ex-block{margin-top:1.05rem}
+  .ex-block h4{font-family:"IBM Plex Mono",monospace; font-size:.66rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 .5rem}
+  .chips{display:flex; flex-wrap:wrap; gap:.4rem}
+  .chip{cursor:pointer; font:inherit; font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:.78rem;
+    padding:.26rem .58rem; border-radius:999px; border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink); display:inline-flex; gap:.35rem; align-items:baseline; transition:.12s}
+  .chip:hover{border-color:var(--accent); background:var(--accent-soft)}
+  .chip .cn{opacity:.6; font-variant-numeric:tabular-nums}
+  .chip.t{border-color:color-mix(in srgb,var(--rec) 40%,var(--line-2))}
+  .chip.s{border-color:color-mix(in srgb,var(--fin) 40%,var(--line-2))}
+  .none{color:var(--ink-faint); font-size:.85rem; font-style:italic}
+  .cross{background:var(--err-bg); border:1px solid color-mix(in srgb,var(--err) 28%,transparent); border-radius:12px; padding:.8rem .9rem; margin-top:1.05rem}
+  .cross h4{color:var(--err)}
+  .cross .row{display:flex; align-items:center; gap:.5rem; font-size:.85rem; margin-top:.4rem; flex-wrap:wrap}
+  .cross .cmod{font-family:"IBM Plex Mono",monospace; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); min-width:70px}
+  .legend{display:flex; flex-wrap:wrap; gap:.9rem; margin:1.3rem 0 0; padding-top:1.1rem; border-top:1px solid var(--line)}
+  .legend span{display:inline-flex; align-items:center; gap:.4rem; font-size:.77rem; color:var(--ink-soft)}
+  .legend i{width:11px; height:11px; border-radius:3px}
+
+  /* ---------- integrations ---------- */
+  .ig-pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;margin-bottom:.6rem}
+  .ig-node{flex:1 1 130px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.7rem .8rem;box-shadow:var(--shadow-sm)}
+  .ig-node.sys{border-color:color-mix(in srgb,var(--sys) 40%,var(--line))}
+  .ig-node .kind{font-family:"IBM Plex Mono",monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 .25rem}
+  .ig-node .nm{font-weight:700;font-size:.98rem;color:var(--sys)}
+  .ig-node .nm .q{color:var(--pend);font-size:.78rem;vertical-align:super}
+  .ig-node .d{font-size:.76rem;color:var(--ink-soft);margin:.2rem 0 0}
+  .ig-hop{align-self:center;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-size:.9rem}
+  .ig-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:1.05rem 1.2rem;box-shadow:var(--shadow-sm);margin-bottom:1rem}
+  .ig-card .hd{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem}
+  .ig-card h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.22rem;margin:0}
+  .ig-card .alias{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-faint)}
+  .ig-card .role{font-family:"IBM Plex Mono",monospace;font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.15rem .5rem;border-radius:999px;background:var(--sys-bg);color:var(--sys)}
+  .ig-row{display:grid;grid-template-columns:auto 1fr;gap:.5rem .8rem;font-size:.89rem;margin-top:.55rem}
+  .ig-row .lab{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;padding-top:.12rem}
+  .ig-row .know{color:var(--ink)} .ig-row .dunno{color:var(--pend);font-weight:600}
+  .ig-flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.2rem;box-shadow:var(--shadow-sm)}
+  .ig-fr{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.4rem 0;border-bottom:1px dashed var(--line-2)}
+  .ig-fr:last-child{border-bottom:none}
+  .ig-fr .via{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--sys);background:var(--sys-bg);border-radius:6px;padding:.1rem .4rem;margin-left:auto}
+  .note{font-size:.82rem;color:var(--ink-soft);margin:.7rem 0 0}
+
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr}
+    .topbar{display:flex}
+    .sidebar{position:fixed; top:0; left:0; z-index:25; width:264px; transform:translateX(-100%); transition:transform .22s ease}
+    .sidebar.open{transform:none; box-shadow:0 0 60px rgba(0,0,0,.3)}
+    .scrim.show{display:block}
+    .ig-node{flex-basis:100%}
+  }
+  @media(min-width:861px){.topbar{display:none}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<div class="topbar">
+  <div class="mk">≡</div><span class="tt">Tren de Estatus</span>
+  <button class="burger" id="burger" aria-label="Menú">☰</button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="mk">TE</div>
+      <div><div class="bt">Tren de Estatus</div><div class="bs">fiscal-api · v1.0(5)</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <a data-route="inicio"><span class="ic">◇</span>Inicio</a>
+      <p class="grp">Panorama</p>
+      <a data-route="panorama"><span class="dot" style="background:var(--fac)"></span>Ciclo de vida</a>
+      <p class="grp">Detalle</p>
+      <a data-route="explorador"><span class="dot" style="background:var(--accent)"></span>Explorador de estatus</a>
+      <p class="grp">Ejemplos reales</p>
+      <a data-route="transporte"><span class="dot" style="background:var(--cp)"></span>Factura de transporte</a>
+      <a data-route="nc-rebate"><span class="dot" style="background:var(--nc)"></span>NC descuento comercial</a>
+      <a data-route="cancelacion"><span class="dot" style="background:var(--err)"></span>Cascada de cancelación</a>
+      <p class="grp">Arquitectura</p>
+      <a data-route="integraciones"><span class="dot" style="background:var(--sys)"></span>Mapa de integraciones</a>
+    </nav>
+    <div class="side-foot">
+      <span class="ver">2026-09</span>
+      <button class="tgl" id="tgl" aria-label="Cambiar tema"><span id="tglic">🌙</span></button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- INICIO -->
+    <section class="view" id="v-inicio">
+      <div class="home-hero">
+        <p class="eyebrow">fiscal-api · documentación visual</p>
+        <h1 class="t">Tren de Estatus</h1>
+        <p class="lede">Cómo se mueven las facturas, notas de crédito, recepciones y guías en el portal — del panorama al detalle, con ejemplos reales y el mapa de integraciones. Elige una vista.</p>
+      </div>
+      <div class="home-grid">
+        <a class="hcard" data-route="panorama" style="--cc:var(--fac)"><span class="tag">Panorama</span><h3>Ciclo de vida</h3><p>De punta a punta: OC, recepción, transporte, desglose, contable y pago.</p><span class="go">Ver el flujo</span></a>
+        <a class="hcard" data-route="explorador" style="--cc:var(--accent)"><span class="tag">Detalle · interactivo</span><h3>Explorador de estatus</h3><p>Clic en un estatus: se iluminan sus transiciones y efectos cruzados.</p><span class="go">Explorar</span></a>
+        <a class="hcard" data-route="transporte" style="--cc:var(--cp)"><span class="tag">Ejemplo real</span><h3>Factura de transporte</h3><p>Por qué aparece una guía de embarque / Carta Porte.</p><span class="go">Ver ejemplo</span></a>
+        <a class="hcard" data-route="nc-rebate" style="--cc:var(--nc)"><span class="tag">Ejemplo real</span><h3>NC descuento comercial</h3><p>El rebate: nace en 17, tolerancia BUS2032, cierra en 19.</p><span class="go">Ver ejemplo</span></a>
+        <a class="hcard" data-route="cancelacion" style="--cc:var(--err)"><span class="tag">Caso</span><h3>Cascada de cancelación</h3><p>Qué libera cancelar una factura: recepción y guía vuelven atrás.</p><span class="go">Ver cascada</span></a>
+        <a class="hcard" data-route="integraciones" style="--cc:var(--sys)"><span class="tag">Arquitectura</span><h3>Mapa de integraciones</h3><p>SAPITO/FOSITO, DMS, i213, SAP — con lo que falta definir.</p><span class="go">Ver mapa</span></a>
+      </div>
+      <div class="foot"><span>Basado en <code>shared_catalogs.status_train</code> v1.0(5) + tabla de conversión.</span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- PANORAMA -->
+    <section class="view" id="v-panorama">
+      <p class="eyebrow">fiscal-api · panorama</p>
+      <h1 class="t">Ciclo de vida de la factura</h1>
+      <p class="lede">Cómo avanza de punta a punta: nace de una orden de compra, cuadra con una recepción, se desglosa y contabiliza, y cierra con el complemento de pago. En el camino se cruzan transporte, notas de crédito y la cancelación.</p>
+      <div class="modkey">
+        <span><i style="background:var(--oc)"></i>Orden de Compra</span>
+        <span><i style="background:var(--rec)"></i>Recepción</span>
+        <span><i style="background:var(--fac)"></i>Factura</span>
+        <span><i style="background:var(--cp)"></i>Carta Porte</span>
+        <span><i style="background:var(--nc)"></i>Nota de Crédito</span>
+        <span><i style="background:var(--pago)"></i>Complemento de pago</span>
+      </div>
+      <div class="flow">
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--oc)">1</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod" style="color:var(--oc)">Orden de Compra</p><h3>Se genera la OC</h3>
+          <p>Sodimac emite la orden de compra al proveedor. Es el punto de partida: recepción, factura y guía se ligan a esta OC.</p></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--rec)">2</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod" style="color:var(--rec)">Recepción</p><h3>Llega la mercancía</h3>
+          <p>Se registra contra la OC. Queda <b>Disponible</b> a la espera de la factura; cuando cuadra, pasa a <b>Consumida</b>.</p>
+          <div class="pills"><span class="pill rec"><span class="n">0</span>Disponible</span><span class="arw">→</span><span class="pill rec"><span class="n">1</span>Consumida</span></div>
+          <div class="branch cp"><div class="btag">⑂ Rama · Transporte</div><p>Si el proveedor es de transporte, hay una <b>guía de embarque</b> (Carta Porte) que acompaña a la OC y alimenta la factura.</p>
+            <div class="pills"><span class="pill cp"><span class="n">1</span>Pend. OC</span><span class="arw">→</span><span class="pill cp"><span class="n">2</span>Pend. Facturar</span><span class="arw">→</span><span class="pill cp"><span class="n">3</span>Por Contabilizar</span><span class="arw">→</span><span class="pill cp"><span class="n">7</span>Pagada</span></div></div>
+        </div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fac)">3</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod">Factura · Portal</p><h3>El proveedor sube la factura</h3>
+          <p>Se registra el CFDI y se valida el subtotal contra el importe de la recepción (tolerancia). Si cuadra, arranca el flujo contable.</p>
+          <div class="pills"><span class="pill fac"><span class="n">3</span>En proceso de envío</span></div>
+          <div class="branch err"><div class="btag">⑂ Fuera de tolerancia</div><p>Factura <b>mayor</b> a la recepción → <b>Recibido Parcial</b> (2), pide una NC. Factura <b>menor</b> fuera de tolerancia → <b>Rechazo Comercial</b>.</p>
+            <div class="pills"><span class="pill err"><span class="n">2</span>Recibido Parcial</span></div></div>
+          <div class="branch err"><div class="btag">⚡ Cancelación</div><p>Si se cancela, va a <b>20 Cancelada</b> y <b>libera el camino</b>: recepción → 0 y guía → 2.</p>
+            <div class="pills"><span class="pill err"><span class="n">20</span>Cancelada</span><span class="arw">libera →</span><span class="pill rec"><span class="n">0</span>Recepción</span><span class="pill cp"><span class="n">2</span>Guía</span></div></div>
+        </div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fac)">4</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod">Factura · Batch</p><h3>Descarga y desglose</h3>
+          <p>El batch descarga el XML y lo desglosa hacia SAP. Errores de estructura regresan la factura a <b>En proceso de envío</b>.</p>
+          <div class="pills"><span class="pill fac"><span class="n">3</span></span><span class="arw">→</span><span class="pill fac"><span class="n">4</span>En proceso de desglose</span><span class="arw">→</span><span class="pill fac"><span class="n">5</span>Desglose de factura</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fac)">5</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod">Factura · SAPITO / i213</p><h3>Envío y registro contable</h3>
+          <p>Se registra y envía a los sistemas contables. Cualquier error de envío la regresa a 3 para reintentar.</p>
+          <div class="pills"><span class="pill fac"><span class="n">7</span>Pend. Envío</span><span class="arw">→</span><span class="pill fac"><span class="n">8</span>Enviada</span><span class="arw">→</span><span class="pill fac"><span class="n">11</span>Pend. i213</span><span class="arw">→</span><span class="pill fac"><span class="n">12</span>Enviada i213</span></div>
+          <p class="note">¿Qué son SAPITO / i213? → <a data-route="integraciones" style="color:var(--accent-ink);cursor:pointer">Mapa de integraciones</a>.</p></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fac)">6</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod">Factura · Contabilización</p><h3>Se contabiliza</h3>
+          <p>Contabilizada en SAP, queda lista para el proceso de pago.</p>
+          <div class="pills"><span class="pill fac"><span class="n">14</span>Pend. contabilizar</span><span class="arw">→</span><span class="pill fac"><span class="n">15</span>Pendiente de Pago</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fac)">7</div><div class="line"></div></div>
+          <div class="stepcard"><p class="mod">Factura · Pago</p><h3>Complemento de pago</h3>
+          <p>Se relaciona el complemento (o pago manual). Es el paso que cierra el ciclo, tanto para factura como para NC.</p>
+          <div class="pills"><span class="pill fac"><span class="n">17</span>Pend. complemento</span><span class="arw">/</span><span class="pill fac"><span class="n">18</span>Pago Manual</span><span class="arw">→</span><span class="pill fac"><span class="n">19</span>Completado</span></div>
+          <div class="branch pago"><div class="btag">⑂ Su propio flujo · Complemento</div><p>Es un CFDI de pago aparte con su propio estatus. Nace <b>Pendiente</b>; al ligarse a la(s) factura(s)/NC pasa a <b>relacionado</b> — y eso lleva la factura a Completado.</p>
+            <div class="pills"><span class="pill pago"><span class="n">1</span>Pendiente</span><span class="arw">→</span><span class="pill pago"><span class="n">2</span>Relacionado</span><span class="arw">·</span><span class="pill err"><span class="n">3</span>Cancelado</span><span class="pill err"><span class="n">4</span>Borrado</span></div></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fin)">8</div></div>
+          <div class="stepcard"><p class="mod" style="color:var(--fin)">Factura · Fin</p><h3>Completado</h3>
+          <p>La factura queda con su complemento de pago relacionado. Ciclo cerrado.</p>
+          <div class="pills"><span class="pill fin"><span class="n">19</span>Completado</span></div>
+          <div class="branch nc"><div class="btag">⑂ Carril paralelo · Nota de Crédito</div><p>Una NC corre su propio tren (mismos pasos). Dos orígenes: <b>ajuste por recepción</b> y <b>descuento comercial / rebate</b> (nace directo en 17). Al llegar el complemento, cierra en 19.</p>
+            <div class="pills"><span class="pill nc"><span class="n">17</span>Pend. complemento</span><span class="arw">→</span><span class="pill nc"><span class="n">19</span>Completado</span></div>
+            <p class="note" style="margin-top:.5rem">Ver <a data-route="nc-rebate" style="color:var(--nc);cursor:pointer">NC descuento comercial</a>.</p></div></div></div>
+      </div>
+      <div class="foot"><span>Vista general · detalle por estatus en el <a data-route="explorador" style="color:var(--accent-ink);cursor:pointer">Explorador</a></span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- EXPLORADOR -->
+    <section class="view" id="v-explorador">
+      <p class="eyebrow">fiscal-api · tren de estatus v1.0(5)</p>
+      <h1 class="t">Explorador de estatus</h1>
+      <p class="lede">Elige un módulo y haz clic en cualquier estatus para ver a dónde puede avanzar, de dónde llega, y qué dispara en otros módulos.</p>
+      <div class="ex-tabs" role="tablist" id="exTabs"></div>
+      <p class="ex-hint" id="exHint">▸ Haz clic en un estatus para iluminar sus transiciones.</p>
+      <div class="ex-layout">
+        <div>
+          <div class="ex-grid" id="exGrid"></div>
+          <div class="legend">
+            <span><i style="background:var(--rec)"></i>Inicial / disponible</span>
+            <span><i style="background:var(--fac)"></i>En proceso</span>
+            <span><i style="background:var(--err)"></i>Error</span>
+            <span><i style="background:var(--fin)"></i>Final</span>
+            <span><i style="background:var(--can)"></i>Cancelado / borrado</span>
+          </div>
+        </div>
+        <aside class="ex-panel" id="exPanel"><div class="empty">Ningún estatus seleccionado.<br>Haz clic en uno del grid.</div></aside>
+      </div>
+      <div class="foot"><span>Datos: <code>shared_catalogs.status_train</code> + tabla de conversión</span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- TRANSPORTE -->
+    <section class="view" id="v-transporte">
+      <p class="eyebrow">fiscal-api · ejemplo real</p>
+      <h1 class="t">Una factura de transporte, paso a paso</h1>
+      <p class="lede">Por qué aparece una guía de embarque (Carta Porte) y cómo camina junto a la factura del flete.</p>
+      <div class="cast">
+        <div class="c"><p class="k">Proveedor</p><p class="v">Autotransportes del Bajío<small>núm. 252250</small></p></div>
+        <div class="c"><p class="k">Orden de compra</p><p class="v">OC 2002<small>servicio de flete</small></p></div>
+        <div class="c"><p class="k">Guía</p><p class="v">Carta Porte<small>XL3350A31012…15200</small></p></div>
+      </div>
+      <div class="callout cp"><p class="tag">¿Por qué una guía / Carta Porte?</p><h3>Porque el SAT exige amparar el traslado</h3>
+        <p>Cuando un proveedor <b>mueve mercancía</b>, el SAT obliga a emitir un CFDI con <b>Complemento Carta Porte</b>: acredita el traslado (origen, destino, mercancías, transportista). No es una factura de venta — es el documento del <b>viaje</b>.</p>
+        <p>En el portal se registra como una <b>guía de embarque</b>, con su propio ciclo, ligada a la OC y luego a la factura del flete. Por eso ves <b>dos cosas</b>: la guía (el traslado) y la factura (el cobro).</p></div>
+      <div class="flow">
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--cp)">1</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Sodimac necesita mover mercancía</h3><p>Se emite una <b>OC de transporte</b> (2002) al proveedor de flete para llevar producto de un CEDIS a una tienda.</p></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--cp)">2</div><div class="line"></div></div>
+          <div class="stepcard"><h3>El proveedor traslada y emite la Carta Porte</h3><p>Al mover la mercancía, emite el CFDI de traslado con <b>Complemento Carta Porte</b>. Nace la <b>guía</b>, ligada a la OC.</p>
+          <div class="pills"><span class="pill cp"><span class="n">1</span>Pendiente de OC</span><span class="arw">→</span><span class="pill cp"><span class="n">2</span>Pendiente de Facturar</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--cp)">3</div><div class="line"></div></div>
+          <div class="stepcard"><h3>El proveedor sube la factura del flete</h3><p>Ahora cobra: sube la <b>factura</b> del transporte. Al cuadrar con la guía y la OC, la guía avanza a <b>Por Contabilizar</b> y la factura entra a su flujo.</p>
+          <div class="pills"><span class="pill cp"><span class="n">2</span></span><span class="arw">→</span><span class="pill cp"><span class="n">3</span>Por Contabilizar</span><span class="arw">· factura →</span><span class="pill fac"><span class="n">3</span>En proceso de envío</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--cp)">4</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Se contabiliza y se paga</h3><p>La factura recorre su ciclo (desglose → contable → pago). Cuando se paga, la guía cierra como <b>Pagada</b>.</p>
+          <div class="pills"><span class="pill cp"><span class="n">5</span>Contabilizada</span><span class="arw">→</span><span class="pill fin"><span class="n">7</span>Pagada</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--err)">5</div></div>
+          <div class="stepcard"><h3>Si se cancela la factura, se libera la guía</h3><p>Al cancelar la factura del flete (<b>20 Cancelada</b>), la guía <b>regresa a Pendiente de Facturar</b> — no se pierde el traslado.</p>
+          <div class="pills"><span class="pill err"><span class="n">20</span>Factura Cancelada</span><span class="arw">libera →</span><span class="pill cp"><span class="n">2</span>Guía Pendiente de Facturar</span></div></div></div>
+      </div>
+      <div class="foot"><span>Ejemplo ilustrativo · datos ficticios sobre el flujo real</span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- NC REBATE -->
+    <section class="view" id="v-nc-rebate">
+      <p class="eyebrow">fiscal-api · ejemplo real</p>
+      <h1 class="t">Una NC de descuento comercial, paso a paso</h1>
+      <p class="lede">El caso del rebate: el proveedor devuelve dinero por un acuerdo comercial. La NC nace “pendiente de complemento”, se valida contra la tolerancia, y cierra cuando llega el complemento de pago.</p>
+      <div class="cast">
+        <div class="c"><p class="k">Acuerdo</p><p class="v">Rebate 4%<small>tenant_finance.rebate</small></p></div>
+        <div class="c"><p class="k">Monto acuerdo</p><p class="v">$10,000.00<small>rebate.amount</small></p></div>
+        <div class="c"><p class="k">Tolerancia</p><p class="v">$4.00<small>param activo · BUS2032</small></p></div>
+      </div>
+      <div class="callout nc"><p class="tag">¿Por qué esta NC es distinta?</p><h3>No corrige una factura: liquida un acuerdo</h3>
+        <p>Un <b>descuento comercial (rebate)</b> es dinero que el proveedor regresa por cumplir un acuerdo (volumen, temporada). La NC no ajusta una recepción — <b>salda el acuerdo</b>, por eso se valida contra el monto pactado y no contra una OC.</p>
+        <p>Como el ciclo cierra al conciliar el pago, esta NC <b>nace directo en <span class="code">17 Pendiente de complemento</span></b>, se salta la recepción.</p></div>
+      <div class="flow">
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--nc)">1</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Existe el acuerdo comercial</h3><p>Finanzas registra el rebate con su <b>monto</b> (<span class="code">rebate.amount</span> = $10,000) y su versión activa. Fer manda el <b>rebateId</b> al portal.</p></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--nc)">2</div><div class="line"></div></div>
+          <div class="stepcard"><h3>El proveedor sube la NC del rebate</h3><p>Registra la NC de <b>tipo descuento comercial</b>, ligada por <span class="code">rebate_uuid</span>. El portal lee la <b>última versión activa</b> del rebate por nombre.</p>
+          <div class="pills"><span class="arw">nace en →</span><span class="pill nc"><span class="n">17</span>Pendiente de complemento</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--warn)">3</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Se valida contra la tolerancia — BUS2032</h3><p>El subtotal de la NC debe cubrir el acuerdo dentro de la <b>tolerancia parametrizada</b>. Se rechaza si <b>subtotal &lt; monto − tolerancia</b>. El parámetro se lee de su <b>última versión activa</b> por nombre; si no hay versión activa → coincidencia <b>exacta al 100%</b>.</p>
+          <div class="calc"><div class="r"><span>rebate.amount</span><span>$10,000.00</span></div><div class="r"><span>− tolerancia (param activo)</span><span>$4.00</span></div><div class="r"><span>mínimo aceptado</span><span>$9,996.00</span></div></div>
+          <p style="margin:.7rem 0 0;color:var(--ink-soft);font-size:.9rem">Si el subtotal cae por debajo → <b>BUS2032</b> con el monto formateado <span class="code">$#,##0.00 MXN</span>.</p>
+          <div class="pills" style="margin-top:.5rem"><span class="pill err">BUS2032</span><span class="arw">“…menor a la tolerancia de $4.00 MXN”</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--nc)">4</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Se contabiliza y se paga</h3><p>Dentro de tolerancia, la NC recorre su ciclo contable como cualquier otra. Queda esperando el <b>complemento de pago</b>.</p>
+          <div class="pills"><span class="pill nc"><span class="n">17</span>Pend. complemento</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--fin)">5</div></div>
+          <div class="stepcard"><h3>Llega el complemento → cierra el ciclo</h3><p>Al subir el complemento se <b>sincronizan los estatus</b>: factura y NC quedan en <b>19 Completado</b>. Fin del ciclo del acuerdo.</p>
+          <div class="pills"><span class="pill nc"><span class="n">17</span>Pend. complemento</span><span class="arw">complemento →</span><span class="pill ok"><span class="n">19</span>Completado</span></div></div></div>
+      </div>
+      <div class="foot"><span>Ejemplo ilustrativo · montos ficticios · lógica real (BUS2032, param versionado, 17→19)</span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- CANCELACION -->
+    <section class="view" id="v-cancelacion">
+      <p class="eyebrow">fiscal-api · caso</p>
+      <h1 class="t">Cascada de cancelación</h1>
+      <p class="lede">Cancelar una factura no es solo cerrarla: <b>libera el camino</b> que había ocupado. La recepción vuelve a estar disponible y la guía de transporte regresa a pendiente de facturar — como si empezara de cero.</p>
+      <div class="callout accent"><p class="tag">La idea en una línea</p><h3>Cancelar = soltar lo que la factura tenía tomado</h3>
+        <p>Mientras la factura vive, “consume” una recepción y “ocupa” una guía. Al cancelarla (<b>20</b>), esos recursos se <b>devuelven</b> a su estado libre para que el ciclo pueda rehacerse.</p></div>
+      <div class="flow">
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--err)">1</div><div class="line"></div></div>
+          <div class="stepcard"><h3>Se cancela la factura</h3><p>La factura de mercancía o transporte pasa a <b>20 Cancelada</b>. Aquí arranca la cascada.</p>
+          <div class="pills"><span class="pill fac"><span class="n">3</span>En proceso</span><span class="arw">cancela →</span><span class="pill err"><span class="n">20</span>Cancelada</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--rec)">2</div><div class="line"></div></div>
+          <div class="stepcard"><h3>La recepción se libera</h3><p>La recepción que la factura había <b>Consumido</b> vuelve a <b>0 Disponible</b>: queda lista para cuadrar con otra factura.</p>
+          <div class="pills"><span class="pill rec"><span class="n">1</span>Consumida</span><span class="arw">→</span><span class="pill rec"><span class="n">0</span>Disponible</span></div></div></div>
+        <div class="stg"><div class="rail"><div class="dot" style="background:var(--cp)">3</div></div>
+          <div class="stepcard"><h3>La guía de transporte regresa (si aplica)</h3><p>Si era una factura de flete, su <b>guía</b> vuelve a <b>2 Pendiente de Facturar</b> — el traslado sigue existiendo, solo falta volver a facturarlo.</p>
+          <div class="pills"><span class="pill cp"><span class="n">3</span>Por Contabilizar</span><span class="arw">→</span><span class="pill cp"><span class="n">2</span>Pendiente de Facturar</span></div>
+          <p class="note">Regla de la tabla de conversión: <span class="code">Factura 20 → Recepción 0 · Guía 2</span>. Validado e2e (factura 20, recepción 0, guía 2).</p></div></div>
+      </div>
+      <div class="foot"><span>Caso real · tabla de conversión de estatus (Ivan) · validado UAT</span><span>fiscal-api</span></div>
+    </section>
+
+    <!-- INTEGRACIONES -->
+    <section class="view" id="v-integraciones">
+      <p class="eyebrow">fiscal-api · arquitectura</p>
+      <h1 class="t">Mapa de integraciones</h1>
+      <p class="lede">Después de que el portal desglosa una factura, el documento viaja por sistemas de Sodimac hasta contabilizarse y pagarse. Esto es lo que hace cada interfaz — según lo que dice el código hoy.</p>
+      <div class="callout pend"><p class="tag">⚠ definición pendiente</p><h3>Los nombres están en el código; la definición formal no</h3>
+        <p>SAPITO, FOSITO, i213 y DMS aparecen en <b>enums, comentarios y adapters</b>, no en un documento oficial. Hay una inconsistencia real: el enum los llama <b>SAPITO</b>, el catálogo del portal los llama <b>FOSITO</b>. Los acrónimos y dueños <b>los tiene que confirmar Ivan / el equipo</b>. Abajo se separa lo que <b>sabemos del código</b> de lo que está <b>por definir</b>.</p></div>
+      <div class="ig-pipe">
+        <div class="ig-node"><p class="kind">Portal FBC</p><p class="nm" style="color:var(--fac)">fiscal-api</p><p class="d">Registra, valida y desglosa el CFDI</p></div>
+        <span class="ig-hop">→</span>
+        <div class="ig-node sys"><p class="kind">BD staging</p><p class="nm">SAPITO<span class="q">?</span> / FOSITO<span class="q">?</span></p><p class="d">SODIMAC_SAP · Envios_Ap</p></div>
+        <span class="ig-hop">→</span>
+        <div class="ig-node sys"><p class="kind">Canal</p><p class="nm">DMS<span class="q">?</span></p><p class="d">Mueve el doc SAPITO → i213</p></div>
+        <span class="ig-hop">→</span>
+        <div class="ig-node sys"><p class="kind">AP contable/pago</p><p class="nm">i213<span class="q">?</span></p><p class="d">Contabiliza y paga (SP)</p></div>
+      </div>
+      <p class="note"><span style="color:var(--pend);font-weight:600">?</span> = sigla / definición formal por confirmar con Ivan.</p>
+
+      <h2 class="sec">Qué hace cada interfaz</h2>
+      <div class="ig-card"><div class="hd"><h3>SAPITO / FOSITO</h3><span class="alias">enum: “SAPITO” · catálogo: “FOSITO”</span><span class="role">BD staging</span></div>
+        <p style="color:var(--ink-soft);font-size:.92rem;margin:0">BD intermedia donde el portal <b>registra y desglosa</b> el documento antes de mandarlo a i213. El batch consulta <b>Envios_Ap</b> para saber si ya se registró y si ya se envió.</p>
+        <div class="ig-row"><span class="lab">Sabemos</span><span class="know">BD <code>SODIMAC_SAP</code>, tabla <code>Envios_Ap</code>. Cols <code>CODIGO_PROVEEDOR</code>, <code>NUMERO_DOCUMENTO</code>, <code>NUMERO_UUID</code>, <code>FLAG_ENVIADO</code> (0 = pend, 1 = enviado, 2 = error).</span>
+          <span class="lab">Sabemos</span><span class="know">Adapter <code>SapitoRepositoryAdapter</code> (batch invoice-status-sync).</span>
+          <span class="lab">Por definir</span><span class="dunno">Qué significa “SAPITO”; por qué el catálogo lo llama “FOSITO”; si son el mismo sistema (parece que sí).</span></div></div>
+      <div class="ig-card"><div class="hd"><h3>DMS</h3><span class="alias">comentario del enum</span><span class="role">Canal</span></div>
+        <p style="color:var(--ink-soft);font-size:.92rem;margin:0">Aparece solo como el <b>mecanismo que mueve la factura de SAPITO hacia i213</b>. El estatus <code>16 Error envío DMS</code> = falló ese envío.</p>
+        <div class="ig-row"><span class="lab">Sabemos</span><span class="know">Comentario en <code>InvoiceStatus</code>: “enviar la factura de SAPITO a i213 (DMS)”.</span>
+          <span class="lab">Por definir</span><span class="dunno">Qué es DMS (¿middleware? ¿bus? ¿siglas?), si es sistema aparte o parte de i213, y quién lo opera.</span></div></div>
+      <div class="ig-card"><div class="hd"><h3>i213</h3><span class="alias">AdmIF213ProdDB @ 10.138.153.10:1433</span><span class="role">AP contable + pago</span></div>
+        <p style="color:var(--ink-soft);font-size:.92rem;margin:0">Sistema de <b>cuentas por pagar</b>. Valida que el documento se <b>contabilizó</b> y se <b>pagó</b> vía stored procedures.</p>
+        <div class="ig-row"><span class="lab">Sabemos</span><span class="know">SP <code>i123_Valida_Documento_AP</code> → contabilización (1 = ok, 0 = rechazo). <em>“i123” es typo del sistema origen.</em></span>
+          <span class="lab">Sabemos</span><span class="know">SP <code>i213_Valida_Documento_Pagado_AP</code> → pago (1 = pagado, devuelve <code>REF_BANK</code>).</span>
+          <span class="lab">Por definir</span><span class="dunno">Qué significa “i213”; su relación exacta con SAP PROD.</span></div></div>
+      <div class="ig-card"><div class="hd"><h3>SAP (SODIMAC_SAP PROD)</h3><span class="alias">ERP contable</span><span class="role">ERP</span></div>
+        <p style="color:var(--ink-soft);font-size:.92rem;margin:0">El ERP donde finalmente se <b>contabiliza</b>. Los estatus hablan de “enviar a Sodimac SAP PROD” y “pendiente de contabilizar en SAP”.</p>
+        <div class="ig-row"><span class="lab">Sabemos</span><span class="know">Aparece en descripciones de <code>InvoiceStatus</code>/<code>CreditNoteStatus</code>. La BD <code>SODIMAC_SAP</code> es la misma que usa SAPITO como staging.</span>
+          <span class="lab">Por definir</span><span class="dunno">Frontera exacta SAP ↔ SAPITO ↔ i213 (staging vs. contabilización vs. AP).</span></div></div>
+
+      <h2 class="sec">El recorrido, estatus por estatus</h2>
+      <div class="ig-flow">
+        <div class="ig-fr"><span class="pill fac"><span class="n">6</span>Pend. envío SAP</span><span class="arw">→</span><span class="pill fac"><span class="n">7</span>Pend. registro</span><span class="via">existe en Envios_Ap</span></div>
+        <div class="ig-fr"><span class="pill fac"><span class="n">7</span>Pend. registro</span><span class="arw">→</span><span class="pill fac"><span class="n">8</span>Pend. envío i213</span><span class="via">SAPITO · registrado</span></div>
+        <div class="ig-fr"><span class="pill fac"><span class="n">8</span>Pend. envío i213</span><span class="arw">→</span><span class="pill fac"><span class="n">9</span>Enviada a i213</span><span class="via">DMS · FLAG 0→1</span></div>
+        <div class="ig-fr"><span class="pill fac"><span class="n">9</span>Enviada a i213</span><span class="arw">→</span><span class="pill fac"><span class="n">10</span>Pend. contabilizar</span><span class="arw">ó</span><span class="pill err"><span class="n">17</span>Error envío</span><span class="via">FLAG 1 / 2</span></div>
+        <div class="ig-fr"><span class="pill fac"><span class="n">10</span>Pend. contabilizar</span><span class="arw">→</span><span class="pill fac"><span class="n">11</span>Pend. pago</span><span class="arw">ó</span><span class="pill err"><span class="n">14</span>Rechazo contable</span><span class="via">i213 · SP i123</span></div>
+        <div class="ig-fr"><span class="pill fac"><span class="n">11</span>Pend. pago</span><span class="arw">→</span><span class="pill fin"><span class="n">12</span>Pend. complemento</span><span class="via">i213 · SP pagado</span></div>
+        <p class="note">Códigos del batch <code>invoice-status-sync</code> (tren v1.0). Con <b>v1.0(5)</b> algunos números cambian — este flujo es la <b>lógica</b> del recorrido, no la numeración final. Cierra con el complemento (→ <b>19 Completado</b>).</p>
+      </div>
+      <div class="foot"><span>Basado en <code>invoice-status-sync</code> + enums de <code>fiscal-api</code>. Definiciones formales por confirmar.</span><span>fiscal-api</span></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ---------------- router ---------------- */
+const ROUTES=["inicio","panorama","explorador","transporte","nc-rebate","cancelacion","integraciones"];
+const navLinks=[...document.querySelectorAll("#nav a")];
+function show(route){
+  if(!ROUTES.includes(route)) route="inicio";
+  ROUTES.forEach(r=>{ const el=document.getElementById("v-"+r); if(el) el.classList.toggle("active", r===route); });
+  navLinks.forEach(a=>a.classList.toggle("active", a.dataset.route===route));
+  if(route==="explorador") ensureExplorer();
+  window.scrollTo({top:0,behavior:"auto"});
+  closeNav();
+}
+function goRoute(r){ if(location.hash!=="#"+r){ location.hash=r; } else { show(r); } }
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+document.addEventListener("click",e=>{ const a=e.target.closest("[data-route]"); if(a){ e.preventDefault(); goRoute(a.dataset.route);} });
+
+/* ---------------- mobile nav ---------------- */
+const sidebar=document.getElementById("sidebar"), scrim=document.getElementById("scrim");
+function openNav(){ sidebar.classList.add("open"); scrim.classList.add("show"); }
+function closeNav(){ sidebar.classList.remove("open"); scrim.classList.remove("show"); }
+document.getElementById("burger").onclick=openNav;
+scrim.onclick=closeNav;
+
+/* ---------------- theme ---------------- */
+const root=document.documentElement, tgl=document.getElementById("tgl"), tglic=document.getElementById("tglic");
+function sysDark(){ return window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches; }
+function applyTheme(t){
+  if(t==="dark"||t==="light") root.setAttribute("data-theme",t); else root.removeAttribute("data-theme");
+  const dark = t==="dark" || (t!=="light" && sysDark());
+  tglic.textContent = dark ? "☀" : "🌙";
+}
+let theme="system";
+try{ theme=localStorage.getItem("te-theme")||"system"; }catch(e){}
+applyTheme(theme);
+tgl.onclick=()=>{ const cur=root.getAttribute("data-theme"); theme = (cur==="dark")?"light":"dark";
+  try{ localStorage.setItem("te-theme",theme); }catch(e){} applyTheme(theme); };
+
+/* ---------------- explorer ---------------- */
+const MOD = {
+  factura:{label:"Factura", statuses:[
+    [1,"No válido fiscal","err"],[2,"Recibido Parcial","ini"],[3,"En proceso de envío","proc"],
+    [4,"En proceso de desglose","proc"],[5,"Desglose de factura","proc"],[6,"Error en desglose XML","err"],
+    [7,"Pendiente Envío","proc"],[8,"Enviada","proc"],[9,"Error registro contable","err"],
+    [10,"Error de Envío","err"],[11,"Pendiente Envío i213","proc"],[12,"Enviada i213","proc"],
+    [13,"Error i213","err"],[14,"Pendiente de contabilizar","proc"],[15,"Pendiente de Pago","proc"],
+    [16,"Rechazo Contable","err"],[17,"Pendiente de complemento","proc"],[18,"Pago Manual","proc"],
+    [19,"Completado","fin"],[20,"Cancelada","can"]],
+    edges:[[2,3],[2,20],[3,4],[3,5],[3,6],[3,20],[4,5],[4,6],[5,7],[5,8],[5,9],[5,10],[6,3],[7,8],[7,10],
+      [8,11],[8,12],[8,13],[9,3],[10,3],[11,12],[11,13],[12,14],[12,15],[12,16],[13,3],[14,15],[14,16],
+      [15,18],[16,3],[17,19],[18,19]]},
+  nc:{label:"Nota de Crédito", statuses:[
+    [1,"No válido fiscal","err"],[2,"Recibida Parcial","ini"],[3,"En proceso de envío","proc"],
+    [4,"En proceso de desglose","proc"],[5,"Desglose de NC","proc"],[6,"Error en desglose XML","err"],
+    [7,"Pendiente Envío","proc"],[8,"Enviada","proc"],[9,"Error registro contable","err"],
+    [10,"Error de Envío","err"],[11,"Pendiente Envío i213","proc"],[12,"Enviada i213","proc"],
+    [13,"Error i213","err"],[14,"Pendiente de contabilizar","proc"],[15,"Pendiente de descuento Pago","proc"],
+    [16,"Rechazo Contable","err"],[17,"Pendiente de complemento","proc"],[18,"N/A","can"],
+    [19,"Completado","fin"],[20,"Cancelada","can"]],
+    edges:[[2,3],[2,20],[3,4],[3,5],[3,6],[3,20],[4,5],[4,6],[5,7],[5,8],[5,9],[5,10],[6,3],[7,8],[7,10],
+      [8,11],[8,12],[8,13],[9,3],[10,3],[11,12],[11,13],[12,14],[12,15],[12,16],[13,3],[14,15],[14,16],
+      [15,18],[16,3],[17,19],[18,19]]},
+  recepcion:{label:"Recepción", statuses:[
+    [0,"Disponible","ini"],[1,"Consumida","proc"],[2,"Consumida manual","proc"],[3,"En proceso contable","proc"],
+    [4,"Rechazo contable","err"],[5,"En proceso de pago","proc"],[6,"Pagada","fin"],[7,"Cancelada","can"],
+    [8,"Borrado","can"],[9,"Inválida","err"]],
+    edges:[[0,1],[0,2],[0,7],[0,8],[1,3],[1,4],[2,3],[2,4],[3,5],[4,5],[5,6],[7,0],[9,8]]},
+  cartaporte:{label:"Carta Porte", statuses:[
+    [1,"Pendiente de OC","ini"],[2,"Pendiente de Facturar","proc"],[3,"Pendiente de Pago","proc"],
+    [4,"En proceso de contabilización","proc"],[5,"Contabilizada","proc"],[6,"Rechazo contable","err"],
+    [7,"Pagada","fin"],[8,"Rechazo de guía","err"],[9,"Cancelada","can"],[10,"Borrado","can"]],
+    edges:[[1,2],[1,9],[1,10],[2,3],[2,9],[3,4],[4,5],[4,6],[5,7],[6,5],[8,1],[8,2]]}
+};
+const CROSS = { "factura:20":[
+    {mod:"recepcion",to:0,note:"La recepción se libera a Disponible"},
+    {mod:"cartaporte",to:2,note:"Guía de transporte a Pendiente de Facturar (si aplica)"} ] };
+const CAT_LABEL={ini:"Inicial",proc:"Proceso",err:"Error",fin:"Final",can:"Cancelado"};
+const CAT_BG={ini:"var(--rec-bg)",proc:"var(--fac-bg)",err:"var(--err-bg)",fin:"var(--fin-bg)",can:"var(--can-bg)"};
+const CAT_FG={ini:"var(--rec)",proc:"var(--fac)",err:"var(--err)",fin:"var(--fin)",can:"var(--can)"};
+
+let cur="factura", sel=null, exReady=false;
+const tabsEl=document.getElementById("exTabs"), gridEl=document.getElementById("exGrid"),
+      panelEl=document.getElementById("exPanel"), hintEl=document.getElementById("exHint");
+function ensureExplorer(){ if(exReady) return; exReady=true;
+  Object.entries(MOD).forEach(([key,m])=>{
+    const b=document.createElement("button");
+    b.className="ex-tab"; b.setAttribute("role","tab"); b.textContent=m.label; b.dataset.key=key;
+    b.setAttribute("aria-selected", key===cur);
+    b.onclick=()=>{cur=key; sel=null; renderTabs(); renderGrid(); renderPanel();};
+    tabsEl.appendChild(b);
+  });
+  renderGrid(); renderPanel();
+}
+function renderTabs(){ [...tabsEl.children].forEach(b=>b.setAttribute("aria-selected", b.dataset.key===cur)); }
+function nameOf(key,code){ const s=MOD[key].statuses.find(x=>x[0]===code); return s?s[1]:code; }
+function catOf(key,code){ const s=MOD[key].statuses.find(x=>x[0]===code); return s?s[2]:"proc"; }
+function renderGrid(){
+  gridEl.innerHTML=""; gridEl.classList.toggle("has-sel", sel!==null);
+  MOD[cur].statuses.forEach(([code,name,cat])=>{
+    const n=document.createElement("button");
+    n.className="ex-node"; n.dataset.cat=cat; n.dataset.code=code; n.type="button";
+    n.innerHTML=`<span class="cd"></span><span class="ec">${code}</span><span class="en">${name}</span>`;
+    n.onclick=()=>{ sel=(sel===code?null:code); renderGrid(); renderPanel(); };
+    if(sel!==null){
+      const out=MOD[cur].edges.filter(e=>e[0]===sel).map(e=>e[1]);
+      const inc=MOD[cur].edges.filter(e=>e[1]===sel).map(e=>e[0]);
+      if(code===sel) n.classList.add("is-sel");
+      else if(out.includes(code)) n.classList.add("is-target");
+      else if(inc.includes(code)) n.classList.add("is-source");
+    }
+    gridEl.appendChild(n);
+  });
+}
+function chip(cls,code){ return `<button class="chip ${cls}" onclick="jump(${code})"><span class="cn">${code}</span>${nameOf(cur,code)}</button>`; }
+window.jump=(code)=>{ sel=code; renderGrid(); renderPanel(); panelEl.scrollIntoView({behavior:"smooth",block:"nearest"}); };
+function renderPanel(){
+  if(sel===null){ panelEl.innerHTML=`<div class="empty">Ningún estatus seleccionado.<br>Haz clic en uno del grid.</div>`; hintEl.style.display=""; return; }
+  hintEl.style.display="none";
+  const cat=catOf(cur,sel);
+  const out=MOD[cur].edges.filter(e=>e[0]===sel).map(e=>e[1]).sort((a,b)=>a-b);
+  const inc=MOD[cur].edges.filter(e=>e[1]===sel).map(e=>e[0]).sort((a,b)=>a-b);
+  const cross=CROSS[cur+":"+sel];
+  let html=`<div class="sh"><span class="sc" style="color:${CAT_FG[cat]}">${sel}</span>
+    <span class="scat" style="background:${CAT_BG[cat]};color:${CAT_FG[cat]}">${CAT_LABEL[cat]}</span></div>
+    <div class="sn">${nameOf(cur,sel)}</div>
+    <div class="ex-block"><h4>▸ Puede avanzar a</h4>${out.length?`<div class="chips">${out.map(c=>chip("t",c)).join("")}</div>`:`<p class="none">Estatus final — no tiene salidas.</p>`}</div>
+    <div class="ex-block"><h4>◂ Llega desde</h4>${inc.length?`<div class="chips">${inc.map(c=>chip("s",c)).join("")}</div>`:`<p class="none">Sin orígenes — es un estatus de entrada.</p>`}</div>`;
+  if(cross){ html+=`<div class="cross"><h4>⚡ Efecto en otros módulos</h4>`;
+    cross.forEach(x=>{ html+=`<div class="row"><span class="cmod">${MOD[x.mod].label}</span>
+      <button class="chip t" onclick="go('${x.mod}',${x.to})"><span class="cn">${x.to}</span>${nameOf(x.mod,x.to)}</button></div>
+      <div style="font-size:.8rem;color:var(--ink-soft);margin:.15rem 0 .2rem 70px">${x.note}</div>`; });
+    html+=`</div>`; }
+  panelEl.innerHTML=html;
+}
+window.go=(mod,code)=>{ cur=mod; sel=code; renderTabs(); renderGrid(); renderPanel();
+  document.querySelector(".ex-layout").scrollIntoView({behavior:"smooth",block:"start"}); };
+
+/* ---------------- boot ---------------- */
+show(location.hash.slice(1)||"inicio");
+</script>

@@ -533,6 +533,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.info("Estatus actualizado exitosamente (usuario actualización: {})",
                     request.getIdUsuarioActualizacion());
 
+            // Cancelación de factura (estatus 20): libera la recepción (→0 Disponible) y, si es
+            // transporte, la guía (→2 Pendiente de Facturar). Tabla de conversión de estatus (Ivan).
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(documentType)
+                    && Integer.valueOf(FACTURA_CANCELADA).equals(newStatusCode)) {
+                liberarRecepcionPorCancelacionFactura(invoice,
+                        "CANCEL-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
+            }
+
             // === PASO 5: ACTUALIZAR ADDENDA (SI SE PROPORCIONA) ===
             boolean addendaActualizada = false;
             if (request.getAddenda() != null) {
@@ -1528,6 +1536,53 @@ public class InvoiceServiceImpl implements InvoiceService {
         receptionRepository.save(reception);
         log.info("Cascada rechazo completa. Factura {} -> 1, NCs -> 9, recepción {} -> 0 (Disponible)",
                 factura.getInvoiceUuid(), reception.getReceptionId());
+    }
+
+    /** Factura Cancelada (tabla de conversión de estatus, Ivan). */
+    private static final int FACTURA_CANCELADA = 20;
+
+    /**
+     * Cascada al CANCELAR una factura (estatus 20). Conforme a la tabla de conversión de estatus
+     * (Ivan 2026-09-03): la recepción ligada regresa a 0 (Disponible) para que el proveedor pueda
+     * volver a facturar, y si es de transporte, la(s) guía(s) de embarque regresan a 2 (Pendiente
+     * de Facturar). Best-effort: NO rompe la cancelación si algo falla (solo log).
+     */
+    private void liberarRecepcionPorCancelacionFactura(InvoiceEntity factura, String idTransaccion,
+            String serviceName) {
+        try {
+            ReceptionEntity reception = resolveReceptionDeFactura(factura.getInvoiceUuid());
+            if (reception == null) {
+                log.info("Cancelación factura {}: sin recepción ligada, no hay nada que liberar",
+                        factura.getInvoiceUuid());
+                return;
+            }
+            // Recepción -> 0 Disponible (Factura 20 -> Recepción 0).
+            reception.setStatus(BigDecimal.ZERO);
+            receptionRepository.save(reception);
+            log.info("Cancelación factura {}: recepción {} -> 0 (Disponible)",
+                    factura.getInvoiceUuid(), reception.getReceptionId());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                    K_SYSTEM, false, "Recepción liberada a Disponible por cancelación de factura",
+                    "facturaUuid: " + factura.getInvoiceUuid() + ", receptionId: " + reception.getReceptionId(),
+                    null, null);
+
+            // Transporte: guía(s) -> 2 Pendiente de Facturar (Factura 20 -> Carta Porte 2).
+            String guide = reception.getGuideNumber();
+            if (guide != null && !guide.isBlank()) {
+                int updated = receptionRepository.markShippingGuidesPendienteFacturar(guide.trim());
+                log.info("Cancelación factura {}: guías guideNumber={} -> 2 Pendiente de Facturar ({} fila(s))",
+                        factura.getInvoiceUuid(), guide.trim(), updated);
+                if (updated > 0) {
+                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                            K_SYSTEM, false, "Guías de embarque a 2 (Pendiente de Facturar) por cancelación de factura",
+                            "facturaUuid: " + factura.getInvoiceUuid() + ", guideNumber: " + guide.trim()
+                                    + ", updated: " + updated, null, null);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo liberar recepción/guía por cancelación de factura {}: {} — no crítico",
+                    factura.getInvoiceUuid(), e.getMessage());
+        }
     }
 
     /**
@@ -3257,6 +3312,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // === PASO 6: PERSISTIR CAMBIOS ===
             invoiceRepository.save(invoice);
+
+            // Cancelación de factura (estatus 20): libera la recepción (→0 Disponible) y, si es
+            // transporte, la guía (→2 Pendiente de Facturar). Tabla de conversión de estatus (Ivan).
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())
+                    && Integer.valueOf(FACTURA_CANCELADA).equals(request.getEstatusDestino())) {
+                liberarRecepcionPorCancelacionFactura(invoice,
+                        "CANCEL-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
+            }
 
             // === PASO 7: GUARDAR HISTORIAL DE CAMBIO DE ESTATUS ===
             try {

@@ -59,4 +59,20 @@ public interface ReceptionRepository extends JpaRepository<ReceptionEntity, UUID
             + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status = 2",
             nativeQuery = true)
     int markShippingGuidesPorContabilizar(@Param("guideNumber") String guideNumber);
+
+    /**
+     * Al CANCELAR una factura de transporte, las guías ligadas por {@code guide_number} regresan a
+     * estatus 2 (Pendiente de Facturar) para poder re-facturarse. Solo desde estatus 3 (Por
+     * Contabilizar, el que dejó el consumo) para no pisar guías ya contabilizadas (4+) ni canceladas.
+     * Tabla de conversión de estatus (Ivan 2026-09-03): Factura 20 (Cancelada) -> Carta Porte 2.
+     *
+     * @return filas actualizadas (0 si no hay guía o no está en 3)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value =
+            "UPDATE tenant_finance.shipping_guide "
+            + "SET status = 2, is_status_updated = true, updated_at = CURRENT_TIMESTAMP "
+            + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status = 3",
+            nativeQuery = true)
+    int markShippingGuidesPendienteFacturar(@Param("guideNumber") String guideNumber);
 }

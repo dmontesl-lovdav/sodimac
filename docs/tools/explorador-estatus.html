@@ -1,0 +1,275 @@
+<title>Explorador de Estatus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f5f7f5; --surface:#ffffff; --surface-2:#eef2f0; --surface-3:#e7ece9;
+    --ink:#1b2320; --ink-soft:#5c6863; --ink-faint:#8a958f; --line:#dde3df;
+    --accent:#0d7d74; --accent-ink:#0a5f58; --accent-soft:#e4f1ef;
+    --cat-ini:#1f7a52;  --cat-ini-bg:#e3f1e9;
+    --cat-proc:#0d7d74; --cat-proc-bg:#e2f0ee;
+    --cat-err:#b23a48;  --cat-err-bg:#f6e6e8;
+    --cat-fin:#3a5bb0;  --cat-fin-bg:#e7ecf8;
+    --cat-can:#6b7671;  --cat-can-bg:#eaeeec;
+    --shadow:0 1px 2px rgba(20,40,35,.05),0 10px 30px -14px rgba(20,40,35,.18);
+    --ring:0 0 0 3px;
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#111517; --surface:#1a2023; --surface-2:#222a2d; --surface-3:#2a3337;
+    --ink:#e9eeea; --ink-soft:#98a6a0; --ink-faint:#71807a; --line:#2a3337;
+    --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --cat-ini:#6fd39f;  --cat-ini-bg:#153223;
+    --cat-proc:#45c6bc; --cat-proc-bg:#15302d;
+    --cat-err:#e58c96;  --cat-err-bg:#331f23;
+    --cat-fin:#8ba6e8; --cat-fin-bg:#1c2740;
+    --cat-can:#8a958f;  --cat-can-bg:#252c2f;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -16px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#111517; --surface:#1a2023; --surface-2:#222a2d; --surface-3:#2a3337;
+    --ink:#e9eeea; --ink-soft:#98a6a0; --ink-faint:#71807a; --line:#2a3337;
+    --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --cat-ini:#6fd39f;  --cat-ini-bg:#153223;
+    --cat-proc:#45c6bc; --cat-proc-bg:#15302d;
+    --cat-err:#e58c96;  --cat-err-bg:#331f23;
+    --cat-fin:#8ba6e8;  --cat-fin-bg:#1c2740;
+    --cat-can:#8a958f;  --cat-can-bg:#252c2f;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -16px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.55; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:clamp(1.5rem,4vw,3rem) 1.25rem 4rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 .8rem}
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--accent)}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:clamp(2rem,5.5vw,3rem);
+    line-height:1.04; letter-spacing:-.015em; margin:0 0 .6rem; text-wrap:balance}
+  .lede{font-size:1.05rem; color:var(--ink-soft); max-width:62ch; margin:0 0 1.8rem}
+
+  /* module tabs */
+  .tabs{display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1.4rem}
+  .tab{font-family:"Public Sans",sans-serif; font-size:.9rem; font-weight:600; cursor:pointer;
+    padding:.55rem 1rem; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink-soft); transition:.15s}
+  .tab:hover{border-color:var(--accent); color:var(--ink)}
+  .tab[aria-selected="true"]{background:var(--accent); color:#fff; border-color:var(--accent)}
+  :root[data-theme="dark"] .tab[aria-selected="true"],
+  :root:not([data-theme="light"]) .tab[aria-selected="true"]{color:#0b1416}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tab[aria-selected="true"]{color:#0b1416}}
+
+  .hint{font-size:.85rem; color:var(--ink-faint); margin:0 0 1rem; display:flex; align-items:center; gap:.4rem}
+
+  .layout{display:grid; grid-template-columns:1.55fr 1fr; gap:1.5rem; align-items:start}
+  @media(max-width:820px){.layout{grid-template-columns:1fr}}
+
+  /* status grid */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:.6rem}
+  .node{position:relative; text-align:left; cursor:pointer; background:var(--surface);
+    border:1px solid var(--line); border-radius:12px; padding:.7rem .8rem .75rem;
+    display:flex; flex-direction:column; gap:.25rem; transition:transform .12s, box-shadow .12s, border-color .12s, opacity .12s; font:inherit; color:inherit}
+  .node:hover{transform:translateY(-2px); box-shadow:var(--shadow)}
+  .node .code{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:1.15rem;
+    font-variant-numeric:tabular-nums; line-height:1}
+  .node .name{font-size:.82rem; color:var(--ink-soft); line-height:1.25}
+  .node .cat-dot{position:absolute; top:.7rem; right:.7rem; width:9px; height:9px; border-radius:3px}
+  .node:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  /* category tint on left border */
+  .node[data-cat="ini"]{border-left:3px solid var(--cat-ini)}  .node[data-cat="ini"] .cat-dot{background:var(--cat-ini)}
+  .node[data-cat="proc"]{border-left:3px solid var(--cat-proc)}.node[data-cat="proc"] .cat-dot{background:var(--cat-proc)}
+  .node[data-cat="err"]{border-left:3px solid var(--cat-err)}  .node[data-cat="err"] .cat-dot{background:var(--cat-err)}
+  .node[data-cat="fin"]{border-left:3px solid var(--cat-fin)}  .node[data-cat="fin"] .cat-dot{background:var(--cat-fin)}
+  .node[data-cat="can"]{border-left:3px solid var(--cat-can)}  .node[data-cat="can"] .cat-dot{background:var(--cat-can)}
+  /* interaction states */
+  .grid.has-sel .node:not(.is-sel):not(.is-target):not(.is-source){opacity:.4}
+  .node.is-sel{border-color:var(--accent); box-shadow:var(--ring) var(--accent); transform:translateY(-2px)}
+  .node.is-target{box-shadow:var(--ring) var(--cat-ini)}
+  .node.is-target::after{content:"↳ destino"; position:absolute; bottom:.5rem; right:.6rem;
+    font-family:"IBM Plex Mono",monospace; font-size:.6rem; font-weight:600; color:var(--cat-ini); letter-spacing:.04em}
+  .node.is-source{box-shadow:var(--ring) var(--cat-fin)}
+  .node.is-source::after{content:"↰ origen"; position:absolute; bottom:.5rem; right:.6rem;
+    font-family:"IBM Plex Mono",monospace; font-size:.6rem; font-weight:600; color:var(--cat-fin); letter-spacing:.04em}
+
+  /* detail panel */
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:1.2rem; box-shadow:var(--shadow); position:sticky; top:1rem}
+  .panel .empty{color:var(--ink-faint); font-size:.9rem; text-align:center; padding:1.5rem 0}
+  .panel .sel-head{display:flex; align-items:center; gap:.6rem; margin-bottom:.2rem}
+  .panel .sel-code{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:1.6rem; font-variant-numeric:tabular-nums}
+  .panel .sel-name{font-family:"Fraunces",serif; font-weight:600; font-size:1.15rem; line-height:1.1}
+  .panel .sel-cat{font-family:"IBM Plex Mono",monospace; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; padding:.1rem .45rem; border-radius:6px}
+  .block{margin-top:1.1rem}
+  .block h3{font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-soft); margin:0 0 .55rem; display:flex; align-items:center; gap:.4rem}
+  .chips{display:flex; flex-wrap:wrap; gap:.4rem}
+  .chip{cursor:pointer; font:inherit; font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:.8rem;
+    padding:.28rem .6rem; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    display:inline-flex; gap:.35rem; align-items:baseline; transition:.12s}
+  .chip:hover{border-color:var(--accent); background:var(--accent-soft)}
+  .chip .cn{opacity:.6; font-variant-numeric:tabular-nums}
+  .chip.t{border-color:color-mix(in srgb,var(--cat-ini) 40%,var(--line))}
+  .chip.s{border-color:color-mix(in srgb,var(--cat-fin) 40%,var(--line))}
+  .none{color:var(--ink-faint); font-size:.85rem; font-style:italic}
+  .cross{background:var(--cat-err-bg); border:1px solid color-mix(in srgb,var(--cat-err) 30%,transparent);
+    border-radius:12px; padding:.8rem .9rem; margin-top:1.1rem}
+  .cross h3{color:var(--cat-err)}
+  .cross .row{display:flex; align-items:center; gap:.5rem; font-size:.85rem; margin-top:.4rem; flex-wrap:wrap}
+  .cross .mod{font-family:"IBM Plex Mono",monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); min-width:74px}
+
+  /* legend */
+  .legend{display:flex; flex-wrap:wrap; gap:.9rem; margin:1.4rem 0 0; padding-top:1.1rem; border-top:1px solid var(--line)}
+  .legend span{display:inline-flex; align-items:center; gap:.4rem; font-size:.78rem; color:var(--ink-soft)}
+  .legend i{width:11px; height:11px; border-radius:3px; display:inline-block}
+  footer{margin-top:2.4rem; padding-top:1.2rem; border-top:1px solid var(--line);
+    color:var(--ink-faint); font-size:.8rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem}
+  footer code{font-family:"IBM Plex Mono",monospace; color:var(--accent-ink)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">fiscal-api · tren de estatus v1.0(5)</p>
+  <h1>Explorador de Estatus</h1>
+  <p class="lede">Elige un módulo y haz clic en cualquier estatus para ver a dónde puede avanzar, de dónde llega, y qué dispara en otros módulos (como la cancelación de factura).</p>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <p class="hint" id="hint">▸ Haz clic en un estatus para iluminar sus transiciones.</p>
+
+  <div class="layout">
+    <div>
+      <div class="grid" id="grid"></div>
+      <div class="legend">
+        <span><i style="background:var(--cat-ini)"></i>Inicial / disponible</span>
+        <span><i style="background:var(--cat-proc)"></i>En proceso</span>
+        <span><i style="background:var(--cat-err)"></i>Error</span>
+        <span><i style="background:var(--cat-fin)"></i>Final</span>
+        <span><i style="background:var(--cat-can)"></i>Cancelado / borrado</span>
+      </div>
+    </div>
+    <aside class="panel" id="panel"><div class="empty">Ningún estatus seleccionado.<br>Haz clic en uno del grid.</div></aside>
+  </div>
+
+  <footer>
+    <span>Datos: <code>shared_catalogs.status_train</code> + tabla de conversión</span>
+    <span>fiscal-api · 2026-09</span>
+  </footer>
+</div>
+
+<script>
+const MOD = {
+  factura:{label:"Factura", statuses:[
+    [1,"No válido fiscal","err"],[2,"Recibido Parcial","ini"],[3,"En proceso de envío","proc"],
+    [4,"En proceso de desglose","proc"],[5,"Desglose de factura","proc"],[6,"Error en desglose XML","err"],
+    [7,"Pendiente Envío","proc"],[8,"Enviada","proc"],[9,"Error registro contable","err"],
+    [10,"Error de Envío","err"],[11,"Pendiente Envío i213","proc"],[12,"Enviada i213","proc"],
+    [13,"Error i213","err"],[14,"Pendiente de contabilizar","proc"],[15,"Pendiente de Pago","proc"],
+    [16,"Rechazo Contable","err"],[17,"Pendiente de complemento","proc"],[18,"Pago Manual","proc"],
+    [19,"Completado","fin"],[20,"Cancelada","can"]],
+    edges:[[2,3],[2,20],[3,4],[3,5],[3,6],[3,20],[4,5],[4,6],[5,7],[5,8],[5,9],[5,10],[6,3],[7,8],[7,10],
+      [8,11],[8,12],[8,13],[9,3],[10,3],[11,12],[11,13],[12,14],[12,15],[12,16],[13,3],[14,15],[14,16],
+      [15,18],[16,3],[17,19],[18,19]]},
+  nc:{label:"Nota de Crédito", statuses:[
+    [1,"No válido fiscal","err"],[2,"Recibida Parcial","ini"],[3,"En proceso de envío","proc"],
+    [4,"En proceso de desglose","proc"],[5,"Desglose de NC","proc"],[6,"Error en desglose XML","err"],
+    [7,"Pendiente Envío","proc"],[8,"Enviada","proc"],[9,"Error registro contable","err"],
+    [10,"Error de Envío","err"],[11,"Pendiente Envío i213","proc"],[12,"Enviada i213","proc"],
+    [13,"Error i213","err"],[14,"Pendiente de contabilizar","proc"],[15,"Pendiente de descuento Pago","proc"],
+    [16,"Rechazo Contable","err"],[17,"Pendiente de complemento","proc"],[18,"N/A","can"],
+    [19,"Completado","fin"],[20,"Cancelada","can"]],
+    edges:[[2,3],[2,20],[3,4],[3,5],[3,6],[3,20],[4,5],[4,6],[5,7],[5,8],[5,9],[5,10],[6,3],[7,8],[7,10],
+      [8,11],[8,12],[8,13],[9,3],[10,3],[11,12],[11,13],[12,14],[12,15],[12,16],[13,3],[14,15],[14,16],
+      [15,18],[16,3],[17,19],[18,19]]},
+  recepcion:{label:"Recepción", statuses:[
+    [0,"Disponible","ini"],[1,"Consumida","proc"],[2,"Consumida manual","proc"],[3,"En proceso contable","proc"],
+    [4,"Rechazo contable","err"],[5,"En proceso de pago","proc"],[6,"Pagada","fin"],[7,"Cancelada","can"],
+    [8,"Borrado","can"],[9,"Inválida","err"]],
+    edges:[[0,1],[0,2],[0,7],[0,8],[1,3],[1,4],[2,3],[2,4],[3,5],[4,5],[5,6],[7,0],[9,8]]},
+  cartaporte:{label:"Carta Porte", statuses:[
+    [1,"Pendiente de OC","ini"],[2,"Pendiente de Facturar","proc"],[3,"Pendiente de Pago","proc"],
+    [4,"En proceso de contabilización","proc"],[5,"Contabilizada","proc"],[6,"Rechazo contable","err"],
+    [7,"Pagada","fin"],[8,"Rechazo de guía","err"],[9,"Cancelada","can"],[10,"Borrado","can"]],
+    edges:[[1,2],[1,9],[1,10],[2,3],[2,9],[3,4],[4,5],[4,6],[5,7],[6,5],[8,1],[8,2]]}
+};
+// Efectos cruzados: (modulo:codigo) -> [{mod,to,note}]
+const CROSS = {
+  "factura:20":[
+    {mod:"recepcion",to:0,note:"La recepción se libera a Disponible"},
+    {mod:"cartaporte",to:2,note:"Guía de transporte a Pendiente de Facturar (si aplica)"}
+  ]
+};
+const CAT_LABEL={ini:"Inicial",proc:"Proceso",err:"Error",fin:"Final",can:"Cancelado"};
+const CAT_BG={ini:"var(--cat-ini-bg)",proc:"var(--cat-proc-bg)",err:"var(--cat-err-bg)",fin:"var(--cat-fin-bg)",can:"var(--cat-can-bg)"};
+const CAT_FG={ini:"var(--cat-ini)",proc:"var(--cat-proc)",err:"var(--cat-err)",fin:"var(--cat-fin)",can:"var(--cat-can)"};
+
+let cur="factura", sel=null;
+const tabsEl=document.getElementById("tabs"), gridEl=document.getElementById("grid"),
+      panelEl=document.getElementById("panel"), hintEl=document.getElementById("hint");
+
+Object.entries(MOD).forEach(([key,m])=>{
+  const b=document.createElement("button");
+  b.className="tab"; b.role="tab"; b.textContent=m.label; b.dataset.key=key;
+  b.setAttribute("aria-selected", key===cur);
+  b.onclick=()=>{cur=key; sel=null; renderTabs(); renderGrid(); renderPanel();};
+  tabsEl.appendChild(b);
+});
+function renderTabs(){ [...tabsEl.children].forEach(b=>b.setAttribute("aria-selected", b.dataset.key===cur)); }
+
+function nameOf(key,code){ const s=MOD[key].statuses.find(x=>x[0]===code); return s?s[1]:code; }
+function catOf(key,code){ const s=MOD[key].statuses.find(x=>x[0]===code); return s?s[2]:"proc"; }
+
+function renderGrid(){
+  gridEl.innerHTML=""; gridEl.classList.toggle("has-sel", sel!==null);
+  MOD[cur].statuses.forEach(([code,name,cat])=>{
+    const n=document.createElement("button");
+    n.className="node"; n.dataset.cat=cat; n.dataset.code=code; n.type="button";
+    n.innerHTML=`<span class="cat-dot"></span><span class="code">${code}</span><span class="name">${name}</span>`;
+    n.onclick=()=>{ sel=(sel===code?null:code); renderGrid(); renderPanel(); };
+    if(sel!==null){
+      const out=MOD[cur].edges.filter(e=>e[0]===sel).map(e=>e[1]);
+      const inc=MOD[cur].edges.filter(e=>e[1]===sel).map(e=>e[0]);
+      if(code===sel) n.classList.add("is-sel");
+      else if(out.includes(code)) n.classList.add("is-target");
+      else if(inc.includes(code)) n.classList.add("is-source");
+    }
+    gridEl.appendChild(n);
+  });
+}
+function chip(cls,code){
+  return `<button class="chip ${cls}" onclick="jump(${code})"><span class="cn">${code}</span>${nameOf(cur,code)}</button>`;
+}
+window.jump=(code)=>{ sel=code; renderGrid(); renderPanel(); panelEl.scrollIntoView({behavior:"smooth",block:"nearest"}); };
+
+function renderPanel(){
+  if(sel===null){ panelEl.innerHTML=`<div class="empty">Ningún estatus seleccionado.<br>Haz clic en uno del grid.</div>`;
+    hintEl.style.display=""; return; }
+  hintEl.style.display="none";
+  const cat=catOf(cur,sel);
+  const out=MOD[cur].edges.filter(e=>e[0]===sel).map(e=>e[1]).sort((a,b)=>a-b);
+  const inc=MOD[cur].edges.filter(e=>e[1]===sel).map(e=>e[0]).sort((a,b)=>a-b);
+  const cross=CROSS[cur+":"+sel];
+  let html=`<div class="sel-head">
+      <span class="sel-code" style="color:${CAT_FG[cat]}">${sel}</span>
+      <span class="sel-cat" style="background:${CAT_BG[cat]};color:${CAT_FG[cat]}">${CAT_LABEL[cat]}</span>
+    </div>
+    <div class="sel-name">${nameOf(cur,sel)}</div>
+    <div class="block"><h3>▸ Puede avanzar a</h3>
+      ${out.length? `<div class="chips">${out.map(c=>chip("t",c)).join("")}</div>` : `<p class="none">Estatus final — no tiene salidas.</p>`}
+    </div>
+    <div class="block"><h3>◂ Llega desde</h3>
+      ${inc.length? `<div class="chips">${inc.map(c=>chip("s",c)).join("")}</div>` : `<p class="none">Sin orígenes — es un estatus de entrada.</p>`}
+    </div>`;
+  if(cross){
+    html+=`<div class="cross"><h3>⚡ Efecto en otros módulos</h3>`;
+    cross.forEach(x=>{ html+=`<div class="row"><span class="mod">${MOD[x.mod].label}</span>
+      <button class="chip t" onclick="go('${x.mod}',${x.to})"><span class="cn">${x.to}</span>${nameOf(x.mod,x.to)}</button></div>
+      <div style="font-size:.8rem;color:var(--ink-soft);margin:.15rem 0 .2rem 74px">${x.note}</div>`; });
+    html+=`</div>`;
+  }
+  panelEl.innerHTML=html;
+}
+window.go=(mod,code)=>{ cur=mod; sel=code; renderTabs(); renderGrid(); renderPanel();
+  document.querySelector(".layout").scrollIntoView({behavior:"smooth",block:"start"}); };
+
+renderGrid(); renderPanel();
+</script>

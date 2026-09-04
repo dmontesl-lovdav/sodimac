@@ -58,6 +58,29 @@ function buildFilters(
     };
 }
 
+function formatStatus(
+    value: string | number | null | undefined
+): string {
+    if (value === null || value === undefined || value === "") {
+        return "";
+    }
+
+    const normalizedValue = String(value).trim();
+
+    const statusLabels: Record<string, string> = {
+        "0": "Pendiente",
+        "1": "Activo",
+        "2": "Procesado",
+        "3": "Cancelado",
+        "4": "Cerrado",
+        "5": "Pagado",
+        "6": "Rechazado",
+        "7": "Finalizado",
+    };
+
+    return statusLabels[normalizedValue] ?? normalizedValue;
+}
+
 const exportColumns = [
     {
         header: "Orden Compra",
@@ -203,6 +226,26 @@ function getExportValue(
             row.numeroDocumento ??
             row.referenciaPago ??
             ""
+        );
+    }
+
+    /*
+     * Convierte el estatus de Orden de Compra a descripción,
+     * igual que en el grid.
+     */
+    if (key === "estatusOrdenCompra") {
+        return formatStatus(
+            row.estatusOrdenCompra as string | number | null | undefined
+        );
+    }
+
+    /*
+     * Convierte el estatus de Recepción a descripción,
+     * igual que en el grid.
+     */
+    if (key === "estatusRecepcion") {
+        return formatStatus(
+            row.estatusRecepcion as string | number | null | undefined
         );
     }
 

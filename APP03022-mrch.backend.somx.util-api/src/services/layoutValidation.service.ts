@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import * as headerRepo from '@/repositories/catalogHeader.repo.js';
 import * as detailRepo from '@/repositories/catalogDetail.repo.js';
 import type { LayoutValidationError, LayoutValidationResponse } from '@/dto/layoutValidation.dto.js';
@@ -490,13 +491,30 @@ async function iterateRows(
     return rows;
 }
 
+function isZipBuffer(buffer: Buffer): boolean {
+    return buffer.length >= 4
+        && buffer[0] === 0x50
+        && buffer[1] === 0x4b
+        && (buffer[2] === 0x03 || buffer[2] === 0x05 || buffer[2] === 0x07)
+        && (buffer[3] === 0x04 || buffer[3] === 0x06 || buffer[3] === 0x08);
+}
+
+async function loadWorkbookSheet(buffer: Buffer): Promise<ExcelJS.Worksheet | undefined> {
+    const wb = new ExcelJS.Workbook();
+    if (isZipBuffer(buffer)) {
+        await wb.xlsx.load(buffer as unknown as ArrayBuffer);
+        return wb.worksheets[0];
+    }
+    let text = buffer.toString('utf8');
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    return wb.csv.read(Readable.from(text));
+}
+
 async function loadSheetOrPushError(
     buffer: Buffer,
     errs: LayoutValidationError[],
 ): Promise<ExcelJS.Worksheet | null> {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buffer as unknown as ArrayBuffer);
-    const sheet = wb.worksheets[0];
+    const sheet = await loadWorkbookSheet(buffer);
     if (!sheet) {
         errs.push({ row: 0, cell: 'N/A', column: 'archivo', message: 'El archivo no contiene hojas.' });
         return null;

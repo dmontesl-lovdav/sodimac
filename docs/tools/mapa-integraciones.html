@@ -1,0 +1,228 @@
+<title>Mapa de Integraciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eceff3; --ink:#1a2028; --ink-soft:#586170;
+    --ink-faint:#8a94a1; --line:#dbe0e7;
+    --sys:#3a5bb0; --sys-ink:#2c478f; --sys-bg:#e7ecf8;
+    --fac:#0d7d74; --fac-bg:#e2f0ee; --err:#b23a48; --err-bg:#f6e6e8;
+    --warn:#a1691a; --warn-bg:#f5ecd9; --fin:#6b4bb0; --fin-bg:#ece7f6;
+    --pend:#b2532a; --pend-bg:#f7e9e0;
+    --shadow:0 1px 2px rgba(20,30,50,.05),0 12px 32px -16px rgba(20,30,50,.22);
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#10141a; --surface:#191f27; --surface-2:#212934; --ink:#e8ecf1; --ink-soft:#9aa5b3;
+    --ink-faint:#6f7a89; --line:#2a323d;
+    --sys:#8ba6e8; --sys-ink:#a9bef0; --sys-bg:#1c2740;
+    --fac:#45c6bc; --fac-bg:#15302d; --err:#e58c96; --err-bg:#331f23;
+    --warn:#e0b264; --warn-bg:#32280f; --fin:#b199e8; --fin-bg:#241c3a;
+    --pend:#e59b73; --pend-bg:#331f14;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#10141a; --surface:#191f27; --surface-2:#212934; --ink:#e8ecf1; --ink-soft:#9aa5b3;
+    --ink-faint:#6f7a89; --line:#2a323d;
+    --sys:#8ba6e8; --sys-ink:#a9bef0; --sys-bg:#1c2740;
+    --fac:#45c6bc; --fac-bg:#15302d; --err:#e58c96; --err-bg:#331f23;
+    --warn:#e0b264; --warn-bg:#32280f; --fin:#b199e8; --fin-bg:#241c3a;
+    --pend:#e59b73; --pend-bg:#331f14;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:clamp(1.6rem,4vw,3.2rem) 1.25rem 4rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--sys-ink);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 .8rem}
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--sys)}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:clamp(2rem,5.5vw,2.9rem);
+    line-height:1.05; letter-spacing:-.015em; margin:0 0 .6rem; text-wrap:balance}
+  .lede{font-size:1.05rem; color:var(--ink-soft); max-width:64ch; margin:0 0 1.8rem}
+  h2.sec{font-family:"Fraunces",serif;font-weight:600;font-size:1.35rem;margin:2.4rem 0 1rem;letter-spacing:-.01em}
+
+  /* pending banner */
+  .pending{background:var(--pend-bg); border:1px solid color-mix(in srgb,var(--pend) 34%,transparent);
+    border-radius:14px; padding:1.1rem 1.3rem; margin-bottom:2rem}
+  .pending .tag{font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--pend);display:flex;align-items:center;gap:.5rem;margin:0 0 .5rem}
+  .pending h2{font-family:"Fraunces",serif;font-size:1.15rem;margin:0 0 .4rem;color:var(--ink)}
+  .pending p{margin:.3rem 0 0;font-size:.93rem;color:var(--ink)}
+  .pending b{color:var(--pend)}
+
+  /* pipeline */
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;margin-bottom:.5rem}
+  .node{flex:1 1 130px;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:.7rem .8rem;box-shadow:var(--shadow);position:relative}
+  .node.sys{border-color:color-mix(in srgb,var(--sys) 40%,var(--line))}
+  .node .kind{font-family:"IBM Plex Mono",monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 .25rem}
+  .node .nm{font-weight:700;font-size:1rem;color:var(--sys-ink)}
+  .node .nm .q{color:var(--pend);font-size:.8rem;vertical-align:super}
+  .node .d{font-size:.78rem;color:var(--ink-soft);margin:.2rem 0 0}
+  .hop{align-self:center;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-size:.9rem;padding:0 .1rem}
+
+  /* system detail cards */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.05rem 1.2rem;
+    box-shadow:var(--shadow);margin-bottom:1rem}
+  .card .hd{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem}
+  .card h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.25rem;margin:0;letter-spacing:-.01em}
+  .card .alias{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-faint)}
+  .card .role{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;padding:.15rem .5rem;border-radius:999px;background:var(--sys-bg);color:var(--sys-ink)}
+  .row{display:grid;grid-template-columns:auto 1fr;gap:.55rem .8rem;font-size:.9rem;margin-top:.55rem}
+  .row .lab{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-faint);white-space:nowrap;padding-top:.12rem}
+  .row .val{color:var(--ink)}
+  .row .val code{font-family:"IBM Plex Mono",monospace;font-size:.8rem;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:5px;padding:.05rem .35rem}
+  .row .val.know{color:var(--ink)} .row .val.dunno{color:var(--pend);font-weight:600}
+  .card b{color:var(--ink)}
+
+  /* flow steps */
+  .flowbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:var(--shadow)}
+  .fl{display:grid;grid-template-columns:1fr;gap:.5rem}
+  .fr{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.35rem 0;border-bottom:1px dashed var(--line)}
+  .fr:last-child{border-bottom:none}
+  .fr .via{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--sys-ink);background:var(--sys-bg);
+    border-radius:6px;padding:.1rem .4rem;margin-left:auto}
+  .pill{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.76rem;padding:.2rem .55rem;
+    border-radius:999px;display:inline-flex;gap:.35rem;align-items:baseline;white-space:nowrap}
+  .pill .n{opacity:.65;font-variant-numeric:tabular-nums}
+  .pill.fac{background:var(--fac-bg);color:var(--fac)} .pill.err{background:var(--err-bg);color:var(--err)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.fin{background:var(--fin-bg);color:var(--fin)}
+  .arw{color:var(--ink-faint);font-size:.85rem}
+  .note{font-size:.82rem;color:var(--ink-soft);margin:.7rem 0 0}
+  .note code{font-family:"IBM Plex Mono",monospace;font-size:.78rem}
+
+  footer{margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    color:var(--ink-faint);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  footer code{font-family:"IBM Plex Mono",monospace;color:var(--sys-ink)}
+  @media(max-width:560px){.node{flex-basis:100%}.hop{transform:rotate(90deg)}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">fiscal-api · arquitectura</p>
+  <h1>Mapa de integraciones</h1>
+  <p class="lede">Después de que el portal desglosa una factura, el documento viaja por sistemas de Sodimac hasta contabilizarse y pagarse. Esto es lo que hace cada interfaz — según lo que dice el código hoy.</p>
+
+  <div class="pending">
+    <p class="tag">⚠ definición pendiente</p>
+    <h2>Los nombres están en el código; la definición formal no</h2>
+    <p>SAPITO, FOSITO, i213 y DMS aparecen en <b>enums, comentarios y adapters</b>, no en un documento oficial. Hay una inconsistencia real: el enum los llama <b>SAPITO</b>, el catálogo del portal los llama <b>FOSITO</b>. Los acrónimos (qué significan las siglas, quién es dueño de cada sistema) <b>los tiene que confirmar Ivan / el equipo</b> antes de darlo por bueno. Abajo se separa lo que <b>sabemos del código</b> de lo que está <b>por definir</b>.</p>
+  </div>
+
+  <div class="pipe">
+    <div class="node"><p class="kind">Portal FBC</p><p class="nm">fiscal-api</p><p class="d">Registra, valida y desglosa el CFDI</p></div>
+    <span class="hop">→</span>
+    <div class="node sys"><p class="kind">BD staging</p><p class="nm">SAPITO<span class="q">?</span> / FOSITO<span class="q">?</span></p><p class="d">SODIMAC_SAP · tabla Envios_Ap</p></div>
+    <span class="hop">→</span>
+    <div class="node sys"><p class="kind">Canal</p><p class="nm">DMS<span class="q">?</span></p><p class="d">Mueve el doc SAPITO → i213</p></div>
+    <span class="hop">→</span>
+    <div class="node sys"><p class="kind">AP contable/pago</p><p class="nm">i213<span class="q">?</span></p><p class="d">Contabiliza y paga (SP)</p></div>
+  </div>
+  <p class="note"><span class="q" style="color:var(--pend);font-weight:600">?</span> = sigla / definición formal por confirmar con Ivan.</p>
+
+  <h2 class="sec">Qué hace cada interfaz</h2>
+
+  <div class="card">
+    <div class="hd">
+      <h3>SAPITO / FOSITO</h3>
+      <span class="alias">enum: “SAPITO” · catálogo portal: “FOSITO”</span>
+      <span class="role">BD staging</span>
+    </div>
+    <p>Base de datos intermedia donde el portal <b>registra y desglosa</b> el documento antes de mandarlo a i213. El batch consulta la tabla <b>Envios_Ap</b> para saber si ya está registrado y si ya se envió.</p>
+    <div class="row">
+      <span class="lab">Sabemos</span><span class="val know">BD <code>SODIMAC_SAP</code>, tabla <code>Envios_Ap</code>. Columnas <code>CODIGO_PROVEEDOR</code>, <code>NUMERO_DOCUMENTO</code>, <code>NUMERO_UUID</code>, <code>FLAG_ENVIADO</code> (0 = pendiente enviar, 1 = enviado, 2 = no enviado / error).</span>
+      <span class="lab">Sabemos</span><span class="val know">Adapter <code>SapitoRepositoryAdapter</code> (batch invoice-status-sync).</span>
+      <span class="lab">Por definir</span><span class="val dunno">Qué significa “SAPITO”; por qué el catálogo lo llama “FOSITO”; si son el mismo sistema (parece que sí).</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <h3>DMS</h3>
+      <span class="alias">comentario del enum de estatus</span>
+      <span class="role">Canal / transporte</span>
+    </div>
+    <p>Aparece solo como el <b>mecanismo que mueve la factura de SAPITO hacia i213</b>. El estatus <code>16 Error envío DMS</code> = falló ese envío.</p>
+    <div class="row">
+      <span class="lab">Sabemos</span><span class="val know">Comentario en <code>InvoiceStatus</code>: “enviar la factura de SAPITO a i213 (DMS)”.</span>
+      <span class="lab">Por definir</span><span class="val dunno">Qué es DMS (¿middleware? ¿bus? ¿siglas?), si es un sistema aparte o parte de i213, y quién lo opera.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <h3>i213</h3>
+      <span class="alias">AdmIF213ProdDB @ 10.138.153.10:1433</span>
+      <span class="role">AP contable + pago</span>
+    </div>
+    <p>Sistema de <b>cuentas por pagar</b>. Valida que el documento se <b>contabilizó</b> y que se <b>pagó</b>, vía stored procedures. El batch lee su resultado para avanzar el estatus en el portal.</p>
+    <div class="row">
+      <span class="lab">Sabemos</span><span class="val know">SP <code>i123_Valida_Documento_AP</code> → contabilización (1 = ok, 0 = rechazo). <em>Ojo: “i123” es typo del sistema origen.</em></span>
+      <span class="lab">Sabemos</span><span class="val know">SP <code>i213_Valida_Documento_Pagado_AP</code> → pago (1 = pagado, devuelve <code>REF_BANK</code>).</span>
+      <span class="lab">Por definir</span><span class="val dunno">Qué significa “i213”; su relación exacta con SAP PROD (¿i213 contabiliza en SAP o solo consulta?).</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <h3>SAP (SODIMAC_SAP PROD)</h3>
+      <span class="alias">ERP contable</span>
+      <span class="role">ERP</span>
+    </div>
+    <p>El ERP donde finalmente se <b>contabiliza</b>. Los estatus del portal hablan de “enviar a Sodimac SAP PROD” y “pendiente de contabilizar en SAP”.</p>
+    <div class="row">
+      <span class="lab">Sabemos</span><span class="val know">Aparece en descripciones de <code>InvoiceStatus</code> / <code>CreditNoteStatus</code>. La BD <code>SODIMAC_SAP</code> es la misma que usa SAPITO como staging.</span>
+      <span class="lab">Por definir</span><span class="val dunno">Frontera exacta SAP ↔ SAPITO ↔ i213 (staging vs. contabilización vs. AP). Aclarar con Ivan para no duplicar conceptos.</span>
+    </div>
+  </div>
+
+  <h2 class="sec">El recorrido, estatus por estatus</h2>
+  <div class="flowbox">
+    <div class="fl">
+      <div class="fr">
+        <span class="pill fac"><span class="n">6</span>Pend. envío SAP</span><span class="arw">→</span>
+        <span class="pill fac"><span class="n">7</span>Pend. registro</span>
+        <span class="via">existe en Envios_Ap</span>
+      </div>
+      <div class="fr">
+        <span class="pill fac"><span class="n">7</span>Pend. registro</span><span class="arw">→</span>
+        <span class="pill fac"><span class="n">8</span>Pend. envío i213</span>
+        <span class="via">SAPITO · registrado</span>
+      </div>
+      <div class="fr">
+        <span class="pill fac"><span class="n">8</span>Pend. envío i213</span><span class="arw">→</span>
+        <span class="pill fac"><span class="n">9</span>Enviada a i213</span>
+        <span class="via">DMS · FLAG_ENVIADO=0→1</span>
+      </div>
+      <div class="fr">
+        <span class="pill fac"><span class="n">9</span>Enviada a i213</span><span class="arw">→</span>
+        <span class="pill fac"><span class="n">10</span>Pend. contabilizar</span>
+        <span class="arw">· ó</span>
+        <span class="pill err"><span class="n">17</span>Error envío i213</span>
+        <span class="via">FLAG_ENVIADO 1 / 2</span>
+      </div>
+      <div class="fr">
+        <span class="pill fac"><span class="n">10</span>Pend. contabilizar</span><span class="arw">→</span>
+        <span class="pill fac"><span class="n">11</span>Pend. pago</span>
+        <span class="arw">· ó</span>
+        <span class="pill err"><span class="n">14</span>Rechazo contable</span>
+        <span class="via">i213 · SP i123</span>
+      </div>
+      <div class="fr">
+        <span class="pill fac"><span class="n">11</span>Pend. pago</span><span class="arw">→</span>
+        <span class="pill fin"><span class="n">12</span>Pend. complemento</span>
+        <span class="via">i213 · SP pagado (REF_BANK)</span>
+      </div>
+    </div>
+    <p class="note">Códigos del batch <code>invoice-status-sync</code> (tren v1.0). Con <b>v1.0(5)</b> algunos números cambian — este flujo es la <b>lógica</b> del recorrido, no la numeración final. La cierra el complemento de pago (→ <b>19 Completado</b>).</p>
+  </div>
+
+  <footer>
+    <span>Basado en el código de <code>invoice-status-sync</code> + enums de <code>fiscal-api</code>. Definiciones formales por confirmar.</span>
+    <span>fiscal-api · 2026-09</span>
+  </footer>
+</div>

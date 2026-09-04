@@ -1,0 +1,177 @@
+<title>Ejemplo: NC de Descuento Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f6f5f8; --surface:#ffffff; --surface-2:#efedf3; --ink:#20202a; --ink-soft:#605c6d;
+    --ink-faint:#928da0; --line:#e0dde6;
+    --nc:#6b4bb0; --nc-ink:#553a92; --nc-bg:#ece7f6;
+    --fac:#0d7d74; --fac-bg:#e2f0ee; --err:#b23a48; --err-bg:#f6e6e8;
+    --ok:#1f7a52; --ok-bg:#e3f1e9; --warn:#a1691a; --warn-bg:#f5ecd9;
+    --shadow:0 1px 2px rgba(30,20,50,.05),0 12px 32px -16px rgba(30,20,50,.2);
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#131017; --surface:#1d1922; --surface-2:#26212e; --ink:#ece9f1; --ink-soft:#a49eb2;
+    --ink-faint:#78718a; --line:#2f2938;
+    --nc:#b199e8; --nc-ink:#c4b1f0; --nc-bg:#241c3a;
+    --fac:#45c6bc; --fac-bg:#15302d; --err:#e58c96; --err-bg:#331f23;
+    --ok:#6fd39f; --ok-bg:#153223; --warn:#e0b264; --warn-bg:#32280f;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#131017; --surface:#1d1922; --surface-2:#26212e; --ink:#ece9f1; --ink-soft:#a49eb2;
+    --ink-faint:#78718a; --line:#2f2938;
+    --nc:#b199e8; --nc-ink:#c4b1f0; --nc-bg:#241c3a;
+    --fac:#45c6bc; --fac-bg:#15302d; --err:#e58c96; --err-bg:#331f23;
+    --ok:#6fd39f; --ok-bg:#153223; --warn:#e0b264; --warn-bg:#32280f;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px; margin:0 auto; padding:clamp(1.6rem,4vw,3.2rem) 1.25rem 4rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--nc-ink);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 .8rem}
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--nc)}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:clamp(2rem,5.5vw,2.9rem);
+    line-height:1.05; letter-spacing:-.015em; margin:0 0 .6rem; text-wrap:balance}
+  .lede{font-size:1.05rem; color:var(--ink-soft); max-width:62ch; margin:0 0 1.8rem}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.7rem; margin-bottom:2rem}
+  .cast .c{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:.75rem .85rem; box-shadow:var(--shadow)}
+  .cast .k{font-family:"IBM Plex Mono",monospace; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 .2rem}
+  .cast .v{font-weight:600; font-size:.95rem}
+  .cast .v small{display:block; font-weight:400; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace; font-size:.72rem; margin-top:.1rem}
+
+  .why{background:var(--nc-bg); border:1px solid color-mix(in srgb,var(--nc) 30%,transparent);
+    border-radius:14px; padding:1.15rem 1.3rem; margin-bottom:2.2rem}
+  .why h2{font-family:"Fraunces",serif; font-size:1.2rem; margin:0 0 .5rem; color:var(--nc-ink)}
+  .why p{margin:.4rem 0 0; font-size:.95rem; color:var(--ink)}
+  .why .tag{font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:600; color:var(--nc-ink)}
+
+  .step{display:grid; grid-template-columns:44px 1fr; gap:1rem}
+  .rail{display:flex; flex-direction:column; align-items:center}
+  .num{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;color:#fff;background:var(--nc);
+    z-index:1;box-shadow:0 0 0 4px var(--bg)}
+  .line{width:2px;flex:1;background:var(--line);margin:2px 0}
+  .step:last-child .line{display:none}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.15rem;
+    box-shadow:var(--shadow);margin-bottom:1.1rem}
+  .card h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.18rem;margin:0 0 .45rem;letter-spacing:-.01em}
+  .card p{margin:0 0 .7rem;color:var(--ink-soft);font-size:.94rem}
+  .card p:last-child{margin-bottom:0}
+  .card b{color:var(--ink)}
+  .pills{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+  .pill{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.78rem;padding:.2rem .55rem;
+    border-radius:999px;display:inline-flex;gap:.35rem;align-items:baseline;white-space:nowrap}
+  .pill .n{opacity:.65;font-variant-numeric:tabular-nums}
+  .pill.nc{background:var(--nc-bg);color:var(--nc-ink)} .pill.fac{background:var(--fac-bg);color:var(--fac)}
+  .pill.err{background:var(--err-bg);color:var(--err)} .pill.ok{background:var(--ok-bg);color:var(--ok)}
+  .arw{color:var(--ink-faint);font-size:.85rem}
+  .code{font-family:"IBM Plex Mono",monospace;font-size:.72rem;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:6px;padding:.05rem .4rem;color:var(--nc-ink)}
+
+  /* tolerance calc */
+  .calc{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);
+    border-radius:12px;padding:.9rem 1.05rem;margin:.6rem 0 0}
+  .calc .r{display:flex;justify-content:space-between;gap:1rem;font-family:"IBM Plex Mono",monospace;
+    font-size:.82rem;padding:.2rem 0;border-bottom:1px dashed color-mix(in srgb,var(--warn) 25%,transparent)}
+  .calc .r:last-child{border-bottom:none;font-weight:600;color:var(--warn)}
+  .calc .r span:last-child{font-variant-numeric:tabular-nums}
+
+  footer{margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    color:var(--ink-faint);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media(max-width:560px){.step{grid-template-columns:34px 1fr;gap:.7rem}.num{width:30px;height:30px;font-size:.82rem}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">fiscal-api · ejemplo real</p>
+  <h1>Una NC de descuento comercial, paso a paso</h1>
+  <p class="lede">El caso del rebate: el proveedor devuelve dinero por un acuerdo comercial. La NC nace “pendiente de complemento”, se valida contra la tolerancia, y cierra cuando llega el complemento de pago.</p>
+
+  <div class="cast">
+    <div class="c"><p class="k">Acuerdo</p><p class="v">Rebate 4%<small>tenant_finance.rebate</small></p></div>
+    <div class="c"><p class="k">Monto acuerdo</p><p class="v">$10,000.00<small>rebate.amount</small></p></div>
+    <div class="c"><p class="k">Tolerancia</p><p class="v">$4.00<small>param activo · BUS2032</small></p></div>
+  </div>
+
+  <div class="why">
+    <p class="tag">¿Por qué esta NC es distinta?</p>
+    <h2>No corrige una factura: liquida un acuerdo</h2>
+    <p>Un <b>descuento comercial (rebate)</b> es dinero que el proveedor regresa a Sodimac por cumplir un acuerdo (volumen, temporada, etc.). La NC no ajusta una recepción — <b>salda el acuerdo</b>, por eso el portal la valida contra el monto pactado y no contra una OC.</p>
+    <p>Como el ciclo se cierra al conciliar el pago, esta NC <b>nace directamente en <span class="code">17 Pendiente de complemento</span></b>, se salta los pasos de recepción.</p>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="rail"><div class="num">1</div><div class="line"></div></div>
+      <div class="card">
+        <h3>Existe el acuerdo comercial</h3>
+        <p>Finanzas registra el rebate con su <b>monto</b> (<span class="code">rebate.amount</span> = $10,000) y su versión activa. Fer manda el <b>rebateId</b> al portal.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">2</div><div class="line"></div></div>
+      <div class="card">
+        <h3>El proveedor sube la NC del rebate</h3>
+        <p>Registra la NC de <b>tipo descuento comercial</b>, ligada al acuerdo por <span class="code">rebate_uuid</span>. El portal lee la <b>última versión activa</b> del rebate por nombre.</p>
+        <div class="pills">
+          <span class="arw">nace en →</span>
+          <span class="pill nc"><span class="n">17</span>Pendiente de complemento</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">3</div><div class="line"></div></div>
+      <div class="card">
+        <h3>Se valida contra la tolerancia — BUS2032</h3>
+        <p>El subtotal de la NC debe cubrir el acuerdo dentro de la <b>tolerancia parametrizada</b>. Se rechaza si <b>subtotal &lt; monto − tolerancia</b>. El parámetro se lee de su <b>última versión activa</b> por nombre; si no hay versión activa, la coincidencia debe ser <b>exacta al 100%</b>.</p>
+        <div class="calc">
+          <div class="r"><span>rebate.amount</span><span>$10,000.00</span></div>
+          <div class="r"><span>− tolerancia (param activo)</span><span>$4.00</span></div>
+          <div class="r"><span>mínimo aceptado</span><span>$9,996.00</span></div>
+        </div>
+        <p style="margin-top:.7rem">Si el subtotal cae por debajo → <b>BUS2032</b> con el monto formateado <span class="code">$#,##0.00 MXN</span>.</p>
+        <div class="pills">
+          <span class="pill err">BUS2032</span>
+          <span class="arw">“…menor a la tolerancia de $4.00 MXN”</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">4</div><div class="line"></div></div>
+      <div class="card">
+        <h3>Se contabiliza y se paga</h3>
+        <p>Dentro de tolerancia, la NC recorre su ciclo contable como cualquier otra. Queda esperando que se concilie el <b>complemento de pago</b>.</p>
+        <div class="pills">
+          <span class="pill nc"><span class="n">17</span>Pend. complemento</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">5</div></div>
+      <div class="card">
+        <h3>Llega el complemento → se cierra el ciclo</h3>
+        <p>Cuando se sube el complemento de pago, se <b>sincronizan los estatus</b>: tanto la factura como la NC quedan en <b>19 Completado</b>. Fin del ciclo del acuerdo.</p>
+        <div class="pills">
+          <span class="pill nc"><span class="n">17</span>Pend. complemento</span><span class="arw">complemento →</span>
+          <span class="pill ok"><span class="n">19</span>Completado</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Ejemplo ilustrativo · montos ficticios · lógica real (BUS2032, param versionado, 17→19)</span>
+    <span>fiscal-api · 2026-09</span>
+  </footer>
+</div>

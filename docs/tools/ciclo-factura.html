@@ -11,6 +11,7 @@
     --m-fac:#0d7d74; --m-fac-bg:#e2f0ee;
     --m-cp:#a1691a;  --m-cp-bg:#f5ecd9;
     --m-nc:#8a4fb0;  --m-nc-bg:#efe6f6;
+    --m-pago:#2b7a9e; --m-pago-bg:#e2eef4;
     --err:#b23a48;   --err-bg:#f6e6e8;
     --shadow:0 1px 2px rgba(20,40,35,.05),0 12px 32px -16px rgba(20,40,35,.2);
   }
@@ -22,6 +23,7 @@
     --m-fac:#45c6bc; --m-fac-bg:#15302d;
     --m-cp:#e0b264;  --m-cp-bg:#32280f;
     --m-nc:#c79ae6;  --m-nc-bg:#2a1c38;
+    --m-pago:#6bbdd8; --m-pago-bg:#12303a;
     --err:#e58c96;   --err-bg:#331f23;
     --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
   }}
@@ -33,6 +35,7 @@
     --m-fac:#45c6bc; --m-fac-bg:#15302d;
     --m-cp:#e0b264;  --m-cp-bg:#32280f;
     --m-nc:#c79ae6;  --m-nc-bg:#2a1c38;
+    --m-pago:#6bbdd8; --m-pago-bg:#12303a;
     --err:#e58c96;   --err-bg:#331f23;
     --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
   }
@@ -81,13 +84,14 @@
   .pill.rec{background:var(--m-rec-bg); color:var(--m-rec)} .pill.fac{background:var(--m-fac-bg); color:var(--m-fac)}
   .pill.cp{background:var(--m-cp-bg); color:var(--m-cp)} .pill.nc{background:var(--m-nc-bg); color:var(--m-nc)}
   .pill.err{background:var(--err-bg); color:var(--err)} .pill.oc{background:var(--m-oc-bg); color:var(--m-oc)}
+  .pill.pago{background:var(--m-pago-bg); color:var(--m-pago)}
   /* branch sub-card */
   .branch{border:1px dashed var(--line); border-left:3px dashed var(--brc,var(--m-cp));
     background:var(--surface-2); border-radius:10px; padding:.7rem .85rem; margin-top:.7rem}
   .branch .btag{font-family:"IBM Plex Mono",monospace; font-size:.64rem; font-weight:600; letter-spacing:.08em;
     text-transform:uppercase; color:var(--brc,var(--m-cp)); display:flex; align-items:center; gap:.4rem; margin-bottom:.35rem}
   .branch p{font-size:.86rem; margin:0 0 .5rem}
-  .branch.cp{--brc:var(--m-cp)} .branch.nc{--brc:var(--m-nc)} .branch.err{--brc:var(--err)}
+  .branch.cp{--brc:var(--m-cp)} .branch.nc{--brc:var(--m-nc)} .branch.err{--brc:var(--err)} .branch.pago{--brc:var(--m-pago)}
 
   footer{margin-top:2.6rem; padding-top:1.2rem; border-top:1px solid var(--line);
     color:var(--ink-faint); font-size:.8rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem}
@@ -106,6 +110,7 @@
     <span><i style="background:var(--m-fac)"></i>Factura</span>
     <span><i style="background:var(--m-cp)"></i>Carta Porte / Transporte</span>
     <span><i style="background:var(--m-nc)"></i>Nota de Crédito</span>
+    <span><i style="background:var(--m-pago)"></i>Complemento de pago</span>
   </div>
 
   <div class="spine">
@@ -222,6 +227,17 @@
           <span class="pill fac"><span class="n">18</span>Pago Manual</span>
           <span class="arw">→</span>
           <span class="pill fac"><span class="n">19</span>Completado</span>
+        </div>
+        <div class="branch pago">
+          <div class="btag">⑂ Su propio flujo · Complemento de pago</div>
+          <p>El complemento es un CFDI de pago aparte, con su propio estatus. Nace <b>Pendiente de complemento</b>; al ligarse a la(s) factura(s)/NC pasa a <b>Complemento relacionado</b> — y eso es lo que lleva la factura a Completado.</p>
+          <div class="pills">
+            <span class="pill pago"><span class="n">1</span>Pendiente de complemento</span><span class="arw">→</span>
+            <span class="pill pago"><span class="n">2</span>Complemento relacionado</span>
+            <span class="arw">·</span>
+            <span class="pill err"><span class="n">3</span>Cancelado</span>
+            <span class="pill err"><span class="n">4</span>Borrado</span>
+          </div>
         </div>
       </div>
     </div>

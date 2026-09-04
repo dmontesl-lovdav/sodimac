@@ -1,0 +1,187 @@
+<title>Ejemplo: Factura de Transporte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f5f7f5; --surface:#ffffff; --surface-2:#eef2f0; --ink:#1b2320; --ink-soft:#5c6863;
+    --ink-faint:#8a958f; --line:#dde3df; --accent:#0d7d74; --accent-ink:#0a5f58; --accent-soft:#e4f1ef;
+    --cp:#a1691a; --cp-bg:#f5ecd9; --rec:#1f7a52; --rec-bg:#e3f1e9; --fac:#0d7d74; --fac-bg:#e2f0ee;
+    --err:#b23a48; --err-bg:#f6e6e8; --fin:#3a5bb0; --fin-bg:#e7ecf8;
+    --shadow:0 1px 2px rgba(20,40,35,.05),0 12px 32px -16px rgba(20,40,35,.2);
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#111517; --surface:#1a2023; --surface-2:#222a2d; --ink:#e9eeea; --ink-soft:#98a6a0;
+    --ink-faint:#71807a; --line:#2a3337; --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --cp:#e0b264; --cp-bg:#32280f; --rec:#6fd39f; --rec-bg:#153223; --fac:#45c6bc; --fac-bg:#15302d;
+    --err:#e58c96; --err-bg:#331f23; --fin:#8ba6e8; --fin-bg:#1c2740;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#111517; --surface:#1a2023; --surface-2:#222a2d; --ink:#e9eeea; --ink-soft:#98a6a0;
+    --ink-faint:#71807a; --line:#2a3337; --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --cp:#e0b264; --cp-bg:#32280f; --rec:#6fd39f; --rec-bg:#153223; --fac:#45c6bc; --fac-bg:#15302d;
+    --err:#e58c96; --err-bg:#331f23; --fin:#8ba6e8; --fin-bg:#1c2740;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -18px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px; margin:0 auto; padding:clamp(1.6rem,4vw,3.2rem) 1.25rem 4rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--cp);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 .8rem}
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--cp)}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:clamp(2rem,5.5vw,2.9rem);
+    line-height:1.05; letter-spacing:-.015em; margin:0 0 .6rem; text-wrap:balance}
+  .lede{font-size:1.05rem; color:var(--ink-soft); max-width:62ch; margin:0 0 1.8rem}
+
+  /* cast card */
+  .cast{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.7rem; margin-bottom:2rem}
+  .cast .c{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:.75rem .85rem; box-shadow:var(--shadow)}
+  .cast .k{font-family:"IBM Plex Mono",monospace; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 .2rem}
+  .cast .v{font-weight:600; font-size:.95rem}
+  .cast .v small{display:block; font-weight:400; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace; font-size:.72rem; margin-top:.1rem}
+
+  /* why callout */
+  .why{background:var(--cp-bg); border:1px solid color-mix(in srgb,var(--cp) 30%,transparent);
+    border-radius:14px; padding:1.15rem 1.3rem; margin-bottom:2.2rem}
+  .why h2{font-family:"Fraunces",serif; font-size:1.2rem; margin:0 0 .5rem; color:var(--cp)}
+  .why p{margin:.4rem 0 0; font-size:.95rem; color:var(--ink)}
+  .why .tag{font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:600; color:var(--cp)}
+
+  /* steps */
+  .step{display:grid; grid-template-columns:44px 1fr; gap:1rem}
+  .rail{display:flex; flex-direction:column; align-items:center}
+  .num{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;color:#fff;background:var(--cp);
+    z-index:1;box-shadow:0 0 0 4px var(--bg)}
+  :root[data-theme="dark"] .num,:root:not([data-theme="light"]) .num{color:#241a06}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .num{color:#241a06}}
+  .line{width:2px;flex:1;background:var(--line);margin:2px 0}
+  .step:last-child .line{display:none}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.15rem;
+    box-shadow:var(--shadow);margin-bottom:1.1rem}
+  .card h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.18rem;margin:0 0 .45rem;letter-spacing:-.01em}
+  .card p{margin:0 0 .7rem;color:var(--ink-soft);font-size:.94rem}
+  .card p:last-child{margin-bottom:0}
+  .card b{color:var(--ink)}
+  .pills{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+  .pill{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.78rem;padding:.2rem .55rem;
+    border-radius:999px;display:inline-flex;gap:.35rem;align-items:baseline;white-space:nowrap}
+  .pill .n{opacity:.65;font-variant-numeric:tabular-nums}
+  .pill.cp{background:var(--cp-bg);color:var(--cp)} .pill.rec{background:var(--rec-bg);color:var(--rec)}
+  .pill.fac{background:var(--fac-bg);color:var(--fac)} .pill.err{background:var(--err-bg);color:var(--err)}
+  .pill.fin{background:var(--fin-bg);color:var(--fin)}
+  .arw{color:var(--ink-faint);font-size:.85rem}
+  .doc{font-family:"IBM Plex Mono",monospace;font-size:.72rem;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:6px;padding:.1rem .4rem;color:var(--ink-soft)}
+
+  /* guide track summary */
+  .track{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.1rem 1.2rem;
+    box-shadow:var(--shadow);margin-top:1.5rem}
+  .track .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 .7rem}
+  .track .flow{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+  footer{margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    color:var(--ink-faint);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media(max-width:560px){.step{grid-template-columns:34px 1fr;gap:.7rem}.num{width:30px;height:30px;font-size:.82rem}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">fiscal-api · ejemplo real</p>
+  <h1>Una factura de transporte, paso a paso</h1>
+  <p class="lede">El caso concreto de por qué aparece una guía de embarque (Carta Porte) y cómo camina junto a la factura del flete.</p>
+
+  <div class="cast">
+    <div class="c"><p class="k">Proveedor</p><p class="v">Autotransportes del Bajío<small>núm. 252250</small></p></div>
+    <div class="c"><p class="k">Orden de compra</p><p class="v">OC 2002<small>servicio de flete</small></p></div>
+    <div class="c"><p class="k">Guía de embarque</p><p class="v">Carta Porte<small>XL3350A31012…15200</small></p></div>
+  </div>
+
+  <div class="why">
+    <p class="tag">¿Por qué una guía / Carta Porte?</p>
+    <h2>Porque el SAT exige amparar el traslado</h2>
+    <p>Cuando un proveedor <b>mueve mercancía</b>, el SAT obliga a emitir un CFDI con <b>Complemento Carta Porte</b>: acredita legalmente el traslado (origen, destino, mercancías, transportista). No es una factura de venta — es el documento del <b>viaje</b>.</p>
+    <p>En el portal de Sodimac ese complemento se registra y se le da seguimiento como una <b>guía de embarque</b>, con su propio ciclo de estatus, ligada a la OC y después a la factura del flete. Por eso en transporte ves <b>dos cosas</b>: la guía (el traslado) y la factura (el cobro del flete).</p>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="rail"><div class="num">1</div><div class="line"></div></div>
+      <div class="card">
+        <h3>Sodimac necesita mover mercancía</h3>
+        <p>Se emite una <b>OC de transporte</b> (2002) al proveedor de flete para llevar producto de un CEDIS a una tienda.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">2</div><div class="line"></div></div>
+      <div class="card">
+        <h3>El proveedor traslada y emite la Carta Porte</h3>
+        <p>Al mover la mercancía, emite el CFDI de traslado con <b>Complemento Carta Porte</b>. En el portal nace la <b>guía de embarque</b>, ligada a la OC.</p>
+        <div class="pills">
+          <span class="pill cp"><span class="n">1</span>Pendiente de OC</span><span class="arw">→</span>
+          <span class="pill cp"><span class="n">2</span>Pendiente de Facturar</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">3</div><div class="line"></div></div>
+      <div class="card">
+        <h3>El proveedor sube su factura del flete</h3>
+        <p>Ahora sí cobra: sube la <b>factura</b> del servicio de transporte. Al cuadrar con la guía y la OC, la guía avanza a <b>Por Contabilizar</b> y la factura entra a su flujo normal.</p>
+        <div class="pills">
+          <span class="pill cp"><span class="n">2</span></span><span class="arw">→</span>
+          <span class="pill cp"><span class="n">3</span>Por Contabilizar</span>
+          <span class="arw">·  factura →</span>
+          <span class="pill fac"><span class="n">3</span>En proceso de envío</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">4</div><div class="line"></div></div>
+      <div class="card">
+        <h3>Se contabiliza y se paga</h3>
+        <p>La factura del flete recorre su ciclo (desglose → contable → pago). Cuando se paga, la guía cierra como <b>Pagada</b>.</p>
+        <div class="pills">
+          <span class="pill cp"><span class="n">5</span>Contabilizada</span><span class="arw">→</span>
+          <span class="pill fin"><span class="n">7</span>Pagada</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="rail"><div class="num">5</div></div>
+      <div class="card">
+        <h3>Si se cancela la factura, se libera la guía</h3>
+        <p>Al cancelar la factura del flete (<b>20 Cancelada</b>), la guía <b>regresa a Pendiente de Facturar</b> para poder volver a facturarse — no se pierde el traslado.</p>
+        <div class="pills">
+          <span class="pill err"><span class="n">20</span>Factura Cancelada</span><span class="arw">libera →</span>
+          <span class="pill cp"><span class="n">2</span>Guía Pendiente de Facturar</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="track">
+    <p class="k">Ciclo de la guía de embarque</p>
+    <div class="flow">
+      <span class="pill cp"><span class="n">1</span>Pend. OC</span><span class="arw">→</span>
+      <span class="pill cp"><span class="n">2</span>Pend. Facturar</span><span class="arw">→</span>
+      <span class="pill cp"><span class="n">3</span>Por Contabilizar</span><span class="arw">→</span>
+      <span class="pill cp"><span class="n">5</span>Contabilizada</span><span class="arw">→</span>
+      <span class="pill fin"><span class="n">7</span>Pagada</span>
+      <span class="arw">· cancelación devuelve a</span>
+      <span class="pill cp"><span class="n">2</span></span>
+    </div>
+  </div>
+
+  <footer>
+    <span>Ejemplo ilustrativo · datos ficticios sobre el flujo real</span>
+    <span>fiscal-api · 2026-09</span>
+  </footer>
+</div>

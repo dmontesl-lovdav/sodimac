@@ -1,0 +1,98 @@
+<title>Tren de Estatus · fiscal-api</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f5f7f5; --surface:#ffffff; --ink:#1b2320; --ink-soft:#5c6863; --ink-faint:#8a958f; --line:#dde3df;
+    --accent:#0d7d74; --accent-ink:#0a5f58; --accent-soft:#e4f1ef;
+    --c1:#0d7d74; --c1-bg:#e2f0ee; --c2:#3a5bb0; --c2-bg:#e7ecf8;
+    --c3:#a1691a; --c3-bg:#f5ecd9; --c4:#b23a48; --c4-bg:#f6e6e8;
+    --shadow:0 1px 2px rgba(20,40,35,.05),0 16px 40px -20px rgba(20,40,35,.25);
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#111517; --surface:#1a2023; --ink:#e9eeea; --ink-soft:#98a6a0; --ink-faint:#71807a; --line:#2a3337;
+    --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --c1:#45c6bc; --c1-bg:#15302d; --c2:#8ba6e8; --c2-bg:#1c2740;
+    --c3:#e0b264; --c3-bg:#32280f; --c4:#e58c96; --c4-bg:#331f23;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 18px 44px -22px rgba(0,0,0,.75);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#111517; --surface:#1a2023; --ink:#e9eeea; --ink-soft:#98a6a0; --ink-faint:#71807a; --line:#2a3337;
+    --accent:#45c6bc; --accent-ink:#7ddbd2; --accent-soft:#15302d;
+    --c1:#45c6bc; --c1-bg:#15302d; --c2:#8ba6e8; --c2-bg:#1c2740;
+    --c3:#e0b264; --c3-bg:#32280f; --c4:#e58c96; --c4-bg:#331f23;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 18px 44px -22px rgba(0,0,0,.75);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); margin:0;
+    font-family:"Public Sans",system-ui,sans-serif; line-height:1.55; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px; margin:0 auto; padding:clamp(2.2rem,6vw,5rem) 1.5rem 4rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink);
+    display:flex; align-items:center; gap:.6rem; margin:0 0 1rem}
+  .eyebrow::before{content:""; width:28px; height:1px; background:var(--accent)}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:clamp(2.4rem,7vw,3.8rem);
+    line-height:1.02; letter-spacing:-.02em; margin:0 0 .7rem; text-wrap:balance}
+  .lede{font-size:1.15rem; color:var(--ink-soft); max-width:60ch; margin:0 0 2.6rem}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.1rem}
+  a.card{display:flex; flex-direction:column; gap:.55rem; text-decoration:none; color:inherit;
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.4rem 1.35rem;
+    box-shadow:var(--shadow); transition:transform .14s, border-color .14s; position:relative; overflow:hidden}
+  a.card::before{content:""; position:absolute; inset:0 auto 0 0; width:4px; background:var(--cc)}
+  a.card:hover{transform:translateY(-4px); border-color:var(--cc)}
+  a.card:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  .card .tag{font-family:"IBM Plex Mono",monospace; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--cc)}
+  .card h2{font-family:"Fraunces",serif; font-weight:600; font-size:1.4rem; margin:.1rem 0 .1rem; letter-spacing:-.01em}
+  .card p{margin:0; color:var(--ink-soft); font-size:.92rem}
+  .card .go{margin-top:.5rem; font-family:"IBM Plex Mono",monospace; font-size:.76rem; font-weight:600; color:var(--cc);
+    display:inline-flex; align-items:center; gap:.4rem}
+  .card .go::after{content:"→"; transition:transform .14s}
+  a.card:hover .go::after{transform:translateX(4px)}
+  .c1{--cc:var(--c1)} .c2{--cc:var(--c2)} .c3{--cc:var(--c3)} .c4{--cc:var(--c4)}
+  footer{margin-top:3rem; padding-top:1.3rem; border-top:1px solid var(--line);
+    color:var(--ink-faint); font-size:.82rem}
+  footer code{font-family:"IBM Plex Mono",monospace; color:var(--accent-ink)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">fiscal-api · documentación visual</p>
+  <h1>Tren de Estatus</h1>
+  <p class="lede">Cuatro vistas para entender cómo se mueven las facturas, notas de crédito, recepciones y guías en el portal — del panorama al detalle.</p>
+
+  <div class="grid">
+    <a class="card c1" href="https://claude.ai/code/artifact/321b64bd-90b7-4467-bbbd-773aebd85d93" target="_blank" rel="noopener">
+      <span class="tag">Panorama</span>
+      <h2>Ciclo de vida de la factura</h2>
+      <p>Cómo avanza de punta a punta: orden de compra, recepción, transporte, desglose, contabilización y pago.</p>
+      <span class="go">Ver el flujo</span>
+    </a>
+
+    <a class="card c2" href="https://claude.ai/code/artifact/e8429019-4301-4294-91c4-ac3967bbe398" target="_blank" rel="noopener">
+      <span class="tag">Detalle · interactivo</span>
+      <h2>Explorador de estatus</h2>
+      <p>Elige módulo y haz clic en un estatus: se iluminan sus transiciones y los efectos en otros módulos.</p>
+      <span class="go">Explorar</span>
+    </a>
+
+    <a class="card c3" href="https://claude.ai/code/artifact/30668aa2-00d3-4da6-aaa9-e71ac20df9cd" target="_blank" rel="noopener">
+      <span class="tag">Ejemplo real</span>
+      <h2>Factura de transporte</h2>
+      <p>Por qué aparece una guía de embarque / Carta Porte y cómo camina junto a la factura del flete.</p>
+      <span class="go">Ver ejemplo</span>
+    </a>
+
+    <a class="card c4" href="https://claude.ai/code/artifact/d29bcd4f-6654-4ecb-bbcc-908f23326c19" target="_blank" rel="noopener">
+      <span class="tag">Caso · cancelación</span>
+      <h2>Cascada de cancelación</h2>
+      <p>Qué libera cancelar una factura: la recepción vuelve a Disponible y la guía a Pendiente de Facturar.</p>
+      <span class="go">Ver cascada</span>
+    </a>
+  </div>
+
+  <footer>
+    Basado en <code>shared_catalogs.status_train</code> v1.0(5) + la tabla de conversión de estatus.
+  </footer>
+</div>

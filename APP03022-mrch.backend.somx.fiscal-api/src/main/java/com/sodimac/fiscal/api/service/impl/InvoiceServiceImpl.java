@@ -97,6 +97,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     private static final String CAT_TIPO_RELACION_NC = "CatTipoRelacionFacturaNC";
     // Tipo de NC "Descuento Comercial" (CatTipoNotaCredito value 2): puede registrarse SIN factura relacionada (f196).
     private static final String TIPO_NC_DESCUENTO_COMERCIAL = "2";
+    /** CatTipoProveedor value "2" = TRANSPORTE (key TPR002). Gate de la cascada de guía al cancelar. */
+    private static final String TIPO_PROVEEDOR_TRANSPORTE = "2";
 
     // Mappers
     private final InvoiceMapper invoiceMapper;
@@ -1566,7 +1568,16 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "facturaUuid: " + factura.getInvoiceUuid() + ", receptionId: " + reception.getReceptionId(),
                     null, null);
 
-            // Transporte: guía(s) -> 2 Pendiente de Facturar (Factura 20 -> Carta Porte 2).
+            // Guía(s) -> 2 Pendiente de Facturar (Factura 20 -> Carta Porte 2), SOLO si el proveedor
+            // es de tipo transporte (CatTipoProveedor value "2"). Directiva Ivan (2026-09): el disparo
+            // se valida por tipo de proveedor — transporte mueve AMBOS estatus (recepción 0 + guía 2);
+            // cualquier otro tipo solo libera la recepción (ya hecho arriba).
+            String tipoProveedorId = resolveTipoProveedorDeFactura(factura.getInvoiceUuid());
+            if (!TIPO_PROVEEDOR_TRANSPORTE.equals(tipoProveedorId)) {
+                log.info("Cancelación factura {}: proveedor tipo={} (no transporte), solo se liberó la recepción",
+                        factura.getInvoiceUuid(), tipoProveedorId);
+                return;
+            }
             String guide = reception.getGuideNumber();
             if (guide != null && !guide.isBlank()) {
                 int updated = receptionRepository.markShippingGuidesPendienteFacturar(guide.trim());
@@ -1583,6 +1594,19 @@ public class InvoiceServiceImpl implements InvoiceService {
             log.warn("No se pudo liberar recepción/guía por cancelación de factura {}: {} — no crítico",
                     factura.getInvoiceUuid(), e.getMessage());
         }
+    }
+
+    /**
+     * Tipo de proveedor (CatTipoProveedor value, ej. "2" = transporte) de la factura, resuelto EN
+     * VIVO desde el supplier_number de su addenda. null si no se puede resolver.
+     */
+    private String resolveTipoProveedorDeFactura(UUID facturaUuid) {
+        return addendumRepository.findByInvoiceUuid(facturaUuid)
+                .map(AddendumEntity::getSupplierNumber)
+                .filter(java.util.Objects::nonNull)
+                .map(java.math.BigDecimal::toPlainString)
+                .map(addendumRepository::findTipoProveedorId)
+                .orElse(null);
     }
 
     /**

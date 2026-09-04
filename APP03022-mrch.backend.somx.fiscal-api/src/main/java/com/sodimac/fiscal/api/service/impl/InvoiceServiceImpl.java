@@ -543,6 +543,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                         "CANCEL-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
             }
 
+            // Cancelación de NC (estatus 20): si la factura relacionada queda sin NCs activas,
+            // regresa a 2 (Recibido Parcial). Regla Ivan (2026-09-04).
+            if (TipoDocumentoFiscal.NOTA_CREDITO.getCodigo().equals(documentType)
+                    && Integer.valueOf(NC_CANCELADA).equals(newStatusCode)) {
+                reevaluarFacturaTrasCancelacionNc(invoice,
+                        "CANCEL-NC-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
+            }
+
             // === PASO 5: ACTUALIZAR ADDENDA (SI SE PROPORCIONA) ===
             boolean addendaActualizada = false;
             if (request.getAddenda() != null) {
@@ -1593,6 +1601,48 @@ public class InvoiceServiceImpl implements InvoiceService {
         } catch (Exception e) {
             log.warn("No se pudo liberar recepción/guía por cancelación de factura {}: {} — no crítico",
                     factura.getInvoiceUuid(), e.getMessage());
+        }
+    }
+
+    /**
+     * Cascada al CANCELAR una NC (estatus 20). Regla Ivan (2026-09-04, Excel): por cada factura
+     * relacionada a la NC, si el total de NCs ACTIVAS (no canceladas) de esa factura es 0, la
+     * factura regresa a 2 (Recibido Parcial) — sin NC el neto vuelve a superar la recepción y la
+     * factura no debe viajar. Si aún tiene NCs activas (>0), se mantiene su estatus actual.
+     * La NC recién cancelada ya está en 20 al llegar aquí, por lo que NO cuenta como activa.
+     * Best-effort: no rompe la cancelación si algo falla.
+     */
+    private void reevaluarFacturaTrasCancelacionNc(InvoiceEntity nc, String idTransaccion, String serviceName) {
+        try {
+            for (RelatedCfdiEntity relNc : relatedCfdiRepository.findByInvoiceUuid(nc.getInvoiceUuid())) {
+                UUID facturaUuid = relNc.getRelatedInvoiceUuid();
+                InvoiceEntity factura = invoiceRepository.findById(facturaUuid).orElse(null);
+                if (factura == null) {
+                    continue;
+                }
+                long ncsActivas = 0;
+                for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(facturaUuid)) {
+                    InvoiceEntity ncRel = invoiceRepository.findById(rel.getInvoiceUuid()).orElse(null);
+                    if (ncRel != null && !Integer.valueOf(NC_CANCELADA).equals(ncRel.getStatus())) {
+                        ncsActivas++;
+                    }
+                }
+                if (ncsActivas == 0) {
+                    factura.setStatus(InvoiceStatus.RECIBIDO_PARCIAL.getCodigo());
+                    invoiceRepository.save(factura);
+                    log.info("Cancelación NC {}: factura {} sin NCs activas -> 2 (Recibido Parcial)",
+                            nc.getInvoiceUuid(), facturaUuid);
+                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                            K_SYSTEM, false, "Factura a 2 (Recibido Parcial): su única NC activa fue cancelada",
+                            "facturaUuid: " + facturaUuid + ", ncUuid: " + nc.getInvoiceUuid(), null, null);
+                } else {
+                    log.info("Cancelación NC {}: factura {} conserva {} NC(s) activa(s) -> estatus sin cambio",
+                            nc.getInvoiceUuid(), facturaUuid, ncsActivas);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo reevaluar factura tras cancelación de NC {}: {} — no crítico",
+                    nc.getInvoiceUuid(), e.getMessage());
         }
     }
 
@@ -3343,6 +3393,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                     && Integer.valueOf(FACTURA_CANCELADA).equals(request.getEstatusDestino())) {
                 liberarRecepcionPorCancelacionFactura(invoice,
                         "CANCEL-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
+            }
+
+            // Cancelación de NC (estatus 20): si la factura relacionada queda sin NCs activas,
+            // regresa a 2 (Recibido Parcial). Regla Ivan (2026-09-04).
+            if (TipoDocumentoFiscal.NOTA_CREDITO.getCodigo().equals(invoice.getDocumentType())
+                    && Integer.valueOf(NC_CANCELADA).equals(request.getEstatusDestino())) {
+                reevaluarFacturaTrasCancelacionNc(invoice,
+                        "CANCEL-NC-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
             }
 
             // === PASO 7: GUARDAR HISTORIAL DE CAMBIO DE ESTATUS ===

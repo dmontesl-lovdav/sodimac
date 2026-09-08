@@ -551,6 +551,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                         "CANCEL-NC-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
             }
 
+            // Pago de factura (estatus 17 Pendiente de complemento): recepción -> 6 (Pagada) y, si es
+            // transporte, la guía -> 7 (Pagada). Tabla de conversión v1.0(7) (Ivan 2026-09-08).
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(documentType)
+                    && Integer.valueOf(FACTURA_PENDIENTE_COMPLEMENTO).equals(newStatusCode)) {
+                cascadaPagoFactura(invoice,
+                        "PAGO-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
+            }
+
             // === PASO 5: ACTUALIZAR ADDENDA (SI SE PROPORCIONA) ===
             boolean addendaActualizada = false;
             if (request.getAddenda() != null) {
@@ -1600,6 +1608,59 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
         } catch (Exception e) {
             log.warn("No se pudo liberar recepción/guía por cancelación de factura {}: {} — no crítico",
+                    factura.getInvoiceUuid(), e.getMessage());
+        }
+    }
+
+    private static final int FACTURA_PENDIENTE_COMPLEMENTO = 17;
+    private static final int RECEPCION_PAGADA = 6;
+
+    /**
+     * Cascada al PAGAR una factura (estatus 17 Pendiente de complemento). Conforme a la tabla de
+     * conversión de estatus v1.0(7) (Ivan 2026-09-08), gemela de la cascada de cancelación:
+     * la recepción ligada pasa a 6 (Pagada) — para todos los proveedores — y, si es de transporte,
+     * la(s) guía(s) de embarque pasan a 7 (Pagada). El batch solo mueve la factura a 17; fiscal-api
+     * hace el resto. Best-effort: NO rompe el cambio de estatus si algo falla (solo log).
+     */
+    private void cascadaPagoFactura(InvoiceEntity factura, String idTransaccion, String serviceName) {
+        try {
+            ReceptionEntity reception = resolveReceptionDeFactura(factura.getInvoiceUuid());
+            if (reception == null) {
+                log.info("Pago factura {}: sin recepción ligada, no hay nada que marcar como pagado",
+                        factura.getInvoiceUuid());
+                return;
+            }
+            // Recepción -> 6 Pagada (Factura 17 -> Recepción 6, todos los proveedores).
+            reception.setStatus(BigDecimal.valueOf(RECEPCION_PAGADA));
+            receptionRepository.save(reception);
+            log.info("Pago factura {}: recepción {} -> 6 (Pagada)",
+                    factura.getInvoiceUuid(), reception.getReceptionId());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                    K_SYSTEM, false, "Recepción a 6 (Pagada) por pago de factura (estatus 17)",
+                    "facturaUuid: " + factura.getInvoiceUuid() + ", receptionId: " + reception.getReceptionId(),
+                    null, null);
+
+            // Guía(s) -> 7 Pagada SOLO si el proveedor es de tipo transporte (CatTipoProveedor "2").
+            String tipoProveedorId = resolveTipoProveedorDeFactura(factura.getInvoiceUuid());
+            if (!TIPO_PROVEEDOR_TRANSPORTE.equals(tipoProveedorId)) {
+                log.info("Pago factura {}: proveedor tipo={} (no transporte), solo se marcó la recepción",
+                        factura.getInvoiceUuid(), tipoProveedorId);
+                return;
+            }
+            String guide = reception.getGuideNumber();
+            if (guide != null && !guide.isBlank()) {
+                int updated = receptionRepository.markShippingGuidesPagada(guide.trim());
+                log.info("Pago factura {}: guías guideNumber={} -> 7 Pagada ({} fila(s))",
+                        factura.getInvoiceUuid(), guide.trim(), updated);
+                if (updated > 0) {
+                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                            K_SYSTEM, false, "Guías de embarque a 7 (Pagada) por pago de factura (estatus 17)",
+                            "facturaUuid: " + factura.getInvoiceUuid() + ", guideNumber: " + guide.trim()
+                                    + ", updated: " + updated, null, null);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo marcar recepción/guía como pagada por pago de factura {}: {} — no crítico",
                     factura.getInvoiceUuid(), e.getMessage());
         }
     }
@@ -3401,6 +3462,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                     && Integer.valueOf(NC_CANCELADA).equals(request.getEstatusDestino())) {
                 reevaluarFacturaTrasCancelacionNc(invoice,
                         "CANCEL-NC-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
+            }
+
+            // Pago de factura (estatus 17 Pendiente de complemento): recepción -> 6 (Pagada) y, si es
+            // transporte, la guía -> 7 (Pagada). Tabla de conversión v1.0(7) (Ivan 2026-09-08).
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())
+                    && Integer.valueOf(FACTURA_PENDIENTE_COMPLEMENTO).equals(request.getEstatusDestino())) {
+                cascadaPagoFactura(invoice,
+                        "PAGO-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
             }
 
             // === PASO 7: GUARDAR HISTORIAL DE CAMBIO DE ESTATUS ===

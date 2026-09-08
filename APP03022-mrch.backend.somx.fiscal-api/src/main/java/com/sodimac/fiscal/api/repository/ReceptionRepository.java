@@ -75,4 +75,21 @@ public interface ReceptionRepository extends JpaRepository<ReceptionEntity, UUID
             + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status = 3",
             nativeQuery = true)
     int markShippingGuidesPendienteFacturar(@Param("guideNumber") String guideNumber);
+
+    /**
+     * Al pasar una factura de transporte a 17 (Pendiente de complemento, es decir pagada), las guías
+     * ligadas por {@code guide_number} pasan a estatus 7 (Pagada). Solo desde estatus en el pipeline
+     * contable (3 Por Contabilizar / 4 En proceso de contabilización / 5 Contabilizada) para no pisar
+     * guías sin facturar (1/2), rechazadas (6) ni terminales (7/9/10).
+     * Tabla de conversión de estatus v1.0(7) (Ivan): Factura 17 -> Carta Porte 7 (solo transporte).
+     *
+     * @return filas actualizadas (0 si no hay guía o no está en 3/4/5)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value =
+            "UPDATE tenant_finance.shipping_guide "
+            + "SET status = 7, is_status_updated = true, updated_at = CURRENT_TIMESTAMP "
+            + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status IN (3, 4, 5)",
+            nativeQuery = true)
+    int markShippingGuidesPagada(@Param("guideNumber") String guideNumber);
 }

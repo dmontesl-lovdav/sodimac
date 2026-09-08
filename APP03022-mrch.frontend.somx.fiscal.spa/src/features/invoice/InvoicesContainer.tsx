@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage, getStandardFilename } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage, getStandardFilename, formatDateReport } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -27,6 +27,11 @@ import {
   useFiscalListRefetchOnReturn,
   useFiscalListScreenSession,
 } from "@/shared/session/fiscalListSession";
+import { buildAccountingSearchParams } from "@/features/accounting/accountingQuery";
+import {
+  canViewAccounting,
+  INVOICE_STATUS_VER_CONTABILIDAD,
+} from "@/features/accounting/accountingStatus";
 
 const breadcrumb: BreadcrumbItem[] = [
   { label: "Fiscal", to: "/" },
@@ -243,6 +248,18 @@ export default function InvoicesGrid() {
       },
     },
     {
+      gate: APP_EVENT.INVOICES.VIEW_ACCOUNTING,
+      action: {
+        title: "Ver Contabilidad",
+        icon: viewIcon,
+        onClick: (row, nav) => {
+          nav(`/fiscal/facturas/contabilidad?${buildAccountingSearchParams(row).toString()}`);
+        },
+        isDisabled: (row) =>
+          !canViewAccounting(row.status, INVOICE_STATUS_VER_CONTABILIDAD),
+      },
+    },
+    {
       gate: APP_EVENT.INVOICES.UPDATE_STATUS,
       action: {
         title: "Reproceso contable",
@@ -407,7 +424,7 @@ export default function InvoicesGrid() {
             enableCsv
             hideCsvToolbar
             onExportAvailabilityChange={setCanExportCsv}
-            csvFilename={`Facturas ${formatDate(new Date().toString(), true)}`}
+            csvFilename={`factura_${formatDateReport(new Date().toString())}`}
             enableXml
             enablePdf
             xmlAppEvent={APP_EVENT.INVOICES.DOWNLOAD_XML}

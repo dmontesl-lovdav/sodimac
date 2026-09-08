@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl, formatDateReport } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -21,6 +21,11 @@ import {
   useFiscalListRefetchOnReturn,
   useFiscalListScreenSession,
 } from "@/shared/session/fiscalListSession";
+import { buildAccountingSearchParams } from "@/features/accounting/accountingQuery";
+import {
+  canViewAccounting,
+  CREDIT_NOTE_STATUS_VER_CONTABILIDAD,
+} from "@/features/accounting/accountingStatus";
 
 const breadcrumb: BreadcrumbItem[] = [
   { label: "Fiscal", to: "/" },
@@ -245,6 +250,18 @@ export default function CreditsGrid() {
       },
     },
     {
+      gate: APP_EVENT.CREDIT_NOTES.VIEW_ACCOUNTING,
+      action: {
+        title: "Ver Contabilidad",
+        icon: viewIcon,
+        onClick: (row, nav) => {
+          nav(`/fiscal/notas-credito/contabilidad?${buildAccountingSearchParams(row).toString()}`);
+        },
+        isDisabled: (row) =>
+          !canViewAccounting(row.status, CREDIT_NOTE_STATUS_VER_CONTABILIDAD),
+      },
+    },
+    {
       gate: APP_EVENT.CREDIT_NOTES.UPDATE_STATUS,
       action: {
         title: "Reproceso contable",
@@ -461,7 +478,7 @@ export default function CreditsGrid() {
           enableCsv
           hideCsvToolbar
           onExportAvailabilityChange={setCanExportCsv}
-          csvFilename={`Notas de Crédito ${formatDate(new Date().toString(), true)}`}
+          csvFilename={`nota_credito_${formatDateReport(new Date().toString())}`}
           enableXml
           enablePdf
           xmlAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_XML}

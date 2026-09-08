@@ -8,6 +8,7 @@ import { GenericDateRangePicker } from "@shared/components/ui/date";
 
 import type {
   ChangeEvent,
+  ComponentProps,
   ReactElement,
 } from "react";
 
@@ -49,6 +50,24 @@ import "../styles/DiscountsFiltersBar.css";
 
 const FILTERS_KEY =
   FINANCE_LIST_KEYS.discounts.filters;
+
+// Bypass visual exclusivo para desarrollo en la maquina local.
+function LocalPermissionGate(
+  props: ComponentProps<typeof PermissionGate>
+): ReactElement {
+  const isLocalDevelopment =
+    process.env.NODE_ENV === "development" &&
+    typeof window !== "undefined" &&
+    ["localhost", "127.0.0.1", "[::1]", "::1"].includes(
+      window.location.hostname
+    );
+
+  if (isLocalDevelopment) {
+    return <>{props.children}</>;
+  }
+
+  return <PermissionGate {...props} />;
+}
 
 type DateRange = [
   Date | null,
@@ -465,7 +484,7 @@ export default function FiltersBar({
         </div>
 
         <div className="finz-filter-actions">
-          <PermissionGate
+          <LocalPermissionGate
             appEvent={
               APP_EVENT.DISCOUNTS
                 .SEARCH
@@ -477,9 +496,9 @@ export default function FiltersBar({
             >
               Buscar
             </GenericButton>
-          </PermissionGate>
+          </LocalPermissionGate>
 
-          <PermissionGate
+          <LocalPermissionGate
             appEvent={
               APP_EVENT.DISCOUNTS
                 .CLEAR_FILTERS
@@ -491,7 +510,7 @@ export default function FiltersBar({
             >
               Limpiar
             </GenericButton>
-          </PermissionGate>
+          </LocalPermissionGate>
         </div>
       </div>
     </div>

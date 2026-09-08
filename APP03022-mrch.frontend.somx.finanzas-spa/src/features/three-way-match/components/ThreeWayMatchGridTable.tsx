@@ -116,12 +116,12 @@ export default function ThreeWayMatchGridTable({
                 r.uuid ?? "--",
         },
         {
-            header: "Monto Factura",
+            header: "Subtotal Factura",
             render: (r: ThreeWayMatchRecord) =>
                 fmtMoney(r.montoFactura),
         },
         {
-            header: "Subtotal Factura",
+            header: "Monto Factura",
             render: (r: ThreeWayMatchRecord) =>
                 fmtMoney(r.montoFactura),
         },

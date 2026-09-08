@@ -74,3 +74,70 @@ UpdateRebateDto:
       format: date-time
     published:
       type: boolean
+
+RebateCreditNoteDto:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Identificador interno del documento fiscal
+    uuid:
+      type: string
+      format: uuid
+      description: UUID fiscal de la nota de credito
+    registeredAt:
+      type: string
+      format: date-time
+      description: Fecha de registro de la nota de credito
+    amount:
+      type: string
+      description: Importe total de la nota de credito expresado como decimal
+      example: "114.81"
+    series:
+      type: string
+      x-nullable: true
+      description: Serie de la nota de credito
+    folio:
+      type: string
+      x-nullable: true
+      description: Folio de la nota de credito
+  required:
+    - id
+    - uuid
+    - registeredAt
+    - amount
+
+RebateFiscalDetailDto:
+  type: object
+  properties:
+    rebateId:
+      type: string
+      format: uuid
+      description: UUID interno del descuento comercial consultado
+    vendorNumber:
+      type: integer
+      x-nullable: true
+      description: Numero del proveedor
+    invoiceFiscalUuid:
+      type: string
+      format: uuid
+      x-nullable: true
+      description: UUID fiscal de la factura original relacionada
+    ncFiscalUuid:
+      type: string
+      format: uuid
+      x-nullable: true
+      description: UUID fiscal de la nota de credito relacionada
+    creditNotes:
+      type: array
+      description: Notas de credito disponibles para mostrar en el detalle
+      items:
+        $ref: "#/RebateCreditNoteDto"
+    message:
+      type: string
+      x-nullable: true
+      description: Mensaje informativo sobre la disponibilidad de la relacion fiscal
+  required:
+    - rebateId
+    - creditNotes

@@ -17,7 +17,13 @@ import {
   XmlComplementPreview,
 } from "./interfaces";
 import { parseComplementXml } from "./utils/helpers";
-import { fetchProvidersAsCatalog, getErrorMessage, toCurrency } from "@/utils/utils";
+import {
+  fetchProvidersAsCatalog,
+  fetchSystemParameters,
+  getErrorMessage,
+  toCurrency,
+  type SystemParameter,
+} from "@/utils/utils";
 import { ModalMsg } from "@/shared/components/ui/modal/ModalMsg";
 import BitacoraErrorModal from "@/shared/components/ui/modal/BitacoraErrorModal";
 import "../creditNote/PublishCreditNote.css";
@@ -25,6 +31,16 @@ import "../creditNote/parts/DiscountInfoGrid.css";
 
 const MAX_MB = 10;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
+const PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT = 12;
+
+function checkSystemParameterValue(
+  systemParameters: SystemParameter[] | null,
+  parameterId: number
+): { value: string; isEnabled: boolean } {
+  const parameter = systemParameters?.find((p) => p.idParameter === parameterId);
+  if (!parameter) return { value: "", isEnabled: false };
+  return { value: String(parameter.value), isEnabled: parameter.status == "1" };
+}
 
 const PAYMENT_FIELDS: Array<{
   key: keyof PaymentHeaderData;
@@ -96,6 +112,16 @@ const BREADCRUMB: BreadcrumbItem[] = [
 ];
 
 export default function AddComplement() {
+  const location = useLocation();
+  const FBC_URL = `${window.location.origin}/`;
+  const isPaymentsFlow = Boolean(parsePaymentQuery(location.search));
+  const paymentsListReturnPath = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const restore = params.get("restoreSearch")?.trim().toLowerCase();
+    const withRestore = restore === "1" || restore === "true";
+    const listPath = `${FBC_URL}finanzas#/finanzas/pagos`;
+    return withRestore ? `${listPath}?restoreSearch=1` : listPath;
+  }, [FBC_URL, location.search]);
   const traceFolioPayload = useMemo<TraceFolioPayload>(
     () => ({
       idAplicativo: "fiscal-front",
@@ -110,7 +136,7 @@ export default function AddComplement() {
   );
   return decorate(
     BREADCRUMB,
-    "/fiscal/consulta-complemento-pago",
+    isPaymentsFlow ? paymentsListReturnPath : "/fiscal/consulta-complemento-pago",
     <TraceFolioProvider traceFolioPayload={traceFolioPayload}>
       <AddComplementContent />
     </TraceFolioProvider>
@@ -169,6 +195,21 @@ function AddComplementContent() {
   const [isUploading, setIsUploading] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [systemParameters, setSystemParameters] = useState<SystemParameter[] | null>(null);
+  const [paramsLoading, setParamsLoading] = useState(true);
+  const [optionalPdf, setOptionalPdf] = useState({ value: "0", isEnabled: false });
+
+  useEffect(() => {
+    fetchSystemParameters()
+      .then((response) => setSystemParameters(response?.data ?? null))
+      .finally(() => setParamsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setOptionalPdf(
+      checkSystemParameterValue(systemParameters, PARAM_OPTIONAL_PDF_PAYMENT_COMPLEMENT)
+    );
+  }, [systemParameters]);
 
   const selectedProvider = useMemo(
     () => providers.find((provider) => provider.idProveedor === header.idProveedor),
@@ -185,9 +226,16 @@ function AddComplementContent() {
   const { traceId, addLog, headerActions, noTraceWarning, traceFooter, traceLoading } =
     useTraceFolio();
   const hasTraceId = Boolean(traceId);
-  const uploadsLocked = published || !hasTraceId || traceLoading || isUploading;
+  const isPageLoading = traceLoading || paramsLoading;
+  const uploadsLocked = published || !hasTraceId || isPageLoading || isUploading;
   const canPublish =
-    hasTraceId && Boolean(xmlFile) && isValidComplement && !isUploading && !published;
+    hasTraceId &&
+    !isPageLoading &&
+    Boolean(xmlFile) &&
+    isValidComplement &&
+    !isUploading &&
+    !published &&
+    (optionalPdf.isEnabled || Boolean(pdfFile));
   const canRelate = hasTraceId && published && !isUploading;
 
   const showAlert = useCallback((message: string) => {
@@ -339,6 +387,11 @@ function AddComplementContent() {
       return;
     }
 
+    if (!optionalPdf.isEnabled && !pdfFile) {
+      showAlert("El archivo PDF es requerido para publicar el complemento de pago.");
+      return;
+    }
+
     setIsUploading(true);
     setErrorMsg(null);
     try {
@@ -376,6 +429,7 @@ function AddComplementContent() {
     addLog,
     header.idProveedor,
     showAlert,
+    optionalPdf.isEnabled,
   ]);
 
   const handleRelate = useCallback(async () => {
@@ -423,7 +477,7 @@ function AddComplementContent() {
         msg={resultMessage ?? ""}
         onClose={() => setResultMessage("")}
       />
-      {(isUploading || traceLoading) && (
+      {(isUploading || isPageLoading) && (
         <GenericModal
           visible
           variant="loading"
@@ -537,7 +591,7 @@ function AddComplementContent() {
                     disabled={uploadsLocked}
                   />
                   <p className="pcn-upload-text">
-                    Subir PDF del complemento de pago (Opcional)
+                    Subir PDF del complemento de pago ({optionalPdf.isEnabled ? "Opcional" : "Requerido"})
                   </p>
                   {pdfFile && <p className="pcn-upload-file">{pdfFile.name}</p>}
                 </label>

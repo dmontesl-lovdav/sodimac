@@ -90,6 +90,10 @@ export interface CreditNote {
   guiaEntrega: string | null;
   xmlContent: string | null;
   notasCreditoRelacionadas: unknown | null;
+  documentNumber?: string | null;
+  sapDocument?: string | null;
+  sapMessage?: string | null;
+  accountingDate?: string | null;
 }
 
 

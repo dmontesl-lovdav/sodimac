@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as ctrl from "@/controllers/rebate.controller.js";
 import * as fiscalCtrl from "@/controllers/rebateFiscal.controller.js";
+import { getFiscalDetail } from "@/controllers/rebateDetail.controller.js";
 
 const router = Router();
 // ============================================================================
@@ -24,6 +25,7 @@ router.get("/vendor/:vendorNumber", ctrl.getRebatesByVendor);
 
 // Rutas CRUD generales
 router.get("/", ctrl.list);
+router.get("/:uuid/fiscal-detail", getFiscalDetail);
 router.get("/:uuid", ctrl.getById);
 router.post("/", ctrl.create);
 router.put("/:uuid", ctrl.update);

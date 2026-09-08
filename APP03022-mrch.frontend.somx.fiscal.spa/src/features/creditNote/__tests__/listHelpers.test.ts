@@ -8,9 +8,33 @@ jest.mock("@/shared/components/ui/datagrid/DataGrid", () => ({
   default: () => null,
 }));
 jest.mock("@shared/security", () => ({
-  APP_EVENT: { CREDIT_NOTES: {}, INVOICES: {} },
+  APP_EVENT: {
+    CREDIT_NOTES: {
+      VIEW_ACCOUNTING: { app: "APL010", event: "EVT003" },
+      LINK_INVOICE: { app: "APL010", event: "EVT005" },
+      UPDATE_STATUS: { app: "APL010", event: "EVT012" },
+      CANCEL: { app: "APL010", event: "EVT011" },
+      DOWNLOAD_CSV: { app: "APL010", event: "EVT002" },
+      PUBLISH: { app: "APL010", event: "EVT016" },
+      SEARCH: { app: "APL010", event: "EVT0008" },
+      CLEAR_FILTERS: { app: "APL010", event: "EVT001" },
+      DOWNLOAD_XML: { app: "APL010", event: "EVT010" },
+      DOWNLOAD_PDF: { app: "APL010", event: "EVT013" },
+    },
+    INVOICES: {
+      VIEW_ACCOUNTING: { app: "APL009", event: "EVT003" },
+      LINK_CREDIT_NOTE: { app: "APL009", event: "EVT007" },
+      UPDATE_STATUS: { app: "APL009", event: "EVT012" },
+      CANCEL: { app: "APL009", event: "EVT011" },
+      DOWNLOAD_CSV: { app: "APL009", event: "EVT002" },
+      SEARCH: { app: "APL009", event: "EVT0008" },
+      CLEAR_FILTERS: { app: "APL009", event: "EVT001" },
+      DOWNLOAD_XML: { app: "APL009", event: "EVT010" },
+      DOWNLOAD_PDF: { app: "APL009", event: "EVT013" },
+    },
+  },
   PermissionGate: ({ children }: any) => children,
-  useSecurityContext: () => ({ hasEvent: () => true }),
+  useSecurityContext: () => ({ hasEvent: () => true, can: () => true }),
 }));
 jest.mock("@/utils/utils", () => ({
   formatDate: () => "",

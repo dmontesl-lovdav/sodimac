@@ -14,6 +14,7 @@ import { Layout } from './shared/components/container/Layout';
 import './App.css';
 import './shared/styles/financeFiltersLayout.css';
 import PublishCreditNote from './features/creditNote/PublishCreditNote';
+import AccountingView from './features/accounting/AccountingView';
 
 import { localHomeStore } from './store/localStore';
 import {
@@ -46,10 +47,12 @@ function AppRoutes() {
                 <Route path="/" element={<FiscalContainer />} />
                 <Route path="/fiscal" element={<FiscalContainer />} />
                 <Route path="/fiscal/facturas" element={<InvoicesContainer />} />
+                <Route path="/fiscal/facturas/contabilidad" element={<AccountingView />} />
                 <Route path="/fiscal/consulta-complemento-pago" element={<ComplementContainer />} />
                 <Route path="/fiscal/publicar-complemento" element={<AddComplement />} />
                 <Route path="/fiscal/complemento/:uuid" element={<ComplementRelatedInvoices />} />
                 <Route path="/fiscal/notas-credito" element={<CreditsContainer />} />
+                <Route path="/fiscal/notas-credito/contabilidad" element={<AccountingView />} />
                 <Route path="/fiscal/publicar-nota-credito" element={<PublishCreditNote />} />
                 <Route path="*" element={<FiscalContainer />} />
             </Routes>

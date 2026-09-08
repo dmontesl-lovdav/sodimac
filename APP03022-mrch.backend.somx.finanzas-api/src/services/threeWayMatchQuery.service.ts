@@ -9,9 +9,7 @@ function monthsDiff(a: Date, b: Date): number {
     return ms / (1000 * 60 * 60 * 24 * 30);
 }
 
-function validateRange(
-    q: ListThreeWayMatchQuery
-): void {
+function validateRange(q: ListThreeWayMatchQuery): void {
     const months = monthsDiff(
         q.fechaInicio,
         q.fechaFin
@@ -128,14 +126,14 @@ const exportColumns = [
         width: 40,
     },
     {
-        header: "Monto Factura",
-        key: "montoFactura",
-        width: 20,
-    },
-    {
         header: "Subtotal Factura",
         key: "subtotalFactura",
         width: 22,
+    },
+    {
+        header: "Monto Factura",
+        key: "montoFactura",
+        width: 20,
     },
     {
         header: "Fecha Recepción Factura",
@@ -207,9 +205,7 @@ type ExportRow = Partial<
     >
 >;
 
-function toExportRow(
-    row: unknown
-): ExportRow {
+function toExportRow(row: unknown): ExportRow {
     return row as ExportRow;
 }
 
@@ -250,8 +246,8 @@ function getExportValue(
     }
 
     /*
-     * Subtotal Factura se toma del monto de factura actual.
-     * En el batch este valor se llena con invoice.subtotal
+     * Subtotal Factura se toma del mismo valor de factura.
+     * En el batch montoFactura se llena usando invoice.subtotal
      * y usa invoice.total como respaldo.
      */
     if (key === "subtotalFactura") {
@@ -287,9 +283,7 @@ function getExportValue(
     return row[key] ?? "";
 }
 
-function escapeCsvValue(
-    value: unknown
-): string {
+function escapeCsvValue(value: unknown): string {
     const text =
         value === null ||
             value === undefined

@@ -336,9 +336,10 @@ export default function GenericTable<T = any>({
                         max={effectiveTotalPages}
                         value={safePage}
                         onChange={(e) => {
+                            const parsed = Number(e.target.value);
                             const next = Math.min(
                                 effectiveTotalPages,
-                                Math.max(1, +e.target.value ?? 1)
+                                Math.max(1, Number.isFinite(parsed) ? parsed : 1)
                             );
                             onChangePage(next);
                         }}

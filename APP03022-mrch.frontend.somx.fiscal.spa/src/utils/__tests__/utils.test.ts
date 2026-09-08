@@ -4,6 +4,7 @@ import {
   startOfLocalDay,
   endOfLocalDay,
   formatLocalDateStr,
+  formatDateReport,
   parseLocalDateStr,
   isDateRangeOverSixMonths,
   toNumber,
@@ -163,6 +164,22 @@ describe("endOfLocalDay", () => {
 // ---------------------------------------------------------------------------
 // formatLocalDateStr
 // ---------------------------------------------------------------------------
+
+describe("formatDateReport", () => {
+  it("devuelve yyyymmdd_hh24.mi.ss en hora local", () => {
+    const d = new Date(2026, 8, 7, 15, 32, 1);
+    expect(formatDateReport(d.toString())).toBe("20260907_15.32.01");
+  });
+
+  it("usa hora de 24 horas y rellena ceros", () => {
+    const d = new Date(2026, 0, 5, 0, 5, 9);
+    expect(formatDateReport(d.toString())).toBe("20260105_00.05.09");
+  });
+
+  it("devuelve vacío si la fecha no es válida", () => {
+    expect(formatDateReport("no-es-fecha")).toBe("");
+  });
+});
 
 describe("formatLocalDateStr", () => {
   it("formatea fecha en YYYY-MM-DD", () => {

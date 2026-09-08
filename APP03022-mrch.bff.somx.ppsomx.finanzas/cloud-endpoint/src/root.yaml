@@ -164,7 +164,8 @@ paths:
   /finanzas-payment/header-with-details:
     $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details"
   /finanzas-payment/header-with-details/{paymentHeaderUuid}:
-    $ref: "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details-by-u\
+    $ref:
+      "./paths/finanzas-payment.yaml#/finanzas-payment-header-with-details-by-u\
       uid"
 
   /audit-logs:
@@ -190,6 +191,8 @@ paths:
     $ref: "./paths/rebates.yaml#/rebates-by-vendor"
   /rebates/{uuid}:
     $ref: "./paths/rebates.yaml#/rebates-by-uuid"
+  /rebates/{uuid}/fiscal-detail:
+    $ref: "./paths/rebates.yaml#/rebates-fiscal-detail"
 
   /stamped-rebates:
     $ref: "./paths/stamped-rebates.yaml#/stamped-rebates"
@@ -334,15 +337,18 @@ definitions:
   CreateFinanzasPaymentDetailItemDto:
     $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentDetailItemDto"
   CreateFinanzasPaymentHeaderWithDetailsDto:
-    $ref: "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDeta\
+    $ref:
+      "./definitions/finanzas-payment.yaml#/CreateFinanzasPaymentHeaderWithDeta\
       ilsDto"
   ResponsePageableFinanzasPaymentDto:
     $ref: "./definitions/finanzas-payment.yaml#/ResponsePageableFinanzasPaymentDto"
   FinanzasPaymentHeaderWithDetailsCreateData:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
+    $ref:
+      "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
       ateData"
   FinanzasPaymentHeaderWithDetailsGetData:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
+    $ref:
+      "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
       Data"
   FinanzasPaymentsListResponse:
     $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentsListResponse"
@@ -351,10 +357,12 @@ definitions:
   FinanzasPaymentUpdateResponse:
     $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentUpdateResponse"
   FinanzasPaymentHeaderWithDetailsCreateResponse:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
+    $ref:
+      "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsCre\
       ateResponse"
   FinanzasPaymentHeaderWithDetailsGetResponse:
-    $ref: "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
+    $ref:
+      "./definitions/finanzas-payment.yaml#/FinanzasPaymentHeaderWithDetailsGet\
       Response"
 
   RebateDto:
@@ -363,6 +371,12 @@ definitions:
     $ref: "./definitions/rebates.yaml#/CreateRebateDto"
   UpdateRebateDto:
     $ref: "./definitions/rebates.yaml#/UpdateRebateDto"
+
+  RebateCreditNoteDto:
+    $ref: "./definitions/rebates.yaml#/RebateCreditNoteDto"
+
+  RebateFiscalDetailDto:
+    $ref: "./definitions/rebates.yaml#/RebateFiscalDetailDto"
 
   StampedRebateDto:
     $ref: "./definitions/stamped-rebates.yaml#/StampedRebateDto"
@@ -440,7 +454,6 @@ definitions:
     $ref: "./definitions/purchase-orders.yaml#/ListReceptionDto"
   ReceptionDto:
     $ref: "./definitions/purchase-orders.yaml#/ReceptionDto"
-  
 
   CartaPorteShippingGuideDocumentItem:
     $ref: "./definitions/carta-porte.yaml#/CartaPorteShippingGuideDocumentItem"

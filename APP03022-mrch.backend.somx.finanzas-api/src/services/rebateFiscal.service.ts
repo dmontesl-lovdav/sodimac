@@ -72,6 +72,13 @@ export async function relateRebate(
         };
     }
 
+    if (!validation.ncFiscalUuid) {
+        throw new HttpError(
+            502,
+            "Fiscal validó la relación, pero no devolvió el UUID de la nota de crédito"
+        );
+    }
+
     console.log(`[relateRebate] Validación exitosa. NC UUID: ${validation.ncFiscalUuid}`);
 
     const stampedRebateRepo = getDataSource().getRepository(StampedRebate);
@@ -97,10 +104,11 @@ export async function relateRebate(
     const stampedRebate = stampedRebateRepo.create({
         documentNumber: request.numeroDocumento,
         referenceNumber: request.referenciaDocumento,
-        invoiceFiscalUuid: request.uuid, // UUID de la factura original
+        invoiceFiscalUuid: request.uuid,
+        ncFiscalUuid: validation.ncFiscalUuid,
         status: 1,
         createdBy: parseInt(request.usuario),
-        createdAt: new Date()
+        createdAt: new Date(),
     });
 
     const savedStampedRebate = await stampedRebateRepo.save(stampedRebate);

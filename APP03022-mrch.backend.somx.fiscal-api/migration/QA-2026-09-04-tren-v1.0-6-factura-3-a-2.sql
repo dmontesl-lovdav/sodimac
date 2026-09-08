@@ -12,11 +12,6 @@
 -- created_by = 1 (mismo criterio que el resto del seed del tren).
 -- =====================================================================
 
--- Resync de la secuencia: status_train tiene filas con id explicito (restore/seeds)
--- que la secuencia no avanzo -> nextval choca con un id existente (SQLState 23505,
--- "duplicate key ... status_train_pkey"). Se realinea al MAX(id) antes de insertar.
-SELECT setval('shared_catalogs.status_train_id_seq', (SELECT MAX(id) FROM shared_catalogs.status_train));
-
 INSERT INTO shared_catalogs.status_train (option_id, source_status, target_status, created_by)
 VALUES (1, 3, 2, 1)
 ON CONFLICT (option_id, source_status, target_status) DO NOTHING;

@@ -1,30 +1,53 @@
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+
+import { createApiClient } from "@/services/ApiClient";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
-import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
+import type { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { withFinanceBreadcrumb } from "@/shared/components/ui/navigation/financeBreadcrumb";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
+import GenericTable from "@/shared/components/ui/table/GenericTable";
+import type { Column } from "@/shared/components/ui/table/GenericTable";
+import RowActionsMenu from "@/shared/components/ui/table/RowActionsMenu";
+import { FINANCE_LIST_KEYS } from "@/shared/hooks";
 import { formatAmount, formatDate, formatDateTime } from "@/utils/utils";
-import { ReactElement, ReactNode, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
+
 import { RebateStatusOptions } from "../interfaces";
 import { parseRebateDetailFromSearchParams } from "../utils/rebateDetailQuery";
-import { FINANCE_LIST_KEYS } from "@/shared/hooks";
-
-import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import eyeIconUrl from "@assets/eye-show.svg";
 
 const LIST_PATH = "/finanzas/descuentos-comerciales";
+const api = createApiClient();
 
+interface CreditNote {
+    id: string;
+    uuid: string;
+    registeredAt: string | null;
+    amount: string | null;
+    series: string | null;
+    folio: string | null;
+}
 
+interface FiscalDetail {
+    rebateId: string;
+    vendorNumber: number | null;
+    invoiceFiscalUuid: string | null;
+    ncFiscalUuid: string | null;
+    creditNotes: CreditNote[];
+    message: string | null;
+}
 
-const styles = {
+const styles: Record<string, CSSProperties> = {
     container: {
         display: "flex",
-        flexDirection: "column" as const,
+        flexDirection: "column",
         gap: "1.5rem",
     },
     header: {
         display: "flex",
-        flexDirection: "column" as const,
+        flexDirection: "column",
         gap: "0.5rem",
     },
     title: {
@@ -37,7 +60,7 @@ const styles = {
     },
     grid: {
         display: "grid",
-        gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
         gap: "1.25rem",
         backgroundColor: "#ffffff",
         border: "1px solid #e5e7eb",
@@ -56,7 +79,7 @@ const styles = {
     value: {
         fontSize: "0.875rem",
         fontWeight: 600,
-        wordBreak: "break-word" as const,
+        wordBreak: "break-word",
     },
     emptyBox: {
         padding: "1.25rem",
@@ -66,25 +89,51 @@ const styles = {
         color: "#92400e",
         fontSize: "0.875rem",
     },
-    actionButton: {
-        background: "transparent",
-        border: "none",
-        padding: 0,
-        cursor: "pointer",
-        opacity: 0.8,
+    errorBox: {
+        padding: "1rem",
+        border: "1px solid #fca5a5",
+        background: "#fef2f2",
+        borderRadius: "0.5rem",
+        color: "#991b1b",
+    },
+    tableCard: {
+        padding: "1rem",
+        border: "1px solid #e5e7eb",
+        borderRadius: "0.5rem",
+        background: "#ffffff",
+        minWidth: 0,
+        overflowX: "auto",
     },
 };
 
-function fmt(v: unknown): string {
-    if (v === null || v === undefined || v === "") return "N/D";
-    return String(v);
+function fmt(value: unknown): string {
+    if (value === null || value === undefined || value === "") {
+        return "N/D";
+    }
+
+    return String(value);
 }
 
-function statusFromCode(statusStr: string): { type: string; label: string } {
-    const n = Number(statusStr);
-    const found = RebateStatusOptions.find((o) => o.value === n);
-    if (found) return { type: found.type, label: found.label };
-    return { type: "error", label: statusStr ?? "N/D" };
+function money(value: unknown): string {
+    if (value === null || value === undefined || value === "") {
+        return "N/D";
+    }
+
+    const amount = Number(value);
+    return Number.isFinite(amount) ? formatAmount(amount) : "N/D";
+}
+
+function statusFromCode(value: string): {
+    type: string;
+    label: string;
+} {
+    const found = RebateStatusOptions.find(
+        (option) => option.value === Number(value)
+    );
+
+    return found
+        ? { type: found.type, label: found.label }
+        : { type: "error", label: value || "N/D" };
 }
 
 function Field({
@@ -102,29 +151,182 @@ function Field({
     );
 }
 
+function creditNoteHref(
+    note: CreditNote,
+    supplierNumber: string
+): string {
+    const params = new URLSearchParams({
+        uuid: note.uuid,
+    });
+
+    if (supplierNumber) {
+        params.set("supplierNumber", supplierNumber);
+    }
+
+    if (note.registeredAt) {
+        const registered = new Date(note.registeredAt);
+
+        if (Number.isFinite(registered.getTime())) {
+            // Incluye días adyacentes para evitar excluir la NC
+            // por la conversión entre UTC y la zona horaria del portal.
+            const start = new Date(registered);
+            const end = new Date(registered);
+
+            start.setUTCDate(start.getUTCDate() - 1);
+            end.setUTCDate(end.getUTCDate() + 1);
+
+            params.set("start", start.toISOString().slice(0, 10));
+            params.set("end", end.toISOString().slice(0, 10));
+        }
+    }
+
+    return buildFiscalSpaUrl("notas-credito", params);
+}
+
 export default function RebateDetailView(): ReactElement {
     const [searchParams] = useSearchParams();
-    
+
     const d = useMemo(
         () => parseRebateDetailFromSearchParams(searchParams),
         [searchParams]
     );
 
-    const docLabel =
-        d.documentNumber?.trim() ||
-        ((t) => (t == null || t === "" ? "—" : t))(d.rebateId?.trim());
+    const [detail, setDetail] = useState<FiscalDetail | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
 
-    const hasPayload =
-        Boolean(d.documentNumber?.trim()) ||
-        Boolean(d.rebateId?.trim()) ||
-        Boolean(d.supplierNumber?.trim());
+    useEffect(() => {
+        let cancelled = false;
+
+        setDetail(null);
+        setError("");
+        setPage(1);
+
+        if (!d.rebateId) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+
+        async function loadDetail() {
+            try {
+                const response = await api.request<
+                    FiscalDetail | { data: FiscalDetail }
+                >(
+                    `rebates/${encodeURIComponent(d.rebateId)}/fiscal-detail`,
+                    "get"
+                );
+
+                const payload =
+                    response && "data" in response
+                        ? response.data
+                        : response;
+
+                if (
+                    !payload ||
+                    payload.rebateId !== d.rebateId ||
+                    !Array.isArray(payload.creditNotes)
+                ) {
+                    throw new Error("Respuesta de detalle fiscal inválida");
+                }
+
+                if (!cancelled) {
+                    setDetail(payload);
+                }
+            } catch {
+                if (!cancelled) {
+                    setError(
+                        "No fue posible consultar la nota de crédito relacionada. Vuelve a abrir el detalle."
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        void loadDetail();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [d.rebateId]);
+
+    const currentDetail =
+        detail?.rebateId === d.rebateId ? detail : null;
+
+    const supplierNumber =
+        currentDetail?.vendorNumber != null
+            ? String(currentDetail.vendorNumber)
+            : d.supplierNumber;
+
+    const columns = useMemo<Column<CreditNote>[]>(
+        () => [
+            {
+                header: "UUID",
+                render: (row) => fmt(row.uuid),
+            },
+            {
+                header: "Fecha Registro",
+                render: (row) =>
+                    row.registeredAt
+                        ? formatDateTime(row.registeredAt, { seconds: true })
+                        : "N/D",
+            },
+            {
+                header: "Importe",
+                align: "right",
+                render: (row) => money(row.amount),
+            },
+            {
+                header: "Serie",
+                render: (row) => fmt(row.series),
+            },
+            {
+                header: "Folio",
+                render: (row) => fmt(row.folio),
+            },
+            {
+                header: "Acción",
+                align: "center",
+                render: (row) =>
+                    row.uuid ? (
+                        <RowActionsMenu
+                            items={[
+                                {
+                                    title: "Ver nota de crédito",
+                                    icon: eyeIconUrl,
+                                    onClick: () => {
+                                        window.open(
+                                            creditNoteHref(row, supplierNumber),
+                                            "_blank",
+                                            "noopener,noreferrer"
+                                        );
+                                    },
+                                },
+                            ]}
+                        />
+                    ) : (
+                        "N/D"
+                    ),
+            },
+        ],
+        [supplierNumber]
+    );
 
     const breadcrumb: BreadcrumbItem[] = useMemo(
         () =>
             withFinanceBreadcrumb([
-                { label: "Descuentos Comerciales", to: LIST_PATH },
                 {
-                    label: d.documentNumber?.trim()
+                    label: "Descuentos Comerciales",
+                    to: LIST_PATH,
+                },
+                {
+                    label: d.documentNumber
                         ? `Documento ${d.documentNumber}`
                         : "Detalle",
                 },
@@ -132,32 +334,34 @@ export default function RebateDetailView(): ReactElement {
         [d.documentNumber]
     );
 
-    const st = statusFromCode(d.status);
-    const amountNum = Number(d.amount);
-    const amountFmt =
-        d.amount !== "" && Number.isFinite(amountNum)
-            ? formatAmount(amountNum)
-            : "N/D";
+    const hasPayload =
+        Boolean(d.documentNumber) ||
+        Boolean(d.rebateId) ||
+        Boolean(d.supplierNumber);
 
-    const hasStamped =
-        Boolean(d.stampedRebateUuid) ||
-        Boolean(d.stampedDocumentNumber) ||
-        Boolean(d.stampedReferenceNumber);
+    const status = statusFromCode(d.status);
+    const docLabel = d.documentNumber || d.rebateId || "—";
+
+    const emptyLabel = loading
+        ? "Cargando nota de crédito..."
+        : !d.rebateId
+            ? "Vuelve al listado y abre el detalle para consultar la nota de crédito."
+            : currentDetail?.message ||
+            "Sin notas de crédito relacionadas";
 
     const content = !hasPayload ? (
         <div style={styles.container}>
-            <div style={styles.header}>
-                <div style={styles.title}>Detalle de descuento</div>
-            </div>
+            <div style={styles.title}>Detalle de descuento</div>
             <div style={styles.emptyBox}>
-                No hay parámetros de consulta. Vuelve al listado y abre el detalle
-                desde el ícono de ver (<strong>ojo</strong>) en una fila con datos.
+                Vuelve al listado y abre el detalle de un descuento comercial.
             </div>
         </div>
     ) : (
         <div style={styles.container}>
             <div style={styles.header}>
-                <div style={styles.title}>Detalle de descuento comercial</div>
+                <div style={styles.title}>
+                    Detalle de descuento comercial
+                </div>
                 <div style={styles.subtitle}>
                     Información relacionada al documento{" "}
                     <strong>{docLabel}</strong>
@@ -165,73 +369,121 @@ export default function RebateDetailView(): ReactElement {
             </div>
 
             <div style={styles.sectionTitle}>Datos generales</div>
+
             <div style={styles.grid}>
-                <Field label="Número Documento">{fmt(d.documentNumber)}</Field>
-                
-                <Field label="Documento Sap">{fmt(d.sapDocument)}</Field>
+                <Field label="Número Documento">
+                    {fmt(d.documentNumber)}
+                </Field>
+
+                <Field label="Documento SAP">
+                    {fmt(d.sapDocument)}
+                </Field>
+
                 <Field label="Estatus">
                     {d.status !== "" ? (
-                        <StatusPill type={st.type}>{st.label}</StatusPill>
+                        <StatusPill type={status.type}>
+                            {status.label}
+                        </StatusPill>
                     ) : (
                         "N/D"
                     )}
                 </Field>
+
                 <Field label="Tipo Rebate">
-                    {d.tipoRebate ?? "N/D"}
+                    {fmt(d.tipoRebate)}
                 </Field>
-                <Field label="Período">{fmt(d.periodId)}</Field>
-                <Field label="Importe">{amountFmt}</Field>
+
+                <Field label="Período">
+                    {fmt(d.periodId)}
+                </Field>
+
+                <Field label="Importe">
+                    {money(d.amount)}
+                </Field>
+
                 <Field label="Fecha Vencimiento">
                     {d.dueDate ? formatDate(d.dueDate) : "N/D"}
                 </Field>
-                
-                <Field label="Fecha Alta">{formatDateTime(d.createdAt, { seconds: true })}</Field>
-                <Field label="Número Proveedor">{fmt(d.supplierNumber)}</Field>
-                <Field label="Nombre Proveedor">{fmt(d.vendorName)}</Field>
-                <Field label="Referencia">{fmt(d.documentReference)}</Field>
+
+                <Field label="Fecha Alta">
+                    {d.createdAt
+                        ? formatDateTime(d.createdAt, { seconds: true })
+                        : "N/D"}
+                </Field>
+
+                <Field label="Número Proveedor">
+                    {fmt(supplierNumber)}
+                </Field>
+
+                <Field label="Nombre Proveedor">
+                    {fmt(d.vendorName)}
+                </Field>
+
+                <Field label="Referencia">
+                    {fmt(d.documentReference)}
+                </Field>
+
                 <Field label="Fecha Aplicación">
                     {d.postingDate ? formatDate(d.postingDate) : "N/D"}
                 </Field>
             </div>
 
-            {hasStamped ? (
-                <>
-                    <div style={styles.sectionTitle}>Timbrado</div>
-                    <div style={styles.grid}>
-                        <Field label="UUID NC">
-                            {fmt(d.stampedRebateUuid)}
-                        </Field>
-                        <Field label="Monto NC">{amountFmt}</Field>
-                        <Field label="UUID Factura">
-                            {fmt(d.stampedInvoiceFiscalUuid)}
-                        </Field>
-                        <Field label="Monto">{amountFmt}</Field>
-                        <Field label="Acciones">
-                            <button style={styles.actionButton} onClick={() => {
-                                const fiscalParams = new URLSearchParams({
-                                    uuid: String(d.stampedRebateUuid ?? ""),
-                                    start: d.postingDate,
-                                    end: d.postingDate,
-                                });
-                                window.location.href = buildFiscalSpaUrl(
-                                    "notas-credito",
-                                    fiscalParams
-                                )
-                            }}>
-                                <img src={eyeIconUrl} alt="Ver NC" width={20} height={20} />
-                            </button>
-                        </Field>
-                    </div>
-                </>
-            ) : null}
+            <div style={styles.sectionTitle}>
+                Nota de crédito relacionada
+            </div>
+
+            <div style={styles.grid}>
+                <Field label="UUID NC">
+                    {loading
+                        ? "Cargando..."
+                        : fmt(currentDetail?.ncFiscalUuid)}
+                </Field>
+
+                <Field label="UUID Factura">
+                    {loading
+                        ? "Cargando..."
+                        : fmt(
+                            currentDetail?.invoiceFiscalUuid ??
+                            d.stampedInvoiceFiscalUuid
+                        )}
+                </Field>
+            </div>
+
+            {error ? (
+                <div role="alert" style={styles.errorBox}>
+                    {error}
+                </div>
+            ) : (
+                <div style={styles.tableCard}>
+                    <GenericTable<CreditNote>
+                        rows={currentDetail?.creditNotes ?? []}
+                        columns={columns}
+                        emptyLabel={emptyLabel}
+                        page={page}
+                        perPage={perPage}
+                        onChangePage={setPage}
+                        onChangePerPage={(value) => {
+                            setPerPage(value);
+                            setPage(1);
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
 
     return (
         <>
-            {decorate(breadcrumb, LIST_PATH, content, false, undefined, {
-                financeListSession: FINANCE_LIST_KEYS.discounts,
-            })}
+            {decorate(
+                breadcrumb,
+                LIST_PATH,
+                content,
+                false,
+                undefined,
+                {
+                    financeListSession: FINANCE_LIST_KEYS.discounts,
+                }
+            )}
         </>
     );
 }

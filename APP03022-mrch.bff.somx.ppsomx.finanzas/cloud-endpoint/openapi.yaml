@@ -295,10 +295,8 @@ paths:
       tags:
         - account-statement
       summary: Batch generate account statements
-      description: >
-        Genera estados de cuenta para uno o todos los proveedores en el
-        año/mes indicado. Si ya existe un registro activo (status > 0) lo
-        omite. Las tablas auxiliares de tenant_finance se usan automáticamente.
+      description: |
+        Generates account statement records for one or all suppliers for a given year/month. If a record already exists (status > 0) it is skipped silently. Defaults to all suppliers, current year and current month when parameters are omitted.
       operationId: batchGenerateAccountStatements
       consumes:
         - application/json
@@ -561,9 +559,8 @@ paths:
       tags:
         - account-statement
       summary: Soft-delete account statement by UUID
-      description: >
-        Marca como eliminado (status = 0) el estado de cuenta y todos sus
-        registros en las 6 tablas auxiliares de tenant_finance (borrado lógico).
+      description: |
+        Marca como eliminado (status = 0) el estado de cuenta y todos sus registros en las 6 tablas auxiliares de tenant_finance (borrado lógico, sin eliminar filas físicas).
       operationId: softDeleteAccountStatement
       produces:
         - application/json
@@ -1592,6 +1589,46 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
         '404':
           description: Not found
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/rebates/{uuid}/fiscal-detail':
+    get:
+      tags:
+        - rebates
+      summary: Consultar detalle fiscal del descuento comercial
+      description: |
+        Obtiene los UUID fiscales relacionados y los datos de la nota de credito para mostrar UUID, fecha de registro, importe, serie y folio. El parametro uuid corresponde al UUID interno del descuento comercial. Cuando el descuento existe pero no tiene una nota de credito disponible, devuelve HTTP 200 con creditNotes vacio y un mensaje informativo.
+      operationId: getRebateFiscalDetail
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+          description: UUID interno del descuento comercial (rebateId)
+      responses:
+        '200':
+          description: Detalle fiscal del descuento comercial
+          schema:
+            $ref: '#/definitions/RebateFiscalDetailDto'
+        '400':
+          description: UUID del descuento comercial invalido
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Descuento comercial no encontrado
           schema:
             $ref: '#/definitions/ExceptionWrapper'
         '500':
@@ -3543,98 +3580,6 @@ definitions:
         type: string
       updatedBy:
         type: integer
-  BatchAccountStatementBodyDto:
-    type: object
-    description: >
-      Parámetros opcionales para la generación en batch de estados de cuenta.
-      Las tablas auxiliares de tenant_finance se usan automáticamente.
-    properties:
-      supplierNumber:
-        type: integer
-        format: int64
-        x-nullable: true
-      year:
-        type: integer
-        minimum: 2020
-        x-nullable: true
-      month:
-        type: integer
-        minimum: 1
-        maximum: 12
-        x-nullable: true
-  BatchAccountStatementDetailItemDto:
-    type: object
-    properties:
-      vendorNumber:
-        type: integer
-        format: int64
-      accountStatementUuid:
-        type: string
-        format: uuid
-      status:
-        type: string
-        enum:
-          - created
-          - skipped
-    required:
-      - vendorNumber
-      - accountStatementUuid
-      - status
-  BatchAccountStatementErrorItemDto:
-    type: object
-    properties:
-      vendorNumber:
-        type: integer
-        format: int64
-      reason:
-        type: string
-    required:
-      - vendorNumber
-      - reason
-  BatchAccountStatementResultDto:
-    type: object
-    properties:
-      created:
-        type: integer
-      skipped:
-        type: integer
-      errors:
-        type: array
-        items:
-          $ref: '#/definitions/BatchAccountStatementErrorItemDto'
-      details:
-        type: array
-        items:
-          $ref: '#/definitions/BatchAccountStatementDetailItemDto'
-    required:
-      - created
-      - skipped
-      - errors
-      - details
-  AccountStatementDeleteResponseDto:
-    type: object
-    properties:
-      success:
-        type: boolean
-      accountStatementUuid:
-        type: string
-        format: uuid
-    required:
-      - success
-      - accountStatementUuid
-  AccountStatementSupplierTypeDto:
-    type: object
-    properties:
-      id:
-        type: integer
-      code:
-        type: string
-      description:
-        type: string
-    required:
-      - id
-      - code
-      - description
   AccountStatementListItemDto:
     type: object
     properties:
@@ -3647,7 +3592,18 @@ definitions:
       vendorName:
         type: string
       supplierType:
-        $ref: '#/definitions/AccountStatementSupplierTypeDto'
+        type: object
+        properties:
+          id:
+            type: integer
+          code:
+            type: string
+          description:
+            type: string
+        required:
+          - id
+          - code
+          - description
       year:
         type: integer
       month:
@@ -3929,6 +3885,89 @@ definitions:
         x-nullable: true
       sortOrder:
         type: integer
+  BatchAccountStatementBodyDto:
+    type: object
+    description: |
+      Parámetros opcionales para la generación en batch de estados de cuenta. Las tablas auxiliares de tenant_finance se usan automáticamente.
+    properties:
+      supplierNumber:
+        type: integer
+        format: int64
+        description: Número de proveedor. Si se omite se procesan todos los proveedores del catálogo.
+        x-nullable: true
+      year:
+        type: integer
+        minimum: 2020
+        description: Año. Por defecto el año actual.
+        x-nullable: true
+      month:
+        type: integer
+        minimum: 1
+        maximum: 12
+        description: Mes (1-12). Por defecto el mes actual.
+        x-nullable: true
+  BatchAccountStatementResultDto:
+    type: object
+    properties:
+      created:
+        type: integer
+        description: Number of new account statement records created.
+      skipped:
+        type: integer
+        description: Number of suppliers skipped because a record already existed.
+      errors:
+        type: array
+        items:
+          $ref: '#/definitions/BatchAccountStatementErrorItemDto'
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/BatchAccountStatementDetailItemDto'
+    required:
+      - created
+      - skipped
+      - errors
+      - details
+  BatchAccountStatementDetailItemDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      accountStatementUuid:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum:
+          - created
+          - skipped
+    required:
+      - vendorNumber
+      - accountStatementUuid
+      - status
+  BatchAccountStatementErrorItemDto:
+    type: object
+    properties:
+      vendorNumber:
+        type: integer
+        format: int64
+      reason:
+        type: string
+    required:
+      - vendorNumber
+      - reason
+  AccountStatementDeleteResponseDto:
+    type: object
+    properties:
+      success:
+        type: boolean
+      accountStatementUuid:
+        type: string
+        format: uuid
+    required:
+      - success
+      - accountStatementUuid
   FiscalPaymentDto:
     type: object
     properties:
@@ -4495,6 +4534,71 @@ definitions:
         format: date-time
       published:
         type: boolean
+  RebateCreditNoteDto:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Identificador interno del documento fiscal
+      uuid:
+        type: string
+        format: uuid
+        description: UUID fiscal de la nota de credito
+      registeredAt:
+        type: string
+        format: date-time
+        description: Fecha de registro de la nota de credito
+      amount:
+        type: string
+        description: Importe total de la nota de credito expresado como decimal
+        example: '114.81'
+      series:
+        type: string
+        x-nullable: true
+        description: Serie de la nota de credito
+      folio:
+        type: string
+        x-nullable: true
+        description: Folio de la nota de credito
+    required:
+      - id
+      - uuid
+      - registeredAt
+      - amount
+  RebateFiscalDetailDto:
+    type: object
+    properties:
+      rebateId:
+        type: string
+        format: uuid
+        description: UUID interno del descuento comercial consultado
+      vendorNumber:
+        type: integer
+        x-nullable: true
+        description: Numero del proveedor
+      invoiceFiscalUuid:
+        type: string
+        format: uuid
+        x-nullable: true
+        description: UUID fiscal de la factura original relacionada
+      ncFiscalUuid:
+        type: string
+        format: uuid
+        x-nullable: true
+        description: UUID fiscal de la nota de credito relacionada
+      creditNotes:
+        type: array
+        description: Notas de credito disponibles para mostrar en el detalle
+        items:
+          $ref: '#/definitions/RebateCreditNoteDto'
+      message:
+        type: string
+        x-nullable: true
+        description: Mensaje informativo sobre la disponibilidad de la relacion fiscal
+    required:
+      - rebateId
+      - creditNotes
   StampedRebateDto:
     type: object
     properties:

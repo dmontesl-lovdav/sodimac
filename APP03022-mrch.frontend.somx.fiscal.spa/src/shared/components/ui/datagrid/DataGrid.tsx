@@ -370,8 +370,8 @@ function DataGridInner<T, F = any>(
   ref: React.ForwardedRef<DataGridHandle>
 ): ReactElement {
   const sec = useSecurityContext();
-  const canXml = true; // !xmlAppEvent || sec.can(xmlAppEvent);
-  const canPdf = true; //!pdfAppEvent || sec.can(pdfAppEvent);
+  const canXml =  !xmlAppEvent || sec.can(xmlAppEvent);
+  const canPdf = !pdfAppEvent || sec.can(pdfAppEvent);
 
   const pagedEnabled = Boolean(fetchFn) && filters != null;
   const paginatedDataResult = usePaginatedData<T, F>({

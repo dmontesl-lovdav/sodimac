@@ -34,6 +34,7 @@ export const APP_EVENT = {
         CANCEL:              { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.CANCEL, label: 'Cancelar Factura' },
         UPDATE_STATUS:       { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.UPDATE_STATUS, label: 'Reproceso Contable' },
         LINK_CREDIT_NOTE:    { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.LINK_CREDIT_NOTE, label: 'Ver Nota Crédito' },
+        VIEW_ACCOUNTING:     { app: APP_KEYS.INVOICES, event: EVENT_KEYS.COMMON.VIEW_DETAIL, label: 'Ver Contabilidad' },
     },
     CREDIT_NOTES: {
         SEARCH:              { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.SEARCH, label: 'Buscar' },
@@ -46,6 +47,7 @@ export const APP_EVENT = {
         UPDATE_STATUS:       { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.UPDATE_STATUS, label: 'Reproceso Contable' },
         PUBLISH:             { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.PUBLISH, label: 'Agregar Nota de Crédito' },
         LINK_INVOICE:        { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.LINK_INVOICE, label: 'Ver Factura' },
+        VIEW_ACCOUNTING:     { app: APP_KEYS.CREDIT_NOTES, event: EVENT_KEYS.COMMON.VIEW_DETAIL, label: 'Ver Contabilidad' },
     },
     PAYMENT_COMPLEMENTS: {
         SEARCH:              { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.SEARCH, label: 'Buscar' },

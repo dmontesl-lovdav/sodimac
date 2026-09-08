@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, formatDateReport } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -239,7 +239,7 @@ export default function ComplementContainer() {
           enableCsv
           hideCsvToolbar
           onExportAvailabilityChange={setCanExportCsv}
-          csvFilename={`Complementos de pago ${formatDate(new Date().toString(), true)}`}
+          csvFilename={`complemento_pago_${formatDateReport(new Date().toString())}`}
           enableXml
           enablePdf
           xmlAppEvent={APP_EVENT.PAYMENT_COMPLEMENTS.DOWNLOAD_XML}

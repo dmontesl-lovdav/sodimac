@@ -1,38 +1,169 @@
-// src/docs/paths/rebate.ts
 import type { OpenAPIV3 } from "openapi-types";
 
 const UUID_EXAMPLE = "209279be-37c7-4154-b3c6-df976fd7b6a";
-const UUID_PATTERN = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+const NC_UUID_EXAMPLE = "4d16b318-6e96-4d09-a759-6ce55f4f8bc9";
+
+const UUID_PATTERN =
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+
+const rebateIdParameter: OpenAPIV3.ParameterObject = {
+    in: "path",
+    name: "id",
+    required: true,
+    description:
+        "UUID interno del descuento (rebateId). No utilizar el UUID fiscal de la NC.",
+    schema: {
+        type: "string",
+        format: "uuid",
+        pattern: UUID_PATTERN,
+        example: UUID_EXAMPLE,
+    },
+};
+
+const searchParameters: OpenAPIV3.ParameterObject[] = [
+    {
+        in: "query",
+        name: "vendorNumber",
+        schema: { type: "integer", example: 34786 },
+        description: "Número exacto de proveedor",
+    },
+    {
+        in: "query",
+        name: "supplierType",
+        schema: { type: "integer" },
+        description: "Identificador del tipo de proveedor",
+    },
+    {
+        in: "query",
+        name: "documentNumber",
+        schema: { type: "string" },
+        description: "Coincidencia parcial del número de documento",
+    },
+    {
+        in: "query",
+        name: "sapDocument",
+        schema: { type: "string" },
+        description: "Coincidencia parcial del documento SAP",
+    },
+    {
+        in: "query",
+        name: "status",
+        schema: { type: "integer", example: 1 },
+        description: "1=Pendiente, 2=Aprobado, 3=Rechazado",
+    },
+    {
+        in: "query",
+        name: "source",
+        schema: { type: "integer" },
+        description: "Identificador del tipo de rebate",
+    },
+    {
+        in: "query",
+        name: "periodId",
+        schema: { type: "integer" },
+        description: "Identificador del período",
+    },
+    {
+        in: "query",
+        name: "from",
+        schema: { type: "string", format: "date-time" },
+        description: "Inicio del rango de fecha de aplicación (postingDate)",
+    },
+    {
+        in: "query",
+        name: "to",
+        schema: { type: "string", format: "date-time" },
+        description: "Fin del rango de fecha de aplicación (postingDate)",
+    },
+    {
+        in: "query",
+        name: "limit",
+        schema: {
+            type: "integer",
+            default: 20,
+            minimum: 1,
+            maximum: 1000,
+        },
+        description: "Máximo de resultados por página",
+    },
+    {
+        in: "query",
+        name: "page",
+        schema: {
+            type: "integer",
+            default: 0,
+            minimum: 0,
+        },
+        description: "Número de página comenzando en cero",
+    },
+];
+
+const rebateResponse: OpenAPIV3.ResponseObject = {
+    description: "Descuento comercial",
+    content: {
+        "application/json": {
+            schema: { $ref: "#/components/schemas/Rebate" },
+        },
+    },
+};
+
+const rebateListResponse: OpenAPIV3.ResponseObject = {
+    description: "Lista de descuentos comerciales",
+    content: {
+        "application/json": {
+            schema: {
+                type: "array",
+                items: { $ref: "#/components/schemas/Rebate" },
+            },
+        },
+    },
+};
+
+const csvResponse: OpenAPIV3.ResponseObject = {
+    description: "Archivo CSV",
+    content: {
+        "text/csv": {
+            schema: {
+                type: "string",
+                format: "binary",
+            },
+        },
+    },
+    headers: {
+        "Content-Disposition": {
+            description: "Nombre del archivo descargable",
+            schema: {
+                type: "string",
+                example: 'attachment; filename="rebates.csv"',
+            },
+        },
+    },
+};
 
 export const rebatePaths: OpenAPIV3.PathsObject = {
     "/rebates": {
         get: {
             tags: ["Rebates"],
-            summary: "List all rebates",
-            description: "Retrieve all rebates with optional relations to stamped rebates",
+            summary: "Listar descuentos comerciales",
+            description:
+                "Obtiene descuentos con su relación stampedRebate cuando existe.",
             responses: {
-                200: {
-                    description: "List of rebates",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "array",
-                                items: { $ref: "#/components/schemas/Rebate" }
-                            },
-                        }
-                    }
-                }
-            }
+                200: rebateListResponse,
+                400: { description: "Parámetros inválidos" },
+                404: { description: "Sin registros para el filtro indicado" },
+            },
         },
 
         post: {
             tags: ["Rebates"],
-            summary: "Create new rebate",
+            summary: "Crear descuento comercial",
             requestBody: {
                 required: true,
                 content: {
                     "application/json": {
-                        schema: { $ref: "#/components/schemas/CreateRebateDto" },
+                        schema: {
+                            $ref: "#/components/schemas/CreateRebateDto",
+                        },
                         example: {
                             documentNumber: "SR-2025-001",
                             referenceNumber: "REF-001-A",
@@ -45,346 +176,256 @@ export const rebatePaths: OpenAPIV3.PathsObject = {
                             postingDate: "2025-01-15T00:00:00.000Z",
                             status: 1,
                             createdBy: 1,
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             responses: {
                 201: {
-                    description: "Created",
+                    ...rebateResponse,
+                    description: "Descuento creado",
+                },
+                400: { description: "Datos de entrada inválidos" },
+            },
+        },
+    },
+
+    "/rebates/{id}/fiscal-detail": {
+        get: {
+            tags: ["Rebates"],
+            operationId: "getRebateFiscalDetail",
+            summary: "Consultar la nota de crédito relacionada con un descuento",
+            description:
+                "Obtiene el UUID de la NC, el UUID de la factura original y los " +
+                "datos para el grid: UUID, fecha de registro, importe total, serie y folio. " +
+                "Consulta exclusivamente la NC identificada por ncFiscalUuid. " +
+                "Si el descuento existe pero no tiene una NC disponible, devuelve " +
+                "HTTP 200 con creditNotes vacío y un mensaje explicativo. " +
+                "No crea ni modifica relaciones.",
+            parameters: [rebateIdParameter],
+            responses: {
+                200: {
+                    description: "Detalle fiscal del descuento",
                     content: {
                         "application/json": {
-                            schema: { $ref: "#/components/schemas/Rebate" },
-                        }
-                    }
+                            schema: {
+                                $ref: "#/components/schemas/RebateFiscalDetail",
+                            },
+                            examples: {
+                                withCreditNote: {
+                                    summary: "Descuento con NC disponible",
+                                    value: {
+                                        rebateId: UUID_EXAMPLE,
+                                        vendorNumber: 34786,
+                                        invoiceFiscalUuid: null,
+                                        ncFiscalUuid: NC_UUID_EXAMPLE,
+                                        creditNotes: [
+                                            {
+                                                id: "39a021ce-63df-4e46-a79d-5f8123186201",
+                                                uuid: NC_UUID_EXAMPLE,
+                                                registeredAt:
+                                                    "2026-09-04T20:13:52.998Z",
+                                                amount: "114.81",
+                                                series: null,
+                                                folio: "9200913182",
+                                            },
+                                        ],
+                                        message: null,
+                                    },
+                                },
+
+                                withoutRelation: {
+                                    summary: "Descuento sin relación fiscal",
+                                    value: {
+                                        rebateId: UUID_EXAMPLE,
+                                        vendorNumber: 34786,
+                                        invoiceFiscalUuid: null,
+                                        ncFiscalUuid: null,
+                                        creditNotes: [],
+                                        message:
+                                            "Este descuento todavía no tiene una nota de crédito relacionada.",
+                                    },
+                                },
+
+                                legacyRelation: {
+                                    summary: "Relación sin UUID fiscal de NC registrado",
+                                    value: {
+                                        rebateId: UUID_EXAMPLE,
+                                        vendorNumber: 34786,
+                                        invoiceFiscalUuid:
+                                            "68f7b8a0-c2e5-4d18-9f62-482be702e103",
+                                        ncFiscalUuid: null,
+                                        creditNotes: [],
+                                        message:
+                                            "La relación existente no tiene registrado el UUID fiscal de la nota de crédito.",
+                                    },
+                                },
+
+                                unavailableCreditNote: {
+                                    summary: "UUID relacionado sin documento fiscal disponible",
+                                    value: {
+                                        rebateId: UUID_EXAMPLE,
+                                        vendorNumber: 34786,
+                                        invoiceFiscalUuid: null,
+                                        ncFiscalUuid: NC_UUID_EXAMPLE,
+                                        creditNotes: [],
+                                        message:
+                                            "La nota de crédito relacionada no está disponible en el repositorio fiscal.",
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
-                400: { description: "Invalid input data" }
-            }
-        }
+                400: {
+                    description: "El identificador del descuento no es un UUID válido",
+                },
+                404: {
+                    description: "No se encontró el descuento comercial",
+                },
+                500: {
+                    description: "Error al consultar el detalle fiscal",
+                },
+            },
+        },
     },
 
     "/rebates/{id}": {
         get: {
             tags: ["Rebates"],
-            summary: "Get rebate by ID",
-            parameters: [
-                {
-                    in: "path",
-                    name: "id",
-                    required: true,
-                    description: "Rebate UUID",
-                    schema: {
-                        type: "string",
-                        pattern: UUID_PATTERN,
-                        example: UUID_EXAMPLE
-                    }
-                }
-            ],
+            summary: "Consultar descuento por UUID",
+            parameters: [rebateIdParameter],
             responses: {
-                200: {
-                    description: "Rebate found",
-                    content: {
-                        "application/json": {
-                            schema: { $ref: "#/components/schemas/Rebate" },
-                        }
-                    }
-                },
-                404: { description: "Rebate not found" }
-            }
+                200: rebateResponse,
+                400: { description: "UUID inválido" },
+                404: { description: "Descuento no encontrado" },
+            },
         },
 
         put: {
             tags: ["Rebates"],
-            summary: "Update rebate",
-            parameters: [
-                {
-                    in: "path",
-                    name: "id",
-                    required: true,
-                    description: "Rebate UUID",
-                    schema: {
-                        type: "string",
-                        pattern: UUID_PATTERN,
-                        example: UUID_EXAMPLE
-                    }
-                }
-            ],
+            summary: "Actualizar descuento",
+            parameters: [rebateIdParameter],
             requestBody: {
                 required: true,
                 content: {
                     "application/json": {
-                        schema: { $ref: "#/components/schemas/UpdateRebateDto" },
+                        schema: {
+                            $ref: "#/components/schemas/UpdateRebateDto",
+                        },
                         example: {
                             amount: "20000.00",
                             status: 2,
                             updatedBy: 1,
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             responses: {
                 200: {
-                    description: "Updated",
-                    content: {
-                        "application/json": {
-                            schema: { $ref: "#/components/schemas/Rebate" },
-                        }
-                    }
+                    ...rebateResponse,
+                    description: "Descuento actualizado",
                 },
-                404: { description: "Rebate not found" }
-            }
+                400: { description: "Datos de entrada inválidos" },
+                404: { description: "Descuento no encontrado" },
+            },
         },
 
         delete: {
             tags: ["Rebates"],
-            summary: "Delete rebate",
-            parameters: [
-                {
-                    in: "path",
-                    name: "id",
-                    required: true,
-                    description: "Rebate UUID",
-                    schema: {
-                        type: "string",
-                        pattern: UUID_PATTERN,
-                        example: UUID_EXAMPLE
-                    }
-                }
-            ],
+            summary: "Eliminar descuento",
+            parameters: [rebateIdParameter],
             responses: {
-                204: { description: "Deleted" },
-                404: { description: "Rebate not found" }
-            }
-        }
+                204: { description: "Operación de eliminación completada" },
+                400: { description: "UUID inválido" },
+                404: { description: "Descuento no encontrado" },
+            },
+        },
     },
 
     "/rebates/published": {
         get: {
             tags: ["Rebates"],
-            summary: "Get published rebates",
-            description: "Retrieve all rebates with status = 2 (published)",
+            summary: "Consultar descuentos publicados",
+            description:
+                "El servicio actual selecciona registros con status = 1. " +
+                "El nombre de la ruta se conserva por compatibilidad.",
             responses: {
-                200: {
-                    description: "List of published rebates",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "array",
-                                items: { $ref: "#/components/schemas/Rebate" }
-                            },
-                        }
-                    }
-                }
-            }
-        }
+                200: rebateListResponse,
+                400: { description: "Parámetros inválidos" },
+                404: { description: "No se encontraron descuentos" },
+            },
+        },
     },
 
     "/rebates/published/export/csv": {
         get: {
             tags: ["Rebates"],
-            summary: "Export published rebates to CSV",
-            description: "Generate CSV file with all published rebates (status = 2)",
+            summary: "Exportar descuentos publicados a CSV",
+            description:
+                "Exporta los descuentos seleccionados por el servicio listPublished, " +
+                "que actualmente utiliza status = 1.",
             responses: {
-                200: {
-                    description: "CSV file generated",
-                    content: {
-                        "text/csv": {
-                            schema: {
-                                type: "string",
-                                format: "binary"
-                            }
-                        }
-                    },
-                    headers: {
-                        "Content-Disposition": {
-                            description: "Attachment filename",
-                            schema: {
-                                type: "string",
-                                example: "attachment; filename=\"published-rebates-2025-10-07.csv\""
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                200: csvResponse,
+                400: { description: "Parámetros inválidos" },
+            },
+        },
     },
 
     "/rebates/vendor/{vendorNumber}": {
         get: {
             tags: ["Rebates"],
-            summary: "Get rebates by vendor number",
-            description: "Retrieve all rebates for a specific vendor",
+            summary: "Consultar descuentos de un proveedor",
+            description:
+                "El servicio actual limita esta consulta a descuentos con status = 1.",
             parameters: [
                 {
                     in: "path",
                     name: "vendorNumber",
                     required: true,
-                    description: "Vendor identifier",
+                    description: "Número de proveedor",
                     schema: {
                         type: "integer",
-                        example: 1001
-                    }
-                }
+                        example: 34786,
+                    },
+                },
             ],
             responses: {
-                200: {
-                    description: "List of rebates for vendor",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "array",
-                                items: { $ref: "#/components/schemas/Rebate" }
-                            },
-                        }
-                    }
-                },
-                400: { description: "Invalid vendor number" }
-            }
-        }
+                200: rebateListResponse,
+                400: { description: "Número de proveedor o parámetros inválidos" },
+                404: { description: "Sin descuentos para el proveedor" },
+            },
+        },
     },
 
     "/rebates/search": {
         get: {
             tags: ["Rebates"],
-            summary: "Search rebates with dynamic filters (Criteria API equivalent)",
-            description: "Advanced search endpoint supporting multiple filters.",
-            parameters: [
-                {
-                    in: "query",
-                    name: "vendorNumber",
-                    required: false,
-                    description: "Filter by exact vendor number",
-                    schema: { type: "integer", example: 1001 }
-                },
-                {
-                    in: "query",
-                    name: "documentNumber",
-                    required: false,
-                    description: "Filter by document number (LIKE search - partial match)",
-                    schema: { type: "string", example: "SR-2025" }
-                },
-                {
-                    in: "query",
-                    name: "sapDocument",
-                    required: false,
-                    description: "Filter by SAP document (LIKE search - partial match)",
-                    schema: { type: "string", example: "SAP-001" }
-                },
-                {
-                    in: "query",
-                    name: "status",
-                    required: false,
-                    description: "Filter by status code (1=pending, 2=published)",
-                    schema: { type: "integer", example: 1 }
-                },
-                {
-                    in: "query",
-                    name: "periodId",
-                    required: false,
-                    description: "Filter by period identifier",
-                    schema: { type: "integer", example: 202501 }
-                },
-                {
-                    in: "query",
-                    name: "limit",
-                    required: false,
-                    description: "Results per page (max 1000)",
-                    schema: { type: "integer", default: 20, minimum: 1, maximum: 1000 }
-                },
-                {
-                    in: "query",
-                    name: "page",
-                    required: false,
-                    description: "Page number (0-indexed)",
-                    schema: { type: "integer", default: 0, minimum: 0 }
-                }
-            ],
+            summary: "Buscar descuentos con filtros",
+            description:
+                "Permite filtrar por proveedor, tipo de proveedor, documento, SAP, " +
+                "estatus, origen, período y fecha de aplicación.",
+            parameters: searchParameters,
             responses: {
-                200: {
-                    description: "List of matching rebates",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "array",
-                                items: { $ref: "#/components/schemas/Rebate" }
-                            },
-                        }
-                    }
-                },
-                400: { description: "Invalid filter parameters" }
-            }
-        }
+                200: rebateListResponse,
+                400: { description: "Filtros inválidos" },
+                404: { description: "Sin registros para los filtros indicados" },
+            },
+        },
     },
 
     "/rebates/export/csv": {
         get: {
             tags: ["Rebates"],
-            summary: "Export filtered rebates to CSV",
-            description: "Generate CSV file with rebates matching the provided filters. Supports all search filters from /rebates/search endpoint.",
-            parameters: [
-                {
-                    in: "query",
-                    name: "vendorNumber",
-                    required: false,
-                    description: "Filter by exact vendor number",
-                    schema: { type: "integer" }
-                },
-                {
-                    in: "query",
-                    name: "documentNumber",
-                    required: false,
-                    description: "Filter by document number (LIKE search)",
-                    schema: { type: "string" }
-                },
-                {
-                    in: "query",
-                    name: "status",
-                    required: false,
-                    description: "Filter by status code",
-                    schema: { type: "integer" }
-                },
-                {
-                    in: "query",
-                    name: "periodId",
-                    required: false,
-                    description: "Filter by period identifier",
-                    schema: { type: "integer" }
-                },
-                {
-                    in: "query",
-                    name: "dueDateFrom",
-                    required: false,
-                    schema: { type: "string", format: "date" }
-                },
-                {
-                    in: "query",
-                    name: "dueDateTo",
-                    required: false,
-                    schema: { type: "string", format: "date" }
-                }
-            ],
+            summary: "Exportar descuentos filtrados a CSV",
+            description:
+                "Utiliza los mismos filtros que /rebates/search. " +
+                "El rango from/to se aplica a postingDate.",
+            parameters: searchParameters,
             responses: {
-                200: {
-                    description: "CSV file generated",
-                    content: {
-                        "text/csv": {
-                            schema: {
-                                type: "string",
-                                format: "binary"
-                            }
-                        }
-                    },
-                    headers: {
-                        "Content-Disposition": {
-                            description: "Attachment filename",
-                            schema: {
-                                type: "string",
-                                example: "attachment; filename=\"filtered-rebates-2025-10-07.csv\""
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                200: csvResponse,
+                400: { description: "Filtros inválidos" },
+            },
+        },
+    },
 };

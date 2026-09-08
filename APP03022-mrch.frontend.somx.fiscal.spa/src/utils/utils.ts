@@ -66,6 +66,16 @@ export function formatDate(date: string, includeHour:boolean=false){
     });
 }
 
+export function formatDateReport(date: string): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const yyyymmdd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const hh24miss = `${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`;
+  return `${yyyymmdd}_${hh24miss}`;
+}
+
 /** Separador de miles sin regex con backtracking (evita S5852 / ReDoS). */
 export function insertThousandsSeparators(intPart: string): string {
     const negative = intPart.startsWith("-");
@@ -149,19 +159,11 @@ const escapeCSVValues = (values: string[] | number[]) => {
 
 export function exportToCSV(headers: any[], rows: any[], filename:string){
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, "0");
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
     
     // Convertir filename a formato slug (tipo-de-tabla)
-    const slugFilename = filename
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+
     
-    const formattedFilename = `${slugFilename}-${day}-${month}-${year}-${hours}-${minutes}.csv`;
+    const formattedFilename = `${filename}.csv`;
     
     const csvContent = '\uFEFF' + [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

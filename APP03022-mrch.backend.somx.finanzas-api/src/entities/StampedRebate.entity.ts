@@ -33,4 +33,11 @@ export class StampedRebate {
 
     @Column({ name: 'updated_at', type: 'timestamp', nullable: true })
     updatedAt?: Date | null;
+
+    @Column({
+        name: "nc_fiscal_uuid",
+        type: "uuid",
+        nullable: true,
+    })
+    ncFiscalUuid?: string | null;
 }

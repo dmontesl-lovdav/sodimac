@@ -93,4 +93,8 @@ export interface Invoice {
   guiaEntrega: string | null;
   xmlContent: string | null;
   notasCreditoRelacionadas: any[];
+  documentNumber?: string | null;
+  sapDocument?: string | null;
+  sapMessage?: string | null;
+  accountingDate?: string | null;
 }

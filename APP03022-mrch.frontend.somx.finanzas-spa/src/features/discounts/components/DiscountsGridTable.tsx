@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { GenericTable } from "@shared/components/ui";
 import type { RowAction } from "@/shared/components/ui/table/GenericTable";
@@ -6,20 +6,24 @@ import {
     formatDate,
     formatAmount,
     capitalizeWord,
-    SelectableOption,
 } from "@/utils/utils";
+import type { SelectableOption } from "@/utils/utils";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
 import type { Rebate, RebateFilters } from "../interfaces";
-import { getRebateVendorNumber, StatusVerDescuentoComercial, StatusRelacionarNotaCredito } from "../interfaces";
+import {
+    getRebateVendorNumber,
+    StatusVerDescuentoComercial,
+    StatusRelacionarNotaCredito,
+} from "../interfaces";
 import { REBATE_DETAIL_ROUTE } from "../constants";
 import { buildRebateDetailSearchParams } from "../utils/rebateDetailQuery";
+import { saveDiscountSearchRestore } from "../utils/discountSearchRestore";
 
 import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import { APP_EVENT, useSecurityContext } from "@shared/security";
-import { saveDiscountSearchRestore } from "../utils/discountSearchRestore";
 
 interface Props {
     lastSearch?: RebateFilters | null;
@@ -31,7 +35,10 @@ interface Props {
     loading: boolean;
     onChangePage: (page: number) => void;
     onChangePerPage: (size: number) => void;
-    renderStatus: (status: number) => { type: string; label: string };
+    renderStatus: (status: number) => {
+        type: string;
+        label: string;
+    };
     rebateTypeOptions: SelectableOption<string>[];
     providers: any[];
 }
@@ -46,29 +53,59 @@ export default function DiscountsGridTable({
 }: Props) {
     const { can } = useSecurityContext();
 
-    const returnProvider = (r: Rebate) => {
-        return providers.find((item) => item.supplierNumber == r.vendorNumber);
-    };
+    // Bypass visual exclusivo para desarrollo en la máquina local.
+    const isLocalDevelopment =
+        process.env.NODE_ENV === "development" &&
+        typeof window !== "undefined" &&
+        ["localhost", "127.0.0.1", "[::1]", "::1"].includes(
+            window.location.hostname
+        );
 
-    const getTipoLabel = (r: Rebate) =>
-        rebateTypeOptions.find((item) => item.value === String(r.source))?.label ?? "--";
+    const returnProvider = useCallback(
+        (r: Rebate) =>
+            providers.find(
+                (item) => item.supplierNumber == r.vendorNumber
+            ),
+        [providers]
+    );
+
+    const getTipoLabel = useCallback(
+        (r: Rebate) =>
+            rebateTypeOptions.find(
+                (item) => item.value === String(r.source)
+            )?.label ?? "--",
+        [rebateTypeOptions]
+    );
 
     const columns = [
-        { header: "Documento", render: (r: Rebate) => r.documentNumber ?? "--" },
+        {
+            header: "Documento",
+            render: (r: Rebate) => r.documentNumber ?? "--",
+        },
         {
             header: "Tipo Rebate",
             render: (r: Rebate) => getTipoLabel(r),
         },
-        { header: "Documento SAP", render: (r: Rebate) => r.sapDocument ?? "--" },
-        { header: "Importe", render: (r: Rebate) => formatAmount(r.amount) },
-        { header: "Período", render: (r: Rebate) => r.periodId ?? "--" },
+        {
+            header: "Documento SAP",
+            render: (r: Rebate) => r.sapDocument ?? "--",
+        },
+        {
+            header: "Importe",
+            render: (r: Rebate) => formatAmount(r.amount),
+        },
+        {
+            header: "Período",
+            render: (r: Rebate) => r.periodId ?? "--",
+        },
         {
             header: "Número Proveedor",
             render: (r: Rebate) => r.vendorNumber ?? "--",
         },
         {
             header: "Nombre Proveedor",
-            render: (r: Rebate) => returnProvider(r)?.businessName ?? "--",
+            render: (r: Rebate) =>
+                returnProvider(r)?.businessName ?? "--",
         },
         {
             header: "Tipo Proveedor",
@@ -79,7 +116,8 @@ export default function DiscountsGridTable({
         },
         {
             header: "Fecha Vencimiento",
-            render: (r: Rebate) => (r.dueDate ? formatDate(r.dueDate) : "--"),
+            render: (r: Rebate) =>
+                r.dueDate ? formatDate(r.dueDate) : "--",
         },
         {
             header: "Estatus",
@@ -99,13 +137,26 @@ export default function DiscountsGridTable({
                     action: {
                         title: "Ver descuento relacionado",
                         icon: eyeIconUrl,
-                        onClick: (r: Rebate, nav: NavigateFunction) => {
-                            const detailParams = buildRebateDetailSearchParams(r);
-                            detailParams.set("tipoRebate", getTipoLabel(r));
-                            nav(`${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`);
+                        onClick: (
+                            r: Rebate,
+                            nav: NavigateFunction
+                        ) => {
+                            const detailParams =
+                                buildRebateDetailSearchParams(r);
+
+                            detailParams.set(
+                                "tipoRebate",
+                                getTipoLabel(r)
+                            );
+
+                            nav(
+                                `${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`
+                            );
                         },
                         isDisabled: (r: Rebate) =>
-                            !StatusVerDescuentoComercial.includes(r.status ?? 0),
+                            !StatusVerDescuentoComercial.includes(
+                                r.status ?? 0
+                            ),
                     } satisfies RowAction<Rebate>,
                 },
                 {
@@ -116,49 +167,69 @@ export default function DiscountsGridTable({
                         onClick: (r: Rebate) => {
                             const vendorNum = getRebateVendorNumber(r);
                             const tipoLabel = getTipoLabel(r);
+
                             const fiscalParams = new URLSearchParams({
                                 numeroProveedor: String(vendorNum ?? ""),
-                                numeroDocumento: String(r.documentNumber ?? ""),
-                                referenciaDocumento: r.documentReference ?? r.referenceNumber ?? "",
+                                numeroDocumento: String(
+                                    r.documentNumber ?? ""
+                                ),
+                                referenciaDocumento:
+                                    r.documentReference ??
+                                    r.referenceNumber ??
+                                    "",
                                 rebateId: String(r.rebateId ?? ""),
                                 supplierNumber: String(vendorNum ?? ""),
-                                documentNumber: String(r.documentNumber ?? ""),
-                                documentReference: r.documentReference ?? r.referenceNumber ?? "",
+                                documentNumber: String(
+                                    r.documentNumber ?? ""
+                                ),
+                                documentReference:
+                                    r.documentReference ??
+                                    r.referenceNumber ??
+                                    "",
                                 sapDocument: String(r.sapDocument ?? ""),
                                 postingDate: String(r.postingDate ?? ""),
                                 dueDate: String(r.dueDate ?? ""),
                                 amount: String(r.amount ?? ""),
                                 periodId: String(r.periodId ?? ""),
                                 tipoRebate: tipoLabel,
-                                vendorName: returnProvider(r)?.businessName ?? "--",
+                                vendorName:
+                                    returnProvider(r)?.businessName ??
+                                    "--",
                             });
+
                             if (r.stampedRebate?.invoiceFiscalUuid) {
-                                fiscalParams.set("uuid", String(r.stampedRebate.invoiceFiscalUuid));
+                                fiscalParams.set(
+                                    "uuid",
+                                    String(
+                                        r.stampedRebate.invoiceFiscalUuid
+                                    )
+                                );
                             }
-                            fiscalParams.set("restoreSearch", "1");
-                            if (lastSearch) {
-                                saveDiscountSearchRestore({
-                                    ...lastSearch,
-                                    pageNumber: props.page,
-                                    pageSize: props.perPage,
-                                });
-                            }
-                            window.location.href = buildFiscalSpaUrl(
+
+                            const fiscalUrl = buildFiscalSpaUrl(
                                 "publicar-nota-credito",
                                 fiscalParams
                             );
+
+                            // Guardar la búsqueda antes de salir a Fiscal.
+                            if (lastSearch) {
+                                saveDiscountSearchRestore(lastSearch);
+                            }
+
+                            window.location.href = fiscalUrl;
                         },
                         isDisabled: (r: Rebate) =>
-                            !StatusRelacionarNotaCredito.includes(r.status ?? 0),
+                            !StatusRelacionarNotaCredito.includes(
+                                r.status ?? 0
+                            ),
                     } satisfies RowAction<Rebate>,
                 },
             ] as const,
-        // providers / rebateTypeOptions used inside handlers via closure; keep deps aligned
-        [providers, rebateTypeOptions, lastSearch, props.page, props.perPage]
+        [getTipoLabel, returnProvider, lastSearch]
     );
 
     const actions: RowAction<Rebate>[] = rowActionDescriptors
-        .filter(({ gate }) => can(gate))
+        .filter(({ gate }) => isLocalDevelopment || can(gate))
         .map(({ action }) => action);
 
     return (

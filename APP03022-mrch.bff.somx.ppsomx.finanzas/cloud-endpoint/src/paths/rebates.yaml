@@ -315,3 +315,48 @@ rebates-by-uuid:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
+rebates-fiscal-detail:
+  get:
+    tags:
+      - rebates
+    summary: Consultar detalle fiscal del descuento comercial
+    description: >
+      Obtiene los UUID fiscales relacionados y los datos de la nota de
+      credito para mostrar UUID, fecha de registro, importe, serie y folio.
+      El parametro uuid corresponde al UUID interno del descuento comercial.
+      Cuando el descuento existe pero no tiene una nota de credito disponible,
+      devuelve HTTP 200 con creditNotes vacio y un mensaje informativo.
+    operationId: getRebateFiscalDetail
+    produces:
+      - application/json
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+        description: UUID interno del descuento comercial (rebateId)
+    responses:
+      "200":
+        description: Detalle fiscal del descuento comercial
+        schema:
+          $ref: "../definitions/rebates.yaml#/RebateFiscalDetailDto"
+      "400":
+        description: UUID del descuento comercial invalido
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Descuento comercial no encontrado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

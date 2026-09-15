@@ -56,6 +56,20 @@ export const purchaseOrdersPaths: OpenAPIV3.PathsObject = {
                 },
                 {
                     in: "query",
+                    name: "receptionNumber",
+                    required: false,
+                    description: "Reception number (partial match, e.g. 7 matches 7, 77, 87)",
+                    schema: { type: "string", example: "7" },
+                },
+                {
+                    in: "query",
+                    name: "receptionTypeId",
+                    required: false,
+                    description: "IdTipoRecepcion (CatTipoRecepcion)",
+                    schema: { type: "number", example: 1 },
+                },
+                {
+                    in: "query",
                     name: "pageNumber",
                     required: true,
                     description: "Page Number",
@@ -280,6 +294,7 @@ export const purchaseOrdersPaths: OpenAPIV3.PathsObject = {
                             orderNumber: "odn45",
                             supplierNumber: 45632,
                             status: 0,
+                            receptionTypeId: 1,
                             receptionId: "2e9c22e4-6b43-4936-92d4-3d437f812eba",
                             pageNumber: 1,
                             pageSize: 10

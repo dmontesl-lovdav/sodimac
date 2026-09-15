@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as managementController from '@/controllers/catalogManagement.controller.js';
 import * as elementController from '@/controllers/catalogElement.controller.js';
 import * as layoutController from '@/controllers/layoutValidation.controller.js';
+import { requirePermission } from '@/middlewares/permission.middleware.js';
 
 const router = Router();
 
@@ -17,9 +18,9 @@ router.post('/:catalogId/elementos', elementController.createElement);
 router.get('/:catalogId/detalle', elementController.getCatalogDetail);
 
 router.get('/', managementController.getCatalogs);
-router.post('/', managementController.createCatalog);
+router.post('/', requirePermission('EVT0073'), managementController.createCatalog);
 router.get('/:id', managementController.getCatalogById);
-router.put('/:id', managementController.updateCatalog);
+router.put('/:id', requirePermission('EVT0077'), managementController.updateCatalog);
 
 export default router;
 

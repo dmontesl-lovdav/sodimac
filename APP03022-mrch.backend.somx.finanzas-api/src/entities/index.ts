@@ -8,6 +8,7 @@ export { VersionCatalog } from './VersionCatalog.entity.js';
 export { PurchaseOrder } from './PurchaseOrder.entity.js';
 export { Rebate } from './Rebate.entity.js';
 export { SapDocument } from './SapDocument.entity.js';
+export { SapDocumentFiscalUuid } from './SapDocumentFiscalUuid.entity.js';
 export { Reception } from './Reception.entity.js';
 export { ReceptionSku } from './ReceptionSku.entity.js';
 export { ShippingGuide } from './ShippingGuide.entity.js';

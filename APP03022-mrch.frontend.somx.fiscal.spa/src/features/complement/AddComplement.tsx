@@ -116,12 +116,9 @@ export default function AddComplement() {
   const FBC_URL = `${window.location.origin}/`;
   const isPaymentsFlow = Boolean(parsePaymentQuery(location.search));
   const paymentsListReturnPath = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const restore = params.get("restoreSearch")?.trim().toLowerCase();
-    const withRestore = restore === "1" || restore === "true";
     const listPath = `${FBC_URL}finanzas#/finanzas/pagos`;
-    return withRestore ? `${listPath}?restoreSearch=1` : listPath;
-  }, [FBC_URL, location.search]);
+    return isPaymentsFlow ? `${listPath}?restoreSearch=1` : listPath;
+  }, [FBC_URL, isPaymentsFlow]);
   const traceFolioPayload = useMemo<TraceFolioPayload>(
     () => ({
       idAplicativo: "fiscal-front",

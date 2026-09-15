@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as ctrl from "@/controllers/purchaseOrder.controller.js";
 import { validateBody, validateQuery } from "@/middlewares/validate.js";
+import { requirePermission } from "@/middlewares/permission.middleware.js";
 import { activityLogger, logBeforeMethod } from "@/middlewares/logger.js";
 import {
     CreatePurchaseOrderSchema,
@@ -21,9 +22,9 @@ router.use(activityLogger(controllerName));
 
 router.get("/listReception", validateBody(ListReceptionQuerySchema), logBeforeMethod("listReception"), ctrl.listReception);
 router.get("/listReceptionV2", validateQuery(ListReceptionQuerySchemaV2), logBeforeMethod("listReceptionV2"), ctrl.listReceptionV2);
-router.patch("/updateReception", validateBody(UpdateStatusReceptionSchema), logBeforeMethod("updateReception"), ctrl.updateReception);
+router.patch("/updateReception", requirePermission("EVT004"), validateBody(UpdateStatusReceptionSchema), logBeforeMethod("updateReception"), ctrl.updateReception);
 router.get("/reception/:uuid", logBeforeMethod("getReceptionById"), ctrl.getReceptionById);
-router.patch("/reception/:uuid", validateBody(UpdateStatusReceptionSchemaByUuid), logBeforeMethod("updateReceptionStatusByUuid"), ctrl.updateReceptionStatusByUuid);
+router.patch("/reception/:uuid", requirePermission("EVT004"), validateBody(UpdateStatusReceptionSchemaByUuid), logBeforeMethod("updateReceptionStatusByUuid"), ctrl.updateReceptionStatusByUuid);
 
 router.post("/", validateBody(CreatePurchaseOrderSchema), logBeforeMethod("save"), ctrl.save);
 router.get("/", validateQuery(ListPurchaseOrderQuerySchema), logBeforeMethod("list"), ctrl.list);

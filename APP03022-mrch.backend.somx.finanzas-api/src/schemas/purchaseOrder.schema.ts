@@ -22,8 +22,14 @@ export const ListPurchaseOrderQuerySchema = z.object({
     purchaseOrderId: z.string().optional(),
     orderNumber: z.string().optional(),
     originId: optionalQueryInt(),
+    receptionTypeId: optionalQueryInt(),
     supplierNumber: optionalQueryInt(),
     status: optionalQueryInt(),
+    receptionNumber: z.preprocess(
+        (val) =>
+            val === "" || val === null || typeof val === "undefined" ? undefined : String(val),
+        z.string().trim().min(1).optional()
+    ),
     pageNumber: z.string(),
     pageSize: z.string()
 });

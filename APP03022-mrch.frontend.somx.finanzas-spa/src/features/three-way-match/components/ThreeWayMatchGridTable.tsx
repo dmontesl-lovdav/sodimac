@@ -118,7 +118,7 @@ export default function ThreeWayMatchGridTable({
         {
             header: "Subtotal Factura",
             render: (r: ThreeWayMatchRecord) =>
-                fmtMoney(r.montoFactura),
+                fmtMoney(r.subtotalFactura),
         },
         {
             header: "Monto Factura",

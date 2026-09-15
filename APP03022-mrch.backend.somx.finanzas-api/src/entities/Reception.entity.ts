@@ -29,6 +29,10 @@ export class Reception {
     @Column({ name: 'origin_id', type: 'numeric', nullable: true })
     originId?: number;
 
+    /** IdTipoRecepcion — CatTipoRecepcion (numérico) */
+    @Column({ name: 'reception_type_id', type: 'numeric', precision: 3, nullable: true })
+    receptionTypeId?: number;
+
     @Column({ name: 'destination_id', type: 'numeric', nullable: true })
     destinationId?: number;
 

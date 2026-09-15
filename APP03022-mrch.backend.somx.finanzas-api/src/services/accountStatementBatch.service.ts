@@ -9,6 +9,11 @@ import type { Reception } from '@/entities/Reception.entity.js';
 import type { Rebate } from '@/entities/Rebate.entity.js';
 import type { FiscalPayment } from '@/entities/FiscalPayment.entity.js';
 import type { BatchAccountStatementBody } from '@/schemas/accountStatement.schema.js';
+import {
+    ACCOUNT_STATEMENT_CANCELLED_INVOICE_STATUS,
+    isExcludedInvoiceOrCreditNoteStatus,
+    isExcludedReceptionStatus,
+} from '@/utils/accountStatementExcludedStatuses.js';
 
 // ─── Tablas auxiliares (tenant_finance) ──────────────────────────────────────
 const T_PO       = 'tenant_finance.account_statement_purchase_order';
@@ -219,8 +224,9 @@ async function findInvoicesAndCreditNotes(
          WHERE a.supplier_number = $1
            AND i.document_type IN ('I', 'E')
            AND i.issue_date BETWEEN $2 AND $3
+           AND COALESCE(i.status, -1) <> $4
          ORDER BY i.document_type DESC, i.issue_date ASC`,
-        [vendorNumber, start, end]
+        [vendorNumber, start, end, ACCOUNT_STATEMENT_CANCELLED_INVOICE_STATUS]
     );
     return rows as InvoiceRow[];
 }
@@ -292,12 +298,19 @@ export async function batchGenerate(body: BatchAccountStatementBody): Promise<Ba
                     findInvoicesAndCreditNotes(vendorNumber, periodStart, periodEnd),
                 ]);
 
-            const facturas     = invoiceRows.filter(i => i.document_type === 'I');
-            const notasCredito = invoiceRows.filter(i => i.document_type === 'E');
+            const facturas     = invoiceRows.filter(
+                i => i.document_type === 'I' && !isExcludedInvoiceOrCreditNoteStatus(i.status)
+            );
+            const notasCredito = invoiceRows.filter(
+                i => i.document_type === 'E' && !isExcludedInvoiceOrCreditNoteStatus(i.status)
+            );
+            const receptionsActive = receptions.filter(
+                rec => !isExcludedReceptionStatus(rec.status)
+            );
 
             await Promise.all([
                 rawInsert(T_PO,       purchaseOrders.map(po  => mapPurchaseOrder(po,        statementUuid))),
-                rawInsert(T_REC,      receptions.map(rec     => mapReception(rec,            statementUuid))),
+                rawInsert(T_REC,      receptionsActive.map(rec     => mapReception(rec,            statementUuid))),
                 rawInsert(T_DISCOUNT, rebates.map(rb         => mapDiscount(rb,              statementUuid))),
                 rawInsert(T_PAYMENT,  payments.map(fp        => mapPayment(fp,               statementUuid))),
                 rawInsert(T_INVOICE,  facturas.map(inv       => mapInvoice(inv,              statementUuid))),

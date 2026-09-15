@@ -30,6 +30,11 @@ import { Supplier } from '@/response/GenericCatalogDetails.dto.js';
 import 'dotenv/config';
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as constants from "@/constants/catalogConstantsCodes.js";
+import {
+    buildReceptionNumberIlikePattern,
+    receptionNumberContainsQuery,
+} from "@/utils/receptionNumberFilter.js";
+import * as POUtils from "@/utils/purchaseOrder.utils.js";
 
 
 
@@ -86,9 +91,31 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
         const supplierList = await svcAxios.GetSuppliers(request.authToken ?? '');
 
         const dto: ListPurchaseOrderQueryDto = ListPurchaseOrderQuerySchema.parse(request.query);
+        const receptionNumberQuery = dto.receptionNumber?.trim();
+        const receptionJoinOn = [
+            "reception.status != 8",
+            "reception.receptionDate BETWEEN :startDate AND :endDate",
+        ];
+        const receptionJoinParams: Record<string, unknown> = {
+            startDate: dto.purchaseOrderDateAtInitial,
+            endDate: dto.purchaseOrderDateAtEnd,
+        };
+        if (receptionNumberQuery) {
+            receptionJoinOn.push(
+                "CAST(reception.receptionNumber AS text) ILIKE :receptionNumberPattern ESCAPE '\\'"
+            );
+            receptionJoinParams.receptionNumberPattern =
+                buildReceptionNumberIlikePattern(receptionNumberQuery);
+        }
+
         const purchaseOrderQuery = await datasource.manager
             .createQueryBuilder(PurchaseOrder, 'purchaseOrder')
-            .leftJoinAndSelect('purchaseOrder.receptions', 'reception', ' reception.status != 8 ')
+            .innerJoinAndSelect(
+                'purchaseOrder.receptions',
+                'reception',
+                receptionJoinOn.join(" AND "),
+                receptionJoinParams,
+            )
             .leftJoinAndSelect('reception.receptionSkus', 'receptionSku')
             .leftJoinAndSelect('purchaseOrder.shippingGuidePurchaseOrders', 'shippingGuidePurchaseOrder')
             .leftJoinAndSelect('shippingGuidePurchaseOrder.shippingGuide', 'shippingGuide')
@@ -109,6 +136,15 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             }
         );
 
+        if (receptionNumberQuery) {
+            purchaseOrderQuery.andWhere(
+                "CAST(reception.receptionNumber AS text) ILIKE :receptionNumberPattern ESCAPE '\\'",
+                {
+                    receptionNumberPattern: buildReceptionNumberIlikePattern(receptionNumberQuery),
+                }
+            );
+        }
+
         if (dto.supplierNumber) {
             console.log("[purchaseOrder.list] applying supplierNumber:", dto.supplierNumber);
             purchaseOrderQuery.andWhere("purchaseOrder.supplierNumber = :supplierNumber", { supplierNumber: dto.supplierNumber });
@@ -122,6 +158,12 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
         if (dto.originId) {
             console.log("[purchaseOrder.list] applying originId:", dto.originId);
             purchaseOrderQuery.andWhere("purchaseOrder.originId = :originId", { originId: dto.originId });
+        }
+
+        if (dto.receptionTypeId) {
+            purchaseOrderQuery.andWhere("reception.receptionTypeId = :receptionTypeId", {
+                receptionTypeId: dto.receptionTypeId,
+            });
         }
 
         if (typeof dto.status === "number" && dto.status !== 8) {
@@ -152,6 +194,32 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             { activeSupplierNumbers },
         );
 
+        const securityTypeIds = (request.security?.types ?? [])
+            .map((t) => Number(String(t).replace(/\D/g, "")))
+            .filter((n) => !Number.isNaN(n) && n > 0);
+
+        if (securityTypeIds.length > 0) {
+            const allowedByTypeSupplierNumbers = await svc.getSupplierNumbersByTypesForList(securityTypeIds);
+            if (allowedByTypeSupplierNumbers.length === 0) {
+                const emptyPage: ResponsePageableDTO = {
+                    content: [],
+                    totalElements: 0,
+                    numberOfElements: 0,
+                    totalPages: 0,
+                    pageNumber: parseInt(dto.pageNumber),
+                    pageSize: parseInt(dto.pageSize),
+                };
+                return response.json({
+                    ...ResponseHandler.responseBuilder("", emptyPage, 0, StatusCodes.OK, true, ""),
+                    trace_id: getTraceId(),
+                });
+            }
+            purchaseOrderQuery.andWhere(
+                "purchaseOrder.supplierNumber IN (:...securitySupplierNumbers)",
+                { securitySupplierNumbers: allowedByTypeSupplierNumbers },
+            );
+        }
+
         const skip = (parseInt(dto.pageNumber) - 1) * parseInt(dto.pageSize);
 
         console.log("[purchaseOrder.list] pagination:", {
@@ -166,7 +234,20 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             .skip(skip)
             .take(parseInt(dto.pageSize))
             .getMany();
-        const result = resultTmp as PurchaseOrderExtended[];
+        const result = (resultTmp as PurchaseOrderExtended[]).filter((item) => {
+            if (receptionNumberQuery) {
+                item.receptions = (item.receptions ?? []).filter((reception) =>
+                    receptionNumberContainsQuery(reception.receptionNumber, receptionNumberQuery)
+                );
+            }
+            if (dto.receptionTypeId) {
+                item.receptions = (item.receptions ?? []).filter(
+                    (reception) => Number(reception.receptionTypeId) === Number(dto.receptionTypeId)
+                );
+            }
+            if (!receptionNumberQuery && !dto.receptionTypeId) return true;
+            return (item.receptions?.length ?? 0) > 0;
+        });
 
         const _numberOfElements = result.length;
         const _totalItems = Number(totalCount?.valueOf() == null ? 0 : Number(totalCount?.valueOf()));
@@ -349,6 +430,7 @@ export async function getReceptionById(request: AuthenticatedRequest, response: 
         (order as any).supplier = foundSupplier;
         rowExtended.supplier = foundSupplier;
         rowExtended.vendorName = foundSupplier?.businessName ?? "";
+        await POUtils.enrichReceptionsListOriginCatalog([row], request.authToken ?? "");
         const data = {
             ...rowExtended,
             order: order,
@@ -472,6 +554,7 @@ export async function listReceptionV2(request: AuthenticatedRequest, response: R
             orderNumber: q.orderNumber,
             status: q.status,
             receptionId: q.receptionId,
+            ...(q.receptionTypeId !== undefined ? { receptionTypeId: q.receptionTypeId } : {}),
             pageNumber : parseInt(q.pageNumber,10),
             pageSize : parseInt(q.pageSize,10)
         };

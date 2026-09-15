@@ -159,6 +159,23 @@ export async function getActiveSupplierNumbers(
         .filter((n) => !Number.isNaN(n));
 }
 
+export async function getActiveSupplierNumbersByTypes(
+    supplierTypeIds: number[],
+): Promise<number[]> {
+    if (supplierTypeIds.length === 0) return [];
+
+    const supplierRepo = getDataSource().getRepository(SharedSupplier);
+    const suppliers = await supplierRepo.find({
+        where: { status: 1, supplierTypeId: In(supplierTypeIds) },
+        select: ["supplierNumber"],
+        order: { id: "ASC" },
+    });
+
+    return suppliers
+        .map((supplier) => Number(supplier.supplierNumber))
+        .filter((n) => !Number.isNaN(n));
+}
+
 export async function getAllSuppliers(
     tipoProveedorList: GenericCatalogDetails[],
 ): Promise<Supplier[]> {

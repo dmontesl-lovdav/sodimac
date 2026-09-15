@@ -378,13 +378,13 @@ export async function create(req: AuthenticatedRequest, dto: CreatePurchaseOrder
 
     let receptionsList: DeepPartial<Reception>[] = [];
     let receptionsSkuList: Partial<ReceptionSku>[] = [];
-    const { supplier, tipoReceptionSodimacList }
-        : { supplier: Supplier | undefined; tipoReceptionSodimacList: GenericCatalogDetails[]; }
+    const { supplier, tipoReceptionSodimacList, tipoRecepcionList }
+        : { supplier: Supplier | undefined; tipoReceptionSodimacList: GenericCatalogDetails[]; tipoRecepcionList: GenericCatalogDetails[]; }
         = await POUtils.getCatalogs(dto, token);
     if (supplier == undefined) {
         throw new Error("No existe el proveedor en el catalogo de proveedores. Proveedor: " + dto.supplierNumber);
     }
-    POUtils.fillReceptionList(dto, supplier, receptionsSkuList, tipoReceptionSodimacList, receptionsList);
+    POUtils.fillReceptionList(dto, supplier, receptionsSkuList, tipoReceptionSodimacList, receptionsList, tipoRecepcionList);
 
     //Valida si la OC ya existe en la base
     let purchaseOrder = await POUtils.getPO(dto);
@@ -432,6 +432,12 @@ export async function getActiveSupplierNumbersForList(): Promise<number[]> {
     return sharedCatalogService.getActiveSupplierNumbers();
 }
 
+export async function getSupplierNumbersByTypesForList(
+    supplierTypeIds: number[],
+): Promise<number[]> {
+    return sharedCatalogService.getActiveSupplierNumbersByTypes(supplierTypeIds);
+}
+
 /** Listado GET `/purchase-orders`: enriquece cada recepción anidada con `originName` (catálogo BFF). */
 export async function enrichPurchaseOrdersRecepcionesOriginCatalog(
     purchaseOrders: PurchaseOrder[],
@@ -441,8 +447,10 @@ export async function enrichPurchaseOrdersRecepcionesOriginCatalog(
         return;
     }
     const lookup = await POUtils.fetchReceptionOriginIdToLabel(token);
+    const typeLookup = await POUtils.fetchReceptionTypeIdToLabel(token);
     for (const po of purchaseOrders) {
         POUtils.applyOriginCatalogLabels(po.receptions ?? [], lookup);
+        POUtils.applyReceptionTypeCatalogLabels(po.receptions ?? [], typeLookup);
     }
 }
 

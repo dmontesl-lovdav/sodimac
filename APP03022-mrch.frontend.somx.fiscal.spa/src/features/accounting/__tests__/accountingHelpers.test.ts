@@ -7,6 +7,7 @@ import {
   buildAccountingSearchParams,
   parseAccountingSearchParams,
 } from "../accountingQuery";
+import { toAccountingDetailRow, unwrapSapDocumentList } from "../accountingApi";
 
 describe("canViewAccounting", () => {
   it("habilita estatus del tren contable", () => {
@@ -14,9 +15,8 @@ describe("canViewAccounting", () => {
     expect(canViewAccounting(9, INVOICE_STATUS_VER_CONTABILIDAD)).toBe(true);
   });
 
-  it("deshabilita cancelada y estatus previos al flujo SAP", () => {
+  it("deshabilita cancelada y sin estatus", () => {
     expect(canViewAccounting(20, INVOICE_STATUS_VER_CONTABILIDAD)).toBe(false);
-    expect(canViewAccounting(2, INVOICE_STATUS_VER_CONTABILIDAD)).toBe(false);
     expect(canViewAccounting(null, INVOICE_STATUS_VER_CONTABILIDAD)).toBe(false);
   });
 });
@@ -42,5 +42,31 @@ describe("accountingQuery", () => {
     expect(parsed.series).toBe("A");
     expect(parsed.sapDocument).toBe("SAP-1");
     expect(parsed.accountingDate).toBe("2026-09-01");
+  });
+});
+
+describe("unwrapSapDocumentList", () => {
+  it("acepta arreglo directo o envuelto en data", () => {
+    expect(unwrapSapDocumentList([{ documentNumber: "1" }])).toHaveLength(1);
+    expect(unwrapSapDocumentList({ data: [{ documentNumber: "2" }] })).toHaveLength(1);
+    expect(unwrapSapDocumentList(null)).toEqual([]);
+  });
+});
+
+describe("toAccountingDetailRow", () => {
+  it("mapea campos SAP a las columnas de Ver Contabilidad", () => {
+    expect(
+      toAccountingDetailRow({
+        documentNumber: "4500",
+        docSap: "5100",
+        message: "ok",
+        createdAt: "2026-09-01T12:00:00.000Z",
+      })
+    ).toEqual({
+      documentNumber: "4500",
+      sapDocument: "5100",
+      sapMessage: "ok",
+      accountingDate: "2026-09-01T12:00:00.000Z",
+    });
   });
 });

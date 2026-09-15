@@ -220,7 +220,7 @@ export interface OrdersFilters {
   providerType?: string | number;
   purchaseOrderId?: string;
   orderNumber?: string;
-  /** Filtro presentacional: recorte en cliente tras aplanar recepciones (si el API no filtra por recepción). */
+  /** Número de recepción; el API filtra con coincidencia parcial (contiene). */
   receptionNumber?: string;
   originId?: string;
   supplierNumber?: number;

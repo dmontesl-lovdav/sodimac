@@ -28,6 +28,9 @@ export const OrderClient = {
         if (criteria.originId != null && String(criteria.originId).trim() !== "") {
             params.set("originId", String(criteria.originId).trim());
         }
+        if (criteria.receptionNumber != null && String(criteria.receptionNumber).trim() !== "") {
+            params.set("receptionNumber", String(criteria.receptionNumber).trim());
+        }
 
         const qs = params.toString();
 

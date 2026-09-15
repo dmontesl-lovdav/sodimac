@@ -20,7 +20,19 @@ export interface ThreeWayMatchRecord {
     uuid: string | null;
 
     fechaTimbrado: string | null;
-    montoFactura: string | null;
+
+    /**
+     * Subtotal real de la factura.
+     * El backend lo envía desde tenant_fiscal.invoice.subtotal
+     * o como respaldo desde Three Way Match invoice_amount.
+     */
+    subtotalFactura?: string | number | null;
+
+    /**
+     * Total real de la factura.
+     * El backend lo envía desde tenant_fiscal.invoice.total.
+     */
+    montoFactura: string | number | null;
 
     numeroNotaCredito: string | null;
     montoNotaCredito: string | null;

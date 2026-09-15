@@ -1845,6 +1845,26 @@
           },
           {
             "in": "query",
+            "name": "receptionNumber",
+            "required": false,
+            "description": "Reception number (partial match, e.g. 7 matches 7, 77, 87)",
+            "schema": {
+              "type": "string",
+              "example": "7"
+            }
+          },
+          {
+            "in": "query",
+            "name": "receptionTypeId",
+            "required": false,
+            "description": "IdTipoRecepcion (CatTipoRecepcion)",
+            "schema": {
+              "type": "number",
+              "example": 1
+            }
+          },
+          {
+            "in": "query",
             "name": "pageNumber",
             "required": true,
             "description": "Page Number",
@@ -2109,6 +2129,7 @@
                 "orderNumber": "odn45",
                 "supplierNumber": 45632,
                 "status": 0,
+                "receptionTypeId": 1,
                 "receptionId": "2e9c22e4-6b43-4936-92d4-3d437f812eba",
                 "pageNumber": 1,
                 "pageSize": 10
@@ -2191,11 +2212,11 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "List all rebates",
-        "description": "Retrieve all rebates with optional relations to stamped rebates",
+        "summary": "Listar descuentos comerciales",
+        "description": "Obtiene descuentos con su relación stampedRebate cuando existe.",
         "responses": {
           "200": {
-            "description": "List of rebates",
+            "description": "Lista de descuentos comerciales",
             "content": {
               "application/json": {
                 "schema": {
@@ -2206,6 +2227,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          },
+          "404": {
+            "description": "Sin registros para el filtro indicado"
           }
         }
       },
@@ -2213,7 +2240,7 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Create new rebate",
+        "summary": "Crear descuento comercial",
         "requestBody": {
           "required": true,
           "content": {
@@ -2239,7 +2266,7 @@
         },
         "responses": {
           "201": {
-            "description": "Created",
+            "description": "Descuento creado",
             "content": {
               "application/json": {
                 "schema": {
@@ -2249,7 +2276,107 @@
             }
           },
           "400": {
-            "description": "Invalid input data"
+            "description": "Datos de entrada inválidos"
+          }
+        }
+      }
+    },
+    "/rebates/{id}/fiscal-detail": {
+      "get": {
+        "tags": [
+          "Rebates"
+        ],
+        "operationId": "getRebateFiscalDetail",
+        "summary": "Consultar la nota de crédito relacionada con un descuento",
+        "description": "Obtiene el UUID de la NC, el UUID de la factura original y los datos para el grid: UUID, fecha de registro, importe total, serie y folio. Consulta exclusivamente la NC identificada por ncFiscalUuid. Si el descuento existe pero no tiene una NC disponible, devuelve HTTP 200 con creditNotes vacío y un mensaje explicativo. No crea ni modifica relaciones.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "UUID interno del descuento (rebateId). No utilizar el UUID fiscal de la NC.",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle fiscal del descuento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RebateFiscalDetail"
+                },
+                "examples": {
+                  "withCreditNote": {
+                    "summary": "Descuento con NC disponible",
+                    "value": {
+                      "rebateId": "209279be-37c7-4154-b3c6-df976fd7b6a",
+                      "vendorNumber": 34786,
+                      "invoiceFiscalUuid": null,
+                      "ncFiscalUuid": "4d16b318-6e96-4d09-a759-6ce55f4f8bc9",
+                      "creditNotes": [
+                        {
+                          "id": "39a021ce-63df-4e46-a79d-5f8123186201",
+                          "uuid": "4d16b318-6e96-4d09-a759-6ce55f4f8bc9",
+                          "registeredAt": "2026-09-04T20:13:52.998Z",
+                          "amount": "114.81",
+                          "series": null,
+                          "folio": "9200913182"
+                        }
+                      ],
+                      "message": null
+                    }
+                  },
+                  "withoutRelation": {
+                    "summary": "Descuento sin relación fiscal",
+                    "value": {
+                      "rebateId": "209279be-37c7-4154-b3c6-df976fd7b6a",
+                      "vendorNumber": 34786,
+                      "invoiceFiscalUuid": null,
+                      "ncFiscalUuid": null,
+                      "creditNotes": [],
+                      "message": "Este descuento todavía no tiene una nota de crédito relacionada."
+                    }
+                  },
+                  "legacyRelation": {
+                    "summary": "Relación sin UUID fiscal de NC registrado",
+                    "value": {
+                      "rebateId": "209279be-37c7-4154-b3c6-df976fd7b6a",
+                      "vendorNumber": 34786,
+                      "invoiceFiscalUuid": "68f7b8a0-c2e5-4d18-9f62-482be702e103",
+                      "ncFiscalUuid": null,
+                      "creditNotes": [],
+                      "message": "La relación existente no tiene registrado el UUID fiscal de la nota de crédito."
+                    }
+                  },
+                  "unavailableCreditNote": {
+                    "summary": "UUID relacionado sin documento fiscal disponible",
+                    "value": {
+                      "rebateId": "209279be-37c7-4154-b3c6-df976fd7b6a",
+                      "vendorNumber": 34786,
+                      "invoiceFiscalUuid": null,
+                      "ncFiscalUuid": "4d16b318-6e96-4d09-a759-6ce55f4f8bc9",
+                      "creditNotes": [],
+                      "message": "La nota de crédito relacionada no está disponible en el repositorio fiscal."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "El identificador del descuento no es un UUID válido"
+          },
+          "404": {
+            "description": "No se encontró el descuento comercial"
+          },
+          "500": {
+            "description": "Error al consultar el detalle fiscal"
           }
         }
       }
@@ -2259,15 +2386,16 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Get rebate by ID",
+        "summary": "Consultar descuento por UUID",
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "description": "Rebate UUID",
+            "description": "UUID interno del descuento (rebateId). No utilizar el UUID fiscal de la NC.",
             "schema": {
               "type": "string",
+              "format": "uuid",
               "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
               "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
             }
@@ -2275,7 +2403,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Rebate found",
+            "description": "Descuento comercial",
             "content": {
               "application/json": {
                 "schema": {
@@ -2284,8 +2412,11 @@
               }
             }
           },
+          "400": {
+            "description": "UUID inválido"
+          },
           "404": {
-            "description": "Rebate not found"
+            "description": "Descuento no encontrado"
           }
         }
       },
@@ -2293,15 +2424,16 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Update rebate",
+        "summary": "Actualizar descuento",
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "description": "Rebate UUID",
+            "description": "UUID interno del descuento (rebateId). No utilizar el UUID fiscal de la NC.",
             "schema": {
               "type": "string",
+              "format": "uuid",
               "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
               "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
             }
@@ -2324,7 +2456,7 @@
         },
         "responses": {
           "200": {
-            "description": "Updated",
+            "description": "Descuento actualizado",
             "content": {
               "application/json": {
                 "schema": {
@@ -2333,8 +2465,11 @@
               }
             }
           },
+          "400": {
+            "description": "Datos de entrada inválidos"
+          },
           "404": {
-            "description": "Rebate not found"
+            "description": "Descuento no encontrado"
           }
         }
       },
@@ -2342,15 +2477,16 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Delete rebate",
+        "summary": "Eliminar descuento",
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "description": "Rebate UUID",
+            "description": "UUID interno del descuento (rebateId). No utilizar el UUID fiscal de la NC.",
             "schema": {
               "type": "string",
+              "format": "uuid",
               "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
               "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
             }
@@ -2358,10 +2494,13 @@
         ],
         "responses": {
           "204": {
-            "description": "Deleted"
+            "description": "Operación de eliminación completada"
+          },
+          "400": {
+            "description": "UUID inválido"
           },
           "404": {
-            "description": "Rebate not found"
+            "description": "Descuento no encontrado"
           }
         }
       }
@@ -2371,11 +2510,11 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Get published rebates",
-        "description": "Retrieve all rebates with status = 2 (published)",
+        "summary": "Consultar descuentos publicados",
+        "description": "El servicio actual selecciona registros con status = 1. El nombre de la ruta se conserva por compatibilidad.",
         "responses": {
           "200": {
-            "description": "List of published rebates",
+            "description": "Lista de descuentos comerciales",
             "content": {
               "application/json": {
                 "schema": {
@@ -2386,6 +2525,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          },
+          "404": {
+            "description": "No se encontraron descuentos"
           }
         }
       }
@@ -2395,11 +2540,11 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Export published rebates to CSV",
-        "description": "Generate CSV file with all published rebates (status = 2)",
+        "summary": "Exportar descuentos publicados a CSV",
+        "description": "Exporta los descuentos seleccionados por el servicio listPublished, que actualmente utiliza status = 1.",
         "responses": {
           "200": {
-            "description": "CSV file generated",
+            "description": "Archivo CSV",
             "content": {
               "text/csv": {
                 "schema": {
@@ -2410,13 +2555,16 @@
             },
             "headers": {
               "Content-Disposition": {
-                "description": "Attachment filename",
+                "description": "Nombre del archivo descargable",
                 "schema": {
                   "type": "string",
-                  "example": "attachment; filename=\"published-rebates-2025-10-07.csv\""
+                  "example": "attachment; filename=\"rebates.csv\""
                 }
               }
             }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
           }
         }
       }
@@ -2426,23 +2574,23 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Get rebates by vendor number",
-        "description": "Retrieve all rebates for a specific vendor",
+        "summary": "Consultar descuentos de un proveedor",
+        "description": "El servicio actual limita esta consulta a descuentos con status = 1.",
         "parameters": [
           {
             "in": "path",
             "name": "vendorNumber",
             "required": true,
-            "description": "Vendor identifier",
+            "description": "Número de proveedor",
             "schema": {
               "type": "integer",
-              "example": 1001
+              "example": 34786
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of rebates for vendor",
+            "description": "Lista de descuentos comerciales",
             "content": {
               "application/json": {
                 "schema": {
@@ -2455,7 +2603,10 @@
             }
           },
           "400": {
-            "description": "Invalid vendor number"
+            "description": "Número de proveedor o parámetros inválidos"
+          },
+          "404": {
+            "description": "Sin descuentos para el proveedor"
           }
         }
       }
@@ -2465,86 +2616,110 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Search rebates with dynamic filters (Criteria API equivalent)",
-        "description": "Advanced search endpoint supporting multiple filters.",
+        "summary": "Buscar descuentos con filtros",
+        "description": "Permite filtrar por proveedor, tipo de proveedor, documento, SAP, estatus, origen, período y fecha de aplicación.",
         "parameters": [
           {
             "in": "query",
             "name": "vendorNumber",
-            "required": false,
-            "description": "Filter by exact vendor number",
             "schema": {
               "type": "integer",
-              "example": 1001
-            }
+              "example": 34786
+            },
+            "description": "Número exacto de proveedor"
+          },
+          {
+            "in": "query",
+            "name": "supplierType",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identificador del tipo de proveedor"
           },
           {
             "in": "query",
             "name": "documentNumber",
-            "required": false,
-            "description": "Filter by document number (LIKE search - partial match)",
             "schema": {
-              "type": "string",
-              "example": "SR-2025"
-            }
+              "type": "string"
+            },
+            "description": "Coincidencia parcial del número de documento"
           },
           {
             "in": "query",
             "name": "sapDocument",
-            "required": false,
-            "description": "Filter by SAP document (LIKE search - partial match)",
             "schema": {
-              "type": "string",
-              "example": "SAP-001"
-            }
+              "type": "string"
+            },
+            "description": "Coincidencia parcial del documento SAP"
           },
           {
             "in": "query",
             "name": "status",
-            "required": false,
-            "description": "Filter by status code (1=pending, 2=published)",
             "schema": {
               "type": "integer",
               "example": 1
-            }
+            },
+            "description": "1=Pendiente, 2=Aprobado, 3=Rechazado"
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identificador del tipo de rebate"
           },
           {
             "in": "query",
             "name": "periodId",
-            "required": false,
-            "description": "Filter by period identifier",
             "schema": {
-              "type": "integer",
-              "example": 202501
-            }
+              "type": "integer"
+            },
+            "description": "Identificador del período"
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Inicio del rango de fecha de aplicación (postingDate)"
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Fin del rango de fecha de aplicación (postingDate)"
           },
           {
             "in": "query",
             "name": "limit",
-            "required": false,
-            "description": "Results per page (max 1000)",
             "schema": {
               "type": "integer",
               "default": 20,
               "minimum": 1,
               "maximum": 1000
-            }
+            },
+            "description": "Máximo de resultados por página"
           },
           {
             "in": "query",
             "name": "page",
-            "required": false,
-            "description": "Page number (0-indexed)",
             "schema": {
               "type": "integer",
               "default": 0,
               "minimum": 0
-            }
+            },
+            "description": "Número de página comenzando en cero"
           }
         ],
         "responses": {
           "200": {
-            "description": "List of matching rebates",
+            "description": "Lista de descuentos comerciales",
             "content": {
               "application/json": {
                 "schema": {
@@ -2557,7 +2732,10 @@
             }
           },
           "400": {
-            "description": "Invalid filter parameters"
+            "description": "Filtros inválidos"
+          },
+          "404": {
+            "description": "Sin registros para los filtros indicados"
           }
         }
       }
@@ -2567,67 +2745,110 @@
         "tags": [
           "Rebates"
         ],
-        "summary": "Export filtered rebates to CSV",
-        "description": "Generate CSV file with rebates matching the provided filters. Supports all search filters from /rebates/search endpoint.",
+        "summary": "Exportar descuentos filtrados a CSV",
+        "description": "Utiliza los mismos filtros que /rebates/search. El rango from/to se aplica a postingDate.",
         "parameters": [
           {
             "in": "query",
             "name": "vendorNumber",
-            "required": false,
-            "description": "Filter by exact vendor number",
+            "schema": {
+              "type": "integer",
+              "example": 34786
+            },
+            "description": "Número exacto de proveedor"
+          },
+          {
+            "in": "query",
+            "name": "supplierType",
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Identificador del tipo de proveedor"
           },
           {
             "in": "query",
             "name": "documentNumber",
-            "required": false,
-            "description": "Filter by document number (LIKE search)",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Coincidencia parcial del número de documento"
+          },
+          {
+            "in": "query",
+            "name": "sapDocument",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Coincidencia parcial del documento SAP"
           },
           {
             "in": "query",
             "name": "status",
-            "required": false,
-            "description": "Filter by status code",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "description": "1=Pendiente, 2=Aprobado, 3=Rechazado"
+          },
+          {
+            "in": "query",
+            "name": "source",
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Identificador del tipo de rebate"
           },
           {
             "in": "query",
             "name": "periodId",
-            "required": false,
-            "description": "Filter by period identifier",
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Identificador del período"
           },
           {
             "in": "query",
-            "name": "dueDateFrom",
-            "required": false,
+            "name": "from",
             "schema": {
               "type": "string",
-              "format": "date"
-            }
+              "format": "date-time"
+            },
+            "description": "Inicio del rango de fecha de aplicación (postingDate)"
           },
           {
             "in": "query",
-            "name": "dueDateTo",
-            "required": false,
+            "name": "to",
             "schema": {
               "type": "string",
-              "format": "date"
-            }
+              "format": "date-time"
+            },
+            "description": "Fin del rango de fecha de aplicación (postingDate)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "description": "Máximo de resultados por página"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            },
+            "description": "Número de página comenzando en cero"
           }
         ],
         "responses": {
           "200": {
-            "description": "CSV file generated",
+            "description": "Archivo CSV",
             "content": {
               "text/csv": {
                 "schema": {
@@ -2638,13 +2859,256 @@
             },
             "headers": {
               "Content-Disposition": {
-                "description": "Attachment filename",
+                "description": "Nombre del archivo descargable",
                 "schema": {
                   "type": "string",
-                  "example": "attachment; filename=\"filtered-rebates-2025-10-07.csv\""
+                  "example": "attachment; filename=\"rebates.csv\""
                 }
               }
             }
+          },
+          "400": {
+            "description": "Filtros inválidos"
+          }
+        }
+      }
+    },
+    "/sap-documents": {
+      "get": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "List SAP documents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fiscalUuid",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Filtra documentos SAP asociados a un folio fiscal (UUID SAT)"
+          },
+          {
+            "in": "query",
+            "name": "sapStatus",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "vendorNumber",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "documentType",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "example": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of SAP documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SapDocument"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No records found (when fiscalUuid is not provided)"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "Create SAP document with one or more fiscal UUIDs",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSapDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SapDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/sap-documents/by-fiscal-uuid/{fiscalUuid}": {
+      "get": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "List SAP documents related to a fiscal UUID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fiscalUuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related SAP documents (empty array if none)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SapDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-documents/{uuid}": {
+      "get": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "Get SAP document by sap_document_uuid",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SapDocument"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "Update SAP document (optional extra fiscalUuids are appended)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSapDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SapDocument"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SapDocument"
+        ],
+        "summary": "Delete SAP document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       }
@@ -4562,6 +5026,10 @@
             "type": "string",
             "example": "SLI"
           },
+          "receptionTypeId": {
+            "type": "number",
+            "example": 1
+          },
           "destinationId": {
             "type": "number",
             "example": "1"
@@ -4808,6 +5276,11 @@
             "example": 1,
             "nullable": true
           },
+          "receptionTypeId": {
+            "type": "number",
+            "example": 1,
+            "nullable": true
+          },
           "supplierNumber": {
             "type": "number",
             "example": 23498,
@@ -4872,6 +5345,11 @@
           "receptionId": {
             "type": "string",
             "example": "1",
+            "nullable": true
+          },
+          "receptionTypeId": {
+            "type": "number",
+            "example": 1,
             "nullable": true
           },
           "pageNumber": {
@@ -4992,6 +5470,16 @@
             "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
             "example": "209279be-37c7-4154-b3c6-df976fd7b6a"
           },
+          "receptionTypeId": {
+            "type": "number",
+            "example": 1,
+            "nullable": true
+          },
+          "receptionTypeName": {
+            "type": "string",
+            "example": "Mercancía",
+            "nullable": true
+          },
           "status": {
             "type": "number",
             "example": 3
@@ -5007,91 +5495,112 @@
       "Rebate": {
         "type": "object",
         "properties": {
-          "id": {
+          "rebateId": {
             "type": "string",
             "format": "uuid",
-            "description": "UUID primary key"
+            "description": "Identificador interno del descuento comercial"
           },
           "documentNumber": {
             "type": "string",
-            "description": "Document number"
+            "description": "Número de documento"
           },
           "referenceNumber": {
             "type": "string",
-            "description": "Reference number"
+            "nullable": true,
+            "description": "Referencia del documento"
           },
           "sapDocument": {
             "type": "string",
             "nullable": true,
-            "description": "SAP document number"
+            "description": "Documento SAP"
           },
           "vendorNumber": {
             "type": "integer",
-            "description": "Vendor identifier"
+            "nullable": true,
+            "description": "Número de proveedor"
           },
           "amount": {
             "type": "string",
-            "description": "Rebate amount (numeric string)"
+            "nullable": true,
+            "description": "Importe expresado como cadena decimal",
+            "example": "114.81"
           },
           "source": {
             "type": "integer",
-            "description": "Source identifier"
+            "nullable": true,
+            "description": "Identificador del tipo de rebate"
           },
           "periodId": {
             "type": "integer",
-            "description": "Period identifier (e.g., 202501)"
+            "nullable": true,
+            "description": "Identificador del período"
           },
           "dueDate": {
             "type": "string",
             "format": "date-time",
-            "description": "Due date"
+            "nullable": true,
+            "description": "Fecha de vencimiento"
           },
           "postingDate": {
             "type": "string",
             "format": "date-time",
-            "description": "Posting date"
+            "nullable": true,
+            "description": "Fecha de aplicación"
           },
           "status": {
             "type": "integer",
-            "description": "Status code (1=pending, 2=published)"
+            "nullable": true,
+            "description": "Estatus mostrado en Finanzas: 1=Pendiente, 2=Aprobado, 3=Rechazado"
           },
           "createdBy": {
-            "type": "integer",
-            "description": "User ID who created the record"
+            "nullable": true,
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Usuario de creación; bigint puede serializarse como texto"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "Creation timestamp"
+            "description": "Fecha de creación"
           },
           "updatedBy": {
-            "type": "integer",
             "nullable": true,
-            "description": "User ID who updated the record"
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Usuario de actualización"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
             "nullable": true,
-            "description": "Update timestamp"
+            "description": "Fecha de actualización"
           },
           "stampedRebate": {
-            "$ref": "#/components/schemas/StampedRebate",
-            "nullable": true
+            "type": "object",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StampedRebate"
+              }
+            ]
           }
         },
         "required": [
-          "id",
+          "rebateId",
           "documentNumber",
-          "referenceNumber",
-          "vendorNumber",
-          "amount",
-          "source",
-          "periodId",
-          "dueDate",
-          "postingDate",
-          "status",
-          "createdBy"
+          "createdAt"
         ]
       },
       "CreateRebateDto": {
@@ -5099,110 +5608,117 @@
         "properties": {
           "documentNumber": {
             "type": "string",
-            "description": "Document number"
+            "minLength": 1,
+            "maxLength": 100
           },
           "referenceNumber": {
             "type": "string",
-            "description": "Reference number"
+            "minLength": 1,
+            "maxLength": 100
           },
           "sapDocument": {
             "type": "string",
-            "nullable": true,
-            "description": "SAP document number"
+            "minLength": 1,
+            "maxLength": 50
           },
           "vendorNumber": {
             "type": "integer",
-            "description": "Vendor identifier"
+            "description": "Número de proveedor"
           },
           "amount": {
             "type": "string",
-            "description": "Rebate amount (numeric string)"
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "description": "Importe decimal con hasta dos decimales",
+            "example": "114.81"
           },
           "source": {
             "type": "integer",
-            "description": "Source identifier"
+            "description": "Identificador del tipo de rebate"
           },
           "periodId": {
             "type": "integer",
-            "description": "Period identifier (e.g., 202501)"
+            "description": "Identificador del período"
           },
           "dueDate": {
             "type": "string",
             "format": "date-time",
-            "description": "Due date"
+            "description": "Fecha de vencimiento"
           },
           "postingDate": {
             "type": "string",
             "format": "date-time",
-            "description": "Posting date"
+            "description": "Fecha de aplicación"
           },
           "status": {
             "type": "integer",
-            "description": "Status code (1=pending, 2=published)"
+            "default": 1,
+            "description": "Estatus mostrado en Finanzas: 1=Pendiente, 2=Aprobado, 3=Rechazado"
           },
           "createdBy": {
             "type": "integer",
-            "description": "User ID who created the record"
+            "nullable": true,
+            "description": "Usuario de creación"
           }
         },
         "required": [
           "documentNumber",
           "referenceNumber",
+          "sapDocument",
           "vendorNumber",
           "amount",
           "source",
           "periodId",
           "dueDate",
-          "postingDate",
-          "status",
-          "createdBy"
+          "postingDate"
         ]
       },
       "UpdateRebateDto": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "documentNumber": {
             "type": "string",
-            "description": "Document number"
+            "minLength": 1,
+            "maxLength": 100
           },
           "referenceNumber": {
             "type": "string",
-            "description": "Reference number"
+            "minLength": 1,
+            "maxLength": 100
           },
           "sapDocument": {
             "type": "string",
-            "nullable": true,
-            "description": "SAP document number"
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "vendorNumber": {
+            "type": "integer"
           },
           "amount": {
             "type": "string",
-            "description": "Rebate amount (numeric string)"
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "114.81"
           },
           "source": {
-            "type": "integer",
-            "description": "Source identifier"
+            "type": "integer"
           },
           "periodId": {
-            "type": "integer",
-            "description": "Period identifier"
+            "type": "integer"
           },
           "dueDate": {
             "type": "string",
-            "format": "date-time",
-            "description": "Due date"
+            "format": "date-time"
           },
           "postingDate": {
             "type": "string",
-            "format": "date-time",
-            "description": "Posting date"
+            "format": "date-time"
           },
           "status": {
             "type": "integer",
-            "description": "Status code (1=pending, 2=published)"
+            "description": "Estatus mostrado en Finanzas: 1=Pendiente, 2=Aprobado, 3=Rechazado"
           },
           "updatedBy": {
-            "type": "integer",
-            "description": "User ID who updated the record"
+            "type": "integer"
           }
         }
       },
@@ -5211,36 +5727,52 @@
         "properties": {
           "vendorNumber": {
             "type": "integer",
-            "description": "Filter by vendor number"
+            "description": "Número de proveedor"
+          },
+          "supplierType": {
+            "type": "integer",
+            "description": "Identificador del tipo de proveedor"
           },
           "documentNumber": {
             "type": "string",
-            "description": "Filter by document number (LIKE search)"
+            "description": "Coincidencia parcial del documento"
           },
           "sapDocument": {
             "type": "string",
-            "description": "Filter by SAP document (LIKE search)"
+            "description": "Coincidencia parcial del documento SAP"
           },
           "status": {
             "type": "integer",
-            "description": "Filter by status code"
+            "description": "Estatus mostrado en Finanzas: 1=Pendiente, 2=Aprobado, 3=Rechazado"
+          },
+          "source": {
+            "type": "integer",
+            "description": "Identificador del tipo de rebate"
           },
           "periodId": {
-            "type": "integer",
-            "description": "Filter by period ID"
+            "type": "integer"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inicio del rango de fecha de aplicación"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fin del rango de fecha de aplicación"
           },
           "limit": {
             "type": "integer",
             "default": 20,
             "minimum": 1,
-            "maximum": 1000,
-            "description": "Results per page"
+            "maximum": 1000
           },
           "page": {
             "type": "integer",
             "default": 0,
             "minimum": 0,
-            "description": "Page number (0-indexed)"
+            "description": "Página comenzando en cero"
           }
         }
       },
@@ -5310,91 +5842,173 @@
           "createdBy"
         ]
       },
+      "RebateCreditNote": {
+        "type": "object",
+        "description": "Datos fiscales de la nota de crédito mostrada en el grid",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador interno tenant_fiscal.invoice.invoice_uuid"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID fiscal de la NC; se utiliza para visualizarla"
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Fecha de registro de la NC en el repositorio fiscal"
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true,
+            "description": "Importe total de la NC, tomado de invoice.total",
+            "example": "114.81"
+          },
+          "series": {
+            "type": "string",
+            "nullable": true,
+            "description": "Serie de la NC"
+          },
+          "folio": {
+            "type": "string",
+            "nullable": true,
+            "description": "Folio de la NC",
+            "example": "9200913182"
+          }
+        },
+        "required": [
+          "id",
+          "uuid",
+          "registeredAt",
+          "amount",
+          "series",
+          "folio"
+        ]
+      },
+      "RebateFiscalDetail": {
+        "type": "object",
+        "description": "Detalle fiscal del descuento. La respuesta es un objeto directo, sin envoltorio data.",
+        "properties": {
+          "rebateId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID interno del descuento consultado"
+          },
+          "vendorNumber": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Número de proveedor del descuento"
+          },
+          "invoiceFiscalUuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "UUID fiscal de la factura original"
+          },
+          "ncFiscalUuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "UUID fiscal de la NC seleccionada en la relación"
+          },
+          "creditNotes": {
+            "type": "array",
+            "description": "Notas encontradas por el UUID fiscal guardado. Vacío cuando no existe una NC disponible.",
+            "items": {
+              "$ref": "#/components/schemas/RebateCreditNote"
+            }
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "Explica la ausencia de relación o de datos fiscales. Null cuando se encontró la NC."
+          }
+        },
+        "required": [
+          "rebateId",
+          "vendorNumber",
+          "invoiceFiscalUuid",
+          "ncFiscalUuid",
+          "creditNotes",
+          "message"
+        ]
+      },
       "SapDocument": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "UUID primary key"
+            "description": "Same as sapDocumentUuid"
+          },
+          "sapDocumentUuid": {
+            "type": "string",
+            "format": "uuid"
           },
           "documentNumber": {
-            "type": "string",
-            "description": "Document number"
+            "type": "string"
           },
           "referenceNumber": {
-            "type": "string",
-            "description": "Reference number"
+            "type": "string"
           },
-          "company": {
-            "type": "integer",
-            "description": "Company code"
-          },
-          "fiscalYear": {
-            "type": "integer",
-            "description": "Fiscal year"
-          },
-          "documentType": {
-            "type": "string",
-            "description": "Document type code"
+          "vendorNumber": {
+            "type": "integer"
           },
           "amount": {
-            "type": "string",
-            "description": "Document amount (numeric string)"
+            "type": "number"
           },
-          "currency": {
-            "type": "string",
-            "description": "Currency code"
+          "source": {
+            "type": "integer"
           },
-          "postingDate": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Posting date"
+          "docSap": {
+            "type": "string"
           },
-          "documentDate": {
+          "message": {
             "type": "string",
-            "format": "date-time",
-            "description": "Document date"
+            "nullable": true
           },
-          "status": {
+          "sapStatus": {
             "type": "integer",
-            "description": "Status code"
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "documentType": {
+            "type": "string"
+          },
+          "fiscalUuids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Folios fiscales (UUID SAT) asociados al documento SAP"
           },
           "createdBy": {
             "type": "integer",
-            "description": "User ID who created the record"
+            "nullable": true
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "description": "Creation timestamp"
+            "format": "date-time"
           },
           "updatedBy": {
             "type": "integer",
-            "nullable": true,
-            "description": "User ID who updated the record"
+            "nullable": true
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
-            "description": "Update timestamp"
+            "nullable": true
           }
-        },
-        "required": [
-          "id",
-          "documentNumber",
-          "referenceNumber",
-          "company",
-          "fiscalYear",
-          "documentType",
-          "amount",
-          "currency",
-          "postingDate",
-          "documentDate",
-          "status",
-          "createdBy"
-        ]
+        }
       },
       "CreateSapDocumentDto": {
         "type": "object",
@@ -5405,61 +6019,105 @@
           "referenceNumber": {
             "type": "string"
           },
-          "company": {
+          "vendorNumber": {
             "type": "integer"
           },
-          "fiscalYear": {
+          "amount": {
+            "type": "string",
+            "description": "Decimal with up to 2 places"
+          },
+          "source": {
             "type": "integer"
+          },
+          "docSap": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "sapStatus": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
           },
           "documentType": {
             "type": "string"
           },
-          "amount": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "postingDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "documentDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "integer"
-          },
           "createdBy": {
-            "type": "integer"
+            "type": "integer",
+            "nullable": true
+          },
+          "fiscalUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalUuids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": [
           "documentNumber",
           "referenceNumber",
-          "company",
-          "fiscalYear",
-          "documentType",
+          "vendorNumber",
           "amount",
-          "currency",
-          "postingDate",
-          "documentDate",
-          "status",
-          "createdBy"
+          "source",
+          "docSap",
+          "documentType"
         ]
       },
       "UpdateSapDocumentDto": {
         "type": "object",
         "properties": {
+          "documentNumber": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
+          },
+          "vendorNumber": {
+            "type": "integer"
+          },
           "amount": {
             "type": "string"
           },
-          "status": {
+          "source": {
             "type": "integer"
+          },
+          "docSap": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "sapStatus": {
+            "type": "integer"
+          },
+          "documentType": {
+            "type": "string"
           },
           "updatedBy": {
             "type": "integer"
+          },
+          "fiscalUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalUuids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },

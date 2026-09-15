@@ -246,11 +246,22 @@ function getExportValue(
     }
 
     /*
-     * Subtotal Factura se toma del mismo valor de factura.
-     * En el batch montoFactura se llena usando invoice.subtotal
-     * y usa invoice.total como respaldo.
+     * Subtotal Factura viene del subtotal real de la factura.
+     * Si no llega subtotalFactura, usa montoFactura como respaldo
+     * para no dejar vacío en datos antiguos.
      */
     if (key === "subtotalFactura") {
+        return (
+            row.subtotalFactura ??
+            row.montoFactura ??
+            ""
+        );
+    }
+
+    /*
+     * Monto Factura viene del total real de la factura.
+     */
+    if (key === "montoFactura") {
         return row.montoFactura ?? "";
     }
 

@@ -6,6 +6,28 @@ sap-documents:
     operationId: listSapDocuments
     produces:
       - application/json
+    parameters:
+      - name: fiscalUuid
+        in: query
+        required: false
+        type: string
+        format: uuid
+        description: Folio fiscal SAT para listar documentos SAP relacionados
+      - name: sapStatus
+        in: query
+        type: integer
+      - name: vendorNumber
+        in: query
+        type: integer
+      - name: documentType
+        in: query
+        type: string
+      - name: source
+        in: query
+        type: integer
+      - name: limit
+        in: query
+        type: integer
     responses:
       "200":
         description: List of SAP documents
@@ -47,6 +69,39 @@ sap-documents:
         description: Bad request
         schema:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+sap-documents-by-fiscal-uuid:
+  get:
+    tags:
+      - sap-documents
+    summary: List SAP documents by fiscal UUID
+    operationId: listSapDocumentsByFiscalUuid
+    produces:
+      - application/json
+    parameters:
+      - name: fiscalUuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+        description: Folio fiscal SAT (UUID de factura o nota de crédito)
+    responses:
+      "200":
+        description: Related SAP documents
+        schema:
+          type: array
+          items:
+            $ref: "../definitions/sap-documents.yaml#/SapDocumentDto"
       "401":
         description: Unauthorized
         schema:

@@ -29,6 +29,11 @@ purchase-orders:
         required: false
         description: Status filter
         type: integer
+      - name: receptionNumber
+        in: query
+        required: false
+        description: Número de recepción (coincidencia parcial)
+        type: string
     responses:
       "200":
         description: List of purchase orders with receipts

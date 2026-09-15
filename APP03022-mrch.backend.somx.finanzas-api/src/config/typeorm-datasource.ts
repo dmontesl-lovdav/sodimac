@@ -22,6 +22,7 @@ import { VersionCatalog } from '../entities/VersionCatalog.entity.js';
 import { PurchaseOrder } from '../entities/PurchaseOrder.entity.js';
 import { Rebate } from '../entities/Rebate.entity.js';
 import { SapDocument } from '../entities/SapDocument.entity.js';
+import { SapDocumentFiscalUuid } from '../entities/SapDocumentFiscalUuid.entity.js';
 import { Reception } from '../entities/Reception.entity.js';
 import { ReceptionSku } from '../entities/ReceptionSku.entity.js';
 import { ShippingGuide } from '../entities/ShippingGuide.entity.js';
@@ -64,6 +65,7 @@ const ENTITIES = [
     PurchaseOrder,
     Rebate,
     SapDocument,
+    SapDocumentFiscalUuid,
     Reception,
     ReceptionSku,
     ShippingGuide,

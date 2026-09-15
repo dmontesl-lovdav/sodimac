@@ -24,16 +24,31 @@ import { DeepPartial } from 'typeorm';
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import { ResponseHandlerDTO } from "@/response/ResponseHandler.dto.js";
+import {
+    catalogAcceptsReceptionTypeId,
+    toNumericReceptionTypeId,
+} from "@/utils/receptionTypeCatalog.js";
 
 export async function getCatalogs(dto: CreatePurchaseOrderDto
     , token: string) {
     const supplier: Supplier | undefined = await svcAxios.GetSupplierBySupplierNumber(dto.supplierNumber, token);
     const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details", token);
-    return { supplier, tipoReceptionSodimacList };
+    let tipoRecepcionList: GenericCatalogDetails[] = [];
+    try {
+        tipoRecepcionList = await svcAxios.GetCatalogDetailList(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+                constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION +
+                "/details",
+            token
+        );
+    } catch (e) {
+        logger.warn("CatTipoRecepcion no disponible al registrar recepción: {}", e);
+    }
+    return { supplier, tipoReceptionSodimacList, tipoRecepcionList };
 }
 
 export function fillReceptionList(dto: CreatePurchaseOrderDto
-    , supplier: Supplier | undefined, receptionsSkuList: Partial<ReceptionSku>[], tipoReceptionSodimacList: GenericCatalogDetails[], receptionsList: DeepPartial<Reception>[]) {
+    , supplier: Supplier | undefined, receptionsSkuList: Partial<ReceptionSku>[], tipoReceptionSodimacList: GenericCatalogDetails[], receptionsList: DeepPartial<Reception>[], tipoRecepcionList: GenericCatalogDetails[] = []) {
     dto.receptionList.forEach(function (reception) {
         if (supplier != undefined && supplier != null && supplier.supplierType.id == 2 && reception.guideNumber != undefined) {
             throw new Error('El tipo de proveedor que desea ingresar en la recepción no acepta este tipo de guías, favor de validar.');
@@ -71,8 +86,17 @@ export function fillReceptionList(dto: CreatePurchaseOrderDto
 
         const guide = dto.guideNumber?.[0]?.guide; //guia de carta porte
 
+        const receptionTypeId = toNumericReceptionTypeId(reception.receptionTypeId);
+        if (receptionTypeId != null && !catalogAcceptsReceptionTypeId(tipoRecepcionList, receptionTypeId)) {
+            throw new Error(
+                "El identificador de Tipo Recepción no existe en el catálogo CatTipoRecepcion. receptionTypeId: " +
+                    receptionTypeId
+            );
+        }
+
         const datarec: Partial<Reception> = {
             originId: reception.originId,
+            ...(receptionTypeId != null ? { receptionTypeId } : {}),
             destinationId: reception.destinationId,
             amount: z.coerce.number().parse(reception.amount),
             status: reception.status ?? 0, //Nace con el Status 0
@@ -225,6 +249,17 @@ export function applyOriginCatalogLabels(receptions: Reception[], lookup: Map<nu
     }
 }
 
+export function applyReceptionTypeCatalogLabels(receptions: Reception[], lookup: Map<number, string>): void {
+    for (const rec of receptions) {
+        const raw =
+            rec.receptionTypeId === undefined || rec.receptionTypeId === null
+                ? NaN
+                : Number(rec.receptionTypeId);
+        const nm = Number.isFinite(raw) ? lookup.get(raw) ?? "" : "";
+        (rec as Reception & { receptionTypeName?: string }).receptionTypeName = nm;
+    }
+}
+
 export function buildCatalogWarningMessage(
     catalogMsg: GenericCatalogDetails,
     ...params: Array<string | number | undefined | null>
@@ -257,6 +292,7 @@ export async function enrichReceptionsListOriginCatalog(
     }
     const lookup = await fetchReceptionOriginIdToLabel(token);
     applyOriginCatalogLabels(receptions, lookup);
+    applyReceptionTypeCatalogLabels(receptions, await fetchReceptionTypeIdToLabel(token));
 }
 
 export async function fetchReceptionOriginIdToLabel(token: string): Promise<Map<number, string>> {
@@ -282,6 +318,33 @@ export async function fetchReceptionOriginIdToLabel(token: string): Promise<Map<
         }
     } catch (e) {
         logger.warn("fetchReceptionOriginIdToLabel: catálogo de orígenes no disponible: {}", e);
+    }
+    return map;
+}
+
+export async function fetchReceptionTypeIdToLabel(token: string): Promise<Map<number, string>> {
+    const map = new Map<number, string>();
+    try {
+        const base =
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION +
+            "/details";
+        const rows = await svcAxios.GetCatalogDetailList(base, token);
+        for (const c of rows ?? []) {
+            const id = Number(c.internalStatus);
+            if (!Number.isFinite(id)) {
+                continue;
+            }
+            const label =
+                [c.description, c.value, c.externalKey, c.key].find(
+                    (s): s is string => typeof s === "string" && String(s).trim().length > 0,
+                )?.trim() ?? "";
+            if (label) {
+                map.set(id, label);
+            }
+        }
+    } catch (e) {
+        logger.warn("fetchReceptionTypeIdToLabel: catálogo CatTipoRecepcion no disponible: {}", e);
     }
     return map;
 }

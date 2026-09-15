@@ -1,5 +1,9 @@
 import { getDataSource } from '@/config/typeorm-datasource.js';
 import * as r from '@/repositories/accountStatement.repo.js';
+import {
+    isExcludedInvoiceOrCreditNoteStatus,
+    isExcludedReceptionStatus,
+} from '@/utils/accountStatementExcludedStatuses.js';
 
 // ─── Tablas auxiliares ────────────────────────────────────────────────────────
 const T_PO       = 'tenant_finance.account_statement_purchase_order';
@@ -278,11 +282,17 @@ export async function buildAccountStatementReportData(
     ]);
 
     const purchaseOrders = (poRows       as Row[]).map(toPurchaseOrderShape);
-    const receptions     = (recRows      as Row[]).map(toReceptionShape);
+    const receptions     = (recRows      as Row[])
+        .map(toReceptionShape)
+        .filter((row) => !isExcludedReceptionStatus(row['status']));
     const payments       = (paymentRows  as Row[]).map(toPaymentShape);
     const rebates        = (discountRows as Row[]).map(toRebateShape);
-    const facturas       = (invoiceRows  as Row[]).map(toInvoiceShape);
-    const notasCredito   = (creditRows   as Row[]).map(toCreditNoteShape);
+    const facturas       = (invoiceRows  as Row[])
+        .map(toInvoiceShape)
+        .filter((row) => !isExcludedInvoiceOrCreditNoteStatus(row['status']));
+    const notasCredito   = (creditRows   as Row[])
+        .map(toCreditNoteShape)
+        .filter((row) => !isExcludedInvoiceOrCreditNoteStatus(row['status']));
 
     const periodStart = row.periodStart ? new Date(row.periodStart) : new Date(row.year, row.month - 1, 1);
     const periodEnd   = row.periodEnd   ? new Date(row.periodEnd)   : new Date(row.year, row.month, 0, 23, 59, 59);

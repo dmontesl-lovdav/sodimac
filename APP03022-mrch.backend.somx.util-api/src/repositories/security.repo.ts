@@ -105,6 +105,15 @@ function normalizeAttributeDisplayName(value: string): string {
         .replace(/\s+/g, '');
 }
 
+const ATTRIBUTE_VALUE_CATALOG_BY_NAME: Record<string, string> = {
+    tipoproveedor: 'CatTipoProveedor',
+    tipoprovedor: 'CatTipoProveedor',
+    empresa: 'CatalogoEmpresa',
+    grupoproveedor: 'CatGrupoProveedores',
+    grupoproveedores: 'CatGrupoProveedores',
+    tiporebate: 'CatTipoRebate',
+};
+
 /** Identidad en core_security.user_data (respuesta API) */
 export interface SecurityUserRef {
     id: number;
@@ -176,6 +185,12 @@ export interface SecurityUserDetailsResponse {
         attributeType: SecurityCatalogRef;
         attributeValue: SecurityCatalogRef | null;
         status: number;
+    }>;
+    eventPermissions: Array<{
+        processId: number;
+        permissionId: number;
+        permissionKey: string;
+        permissionName: string;
     }>;
 }
 
@@ -755,14 +770,20 @@ export async function getAttributeValuesByType(
 
     const attributeName = String(attributeTypeRaw.displayName ?? '');
     const normalizedName = normalizeAttributeDisplayName(attributeName);
-    const targetHeaderId = (
-        idAttributeType === 556 ||
-        normalizedName === 'tipoproveedor' ||
-        normalizedName === 'tipoprovedor'
-    )
-        ? 22
-        : undefined;
-    if (!targetHeaderId) {
+    const headerCode = ATTRIBUTE_VALUE_CATALOG_BY_NAME[normalizedName]
+        ?? (idAttributeType === 556 ? 'CatTipoProveedor' : undefined);
+    if (!headerCode) {
+        return [];
+    }
+
+    const headerRow = await datasource
+        .getRepository(CatalogHeader)
+        .createQueryBuilder('h')
+        .where('h.code = :code', { code: headerCode })
+        .andWhere('h.status = 1')
+        .select('h.id', 'id')
+        .getRawOne<{ id: number }>();
+    if (!headerRow) {
         return [];
     }
 
@@ -770,7 +791,7 @@ export async function getAttributeValuesByType(
         .getRepository(CatalogDetail)
         .createQueryBuilder('v')
         .where('v.status = 1')
-        .andWhere('v.header_id = :headerId', { headerId: targetHeaderId })
+        .andWhere('v.header_id = :headerId', { headerId: Number(headerRow.id) })
         .select('v.id', 'id')
         .addSelect('v.key', 'catalogKey')
         .addSelect(dictionaryLabelExpr('v', langId), 'name')
@@ -987,6 +1008,62 @@ export async function findActiveRoleAttributeForRole(
         .andWhere('ra.status = 1')
         .andWhere('ra.catalog_detail_role_id = :roleId', { roleId: idRole })
         .getOne();
+}
+
+export async function userHasPermissionForEvent(userKey: string, eventKey: string): Promise<boolean> {
+    const key = String(userKey ?? '').trim();
+    const evt = String(eventKey ?? '').trim();
+    if (!key || !evt) return false;
+
+    const rows = await datasource.query(
+        `SELECT 1
+         FROM shared_catalogs.catalog_detail ev
+         JOIN shared_catalogs.catalog_header hev ON hev.id = ev.header_id AND hev.code = 'CatEvento'
+         JOIN core_security.event_permission epn ON epn.catalog_detail_process_id = ev.id AND epn.status = 1
+         JOIN core_security.role_permission rp ON rp.catalog_detail_permission_id = epn.catalog_detail_permission_id AND rp.status = 1
+         JOIN core_security.role_user ru ON ru.catalog_detail_role_id = rp.catalog_detail_role_id AND ru.status = 1
+         JOIN core_security.user_data ud ON ud.user_data_id = ru.user_data_id AND ud.status = 1
+         WHERE ev.key = $1
+           AND (ud.sub = $2 OR ud.preferred_username = $2 OR ud.email = $2)
+         LIMIT 1`,
+        [evt, key],
+    );
+    return Array.isArray(rows) && rows.length > 0;
+}
+
+export async function listRoleAttributesForUser(
+    userId: number,
+): Promise<Array<{ attributeTypeId: number; attributeTypeKey: string; attributeValueKey: string | null }>> {
+    const raw = await datasource
+        .getRepository(RoleAttribute)
+        .createQueryBuilder('roleAttribute')
+        .innerJoin(
+            RoleUser,
+            'ru',
+            'ru.catalog_detail_role_id = roleAttribute.catalog_detail_role_id AND ru.user_data_id = :userId AND ru.status = 1',
+            { userId },
+        )
+        .innerJoin(
+            CatalogDetail,
+            'attributeType',
+            'attributeType.id = roleAttribute.catalog_detail_attribute_type_id AND attributeType.status = 1',
+        )
+        .leftJoin(
+            CatalogDetail,
+            'attributeValue',
+            'attributeValue.id = roleAttribute.catalog_detail_attribute_value_id',
+        )
+        .where('roleAttribute.status = 1')
+        .select('roleAttribute.catalog_detail_attribute_type_id', 'attributeTypeId')
+        .addSelect('attributeType.key', 'attributeTypeKey')
+        .addSelect('attributeValue.key', 'attributeValueKey')
+        .getRawMany<Record<string, unknown>>();
+
+    return raw.map((item) => ({
+        attributeTypeId: Number(item.attributeTypeId),
+        attributeTypeKey: String(item.attributeTypeKey),
+        attributeValueKey: item.attributeValueKey == null ? null : String(item.attributeValueKey),
+    }));
 }
 
 export async function listProfileModules(filters: SecuritySearchFilter): Promise<SecuritySummaryRow[]> {
@@ -1795,6 +1872,23 @@ export async function getSecurityUserDetailsByCatalogKey(
         providersSet.set(`${role.id}-${provider.id}`, { provider, role });
     }
 
+    const eventPermissionsRaw = await datasource.query(
+        `SELECT ep.catalog_detail_process_id AS "processId",
+                perm.id AS "permissionId",
+                perm.key AS "permissionKey",
+                COALESCE((SELECT dl.description FROM shared_catalogs.dictionary_lang dl WHERE dl.dict_id = perm.dict_id AND dl.lang_id = $1 LIMIT 1), NULLIF(TRIM(perm.value), ''), perm.key) AS "permissionName"
+         FROM core_security.event_permission ep
+         JOIN shared_catalogs.catalog_detail perm ON perm.id = ep.catalog_detail_permission_id
+         WHERE ep.status = 1`,
+        [langId],
+    );
+    const eventPermissions = (eventPermissionsRaw as Array<Record<string, unknown>>).map((row) => ({
+        processId: Number(row.processId),
+        permissionId: Number(row.permissionId),
+        permissionKey: String(row.permissionKey ?? ''),
+        permissionName: String(row.permissionName ?? ''),
+    }));
+
     return {
         user: userRef,
         profiles: profilesRaw.map(mapRawToCatalogRef),
@@ -1804,6 +1898,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         permissions: [...permissionsSet.values()],
         providers: [...providersSet.values()],
         attributes,
+        eventPermissions,
     };
 }
 

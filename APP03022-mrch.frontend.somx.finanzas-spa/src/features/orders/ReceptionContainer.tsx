@@ -21,6 +21,7 @@ import ReceptionGridTable from "./components/ReceptionGridTable";
 
 import type { Order, Reception, ReceptionAxios, ReceptionSKU, OrdersFilters } from "./interfaces";
 import { resolveReceptionStatusDisplay } from "./receptionStatusDisplay";
+import { filterByReceptionQuery } from "./receptionNumberQuery";
 import {
     FINANCE_LIST_KEYS,
     useFinanceListScreenSession,
@@ -45,18 +46,6 @@ function mergeShippingNumbers(shippings: any[]): string {
 
 function getAdendumInvoice(re: Reception) {
   return re.listAddendum?.[0]?.invoice;
-}
-
-function filterByReceptionQuery(receptions: Reception[], q?: string): Reception[] {
-  const t = q?.trim().toLowerCase();
-  if (!t) return receptions;
-  return receptions.filter(
-    (r) =>
-      (r.receptionNumber ?? "").toLowerCase().includes(t) ||
-      String(r.receptionId ?? "")
-        .toLowerCase()
-        .includes(t)
-  );
 }
 
 function filterByProviderType(
@@ -195,10 +184,12 @@ export default function ReceptionContainer(): ReactElement {
     try {
       setLoading(true);
 
-      const { receptionNumber: receptionQ, providerType: providerTypeQ, ...apiCriteria } = criteria;
+      const { providerType: providerTypeQ, ...apiCriteria } = criteria;
+      const receptionQ = criteria.receptionNumber;
 
       const finalCriteria: OrdersFilters = {
         ...apiCriteria,
+        receptionNumber: receptionQ,
         pageNumber: 1,
         pageSize: FETCH_ORDERS_PAGE_SIZE,
       };

@@ -203,6 +203,8 @@ paths:
 
   /sap-documents:
     $ref: "./paths/sap-documents.yaml#/sap-documents"
+  /sap-documents/by-fiscal-uuid/{fiscalUuid}:
+    $ref: "./paths/sap-documents.yaml#/sap-documents-by-fiscal-uuid"
   /sap-documents/{uuid}:
     $ref: "./paths/sap-documents.yaml#/sap-documents-by-uuid"
 

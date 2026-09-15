@@ -840,44 +840,47 @@ function buildPermissionEventMatrixRows(
             a.moduleName.localeCompare(b.moduleName, 'es') || a.processName.localeCompare(b.processName, 'es'),
     );
 
-    const permMap = new Map<
-        number,
-        { permissionId: number; permissionName: string; permissionKey: string; roleId: number; roleName: string }
-    >();
+    const eventPermMap = new Map<number, { permissionId: number; permissionName: string; permissionKey: string }>();
+    for (const ep of snap.eventPermissions ?? []) {
+        eventPermMap.set(ep.processId, {
+            permissionId: ep.permissionId,
+            permissionName: ep.permissionName,
+            permissionKey: ep.permissionKey,
+        });
+    }
+
+    const roleByPermission = new Map<number, { roleId: number; roleName: string }>();
     for (const p of snap.permissions) {
-        if (!permMap.has(p.permission.id)) {
-            permMap.set(p.permission.id, {
-                permissionId: p.permission.id,
-                permissionName: p.permission.label,
-                permissionKey: p.permission.catalogKey,
-                roleId: p.role.id,
-                roleName: p.role.label,
-            });
+        if (!roleByPermission.has(p.permission.id)) {
+            roleByPermission.set(p.permission.id, { roleId: p.role.id, roleName: p.role.label });
         }
     }
-    const perms = [...permMap.values()].sort(
-        (a, b) =>
-            a.roleName.localeCompare(b.roleName, 'es') || a.permissionName.localeCompare(b.permissionName, 'es'),
-    );
 
     const rows: PermissionEventMatrixRow[] = [];
-    for (const perm of perms) {
-        for (const ev of events) {
-            rows.push({
-                permissionId: perm.permissionId,
-                permissionName: perm.permissionName,
-                permissionKey: perm.permissionKey,
-                roleId: perm.roleId,
-                roleName: perm.roleName,
-                moduleId: ev.moduleId,
-                moduleName: ev.moduleName,
-                processId: ev.processId,
-                processName: ev.processName,
-                processKey: ev.processKey,
-                effective: true,
-            });
+    for (const ev of events) {
+        const perm = eventPermMap.get(ev.processId);
+        if (!perm) {
+            continue;
         }
+        const grantingRole = roleByPermission.get(perm.permissionId);
+        rows.push({
+            permissionId: perm.permissionId,
+            permissionName: perm.permissionName,
+            permissionKey: perm.permissionKey,
+            roleId: grantingRole?.roleId ?? 0,
+            roleName: grantingRole?.roleName ?? '—',
+            moduleId: ev.moduleId,
+            moduleName: ev.moduleName,
+            processId: ev.processId,
+            processName: ev.processName,
+            processKey: ev.processKey,
+            effective: Boolean(grantingRole),
+        });
     }
+    rows.sort(
+        (a, b) =>
+            a.moduleName.localeCompare(b.moduleName, 'es') || a.processName.localeCompare(b.processName, 'es'),
+    );
     return rows;
 }
 
@@ -981,16 +984,26 @@ export async function getUserAttributesByKey(userKey: string, langId?: number) {
     if (!user) throw new HttpException(404, `No existe usuario activo con la clave '${key}'`);
 
     const result = await securityRepo.listUserAttributes(user.idUserData, 1, 1000, langId);
+    const roleAttributes = await securityRepo.listRoleAttributesForUser(user.idUserData);
+
+    const merged = new Map<string, { typeKey: string; valueKey: string | null }>();
+    for (const a of result.items) {
+        const typeKey = a.attributeTypeKey ?? String(a.attributeTypeId);
+        const valueKey = a.attributeValueKey ?? null;
+        merged.set(`${typeKey}::${valueKey ?? ''}`, { typeKey, valueKey });
+    }
+    for (const a of roleAttributes) {
+        const typeKey = a.attributeTypeKey ?? String(a.attributeTypeId);
+        const valueKey = a.attributeValueKey ?? null;
+        merged.set(`${typeKey}::${valueKey ?? ''}`, { typeKey, valueKey });
+    }
 
     return {
         userDataId: user.idUserData,
         sub: user.sub,
         preferredUsername: user.preferredUsername,
         email: user.email,
-        attributes: result.items.map((a) => ({
-            typeKey:  a.attributeTypeKey ?? String(a.attributeTypeId),
-            valueKey: a.attributeValueKey ?? null,
-        })),
+        attributes: [...merged.values()],
     };
 }
 

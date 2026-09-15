@@ -6,6 +6,7 @@ import {
     UpdateSapDocumentSchema,
     ListSapDocumentQuerySchema,
     IdParamSchema,
+    FiscalUuidParamSchema,
     type CreateSapDocumentDto,
     type UpdateSapDocumentDto,
     type ListSapDocumentQuery,
@@ -17,7 +18,9 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         const q: ListSapDocumentQuery = ListSapDocumentQuerySchema.parse(req.query);
         const rows = await svc.list(q);
 
-        if (!rows.length) throw new HttpError(404, "No records found for that filter");
+        if (!rows.length && !q.fiscalUuid) {
+            throw new HttpError(404, "No records found for that filter");
+        }
 
         res.json(rows);
     } catch (e) {
@@ -25,11 +28,22 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-// GET /sap-documents/:id
+// GET /sap-documents/by-fiscal-uuid/:fiscalUuid
+export async function listByFiscalUuid(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { fiscalUuid } = FiscalUuidParamSchema.parse(req.params);
+        const rows = await svc.listByFiscalUuid(fiscalUuid);
+        res.json(rows);
+    } catch (e) {
+        next(e);
+    }
+}
+
+// GET /sap-documents/:uuid
 export async function getById(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
-        const row = await svc.get(id);
+        const { uuid } = IdParamSchema.parse(req.params);
+        const row = await svc.get(uuid);
         if (!row) return res.status(404).json({ message: "Not found" });
         res.json(row);
     } catch (e) { next(e); }
@@ -44,22 +58,22 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     } catch (e) { next(e); }
 }
 
-// PUT /sap-documents/:id
+// PUT /sap-documents/:uuid
 export async function update(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
+        const { uuid } = IdParamSchema.parse(req.params);
         const dto: UpdateSapDocumentDto = UpdateSapDocumentSchema.parse(req.body);
-        const updated = await svc.update(id, dto);
+        const updated = await svc.update(uuid, dto);
         if (!updated) return res.status(404).json({ message: "Not found" });
         res.json(updated);
     } catch (e) { next(e); }
 }
 
-// DELETE /sap-documents/:id
+// DELETE /sap-documents/:uuid
 export async function remove(req: Request, res: Response, next: NextFunction) {
     try {
-        const { id } = IdParamSchema.parse(req.params);
-        await svc.remove(id);
+        const { uuid } = IdParamSchema.parse(req.params);
+        await svc.remove(uuid);
         res.status(204).end();
     } catch (e) { next(e); }
 }

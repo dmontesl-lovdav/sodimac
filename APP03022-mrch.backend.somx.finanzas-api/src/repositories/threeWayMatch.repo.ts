@@ -11,10 +11,19 @@ type SupplierInfo = {
     tipoProveedor: string | null;
 };
 
+type InvoiceAmountInfo = {
+    subtotalFactura: number | null;
+    montoFactura: number | null;
+};
+
 type ThreeWayMatchWithSupplierInfo = ThreeWayMatch & {
-    nombreProveedor?: string | null;
-    tipoProveedorId?: string | null;
-    tipoProveedor?: string | null;
+    nombreProveedor: string | null;
+    tipoProveedorId: string | null;
+    tipoProveedor: string | null;
+};
+
+type ThreeWayMatchWithInvoiceInfo = ThreeWayMatchWithSupplierInfo & {
+    subtotalFactura: number | null;
 };
 
 type FindWithFiltersParams = {
@@ -73,6 +82,20 @@ export function findByStatus(status: number) {
             estatus: status,
         },
     });
+}
+
+function toNullableNumber(
+    value: string | number | null | undefined
+): number | null {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const numericValue = Number(value);
+
+    return Number.isFinite(numericValue)
+        ? numericValue
+        : null;
 }
 
 /**
@@ -158,6 +181,86 @@ async function findSupplierInfo(
 }
 
 /**
+ * Obtiene subtotal y total real de la factura desde tenant_fiscal.invoice.
+ *
+ * subtotalFactura:
+ * - Se usa invoice.subtotal si existe.
+ * - Si no existe, se conserva invoice_amount de Three Way Match.
+ *
+ * montoFactura:
+ * - Se usa invoice.total si existe.
+ * - Si no existe, se conserva invoice_amount de Three Way Match.
+ */
+async function findInvoiceAmounts(
+    invoiceUuids: string[]
+): Promise<Map<string, InvoiceAmountInfo>> {
+    const invoiceAmountMap =
+        new Map<string, InvoiceAmountInfo>();
+
+    const normalizedInvoiceUuids = Array.from(
+        new Set(
+            invoiceUuids
+                .map((value) => String(value).trim())
+                .filter((value) => value !== "")
+        )
+    );
+
+    if (normalizedInvoiceUuids.length === 0) {
+        return invoiceAmountMap;
+    }
+
+    const ds = getDataSource();
+
+    const invoiceRows = await ds.query(
+        `
+            SELECT
+                i.invoice_uuid::text AS "invoiceUuid",
+                i.fiscal_uuid::text AS "fiscalUuid",
+                i.subtotal::text AS "subtotalFactura",
+                i.total::text AS "montoFactura"
+            FROM tenant_fiscal.invoice i
+            WHERE
+                i.invoice_uuid::text = ANY($1::text[])
+                OR i.fiscal_uuid::text = ANY($1::text[])
+        `,
+        [normalizedInvoiceUuids]
+    );
+
+    for (
+        const row of invoiceRows as Array<{
+            invoiceUuid: string | null;
+            fiscalUuid: string | null;
+            subtotalFactura: string | number | null;
+            montoFactura: string | number | null;
+        }>
+    ) {
+        const invoiceInfo: InvoiceAmountInfo = {
+            subtotalFactura:
+                toNullableNumber(row.subtotalFactura),
+
+            montoFactura:
+                toNullableNumber(row.montoFactura),
+        };
+
+        if (row.invoiceUuid) {
+            invoiceAmountMap.set(
+                String(row.invoiceUuid).trim(),
+                invoiceInfo
+            );
+        }
+
+        if (row.fiscalUuid) {
+            invoiceAmountMap.set(
+                String(row.fiscalUuid).trim(),
+                invoiceInfo
+            );
+        }
+    }
+
+    return invoiceAmountMap;
+}
+
+/**
  * Enriquece los registros de Three Way Match con los
  * datos del proveedor.
  */
@@ -212,6 +315,71 @@ async function enrichWithSupplierInfo(
 
             tipoProveedor:
                 supplierInfo?.tipoProveedor ?? null,
+        };
+    });
+}
+
+/**
+ * Enriquece los registros con el subtotal y total real de factura.
+ *
+ * Importante:
+ * - item.montoFactura viene de tenant_finance.three_way_match.invoice_amount.
+ * - Ese valor actualmente corresponde al subtotal.
+ * - Para Monto Factura se consulta tenant_fiscal.invoice.total.
+ */
+async function enrichWithInvoiceAmounts(
+    data: ThreeWayMatchWithSupplierInfo[]
+): Promise<ThreeWayMatchWithInvoiceInfo[]> {
+    if (data.length === 0) {
+        return [];
+    }
+
+    const invoiceUuids = Array.from(
+        new Set(
+            data
+                .map((item) => item.uuid)
+                .filter(
+                    (value) =>
+                        value !== null &&
+                        value !== undefined
+                )
+                .map((value) => String(value).trim())
+                .filter((value) => value !== "")
+        )
+    );
+
+    if (invoiceUuids.length === 0) {
+        return data.map((item) => ({
+            ...item,
+            subtotalFactura:
+                item.montoFactura ?? null,
+        }));
+    }
+
+    const invoiceAmountMap =
+        await findInvoiceAmounts(invoiceUuids);
+
+    return data.map((item) => {
+        const normalizedInvoiceUuid =
+            item.uuid != null
+                ? String(item.uuid).trim()
+                : "";
+
+        const invoiceAmount =
+            invoiceAmountMap.get(normalizedInvoiceUuid);
+
+        return {
+            ...item,
+
+            subtotalFactura:
+                invoiceAmount?.subtotalFactura ??
+                item.montoFactura ??
+                null,
+
+            montoFactura:
+                invoiceAmount?.montoFactura ??
+                item.montoFactura ??
+                null,
         };
     });
 }
@@ -380,8 +548,11 @@ export async function findWithFilters(
     const [data, total] =
         await qb.getManyAndCount();
 
-    const enrichedData =
+    const dataWithSupplierInfo =
         await enrichWithSupplierInfo(data);
+
+    const enrichedData =
+        await enrichWithInvoiceAmounts(dataWithSupplierInfo);
 
     return {
         data: enrichedData,

@@ -305,7 +305,7 @@ El OpenAPI documenta rutas para los siguientes dominios:
 | Audit Logs | `/audit-logs`, `/audit-logs/export/csv`, `/audit-logs/transaction/{idTransaccion}`, `/audit-logs/{id}` |
 | Rebates | `/rebates`, `/rebates/published`, `/rebates/search`, `/rebates/export/csv`, `/rebates/vendor/{vendorNumber}`, `/rebates/{uuid}` |
 | Stamped Rebates | `/stamped-rebates`, `/stamped-rebates/export/csv`, `/stamped-rebates/{uuid}` |
-| SAP Documents | `/sap-documents`, `/sap-documents/{uuid}` |
+| SAP Documents | `/sap-documents`, `/sap-documents/by-fiscal-uuid/{fiscalUuid}`, `/sap-documents/{uuid}` |
 | Shipping Guide | `/shipping-guide`, `/shipping-guide/csv`, `/shipping-guide/cancel`, `/shipping-guide/status`, `/shipping-guide/{uuid}`, `/shipping-guide/guide/{idGuide}` |
 | Three Way Match | `/three-way-match`, `/three-way-match/export/csv`, `/three-way-match/export/xlsx`, `/three-way-match/run` |
 | MIGO | `/migo`, `/migo/upload`, `/migo/reject`, `/migo/{id}`, `/migo/{id}/receptions`, `/migo/{id}/authorize`, `/migo/{id}/export-csv` |

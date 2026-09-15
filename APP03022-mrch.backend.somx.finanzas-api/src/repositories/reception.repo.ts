@@ -8,6 +8,7 @@ ListReceptionQueryDto
 import { z } from "zod/v4";
 import { In, type FindOptionsWhere, Between, DeepPartial } from "typeorm";
 import { Not } from 'typeorm';
+import { ACCOUNT_STATEMENT_EXCLUDED_RECEPTION_STATUSES } from "@/utils/accountStatementExcludedStatuses.js";
 
 export const repo = () => datasource.getRepository(Reception);
 
@@ -69,7 +70,9 @@ export async function findByVendorAndDateRange(vendorNumber: number, start: Date
         .leftJoinAndSelect('r.purchaseOrder', 'po')
         .where('po.supplierNumber = :vendorNumber', { vendorNumber })
         .andWhere('r.receptionDate BETWEEN :start AND :end', { start, end })
-        .andWhere('r.status != 8')
+        .andWhere('(r.status IS NULL OR r.status NOT IN (:...excludedReceptionStatus))', {
+            excludedReceptionStatus: [...ACCOUNT_STATEMENT_EXCLUDED_RECEPTION_STATUSES],
+        })
         .orderBy('r.receptionDate', 'ASC')
         .take(500)
         .getMany();
@@ -186,6 +189,11 @@ export async function findAllPaginated(filter: ListReceptionQueryDto, pageSize: 
         if (filter.receptionId !== undefined) {
             receptionQuery.andWhere("reception.receptionId = CAST(:receptionId AS uuid)", {
                 receptionId: filter.receptionId,
+            });
+        }
+        if (filter.receptionTypeId !== undefined) {
+            receptionQuery.andWhere("reception.receptionTypeId = :receptionTypeId", {
+                receptionTypeId: filter.receptionTypeId,
             });
         }
         

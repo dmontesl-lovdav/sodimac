@@ -603,14 +603,16 @@ export default function CatalogsContainer() {
                   );
                 })()}
               </PermissionGate>
-              <button
-                style={styles.primaryBtn}
-                onClick={() => navigate('/util/catalogos/catalogs/crear')}
-              >
-                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
-                {' '}
-                Nuevo Catálogo
-              </button>
+              <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT}>
+                <button
+                  style={styles.primaryBtn}
+                  onClick={() => navigate('/util/catalogos/catalogs/crear')}
+                >
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⊕</span>
+                  {' '}
+                  Nuevo Catálogo
+                </button>
+              </PermissionGate>
             </div>
           </div>
 
@@ -811,13 +813,15 @@ export default function CatalogsContainer() {
                           </button>
                         </td>
                         <td style={styles.td}>
-                          <button
-                            style={styles.actionBtn}
-                            title="Editar"
-                            onClick={() => navigate(`/util/catalogos/catalogs/editar/${catalog.id}`)}
-                          >
-                            <img src={editIcon} alt="Editar" style={{ width: '20px', height: '20px' }} />
-                          </button>
+                          <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT}>
+                            <button
+                              style={styles.actionBtn}
+                              title="Editar"
+                              onClick={() => navigate(`/util/catalogos/catalogs/editar/${catalog.id}`)}
+                            >
+                              <img src={editIcon} alt="Editar" style={{ width: '20px', height: '20px' }} />
+                            </button>
+                          </PermissionGate>
                         </td>
                       </tr>
                     ))}

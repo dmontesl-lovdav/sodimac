@@ -4,29 +4,40 @@ SapDocumentDto:
     id:
       type: string
       format: uuid
-      description: Unique identifier
+      description: Same as sapDocumentUuid
+    sapDocumentUuid:
+      type: string
+      format: uuid
     documentNumber:
       type: string
-      description: SAP document number
-    documentType:
+    referenceNumber:
       type: string
-      description: Document type
     vendorNumber:
       type: integer
-      description: Vendor identifier
     amount:
-      type: string
-      description: Document amount
-    postingDate:
-      type: string
-      format: date-time
-      description: Posting date
-    status:
+      type: number
+    source:
       type: integer
-      description: Document status
+    docSap:
+      type: string
+    message:
+      type: string
+    sapStatus:
+      type: integer
+    documentType:
+      type: string
+    fiscalUuids:
+      type: array
+      items:
+        type: string
+        format: uuid
+    createdBy:
+      type: integer
     createdAt:
       type: string
       format: date-time
+    updatedBy:
+      type: integer
     updatedAt:
       type: string
       format: date-time
@@ -35,30 +46,72 @@ CreateSapDocumentDto:
   type: object
   required:
     - documentNumber
-    - documentType
+    - referenceNumber
     - vendorNumber
+    - amount
+    - source
+    - docSap
+    - documentType
   properties:
     documentNumber:
       type: string
-    documentType:
+    referenceNumber:
       type: string
     vendorNumber:
       type: integer
     amount:
       type: string
-    postingDate:
-      type: string
-      format: date-time
-    status:
+    source:
       type: integer
+    docSap:
+      type: string
+    message:
+      type: string
+    sapStatus:
+      type: integer
+    documentType:
+      type: string
+    createdBy:
+      type: integer
+    fiscalUuid:
+      type: string
+      format: uuid
+      description: UUID fiscal SAT (alternativo a fiscalUuids)
+    fiscalUuids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Lista de UUIDs fiscales. Se requiere al menos uno (fiscalUuid o fiscalUuids)
 
 UpdateSapDocumentDto:
   type: object
   properties:
-    status:
+    documentNumber:
+      type: string
+    referenceNumber:
+      type: string
+    vendorNumber:
       type: integer
     amount:
       type: string
-    postingDate:
+    source:
+      type: integer
+    docSap:
       type: string
-      format: date-time
+    message:
+      type: string
+    sapStatus:
+      type: integer
+    documentType:
+      type: string
+    updatedBy:
+      type: integer
+    fiscalUuid:
+      type: string
+      format: uuid
+    fiscalUuids:
+      type: array
+      items:
+        type: string
+        format: uuid

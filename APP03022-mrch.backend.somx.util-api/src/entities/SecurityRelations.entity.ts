@@ -2,6 +2,7 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    Index,
     PrimaryColumn,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
@@ -38,6 +39,10 @@ export class UserData {
 }
 
 @Entity({ schema: 'core_security', name: 'module_process' })
+@Index('uk_module_process_active', ['idCatalogDetailModule', 'idCatalogDetailProcess'], {
+    unique: true,
+    where: 'status = 1',
+})
 export class ModuleProcess {
     @PrimaryGeneratedColumn({ name: 'module_process_id' })
     idModuleProcess!: number;

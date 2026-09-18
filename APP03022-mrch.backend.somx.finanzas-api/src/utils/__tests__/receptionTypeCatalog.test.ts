@@ -1,4 +1,4 @@
-import { catalogAcceptsReceptionTypeId, toNumericReceptionTypeId } from "../receptionTypeCatalog.js";
+import { catalogAcceptsReceptionTypeId, catalogDetailsToIdLabelMap, toNumericReceptionTypeId } from "../receptionTypeCatalog.js";
 
 describe("catalogAcceptsReceptionTypeId", () => {
     it("prioriza value, luego internal y al final id", () => {
@@ -18,5 +18,16 @@ describe("toNumericReceptionTypeId", () => {
         expect(toNumericReceptionTypeId("2")).toBe(2);
         expect(toNumericReceptionTypeId(3)).toBe(3);
         expect(toNumericReceptionTypeId("")).toBeUndefined();
+    });
+});
+
+describe("catalogDetailsToIdLabelMap", () => {
+    it("resuelve el nombre por value, internalStatus e id", () => {
+        const map = catalogDetailsToIdLabelMap([
+            { value: "1", internalStatus: 9, description: "Mercancía", key: "TRE001", id: 50 } as any,
+        ]);
+        expect(map.get(1)).toBe("Mercancía");
+        expect(map.get(9)).toBe("Mercancía");
+        expect(map.get(50)).toBe("Mercancía");
     });
 });

@@ -33,7 +33,7 @@ CATALOGS_API_TIPO_PROVEEDOR: "/catalog/CatTipoProveedor",
 CATALOGS_API_TIPO_ENTREGA_GUIA: "/catalog/CatTipoEntregaGuia",
 CATALOGS_API_ORIGEN_CARTA_PORTE: "/catalog/CatOrigenCartaPorte",
 CATALOGS_API_TIPO_RECEPCION_SODIMAC: "/catalog/CatTipoOrigenRecepcionSodimac",
-CATALOGS_API_TIPO_RECEPCION: "/catalog/CatTipoRecepcion",
+CATALOGS_API_TIPO_RECEPCION: "/catalog/CATTIPORECEPCION",
 } as const;
 
 

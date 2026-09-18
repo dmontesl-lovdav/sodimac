@@ -1,6 +1,6 @@
 /** Etiquetas legibles para estatus numérico de orden de compra en detalle de guía. */
 const PURCHASE_ORDER_STATUS_LABELS: Record<number, string> = {
-    0: "Cancelada",
+    0: "Disponible",
     1: "Registrada",
     2: "En proceso",
     3: "Cerrada",

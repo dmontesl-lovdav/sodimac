@@ -22,6 +22,7 @@ import ReceptionGridTable from "./components/ReceptionGridTable";
 import type { Order, Reception, ReceptionAxios, ReceptionSKU, OrdersFilters } from "./interfaces";
 import { resolveReceptionStatusDisplay } from "./receptionStatusDisplay";
 import { filterByReceptionQuery } from "./receptionNumberQuery";
+import { filterByReceptionType, normalizeReceptionTypeQueryValue } from "./receptionTypeQuery";
 import {
     FINANCE_LIST_KEYS,
     useFinanceListScreenSession,
@@ -125,6 +126,9 @@ export default function ReceptionContainer(): ReactElement {
           originId: String(rec.originId ?? item.originId ?? "0"),
           originName:
             typeof rec.originName === "string" ? rec.originName.trim() : "",
+          receptionTypeId: rec.receptionTypeId ?? "",
+          receptionTypeName:
+            typeof rec.receptionTypeName === "string" ? rec.receptionTypeName.trim() : "",
           purchaseOrderDate: item.purchaseOrderDate,
           supplierNumber: String(item.supplierNumber ?? ""),
           vendorName:
@@ -184,8 +188,9 @@ export default function ReceptionContainer(): ReactElement {
     try {
       setLoading(true);
 
-      const { providerType: providerTypeQ, ...apiCriteria } = criteria;
+      const { providerType: providerTypeQ, receptionTypeId: receptionTypeRaw, ...apiCriteria } = criteria;
       const receptionQ = criteria.receptionNumber;
+      const receptionTypeQ = normalizeReceptionTypeQueryValue(receptionTypeRaw);
 
       const finalCriteria: OrdersFilters = {
         ...apiCriteria,
@@ -193,6 +198,9 @@ export default function ReceptionContainer(): ReactElement {
         pageNumber: 1,
         pageSize: FETCH_ORDERS_PAGE_SIZE,
       };
+      if (receptionTypeQ) {
+        finalCriteria.receptionTypeId = receptionTypeQ;
+      }
 
       const res: ReceptionAxios = await OrderClient.get(finalCriteria);
       const orders = res?.data?.content ?? [];
@@ -205,6 +213,7 @@ export default function ReceptionContainer(): ReactElement {
       }
       receptions = filterByReceptionQuery(receptions, receptionQ);
       receptions = filterByProviderType(receptions, providerTypeQ);
+      receptions = filterByReceptionType(receptions, receptionTypeQ);
 
       setAllFiltered(receptions);
       setPerPage(s);
@@ -275,6 +284,7 @@ export default function ReceptionContainer(): ReactElement {
       "Número Proveedor",
       "Nombre Proveedor",
       "Tipo Proveedor",
+      "Tipo Recepción",
       "Importe",
       "Serie",
       "Folio",
@@ -312,6 +322,7 @@ export default function ReceptionContainer(): ReactElement {
         String(r.supplier?.supplierNumber ?? r.supplierNumber ?? "--"),
         r.supplier?.businessName ?? r.vendorName ?? r.order?.vendorName ?? "--",
         providerType,
+        r.receptionTypeName?.trim() || "--",
         formatAmount(r.amount),
         inv?.series ?? "--",
         inv?.folio ?? "--",

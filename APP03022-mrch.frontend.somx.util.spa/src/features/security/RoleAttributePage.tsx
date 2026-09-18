@@ -1,9 +1,9 @@
-import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import GenericButton from '@shared/components/ui/button/GenericButton';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
 import { getErrorMessage, useAlertModal } from '@shared/hooks/useAlertModal';
-import { GenericSelect } from '@shared/components/ui/select';
+import { MultiValueSelect } from './components/MultiValueSelect';
 import { SecurityBreadcrumb } from './components/SecurityBreadcrumb';
 import { DualTransferList } from './components/DualTransferList';
 import { SecuritySearchFilters } from './components/SecuritySearchFilters';
@@ -37,35 +37,17 @@ type RoleAttributeListRestore = {
   };
 };
 
-const findExistingAttributeValueId = (
+const buildSelectedValuesMap = (
   attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
-  attributeTypeId: number,
-): number | undefined =>
-  attributes.find((item) => item.attributeTypeId === attributeTypeId)?.attributeValueId;
-
-const resolveChosenAttributeValue = (
-  attributeTypeId: number,
-  prev: Record<number, string>,
-  attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
-  optionsMap: Record<number, AttributeValueOption[]>,
-): number | undefined => {
-  const existing = findExistingAttributeValueId(attributes, attributeTypeId);
-  if (existing) return existing;
-  const prevValue = prev[attributeTypeId];
-  if (prevValue) return Number(prevValue);
-  return optionsMap[attributeTypeId]?.[0]?.id;
-};
-
-const buildSelectedValueMap = (
-  attributeTypeIds: number[],
-  prev: Record<number, string>,
-  attributes: Array<{ attributeTypeId: number; attributeValueId?: number }>,
-  optionsMap: Record<number, AttributeValueOption[]>,
-): Record<number, string> => {
-  const next: Record<number, string> = {};
-  for (const attributeTypeId of attributeTypeIds) {
-    const chosen = resolveChosenAttributeValue(attributeTypeId, prev, attributes, optionsMap);
-    if (chosen) next[attributeTypeId] = String(chosen);
+): Record<number, number[]> => {
+  const next: Record<number, number[]> = {};
+  for (const item of attributes) {
+    if (item.attributeValueId == null) continue;
+    const current = next[item.attributeTypeId] ?? [];
+    if (!current.includes(item.attributeValueId)) {
+      current.push(item.attributeValueId);
+    }
+    next[item.attributeTypeId] = current;
   }
   return next;
 };
@@ -77,7 +59,7 @@ export function RoleAttributePage() {
   const [appliedFilters, setAppliedFilters] = useState<SecurityFilters | null>(null);
   const [selectedRole, setSelectedRole] = useState<SecurityRow | null>(null);
   const [valueOptionsByType, setValueOptionsByType] = useState<Record<number, AttributeValueOption[]>>({});
-  const [selectedValueByType, setSelectedValueByType] = useState<Record<number, string>>({});
+  const [selectedValuesByType, setSelectedValuesByType] = useState<Record<number, number[]>>({});
   const [valuesLoading, setValuesLoading] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const { showAlert, alertModal } = useAlertModal();
@@ -94,7 +76,7 @@ export function RoleAttributePage() {
     setSelectedRole(null);
     setDraftFilters(payload.draftFilters);
     setAppliedFilters(payload.appliedFilters);
-    setSelectedValueByType({});
+    setSelectedValuesByType({});
     setValueOptionsByType({});
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state, location.pathname, navigate]);
@@ -166,7 +148,7 @@ export function RoleAttributePage() {
   const openRole = (row: SecurityRow) => {
     setSelectedRole(row);
     setValueOptionsByType({});
-    setSelectedValueByType({});
+    setSelectedValuesByType({});
   };
 
   const assignmentLists = useMemo(() => {
@@ -211,9 +193,7 @@ export function RoleAttributePage() {
         }
         setValueOptionsByType(optionsMap);
 
-        setSelectedValueByType((prev) =>
-          buildSelectedValueMap(attributeTypeIds, prev, attributes, optionsMap),
-        );
+        setSelectedValuesByType(buildSelectedValuesMap(attributes));
       } catch {
         if (!cancelled) {
           showAlert({
@@ -236,46 +216,63 @@ export function RoleAttributePage() {
     };
   }, [selectedRole, attributeTypes, attributes]);
 
-  const updateAssignedValue = (attributeTypeId: number, selectedValueId: string) => {
-    setSelectedValueByType((prev) => ({
+  const updateAssignedValues = (attributeTypeId: number, values: number[]) => {
+    setSelectedValuesByType((prev) => ({
       ...prev,
-      [attributeTypeId]: selectedValueId,
+      [attributeTypeId]: values,
     }));
   };
 
   const saveAssignments = async (selectedIds: number[]) => {
     if (!selectedRole) return false;
 
-    const toDelete = attributes.filter((item) => !selectedIds.includes(item.attributeTypeId));
+    const unassignedRows = attributes.filter((item) => !selectedIds.includes(item.attributeTypeId));
 
     try {
       for (const attributeTypeId of selectedIds) {
+        const attributeType = attributeTypes.find((item) => item.id === attributeTypeId);
+        const attributeTypeName = attributeType?.name ?? `Atributo ${attributeTypeId}`;
         const options = valueOptionsByType[attributeTypeId] ?? [];
         if (options.length === 0) {
-          const attributeType = attributeTypes.find((item) => item.id === attributeTypeId);
-          const attributeTypeName = attributeType?.name ?? `Atributo ${attributeTypeId}`;
           throw new Error(`No hay catálogo configurable para "${attributeTypeName}".`);
         }
-        const selectedValueId = Number(selectedValueByType[attributeTypeId]);
-        if (!Number.isInteger(selectedValueId) || selectedValueId <= 0) {
-          const attributeType = attributeTypes.find((item) => item.id === attributeTypeId);
-          const attributeTypeName = attributeType?.name ?? `Atributo ${attributeTypeId}`;
-          throw new Error(`Selecciona un valor de catálogo para "${attributeTypeName}".`);
+        const values = selectedValuesByType[attributeTypeId] ?? [];
+        if (values.length === 0) {
+          throw new Error(`Selecciona al menos un valor de catálogo para "${attributeTypeName}".`);
         }
       }
 
-      await Promise.all(
-        selectedIds.map((attributeTypeId) =>
-          createAttributeMutation.mutateAsync({
-            roleId: selectedRole.id,
-            attributeTypeId,
-            attributeValueId: Number(selectedValueByType[attributeTypeId]),
-          }),
-        ),
-      );
+      for (const attributeTypeId of selectedIds) {
+        const values = selectedValuesByType[attributeTypeId] ?? [];
+        const existingRows = attributes.filter((item) => item.attributeTypeId === attributeTypeId);
+        const existingValueIds = existingRows
+          .map((item) => item.attributeValueId)
+          .filter((value): value is number => value != null);
+
+        const valuesToAdd = values.filter((value) => !existingValueIds.includes(value));
+        const rowsToRemove = existingRows.filter(
+          (item) => item.attributeValueId != null && !values.includes(item.attributeValueId),
+        );
+
+        await Promise.all(
+          valuesToAdd.map((attributeValueId) =>
+            createAttributeMutation.mutateAsync({
+              roleId: selectedRole.id,
+              attributeTypeId,
+              attributeValueId,
+            }),
+          ),
+        );
+
+        await Promise.all(
+          rowsToRemove.map((row) =>
+            deleteAttributeMutation.mutateAsync({ roleId: selectedRole.id, attributeId: row.id }),
+          ),
+        );
+      }
 
       await Promise.all(
-        toDelete.map((item) =>
+        unassignedRows.map((item) =>
           deleteAttributeMutation.mutateAsync({ roleId: selectedRole.id, attributeId: item.id }),
         ),
       );
@@ -299,17 +296,11 @@ export function RoleAttributePage() {
 
     return (
       <div className="security-attribute-value-row">
-        <small>Valor de catálogo</small>
-        <GenericSelect
-          value={selectedValueByType[item.id] ?? ''}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => updateAssignedValue(item.id, event.target.value)}
-          options={options.map((option) => ({
-            value: String(option.id),
-            label: `${option.catalogKey} - ${option.name}`,
-          }))}
-          placeholder="Selecciona valor"
-          containerClassName="security-attribute-value-select"
-          widthClass="gs-width-full"
+        <small>Valores de catálogo</small>
+        <MultiValueSelect
+          options={options}
+          selected={selectedValuesByType[item.id] ?? []}
+          onChange={(values) => updateAssignedValues(item.id, values)}
         />
       </div>
     );
@@ -344,7 +335,7 @@ export function RoleAttributePage() {
             renderAssignedItemExtra={renderAssignedItemExtra}
             onBack={() => {
               setSelectedRole(null);
-              setSelectedValueByType({});
+              setSelectedValuesByType({});
               setValueOptionsByType({});
             }}
           />

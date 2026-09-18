@@ -231,7 +231,7 @@ export function buildAccountStatementHtml(
     const vn = data.vendor.vendorNumber;
     
 
-    const ocRows = data.purchaseOrders.map((po) => {
+    const ocRows = data.purchaseOrders.filter((po) => po.status != 7 && po.status != 8).map((po) => {
         const purchaseOrderId = po.purchaseOrderId as string | undefined;
         const rec = data.receptions.find(
             (r) => r.purchaseOrderId === purchaseOrderId

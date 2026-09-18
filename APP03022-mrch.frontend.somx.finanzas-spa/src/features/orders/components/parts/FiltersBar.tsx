@@ -19,6 +19,10 @@ import {
   fetchCatalogAsSelectableOptions,
 } from "@/utils/utils";
 import {
+  catalogDetailsToReceptionTypeOptions,
+  normalizeReceptionTypeQueryValue,
+} from "../../receptionTypeQuery";
+import {
   clearFinanceListSession,
   FINANCE_LIST_KEYS,
   isFinanceListUrlReset,
@@ -58,6 +62,7 @@ function buildOrdersFilterPayload(input: {
   receptionNumber: string;
   status: string;
   providerType: string;
+  receptionType: string;
 }): OrdersFilters {
   const [start, end] = input.dateRange;
   const dayStart = startOfLocalDay(start ?? new Date());
@@ -66,6 +71,7 @@ function buildOrdersFilterPayload(input: {
   const sn = input.provider.trim();
   const parsedSupplier = sn === "" ? NaN : Number(sn);
   const providerType = input.providerType.trim();
+  const receptionTypeId = normalizeReceptionTypeQueryValue(input.receptionType);
   const orderNumber = input.orderNumber.trim();
   const receptionNumber = input.receptionNumber.trim();
   return {
@@ -74,6 +80,7 @@ function buildOrdersFilterPayload(input: {
     supplierNumber:
       sn !== "" && Number.isFinite(parsedSupplier) ? parsedSupplier : undefined,
     providerType: providerType ? providerType : undefined,
+    ...(receptionTypeId ? { receptionTypeId } : {}),
     orderNumber: orderNumber ? orderNumber : undefined,
     receptionNumber: receptionNumber ? receptionNumber : undefined,
     status: input.status.trim() !== "" ? Number(input.status) : undefined,
@@ -112,6 +119,7 @@ function applySavedOrdersFilters(
     setDateRange: (v: [Date | null, Date | null]) => void;
     setProvider: (v: string) => void;
     setProviderType: (v: string) => void;
+    setReceptionType: (v: string) => void;
     setOrderNumber: (v: string) => void;
     setReceptionNumber: (v: string) => void;
     setStatus: (v: string) => void;
@@ -127,6 +135,11 @@ function applySavedOrdersFilters(
   setters.setProviderType(
     saved.providerType != null && String(saved.providerType).trim() !== ""
       ? String(saved.providerType)
+      : ""
+  );
+  setters.setReceptionType(
+    saved.receptionTypeId != null && String(saved.receptionTypeId).trim() !== ""
+      ? String(saved.receptionTypeId)
       : ""
   );
   setters.setOrderNumber(
@@ -157,6 +170,7 @@ function applyDeepLinkFilters(
     dateRange: linkRange,
     provider: urlParams.supplierNumber,
     providerType: "",
+    receptionType: "",
     orderNumber: urlParams.orderNumber,
     receptionNumber: "",
     status: "",
@@ -173,8 +187,12 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
   const [providerTypeCatalog, setProviderTypeCatalog] = useState<
     ProvidersOptions[]
   >([]);
+  const [receptionTypeCatalog, setReceptionTypeCatalog] = useState<
+    ProvidersOptions[]
+  >([]);
   const [statusCatalog, setStatusCatalog] = useState<ProvidersOptions[]>([]);
   const [providerType, setProviderType] = useState<string>("");
+  const [receptionType, setReceptionType] = useState<string>("");
   const [provider, setProvider] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState("");
   const [receptionNumber, setReceptionNumber] = useState("");
@@ -195,10 +213,11 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
 
   useEffect(() => {
     const loadCatalogs = async () => {
-      const [providersRes, tipoProveedorRes, tipoRecepcionRes] =
+      const [providersRes, tipoProveedorRes, tipoRecepcionRes, estatusRecepcionRes] =
         await Promise.all([
           fetchProvidersAsCatalog("supplierNumber", isSupplierActiveOrInactive),
           fetchCatalogDetails("CatTipoProveedor"),
+          fetchCatalogDetails("CATTIPORECEPCION"),
           fetchCatalogDetails("CatEstatusRecepcion"),
         ]);
 
@@ -209,7 +228,11 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       }
 
       if (tipoRecepcionRes) {
-        const mappedStatus = fetchCatalogAsSelectableOptions(tipoRecepcionRes, "Todos los estatus");
+        setReceptionTypeCatalog(catalogDetailsToReceptionTypeOptions(tipoRecepcionRes));
+      }
+
+      if (estatusRecepcionRes) {
+        const mappedStatus = fetchCatalogAsSelectableOptions(estatusRecepcionRes, "Todos los estatus");
         setStatusCatalog(mappedStatus.filter((item: any) => item.value !== "8"));
       }
     };
@@ -221,6 +244,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
     setDateRange(initialDefaultRange());
     setProvider("");
     setProviderType("");
+    setReceptionType("");
     setOrderNumber("");
     setReceptionNumber("");
     setStatus("");
@@ -257,6 +281,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
           setDateRange,
           setProvider,
           setProviderType,
+          setReceptionType,
           setOrderNumber,
           setReceptionNumber,
           setStatus,
@@ -284,6 +309,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
     const linkRange = applyDeepLinkFilters(urlParams, onSearchRef.current);
     setProvider(urlParams.supplierNumber);
     setProviderType("");
+    setReceptionType("");
     setReceptionNumber("");
     setStatus("");
     setOrderNumber(urlParams.orderNumber);
@@ -308,6 +334,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
       dateRange,
       provider,
       providerType,
+      receptionType,
       orderNumber,
       receptionNumber,
       status,
@@ -331,6 +358,7 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
     lastUrlEndDateRef.current = null;
     setProvider("");
     setProviderType("");
+    setReceptionType("");
     setOrderNumber("");
     setReceptionNumber("");
     setStatus("");
@@ -360,6 +388,17 @@ export default function FiltersBar({ onSearch, onClear }: Props): ReactElement {
               }
               options={providerTypeCatalog}
               placeholder="Tipo Proveedor"
+              widthClass="gs-width-md"
+            />
+          </div>
+          <div className="rc-filter-provider-type rc-filter-reception-type">
+            <GenericSelectSearchable
+              value={receptionType}
+              onChange={(e: { target: { value: string } }) =>
+                setReceptionType(e.target.value)
+              }
+              options={receptionTypeCatalog}
+              placeholder="Tipo Recepción"
               widthClass="gs-width-md"
             />
           </div>

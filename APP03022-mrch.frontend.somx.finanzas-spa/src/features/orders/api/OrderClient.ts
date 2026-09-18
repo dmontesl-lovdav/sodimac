@@ -1,6 +1,7 @@
 import { createApiClient } from "@/services/ApiClient";
 import type { OrdersFilters } from "../interfaces";
 import { Order, Reception, ReceptionAxios, ReceptionAxiosSingle } from "../interfaces";
+import { buildPurchaseOrdersQuery } from "../purchaseOrderListQuery";
 
 const api = createApiClient({
     baseUrl: process.env.API_BASE_URL ?? "",
@@ -10,29 +11,7 @@ const DEFAULT_ROUTE = "purchase-orders";
 
 export const OrderClient = {
     async get(criteria: OrdersFilters): Promise<ReceptionAxios> {
-        const params = new URLSearchParams();
-        params.set("purchaseOrderDateAtInitial", criteria.purchaseOrderDateAtInitial);
-        params.set("purchaseOrderDateAtEnd", criteria.purchaseOrderDateAtEnd);
-        params.set("pageNumber", String(criteria.pageNumber));
-        params.set("pageSize", String(criteria.pageSize));
-
-        if (criteria.supplierNumber != null && !Number.isNaN(Number(criteria.supplierNumber))) {
-            params.set("supplierNumber", String(criteria.supplierNumber));
-        }
-        if (criteria.orderNumber != null && String(criteria.orderNumber).trim() !== "") {
-            params.set("orderNumber", String(criteria.orderNumber).trim());
-        }
-        if (criteria.status != null && !Number.isNaN(Number(criteria.status))) {
-            params.set("status", String(criteria.status));
-        }
-        if (criteria.originId != null && String(criteria.originId).trim() !== "") {
-            params.set("originId", String(criteria.originId).trim());
-        }
-        if (criteria.receptionNumber != null && String(criteria.receptionNumber).trim() !== "") {
-            params.set("receptionNumber", String(criteria.receptionNumber).trim());
-        }
-
-        const qs = params.toString();
+        const qs = buildPurchaseOrdersQuery(criteria).toString();
 
         return api.request<ReceptionAxios>(
             `${DEFAULT_ROUTE}?${qs}`,

@@ -464,7 +464,7 @@ function pushEmptyRowError(rn: number, errs: LayoutValidationError[]): void {
         cell: `A${rn}`,
         column: 'fila',
         message:
-            'La fila está completamente vacía. No se permiten filas vacías entre registros válidos. Las filas vacías solo se permiten al final del archivo.',
+            `Error en la fila ${rn}: La fila está completamente vacía. No se permiten filas vacías entre registros válidos. Las filas vacías solo se permiten al final del archivo.`,
     });
 }
 

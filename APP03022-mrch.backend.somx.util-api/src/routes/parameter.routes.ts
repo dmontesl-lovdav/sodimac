@@ -2,6 +2,7 @@
 // STM-1213: Sistema de versionado de parametros
 import { Router } from "express";
 import * as parameterController from "@/controllers/parameter.controller.js";
+import { requirePermission } from "@/middlewares/permission.middleware.js";
 
 const router = Router();
 
@@ -16,10 +17,10 @@ router.get("/", parameterController.list);
 router.get("/:id", parameterController.getById);
 
 // POST /api/parameters - Crear parametro (version inicial 1.0)
-router.post("/", parameterController.create);
+router.post("/", requirePermission("EVT0065"), parameterController.create);
 
 // PATCH /api/parameters/:id - Actualizar metadatos (NO permite cambiar value)
-router.patch("/:id", parameterController.update);
+router.patch("/:id", requirePermission("EVT0068"), parameterController.update);
 
 // DELETE /api/parameters/:id - Eliminar parametro (soft delete)
 router.delete("/:id", parameterController.remove);
@@ -32,7 +33,7 @@ router.delete("/:id", parameterController.remove);
 router.get("/:id/versions", parameterController.getVersions);
 
 // POST /api/parameters/:id/versions - Crear nueva version (cuando cambia value)
-router.post("/:id/versions", parameterController.createVersion);
+router.post("/:id/versions", requirePermission("EVT0068"), parameterController.createVersion);
 
 // ========================================
 // GESTION DE ESTATUS

@@ -27,6 +27,10 @@ import {
 import { paymentsService } from "./api/paymentsService";
 import { PaymentRecord } from "./interfaces";
 import { PaymentFiltersValues } from "./components/FiltersBar";
+import {
+    clearPaymentSearchRestore,
+    hydratePaymentSearchRestoreIntoSession,
+} from "./utils/paymentSearchRestore";
 import { authenticator } from "@/configuration/ConfigurationBuilder";
 import { getErrorMessage } from "@/utils/errorMessage";
 import { fetchProviders } from "@/utils/utils";
@@ -35,6 +39,7 @@ import ConfigurationBuilder from "@/configuration/ConfigurationBuilder";
 import "./styles/PaymentsContainer.css";
 import {
     FINANCE_LIST_KEYS,
+    isFinanceListUrlRestore,
     useFinanceListScreenSession,
     useFinanceListRefetchOnReturn,
 } from "@/shared/hooks";
@@ -84,6 +89,17 @@ export default function PaymentsContainer(): ReactElement {
         useState(false);
 
     const warnIfEmptyRef = useRef(false);
+
+    const fiscalRestoreHydratedRef = useRef(false);
+    if (!fiscalRestoreHydratedRef.current) {
+        fiscalRestoreHydratedRef.current = true;
+        if (
+            typeof window !== "undefined" &&
+            isFinanceListUrlRestore(new URLSearchParams())
+        ) {
+            hydratePaymentSearchRestoreIntoSession();
+        }
+    }
 
     const returningFromDetail =
         useFinanceListScreenSession(
@@ -543,6 +559,7 @@ export default function PaymentsContainer(): ReactElement {
                 1,
                 perPage
             );
+            clearPaymentSearchRestore();
         }
     );
 

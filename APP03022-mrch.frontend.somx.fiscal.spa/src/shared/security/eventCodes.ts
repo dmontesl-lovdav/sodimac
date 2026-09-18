@@ -57,7 +57,7 @@ export const APP_EVENT = {
         VIEW_DETAIL:         { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.VIEW_DETAIL },
         DOWNLOAD_XML:        { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.DOWNLOAD_XML },
         DOWNLOAD_PDF:        { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.DOWNLOAD_PDF },
-        PUBLISH:             { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: EVENT_KEYS.COMMON.PUBLISH },
+        PUBLISH:             { app: APP_KEYS.PAYMENT_COMPLEMENTS, event: 'EVT0124', label: 'Publicar' },
     },
 } as const satisfies Record<string, Record<string, { app: AppKey; event: string; label?: string }>>;
 

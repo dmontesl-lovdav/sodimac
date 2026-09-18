@@ -30,3 +30,30 @@ export function toNumericReceptionTypeId(raw: unknown): number | undefined {
     }
     return parsed;
 }
+
+/** Índices value → description, luego internalStatus e id (misma prioridad que el front). */
+export function catalogDetailsToIdLabelMap(
+    rows: Array<GenericCatalogDetails & { id?: number | string }>
+): Map<number, string> {
+    const map = new Map<number, string>();
+    for (const row of rows ?? []) {
+        const label =
+            [row.description, row.value, row.externalKey, row.key].find(
+                (s): s is string => typeof s === "string" && String(s).trim().length > 0
+            )?.trim() ?? "";
+        if (!label) {
+            continue;
+        }
+        const keys = [
+            Number(String(row.value ?? "").trim()),
+            Number(row.internalStatus),
+            Number(row.id),
+        ];
+        for (const key of keys) {
+            if (Number.isFinite(key) && !map.has(key)) {
+                map.set(key, label);
+            }
+        }
+    }
+    return map;
+}

@@ -155,7 +155,7 @@ export default function AccountStatementContainer() {
 
         if(criteria.year==0){
             setInfoModal({
-                type: "error",
+                type: "warning",
                 visible: true,
                 message: "Selecciona un año válido del listado para consultar el estado de cuenta.",
             });

@@ -174,6 +174,9 @@ export interface Reception {
     originId: string;
     /** Nombre amigable (catálogo BFF CatTipoOrigenRecepcionSodimac), junto con originId. */
     originName?: string;
+    receptionTypeId?: string | number;
+    /** Descripción funcional CatTipoRecepcion. */
+    receptionTypeName?: string;
     purchaseOrderDate: string;
     supplierNumber: string;
     vendorName: string;
@@ -223,6 +226,8 @@ export interface OrdersFilters {
   /** Número de recepción; el API filtra con coincidencia parcial (contiene). */
   receptionNumber?: string;
   originId?: string;
+  /** IdTipoRecepcion (CatTipoRecepcion). */
+  receptionTypeId?: string | number;
   supplierNumber?: number;
   status?: number;
   isStatusUpdated?: boolean;

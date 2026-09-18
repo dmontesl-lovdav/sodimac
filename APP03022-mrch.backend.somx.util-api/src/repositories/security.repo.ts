@@ -112,6 +112,7 @@ const ATTRIBUTE_VALUE_CATALOG_BY_NAME: Record<string, string> = {
     grupoproveedor: 'CatGrupoProveedores',
     grupoproveedores: 'CatGrupoProveedores',
     tiporebate: 'CatTipoRebate',
+    proveedor: 'CatProveedor',
 };
 
 /** Identidad en core_security.user_data (respuesta API) */
@@ -961,13 +962,13 @@ export async function createRoleAttributes(
     const existing = await repo.findOneBy({
         idCatalogDetailRole: roleId,
         idCatalogDetailAttributeType: attributeTypeId,
+        idCatalogDetailAttributeValue: attributeValueId,
     });
     if (existing) {
         await repo.update(
             { idRoleAttribute: existing.idRoleAttribute },
             {
                 status: 1,
-                idCatalogDetailAttributeValue: attributeValueId,
                 updatedBy: actorId,
                 updatedAt: new Date(),
             },

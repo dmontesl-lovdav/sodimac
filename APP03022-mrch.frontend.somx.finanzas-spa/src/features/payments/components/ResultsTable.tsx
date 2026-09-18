@@ -7,7 +7,7 @@ import type { RowAction } from "@/shared/components/ui/table/GenericTable";
 import eyeIconUrl from "@assets/eye-show.svg";
 import plusIconUrl from "@assets/icons/plus.svg";
 
-import { capitalizeWord, formatDate } from "@/utils/utils";
+import { capitalizeWord } from "@/utils/utils";
 import { buildFiscalSpaUrl } from "@/utils/fiscalSpaUrl";
 import {
     canRelatePaymentComplement,
@@ -16,7 +16,8 @@ import {
 import type { PaymentRecord } from "../interfaces";
 import { StatusPill } from "@/shared/components/ui/statusPill/StatusPill";
 import type { PaymentFiltersValues } from "./FiltersBar";
-
+import { savePaymentSearchRestore } from "../utils/paymentSearchRestore";
+import { FINANCE_LIST_KEYS, readFinanceListFilters } from "@/shared/hooks";
 import { APP_EVENT, useSecurityContext } from "@shared/security";
 import "../styles/PaymentsResultsTable.css";
 
@@ -157,7 +158,17 @@ export default function ResultsTable({
                             year: r.paymentYear ?? "",
                             uuid: r.paymentHeaderUuid ?? "",
                             status: r.status ?? "",
+                            restoreSearch: "1",
                         });
+                        if (lastFilters) {
+                            savePaymentSearchRestore(lastFilters);
+                        } else {
+                            const saved =
+                                readFinanceListFilters<PaymentFiltersValues>(
+                                    FINANCE_LIST_KEYS.payments.filters
+                                );
+                            if (saved) savePaymentSearchRestore(saved);
+                        }
                         window.location.href = buildFiscalSpaUrl(
                             "publicar-complemento",
                             params

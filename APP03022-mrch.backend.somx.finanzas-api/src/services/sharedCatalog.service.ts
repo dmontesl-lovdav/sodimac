@@ -192,3 +192,46 @@ export async function getAllSuppliers(
 
     return suppliers.map((supplier) => mapSupplierToDto(supplier, suppliersTypes));
 }
+
+const CATTIPORECEPCION_KEYS = ["CATTIPORECEPCION", "CatTipoRecepcion"] as const;
+
+/** Detalles activos del catálogo CATTIPORECEPCION (por code o name). */
+export async function getCatTipoRecepcionDetails(): Promise<
+    Array<GenericCatalogDetails & { id?: number }>
+> {
+    const headerRepo = getDataSource().getRepository(SharedCatalogHeader);
+    const detailRepo = getDataSource().getRepository(SharedCatalogDetail);
+    const dictLangRepo = getDataSource().getRepository(SharedCatalogDictionaryLang);
+
+    const header = await headerRepo.findOne({
+        where: CATTIPORECEPCION_KEYS.flatMap((key) => [
+            { code: key },
+            { name: key },
+        ]),
+    });
+    if (!header) {
+        return [];
+    }
+
+    const details = await detailRepo.find({
+        where: { headerId: header.id, status: 1 },
+        order: { sortOrder: "ASC", id: "ASC" },
+    });
+    if (details.length === 0) {
+        return [];
+    }
+
+    const dictIds = details
+        .map((item) => item.dictId)
+        .filter((id): id is number => id != null);
+    const dictLangs = dictIds.length
+        ? await dictLangRepo.find({
+              where: { dictId: In(dictIds), langId: 1 },
+          })
+        : [];
+
+    return details.map((detail) => ({
+        ...mapCatalogDetailToDto(detail, dictLangs),
+        id: detail.id,
+    }));
+}

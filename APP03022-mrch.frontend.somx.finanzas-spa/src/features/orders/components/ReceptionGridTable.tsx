@@ -124,6 +124,10 @@ export default function ReceptionGridTable({ rows, ...props }: Props) {
             render: (r: Reception) => resolveProviderTypeLabel(r),
         },
         {
+            header: "Tipo Recepción",
+            render: (r: Reception) => r.receptionTypeName?.trim() || "--",
+        },
+        {
             header: "Importe",
             render: (r: Reception) => formatAmount(r.amount),
         },

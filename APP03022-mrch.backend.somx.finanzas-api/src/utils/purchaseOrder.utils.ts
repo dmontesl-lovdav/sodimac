@@ -24,8 +24,10 @@ import { DeepPartial } from 'typeorm';
 import * as constants from "@/constants/catalogConstantsCodes.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import { ResponseHandlerDTO } from "@/response/ResponseHandler.dto.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import {
     catalogAcceptsReceptionTypeId,
+    catalogDetailsToIdLabelMap,
     toNumericReceptionTypeId,
 } from "@/utils/receptionTypeCatalog.js";
 
@@ -35,14 +37,17 @@ export async function getCatalogs(dto: CreatePurchaseOrderDto
     const tipoReceptionSodimacList: GenericCatalogDetails[] = await svcAxios.GetCatalogDetailList((process.env.CATALOGS_API_URL_BFF ?? "") + constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION_SODIMAC + "/details", token);
     let tipoRecepcionList: GenericCatalogDetails[] = [];
     try {
-        tipoRecepcionList = await svcAxios.GetCatalogDetailList(
-            (process.env.CATALOGS_API_URL_BFF ?? "") +
-                constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION +
-                "/details",
-            token
-        );
+        tipoRecepcionList = await sharedCatalogService.getCatTipoRecepcionDetails();
+        if (!tipoRecepcionList.length) {
+            tipoRecepcionList = await svcAxios.GetCatalogDetailList(
+                (process.env.CATALOGS_API_URL_BFF ?? "") +
+                    constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION +
+                    "/details",
+                token
+            );
+        }
     } catch (e) {
-        logger.warn("CatTipoRecepcion no disponible al registrar recepción: {}", e);
+        logger.warn("CATTIPORECEPCION no disponible al registrar recepción: {}", e);
     }
     return { supplier, tipoReceptionSodimacList, tipoRecepcionList };
 }
@@ -323,28 +328,23 @@ export async function fetchReceptionOriginIdToLabel(token: string): Promise<Map<
 }
 
 export async function fetchReceptionTypeIdToLabel(token: string): Promise<Map<number, string>> {
-    const map = new Map<number, string>();
+    try {
+        const fromDb = await sharedCatalogService.getCatTipoRecepcionDetails();
+        if (fromDb.length) {
+            return catalogDetailsToIdLabelMap(fromDb);
+        }
+    } catch (e) {
+        logger.warn("fetchReceptionTypeIdToLabel: CATTIPORECEPCION en BD no disponible: {}", e);
+    }
     try {
         const base =
             (process.env.CATALOGS_API_URL_BFF ?? "") +
             constants.CatalogSupplierUrls.CATALOGS_API_TIPO_RECEPCION +
             "/details";
         const rows = await svcAxios.GetCatalogDetailList(base, token);
-        for (const c of rows ?? []) {
-            const id = Number(c.internalStatus);
-            if (!Number.isFinite(id)) {
-                continue;
-            }
-            const label =
-                [c.description, c.value, c.externalKey, c.key].find(
-                    (s): s is string => typeof s === "string" && String(s).trim().length > 0,
-                )?.trim() ?? "";
-            if (label) {
-                map.set(id, label);
-            }
-        }
+        return catalogDetailsToIdLabelMap(rows ?? []);
     } catch (e) {
-        logger.warn("fetchReceptionTypeIdToLabel: catálogo CatTipoRecepcion no disponible: {}", e);
+        logger.warn("fetchReceptionTypeIdToLabel: catálogo CATTIPORECEPCION no disponible: {}", e);
     }
-    return map;
+    return new Map();
 }

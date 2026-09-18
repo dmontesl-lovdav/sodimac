@@ -639,7 +639,11 @@ const CROSS = {
     {mod:"cartaporte",to:2,note:"Guía de transporte a Pendiente de Facturar (si aplica)"} ],
   "factura:17":[
     {mod:"recepcion",to:6,note:"La recepción pasa a Pagada (todos los proveedores)"},
-    {mod:"cartaporte",to:7,note:"Guía de transporte a Pagada (solo si es proveedor de transporte)"} ]
+    {mod:"cartaporte",to:7,note:"Guía de transporte a Pagada (solo si es proveedor de transporte)"} ],
+  "factura:5":[
+    {mod:"cartaporte",to:4,note:"Guía a En proceso de contabilización (solo transporte)"} ],
+  "factura:15":[
+    {mod:"cartaporte",to:5,note:"Guía a Contabilizada (solo transporte)"} ]
 };
 const CAT_LABEL={ini:"Inicial",proc:"Proceso",err:"Error",fin:"Final",can:"Cancelado"};
 const CAT_BG={ini:"var(--rec-bg)",proc:"var(--fac-bg)",err:"var(--err-bg)",fin:"var(--fin-bg)",can:"var(--can-bg)"};

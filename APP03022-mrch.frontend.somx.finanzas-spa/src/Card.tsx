@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOMClient from 'react-dom/client';
 import singleSpaReact from 'single-spa-react';
 import { navigateToUrl } from 'single-spa';
+
 import {
     Box,
     CardActionArea,
@@ -9,12 +10,70 @@ import {
     Paper,
     Typography,
 } from '@mui/material';
+
 import { styles } from './cardStyle';
+import { globalHomeStore } from './store/globalStore';
 
 interface CardProps {
     onClick?: () => void;
     title?: string;
 }
+
+interface Country {
+    name?: string;
+}
+
+interface SelectedTenant {
+    name?: string;
+    country?: Country;
+}
+
+interface ConfigurationState {
+    selectedTenant?: SelectedTenant;
+}
+
+interface GlobalState {
+    configuration?: ConfigurationState;
+}
+
+/**
+ * Obtiene el país seleccionado desde el Common State.
+ *
+ * Estructura real:
+ * state.configuration.selectedTenant.country.name
+ */
+const getSelectedCountry = (
+    state: unknown
+): string | undefined => {
+    if (!state || typeof state !== 'object') {
+        console.warn(
+            '[Finanzas Card] Global state vacío o inválido:',
+            state
+        );
+
+        return undefined;
+    }
+
+    const globalState = state as GlobalState;
+
+    const selectedTenant =
+        globalState.configuration?.selectedTenant;
+
+    const country =
+        selectedTenant?.country?.name;
+
+    console.log(
+        '[Finanzas Card] Tenant seleccionado:',
+        selectedTenant
+    );
+
+    console.log(
+        '[Finanzas Card] País seleccionado:',
+        country
+    );
+
+    return country;
+};
 
 const FinanzasIcon: React.FC = () => (
     <svg
@@ -30,10 +89,23 @@ const FinanzasIcon: React.FC = () => (
             height: '54px',
         }}
     >
-        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <rect
+            x="2"
+            y="4"
+            width="20"
+            height="16"
+            rx="2"
+        />
+
         <path d="M12 8v8" />
         <path d="M8 12h8" />
-        <circle cx="12" cy="12" r="3" />
+
+        <circle
+            cx="12"
+            cy="12"
+            r="3"
+        />
+
         <path d="M6 8h.01" />
         <path d="M6 16h.01" />
         <path d="M18 8h.01" />
@@ -45,7 +117,93 @@ const Card: React.FC<CardProps> = ({
     onClick,
     title = 'Finanzas',
 }) => {
-    const handleNavigate = (event: React.MouseEvent<HTMLElement>) => {
+    const [countryName, setCountryName] = useState<
+        string | undefined
+    >(undefined);
+
+    useEffect(() => {
+        const updateCountry = (
+            globalState: unknown,
+            origin: string
+        ) => {
+            console.log(
+                `[Finanzas Card] Global state (${origin}):`,
+                globalState
+            );
+
+            const country =
+                getSelectedCountry(globalState);
+
+            console.log(
+                `[Finanzas Card] Country detectado (${origin}):`,
+                country
+            );
+
+            setCountryName(country);
+        };
+
+        /**
+         * Estado inicial.
+         */
+        try {
+            const initialGlobalState =
+                globalHomeStore.GetGlobalState();
+
+            updateCountry(
+                initialGlobalState,
+                'initial'
+            );
+        } catch (error) {
+            console.error(
+                '[Finanzas Card] Error leyendo estado inicial:',
+                error
+            );
+        }
+
+        /**
+         * Cambios posteriores de tenant.
+         */
+        const unsubscribe =
+            globalHomeStore.SubscribeToGlobalState(
+                'finanzas',
+                (globalState: unknown) => {
+                    updateCountry(
+                        globalState,
+                        'subscription'
+                    );
+                }
+            );
+
+        return () => {
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
+        };
+    }, []);
+
+    const normalizedCountry =
+        countryName?.trim().toUpperCase();
+
+    console.log(
+        '[Finanzas Card] Render:',
+        {
+            countryName,
+            normalizedCountry,
+            shouldRender:
+                normalizedCountry === 'MX',
+        }
+    );
+
+    /**
+     * Finanzas solamente se renderiza para México.
+     */
+    if (normalizedCountry !== 'MX') {
+        return null;
+    }
+
+    const handleNavigate = (
+        event: React.MouseEvent<HTMLElement>
+    ) => {
         event.preventDefault();
 
         if (onClick) {
@@ -78,7 +236,7 @@ const Card: React.FC<CardProps> = ({
 
                 <CardContent sx={styles.cardContent}>
                     <Typography
-                        component="h2"
+                        component="p"
                         data-testid="card-title"
                         sx={styles.cardText}
                     >
@@ -94,10 +252,25 @@ const lifecycles = singleSpaReact({
     React,
     ReactDOMClient,
     rootComponent: Card,
-    errorBoundary() {
-        return <Box>Error al cargar el módulo de finanzas</Box>;
+
+    errorBoundary(error) {
+        console.error(
+            '[Finanzas Card] ErrorBoundary:',
+            error
+        );
+
+        return (
+            <Box>
+                Error al cargar el módulo de finanzas
+            </Box>
+        );
     },
 });
 
-export const { bootstrap, mount, unmount } = lifecycles;
+export const {
+    bootstrap,
+    mount,
+    unmount,
+} = lifecycles;
+
 export default Card;

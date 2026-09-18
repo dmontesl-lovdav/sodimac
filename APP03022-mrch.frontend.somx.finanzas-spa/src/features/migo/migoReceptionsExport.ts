@@ -5,6 +5,7 @@ export interface GroupedMigoReception {
     key: string;
     nroOc: number;
     nroRecepcion: number;
+    tipoRecepcion: number | null;
     sucursal: number;
     numeroProveedor: string;
     nroGuia: string;
@@ -20,6 +21,7 @@ export interface GroupedMigoReception {
 export const MIGO_GROUPED_RECEPTION_CSV_HEADERS = [
     "Orden Compra",
     "Recepción",
+    "Tipo Recepción",
     "Sucursal",
     "Número Proveedor",
     "Nombre Proveedor",
@@ -47,6 +49,7 @@ export function groupMigoReceptions(
                 key,
                 nroOc: r.nroOc,
                 nroRecepcion: r.nroRecepcion,
+                tipoRecepcion: r.tipoRecepcion ?? null,
                 sucursal: r.sucursal,
                 numeroProveedor: (r.numeroProveedor ?? "").toString().trim(),
                 nroGuia: r.nroGuia ?? "-",
@@ -68,6 +71,7 @@ export function mapGroupedMigoReceptionToCsvRow(
     return [
         String(r.nroOc ?? ""),
         String(r.nroRecepcion ?? ""),
+        r.tipoRecepcion != null ? String(r.tipoRecepcion) : "--",
         String(r.sucursal ?? ""),
         r.numeroProveedor || "--",
         r.vendorName || "--",

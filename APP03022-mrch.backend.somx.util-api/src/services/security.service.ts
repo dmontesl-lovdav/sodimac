@@ -975,6 +975,10 @@ export async function invalidateUserDetailsCache(userKey?: string, idProfile?: n
     return { cleared: existed ? 1 : 0 };
 }
 
+export async function hasPermissionForEvent(userKey: string, eventKey: string): Promise<boolean> {
+    return securityRepo.userHasPermissionForEvent(userKey, eventKey);
+}
+
 /** Atributos de un usuario por userKey (sub, preferred_username, email o id). Uso BFF. */
 export async function getUserAttributesByKey(userKey: string, langId?: number) {
     const key = String(userKey ?? '').trim();

@@ -6,6 +6,7 @@ import com.sodimac.fiscal.api.model.dto.response.PaymentRegistrationResponse;
 import com.sodimac.fiscal.api.model.dto.response.PaymentSearchResponse;
 import com.sodimac.fiscal.api.service.PaymentQueryService;
 import com.sodimac.fiscal.api.service.PaymentRegistrationService;
+import com.sodimac.fiscal.api.security.RequirePermission;
 import org.springframework.data.domain.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -63,6 +64,7 @@ public class PaymentRegistrationController {
      * @param request DTO con los parámetros de entrada
      * @return ResponseEntity con el resultado del registro
      */
+    @RequirePermission("EVT0124")
     @PostMapping(value = "/registrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Registrar complemento de pago",

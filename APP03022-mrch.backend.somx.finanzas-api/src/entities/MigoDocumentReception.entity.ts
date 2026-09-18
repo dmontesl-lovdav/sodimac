@@ -25,6 +25,9 @@ export class MigoDocumentReception {
     @Column({ name: 'numero_proveedor', type: 'varchar', length: 50, nullable: true })
     numeroProveedor?: string | null;
 
+    @Column({ name: 'tipo_recepcion', type: 'int', nullable: true })
+    tipoRecepcion?: number | null;
+
     @Column({ name: 'sucursal', type: 'bigint', nullable: false })
     sucursal!: number;
 

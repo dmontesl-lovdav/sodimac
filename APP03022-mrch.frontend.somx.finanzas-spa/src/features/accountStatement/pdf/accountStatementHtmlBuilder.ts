@@ -3,6 +3,13 @@ import type {
     AccountStatementReportPayload,
     CatalogStatusItem,
 } from '../interfaces/accountStatementReport';
+import {
+    isCancelledInvoiceOrCreditNote,
+    isCancelledReception,
+    omitCancelledAccountStatementRows,
+    omitPurchaseOrdersWithoutVisibleReception,
+    type StatusOption,
+} from './accountStatementCancelled';
 
 const ISSUER_FALLBACK = {
     name: 'Comercializadora SDMHC S.A. de C.V. (SODIMAC MÉXICO)',
@@ -121,7 +128,41 @@ type ViewModel = {
     catalogs: AccountStatementReportPayload['catalogs'];
 };
 
-function toViewModel(payload: AccountStatementReportPayload): ViewModel {
+function toViewModel(
+    payload: AccountStatementReportPayload,
+    receptionStatuses: StatusOption[] = [],
+    invoiceStatuses: StatusOption[] = []
+): ViewModel {
+    const catalogs = payload.catalogs ?? {
+        purchaseOrderStatus: [],
+        invoiceStatus: [],
+        paymentStatus: [],
+        creditNoteStatus: [],
+    };
+    const receptions = omitCancelledAccountStatementRows(
+        payload.receptions,
+        (status) => isCancelledReception(status, receptionStatuses)
+    );
+    const facturas = omitCancelledAccountStatementRows(
+        payload.facturas,
+        (status) =>
+            isCancelledInvoiceOrCreditNote(
+                status,
+                catalogs.invoiceStatus,
+                invoiceStatuses
+            )
+    );
+    const notasCredito = omitCancelledAccountStatementRows(
+        payload.notasCredito,
+        (status) =>
+            isCancelledInvoiceOrCreditNote(status, catalogs.creditNoteStatus)
+    );
+    const purchaseOrders = omitPurchaseOrdersWithoutVisibleReception(
+        payload.purchaseOrders,
+        receptions,
+        receptionStatuses
+    );
+
     return {
         issuer: payload.issuer ?? ISSUER_FALLBACK,
         vendor: payload.vendor,
@@ -134,19 +175,34 @@ function toViewModel(payload: AccountStatementReportPayload): ViewModel {
         periodEndStr: payload.dates.periodEnd
             ? formatDate(payload.dates.periodEnd)
             : 'N/A',
-        totals: payload.totals,
-        purchaseOrders: payload.purchaseOrders ?? [],
-        receptions: payload.receptions ?? [],
+        totals: {
+            ...payload.totals,
+            totalOC: purchaseOrders.reduce(
+                (sum, row) => sum + parseNum(row.amount),
+                0
+            ),
+            totalFacturasPendientes: facturas.reduce(
+                (sum, row) => sum + parseNum(row.total),
+                0
+            ),
+            totalNotasCredito: notasCredito.reduce(
+                (sum, row) => sum + parseNum(row.total),
+                0
+            ),
+            counts: {
+                ...payload.totals.counts,
+                purchaseOrders: purchaseOrders.length,
+                facturas: facturas.length,
+                notasCredito: notasCredito.length,
+            },
+        },
+        purchaseOrders,
+        receptions,
         payments: payload.payments ?? [],
         rebates: payload.rebates ?? [],
-        facturas: payload.facturas ?? [],
-        notasCredito: payload.notasCredito ?? [],
-        catalogs: payload.catalogs ?? {
-            purchaseOrderStatus: [],
-            invoiceStatus: [],
-            paymentStatus: [],
-            creditNoteStatus: [],
-        },
+        facturas,
+        notasCredito,
+        catalogs,
     };
 }
 
@@ -226,7 +282,7 @@ export function buildAccountStatementHtml(
     receptionStatuses: any[],
     invoiceStatuses: any[]
 ): string {
-    const data = toViewModel(payload);
+    const data = toViewModel(payload, receptionStatuses, invoiceStatuses);
     const h = escapeHtml;
     const vn = data.vendor.vendorNumber;
     

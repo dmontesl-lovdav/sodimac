@@ -41,6 +41,7 @@ router.get('/catalogs/attribute-values', securityController.listAttributeValuesB
 router.delete('/user-details/cache', securityController.invalidateUserDetailsCache);
 router.get('/user-details/:userKey', securityController.getUserDetailsByCatalogKey);
 router.get('/user-attributes-by-key/:userKey', securityController.getUserAttributesByKey);
+router.get('/has-permission/:userKey/:eventKey', securityController.hasPermission);
 
 router.get('/user-catalog', securityController.searchUserCatalog);
 router.get('/user-catalog/csv', securityController.exportUserCatalogCsv);

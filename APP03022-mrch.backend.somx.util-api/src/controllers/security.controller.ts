@@ -467,6 +467,18 @@ export async function getUserAttributesByKey(req: Request, res: Response, next: 
     }
 }
 
+/** GET /api/security/has-permission/:userKey/:eventKey — valida permiso por evento (uso server-to-server). */
+export async function hasPermission(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userKey = decodeURIComponent(String(req.params.userKey ?? ''));
+        const eventKey = decodeURIComponent(String(req.params.eventKey ?? ''));
+        const allowed = await securityService.hasPermissionForEvent(userKey, eventKey);
+        res.json({ success: true, data: { allowed } });
+    } catch (error) {
+        next(error);
+    }
+}
+
 /** GET /api/security/user-details/:userKey — detalle por user_data (preferred_username, sub, email o id). */
 export async function getUserDetailsByCatalogKey(req: Request, res: Response, next: NextFunction) {
     try {

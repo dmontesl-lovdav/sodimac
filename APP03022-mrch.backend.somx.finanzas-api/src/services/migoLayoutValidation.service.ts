@@ -4,6 +4,7 @@ export interface MigoCsvRow {
     Nro_OC: string;
     Nro_Recepcion: string;
     Numero_Proveedor: string;
+    Tipo_Recepcion: string;
     Sucursal: string;
     Nro_Guia: string;
     Origen: string;
@@ -43,6 +44,7 @@ export const REQUIRED_HEADERS = [
     'Nro_OC',
     'Nro_Recepcion',
     'Numero_Proveedor',
+    'Tipo_Recepcion',
     'Sucursal',
     'Nro_Guia',
     'Origen',
@@ -200,18 +202,32 @@ function buildEmptyLayoutResult(): ValidationResult {
     };
 }
 
-function buildInvalidHeadersResult(totalRows: number): ValidationResult {
-    return {
-        valid: false,
-        globalError: {
+function resolveHeaderError(headers: string[]): { code: string; message: string } | null {
+    const numeroIndex = headers.indexOf('Numero_Proveedor');
+    const tipoIndex = headers.indexOf('Tipo_Recepcion');
+
+    if (tipoIndex === -1) {
+        return {
+            code: 'WRN7020',
+            message: 'Falta la columna Tipo_Recepcion en el layout. Debe ubicarse después de Numero_Proveedor.',
+        };
+    }
+
+    if (numeroIndex === -1 || tipoIndex !== numeroIndex + 1) {
+        return {
+            code: 'WRN7020',
+            message: 'El orden de columnas no corresponde al layout permitido: Tipo_Recepcion debe ubicarse inmediatamente después de Numero_Proveedor.',
+        };
+    }
+
+    if (!headersAreValid(headers)) {
+        return {
             code: 'WRN7020',
             message: 'La cabecera del layout esta incorrecta, favor de validar.',
-        },
-        parsedRows: [],
-        totalRows,
-        totalValid: 0,
-        totalInvalid: totalRows,
-    };
+        };
+    }
+
+    return null;
 }
 
 function headersAreValid(headers: string[]): boolean {
@@ -364,6 +380,20 @@ function addCalculatedAmountError(
     );
 }
 
+function addTipoRecepcionErrors(
+    row: RawCsvRow,
+    errors: string[],
+): void {
+    const value = (row['Tipo_Recepcion'] ?? '').trim();
+    if (value === '') {
+        errors.push('Tipo_Recepcion es obligatorio y no puede estar vacío');
+        return;
+    }
+    if (!/^\d+$/.test(value)) {
+        errors.push('Tipo_Recepcion solo admite un valor numérico entero');
+    }
+}
+
 function buildParsedRow(
     row: RawCsvRow,
     rowNumber: number,
@@ -375,6 +405,11 @@ function buildParsedRow(
         row,
         errors,
         hasMontoOc,
+    );
+
+    addTipoRecepcionErrors(
+        row,
+        errors,
     );
 
     addPositiveValueErrors(
@@ -391,6 +426,7 @@ function buildParsedRow(
         Nro_OC: row['Nro_OC']?.trim() ?? '',
         Nro_Recepcion: row['Nro_Recepcion']?.trim() ?? '',
         Numero_Proveedor: row['Numero_Proveedor']?.trim() ?? '',
+        Tipo_Recepcion: row['Tipo_Recepcion']?.trim() ?? '',
         Sucursal: row['Sucursal']?.trim() ?? '',
         Nro_Guia: row['Nro_Guia']?.trim() ?? '',
         Origen: row['Origen']?.trim() ?? '',
@@ -551,8 +587,16 @@ export function validateLayout(
         return buildEmptyLayoutResult();
     }
 
-    if (!headersAreValid(headers)) {
-        return buildInvalidHeadersResult(rows.length);
+    const headerError = resolveHeaderError(headers);
+    if (headerError) {
+        return {
+            valid: false,
+            globalError: headerError,
+            parsedRows: [],
+            totalRows: rows.length,
+            totalValid: 0,
+            totalInvalid: rows.length,
+        };
     }
 
     const hasMontoOc = headers.includes('MontoOC');

@@ -41,7 +41,7 @@ export async function findAllVisible(): Promise<Supplier[]> {
 
 export async function findExistingStatus(
     supplierNumber: string,
-): Promise<'active' | 'inactive' | null> {
+): Promise<'active' | 'inactive' | 'deleted' | null> {
     const existing = await repo().findOne({
         where: { supplierNumber },
         select: ['status'],
@@ -49,6 +49,7 @@ export async function findExistingStatus(
     if (!existing) return null;
     if (existing.status === Supplier.STATUS_ACTIVE) return 'active';
     if (existing.status === Supplier.STATUS_INACTIVE) return 'inactive';
+    if (existing.status === Supplier.STATUS_DELETED) return 'deleted';
     return null;
 }
 

@@ -23,6 +23,7 @@ export interface MigoReception {
     migoDocumentId: string;
     nroOc: number;
     nroRecepcion: number;
+    tipoRecepcion?: number | null;
     sucursal: number;
     nroGuia?: string;
     origen?: string;

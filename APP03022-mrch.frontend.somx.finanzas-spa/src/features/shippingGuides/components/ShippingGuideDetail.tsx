@@ -306,10 +306,6 @@ export default function ShippingGuideDetailView(): ReactElement {
                         <DetailCell label="Estatus Actualizado">
                             {detail.isStatusUpdated ? "Sí" : "No"}
                         </DetailCell>
-
-                        <DetailCell label="Usuario Registro">
-                            {fmt(detail.createdBy)}
-                        </DetailCell>
                         <DetailCell label="Usuario Actualización">
                             {fmt(detail.updatedBy)}
                         </DetailCell>

@@ -1,7 +1,20 @@
 import { datasource } from '@/config/typeorm-datasource.js';
 import { CatalogHeader } from '@/entities/CatalogHeader.entity.js';
+import { CatalogDetail } from '@/entities/CatalogDetail.entity.js';
 
 export const repo = () => datasource.getRepository(CatalogHeader);
+
+export async function findParentCatalogsForCatalog(catalogId: number): Promise<CatalogHeader[]> {
+    return repo()
+        .createQueryBuilder('ph')
+        .innerJoin(CatalogDetail, 'e', 'e.parent_catalog_id = ph.id')
+        .where('e.header_id = :catalogId', { catalogId })
+        .andWhere('e.parent_catalog_id IS NOT NULL')
+        .andWhere('ph.status = 1')
+        .distinct(true)
+        .orderBy('ph.name', 'ASC')
+        .getMany();
+}
 
 export async function findById(id: number): Promise<CatalogHeader | null> {
     return repo().findOne({ where: { id } });

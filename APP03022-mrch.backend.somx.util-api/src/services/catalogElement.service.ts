@@ -551,7 +551,11 @@ export async function changeStatus(
     return result;
 }
 
-export async function findPrimaryCatalogs(): Promise<CatalogSimpleDto[]> {
+export async function findPrimaryCatalogs(catalogId?: number): Promise<CatalogSimpleDto[]> {
+    if (catalogId != null && Number.isInteger(catalogId)) {
+        const parents = await headerRepo.findParentCatalogsForCatalog(catalogId);
+        return elementMapper.toSimpleDtoList(parents);
+    }
     const primaries = await headerRepo.findByCatalogTypeAndStatus(CATALOG_TYPE_PRIMARIO, 1);
     const hierarchicals = await headerRepo.findByCatalogTypeAndStatus(CATALOG_TYPE_HIERARCHICAL, 1);
     return elementMapper.toSimpleDtoList([...primaries, ...hierarchicals]);

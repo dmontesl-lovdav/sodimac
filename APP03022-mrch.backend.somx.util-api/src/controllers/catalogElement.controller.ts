@@ -101,9 +101,10 @@ export async function changeStatus(req: Request, res: Response, next: NextFuncti
     }
 }
 
-export async function getPrimaryCatalogs(_req: Request, res: Response, next: NextFunction) {
+export async function getPrimaryCatalogs(req: Request, res: Response, next: NextFunction) {
     try {
-        const result = await elementService.findPrimaryCatalogs();
+        const catalogId = toIntOrNull((req.query as Record<string, unknown>).catalogId);
+        const result = await elementService.findPrimaryCatalogs(catalogId ?? undefined);
         res.json(result);
     } catch (err) {
         next(err);

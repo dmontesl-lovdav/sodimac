@@ -1,9 +1,11 @@
 package com.sodimac.fiscal.api.security;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,6 +96,37 @@ public class UtilApiSecurityClient {
         } catch (Exception e) {
             log.warn("util-api fetch error for sub={}: {}", sub, e.getMessage());
             return SecurityAttributes.empty();
+        }
+    }
+
+    public boolean hasPermission(String userKey, String eventKey) {
+        if (userKey == null || userKey.isBlank() || eventKey == null || eventKey.isBlank()) {
+            return false;
+        }
+        try {
+            URI uri = URI.create(utilApiUrl + "/api/security/has-permission/"
+                    + URLEncoder.encode(userKey, StandardCharsets.UTF_8) + "/"
+                    + URLEncoder.encode(eventKey, StandardCharsets.UTF_8));
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() != 200) {
+                log.warn("util-api has-permission returned {} for userKey={} eventKey={}", res.statusCode(), userKey, eventKey);
+                return false;
+            }
+            JsonNode root = mapper.readTree(res.body());
+            return root.path("data").path("allowed").asBoolean(false);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("util-api has-permission interrupted for userKey={}: {}", userKey, e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.warn("util-api has-permission error for userKey={}: {}", userKey, e.getMessage());
+            return false;
         }
     }
 

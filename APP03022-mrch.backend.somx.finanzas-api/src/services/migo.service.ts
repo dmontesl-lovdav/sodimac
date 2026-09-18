@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import * as migoRepo from "@/repositories/migo.repo.js";
 import * as svcAxios from "@/services/axios.service.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
+import * as auditLogService from "@/services/auditLog.service.js";
+import { catalogAcceptsReceptionTypeId, toNumericReceptionTypeId } from "@/utils/receptionTypeCatalog.js";
 import { ResponseHandler } from '@/response/ResponseHandler.js';
 import { StatusCodes } from 'http-status-codes';
 import { ResponsePageableDTO } from '@/response/ResponseHandler.dto.js';
@@ -205,6 +208,7 @@ function buildReceptionRecord(
         nroOc: toNum(row.Nro_OC),
         nroRecepcion: toNum(row.Nro_Recepcion),
         numeroProveedor: row.Numero_Proveedor || null,
+        tipoRecepcion: row.Tipo_Recepcion ? Number(row.Tipo_Recepcion) : null,
         sucursal: toNum(row.Sucursal),
         fechaRecepcion:
             parseLayoutDate(row.Fecha_Recepcion) ??
@@ -592,6 +596,7 @@ async function rawInsertReception(
         receptionDate: Date;
         guideNumber?: string;
         originId?: number;
+        receptionTypeId?: number;
         purchaseOrderId?: string;
         createdBy?: number;
     },
@@ -625,6 +630,10 @@ async function rawInsertReception(
     if (data.originId !== undefined) {
         columns.push('origin_id');
         values.push(data.originId);
+    }
+    if (data.receptionTypeId !== undefined) {
+        columns.push('reception_type_id');
+        values.push(data.receptionTypeId);
     }
     if (data.purchaseOrderId !== undefined) {
         columns.push('purchase_order_uuid');
@@ -852,6 +861,11 @@ function buildReceptionInsert(
             Number(first.sucursal);
     }
 
+    if (first.tipoRecepcion != null) {
+        receptionInsert.receptionTypeId =
+            Number(first.tipoRecepcion);
+    }
+
     if (purchaseOrderId) {
         receptionInsert.purchaseOrderId =
             purchaseOrderId;
@@ -1075,6 +1089,45 @@ export async function authorizeDocument(migoDocumentId: string, updatedBy?: numb
         return ResponseHandler.responseBuilder("Solo se pueden autorizar documentos en estatus 'Publicado' (9)", null, -1, StatusCodes.BAD_REQUEST, false, "");
     }
 
+    const tipoRecepcionCatalog = await sharedCatalogService.getCatTipoRecepcionDetails();
+    const documentReceptions = await migoRepo.findAllReceptionsByDocument(migoDocumentId);
+    const notCataloguedRows = documentReceptions.filter((rec) => {
+        if (rec.isValid === false) return false;
+        const typeId = toNumericReceptionTypeId(rec.tipoRecepcion);
+        if (typeId === undefined) return false;
+        return !catalogAcceptsReceptionTypeId(tipoRecepcionCatalog, typeId);
+    });
+
+    if (notCataloguedRows.length > 0) {
+        const tipos = [...new Set(notCataloguedRows.map((rec) => Number(rec.tipoRecepcion)))].join(', ');
+        const affected = notCataloguedRows
+            .slice(0, 20)
+            .map((rec) => `OC ${rec.nroOc}/Recepción ${rec.nroRecepcion} (Tipo ${rec.tipoRecepcion})`)
+            .join('; ');
+        const message = `El Tipo de Recepción (${tipos}) no está catalogado. La autorización/publicación fue rechazada.`;
+
+        try {
+            await auditLogService.create({
+                idTransaccion: migoDocumentId,
+                idAplicativo: 'finanzas-api',
+                idModulo: 'Recepciones MIGO',
+                paso: 'AUTORIZACION_PUBLICACION',
+                detalle: `Folio ${doc.folio}. Tipo de Recepción no catalogado. Recepciones afectadas: ${affected}.`,
+                tipoEvento: 'ERROR',
+                idError: 'WRN7038',
+                mensaje: message,
+                log: message,
+                idUsuario: updatedBy != null ? String(updatedBy) : 'system',
+            });
+        } catch (logErr) {
+            logger.warn(
+                `[MIGO] No se pudo registrar en Bitácora el rechazo por Tipo de Recepción no catalogado: ${(logErr as Error).message}`,
+            );
+        }
+
+        return ResponseHandler.responseBuilder(message, { tipos }, -1, StatusCodes.BAD_REQUEST, false, message);
+    }
+
     let promotionStats: PromotionStats;
     try {
         promotionStats = await promoteMigoReceptionsToNormalReceptions(
@@ -1178,6 +1231,7 @@ export async function exportReceptionsCsv(migoDocumentId: string): Promise<strin
         const cells: string[] = [
             String(r.nroOc), String(r.nroRecepcion),
             r.numeroProveedor || '',
+            r.tipoRecepcion != null ? String(r.tipoRecepcion) : '',
             String(r.sucursal),
             r.nroGuia || '', r.origen || '',
             fechaStr,
@@ -1193,7 +1247,7 @@ export async function exportReceptionsCsv(migoDocumentId: string): Promise<strin
 }
 
 const EXPECTED_CSV_HEADERS = [
-    'Nro_OC', 'Nro_Recepcion', 'Numero_Proveedor', 'Sucursal', 'Nro_Guia', 'Origen',
+    'Nro_OC', 'Nro_Recepcion', 'Numero_Proveedor', 'Tipo_Recepcion', 'Sucursal', 'Nro_Guia', 'Origen',
     'Fecha_Recepcion', 'Importe_sin_impuesto', 'SKU', 'Descripcion_Sku',
     'Cantidad', 'Importe_Unitario', 'Importe_SinImpuesto',
 ];

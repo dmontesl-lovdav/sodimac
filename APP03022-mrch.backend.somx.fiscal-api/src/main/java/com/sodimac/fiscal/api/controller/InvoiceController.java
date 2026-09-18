@@ -15,6 +15,9 @@ import com.sodimac.fiscal.api.model.dto.NCValidationRequest;
 import com.sodimac.fiscal.api.model.dto.NCValidationResponse;
 import com.sodimac.fiscal.api.service.InvoiceService;
 import com.sodimac.fiscal.api.service.NCValidationService;
+import com.sodimac.fiscal.api.security.JwtUserKey;
+import com.sodimac.fiscal.api.security.UtilApiSecurityClient;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -76,6 +79,13 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
     private final NCValidationService ncValidationService;
     private final PaginationConfig paginationConfig; // Configuración centralizada de paginación
+    private final UtilApiSecurityClient securityClient;
+
+    private static final int STATUS_CANCELADA = 20;
+    private static final int STATUS_REPROCESO = 3;
+    private static final String EVENT_CANCELAR = "EVT0052";
+    private static final String EVENT_REPROCESO = "EVT0051";
+    private static final String EVENT_AGREGAR_NC = "EVT0055";
 
     /**
      * GET /api/invoices?page=0
@@ -180,7 +190,15 @@ public class InvoiceController {
             @Parameter(description = "UUID del rebate/descuento comercial en finanzas (solo NC tipo 2). Se usa para validar la tolerancia del descuento contra el subtotal de la NC (BUS2032).")
             @RequestParam(value = "rebateId", required = false) String rebateId,
             @Parameter(description = "Confirma cancelar NCs + rechazar la factura cuando el neto (factura - NCs) queda por debajo de la recepción (fila 104). Si es false y aplica, se rechaza con WRN7034 sin registrar la NC.")
-            @RequestParam(value = "confirmarCancelacionNc", required = false, defaultValue = "false") boolean confirmarCancelacionNc) {
+            @RequestParam(value = "confirmarCancelacionNc", required = false, defaultValue = "false") boolean confirmarCancelacionNc,
+            HttpServletRequest httpRequest) {
+
+        if (tipoNotaCredito != null && !tipoNotaCredito.isBlank()) {
+            String userKey = JwtUserKey.resolve(httpRequest);
+            if (userKey == null || !securityClient.hasPermission(userKey, EVENT_AGREGAR_NC)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
 
         log.info("Solicitud de registro de factura/NC recibida. Archivo: {}, idTransaccion: {}, receptionId: {}",
                 file.getOriginalFilename(), idTransaccion, receptionId);
@@ -291,7 +309,22 @@ public class InvoiceController {
     })
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<InvoiceUpdateResponse> updateInvoice(
-            @Valid @RequestBody InvoiceUpdateRequest request) {
+            @Valid @RequestBody InvoiceUpdateRequest request,
+            HttpServletRequest httpRequest) {
+
+        Integer estatus = request.getEstatus();
+        String requiredEvent = null;
+        if (estatus != null && estatus == STATUS_CANCELADA) {
+            requiredEvent = EVENT_CANCELAR;
+        } else if (estatus != null && estatus == STATUS_REPROCESO) {
+            requiredEvent = EVENT_REPROCESO;
+        }
+        if (requiredEvent != null) {
+            String userKey = JwtUserKey.resolve(httpRequest);
+            if (userKey == null || !securityClient.hasPermission(userKey, requiredEvent)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
 
         log.info("Solicitud de actualizacion de factura/NC recibida. UUID: {}, Nuevo Estatus: {}",
                 request.getUuid(), request.getEstatus());

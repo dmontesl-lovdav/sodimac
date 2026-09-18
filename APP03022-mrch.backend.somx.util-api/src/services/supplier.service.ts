@@ -77,7 +77,21 @@ export async function create(dto: SupplierCreateDto, createdBy: string): Promise
 
     const repo = datasource.getRepository(Supplier);
     const base = supplierMapper.toEntity(dto);
-    const entity = repo.create({ ...base, createdBy });
+
+    let entity: Supplier;
+    if (existingStatus === 'deleted') {
+        const existing = await supplierRepo.findBySupplierNumber(dto.supplierNumber);
+        entity = existing!;
+        Object.assign(entity, base);
+        entity.status = Supplier.STATUS_ACTIVE;
+        entity.supplierType = null;
+        entity.supplierTypeId = null;
+        entity.paymentCondition = null;
+        entity.paymentConditionId = null;
+        entity.updatedBy = createdBy;
+    } else {
+        entity = repo.create({ ...base, createdBy });
+    }
 
     if (dto.supplierTypeId != null) {
         const type = await supplierTypeRepo.findById(dto.supplierTypeId);

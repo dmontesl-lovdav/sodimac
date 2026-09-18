@@ -1,6 +1,7 @@
 package com.sodimac.fiscal.api.config;
 
 import com.sodimac.fiscal.api.security.JwtTokenInterceptor;
+import com.sodimac.fiscal.api.security.PermissionInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,18 +15,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SecurityInterceptor implements WebMvcConfigurer {
 
     private final JwtTokenInterceptor interceptor;
+    private final PermissionInterceptor permissionInterceptor;
 
     @Value("${security.enabled:true}")
     private boolean securityEnabled;
 
-    public SecurityInterceptor(JwtTokenInterceptor interceptors) {
+    public SecurityInterceptor(JwtTokenInterceptor interceptors, PermissionInterceptor permissionInterceptor) {
         this.interceptor = interceptors;
+        this.permissionInterceptor = permissionInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         if (securityEnabled) {
             registry.addInterceptor(interceptor);
+            registry.addInterceptor(permissionInterceptor);
         }
     }
 

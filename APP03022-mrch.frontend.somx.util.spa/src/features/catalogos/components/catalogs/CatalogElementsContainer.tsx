@@ -551,7 +551,7 @@ export default function CatalogElementsContainer() {
   useEffect(() => {
     const loadParentCatalogs = async () => {
       try {
-        const primaryCatalogs = await catalogService.getPrimaryCatalogs();
+        const primaryCatalogs = await catalogService.getPrimaryCatalogs(id ? parseInt(id) : undefined);
         setParentCatalogs(primaryCatalogs.map((c: CatalogSimple) => ({
           id: String(c.id),
           name: c.name,

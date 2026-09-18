@@ -169,11 +169,17 @@ export default function PaymentDetail() {
         const now = new Date();
         const pad2 = (value: number) =>
             value.toString().padStart(2, "0");
-
-        const fileName =
-            `detalle_pago_${ref || "pago"}_${now.getFullYear()}_${pad2(
-                now.getMonth() + 1
-            )}_${pad2(now.getDate())}.csv`;
+        const sapNumber =
+            String(
+                payment?.documentNumber ||
+                    allDocuments[0]?.documentNumber ||
+                    "pago"
+            )
+                .trim()
+                .replace(/[^\w.-]+/g, "_") || "pago";
+        const ymd = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
+        const hms = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+        const fileName = `detalle_pago_${sapNumber}_${ymd}.${hms}.csv`;
 
         anchor.href = url;
         anchor.download = fileName;
@@ -507,7 +513,7 @@ export default function PaymentDetail() {
             render: (
                 document: PaymentDocument
             ) =>
-                document.documentNumber ||
+                document.sapDocument ||
                 "—",
         },
         {
@@ -515,7 +521,7 @@ export default function PaymentDetail() {
             render: (
                 document: PaymentDocument
             ) =>
-                document.sapDocument ||
+                document.documentNumber ||
                 "—",
         },
         {
@@ -559,12 +565,6 @@ export default function PaymentDetail() {
             render: (
                 document: PaymentDocument
             ) => document.createdAt ?? "—",
-        },
-        {
-            header: "Fecha de Actualización",
-            render: (
-                document: PaymentDocument
-            ) => document.updatedAt ?? "—",
         },
         {
             header: "Factura / NC",

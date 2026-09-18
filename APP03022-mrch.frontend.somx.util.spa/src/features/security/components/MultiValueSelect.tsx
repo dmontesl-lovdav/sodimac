@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AttributeValueOption } from '../types';
 
 interface MultiValueSelectProps {
@@ -8,63 +8,47 @@ interface MultiValueSelectProps {
   placeholder?: string;
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  wrap: { position: 'relative', width: '100%' },
-  trigger: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '0.5rem',
-    padding: '0.4rem 0.6rem',
-    border: '1px solid #cbd5e1',
-    borderRadius: '6px',
-    background: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-    color: '#0f172a',
-  },
-  menu: {
-    position: 'absolute',
-    zIndex: 20,
-    top: 'calc(100% + 4px)',
-    left: 0,
-    right: 0,
-    maxHeight: '220px',
-    overflowY: 'auto',
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '6px',
-    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.12)',
-    padding: '0.25rem',
-  },
-  item: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.35rem 0.5rem',
-    fontSize: '0.85rem',
-    color: '#0f172a',
-    cursor: 'pointer',
-    borderRadius: '4px',
-  },
-  separator: { height: '1px', background: '#e2e8f0', margin: '0.25rem 0' },
-};
+const normalize = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 
-export function MultiValueSelect({ options, selected, onChange, placeholder = 'Selecciona valores' }: MultiValueSelectProps) {
+export function MultiValueSelect({
+  options,
+  selected,
+  onChange,
+  placeholder = 'Selecciona valores',
+}: MultiValueSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
     const onPointerDown = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [open]);
+
+  const filteredOptions = useMemo(() => {
+    const q = normalize(query.trim());
+    if (!q) return options;
+    return options.filter(
+      (option) => normalize(`${option.catalogKey} ${option.name}`).includes(q),
+    );
+  }, [options, query]);
 
   const allSelected = options.length > 0 && selected.length === options.length;
 
@@ -73,36 +57,65 @@ export function MultiValueSelect({ options, selected, onChange, placeholder = 'S
   const toggleValue = (id: number) =>
     onChange(selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]);
 
-  let label = placeholder;
+  let triggerLabel = placeholder;
   if (allSelected) {
-    label = 'Todos';
-  } else if (selected.length > 0) {
-    label = `${selected.length} seleccionado(s)`;
+    triggerLabel = 'Todos seleccionados';
+  } else if (selected.length === 1) {
+    const one = options.find((option) => option.id === selected[0]);
+    triggerLabel = one ? `${one.catalogKey} - ${one.name}` : '1 seleccionado';
+  } else if (selected.length > 1) {
+    triggerLabel = `${selected.length} seleccionados`;
   }
 
   return (
-    <div style={styles.wrap} ref={ref}>
-      <button type="button" style={styles.trigger} onClick={() => setOpen((value) => !value)}>
-        <span>{label}</span>
-        <span aria-hidden="true">▾</span>
+    <div className="mvs" ref={ref}>
+      <button
+        type="button"
+        className={`mvs__trigger${open ? ' mvs__trigger--open' : ''}`}
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className={`mvs__trigger-label${selected.length === 0 ? ' mvs__trigger-label--placeholder' : ''}`}>
+          {triggerLabel}
+        </span>
+        <span className="mvs__chevron" aria-hidden="true">▾</span>
       </button>
+
       {open && (
-        <div style={styles.menu} role="listbox" aria-multiselectable="true">
-          <label style={styles.item}>
-            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
-            <span>Todos</span>
+        <div className="mvs__menu" role="listbox" aria-multiselectable="true">
+          <div className="mvs__search">
+            <input
+              type="text"
+              className="mvs__search-input"
+              placeholder="Buscar..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <label className="mvs__item mvs__item--all">
+            <input type="checkbox" className="mvs__checkbox" checked={allSelected} onChange={toggleAll} />
+            <span className="mvs__item-text">Todos</span>
           </label>
-          <div style={styles.separator} />
-          {options.map((option) => (
-            <label key={option.id} style={styles.item}>
-              <input
-                type="checkbox"
-                checked={selected.includes(option.id)}
-                onChange={() => toggleValue(option.id)}
-              />
-              <span>{`${option.catalogKey} - ${option.name}`}</span>
-            </label>
-          ))}
+
+          <div className="mvs__list">
+            {filteredOptions.length === 0 && (
+              <div className="mvs__empty">Sin coincidencias</div>
+            )}
+            {filteredOptions.map((option) => (
+              <label key={option.id} className="mvs__item">
+                <input
+                  type="checkbox"
+                  className="mvs__checkbox"
+                  checked={selected.includes(option.id)}
+                  onChange={() => toggleValue(option.id)}
+                />
+                <span className="mvs__item-text">{`${option.catalogKey} - ${option.name}`}</span>
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>

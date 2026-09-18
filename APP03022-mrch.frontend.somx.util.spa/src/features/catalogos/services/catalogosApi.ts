@@ -302,8 +302,9 @@ export const catalogService = {
     return apiClient.request<CatalogResponse>(`/catalogos/${id}`, 'put', data, userHeaders(userId));
   },
 
-  getPrimaryCatalogs: async (): Promise<CatalogSimple[]> => {
-    return apiClient.request<CatalogSimple[]>('/catalogos/primarios', 'get');
+  getPrimaryCatalogs: async (catalogId?: number): Promise<CatalogSimple[]> => {
+    const query = catalogId != null ? `?catalogId=${catalogId}` : '';
+    return apiClient.request<CatalogSimple[]>(`/catalogos/primarios${query}`, 'get');
   },
   validateLayout: async (
     file: File,

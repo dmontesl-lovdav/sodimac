@@ -51,11 +51,22 @@ const columns: DataGridColumn<Invoice>[] = [
     accessor: r =>
       r.notasCreditoRelacionadas.length === 0
         ? "0"
-        : String(r.notasCreditoRelacionadas.length),
+        : String(r.notasCreditoRelacionadas.filter(nc => nc.status != INVOICE_STATUS_CANCELADA).length),
     exportAccessor: r =>
       r.notasCreditoRelacionadas.length === 0
         ? "0"
-        : String(r.notasCreditoRelacionadas.length),
+        : String(r.notasCreditoRelacionadas.filter(nc => nc.status != INVOICE_STATUS_CANCELADA).length),
+  },
+  {
+    header: "NC Canceladas",
+    accessor: r =>
+      r.notasCreditoRelacionadas.length === 0
+        ? "0"
+        : String(r.notasCreditoRelacionadas.filter(nc => nc.status == INVOICE_STATUS_CANCELADA).length),
+    exportAccessor: r =>
+      r.notasCreditoRelacionadas.length === 0
+        ? "0"
+        : String(r.notasCreditoRelacionadas.filter(nc => nc.status == INVOICE_STATUS_CANCELADA).length),
   },
   { header: "Tipo Proveedor", accessor: r => r.tipoProveedorDescripcion ?? "--", exportAccessor: r => r.tipoProveedorDescripcion },
   { header: "Número Proveedor", accessor: r => r.numeroProveedor ?? "--", exportAccessor: r => r.numeroProveedor },
@@ -255,8 +266,7 @@ export default function InvoicesGrid() {
         onClick: (row, nav) => {
           nav(`/fiscal/facturas/contabilidad?${buildAccountingSearchParams(row).toString()}`);
         },
-        isDisabled: (row) =>
-          !canViewAccounting(row.status, INVOICE_STATUS_VER_CONTABILIDAD),
+        
       },
     },
     {
@@ -283,7 +293,7 @@ export default function InvoicesGrid() {
     },
   ];
   const rowActions: RowAction<Invoice>[] = rowActionDescriptors
-    //.filter(({ gate }) => can(gate))
+    .filter(({ gate }) => can(gate))
     .map(({ action }) => action);
 
   const filterFields: FilterField[] = useMemo(

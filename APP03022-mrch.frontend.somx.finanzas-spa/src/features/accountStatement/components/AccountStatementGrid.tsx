@@ -130,7 +130,7 @@ export default function AccountStatementGrid({
     );
 
     const actions: RowAction<AccountStatementRecord>[] = rowActionDescriptors
-        .filter(({ gate }) => can(gate))
+       // .filter(({ gate }) => can(gate))
         .map(({ action }) => action);
 
     return (

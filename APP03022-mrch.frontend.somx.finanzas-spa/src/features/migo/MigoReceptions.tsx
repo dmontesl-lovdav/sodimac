@@ -125,6 +125,7 @@ export default function MigoReceptions(): ReactElement {
     const columns: Column<GroupedMigoReception>[] = [
         { header: 'Orden Compra', render: (r) => r.nroOc },
         { header: 'Recepción', render: (r) => r.nroRecepcion },
+        { header: 'Tipo Recepción', align: 'center', render: (r) => (r.tipoRecepcion != null ? r.tipoRecepcion : '--') },
         { header: 'Sucursal', align: 'center', render: (r) => r.sucursal },
         { header: 'Número Proveedor', render: (r) => r.numeroProveedor ?? '--' },
         { header: 'Nombre Proveedor', render: (r) => r.vendorName ?? '--' },

@@ -1,0 +1,8 @@
+David: tengo estos dos puntos contigo
+ 
+dales un ojo 
+ 
+Al cancelar una nota de crédito (NC), el cambio de estatus se realiza correctamente; sin embargo, falta implementar el siguiente flujo: cambiar a «Recibido parcial» el estatus de la factura relacionada y el de todas sus notas de crédito asociadas.
+Al cancelar una factura con estatus «Recibido parcial», cambiar automáticamente a «Cancelado» el estatus de todas las notas de crédito relacionadas y a «Disponible» el estatus de la recepción. Actualmente, este flujo está implementado.
+ 
+ 

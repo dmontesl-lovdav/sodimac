@@ -92,4 +92,21 @@ public interface ReceptionRepository extends JpaRepository<ReceptionEntity, UUID
             + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status IN (3, 4, 5)",
             nativeQuery = true)
     int markShippingGuidesPagada(@Param("guideNumber") String guideNumber);
+
+    /**
+     * Mueve la(s) guía(s) ligadas por {@code guide_number} de un estatus {@code from} a {@code to}.
+     * Solo actualiza las que están en {@code from} (no pisa otros estatus). Usado por la cascada
+     * contable de Carta Porte al avanzar una factura de transporte (Ivan v1.0(9)):
+     * factura 5 (Desglose) -> guía 3->4; factura 15 (Pendiente de Pago) -> guía 4->5.
+     *
+     * @return filas actualizadas (0 si no hay guía o no está en {@code from})
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value =
+            "UPDATE tenant_finance.shipping_guide "
+            + "SET status = :to, is_status_updated = true, updated_at = CURRENT_TIMESTAMP "
+            + "WHERE TRIM(guide_number) = TRIM(:guideNumber) AND status = :from",
+            nativeQuery = true)
+    int updateShippingGuideStatus(@Param("guideNumber") String guideNumber,
+                                  @Param("from") int from, @Param("to") int to);
 }

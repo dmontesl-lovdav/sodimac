@@ -559,6 +559,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                         "PAGO-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
             }
 
+            // Cascada contable Carta Porte (solo transporte, Ivan v1.0(9)): factura 5 -> guía 3->4;
+            // factura 15 -> guía 4->5.
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(documentType)
+                    && Integer.valueOf(FACTURA_DESGLOSE).equals(newStatusCode)) {
+                cascadaCartaPorteContable(invoice, GUIA_POR_CONTABILIZAR, GUIA_EN_PROCESO_CONTAB,
+                        "CP-CONT-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
+            }
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(documentType)
+                    && Integer.valueOf(FACTURA_PENDIENTE_PAGO).equals(newStatusCode)) {
+                cascadaCartaPorteContable(invoice, GUIA_EN_PROCESO_CONTAB, GUIA_CONTABILIZADA,
+                        "CP-CONT-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoice");
+            }
+
             // === PASO 5: ACTUALIZAR ADDENDA (SI SE PROPORCIONA) ===
             boolean addendaActualizada = false;
             if (request.getAddenda() != null) {
@@ -1614,6 +1627,48 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private static final int FACTURA_PENDIENTE_COMPLEMENTO = 17;
     private static final int RECEPCION_PAGADA = 6;
+    // Cascada contable de Carta Porte (Ivan v1.0(9), solo transporte, tipo WS):
+    // factura 5 (Desglose) -> guía 3->4; factura 15 (Pendiente de Pago) -> guía 4->5.
+    private static final int FACTURA_DESGLOSE = 5;
+    private static final int FACTURA_PENDIENTE_PAGO = 15;
+    private static final int GUIA_POR_CONTABILIZAR = 3;
+    private static final int GUIA_EN_PROCESO_CONTAB = 4;
+    private static final int GUIA_CONTABILIZADA = 5;
+
+    /**
+     * Cascada contable de Carta Porte al avanzar una factura de TRANSPORTE (Ivan v1.0(9), tipo WS).
+     * Mueve la guía ligada de {@code fromGuide} a {@code toGuide} SOLO si el proveedor es transporte.
+     * Best-effort: no rompe el cambio de estatus de la factura si algo falla.
+     */
+    private void cascadaCartaPorteContable(InvoiceEntity factura, int fromGuide, int toGuide,
+            String idTransaccion, String serviceName) {
+        try {
+            String tipoProveedorId = resolveTipoProveedorDeFactura(factura.getInvoiceUuid());
+            if (!TIPO_PROVEEDOR_TRANSPORTE.equals(tipoProveedorId)) {
+                return; // solo transporte
+            }
+            ReceptionEntity reception = resolveReceptionDeFactura(factura.getInvoiceUuid());
+            if (reception == null) {
+                return;
+            }
+            String guide = reception.getGuideNumber();
+            if (guide == null || guide.isBlank()) {
+                return;
+            }
+            int updated = receptionRepository.updateShippingGuideStatus(guide.trim(), fromGuide, toGuide);
+            if (updated > 0) {
+                log.info("Factura {} (transporte): guía guideNumber={} {} -> {} ({} fila(s))",
+                        factura.getInvoiceUuid(), guide.trim(), fromGuide, toGuide, updated);
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                        K_SYSTEM, false, "Guía de embarque " + fromGuide + " -> " + toGuide
+                                + " por avance contable de factura de transporte",
+                        "facturaUuid: " + factura.getInvoiceUuid() + ", guideNumber: " + guide.trim(), null, null);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cascada Carta Porte contable de factura {}: {} — no crítico",
+                    factura.getInvoiceUuid(), e.getMessage());
+        }
+    }
 
     /**
      * Cascada al PAGAR una factura (estatus 17 Pendiente de complemento). Conforme a la tabla de
@@ -3470,6 +3525,19 @@ public class InvoiceServiceImpl implements InvoiceService {
                     && Integer.valueOf(FACTURA_PENDIENTE_COMPLEMENTO).equals(request.getEstatusDestino())) {
                 cascadaPagoFactura(invoice,
                         "PAGO-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
+            }
+
+            // Cascada contable Carta Porte (solo transporte, Ivan v1.0(9)): factura 5 -> guía 3->4;
+            // factura 15 -> guía 4->5.
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())
+                    && Integer.valueOf(FACTURA_DESGLOSE).equals(request.getEstatusDestino())) {
+                cascadaCartaPorteContable(invoice, GUIA_POR_CONTABILIZAR, GUIA_EN_PROCESO_CONTAB,
+                        "CP-CONT-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
+            }
+            if (TipoDocumentoFiscal.FACTURA.getCodigo().equals(invoice.getDocumentType())
+                    && Integer.valueOf(FACTURA_PENDIENTE_PAGO).equals(request.getEstatusDestino())) {
+                cascadaCartaPorteContable(invoice, GUIA_EN_PROCESO_CONTAB, GUIA_CONTABILIZADA,
+                        "CP-CONT-" + invoice.getInvoiceUuid(), "InvoiceService.updateInvoiceStatus");
             }
 
             // === PASO 7: GUARDAR HISTORIAL DE CAMBIO DE ESTATUS ===

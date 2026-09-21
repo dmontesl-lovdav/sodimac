@@ -128,3 +128,24 @@ SET ur.activo = b.activo;
 UPDATE catusoscfdi u
 JOIN bkp_catusoscfdi_20260807 b ON b.idUsoCfdi = u.idUsoCfdi
 SET u.activo = b.activo;
+
+
+
+http://10.138.153.10:8080/wsmdlwticket/Ticket/Obtener/v1.0
+Envelope:
+
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:req="http://mdwcorp.falabella.com/SOD/CORP/OSB/schema/Cliente/Ticket/Obtener/Req-v2018.02">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <req:ClienteTicketObtenerExpReq>
+         <req:body>
+            <req:i_num_oc></req:i_num_oc>
+            <req:i_num_ticket>7588</req:i_num_ticket>
+            <req:i_num_tienda>1010</req:i_num_tienda>
+            <req:i_num_caja>005</req:i_num_caja>
+            <req:fecha_trx>20-08-2026</req:fecha_trx>
+         </req:body>
+      </req:ClienteTicketObtenerExpReq>
+   </soapenv:Body>
+</soapenv:Envelope>

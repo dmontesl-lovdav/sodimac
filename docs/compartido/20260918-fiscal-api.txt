@@ -6,3 +6,14 @@ Al cancelar una nota de crédito (NC), el cambio de estatus se realiza correctam
 Al cancelar una factura con estatus «Recibido parcial», cambiar automáticamente a «Cancelado» el estatus de todas las notas de crédito relacionadas y a «Disponible» el estatus de la recepción. Actualmente, este flujo está implementado.
  
  
+
+
+ Al cancelar una NC, ¿la factura y sus NCs van a Recibido Parcial siempre, o solo cuando no queden NCs activas? Hoy solo muevo la factura y solo si no quedan activas; me pides mover también las NCs, y eso solo tiene sentido definiendo esa condición.
+Ojo con el punto 2: la cancelación de factura hoy libera la recepción (y la guía en transporte) pero no cancela las NCs relacionadas — esa parte no estaba. ¿La agrego (NCs → Cancelado al cancelar la factura)?
+
+
+Ivan, los endpoints:
+
+Factura: PUT /ppsomx/fiscal/invoices (body: uuid=folio fiscal, numeroProveedor, estatus, idUsuarioActualizacion). También existe PUT /invoices/{uuid}/status con estatusOrigen/estatusDestino.
+Recepción: PATCH /ppsomx/backend-finanzas/purchase-orders/updateReception (supplierNumber, orderNumber, receptionNumber, status, comments) o PATCH /purchase-orders/reception/{uuid} (status, comment). Requieren permiso EVT004.
+Nota: el status de recepción en esos endpoints es mínimo 1, no acepta 0 (Disponible).

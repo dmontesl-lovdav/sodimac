@@ -17,3 +17,10 @@ Ivan, los endpoints:
 Factura: PUT /ppsomx/fiscal/invoices (body: uuid=folio fiscal, numeroProveedor, estatus, idUsuarioActualizacion). También existe PUT /invoices/{uuid}/status con estatusOrigen/estatusDestino.
 Recepción: PATCH /ppsomx/backend-finanzas/purchase-orders/updateReception (supplierNumber, orderNumber, receptionNumber, status, comments) o PATCH /purchase-orders/reception/{uuid} (status, comment). Requieren permiso EVT004.
 Nota: el status de recepción en esos endpoints es mínimo 1, no acepta 0 (Disponible).
+
+
+Hol Ivan buenos días, de los dos puntos que me comentaste, tengo dos dudas
+ 
+1.- Al cancelar una NC, ¿la factura y sus NCs van a Recibido Parcial siempre, o solo cuando no queden NCs activas? Hoy solo muevo la factura y solo si no quedan activas; me pides mover también las NCs
+
+2.- la cancelación de factura hoy libera la recepción (y la guía en transporte) pero no cancela las NCs relacionadas, esa parte no estaba. ¿La agrego (NCs --> Cancelado al cancelar la factura)?

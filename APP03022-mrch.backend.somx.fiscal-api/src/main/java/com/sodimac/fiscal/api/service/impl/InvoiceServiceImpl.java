@@ -1597,6 +1597,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                     "facturaUuid: " + factura.getInvoiceUuid() + ", receptionId: " + reception.getReceptionId(),
                     null, null);
 
+            // NCs relacionadas -> 20 Cancelada (Ivan 2026-09-21): cancelar la factura también cancela
+            // sus NCs. Aplica a TODOS los proveedores (antes del gate de transporte de la guía).
+            setEstatusNcsDeFactura(factura.getInvoiceUuid(), NC_CANCELADA);
+            log.info("Cancelación factura {}: NCs relacionadas -> 20 (Cancelada)", factura.getInvoiceUuid());
+            auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                    K_SYSTEM, false, "NCs relacionadas a 20 (Cancelada) por cancelación de factura",
+                    "facturaUuid: " + factura.getInvoiceUuid(), null, null);
+
             // Guía(s) -> 2 Pendiente de Facturar (Factura 20 -> Carta Porte 2), SOLO si el proveedor
             // es de tipo transporte (CatTipoProveedor value "2"). Directiva Ivan (2026-09): el disparo
             // se valida por tipo de proveedor — transporte mueve AMBOS estatus (recepción 0 + guía 2);
@@ -1736,25 +1744,26 @@ public class InvoiceServiceImpl implements InvoiceService {
                 if (factura == null) {
                     continue;
                 }
-                long ncsActivas = 0;
+                // Regla Ivan (2026-09-21): al cancelar una NC, SIEMPRE la factura relacionada y sus
+                // NCs asociadas (activas) regresan a 2 (Recibido Parcial). La NC recién cancelada
+                // queda en 20 (no se toca).
+                factura.setStatus(InvoiceStatus.RECIBIDO_PARCIAL.getCodigo());
+                invoiceRepository.save(factura);
+                int ncsMovidas = 0;
                 for (RelatedCfdiEntity rel : relatedCfdiRepository.findByRelatedInvoiceUuid(facturaUuid)) {
                     InvoiceEntity ncRel = invoiceRepository.findById(rel.getInvoiceUuid()).orElse(null);
                     if (ncRel != null && !Integer.valueOf(NC_CANCELADA).equals(ncRel.getStatus())) {
-                        ncsActivas++;
+                        ncRel.setStatus(NC_RECIBIDO_PARCIAL);
+                        invoiceRepository.save(ncRel);
+                        ncsMovidas++;
                     }
                 }
-                if (ncsActivas == 0) {
-                    factura.setStatus(InvoiceStatus.RECIBIDO_PARCIAL.getCodigo());
-                    invoiceRepository.save(factura);
-                    log.info("Cancelación NC {}: factura {} sin NCs activas -> 2 (Recibido Parcial)",
-                            nc.getInvoiceUuid(), facturaUuid);
-                    auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
-                            K_SYSTEM, false, "Factura a 2 (Recibido Parcial): su única NC activa fue cancelada",
-                            "facturaUuid: " + facturaUuid + ", ncUuid: " + nc.getInvoiceUuid(), null, null);
-                } else {
-                    log.info("Cancelación NC {}: factura {} conserva {} NC(s) activa(s) -> estatus sin cambio",
-                            nc.getInvoiceUuid(), facturaUuid, ncsActivas);
-                }
+                log.info("Cancelación NC {}: factura {} -> 2 (Recibido Parcial) + {} NC(s) activa(s) -> 2",
+                        nc.getInvoiceUuid(), facturaUuid, ncsMovidas);
+                auditoriaApiService.logActivity(idTransaccion, AuditAction.VALIDAR_ADDENDA.getCode(), serviceName,
+                        K_SYSTEM, false, "Factura y NCs asociadas a 2 (Recibido Parcial) por cancelación de NC",
+                        "facturaUuid: " + facturaUuid + ", ncUuid: " + nc.getInvoiceUuid()
+                                + ", ncsMovidas: " + ncsMovidas, null, null);
             }
         } catch (Exception e) {
             log.warn("No se pudo reevaluar factura tras cancelación de NC {}: {} — no crítico",

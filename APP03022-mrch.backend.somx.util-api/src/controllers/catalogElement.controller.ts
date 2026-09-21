@@ -114,7 +114,8 @@ export async function getPrimaryCatalogs(req: Request, res: Response, next: Next
 export async function getActiveElements(req: Request, res: Response, next: NextFunction) {
     try {
         const catalogId = Number(req.params.catalogId);
-        const result = await elementService.findActiveElements(catalogId);
+        const relatedToCatalogId = toIntOrNull((req.query as Record<string, unknown>).relatedToCatalogId);
+        const result = await elementService.findActiveElements(catalogId, relatedToCatalogId ?? undefined);
         res.json(result);
     } catch (err) {
         next(err);

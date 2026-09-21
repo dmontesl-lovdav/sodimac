@@ -346,8 +346,9 @@ export const catalogElementService = {
     return apiClient.request<CatalogElement>(`/catalogos/elementos/${elementId}/estatus`, 'patch', { status }, userHeaders(userId));
   },
 
-  getActiveElements: async (catalogId: number): Promise<CatalogElement[]> => {
-    return apiClient.request<CatalogElement[]>(`/catalogos/${catalogId}/elementos/activos`, 'get');
+  getActiveElements: async (catalogId: number, relatedToCatalogId?: number): Promise<CatalogElement[]> => {
+    const query = relatedToCatalogId != null ? `?relatedToCatalogId=${relatedToCatalogId}` : '';
+    return apiClient.request<CatalogElement[]>(`/catalogos/${catalogId}/elementos/activos${query}`, 'get');
   },
 
   getCatalogDetail: async (catalogId: number): Promise<CatalogSimple> => {

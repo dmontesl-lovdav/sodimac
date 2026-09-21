@@ -1,12 +1,70 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOMClient from "react-dom/client";
 import singleSpaReact from "single-spa-react";
 import { navigateToUrl } from "single-spa";
+
+import { globalHomeStore } from "./store/globalStore";
 
 interface CardProps {
     onClick?: () => void;
     title?: string;
 }
+
+interface Country {
+    name?: string;
+}
+
+interface SelectedTenant {
+    name?: string;
+    country?: Country;
+}
+
+interface ConfigurationState {
+    selectedTenant?: SelectedTenant;
+}
+
+interface GlobalState {
+    configuration?: ConfigurationState;
+}
+
+/**
+ * Obtiene el país seleccionado desde el Common State.
+ *
+ * Estructura:
+ * state.configuration.selectedTenant.country.name
+ */
+const getSelectedCountry = (
+    state: unknown
+): string | undefined => {
+    if (!state || typeof state !== "object") {
+        console.warn(
+            "[Fiscal Card] Global state vacío o inválido:",
+            state
+        );
+
+        return undefined;
+    }
+
+    const globalState = state as GlobalState;
+
+    const selectedTenant =
+        globalState.configuration?.selectedTenant;
+
+    const country =
+        selectedTenant?.country?.name;
+
+    console.log(
+        "[Fiscal Card] Tenant seleccionado:",
+        selectedTenant
+    );
+
+    console.log(
+        "[Fiscal Card] País seleccionado:",
+        country
+    );
+
+    return country;
+};
 
 const FiscalIcon: React.FC = () => (
     <svg
@@ -34,6 +92,90 @@ const Card: React.FC<CardProps> = ({
     onClick,
     title = "Fiscal",
 }) => {
+    const [countryName, setCountryName] = useState<
+        string | undefined
+    >(undefined);
+
+    useEffect(() => {
+        const updateCountry = (
+            globalState: unknown,
+            origin: string
+        ) => {
+            console.log(
+                `[Fiscal Card] Global state (${origin}):`,
+                globalState
+            );
+
+            const country =
+                getSelectedCountry(globalState);
+
+            console.log(
+                `[Fiscal Card] Country detectado (${origin}):`,
+                country
+            );
+
+            setCountryName(country);
+        };
+
+        /**
+         * Lee el estado global actual al montar la Card.
+         */
+        try {
+            const initialGlobalState =
+                globalHomeStore.GetGlobalState();
+
+            updateCountry(
+                initialGlobalState,
+                "initial"
+            );
+        } catch (error) {
+            console.error(
+                "[Fiscal Card] Error leyendo estado inicial:",
+                error
+            );
+        }
+
+        /**
+         * Escucha cambios posteriores del tenant.
+         */
+        const unsubscribe =
+            globalHomeStore.SubscribeToGlobalState(
+                "fiscal",
+                (globalState: unknown) => {
+                    updateCountry(
+                        globalState,
+                        "subscription"
+                    );
+                }
+            );
+
+        return () => {
+            if (typeof unsubscribe === "function") {
+                unsubscribe();
+            }
+        };
+    }, []);
+
+    const normalizedCountry =
+        countryName?.trim().toUpperCase();
+
+    console.log(
+        "[Fiscal Card] Render:",
+        {
+            countryName,
+            normalizedCountry,
+            shouldRender:
+                normalizedCountry === "MX",
+        }
+    );
+
+    /**
+     * Fiscal solamente se renderiza para México.
+     */
+    if (normalizedCountry !== "MX") {
+        return null;
+    }
+
     const handleClick = () => {
         if (onClick) {
             onClick();
@@ -58,17 +200,28 @@ const Card: React.FC<CardProps> = ({
                 justifyContent: "center",
                 cursor: "pointer",
                 boxSizing: "border-box",
-                transition: "box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease",
+                transition:
+                    "box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease",
             }}
             onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.12)";
-                e.currentTarget.style.borderColor = "#D0D0D0";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow =
+                    "0 2px 8px rgba(0, 0, 0, 0.12)";
+
+                e.currentTarget.style.borderColor =
+                    "#D0D0D0";
+
+                e.currentTarget.style.transform =
+                    "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.borderColor = "rgba(0, 0, 0, 0.12)";
-                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                    "none";
+
+                e.currentTarget.style.borderColor =
+                    "rgba(0, 0, 0, 0.12)";
+
+                e.currentTarget.style.transform =
+                    "translateY(0)";
             }}
         >
             <div
@@ -109,7 +262,7 @@ const Card: React.FC<CardProps> = ({
                     </div>
                 </div>
 
-                <h2
+                <p
                     style={{
                         margin: 0,
                         fontSize: "18px",
@@ -120,7 +273,7 @@ const Card: React.FC<CardProps> = ({
                     }}
                 >
                     {title}
-                </h2>
+                </p>
             </div>
         </div>
     );
@@ -130,10 +283,25 @@ const lifecycles = singleSpaReact({
     React,
     ReactDOMClient,
     rootComponent: Card,
-    errorBoundary() {
-        return <div>Error al cargar el módulo fiscal</div>;
+
+    errorBoundary(error) {
+        console.error(
+            "[Fiscal Card] ErrorBoundary:",
+            error
+        );
+
+        return (
+            <div>
+                Error al cargar el módulo fiscal
+            </div>
+        );
     },
 });
 
-export const { bootstrap, mount, unmount } = lifecycles;
+export const {
+    bootstrap,
+    mount,
+    unmount,
+} = lifecycles;
+
 export default Card;

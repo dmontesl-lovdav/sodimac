@@ -583,7 +583,7 @@ export default function CatalogElementsContainer() {
     if (field === 'parentCatalogId') {
       setFilters((prev) => ({ ...prev, parentCatalogId: value, parentElementId: '' }));
       if (value) {
-        catalogElementService.getActiveElements(parseInt(value))
+        catalogElementService.getActiveElements(parseInt(value), id ? parseInt(id) : undefined)
           .then((elems) => setFilterParentElements(elems.map((e: any) => ({ id: String(e.id), name: e.element || e.value || '' }))))
           .catch(() => setFilterParentElements([]));
       } else {

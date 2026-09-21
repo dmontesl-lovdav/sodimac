@@ -508,7 +508,11 @@ export async function updateElement(
     await ensureNoDuplicateOnUpdate(catalog, detail, dto, parentCatId, parentElemId);
 
     if (dto.element && dto.element.trim() !== '') {
-        await updateDictionaryEntry(detail.dictId, dto.element);
+        if (detail.dictId != null && detail.dictId > 0) {
+            await updateDictionaryEntry(detail.dictId, dto.element);
+        } else {
+            detail.dictId = await createDictionaryEntry(dto.element);
+        }
     }
 
     if (dtoTouchesParent) {
@@ -561,8 +565,10 @@ export async function findPrimaryCatalogs(catalogId?: number): Promise<CatalogSi
     return elementMapper.toSimpleDtoList([...primaries, ...hierarchicals]);
 }
 
-export async function findActiveElements(catalogId: number): Promise<CatalogElementDto[]> {
-    const elements = await detailRepo.findByHeaderIdAndStatus(catalogId, CatalogDetail.STATUS_ACTIVE);
+export async function findActiveElements(catalogId: number, relatedToCatalogId?: number): Promise<CatalogElementDto[]> {
+    const elements = (relatedToCatalogId != null && Number.isInteger(relatedToCatalogId))
+        ? await detailRepo.findParentElementsReferencedByCatalog(catalogId, relatedToCatalogId)
+        : await detailRepo.findByHeaderIdAndStatus(catalogId, CatalogDetail.STATUS_ACTIVE);
     return elementMapper.toDtoList(elements);
 }
 

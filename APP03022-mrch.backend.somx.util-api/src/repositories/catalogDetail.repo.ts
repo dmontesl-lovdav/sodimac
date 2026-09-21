@@ -115,6 +115,23 @@ export async function findByHeaderIdAndStatus(headerId: number, status: number):
     });
 }
 
+export async function findParentElementsReferencedByCatalog(
+    parentCatalogId: number,
+    relatedToCatalogId: number,
+): Promise<CatalogDetail[]> {
+    return repo()
+        .createQueryBuilder('pe')
+        .innerJoin(CatalogDetail, 'e', 'e.parent_element_id = pe.id')
+        .leftJoinAndSelect('pe.header', 'header')
+        .where('pe.header_id = :parentCatalogId', { parentCatalogId })
+        .andWhere('e.header_id = :relatedToCatalogId', { relatedToCatalogId })
+        .andWhere('e.parent_element_id IS NOT NULL')
+        .andWhere('pe.status = 1')
+        .distinct(true)
+        .orderBy('pe.sort_order', 'ASC')
+        .getMany();
+}
+
 export async function existsByHeaderIdAndKeyIgnoreCase(headerId: number, key: string): Promise<boolean> {
     const count = await repo()
         .createQueryBuilder('d')

@@ -20,8 +20,13 @@ const EXPORT_COLUMNS = [
   { key: 'fechaActualizacion', label: 'Fecha Actualización' },
 ];
 
-const toEsMxDate = (raw: unknown): string =>
-  raw ? new Date(raw as string).toLocaleDateString('es-MX') : '';
+const toEsMxDate = (raw: unknown): string => {
+  if (!raw) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(raw));
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  const d = new Date(raw as string);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-MX');
+};
 
 const mapConversionForExport = (c: any) => ({
   idElemento: c.idElemento || '',
@@ -276,7 +281,13 @@ export default function ConversionsContainer() {
     msg: { padding: '0.75rem 1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' },
   };
 
-  const formatDate = (d: any) => d ? new Date(d).toLocaleDateString('es-MX') : '-';
+  const formatDate = (d: any) => {
+    if (!d) return '-';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d));
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    const dt = new Date(d);
+    return Number.isNaN(dt.getTime()) ? '-' : dt.toLocaleDateString('es-MX');
+  };
 
   const effectiveCatalogId = catalogId ?? sourceCatalogId;
   const goToElementos = () => {

@@ -1,12 +1,70 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOMClient from 'react-dom/client';
 import singleSpaReact from 'single-spa-react';
 import { navigateToUrl } from 'single-spa';
+
+import { globalHomeStore } from './store/globalStore';
 
 interface CardProps {
     onClick?: () => void;
     title?: string;
 }
+
+interface Country {
+    name?: string;
+}
+
+interface SelectedTenant {
+    name?: string;
+    country?: Country;
+}
+
+interface ConfigurationState {
+    selectedTenant?: SelectedTenant;
+}
+
+interface GlobalState {
+    configuration?: ConfigurationState;
+}
+
+/**
+ * Obtiene el país seleccionado desde el Common State.
+ *
+ * Estructura:
+ * state.configuration.selectedTenant.country.name
+ */
+const getSelectedCountry = (
+    state: unknown
+): string | undefined => {
+    if (!state || typeof state !== 'object') {
+        console.warn(
+            '[Utilerias Card] Global state vacío o inválido:',
+            state
+        );
+
+        return undefined;
+    }
+
+    const globalState = state as GlobalState;
+
+    const selectedTenant =
+        globalState.configuration?.selectedTenant;
+
+    const country =
+        selectedTenant?.country?.name;
+
+    console.log(
+        '[Utilerias Card] Tenant seleccionado:',
+        selectedTenant
+    );
+
+    console.log(
+        '[Utilerias Card] País seleccionado:',
+        country
+    );
+
+    return country;
+};
 
 const UtilIcon: React.FC = () => (
     <svg
@@ -23,6 +81,7 @@ const UtilIcon: React.FC = () => (
         }}
     >
         <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+
         <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 1 1-2.97 2.97l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6l-.03.03a2.1 2.1 0 1 1-2.97-2.97l.03-.03A1.8 1.8 0 0 0 11.6 15a1.8 1.8 0 0 0-1.6-1h-.1a2.1 2.1 0 1 1 0-4.2h.1a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.36-1.98l-.05-.05a2.1 2.1 0 1 1 2.97-2.97l.05.05A1.8 1.8 0 0 0 15 4.6a1.8 1.8 0 0 0 1-.6l.03-.03A2.1 2.1 0 1 1 19 6.94l-.03.03A1.8 1.8 0 0 0 18.4 9c.2.6.75 1 1.4 1h.1a2.1 2.1 0 1 1 0 4.2h-.1a1.8 1.8 0 0 0-1.4.8Z" />
     </svg>
 );
@@ -31,6 +90,90 @@ const Card: React.FC<CardProps> = ({
     onClick,
     title = 'Utilerías',
 }) => {
+    const [countryName, setCountryName] = useState<
+        string | undefined
+    >(undefined);
+
+    useEffect(() => {
+        const updateCountry = (
+            globalState: unknown,
+            origin: string
+        ) => {
+            console.log(
+                `[Utilerias Card] Global state (${origin}):`,
+                globalState
+            );
+
+            const country =
+                getSelectedCountry(globalState);
+
+            console.log(
+                `[Utilerias Card] Country detectado (${origin}):`,
+                country
+            );
+
+            setCountryName(country);
+        };
+
+        /**
+         * Lee primero el estado global actual.
+         */
+        try {
+            const initialGlobalState =
+                globalHomeStore.GetGlobalState();
+
+            updateCountry(
+                initialGlobalState,
+                'initial'
+            );
+        } catch (error) {
+            console.error(
+                '[Utilerias Card] Error leyendo estado inicial:',
+                error
+            );
+        }
+
+        /**
+         * Escucha cambios posteriores del tenant.
+         */
+        const unsubscribe =
+            globalHomeStore.SubscribeToGlobalState(
+                'utilerias',
+                (globalState: unknown) => {
+                    updateCountry(
+                        globalState,
+                        'subscription'
+                    );
+                }
+            );
+
+        return () => {
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
+        };
+    }, []);
+
+    const normalizedCountry =
+        countryName?.trim().toUpperCase();
+
+    console.log(
+        '[Utilerias Card] Render:',
+        {
+            countryName,
+            normalizedCountry,
+            shouldRender:
+                normalizedCountry === 'MX',
+        }
+    );
+
+    /**
+     * Utilerías solamente se renderiza para MX.
+     */
+    if (normalizedCountry !== 'MX') {
+        return null;
+    }
+
     const handleClick = () => {
         if (onClick) {
             onClick();
@@ -60,17 +203,28 @@ const Card: React.FC<CardProps> = ({
                 padding: 0,
                 font: 'inherit',
                 appearance: 'none',
-                transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                transition:
+                    'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
             }}
             onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.12)';
-                e.currentTarget.style.borderColor = '#D0D0D0';
-                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow =
+                    '0 2px 8px rgba(0, 0, 0, 0.12)';
+
+                e.currentTarget.style.borderColor =
+                    '#D0D0D0';
+
+                e.currentTarget.style.transform =
+                    'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.12)';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow =
+                    'none';
+
+                e.currentTarget.style.borderColor =
+                    'rgba(0, 0, 0, 0.12)';
+
+                e.currentTarget.style.transform =
+                    'translateY(0)';
             }}
         >
             <div
@@ -111,7 +265,7 @@ const Card: React.FC<CardProps> = ({
                     </div>
                 </div>
 
-                <h2
+                <p
                     style={{
                         margin: 0,
                         fontSize: '18px',
@@ -122,7 +276,7 @@ const Card: React.FC<CardProps> = ({
                     }}
                 >
                     {title}
-                </h2>
+                </p>
             </div>
         </button>
     );
@@ -132,10 +286,25 @@ const lifecycles = singleSpaReact({
     React,
     ReactDOMClient,
     rootComponent: Card,
-    errorBoundary() {
-        return <div>Error al cargar el módulo de utilerías</div>;
+
+    errorBoundary(error) {
+        console.error(
+            '[Utilerias Card] ErrorBoundary:',
+            error
+        );
+
+        return (
+            <div>
+                Error al cargar el módulo de utilerías
+            </div>
+        );
     },
 });
 
-export const { bootstrap, mount, unmount } = lifecycles;
+export const {
+    bootstrap,
+    mount,
+    unmount,
+} = lifecycles;
+
 export default Card;

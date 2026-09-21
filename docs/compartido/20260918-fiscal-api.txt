@@ -24,3 +24,24 @@ Hol Ivan buenos días, de los dos puntos que me comentaste, tengo dos dudas
 1.- Al cancelar una NC, ¿la factura y sus NCs van a Recibido Parcial siempre, o solo cuando no queden NCs activas? Hoy solo muevo la factura y solo si no quedan activas; me pides mover también las NCs
 
 2.- la cancelación de factura hoy libera la recepción (y la guía en transporte) pero no cancela las NCs relacionadas, esa parte no estaba. ¿La agrego (NCs --> Cancelado al cancelar la factura)?
+
+# --- mirror -> C:\local ---
+cd C:\local; git checkout dmontes; git pull origin dmontes
+
+# --- copiar al repo real ---
+$proj = "APP03022-mrch.backend.somx.fiscal-api"
+robocopy "C:\local\$proj" "C:\workspace-fbc-github\$proj" /MIR /XD .git node_modules dist target build .idea /XF *.log
+
+# --- commit a develop ---
+cd "C:\workspace-fbc-github\$proj"
+git checkout develop; git pull origin develop
+git status   # esperado: SOLO InvoiceServiceImpl.java
+git add src/main/java/com/sodimac/fiscal/api/service/impl/InvoiceServiceImpl.java
+git commit -m "feat: cancelar NC pasa factura y NCs a Recibido Parcial; cancelar factura cancela NCs relacionadas"
+git push origin develop
+
+# --- promover develop -> uat ---
+git checkout uat; git pull origin uat
+git merge develop --no-ff -m "merge: cascadas de cancelacion NC/factura sobre NCs"
+git push origin uat
+

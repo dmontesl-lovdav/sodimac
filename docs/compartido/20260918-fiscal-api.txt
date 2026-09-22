@@ -45,3 +45,5 @@ git checkout uat; git pull origin uat
 git merge develop --no-ff -m "merge: cascadas de cancelacion NC/factura sobre NCs"
 git push origin uat
 
+
+git commit --allow-empty -m "ci: retrigger build"; git push origin uat

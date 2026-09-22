@@ -44,7 +44,16 @@ git push origin uat
 - Si el pipeline de finanzas falla por el error de Artifact Registry (mismo del build de fiscal-api), es infra — re-correr / avisar a Bonelli. No es este cambio.
 
 ## Validar en UAT (cuando despliegue)
+
+GET (sin body → sin problemas de comillas en cmd). Ajusta las fechas a un rango con recepciones que tengan addenda con factura.
+
+```bash
+curl -s "https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/purchase-orders/listReceptionV2?receptionDateAtInitial=2026-09-03&receptionDateAtEnd=2026-09-03&pageNumber=1&pageSize=15"
 ```
-GET https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/purchase-orders/listReceptionV2?receptionDateAtInitial=2026-09-03&receptionDateAtEnd=2026-09-03&pageNumber=1&pageSize=15
+
+Con `jq` (para ubicar el campo rápido):
+```bash
+curl -s "https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/purchase-orders/listReceptionV2?receptionDateAtInitial=2026-09-03&receptionDateAtEnd=2026-09-03&pageNumber=1&pageSize=15" | jq ".[].listAddendum[].invoice | {fiscalUuid, folio, status}"
 ```
-En la respuesta, cada `listAddendum[].invoice` debe ahora incluir `"status": <n>` junto a fiscalUuid/folio/etc.
+
+**Esperado:** cada `listAddendum[].invoice` debe incluir `"status": <n>` junto a `fiscalUuid`/`folio`/etc. Antes el nodo terminaba en `certificationDate`; ahora trae también `status` (estatus del tren de la factura).

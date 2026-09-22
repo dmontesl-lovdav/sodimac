@@ -35,6 +35,11 @@ export class Invoice {
     @Column({ name: 'certification_date', type: 'timestamp', nullable: true })
     certificationDate?: Date;
 
+    // Estatus de la factura (tenant_fiscal.invoice.status). Solicitado por Josue para exponerlo
+    // en el nodo invoice del GET /purchase-orders/listReception(V2).
+    @Column({ name: 'status', type: 'integer', nullable: true })
+    status?: number;
+
     // Relaciones
     @OneToMany(() => Addendum, addendum => addendum.invoice,  { cascade: true, eager: false  })
     addendums?: Addendum[];

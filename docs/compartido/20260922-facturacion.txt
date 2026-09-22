@@ -1,0 +1,15 @@
+2026-09-22 13:25:32,323 INFO com.sodimac.facturacion.service.FacturasServiceImpl [http-nio-8080-exec-23] obtenerDatosEmisionExpedicion: 2026092121400034256
+2026-09-22 13:25:32,323 INFO com.sodimac.facturacion.service.FacturasServiceImpl [http-nio-8080-exec-23] transformarXmlTicketXmlPacDetecno
+2026-09-22 13:25:32,339 INFO com.sodimac.facturacion.service.FacturasServiceImpl [http-nio-8080-exec-23] model.getTicketBct(): 2026092121400034256
+2026-09-22 13:25:32,339 ERROR com.sodimac.facturacion.controller.TimbrarController [http-nio-8080-exec-23] Ticket 2026092121400034256: 
+java.lang.NullPointerException: null
+	at com.sodimac.facturacion.service.FacturasServiceImpl.obtenerDatosEmisionExpedicion(FacturasServiceImpl.java:3008)
+	at com.sodimac.facturacion.service.FacturasServiceImpl.transformarXmlTicketXmlPacDetecno(FacturasServiceImpl.java:3429)
+	at com.sodimac.facturacion.service.FacturasServiceImpl.obtenerDetalleTicket(FacturasServiceImpl.java:3374)
+	at sun.reflect.GeneratedMethodAccessor386.invoke(Unknown Source)
+
+
+
+"idPac","idPacExternal","nombrePac","razonSocial","rfc","email","endPoint","prioridad","reintentos","licencia","usuario","contrasena","activo","fechaCreacion","fechaVigencia","endPoint40"
+1,14068,Detecno,"99498dd6524d246d501913a37e990c128d18fd3257ebe66727f1ac0c2272abb7","71920f68e96f8e0a0244c00471d9bd8d","19b2afc2e4d77a360051f3f1d9c8bbdedefd7229be2be70272990dbcd73f0450",https://emision.emisiondetecno.mx/Sodimac/Detickets/cfdiWcfEmisionServicio_SodimacDetickets/Detecno.svc?WSDL,1,3,da118f9e17f410883dbfb37db51ede2b034cf1e040022489d0630607db775152b1c04ca97728d0b1edaa6737a5d1aa78,e2664a18f5c50f0c3b86e41c1dd92c17,"8d1dace0bc2873ed4108657415d3377c",1,"2019-10-15 13:15:09",,https://genera.emisiondetecno.mx/Sodimac/Detickets/cfdiWcfEmisionServicio40_SodimacDetickets/Detecno.svc
+

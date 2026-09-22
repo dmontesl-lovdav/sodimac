@@ -64,3 +64,68 @@ transporter factories: HttpTransporterFactory, FileTransporterFactory, WagonTran
 De mi lado solo modifiqué la clase InvoiceServiceImpl.java (lógica de estatus), no toqué pom.xml, .mvn ni nada de build.
 
 Al parecer es porque el runner no puede acceder/autenticar contra el Artifact Registry de GCP (us-east4-maven.pkg.dev/...java-libs-repo) para bajar el parent POM — el wagon de artifactregistry no está cargando o falló el token de acceso. No parece del código. ¿Lo puedes revisar del lado del pipeline / permisos del Artifact Registry? ¿Cambió algo recientemente en el runner o en la config?
+
+
+https://uat.fbusinesscenter.com/ppsomx/backend-finanzas/purchase-orders/listReceptionV2?receptionDateAtInitial=2026-09-03&receptionDateAtEnd=2026-09-03&pageNumber=1&pageSize=15
+ 
+GET
+ 
+"receptionId": "04b5bdba-84f1-4610-b56d-85dd1220d03e",
+                "receptionNumber": "12",
+                "purchaseOrderId": "3c3d88ff-b30e-4a27-bed5-01171e02d9f3",
+                "originId": "0",
+                "receptionTypeId": null,
+                "destinationId": null,
+                "amount": "46263.36",
+                "status": "1",
+                "comment": "MIGO MIGO-20260914-155313238",
+                "receptionDate": "2026-09-03",
+                "guideNumber": "XX",
+                "createdBy": null,
+                "createdAt": "2026-09-14T15:53:20.001Z",
+                "updatedBy": null,
+                "updatedAt": null,
+                "purchaseOrder": {
+                    "purchaseOrderId": "3c3d88ff-b30e-4a27-bed5-01171e02d9f3",
+                    "orderNumber": "441848",
+                    "supplierNumber": 14786,
+                    "originId": 0,
+                    "amount": "46263.36",
+                    "status": 1,
+                    "purchaseOrderDate": "2026-09-03T00:00:00.000Z",
+                    "createdBy": null,
+                    "createdAt": "2026-09-14T15:53:19.981Z",
+                    "updatedBy": null,
+                    "updatedAt": null,
+                    "shippingGuidePurchaseOrders": []
+                },
+                "listAddendum": [
+                    {
+                        "addendumUuid": "9d781824-fb19-4ddd-b44b-0990a75cfce3",
+                        "invoiceUuid": "bdc00515-5d23-461a-abfa-0eeb65a897b3",
+                        "supplierNumber": "14786",
+                        "receptionNumber": "12",
+                        "purchaseOrderNumber": "441848",
+                        "shippingGuideNumber": null,
+                        "createdBy": null,
+                        "createdAt": "2026-09-14T12:55:19.192Z",
+                        "updatedBy": null,
+                        "updatedAt": "2026-09-14T12:55:19.192Z",
+                        "invoice": {
+                            "invoiceUuid": "bdc00515-5d23-461a-abfa-0eeb65a897b3",
+                            "fiscalUuid": "fdb2cdf8-3fe8-40f4-9f53-0f1b6b2b208f",
+                            "documentType": "I",
+                            "total": "53665.50",
+                            "subtotal": "46263.36",
+                            "folio": "1228654",
+                            "series": "TBMatri2",
+                            "issueDate": "2026-06-20T00:00:00.000Z",
+                            "certificationDate": "2026-06-20T09:44:55.000Z"
+                        }
+                    }
+                ],
+ 
+Vale
+ 
+hay que agregarle el estatus de la factura verdad?
+ 

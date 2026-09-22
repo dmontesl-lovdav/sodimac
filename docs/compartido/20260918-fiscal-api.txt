@@ -47,3 +47,20 @@ git push origin uat
 
 
 git commit --allow-empty -m "ci: retrigger build"; git push origin uat
+
+
+
+@Bonelli buenas, ¿me ayudas a identificar de qué es este error de despliegue?
+
+Estuve atendiendo un ajuste que me pidió Ivan (cancelación de NC/factura en fiscal-api) y al hacer el despliegue el pipeline falla en el build de Maven con esto:
+
+
+[FATAL] Non-resolvable parent POM ... spring-boot-starter-parent:pom:3.4.2 (absent):
+Could not transfer artifact ... from/to artifact-registry
+(artifactregistry://us-east4-maven.pkg.dev/fal-corp-mrch-foundational-dev/java-libs-repo)
+...
+NoTransporterException: Cannot access artifactregistry://... using the registered
+transporter factories: HttpTransporterFactory, FileTransporterFactory, WagonTransporterFactory
+De mi lado solo modifiqué la clase InvoiceServiceImpl.java (lógica de estatus), no toqué pom.xml, .mvn ni nada de build.
+
+Al parecer es porque el runner no puede acceder/autenticar contra el Artifact Registry de GCP (us-east4-maven.pkg.dev/...java-libs-repo) para bajar el parent POM — el wagon de artifactregistry no está cargando o falló el token de acceso. No parece del código. ¿Lo puedes revisar del lado del pipeline / permisos del Artifact Registry? ¿Cambió algo recientemente en el runner o en la config?

@@ -427,7 +427,8 @@ public class InvoiceController {
     @PostMapping(value = "/search", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> searchInvoices(
             @Valid @RequestBody InvoiceSearchRequest searchRequest,
-            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors) {
+            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors,
+            @RequestHeader(value = "x-user-types", required = false) String xUserTypes) {
 
         // STM-323: filtro seguridad por proveedor
         List<String> allowedVendors = parseVendorHeader(xUserVendors);
@@ -439,6 +440,9 @@ public class InvoiceController {
             ));
         }
 
+        // STM-1458: filtro seguridad por tipo de proveedor
+        List<String> allowedTypes = parseTypeHeader(xUserTypes);
+
         log.info("Solicitud de busqueda de facturas/NC recibida. RFC Emisor: {}, Tipo: {}, Fechas: {} - {}, Vendors: {}",
                 searchRequest.getRfcEmisor(),
                 searchRequest.getTipoDocumento(),
@@ -446,7 +450,7 @@ public class InvoiceController {
                 searchRequest.getFechaFinalRecepcion(),
                 allowedVendors);
 
-        Page<InvoiceSearchResponse> results = invoiceService.searchInvoices(searchRequest, allowedVendors);
+        Page<InvoiceSearchResponse> results = invoiceService.searchInvoices(searchRequest, allowedVendors, allowedTypes);
 
         log.info("Busqueda completada. Resultados: {} de {} totales",
                 results.getNumberOfElements(), results.getTotalElements());
@@ -460,6 +464,20 @@ public class InvoiceController {
         if (trimmed.isEmpty()) return Collections.emptyList();  // vacío → WRN7029
         if ("-1".equals(trimmed)) return null;         // -1 → acceso total
         return Arrays.asList(trimmed.split(","));
+    }
+
+    private List<String> parseTypeHeader(String header) {
+        if (header == null) return null;
+        String trimmed = header.trim();
+        if (trimmed.isEmpty() || "-1".equals(trimmed)) return null;
+        List<String> ids = new java.util.ArrayList<>();
+        for (String part : trimmed.split(",")) {
+            String digits = part.trim().replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                ids.add(String.valueOf(Integer.parseInt(digits)));
+            }
+        }
+        return ids.isEmpty() ? null : ids;
     }
 
     /**

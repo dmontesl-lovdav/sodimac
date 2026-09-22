@@ -47,7 +47,14 @@ export async function list(
             q
         );
 
-        const response = await svc.list(q);
+        const securityVendors = (req.security?.vendors ?? [])
+            .map((v) => String(v).trim())
+            .filter((v) => v.length > 0);
+        const securityTypeIds = (req.security?.types ?? [])
+            .map((t) => Number(String(t).replace(/\D/g, "")))
+            .filter((n) => !Number.isNaN(n) && n > 0);
+
+        const response = await svc.list(q, securityVendors, securityTypeIds);
 
         console.log("[finanzas-payment][controller.list] END", {
             elapsedMs: Date.now() - start,

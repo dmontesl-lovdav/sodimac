@@ -113,7 +113,13 @@ export async function exportFilteredRebatesToCsv(req: Request, res: Response, ne
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
         const q: ListRebateQuery = ListRebateQuerySchema.parse(req.query);
-        const rows = await svc.list(q);
+        const securityVendors = (req.security?.vendors ?? [])
+            .map((v) => String(v).trim())
+            .filter((v) => v.length > 0);
+        const securityTypeIds = (req.security?.types ?? [])
+            .map((t) => Number(String(t).replace(/\D/g, "")))
+            .filter((n) => !Number.isNaN(n) && n > 0);
+        const rows = await svc.list(q, securityVendors, securityTypeIds);
 
         if (!rows.length) throw new HttpError(404, "No records found for that filter");
 

@@ -124,7 +124,7 @@ type ItemWithSG =
 
 
 
-export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: number[] | null = null) {
+export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: number[] | null = null, securityTypeIds: number[] | null = null) {
     const {
         statusList,
         tipoProveedorList,
@@ -141,6 +141,10 @@ export async function listPaginated(q: ListShippingGuideQuery, allowedVendors: n
     if (allowedVendors && allowedVendors.length > 0) {
         const allowed = new Set(allowedVendors);
         vendorFilter = vendorFilter.filter((n) => allowed.has(n));
+    }
+    if (securityTypeIds && securityTypeIds.length > 0) {
+        const allowedByType = new Set(await sharedCatalogService.getActiveSupplierNumbersByTypes(securityTypeIds));
+        vendorFilter = vendorFilter.filter((n) => allowedByType.has(n));
     }
     if (q.vendorNumber !== undefined) {
         vendorFilter = vendorFilter.filter((n) => n === q.vendorNumber);

@@ -6,13 +6,28 @@ import type {
     RebateFilterDto,
 } from "@/schemas/rebate.schema.js";
 import type { Rebate } from "@/entities/Rebate.entity.js";
-import { Between, LessThanOrEqual, MoreThanOrEqual, FindOptionsWhere, Like } from "typeorm";
+import { Between, LessThanOrEqual, MoreThanOrEqual, FindOptionsWhere, Like, In } from "typeorm";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
-export async function list(q: ListRebateQuery) {
+async function resolveAllowedVendorNums(
+    securityVendors: string[],
+    securityTypeIds: number[],
+): Promise<number[] | null> {
+    let allowed: number[] | null =
+        securityVendors.length > 0
+            ? securityVendors.map(Number).filter((n) => !Number.isNaN(n))
+            : null;
+    if (securityTypeIds.length > 0) {
+        const typeSupplierNums = await sharedCatalogService.getActiveSupplierNumbersByTypes(securityTypeIds);
+        allowed = allowed ? allowed.filter((n) => typeSupplierNums.includes(n)) : typeSupplierNums;
+    }
+    return allowed;
+}
+
+export async function list(q: ListRebateQuery, securityVendors: string[] = [], securityTypeIds: number[] = []) {
     const filter: FindOptionsWhere<Rebate> = {};
 
     if (q.status !== undefined) filter.status = q.status;
-    if (q.vendorNumber !== undefined) filter.vendorNumber = q.vendorNumber;
     if (q.documentNumber !== undefined) {
         filter.documentNumber = Like(`%${q.documentNumber}%`);
     }
@@ -22,6 +37,16 @@ export async function list(q: ListRebateQuery) {
     if (q.from && q.to) filter.postingDate = Between(q.from, q.to);
     else if (q.from) filter.postingDate = MoreThanOrEqual(q.from);
     else if (q.to) filter.postingDate = LessThanOrEqual(q.to);
+
+    const allowedVendorNums = await resolveAllowedVendorNums(securityVendors, securityTypeIds);
+    if (q.vendorNumber !== undefined) {
+        filter.vendorNumber =
+            allowedVendorNums && !allowedVendorNums.includes(q.vendorNumber)
+                ? In([-1])
+                : q.vendorNumber;
+    } else if (allowedVendorNums !== null) {
+        filter.vendorNumber = allowedVendorNums.length > 0 ? In(allowedVendorNums) : In([-1]);
+    }
 
     return r.findAll(filter, q.limit ?? 20);
 }

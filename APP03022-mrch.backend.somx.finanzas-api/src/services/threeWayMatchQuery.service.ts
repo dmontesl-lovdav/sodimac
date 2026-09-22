@@ -1,6 +1,8 @@
 import * as r from "@/repositories/threeWayMatch.repo.js";
 import type { ListThreeWayMatchQuery } from "@/schemas/threeWayMatch.schema.js";
 import { HttpError } from "@/utils/HttpError.js";
+import * as svcAxios from "@/services/axios.service.js";
+import * as constants from "@/constants/catalogConstantsCodes.js";
 import ExcelJS from "exceljs";
 
 function monthsDiff(a: Date, b: Date): number {
@@ -27,7 +29,8 @@ function buildFilters(
     q: ListThreeWayMatchQuery,
     page: number,
     limit: number,
-    allowedVendors: string[] | null
+    allowedVendors: string[] | null,
+    securityTypeIds: number[] | null
 ) {
     return {
         tipoFecha: q.tipoFecha,
@@ -51,32 +54,44 @@ function buildFilters(
         }),
 
         allowedVendors,
+        securityTypeIds,
         page,
         limit,
     };
 }
 
-function formatStatus(
-    value: string | number | null | undefined
-): string {
-    if (value === null || value === undefined || value === "") {
-        return "";
+type ReceptionStatusMap = Map<string, string>;
+
+async function getReceptionStatusMap(
+    authToken: string
+): Promise<ReceptionStatusMap> {
+    const catalog =
+        await svcAxios.GetCatalogDetailList(
+            (process.env.CATALOGS_API_URL_BFF ?? "") +
+            constants.CatEstatusRecepcion.CATALOGS_API_STATUS_RECEPTION,
+            authToken
+        );
+
+    const statusMap =
+        new Map<string, string>();
+
+    for (
+        const item of catalog as Array<{
+            value?: unknown;
+            description?: unknown;
+        }>
+    ) {
+        if (item.value === null || item.value === undefined) {
+            continue;
+        }
+
+        statusMap.set(
+            String(item.value).trim(),
+            String(item.description ?? "").trim()
+        );
     }
 
-    const normalizedValue = String(value).trim();
-
-    const statusLabels: Record<string, string> = {
-        "0": "Pendiente",
-        "1": "Activo",
-        "2": "Procesado",
-        "3": "Cancelado",
-        "4": "Cerrado",
-        "5": "Pagado",
-        "6": "Rechazado",
-        "7": "Finalizado",
-    };
-
-    return statusLabels[normalizedValue] ?? normalizedValue;
+    return statusMap;
 }
 
 const exportColumns = [
@@ -84,11 +99,6 @@ const exportColumns = [
         header: "Orden Compra",
         key: "ordenCompra",
         width: 20,
-    },
-    {
-        header: "Estatus OC",
-        key: "estatusOrdenCompra",
-        width: 18,
     },
     {
         header: "Recepción",
@@ -211,7 +221,8 @@ function toExportRow(row: unknown): ExportRow {
 
 function getExportValue(
     row: ExportRow,
-    key: ExportColumnKey
+    key: ExportColumnKey,
+    receptionStatusMap: ReceptionStatusMap
 ): unknown {
     /*
      * La pantalla utiliza numeroDocumento como primera
@@ -226,22 +237,27 @@ function getExportValue(
     }
 
     /*
-     * Convierte el estatus de Orden de Compra a descripción,
-     * igual que en el grid.
-     */
-    if (key === "estatusOrdenCompra") {
-        return formatStatus(
-            row.estatusOrdenCompra as string | number | null | undefined
-        );
-    }
-
-    /*
-     * Convierte el estatus de Recepción a descripción,
-     * igual que en el grid.
+     * Utiliza CatEstatusRecepcion para mostrar
+     * la descripción real del estatus de recepción.
      */
     if (key === "estatusRecepcion") {
-        return formatStatus(
-            row.estatusRecepcion as string | number | null | undefined
+        const value =
+            row.estatusRecepcion;
+
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
+            return "";
+        }
+
+        const normalizedValue =
+            String(value).trim();
+
+        return (
+            receptionStatusMap.get(normalizedValue) ??
+            normalizedValue
         );
     }
 
@@ -306,7 +322,8 @@ function escapeCsvValue(value: unknown): string {
 
 export async function list(
     q: ListThreeWayMatchQuery,
-    allowedVendors: string[] | null = null
+    allowedVendors: string[] | null = null,
+    securityTypeIds: number[] | null = null
 ) {
     validateRange(q);
 
@@ -315,14 +332,17 @@ export async function list(
             q,
             q.page ?? 1,
             q.limit ?? 20,
-            allowedVendors
+            allowedVendors,
+            securityTypeIds
         )
     );
 }
 
 export async function exportCsv(
     q: ListThreeWayMatchQuery,
-    allowedVendors: string[] | null = null
+    allowedVendors: string[] | null = null,
+    securityTypeIds: number[] | null = null,
+    authToken: string = ""
 ): Promise<string> {
     validateRange(q);
 
@@ -331,9 +351,13 @@ export async function exportCsv(
             q,
             1,
             100000,
-            allowedVendors
+            allowedVendors,
+            securityTypeIds
         )
     );
+
+    const receptionStatusMap =
+        await getReceptionStatusMap(authToken);
 
     const rows =
         result.data.map(toExportRow);
@@ -352,7 +376,8 @@ export async function exportCsv(
                     escapeCsvValue(
                         getExportValue(
                             row,
-                            column.key
+                            column.key,
+                            receptionStatusMap
                         )
                     )
                 )
@@ -369,7 +394,9 @@ export async function exportCsv(
 
 export async function exportXlsx(
     q: ListThreeWayMatchQuery,
-    allowedVendors: string[] | null = null
+    allowedVendors: string[] | null = null,
+    securityTypeIds: number[] | null = null,
+    authToken: string = ""
 ): Promise<Buffer> {
     validateRange(q);
 
@@ -378,9 +405,13 @@ export async function exportXlsx(
             q,
             1,
             100000,
-            allowedVendors
+            allowedVendors,
+            securityTypeIds
         )
     );
+
+    const receptionStatusMap =
+        await getReceptionStatusMap(authToken);
 
     const workbook =
         new ExcelJS.Workbook();
@@ -407,7 +438,8 @@ export async function exportXlsx(
                             column.key,
                             getExportValue(
                                 row,
-                                column.key
+                                column.key,
+                                receptionStatusMap
                             ),
                         ]
                     )

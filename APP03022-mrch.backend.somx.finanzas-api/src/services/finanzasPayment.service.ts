@@ -17,13 +17,17 @@ import { FinanzasPayment } from "@/entities/FinanzasPayment.entities.js";
 import {
     Between,
     MoreThanOrEqual,
+    In,
     type FindOptionsWhere,
 } from "typeorm";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 import { datasource } from "@/config/typeorm-datasource.js";
 import { randomUUID } from "crypto";
 
 export async function list(
-    q: ListFinanzasPaymentQuery
+    q: ListFinanzasPaymentQuery,
+    securityVendors: string[] = [],
+    securityTypeIds: number[] = []
 ) {
     const start = Date.now();
 
@@ -41,9 +45,25 @@ export async function list(
     const filter: FindOptionsWhere<FinanzasPaymentHeader> =
         {};
 
+    let allowedVendorNums: number[] | null =
+        securityVendors.length > 0
+            ? securityVendors.map(Number).filter((n) => !Number.isNaN(n))
+            : null;
+    if (securityTypeIds.length > 0) {
+        const typeSupplierNums = await sharedCatalogService.getActiveSupplierNumbersByTypes(securityTypeIds);
+        allowedVendorNums = allowedVendorNums
+            ? allowedVendorNums.filter((n) => typeSupplierNums.includes(n))
+            : typeSupplierNums;
+    }
+
     if (q.vendorNumber !== undefined) {
         filter.vendorNumber =
-            q.vendorNumber;
+            allowedVendorNums && !allowedVendorNums.includes(q.vendorNumber)
+                ? In([-1])
+                : q.vendorNumber;
+    } else if (allowedVendorNums !== null) {
+        filter.vendorNumber =
+            allowedVendorNums.length > 0 ? In(allowedVendorNums) : In([-1]);
     }
 
     if (q.paymentDate !== undefined) {

@@ -14,6 +14,7 @@ export interface FindByFiltersOptions {
     year: number;
     month: number | 'all';
     allowedVendors?: string[] | null;
+    securityTypeIds?: number[] | null;
     limit: number;
     offset: number;
 }
@@ -41,6 +42,9 @@ export async function findByFilters(options: FindByFiltersOptions): Promise<{ ro
 
     if (options.allowedVendors && options.allowedVendors.length > 0) {
         qb.andWhere('CAST(a.vendor_number AS TEXT) IN (:...allowedVendors)', { allowedVendors: options.allowedVendors });
+    }
+    if (options.securityTypeIds && options.securityTypeIds.length > 0) {
+        qb.andWhere('s.supplier_type_id IN (:...securityTypeIds)', { securityTypeIds: options.securityTypeIds });
     }
     if (options.vendorNumber) {
         qb.andWhere('a.vendor_number = :vendorNumber', { vendorNumber: options.vendorNumber });

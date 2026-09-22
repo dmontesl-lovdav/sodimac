@@ -27,5 +27,5 @@ public interface PaymentQueryService {
      */
     Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest);
 
-    Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors);
+    Page<PaymentSearchResponse> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors, java.util.List<String> allowedTypes);
 }

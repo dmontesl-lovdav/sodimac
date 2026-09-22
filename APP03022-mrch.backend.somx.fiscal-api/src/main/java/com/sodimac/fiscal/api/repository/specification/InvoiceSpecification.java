@@ -41,10 +41,14 @@ public class InvoiceSpecification {
      * @return Specification para ejecutar la query
      */
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest) {
-        return buildSpecification(searchRequest, null);
+        return buildSpecification(searchRequest, null, null);
     }
 
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors) {
+        return buildSpecification(searchRequest, allowedVendors, null);
+    }
+
+    public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors, List<String> allowedTypes) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -243,6 +247,15 @@ public class InvoiceSpecification {
                             .where(secRoot.get("supplierNumber").in(vendorNumbers));
                     predicates.add(root.get(K_INVOICE_UUID).in(secSubquery));
                 }
+            }
+
+            // Filtro de seguridad STM-1458: tipos de proveedor permitidos del usuario (x-user-types)
+            if (allowedTypes != null && !allowedTypes.isEmpty()) {
+                Subquery<UUID> typeSubquery = query.subquery(UUID.class);
+                Root<AddendumEntity> typeRoot = typeSubquery.from(AddendumEntity.class);
+                typeSubquery.select(typeRoot.get(K_INVOICE_UUID))
+                        .where(typeRoot.get("supplierType").in(allowedTypes));
+                predicates.add(root.get(K_INVOICE_UUID).in(typeSubquery));
             }
 
             // Combinar todos los predicados con AND

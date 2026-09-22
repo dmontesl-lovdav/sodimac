@@ -8,6 +8,11 @@ import {
 import { initDataSource } from "@/config/typeorm-datasource.js";
 import { runThreeWayMatch } from "@/services/threeWayMatch.service.js";
 import { RunThreeWayMatchBodySchema, type RunThreeWayMatchBody } from "@/schemas/threeWayMatchRun.schema.js";
+import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+
+function buildExportTimestamp(): string {
+    return new Date().toISOString().replace(/[:.]/g, "-");
+}
 
 const WRN7029 = { success: false, code: "WRN7029", message: "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador" };
 
@@ -16,6 +21,12 @@ function allowedVendors(req: Request): string[] | null | "wrn7029" {
     if (!sec) return null;
     if (Array.isArray(sec.vendors) && sec.vendors.length === 0) return "wrn7029";
     return sec.vendors;   // null = sin restricción, string[] = filtro
+}
+
+function securityTypeIds(req: Request): number[] {
+    return (req.security?.types ?? [])
+        .map((t) => Number(String(t).replace(/\D/g, "")))
+        .filter((n) => !Number.isNaN(n) && n > 0);
 }
 
 export async function list(
@@ -28,7 +39,7 @@ export async function list(
         if (vendors === "wrn7029") { res.status(400).json(WRN7029); return; }
 
         const q: ListThreeWayMatchQuery = ListThreeWayMatchQuerySchema.parse(req.query);
-        const result = await svc.list(q, vendors);
+        const result = await svc.list(q, vendors, securityTypeIds(req));
         res.json(result);
     } catch (e) {
         next(e);
@@ -36,7 +47,7 @@ export async function list(
 }
 
 export async function exportCsv(
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) {
@@ -47,9 +58,9 @@ export async function exportCsv(
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const csv = await svc.exportCsv(q, vendors);
+        const csv = await svc.exportCsv(q, vendors, securityTypeIds(req), req.authToken ?? "");
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const timestamp = buildExportTimestamp();
 
         res.setHeader("Content-Type", "text/csv; charset=utf-8");
         res.setHeader(
@@ -64,7 +75,7 @@ export async function exportCsv(
 }
 
 export async function exportXlsx(
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) {
@@ -75,9 +86,9 @@ export async function exportXlsx(
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const buffer = await svc.exportXlsx(q, vendors);
+        const buffer = await svc.exportXlsx(q, vendors, securityTypeIds(req), req.authToken ?? "");
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const timestamp = buildExportTimestamp();
 
         res.setHeader(
             "Content-Type",

@@ -16,13 +16,19 @@ function allowedVendors(req: Request): string[] | null | 'wrn7029' {
     return sec.vendors;
 }
 
+function securityTypeIds(req: Request): number[] {
+    return (req.security?.types ?? [])
+        .map((t) => Number(String(t).replace(/\D/g, '')))
+        .filter((n) => !Number.isNaN(n) && n > 0);
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
         const vendors = allowedVendors(req);
         if (vendors === 'wrn7029') { res.status(400).json(WRN7029); return; }
 
         const query = ListAccountStatementQuerySchema.parse(req.query);
-        const result = await svc.search(query, vendors);
+        const result = await svc.search(query, vendors, securityTypeIds(req));
         res.json(result);
     } catch (e) {
         next(e);

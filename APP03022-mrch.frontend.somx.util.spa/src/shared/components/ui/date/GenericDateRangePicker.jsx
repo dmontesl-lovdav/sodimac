@@ -71,6 +71,7 @@ export default function GenericDateRangePicker({
     inputClassName = '',
     popperClassName = '',
     inputProps = {},
+    maxDate = new Date(),
 }) {
     const datePickerRef = useRef(null);
     const [internalRange, setInternalRange] = useState(value);
@@ -133,6 +134,7 @@ export default function GenericDateRangePicker({
                 locale={es}
                 startDate={internalRange?.[0]}
                 endDate={internalRange?.[1]}
+                maxDate={maxDate}
                 onChange={(dates) => handleChange(dates)}
                 dateFormat="dd/MM/yyyy"
                 isClearable={false}
@@ -217,4 +219,5 @@ GenericDateRangePicker.propTypes = {
     inputClassName: PropTypes.string,
     popperClassName: PropTypes.string,
     inputProps: PropTypes.object,
+    maxDate: PropTypes.instanceOf(Date),
 };

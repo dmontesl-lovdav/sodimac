@@ -95,7 +95,7 @@ export function exportGroupedMigoReceptionsCsv(
     );
 }
 
-export function migoReceptionsCsvFileName(documentIdOrFolio: string): string {
-    return `recepciones-migo-${documentIdOrFolio}_${formatFilenameTimestamp()}`;
+export function migoReceptionsCsvFileName(_documentIdOrFolio?: string): string {
+    return `recepciones-migo_${formatFilenameTimestamp()}`;
 }
 

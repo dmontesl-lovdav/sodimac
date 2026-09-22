@@ -1,6 +1,21 @@
 import { datasource } from '@/config/typeorm-datasource.js';
 import { Supplier } from '@/entities/Supplier.entity.js';
-import { Not } from 'typeorm';
+import { Not, In, type FindOptionsWhere } from 'typeorm';
+
+export interface SupplierSecurityFilter {
+    vendors?: string[] | null;
+    typeIds?: number[] | null;
+}
+
+function applySecurityWhere(where: FindOptionsWhere<Supplier>, security?: SupplierSecurityFilter): FindOptionsWhere<Supplier> {
+    if (security?.vendors && security.vendors.length > 0) {
+        where.supplierNumber = In(security.vendors);
+    }
+    if (security?.typeIds && security.typeIds.length > 0) {
+        where.supplierTypeId = In(security.typeIds);
+    }
+    return where;
+}
 
 export const repo = () => datasource.getRepository(Supplier);
 
@@ -25,16 +40,16 @@ export async function findByRfc(rfc: string): Promise<Supplier | null> {
     });
 }
 
-export async function findByStatus(status: number): Promise<Supplier[]> {
+export async function findByStatus(status: number, security?: SupplierSecurityFilter): Promise<Supplier[]> {
     return repo().find({
-        where: { status },
+        where: applySecurityWhere({ status }, security),
         relations: ['supplierType', 'paymentCondition']
     });
 }
 
-export async function findAllVisible(): Promise<Supplier[]> {
+export async function findAllVisible(security?: SupplierSecurityFilter): Promise<Supplier[]> {
     return repo().find({
-        where: { status: Not(Supplier.STATUS_DELETED) },
+        where: applySecurityWhere({ status: Not(Supplier.STATUS_DELETED) }, security),
         relations: ['supplierType', 'paymentCondition']
     });
 }

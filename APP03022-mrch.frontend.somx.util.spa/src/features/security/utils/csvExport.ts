@@ -7,6 +7,7 @@ function buildCsvFilename(title: string): string {
   const yyyy = String(now.getFullYear());
   const hh = String(now.getHours()).padStart(2, '0');
   const min = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
   const safeTitle = title
     .trim()
     .normalize('NFD')
@@ -14,7 +15,7 @@ function buildCsvFilename(title: string): string {
     .toLowerCase()
     .replace(/[\\/:*?"<>|]/g, '')
     .replace(/\s+/g, '-');
-  return `${safeTitle}-${dd}-${mm}-${yyyy}-${hh}-${min}.csv`;
+  return `${safeTitle}_${yyyy}${mm}${dd}.${hh}${min}${ss}.csv`;
 }
 
 export function exportSecurityRowsAsCsv(rows: SecurityRow[], title: string) {

@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { GenericTable } from "@shared/components/ui";
-import { formatDate } from "@/utils/utils";
+import { fetchCatalog, formatDate } from "@/utils/utils";
 import type { ThreeWayMatchRecord } from "../interfaces";
 
 interface Props {
@@ -13,6 +14,11 @@ interface Props {
     onChangePage: (page: number) => void;
     onChangePerPage: (size: number) => void;
 }
+
+type ReceptionStatusCatalogItem = {
+    label: string;
+    value: string;
+};
 
 function fmtDate(value: string | null | undefined): string {
     if (value == null || value === "") return "--";
@@ -42,43 +48,82 @@ function fmtMoney(
     }).format(amount);
 }
 
-function fmtStatus(
-    value: string | number | null | undefined
-): string {
-    if (value == null || value === "") return "--";
-
-    const normalizedValue =
-        String(value).trim();
-
-    const statusLabels: Record<string, string> = {
-        "0": "Pendiente",
-        "1": "Activo",
-        "2": "Procesado",
-        "3": "Cancelado",
-        "4": "Cerrado",
-        "5": "Pagado",
-        "6": "Rechazado",
-        "7": "Finalizado",
-    };
-
-    return statusLabels[normalizedValue] ?? normalizedValue;
-}
-
 export default function ThreeWayMatchGridTable({
     rows,
     isAdmin: _isAdmin,
     ...props
 }: Props) {
+    const [statusCatalog, setStatusCatalog] = useState<
+        ReceptionStatusCatalogItem[]
+    >([]);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadReceptionStatusCatalog = async () => {
+            try {
+                const catalog =
+                    await fetchCatalog("CatEstatusRecepcion");
+
+                const raw =
+                    catalog as {
+                        details?: Array<{
+                            description?: unknown;
+                            value?: unknown;
+                        }>;
+                    } | null;
+
+                const mapped =
+                    raw?.details?.map((item) => ({
+                        label: String(
+                            item.description ?? ""
+                        ).trim(),
+                        value: String(
+                            item.value ?? ""
+                        ).trim(),
+                    })) ?? [];
+
+                if (mounted) {
+                    setStatusCatalog(mapped);
+                }
+            } catch {
+                if (mounted) {
+                    setStatusCatalog([]);
+                }
+            }
+        };
+
+        void loadReceptionStatusCatalog();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const resolveReceptionStatus = (
+        value: string | number | null | undefined
+    ): string => {
+        if (value == null || value === "") {
+            return "--";
+        }
+
+        const normalizedValue =
+            String(value).trim();
+
+        const status =
+            statusCatalog.find(
+                (item) =>
+                    item.value === normalizedValue
+            );
+
+        return status?.label || "--";
+    };
+
     const columns = [
         {
             header: "Orden Compra",
             render: (r: ThreeWayMatchRecord) =>
                 r.ordenCompra ?? "--",
-        },
-        {
-            header: "Estatus OC",
-            render: (r: ThreeWayMatchRecord) =>
-                fmtStatus(r.estatusOrdenCompra),
         },
         {
             header: "Recepción",
@@ -88,7 +133,9 @@ export default function ThreeWayMatchGridTable({
         {
             header: "Estatus Recepción",
             render: (r: ThreeWayMatchRecord) =>
-                fmtStatus(r.estatusRecepcion),
+                resolveReceptionStatus(
+                    r.estatusRecepcion
+                ),
         },
         {
             header: "Monto Recepción",

@@ -62,10 +62,17 @@ export default function DiscountsGridTable({
         );
 
     const returnProvider = useCallback(
-        (r: Rebate) =>
-            providers.find(
-                (item) => item.supplierNumber == r.vendorNumber
-            ),
+        (r: Rebate) => {
+            const vendorNumber = getRebateVendorNumber(r);
+
+            if (vendorNumber == null) return undefined;
+
+            return providers.find(
+                (item) =>
+                    String(item.supplierNumber).trim() ===
+                    String(vendorNumber).trim()
+            );
+        },
         [providers]
     );
 
@@ -137,17 +144,27 @@ export default function DiscountsGridTable({
                     action: {
                         title: "Ver descuento relacionado",
                         icon: eyeIconUrl,
-                        onClick: (
-                            r: Rebate,
-                            nav: NavigateFunction
-                        ) => {
+                        onClick: (r: Rebate, nav: NavigateFunction) => {
                             const detailParams =
                                 buildRebateDetailSearchParams(r);
 
+                            const vendorName =
+                                returnProvider(r)?.businessName?.trim() ||
+                                r.vendorName?.trim() ||
+                                r.supplier?.businessName?.trim() ||
+                                "";
+
+                            detailParams.set("tipoRebate", getTipoLabel(r));
                             detailParams.set(
-                                "tipoRebate",
-                                getTipoLabel(r)
+                                "supplierNumber",
+                                String(getRebateVendorNumber(r) ?? "")
                             );
+
+                            if (vendorName) {
+                                detailParams.set("vendorName", vendorName);
+                            } else {
+                                detailParams.delete("vendorName");
+                            }
 
                             nav(
                                 `${REBATE_DETAIL_ROUTE}?${detailParams.toString()}`
@@ -166,7 +183,12 @@ export default function DiscountsGridTable({
                         icon: plusIconUrl,
                         onClick: (r: Rebate) => {
                             const vendorNum = getRebateVendorNumber(r);
-                            const tipoLabel = getTipoLabel(r);
+
+                            const vendorName =
+                                returnProvider(r)?.businessName?.trim() ||
+                                r.vendorName?.trim() ||
+                                r.supplier?.businessName?.trim() ||
+                                "--";
 
                             const fiscalParams = new URLSearchParams({
                                 numeroProveedor: String(vendorNum ?? ""),
@@ -191,18 +213,14 @@ export default function DiscountsGridTable({
                                 dueDate: String(r.dueDate ?? ""),
                                 amount: String(r.amount ?? ""),
                                 periodId: String(r.periodId ?? ""),
-                                tipoRebate: tipoLabel,
-                                vendorName:
-                                    returnProvider(r)?.businessName ??
-                                    "--",
+                                tipoRebate: getTipoLabel(r),
+                                vendorName,
                             });
 
                             if (r.stampedRebate?.invoiceFiscalUuid) {
                                 fiscalParams.set(
                                     "uuid",
-                                    String(
-                                        r.stampedRebate.invoiceFiscalUuid
-                                    )
+                                    String(r.stampedRebate.invoiceFiscalUuid)
                                 );
                             }
 
@@ -211,7 +229,6 @@ export default function DiscountsGridTable({
                                 fiscalParams
                             );
 
-                            // Guardar la búsqueda antes de salir a Fiscal.
                             if (lastSearch) {
                                 saveDiscountSearchRestore(lastSearch);
                             }

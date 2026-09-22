@@ -38,13 +38,13 @@ async function getMessage(key: string, ...params: string[]): Promise<string> {
     }
 }
 
-export async function findAll(): Promise<SupplierDto[]> {
-    const suppliers = await supplierRepo.findAllVisible();
+export async function findAll(security?: supplierRepo.SupplierSecurityFilter): Promise<SupplierDto[]> {
+    const suppliers = await supplierRepo.findAllVisible(security);
     return supplierMapper.toDtoList(suppliers);
 }
 
-export async function findByStatus(status: number): Promise<SupplierDto[]> {
-    const suppliers = await supplierRepo.findByStatus(status);
+export async function findByStatus(status: number, security?: supplierRepo.SupplierSecurityFilter): Promise<SupplierDto[]> {
+    const suppliers = await supplierRepo.findByStatus(status, security);
     return supplierMapper.toDtoList(suppliers);
 }
 
@@ -213,13 +213,22 @@ export async function isSupplierTypeBlocked(supplierNumber: string): Promise<boo
 
 export async function findByTypeAndBlockStatus(
     tipoProveedor: number,
-    estatusBloqueo: number
+    estatusBloqueo: number,
+    security?: supplierRepo.SupplierSecurityFilter
 ): Promise<SupplierFilterDto[]> {
     if (tipoProveedor < MIN_SUPPLIER_TYPE || tipoProveedor > MAX_SUPPLIER_TYPE) {
         throw new Error(await getMessage(MSG_SUPPLIER_TYPE_INVALID, String(tipoProveedor)));
     }
 
-    const suppliers = await supplierRepo.findByTypeFilter(tipoProveedor);
+    let suppliers = await supplierRepo.findByTypeFilter(tipoProveedor);
+    if (security?.vendors && security.vendors.length > 0) {
+        const allowedVendors = new Set(security.vendors.map(String));
+        suppliers = suppliers.filter((s) => allowedVendors.has(String(s.supplierNumber)));
+    }
+    if (security?.typeIds && security.typeIds.length > 0) {
+        const allowedTypes = new Set(security.typeIds);
+        suppliers = suppliers.filter((s) => s.supplierTypeId != null && allowedTypes.has(s.supplierTypeId));
+    }
     const result: SupplierFilterDto[] = [];
 
     for (const supplier of suppliers) {

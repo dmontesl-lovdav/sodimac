@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as securityRepo from '@/repositories/security.repo.js';
 
-function resolveUserKey(req: Request): string | null {
+export function resolveUserKey(req: Request): string | null {
     const raw = req.header('authorization') ?? req.header('Authorization');
     if (!raw) return null;
     const token = raw.startsWith('Bearer ') ? raw.slice(7) : raw;

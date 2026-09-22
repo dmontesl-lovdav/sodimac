@@ -172,7 +172,8 @@ public class PaymentRegistrationController {
     })
     public ResponseEntity<?> buscarComplementosPago(
             @ModelAttribute PaymentSearchRequest searchRequest,
-            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors) {
+            @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors,
+            @RequestHeader(value = "x-user-types", required = false) String xUserTypes) {
 
         List<String> allowedVendors = parseVendorHeader(xUserVendors);
         if (allowedVendors != null && allowedVendors.isEmpty()) {
@@ -182,10 +183,13 @@ public class PaymentRegistrationController {
             ));
         }
 
-        log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}", searchRequest,
-                allowedVendors == null ? "sin restricción" : allowedVendors);
+        List<String> allowedTypes = parseTypeHeader(xUserTypes);
 
-        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest, allowedVendors);
+        log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}, types: {}", searchRequest,
+                allowedVendors == null ? "sin restricción" : allowedVendors,
+                allowedTypes == null ? "sin restricción" : allowedTypes);
+
+        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest, allowedVendors, allowedTypes);
 
         log.info("Búsqueda completada - {}/{} resultados, página {}/{}",
                 results.getNumberOfElements(), results.getTotalElements(),
@@ -200,5 +204,19 @@ public class PaymentRegistrationController {
         if (trimmed.isEmpty()) return Collections.emptyList();
         if ("-1".equals(trimmed)) return null;
         return Arrays.asList(trimmed.split(","));
+    }
+
+    private List<String> parseTypeHeader(String header) {
+        if (header == null) return null;
+        String trimmed = header.trim();
+        if (trimmed.isEmpty() || "-1".equals(trimmed)) return null;
+        List<String> ids = new java.util.ArrayList<>();
+        for (String part : trimmed.split(",")) {
+            String digits = part.trim().replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                ids.add(String.valueOf(Integer.parseInt(digits)));
+            }
+        }
+        return ids.isEmpty() ? null : ids;
     }
 }

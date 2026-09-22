@@ -432,23 +432,6 @@ export default function RebateDetailView(): ReactElement {
                 Nota de crédito relacionada
             </div>
 
-            <div style={styles.grid}>
-                <Field label="UUID NC">
-                    {loading
-                        ? "Cargando..."
-                        : fmt(currentDetail?.ncFiscalUuid)}
-                </Field>
-
-                <Field label="UUID Factura">
-                    {loading
-                        ? "Cargando..."
-                        : fmt(
-                            currentDetail?.invoiceFiscalUuid ??
-                            d.stampedInvoiceFiscalUuid
-                        )}
-                </Field>
-            </div>
-
             {error ? (
                 <div role="alert" style={styles.errorBox}>
                     {error}

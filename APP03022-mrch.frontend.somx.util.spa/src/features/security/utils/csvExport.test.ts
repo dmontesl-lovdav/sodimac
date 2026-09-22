@@ -94,7 +94,7 @@ describe('exportSecurityRowsAsCsv', () => {
     expect(download).not.toContain(' ');
     expect(download).not.toContain('/');
     expect(download).not.toContain('*');
-    expect(download.startsWith('reporte-con-espaciosycarac-')).toBe(true);
+    expect(download.startsWith('reporte-con-espaciosycarac_')).toBe(true);
   });
 
   it('soporta valores nulos sin romper', () => {

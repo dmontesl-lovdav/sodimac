@@ -10,17 +10,55 @@
 	xmlns:fo="http://www.w3.org/1999/XSL/Format"
 	exclude-result-prefixes="fo">
 	
-	<xsl:param name="usoCFDIDesc" select="/" />
-	<xsl:param name="regimenFiscalDesc" select="/" />
-	<xsl:param name="regimenFiscalReceptorDesc" select="/" />
-	<xsl:param name="tipoComprobanteDesc" select="/" />
-	<xsl:param name="tipoDeComprobanteDesc" select="/" />
-	<xsl:param name="transaccion" select="/" />
-	<xsl:param name="nombreObra" select="/" />
-	<xsl:param name="responsableObra" select="/" />
-	<xsl:param name="uuidRelacionado" select="/" />
-	<xsl:param name="moneda" select="/" />
-	<xsl:param name="monedaDesc" select="/" />
+	<!-- Los parametros que no se envian desde Java deben quedar vacios, NO en el nodo
+	     raiz: con select="/" xsl:value-of imprime la concatenacion de todo el texto
+	     del XML (los elementos de la cfdi:Addenda), que es lo que ensuciaba los
+	     campos "No. Transaccion" y "Folio Fiscal a Relacionar". -->
+	<xsl:param name="usoCFDIDesc" select="''" />
+	<xsl:param name="regimenFiscalDesc" select="''" />
+	<xsl:param name="regimenFiscalReceptorDesc" select="''" />
+	<xsl:param name="tipoComprobanteDesc" select="''" />
+	<xsl:param name="tipoDeComprobanteDesc" select="''" />
+	<xsl:param name="transaccion" select="''" />
+	<xsl:param name="nombreObra" select="''" />
+	<xsl:param name="responsableObra" select="''" />
+	<xsl:param name="uuidRelacionado" select="''" />
+	<xsl:param name="moneda" select="''" />
+	<xsl:param name="monedaDesc" select="''" />
+
+	<!-- ================================================================
+	     Valores resueltos: se usa el parametro si Java lo envia; si no,
+	     se leen directamente del XML del CFDI.
+	     ================================================================ -->
+
+	<!-- Folio Fiscal a Relacionar: UUID(s) de cfdi:CfdiRelacionados.
+	     Si hay mas de uno se listan separados por coma. -->
+	<xsl:variable name="uuidRelacionadoFinal">
+		<xsl:choose>
+			<xsl:when test="$uuidRelacionado != ''">
+				<xsl:value-of select="$uuidRelacionado" />
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:for-each select="/cfdi:Comprobante/cfdi:CfdiRelacionados/cfdi:CfdiRelacionado">
+					<xsl:if test="position() &gt; 1">, </xsl:if>
+					<xsl:value-of select="@UUID" />
+				</xsl:for-each>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
+
+	<!-- No. Transaccion: numero de recepcion de la Addenda Sodimac.
+	     Se usa local-name() porque la addenda llega con y sin prefijo. -->
+	<xsl:variable name="transaccionFinal">
+		<xsl:choose>
+			<xsl:when test="$transaccion != ''">
+				<xsl:value-of select="$transaccion" />
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="/cfdi:Comprobante/cfdi:Addenda//*[local-name()='NoRecepcion'][1]" />
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:variable>
     <xsl:param name="importeLetra" select="''"/>
     <xsl:param name="formaPagoLetter" select="''"/>
     <xsl:param name="metodoPagoLetter" select="''"/>
@@ -368,8 +406,8 @@
 														</fo:block>
 													</fo:table-cell>
 													<fo:table-cell display-align="center">
-														<fo:block font-size="6pt">
-															<xsl:value-of select="$transaccion" />
+														<fo:block font-size="6pt" wrap-option="wrap">
+															<xsl:value-of select="$transaccionFinal" />
 														</fo:block>
 													</fo:table-cell>
 												</fo:table-row>
@@ -1019,7 +1057,7 @@
 										</fo:table-cell>
 									</fo:table-row>
 								</xsl:if>
-								<xsl:if test="$uuidRelacionado != ''" >
+								<xsl:if test="$uuidRelacionadoFinal != ''" >
 									<fo:table-row>
 										<fo:table-cell display-align="center">
 											<fo:table>
@@ -1033,8 +1071,8 @@
 															</fo:block>
 														</fo:table-cell>
 														<fo:table-cell>
-															<fo:block font-size="6pt">
-																<xsl:value-of select="$uuidRelacionado"/>
+															<fo:block font-size="6pt" wrap-option="wrap">
+																<xsl:value-of select="$uuidRelacionadoFinal"/>
 															</fo:block>
 														</fo:table-cell>
 													</fo:table-row>

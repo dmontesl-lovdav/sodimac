@@ -220,6 +220,17 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             );
         }
 
+        const securityVendors = (request.security?.vendors ?? [])
+            .map((v) => String(v).trim())
+            .filter((v) => v.length > 0);
+
+        if (securityVendors.length > 0) {
+            purchaseOrderQuery.andWhere(
+                "CAST(purchaseOrder.supplierNumber AS TEXT) IN (:...securityVendors)",
+                { securityVendors },
+            );
+        }
+
         const skip = (parseInt(dto.pageNumber) - 1) * parseInt(dto.pageSize);
 
         console.log("[purchaseOrder.list] pagination:", {

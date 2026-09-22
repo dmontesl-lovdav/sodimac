@@ -42,6 +42,7 @@ type FindWithFiltersParams = {
     recepcion?: string;
 
     allowedVendors?: string[] | null;
+    securityTypeIds?: number[] | null;
 
     page?: number;
     limit?: number;
@@ -400,6 +401,7 @@ export async function findWithFilters(
         ordenCompra,
         recepcion,
         allowedVendors = null,
+        securityTypeIds = null,
         page = 1,
         limit = 20,
     } = params;
@@ -502,6 +504,30 @@ export async function findWithFilters(
             {
                 tipoProveedor:
                     String(tipoProveedor).trim(),
+            }
+        );
+    }
+
+    if (securityTypeIds && securityTypeIds.length > 0) {
+        qb.andWhere(
+            `
+                EXISTS (
+                    SELECT 1
+                    FROM shared_catalogs.supplier supplier
+                    WHERE
+                        CAST(
+                            supplier.supplier_number
+                            AS TEXT
+                        ) =
+                        CAST(
+                            "t"."vendor_number"
+                            AS TEXT
+                        )
+                    AND supplier.supplier_type_id IN (:...securityTypeIds)
+                )
+            `,
+            {
+                securityTypeIds,
             }
         );
     }

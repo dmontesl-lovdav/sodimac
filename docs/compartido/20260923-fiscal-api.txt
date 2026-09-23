@@ -101,3 +101,47 @@ cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
 git log --oneline -20
 git log --oneline -15 -- .github/workflows/pipeline.yml
 git log --oneline -15 -- .mvn/
+
+
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PS C:\Users\g_dco018> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -20
+7740f84 (HEAD -> develop, origin/develop) Merge branch 'develop' of https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api into develop
+5bf4706 fix: remove permission validation from credit note registration
+0b3d363 fix: findCatalogDescription case-insensitive por code (evita nombre por enum fallback)
+6cba0c3 merge uat -> develop: alinear tras re-trigger CI
+70af75b ci: retrigger deploy fiscal-api (fix artifact registry)
+4748d16 fix(ci): register Artifact Registry Maven wagon early
+977c5b1 Merge pull request #51 from falabella-stores-and-merchandise/develop
+63a7c0d Merge pull request #50 from falabella-stores-and-merchandise/feature/pdf-folio-fiscal-relacionado
+64d87dc (origin/feature/pdf-folio-fiscal-relacionado) fix: corregir Folio Fiscal a Relacionar y No. Transaccion en PDF del CFDI
+55f345c Merge pull request #49 from falabella-stores-and-merchandise/feature/events
+c66007f feature: events
+cfd906c ci: retrigger build
+76bc5e7 merge: cascadas de cancelacion NC/factura sobre NCs
+d00e575 feat: cancelar NC pasa factura y NCs a Recibido Parcial; cancelar factura cancela NCs relacionadas
+8ae1247 Merge pull request #48 from falabella-stores-and-merchandise/develop
+8ee6c0a Merge pull request #47 from falabella-stores-and-merchandise/feature/roles
+391714d feature: roles
+4dfe764 merge: cascada contable Carta Porte transporte
+6576475 feat: cascada contable Carta Porte en factura de transporte (factura 5->guia 4, factura 15->guia 5)
+499fbd9 Merge pull request #46 from falabella-stores-and-merchandise/develop
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -15 -- .github/workflows/pipeline.yml
+623bc3c chore: generate jacoco coverage report
+dd7855e chore: add sonar project properties
+cdfe4c1 (devops) use gcr java build reusable
+c66e842 (devops) move workflow oidc permissions to top level
+20f9221 (devops) add build job oidc permissions
+baf18d0 Update Maven container image version in pipeline
+c5a7b31 Update container image in pipeline workflow
+c98e168 Update container image in pipeline configuration
+968a06f Simplify Maven build and test commands in pipeline
+e4f1456 init github
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -15 -- .mvn/
+4748d16 fix(ci): register Artifact Registry Maven wagon early
+bf55304 update fiscal-api Se agrega CRUD de las tablas involucradas en Fiscal
+bb619d6 Upload New File
+8521414 feat: Add Maven wrapper files for project setup and dependency management
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>

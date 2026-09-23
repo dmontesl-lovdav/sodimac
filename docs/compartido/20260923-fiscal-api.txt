@@ -30,3 +30,18 @@ Nota finanzas-api (pendiente aparte):
 - El cambio de "status de factura en listReception" (Josue) tiene su propio
   runbook en: docs/compartido/20260922-pase-finanzas-status-factura.md
 - Ese aun hay que pasarlo (develop -> uat) y desplegarlo.
+
+--------------------------------------------------------------------------
+Alinear develop con uat tras el re-trigger (empty commit se fue directo a uat)
+--------------------------------------------------------------------------
+Se uso la Opcion B (empty commit) y quedo SOLO en uat -> develop 1 commit vacio
+atras. El codigo real ya estaba en ambos; esto solo alinea. Correr en Sodimac:
+
+  cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+  git checkout develop
+  git pull origin develop
+  git merge origin/uat --no-ff -m "merge uat -> develop: alinear tras re-trigger CI"
+  git push origin develop
+
+Para futuro: el empty commit de re-trigger meterlo en develop y luego merge a
+uat, o usar Re-run jobs en Actions (no crea commit) -> asi no divergen.

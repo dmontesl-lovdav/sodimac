@@ -47,3 +47,49 @@ Para futuro: el empty commit de re-trigger meterlo en develop y luego merge a
 uat, o usar Re-run jobs en Actions (no crea commit) -> asi no divergen.
 
 C:\local\docs\compartido\imagen (29).png
+
+
+Preparing Java & Maven environment
+  🔎 Running additional command:
+  COMMAND_ADDITIONAL = echo no additional command
+  no additional command
+  --------------------------------------------------
+  🔨 Running main Maven build command:
+  COMMAND = mvn --batch-mode --errors package -DskipTests
+  [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/google/cloud/artifactregistry/artifactregistry-maven-wagon/2.2.5/artifactregistry-maven-wagon-2.2.5.pom
+  [ERROR] Error executing Maven.
+  org.apache.maven.cli.internal.ExtensionResolutionException: Extension com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved: Plugin com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved:
+  	Failed to read artifact descriptor for com.google.cloud.artifactregistry:artifactregistry-maven-wagon:jar:2.2.5
+  
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveExtension (BootstrapCoreExtensionManager.java:182)
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveCoreExtensions (BootstrapCoreExtensionManager.java:115)
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.loadCoreExtensions (BootstrapCoreExtensionManager.java:99)
+      at org.apache.maven.cli.MavenCli.loadCoreExtensions (MavenCli.java:768)
+      at org.apache.maven.cli.MavenCli.container (MavenCli.java:639)
+      at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:279)
+      at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+      at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
+      at java.lang.reflect.Method.invoke (Method.java:580)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+  Caused by: org.apache.maven.plugin.PluginResolutionException: Plugin com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved:
+  	Failed to read artifact descriptor for com.google.cloud.artifactregistry:artifactregistry-maven-wagon:jar:2.2.5
+  
+      at org.apache.maven.plugin.internal.DefaultPluginDependenciesResolver.resolveInternal (DefaultPluginDependenciesResolver.java:226)
+      at org.apache.maven.plugin.internal.DefaultPluginDependenciesResolver.resolveCoreExtension (DefaultPluginDependenciesResolver.java:159)
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveExtension (BootstrapCoreExtensionManager.java:174)
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveCoreExtensions (BootstrapCoreExtensionManager.java:115)
+      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.loadCoreExtensions (BootstrapCoreExtensionManager.java:99)
+      at org.apache.maven.cli.MavenCli.loadCoreExtensions (MavenCli.java:768)
+      at org.apache.maven.cli.MavenCli.container (MavenCli.java:639)
+      at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:279)
+      at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+      at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
+      at java.lang.reflect.Method.invoke (Method.java:580)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
+      at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+  Error: Process completed with exit code 1.

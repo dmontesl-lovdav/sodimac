@@ -57,6 +57,29 @@ Verificar (esperado 1..20 con nombre; 20 = Cancelada):
   WHERE UPPER(ch.code) = UPPER('CatEstatusFactura')
   ORDER BY (cd.value)::int;
 
+  "value","description"
+"1",No valido fiscal
+"2",Recibido Parcial
+"3",En proceso de envio
+"4",En proceso de desglose
+"5",Desglose de factura
+"6",Error en el desglose xml
+"7",Pendiente Envio
+"8",Enviada
+"9",Error registro contable
+"10",Error de Envio
+"11",Pendiente Envio i213
+"12",Enviada i213
+"13",Error i213
+"14",Pendiente de contabilizar
+"15",Pendiente de Pago
+"16",Rechazo Contable
+"17",Pendiente de complemento
+"18",Pago Manual
+"19",Completado
+"20",Cancelada
+
+
 ==========================================================================
 Notas
 ==========================================================================

@@ -1,0 +1,1 @@
+Carpeta para pasar dumps de BD por git (sin SSH). Los zips/tar/gz aqui SI se versionan (excepcion en .gitignore). Ojo: GitHub rechaza archivos > 100 MB; si el dump pesa mas, partelo en volumenes.

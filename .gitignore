@@ -37,3 +37,12 @@ sesiones/
 *.7z
 *.tar
 *.gz
+
+# Excepcion: dumps de BD que se pasan por git (canal compartido, sin SSH).
+# Solo dentro de docs/compartido/db/. OJO: GitHub rechaza archivos > 100 MB.
+!docs/compartido/db/
+!docs/compartido/db/*.zip
+!docs/compartido/db/*.rar
+!docs/compartido/db/*.7z
+!docs/compartido/db/*.tar
+!docs/compartido/db/*.gz

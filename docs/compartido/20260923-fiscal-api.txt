@@ -1,1 +1,32 @@
-C:\local\docs\compartido\imagen (28).png
+RUNBOOK — re-disparar deploy fiscal-api tras fix del pipeline (2026-09-23)
+==========================================================================
+
+Contexto:
+- El pipeline ya quedó arreglado: commit "fix(ci): register Artifact Registry
+  Maven wagon early" (Pipeline CI Microservice #222, verde).
+- El cambio de cancelacion NC/factura (commit mirror 3d4183b4) YA esta en
+  develop/uat, pero su deploy anterior fallo por el error de Artifact Registry.
+- Solo falta RE-CORRER el pipeline para que despliegue con el CI ya arreglado.
+
+Opcion A (recomendada) — Re-run desde GitHub Actions (UI):
+- Entrar a Actions del repo real fiscal-api:
+  https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/actions
+- Abrir el run de "Pipeline CI Microservice" que fallo (rama uat).
+- Boton "Re-run jobs" -> "Re-run all jobs".
+
+Opcion B — empty commit en uat (PC Sodimac, PowerShell):
+  cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+  git checkout uat
+  git pull origin uat
+  git commit --allow-empty -m "ci: retrigger deploy fiscal-api (fix artifact registry)"
+  git push origin uat
+
+Verificar:
+- El run nuevo de "Pipeline CI Microservice" debe salir verde.
+- El ❌ de "Automatic Dependency Submission (Maven)" es un workflow aparte de
+  DevSecOps (grafo de dependencias), NO el build/deploy -> no bloquea.
+
+Nota finanzas-api (pendiente aparte):
+- El cambio de "status de factura en listReception" (Josue) tiene su propio
+  runbook en: docs/compartido/20260922-pase-finanzas-status-factura.md
+- Ese aun hay que pasarlo (develop -> uat) y desplegarlo.

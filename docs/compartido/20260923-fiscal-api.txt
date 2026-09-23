@@ -93,3 +93,11 @@ Preparing Java & Maven environment
       at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
       at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
   Error: Process completed with exit code 1.
+
+
+
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+git log --oneline -20
+git log --oneline -15 -- .github/workflows/pipeline.yml
+git log --oneline -15 -- .mvn/

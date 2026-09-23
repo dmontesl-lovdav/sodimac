@@ -45,3 +45,5 @@ atras. El codigo real ya estaba en ambos; esto solo alinea. Correr en Sodimac:
 
 Para futuro: el empty commit de re-trigger meterlo en develop y luego merge a
 uat, o usar Re-run jobs en Actions (no crea commit) -> asi no divergen.
+
+C:\local\docs\compartido\imagen (29).png

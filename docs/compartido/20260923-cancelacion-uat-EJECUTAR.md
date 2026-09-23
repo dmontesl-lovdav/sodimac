@@ -18,9 +18,19 @@ UPDATE tenant_fiscal.invoice SET status=3 WHERE invoice_uuid='02057fcc-5220-499e
 :: curl (cmd)
 curl -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/0665d251-206f-4d1c-8b89-03c2087a62d5/status" -H "Content-Type: application/json" -d "{\"estatusOrigen\":3,\"estatusDestino\":20,\"numeroProveedor\":252338,\"idUsuarioActualizacion\":\"11111111-1111-1111-1111-111111111111\"}"
 
+C:\Users\g_dco018>curl -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/0665d251-206f-4d1c-8b89-03c2087a62d5/status" -H "Content-Type: application/json" -d "{\"estatusOrigen\":3,\"estatusDestino\":20,\"numeroProveedor\":252338,\"idUsuarioActualizacion\":\"11111111-1111-1111-1111-111111111111\"}"
+{"success":true,"code":"BUS3010","message":"Estatus actualizado exitosamente","invoiceUuid":"02057fcc-5220-499e-b641-645eb1a4f2e9","fiscalUuid":"0665d251-206f-4d1c-8b89-03c2087a62d5","documentType":"E","estatusAnterior":3,"estatusNuevo":20,"estatusNuevoNombre":"Cancelada","fechaContabilizacion":null,"fechaActualizacion":"2026-09-23T17:35:11.096555105"}
+C:\Users\g_dco018>
+
 -- verificar: NC1=20, factura=2, NC2=2
 SELECT invoice_uuid, document_type, status FROM tenant_fiscal.invoice
 WHERE invoice_uuid IN ('95d1a84a-14d9-487d-a9ef-7dad25334be5','02057fcc-5220-499e-b641-645eb1a4f2e9','1a2d6183-1650-4647-bf70-1775d903de5e');
+
+"invoice_uuid","document_type","status"
+"02057fcc-5220-499e-b641-645eb1a4f2e9",E,20
+"95d1a84a-14d9-487d-a9ef-7dad25334be5",I,2
+"1a2d6183-1650-4647-bf70-1775d903de5e",E,2
+
 
 ==========================================================================
 PUNTO 2 - cancelar la factura (NCs -> 20 + recepcion 0)
@@ -32,14 +42,27 @@ UPDATE tenant_fiscal.invoice SET status=3 WHERE invoice_uuid IN ('02057fcc-5220-
 :: curl (cmd)
 curl -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/b6828aef-75b9-4813-862b-3319cd7ea122/status" -H "Content-Type: application/json" -d "{\"estatusOrigen\":2,\"estatusDestino\":20,\"numeroProveedor\":252338,\"idUsuarioActualizacion\":\"11111111-1111-1111-1111-111111111111\"}"
 
+
+C:\Users\g_dco018>curl -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/b6828aef-75b9-4813-862b-3319cd7ea122/status" -H "Content-Type: application/json" -d "{\"estatusOrigen\":2,\"estatusDestino\":20,\"numeroProveedor\":252338,\"idUsuarioActualizacion\":\"11111111-1111-1111-1111-111111111111\"}"
+{"success":true,"code":"BUS3010","message":"Estatus actualizado exitosamente","invoiceUuid":"95d1a84a-14d9-487d-a9ef-7dad25334be5","fiscalUuid":"b6828aef-75b9-4813-862b-3319cd7ea122","documentType":"I","estatusAnterior":2,"estatusNuevo":20,"estatusNuevoNombre":"Error en la contabilización","fechaContabilizacion":null,"fechaActualizacion":"2026-09-23T17:36:13.064521216"}
+C:\Users\g_dco018>
+
+
 -- verificar: factura=20, NC1=20, NC2=20
 SELECT invoice_uuid, document_type, status FROM tenant_fiscal.invoice
 WHERE invoice_uuid IN ('95d1a84a-14d9-487d-a9ef-7dad25334be5','02057fcc-5220-499e-b641-645eb1a4f2e9','1a2d6183-1650-4647-bf70-1775d903de5e');
+
+"invoice_uuid","document_type","status"
+"02057fcc-5220-499e-b641-645eb1a4f2e9",E,20
+"95d1a84a-14d9-487d-a9ef-7dad25334be5",I,20
+"1a2d6183-1650-4647-bf70-1775d903de5e",E,20
+
 
 -- recepcion -> 0
 SELECT r.status FROM tenant_fiscal.addendum a
 JOIN tenant_finance.reception r ON TRIM(r.reception_number)=TRIM(a.reception_number)
 WHERE a.invoice_uuid='95d1a84a-14d9-487d-a9ef-7dad25334be5';
+0
 
 ==========================================================================
 Orden: Punto 1 -> verificar -> Punto 2 -> verificar.

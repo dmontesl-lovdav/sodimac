@@ -58,3 +58,8 @@ Ivan, ya desplegado y probado en UAT los dos puntos de cancelacion:
 - Cancelar factura -> sus NCs relacionadas pasan a Cancelado y la recepcion se libera a Disponible
   (ademas de la guia a Pendiente de Facturar en transporte).
 Quedo en UAT por si lo quieres validar de tu lado.
+
+
+"fac_fiscal","fac_uuid","fac_st","prov","nc_fiscal","nc_uuid","nc_st"
+b6828aef-75b9-4813-862b-3319cd7ea122,"95d1a84a-14d9-487d-a9ef-7dad25334be5",5,252338,"0665d251-206f-4d1c-8b89-03c2087a62d5","02057fcc-5220-499e-b641-645eb1a4f2e9",5
+b6828aef-75b9-4813-862b-3319cd7ea122,"95d1a84a-14d9-487d-a9ef-7dad25334be5",5,252338,a252062a-bd50-49c6-86c9-800c3bf3c0bf,"1a2d6183-1650-4647-bf70-1775d903de5e",5

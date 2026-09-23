@@ -780,7 +780,7 @@ export async function getAttributeValuesByType(
     const headerRow = await datasource
         .getRepository(CatalogHeader)
         .createQueryBuilder('h')
-        .where('h.code = :code', { code: headerCode })
+        .where('(h.code = :code OR h.name = :code)', { code: headerCode })
         .andWhere('h.status = 1')
         .select('h.id', 'id')
         .getRawOne<{ id: number }>();

@@ -231,6 +231,32 @@ export async function list(request: AuthenticatedRequest, response: Response, ne
             );
         }
 
+        const securityGroups = (request.security?.groups ?? [])
+            .map((g) => String(g).trim())
+            .filter((g) => g.length > 0);
+
+        if (securityGroups.length > 0) {
+            const allowedByGroupSupplierNumbers = await svc.getSupplierNumbersByGroupsForList(securityGroups);
+            if (allowedByGroupSupplierNumbers.length === 0) {
+                const emptyPage: ResponsePageableDTO = {
+                    content: [],
+                    totalElements: 0,
+                    numberOfElements: 0,
+                    totalPages: 0,
+                    pageNumber: parseInt(dto.pageNumber),
+                    pageSize: parseInt(dto.pageSize),
+                };
+                return response.json({
+                    ...ResponseHandler.responseBuilder("", emptyPage, 0, StatusCodes.OK, true, ""),
+                    trace_id: getTraceId(),
+                });
+            }
+            purchaseOrderQuery.andWhere(
+                "purchaseOrder.supplierNumber IN (:...securityGroupSupplierNumbers)",
+                { securityGroupSupplierNumbers: allowedByGroupSupplierNumbers },
+            );
+        }
+
         const skip = (parseInt(dto.pageNumber) - 1) * parseInt(dto.pageSize);
 
         console.log("[purchaseOrder.list] pagination:", {

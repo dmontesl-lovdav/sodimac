@@ -176,6 +176,46 @@ export async function getActiveSupplierNumbersByTypes(
         .filter((n) => !Number.isNaN(n));
 }
 
+const CATGRUPOPROVEEDORES_KEYS = ["CatGrupoProveedores", "CATGRUPOPROVEEDORBLOQUEA"] as const;
+
+export async function getActiveSupplierNumbersByGroups(
+    groupKeys: string[],
+): Promise<number[]> {
+    if (groupKeys.length === 0) return [];
+
+    const headerRepo = getDataSource().getRepository(SharedCatalogHeader);
+    const detailRepo = getDataSource().getRepository(SharedCatalogDetail);
+
+    const parent = await headerRepo.findOne({
+        where: CATGRUPOPROVEEDORES_KEYS.flatMap((k) => [{ code: k }, { name: k }]),
+    });
+    if (!parent) return [];
+
+    const groupElements = await detailRepo.find({
+        where: { headerId: parent.id, status: 1, key: In(groupKeys) },
+        select: ["value"],
+    });
+    const childCatalogNames = groupElements
+        .map((e) => (e.value ?? "").trim())
+        .filter((v) => v.length > 0);
+    if (childCatalogNames.length === 0) return [];
+
+    const childHeaders = await headerRepo.find({
+        where: childCatalogNames.flatMap((n) => [{ code: n }, { name: n }]),
+    });
+    const childIds = childHeaders.map((h) => h.id);
+    if (childIds.length === 0) return [];
+
+    const supplierElements = await detailRepo.find({
+        where: { headerId: In(childIds), status: 1 },
+        select: ["value"],
+    });
+
+    return supplierElements
+        .map((e) => Number((e.value ?? "").trim()))
+        .filter((n) => !Number.isNaN(n) && n > 0);
+}
+
 export async function getAllSuppliers(
     tipoProveedorList: GenericCatalogDetails[],
 ): Promise<Supplier[]> {

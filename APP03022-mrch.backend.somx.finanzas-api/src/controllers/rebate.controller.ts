@@ -119,7 +119,10 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         const securityTypeIds = (req.security?.types ?? [])
             .map((t) => Number(String(t).replace(/\D/g, "")))
             .filter((n) => !Number.isNaN(n) && n > 0);
-        const rows = await svc.list(q, securityVendors, securityTypeIds);
+        const securityGroups = (req.security?.groups ?? [])
+            .map((g) => String(g).trim())
+            .filter((g) => g.length > 0);
+        const rows = await svc.list(q, securityVendors, securityTypeIds, securityGroups);
 
         if (!rows.length) throw new HttpError(404, "No records found for that filter");
 

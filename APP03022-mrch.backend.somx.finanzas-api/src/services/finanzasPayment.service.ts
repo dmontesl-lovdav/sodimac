@@ -27,7 +27,8 @@ import { randomUUID } from "crypto";
 export async function list(
     q: ListFinanzasPaymentQuery,
     securityVendors: string[] = [],
-    securityTypeIds: number[] = []
+    securityTypeIds: number[] = [],
+    securityGroups: string[] = []
 ) {
     const start = Date.now();
 
@@ -54,6 +55,13 @@ export async function list(
         allowedVendorNums = allowedVendorNums
             ? allowedVendorNums.filter((n) => typeSupplierNums.includes(n))
             : typeSupplierNums;
+    }
+
+    if (securityGroups.length > 0) {
+        const groupSupplierNums = await sharedCatalogService.getActiveSupplierNumbersByGroups(securityGroups);
+        allowedVendorNums = allowedVendorNums
+            ? allowedVendorNums.filter((n) => groupSupplierNums.includes(n))
+            : groupSupplierNums;
     }
 
     if (q.vendorNumber !== undefined) {

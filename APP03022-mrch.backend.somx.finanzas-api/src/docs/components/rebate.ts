@@ -445,4 +445,140 @@ export const rebateSchemas: Record<string, OpenAPIV3.SchemaObject> = {
             "message",
         ],
     },
+
+    "RebatePurchaseOrderDetailDto": {
+        "type": "object",
+        "properties": {
+            "purchaseOrder": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "example": "428726",
+                "description": "Número de orden de compra."
+            },
+            "receivedAmount": {
+                "type": "string",
+                "pattern": "^-?\\d{1,24}(\\.\\d{1,8})?$",
+                "description": "Importe decimal conservado como texto, con hasta ocho decimales.",
+                "example": "110651.0600"
+            },
+            "receptionDate": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "example": "2026-04-13",
+                "description": "Fecha calendario válida, sin hora ni conversión de zona horaria."
+            },
+            "discountType": {
+                "type": "integer",
+                "example": 1,
+                "description": "Tipo de rebate; debe coincidir con source de la cabecera."
+            },
+            "discountAmount": {
+                "type": "string",
+                "pattern": "^-?\\d{1,24}(\\.\\d{1,8})?$",
+                "description": "Importe decimal conservado como texto, con hasta ocho decimales.",
+                "example": "4492.4334"
+            }
+        },
+        "required": [
+            "purchaseOrder",
+            "receivedAmount",
+            "receptionDate",
+            "discountType",
+            "discountAmount"
+        ],
+        "additionalProperties": false
+    },
+    "SyncRebatePurchaseOrderDetailsDto": {
+        "type": "object",
+        "properties": {
+            "documentNumber": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "example": "01-CrossDock 01-000360189-26M"
+            },
+            "vendorNumber": {
+                "type": "integer",
+                "example": 250053
+            },
+            "source": {
+                "type": "integer",
+                "example": 1
+            },
+            "periodId": {
+                "type": "integer",
+                "example": 189
+            },
+            "orders": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10000,
+                "items": {
+                    "$ref": "#/components/schemas/RebatePurchaseOrderDetailDto"
+                }
+            }
+        },
+        "required": [
+            "documentNumber",
+            "vendorNumber",
+            "source",
+            "periodId",
+            "orders"
+        ],
+        "additionalProperties": false,
+        "description": "Identifica una cabecera existente por sus cuatro campos exactos. Cada discountType debe coincidir con source; no se admite una lista vacía."
+    },
+    "SyncRebatePurchaseOrderDetailsResultDto": {
+        "type": "object",
+        "properties": {
+            "rebateId": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10000,
+                "description": "Cantidad de filas guardadas."
+            }
+        },
+        "required": [
+            "rebateId",
+            "count"
+        ]
+    },
+    "RebatePurchaseOrderDetailsDto": {
+        "type": "object",
+        "properties": {
+            "rebateId": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "orders": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/RebatePurchaseOrderDetailDto"
+                }
+            },
+            "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "Fecha de la última sincronización guardada; null si no existe detalle."
+            },
+            "message": {
+                "type": "string",
+                "nullable": true
+            }
+        },
+        "required": [
+            "rebateId",
+            "orders",
+            "updatedAt",
+            "message"
+        ],
+        "description": "Objeto directo, sin envoltorio data. Cuando no existe detalle devuelve orders vacío, updatedAt null y un mensaje informativo."
+    },
 };

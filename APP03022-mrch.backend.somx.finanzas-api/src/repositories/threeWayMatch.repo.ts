@@ -43,6 +43,7 @@ type FindWithFiltersParams = {
 
     allowedVendors?: string[] | null;
     securityTypeIds?: number[] | null;
+    securityGroupSuppliers?: string[] | null;
 
     page?: number;
     limit?: number;
@@ -402,6 +403,7 @@ export async function findWithFilters(
         recepcion,
         allowedVendors = null,
         securityTypeIds = null,
+        securityGroupSuppliers = null,
         page = 1,
         limit = 20,
     } = params;
@@ -530,6 +532,17 @@ export async function findWithFilters(
                 securityTypeIds,
             }
         );
+    }
+
+    if (securityGroupSuppliers) {
+        if (securityGroupSuppliers.length === 0) {
+            qb.andWhere('1 = 0');
+        } else {
+            qb.andWhere(
+                `CAST("t"."vendor_number" AS TEXT) IN (:...securityGroupSuppliers)`,
+                { securityGroupSuppliers }
+            );
+        }
     }
 
     // ========================

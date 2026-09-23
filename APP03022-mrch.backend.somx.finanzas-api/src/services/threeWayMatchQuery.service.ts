@@ -30,7 +30,8 @@ function buildFilters(
     page: number,
     limit: number,
     allowedVendors: string[] | null,
-    securityTypeIds: number[] | null
+    securityTypeIds: number[] | null,
+    securityGroupSuppliers: string[] | null
 ) {
     return {
         tipoFecha: q.tipoFecha,
@@ -55,6 +56,7 @@ function buildFilters(
 
         allowedVendors,
         securityTypeIds,
+        securityGroupSuppliers,
         page,
         limit,
     };
@@ -323,7 +325,8 @@ function escapeCsvValue(value: unknown): string {
 export async function list(
     q: ListThreeWayMatchQuery,
     allowedVendors: string[] | null = null,
-    securityTypeIds: number[] | null = null
+    securityTypeIds: number[] | null = null,
+    securityGroupSuppliers: string[] | null = null
 ) {
     validateRange(q);
 
@@ -333,7 +336,8 @@ export async function list(
             q.page ?? 1,
             q.limit ?? 20,
             allowedVendors,
-            securityTypeIds
+            securityTypeIds,
+            securityGroupSuppliers
         )
     );
 }
@@ -342,7 +346,8 @@ export async function exportCsv(
     q: ListThreeWayMatchQuery,
     allowedVendors: string[] | null = null,
     securityTypeIds: number[] | null = null,
-    authToken: string = ""
+    authToken: string = "",
+    securityGroupSuppliers: string[] | null = null
 ): Promise<string> {
     validateRange(q);
 
@@ -352,7 +357,8 @@ export async function exportCsv(
             1,
             100000,
             allowedVendors,
-            securityTypeIds
+            securityTypeIds,
+            securityGroupSuppliers
         )
     );
 
@@ -396,7 +402,8 @@ export async function exportXlsx(
     q: ListThreeWayMatchQuery,
     allowedVendors: string[] | null = null,
     securityTypeIds: number[] | null = null,
-    authToken: string = ""
+    authToken: string = "",
+    securityGroupSuppliers: string[] | null = null
 ): Promise<Buffer> {
     validateRange(q);
 
@@ -406,7 +413,8 @@ export async function exportXlsx(
             1,
             100000,
             allowedVendors,
-            securityTypeIds
+            securityTypeIds,
+            securityGroupSuppliers
         )
     );
 

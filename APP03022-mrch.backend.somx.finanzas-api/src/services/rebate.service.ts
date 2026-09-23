@@ -12,6 +12,7 @@ import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 async function resolveAllowedVendorNums(
     securityVendors: string[],
     securityTypeIds: number[],
+    securityGroups: string[],
 ): Promise<number[] | null> {
     let allowed: number[] | null =
         securityVendors.length > 0
@@ -21,10 +22,14 @@ async function resolveAllowedVendorNums(
         const typeSupplierNums = await sharedCatalogService.getActiveSupplierNumbersByTypes(securityTypeIds);
         allowed = allowed ? allowed.filter((n) => typeSupplierNums.includes(n)) : typeSupplierNums;
     }
+    if (securityGroups.length > 0) {
+        const groupSupplierNums = await sharedCatalogService.getActiveSupplierNumbersByGroups(securityGroups);
+        allowed = allowed ? allowed.filter((n) => groupSupplierNums.includes(n)) : groupSupplierNums;
+    }
     return allowed;
 }
 
-export async function list(q: ListRebateQuery, securityVendors: string[] = [], securityTypeIds: number[] = []) {
+export async function list(q: ListRebateQuery, securityVendors: string[] = [], securityTypeIds: number[] = [], securityGroups: string[] = []) {
     const filter: FindOptionsWhere<Rebate> = {};
 
     if (q.status !== undefined) filter.status = q.status;
@@ -38,7 +43,7 @@ export async function list(q: ListRebateQuery, securityVendors: string[] = [], s
     else if (q.from) filter.postingDate = MoreThanOrEqual(q.from);
     else if (q.to) filter.postingDate = LessThanOrEqual(q.to);
 
-    const allowedVendorNums = await resolveAllowedVendorNums(securityVendors, securityTypeIds);
+    const allowedVendorNums = await resolveAllowedVendorNums(securityVendors, securityTypeIds, securityGroups);
     if (q.vendorNumber !== undefined) {
         filter.vendorNumber =
             allowedVendorNums && !allowedVendorNums.includes(q.vendorNumber)

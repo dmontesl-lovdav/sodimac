@@ -1637,6 +1637,197 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /rebates/purchase-order-details/sync:
+    post:
+      tags:
+        - rebates
+      summary: Sincronizar las ordenes de compra de un descuento comercial
+      description: |
+        Localiza una cabecera existente por documentNumber, vendorNumber, source y periodId exactos, sin filtrar por estado. Guarda o reemplaza su detalle de ordenes dentro de una transaccion. No crea cabeceras ni modifica el importe, estado o nota de credito. Devuelve 404 si no existe la cabecera y 409 si hay varias coincidencias. No acepta una lista vacia de ordenes.
+      operationId: syncRebatePurchaseOrderDetails
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+              - documentNumber
+              - vendorNumber
+              - source
+              - periodId
+              - orders
+            properties:
+              documentNumber:
+                type: string
+                minLength: 1
+                maxLength: 100
+                description: Numero exacto del documento de la cabecera existente
+                example: 01-CrossDock 01-000360189-26M
+              vendorNumber:
+                type: integer
+                description: Numero del proveedor
+                example: 250053
+              source:
+                type: integer
+                description: Tipo de rebate de la cabecera
+                example: 1
+              periodId:
+                type: integer
+                description: Identificador del periodo de la cabecera
+                example: 189
+              orders:
+                type: array
+                minItems: 1
+                maxItems: 10000
+                description: |
+                  Detalle completo que reemplaza la instantanea anterior. Cada discountType debe coincidir con source.
+                items:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - purchaseOrder
+                    - receivedAmount
+                    - receptionDate
+                    - discountType
+                    - discountAmount
+                  properties:
+                    purchaseOrder:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                      description: Numero de orden de compra
+                      example: '428726'
+                    receivedAmount:
+                      type: string
+                      pattern: '^-?\d{1,24}(\.\d{1,8})?$'
+                      description: Monto recibido como texto decimal sin separadores de miles
+                      example: '110651.0600'
+                    receptionDate:
+                      type: string
+                      format: date
+                      pattern: '^\d{4}-\d{2}-\d{2}$'
+                      description: Fecha civil de recepcion en formato YYYY-MM-DD
+                      example: '2026-04-13'
+                    discountType:
+                      type: integer
+                      description: Tipo de rebate; debe coincidir con source de la cabecera
+                      example: 1
+                    discountAmount:
+                      type: string
+                      pattern: '^-?\d{1,24}(\.\d{1,8})?$'
+                      description: Monto del descuento como texto decimal sin separadores de miles
+                      example: '4492.4334'
+      responses:
+        '200':
+          description: Detalle de ordenes guardado
+          schema:
+            type: object
+            required:
+              - rebateId
+              - count
+            properties:
+              rebateId:
+                type: string
+                format: uuid
+                description: UUID interno del descuento actualizado
+              count:
+                type: integer
+                minimum: 1
+                maximum: 10000
+                description: Cantidad de filas de detalle guardadas
+                example: 4
+        '400':
+          description: Datos de sincronizacion invalidos
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: El descuento aun no existe en FBC
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '409':
+          description: Varias cabeceras coinciden con la clave del descuento
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
+  '/rebates/{uuid}/purchase-order-details':
+    get:
+      tags:
+        - rebates
+      summary: Consultar las ordenes de compra de un descuento comercial
+      description: |
+        Devuelve el ultimo detalle de ordenes sincronizado para el rebate. Incluye orden de compra, monto recibido, fecha de recepcion, tipo de descuento y monto de descuento. Si el descuento existe pero aun no tiene detalle sincronizado, devuelve HTTP 200 con orders vacio y un mensaje informativo.
+      operationId: getRebatePurchaseOrderDetails
+      produces:
+        - application/json
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          type: string
+          format: uuid
+          description: UUID interno del descuento comercial (rebateId)
+      responses:
+        '200':
+          description: Detalle de ordenes del descuento comercial
+          schema:
+            type: object
+            required:
+              - rebateId
+              - orders
+              - updatedAt
+              - message
+            properties:
+              rebateId:
+                type: string
+                format: uuid
+                description: UUID interno del descuento comercial
+              orders:
+                type: array
+                description: Ultima instantanea de ordenes sincronizada
+                items:
+                  $ref: '#/paths/~1rebates~1purchase-order-details~1sync/post/parameters/0/schema/properties/orders/items'
+              updatedAt:
+                type: string
+                format: date-time
+                x-nullable: true
+                description: Fecha de sincronizacion; null si no existe detalle guardado
+              message:
+                type: string
+                x-nullable: true
+                description: Mensaje informativo; null cuando existe detalle guardado
+        '400':
+          description: UUID del descuento comercial invalido
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '404':
+          description: Descuento comercial no encontrado
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   /stamped-rebates:
     get:
       tags:

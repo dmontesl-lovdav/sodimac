@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as svc from '@/services/accountStatement.service.js';
 import * as batchSvc from '@/services/accountStatementBatch.service.js';
+import * as sharedCatalogService from '@/services/sharedCatalog.service.js';
 import {
     ListAccountStatementQuerySchema,
     UuidParamSchema,
@@ -22,13 +23,20 @@ function securityTypeIds(req: Request): number[] {
         .filter((n) => !Number.isNaN(n) && n > 0);
 }
 
+async function securityGroupSuppliers(req: Request): Promise<string[] | null> {
+    const groups = (req.security?.groups ?? []).map((g) => String(g).trim()).filter((g) => g.length > 0);
+    if (groups.length === 0) return null;
+    const suppliers = await sharedCatalogService.getActiveSupplierNumbersByGroups(groups);
+    return suppliers.map(String);
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
         const vendors = allowedVendors(req);
         if (vendors === 'wrn7029') { res.status(400).json(WRN7029); return; }
 
         const query = ListAccountStatementQuerySchema.parse(req.query);
-        const result = await svc.search(query, vendors, securityTypeIds(req));
+        const result = await svc.search(query, vendors, securityTypeIds(req), await securityGroupSuppliers(req));
         res.json(result);
     } catch (e) {
         next(e);

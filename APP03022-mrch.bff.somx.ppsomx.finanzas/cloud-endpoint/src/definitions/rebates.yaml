@@ -141,3 +141,122 @@ RebateFiscalDetailDto:
   required:
     - rebateId
     - creditNotes
+
+RebatePurchaseOrderDetailDto:
+  type: object
+  additionalProperties: false
+  required:
+    - purchaseOrder
+    - receivedAmount
+    - receptionDate
+    - discountType
+    - discountAmount
+  properties:
+    purchaseOrder:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Numero de orden de compra
+      example: "428726"
+    receivedAmount:
+      type: string
+      pattern: '^-?\d{1,24}(\.\d{1,8})?$'
+      description: Monto recibido como texto decimal sin separadores de miles
+      example: "110651.0600"
+    receptionDate:
+      type: string
+      format: date
+      pattern: '^\d{4}-\d{2}-\d{2}$'
+      description: Fecha civil de recepcion en formato YYYY-MM-DD
+      example: "2026-04-13"
+    discountType:
+      type: integer
+      description: Tipo de rebate; debe coincidir con source de la cabecera
+      example: 1
+    discountAmount:
+      type: string
+      pattern: '^-?\d{1,24}(\.\d{1,8})?$'
+      description: Monto del descuento como texto decimal sin separadores de miles
+      example: "4492.4334"
+
+SyncRebatePurchaseOrderDetailsDto:
+  type: object
+  additionalProperties: false
+  required:
+    - documentNumber
+    - vendorNumber
+    - source
+    - periodId
+    - orders
+  properties:
+    documentNumber:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Numero exacto del documento de la cabecera existente
+      example: "01-CrossDock 01-000360189-26M"
+    vendorNumber:
+      type: integer
+      description: Numero del proveedor
+      example: 250053
+    source:
+      type: integer
+      description: Tipo de rebate de la cabecera
+      example: 1
+    periodId:
+      type: integer
+      description: Identificador del periodo de la cabecera
+      example: 189
+    orders:
+      type: array
+      minItems: 1
+      maxItems: 10000
+      description: >
+        Detalle completo que reemplaza la instantanea anterior.
+        Cada discountType debe coincidir con source.
+      items:
+        $ref: "#/RebatePurchaseOrderDetailDto"
+
+SyncRebatePurchaseOrderDetailsResultDto:
+  type: object
+  required:
+    - rebateId
+    - count
+  properties:
+    rebateId:
+      type: string
+      format: uuid
+      description: UUID interno del descuento actualizado
+    count:
+      type: integer
+      minimum: 1
+      maximum: 10000
+      description: Cantidad de filas de detalle guardadas
+      example: 4
+
+RebatePurchaseOrderDetailsDto:
+  type: object
+  required:
+    - rebateId
+    - orders
+    - updatedAt
+    - message
+  properties:
+    rebateId:
+      type: string
+      format: uuid
+      description: UUID interno del descuento comercial
+    orders:
+      type: array
+      description: Ultima instantanea de ordenes sincronizada
+      items:
+        $ref: "#/RebatePurchaseOrderDetailDto"
+    updatedAt:
+      type: string
+      format: date-time
+      x-nullable: true
+      description: Fecha de sincronizacion; null si no existe detalle guardado
+    message:
+      type: string
+      x-nullable: true
+      description: Mensaje informativo; null cuando existe detalle guardado

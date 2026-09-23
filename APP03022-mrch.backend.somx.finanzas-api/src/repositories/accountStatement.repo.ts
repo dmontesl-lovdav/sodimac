@@ -15,6 +15,7 @@ export interface FindByFiltersOptions {
     month: number | 'all';
     allowedVendors?: string[] | null;
     securityTypeIds?: number[] | null;
+    securityGroupSuppliers?: string[] | null;
     limit: number;
     offset: number;
 }
@@ -45,6 +46,13 @@ export async function findByFilters(options: FindByFiltersOptions): Promise<{ ro
     }
     if (options.securityTypeIds && options.securityTypeIds.length > 0) {
         qb.andWhere('s.supplier_type_id IN (:...securityTypeIds)', { securityTypeIds: options.securityTypeIds });
+    }
+    if (options.securityGroupSuppliers) {
+        if (options.securityGroupSuppliers.length === 0) {
+            qb.andWhere('1 = 0');
+        } else {
+            qb.andWhere('CAST(a.vendor_number AS TEXT) IN (:...securityGroupSuppliers)', { securityGroupSuppliers: options.securityGroupSuppliers });
+        }
     }
     if (options.vendorNumber) {
         qb.andWhere('a.vendor_number = :vendorNumber', { vendorNumber: options.vendorNumber });

@@ -428,4 +428,89 @@ export const rebatePaths: OpenAPIV3.PathsObject = {
             },
         },
     },
+
+    "/rebates/purchase-order-details/sync": {
+        "post": {
+            "tags": [
+                "Rebates"
+            ],
+            "operationId": "syncRebatePurchaseOrderDetails",
+            "summary": "Sincronizar órdenes de compra de un descuento comercial",
+            "description": "Uso del batch. Localiza una cabecera existente por documentNumber, vendorNumber, source y periodId exactos, sin filtrar por estado. Guarda o reemplaza todo su detalle en una transacción. No crea cabeceras ni modifica el importe, estado o relación fiscal.",
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/SyncRebatePurchaseOrderDetailsDto"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Detalle guardado",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SyncRebatePurchaseOrderDetailsResultDto"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Datos inválidos, lista vacía, fecha inválida o discountType distinto de source."
+                },
+                "401": {
+                    "description": "No autenticado"
+                },
+                "404": {
+                    "description": "El descuento aún no existe en FBC"
+                },
+                "409": {
+                    "description": "Hay varias cabeceras para la misma clave; requiere conciliación"
+                },
+                "500": {
+                    "description": "Error al guardar el detalle"
+                }
+            }
+        }
+    },
+    "/rebates/{id}/purchase-order-details": {
+        "get": {
+            "tags": [
+                "Rebates"
+            ],
+            "operationId": "getRebatePurchaseOrderDetails",
+            "summary": "Consultar órdenes de compra de un descuento comercial",
+            "description": "Devuelve el último detalle sincronizado para el grid. Si el descuento existe pero no tiene detalle, responde HTTP 200 con orders vacío, updatedAt null y un mensaje informativo.",
+            "parameters": [
+                rebateIdParameter
+            ],
+            "responses": {
+                "200": {
+                    "description": "Detalle de órdenes de compra",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RebatePurchaseOrderDetailsDto"
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "UUID inválido"
+                },
+                "401": {
+                    "description": "No autenticado"
+                },
+                "404": {
+                    "description": "No se encontró el descuento comercial"
+                },
+                "500": {
+                    "description": "Error al consultar el detalle"
+                }
+            }
+        }
+    },
 };

@@ -54,6 +54,12 @@ function securityTypeIds(req: Request): number[] {
         .filter((n) => !Number.isNaN(n) && n > 0);
 }
 
+function securityGroups(req: Request): string[] {
+    return (req.security?.groups ?? [])
+        .map((g) => String(g).trim())
+        .filter((g) => g.length > 0);
+}
+
 // GET /shipping-guide STM 577
 export async function list(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
@@ -63,7 +69,7 @@ export async function list(req: AuthenticatedRequest, res: Response, next: NextF
         const q: ListShippingGuideQuery =
             ListShippingGuideQuerySchema.parse(req.query);
 
-        const response = await shippingGuideService.listPaginated(q, vendors, securityTypeIds(req));
+        const response = await shippingGuideService.listPaginated(q, vendors, securityTypeIds(req), securityGroups(req));
         res.status(response.httpStatus).json({...response, trace_id: getTraceId()});
     } catch (e) {
         logger.error("❌ ShippingGuide.list. ERROR  : No fue posible listar las guias de enbarque. FAILED → data={} cause={}", req.query, e); 

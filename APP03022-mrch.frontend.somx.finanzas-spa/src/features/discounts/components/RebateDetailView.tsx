@@ -30,6 +30,19 @@ interface CreditNote {
     folio: string | null;
 }
 
+interface PurchaseOrderDetail {
+    purchaseOrder: string;
+    receivedAmount: string;
+    receptionDate: string;
+    discountType: number;
+    discountAmount: string;
+}
+interface OrdersDetail {
+    rebateId: string;
+    orders: PurchaseOrderDetail[];
+    message: string | null;
+}
+
 interface FiscalDetail {
     rebateId: string;
     vendorNumber: number | null;
@@ -192,6 +205,55 @@ export default function RebateDetailView(): ReactElement {
     );
 
     const [detail, setDetail] = useState<FiscalDetail | null>(null);
+    const [ordersDetail, setOrdersDetail] = useState<OrdersDetail | null>(null);
+    const [ordersError, setOrdersError] = useState("");
+    const [ordersLoading, setOrdersLoading] = useState(false);
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersPerPage, setOrdersPerPage] = useState(10);
+
+    useEffect(() => {
+        let cancelled = false;
+        setOrdersDetail(null);
+        setOrdersError("");
+        setOrdersPage(1);
+        setOrdersLoading(Boolean(d.rebateId));
+        if (!d.rebateId) return;
+        void (async () => {
+            try {
+                const response = await api.request<OrdersDetail | { data: OrdersDetail }>(
+                    `rebates/${encodeURIComponent(d.rebateId)}/purchase-order-details`, "get"
+                );
+                const payload = response && "data" in response ? response.data : response;
+                if (!payload || payload.rebateId !== d.rebateId || !Array.isArray(payload.orders)) {
+                    throw new Error("Detalle de órdenes inválido");
+                }
+                if (!cancelled) setOrdersDetail(payload);
+            } catch {
+                if (!cancelled) setOrdersError("No fue posible consultar las órdenes de compra. Vuelve a abrir el detalle.");
+            } finally {
+                if (!cancelled) setOrdersLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [d.rebateId]);
+
+    const orderColumns = useMemo<Column<PurchaseOrderDetail>[]>(() => [
+        { header: "Orden de compra", render: row => row.purchaseOrder },
+        { header: "Monto recibido", align: "right", render: row => money(row.receivedAmount) },
+        {
+            header: "Fecha de recepción", render: row => {
+                // Fecha civil: no convertir medianoche UTC a la zona local.
+                const parts = row.receptionDate?.split("-");
+                return parts?.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : "N/D";
+            }
+        },
+        {
+            header: "Tipo de descuento", render: row =>
+                d.tipoRebate || `Tipo ${row.discountType}`
+        },
+        { header: "Monto de descuento", align: "right", render: row => money(row.discountAmount) },
+    ], [d.originId, d.tipoRebate]);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [page, setPage] = useState(1);
@@ -449,6 +511,24 @@ export default function RebateDetailView(): ReactElement {
                             setPerPage(value);
                             setPage(1);
                         }}
+                    />
+                </div>
+            )}
+
+            <div style={styles.sectionTitle}>Órdenes de compra del descuento</div>
+            {ordersError ? (
+                <div role="alert" style={styles.errorBox}>{ordersError}</div>
+            ) : (
+                <div style={styles.tableCard}>
+                    <GenericTable<PurchaseOrderDetail>
+                        rows={ordersDetail?.rebateId === d.rebateId ? ordersDetail.orders : []}
+                        columns={orderColumns}
+                        emptyLabel={ordersLoading ? "Cargando órdenes de compra…" :
+                            ordersDetail?.message || "Sin órdenes de compra relacionadas"}
+                        page={ordersPage}
+                        perPage={ordersPerPage}
+                        onChangePage={setOrdersPage}
+                        onChangePerPage={value => { setOrdersPerPage(value); setOrdersPage(1); }}
                     />
                 </div>
             )}

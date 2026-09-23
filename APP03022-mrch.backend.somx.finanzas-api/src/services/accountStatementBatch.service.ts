@@ -193,6 +193,7 @@ function mapCreditNote(row: InvoiceRow, uuid: string): Record<string, unknown> {
  * Obtiene facturas (type='I') y notas de crédito (type='E') del proveedor
  * en el período, incluyendo el fiscal_uuid de la factura original relacionada
  * para las NCs (via tenant_fiscal.related_cfdi).
+ * El periodo se aplica sobre created_at (alta en sistema), no sobre issue_date.
  */
 async function findInvoicesAndCreditNotes(
     vendorNumber: number,
@@ -223,9 +224,9 @@ async function findInvoicesAndCreditNotes(
                 ON ri.invoice_uuid = rc.related_invoice_uuid
          WHERE a.supplier_number = $1
            AND i.document_type IN ('I', 'E')
-           AND i.issue_date BETWEEN $2 AND $3
+           AND i.created_at BETWEEN $2 AND $3
            AND COALESCE(i.status, -1) <> $4
-         ORDER BY i.document_type DESC, i.issue_date ASC`,
+         ORDER BY i.document_type DESC, i.created_at ASC`,
         [vendorNumber, start, end, ACCOUNT_STATEMENT_CANCELLED_INVOICE_STATUS]
     );
     return rows as InvoiceRow[];

@@ -1,11 +1,9 @@
 rebates:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: List rebates
     operationId: listRebates
-    produces:
-      - application/json
+    produces: [application/json]
     responses:
       "200":
         description: List of rebates
@@ -23,15 +21,13 @@ rebates:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
   post:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Create rebate
     operationId: createRebate
-    consumes:
-      - application/json
-    produces:
-      - application/json
+    consumes: [application/json]
+    produces: [application/json]
     parameters:
       - in: body
         name: body
@@ -60,12 +56,10 @@ rebates:
 
 rebates-published:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Get published rebates
     operationId: getPublishedRebates
-    produces:
-      - application/json
+    produces: [application/json]
     responses:
       "200":
         description: List of published rebates
@@ -86,12 +80,10 @@ rebates-published:
 
 rebates-published-export-csv:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Export published rebates to CSV
     operationId: exportPublishedRebatesToCsv
-    produces:
-      - text/csv
+    produces: [text/csv]
     responses:
       "200":
         description: CSV file with published rebates
@@ -108,12 +100,10 @@ rebates-published-export-csv:
 
 rebates-search:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Search rebates
     operationId: searchRebates
-    produces:
-      - application/json
+    produces: [application/json]
     parameters:
       - name: q
         in: query
@@ -150,12 +140,10 @@ rebates-search:
 
 rebates-export-csv:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Export filtered rebates to CSV
     operationId: exportFilteredRebatesToCsv
-    produces:
-      - text/csv
+    produces: [text/csv]
     parameters:
       - name: status
         in: query
@@ -183,12 +171,10 @@ rebates-export-csv:
 
 rebates-by-vendor:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Get rebates by vendor
     operationId: getRebatesByVendor
-    produces:
-      - application/json
+    produces: [application/json]
     parameters:
       - name: vendorNumber
         in: path
@@ -215,12 +201,10 @@ rebates-by-vendor:
 
 rebates-by-uuid:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Get rebate by ID
     operationId: getRebateById
-    produces:
-      - application/json
+    produces: [application/json]
     parameters:
       - name: uuid
         in: path
@@ -246,15 +230,13 @@ rebates-by-uuid:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
   put:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Update rebate
     operationId: updateRebate
-    consumes:
-      - application/json
-    produces:
-      - application/json
+    consumes: [application/json]
+    produces: [application/json]
     parameters:
       - name: uuid
         in: path
@@ -285,13 +267,12 @@ rebates-by-uuid:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
   delete:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Delete rebate
     operationId: deleteRebate
-    produces:
-      - application/json
+    produces: [application/json]
     parameters:
       - name: uuid
         in: path
@@ -318,8 +299,7 @@ rebates-by-uuid:
 
 rebates-fiscal-detail:
   get:
-    tags:
-      - rebates
+    tags: [rebates]
     summary: Consultar detalle fiscal del descuento comercial
     description: >
       Obtiene los UUID fiscales relacionados y los datos de la nota de
@@ -328,8 +308,7 @@ rebates-fiscal-detail:
       Cuando el descuento existe pero no tiene una nota de credito disponible,
       devuelve HTTP 200 con creditNotes vacio y un mensaje informativo.
     operationId: getRebateFiscalDetail
-    produces:
-      - application/json
+    produces: [application/json]
     parameters:
       - name: uuid
         in: path
@@ -342,6 +321,97 @@ rebates-fiscal-detail:
         description: Detalle fiscal del descuento comercial
         schema:
           $ref: "../definitions/rebates.yaml#/RebateFiscalDetailDto"
+      "400":
+        description: UUID del descuento comercial invalido
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: Descuento comercial no encontrado
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-purchase-order-details-sync:
+  post:
+    tags: [rebates]
+    summary: Sincronizar las ordenes de compra de un descuento comercial
+    description: >
+      Localiza una cabecera existente por documentNumber, vendorNumber,
+      source y periodId exactos, sin filtrar por estado.
+      Guarda o reemplaza su detalle de ordenes dentro de una transaccion.
+      No crea cabeceras ni modifica el importe, estado o nota de credito.
+      Devuelve 404 si no existe la cabecera y 409 si hay varias coincidencias.
+      No acepta una lista vacia de ordenes.
+    operationId: syncRebatePurchaseOrderDetails
+    consumes: [application/json]
+    produces: [application/json]
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: "../definitions/rebates.yaml#/SyncRebatePurchaseOrderDetailsDto"
+    responses:
+      "200":
+        description: Detalle de ordenes guardado
+        schema:
+          $ref: "../definitions/rebates.yaml#/SyncRebatePurchaseOrderDetailsResultDto"
+      "400":
+        description: Datos de sincronizacion invalidos
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "404":
+        description: El descuento aun no existe en FBC
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "409":
+        description: Varias cabeceras coinciden con la clave del descuento
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []
+
+rebates-purchase-order-details:
+  get:
+    tags: [rebates]
+    summary: Consultar las ordenes de compra de un descuento comercial
+    description: >
+      Devuelve el ultimo detalle de ordenes sincronizado para el rebate.
+      Incluye orden de compra, monto recibido, fecha de recepcion,
+      tipo de descuento y monto de descuento.
+      Si el descuento existe pero aun no tiene detalle sincronizado,
+      devuelve HTTP 200 con orders vacio y un mensaje informativo.
+    operationId: getRebatePurchaseOrderDetails
+    produces: [application/json]
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        type: string
+        format: uuid
+        description: UUID interno del descuento comercial (rebateId)
+    responses:
+      "200":
+        description: Detalle de ordenes del descuento comercial
+        schema:
+          $ref: "../definitions/rebates.yaml#/RebatePurchaseOrderDetailsDto"
       "400":
         description: UUID del descuento comercial invalido
         schema:

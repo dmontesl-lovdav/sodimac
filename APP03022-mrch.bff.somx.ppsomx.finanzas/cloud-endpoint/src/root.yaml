@@ -193,6 +193,10 @@ paths:
     $ref: "./paths/rebates.yaml#/rebates-by-uuid"
   /rebates/{uuid}/fiscal-detail:
     $ref: "./paths/rebates.yaml#/rebates-fiscal-detail"
+  /rebates/purchase-order-details/sync:
+    $ref: "./paths/rebates.yaml#/rebates-purchase-order-details-sync"
+  /rebates/{uuid}/purchase-order-details:
+    $ref: "./paths/rebates.yaml#/rebates-purchase-order-details"
 
   /stamped-rebates:
     $ref: "./paths/stamped-rebates.yaml#/stamped-rebates"

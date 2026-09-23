@@ -53,8 +53,11 @@ export async function list(
         const securityTypeIds = (req.security?.types ?? [])
             .map((t) => Number(String(t).replace(/\D/g, "")))
             .filter((n) => !Number.isNaN(n) && n > 0);
+        const securityGroups = (req.security?.groups ?? [])
+            .map((g) => String(g).trim())
+            .filter((g) => g.length > 0);
 
-        const response = await svc.list(q, securityVendors, securityTypeIds);
+        const response = await svc.list(q, securityVendors, securityTypeIds, securityGroups);
 
         console.log("[finanzas-payment][controller.list] END", {
             elapsedMs: Date.now() - start,

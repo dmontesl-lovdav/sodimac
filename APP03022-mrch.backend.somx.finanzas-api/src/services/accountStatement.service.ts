@@ -21,7 +21,7 @@ function statusToLabel(status: number): string {
 }
 
 
-export async function search(query: ListAccountStatementQuery, allowedVendors: string[] | null = null, securityTypeIds: number[] | null = null) {
+export async function search(query: ListAccountStatementQuery, allowedVendors: string[] | null = null, securityTypeIds: number[] | null = null, securityGroupSuppliers: string[] | null = null) {
     const month = query.month === 'all' ? undefined : query.month;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
@@ -32,6 +32,7 @@ export async function search(query: ListAccountStatementQuery, allowedVendors: s
         month: month ?? 'all',
         allowedVendors,
         securityTypeIds,
+        securityGroupSuppliers,
         limit: pageSize,
         offset: (page - 1) * pageSize,
     });

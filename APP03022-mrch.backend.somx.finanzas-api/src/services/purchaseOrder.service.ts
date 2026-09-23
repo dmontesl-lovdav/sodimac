@@ -438,6 +438,12 @@ export async function getSupplierNumbersByTypesForList(
     return sharedCatalogService.getActiveSupplierNumbersByTypes(supplierTypeIds);
 }
 
+export async function getSupplierNumbersByGroupsForList(
+    groupKeys: string[],
+): Promise<number[]> {
+    return sharedCatalogService.getActiveSupplierNumbersByGroups(groupKeys);
+}
+
 /** Listado GET `/purchase-orders`: enriquece cada recepción anidada con `originName` (catálogo BFF). */
 export async function enrichPurchaseOrdersRecepcionesOriginCatalog(
     purchaseOrders: PurchaseOrder[],

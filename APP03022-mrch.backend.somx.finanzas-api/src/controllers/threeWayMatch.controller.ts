@@ -9,9 +9,19 @@ import { initDataSource } from "@/config/typeorm-datasource.js";
 import { runThreeWayMatch } from "@/services/threeWayMatch.service.js";
 import { RunThreeWayMatchBodySchema, type RunThreeWayMatchBody } from "@/schemas/threeWayMatchRun.schema.js";
 import { AuthenticatedRequest } from "@/middlewares/authToken.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
 function buildExportTimestamp(): string {
-    return new Date().toISOString().replace(/[:.]/g, "-");
+    const now = new Date();
+
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+
+    return `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
 }
 
 const WRN7029 = { success: false, code: "WRN7029", message: "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador" };
@@ -29,6 +39,13 @@ function securityTypeIds(req: Request): number[] {
         .filter((n) => !Number.isNaN(n) && n > 0);
 }
 
+async function securityGroupSuppliers(req: Request): Promise<string[] | null> {
+    const groups = (req.security?.groups ?? []).map((g) => String(g).trim()).filter((g) => g.length > 0);
+    if (groups.length === 0) return null;
+    const suppliers = await sharedCatalogService.getActiveSupplierNumbersByGroups(groups);
+    return suppliers.map(String);
+}
+
 export async function list(
     req: Request,
     res: Response,
@@ -39,7 +56,7 @@ export async function list(
         if (vendors === "wrn7029") { res.status(400).json(WRN7029); return; }
 
         const q: ListThreeWayMatchQuery = ListThreeWayMatchQuerySchema.parse(req.query);
-        const result = await svc.list(q, vendors, securityTypeIds(req));
+        const result = await svc.list(q, vendors, securityTypeIds(req), await securityGroupSuppliers(req));
         res.json(result);
     } catch (e) {
         next(e);
@@ -58,7 +75,7 @@ export async function exportCsv(
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const csv = await svc.exportCsv(q, vendors, securityTypeIds(req), req.authToken ?? "");
+        const csv = await svc.exportCsv(q, vendors, securityTypeIds(req), req.authToken ?? "", await securityGroupSuppliers(req));
 
         const timestamp = buildExportTimestamp();
 
@@ -86,7 +103,7 @@ export async function exportXlsx(
         const q: ListThreeWayMatchQuery =
             ListThreeWayMatchQuerySchema.parse(req.query);
 
-        const buffer = await svc.exportXlsx(q, vendors, securityTypeIds(req), req.authToken ?? "");
+        const buffer = await svc.exportXlsx(q, vendors, securityTypeIds(req), req.authToken ?? "", await securityGroupSuppliers(req));
 
         const timestamp = buildExportTimestamp();
 

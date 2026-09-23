@@ -145,3 +145,28 @@ bf55304 update fiscal-api Se agrega CRUD de las tablas involucradas en Fiscal
 bb619d6 Upload New File
 8521414 feat: Add Maven wrapper files for project setup and dependency management
 PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        deleted:    .mvn/extensions.xml
+        deleted:    migration/QA-2026-08-24-tren-estatus-v1.0-5.sql
+        modified:   migration/QA-2026-09-04-tren-v1.0-6-factura-3-a-2.sql
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        migration/QA-122_migracion_estatus_nc_+2.sql
+        migration/QA-122_reseed_CatEstatusNotaCredito_EF.sql
+        migration/QA-2026-07-24-BUS045-tipo-relacion-no-permitido.sql
+        migration/QA-2026-09-02-BUS2032-tolerancia-parametrizada.sql
+        migration/QA-2026-09-23-repoblar-catestatusfactura.sql
+        migration/QA-mascara-tolerancia-WRN7034.sql
+        migration/QA-mensajes_cat_message.sql
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>

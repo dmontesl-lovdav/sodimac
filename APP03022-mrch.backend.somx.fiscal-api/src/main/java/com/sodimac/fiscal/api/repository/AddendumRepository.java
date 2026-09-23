@@ -83,7 +83,7 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "FROM shared_catalogs.catalog_header ch " +
             "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
             "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = :langId " +
-            "WHERE ch.code = :catalogCode AND cd.value = :value LIMIT 1", nativeQuery = true)
+            "WHERE UPPER(ch.code) = UPPER(:catalogCode) AND cd.value = :value LIMIT 1", nativeQuery = true)
     String findCatalogDescription(@Param("catalogCode") String catalogCode,
             @Param("value") String value, @Param("langId") int langId);
 

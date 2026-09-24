@@ -28,8 +28,8 @@ jobs:
     secrets: inherit
     with:
       container_image: "gcr.io/fal-corp-stro-ops-prd/pipeline-maven:3.9.12-jdk-21"
-      command_build: "mvn --batch-mode --errors package -DskipTests"
-      command_test: "mvn --batch-mode org.jacoco:jacoco-maven-plugin:prepare-agent test org.jacoco:jacoco-maven-plugin:report"
+      command_build: "mvn --settings .mvn/settings.xml --batch-mode --errors package -DskipTests"
+      command_test: "mvn --settings .mvn/settings.xml --batch-mode org.jacoco:jacoco-maven-plugin:prepare-agent test org.jacoco:jacoco-maven-plugin:report"
       runners: ${{ vars.RUNNER_MERCH }}
 
   build_docker:

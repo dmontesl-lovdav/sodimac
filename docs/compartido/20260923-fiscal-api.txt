@@ -1,108 +1,3 @@
-RUNBOOK — re-disparar deploy fiscal-api tras fix del pipeline (2026-09-23)
-==========================================================================
-
-Contexto:
-- El pipeline ya quedó arreglado: commit "fix(ci): register Artifact Registry
-  Maven wagon early" (Pipeline CI Microservice #222, verde).
-- El cambio de cancelacion NC/factura (commit mirror 3d4183b4) YA esta en
-  develop/uat, pero su deploy anterior fallo por el error de Artifact Registry.
-- Solo falta RE-CORRER el pipeline para que despliegue con el CI ya arreglado.
-
-Opcion A (recomendada) — Re-run desde GitHub Actions (UI):
-- Entrar a Actions del repo real fiscal-api:
-  https://github.com/falabella-stores-and-merchandise/APP03022-mrch.backend.somx.fiscal-api/actions
-- Abrir el run de "Pipeline CI Microservice" que fallo (rama uat).
-- Boton "Re-run jobs" -> "Re-run all jobs".
-
-Opcion B — empty commit en uat (PC Sodimac, PowerShell):
-  cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
-  git checkout uat
-  git pull origin uat
-  git commit --allow-empty -m "ci: retrigger deploy fiscal-api (fix artifact registry)"
-  git push origin uat
-
-Verificar:
-- El run nuevo de "Pipeline CI Microservice" debe salir verde.
-- El ❌ de "Automatic Dependency Submission (Maven)" es un workflow aparte de
-  DevSecOps (grafo de dependencias), NO el build/deploy -> no bloquea.
-
-Nota finanzas-api (pendiente aparte):
-- El cambio de "status de factura en listReception" (Josue) tiene su propio
-  runbook en: docs/compartido/20260922-pase-finanzas-status-factura.md
-- Ese aun hay que pasarlo (develop -> uat) y desplegarlo.
-
---------------------------------------------------------------------------
-Alinear develop con uat tras el re-trigger (empty commit se fue directo a uat)
---------------------------------------------------------------------------
-Se uso la Opcion B (empty commit) y quedo SOLO en uat -> develop 1 commit vacio
-atras. El codigo real ya estaba en ambos; esto solo alinea. Correr en Sodimac:
-
-  cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
-  git checkout develop
-  git pull origin develop
-  git merge origin/uat --no-ff -m "merge uat -> develop: alinear tras re-trigger CI"
-  git push origin develop
-
-Para futuro: el empty commit de re-trigger meterlo en develop y luego merge a
-uat, o usar Re-run jobs en Actions (no crea commit) -> asi no divergen.
-
-C:\local\docs\compartido\imagen (29).png
-
-
-Preparing Java & Maven environment
-  🔎 Running additional command:
-  COMMAND_ADDITIONAL = echo no additional command
-  no additional command
-  --------------------------------------------------
-  🔨 Running main Maven build command:
-  COMMAND = mvn --batch-mode --errors package -DskipTests
-  [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/google/cloud/artifactregistry/artifactregistry-maven-wagon/2.2.5/artifactregistry-maven-wagon-2.2.5.pom
-  [ERROR] Error executing Maven.
-  org.apache.maven.cli.internal.ExtensionResolutionException: Extension com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved: Plugin com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved:
-  	Failed to read artifact descriptor for com.google.cloud.artifactregistry:artifactregistry-maven-wagon:jar:2.2.5
-  
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveExtension (BootstrapCoreExtensionManager.java:182)
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveCoreExtensions (BootstrapCoreExtensionManager.java:115)
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.loadCoreExtensions (BootstrapCoreExtensionManager.java:99)
-      at org.apache.maven.cli.MavenCli.loadCoreExtensions (MavenCli.java:768)
-      at org.apache.maven.cli.MavenCli.container (MavenCli.java:639)
-      at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:279)
-      at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
-      at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
-      at java.lang.reflect.Method.invoke (Method.java:580)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
-  Caused by: org.apache.maven.plugin.PluginResolutionException: Plugin com.google.cloud.artifactregistry:artifactregistry-maven-wagon:2.2.5 or one of its dependencies could not be resolved:
-  	Failed to read artifact descriptor for com.google.cloud.artifactregistry:artifactregistry-maven-wagon:jar:2.2.5
-  
-      at org.apache.maven.plugin.internal.DefaultPluginDependenciesResolver.resolveInternal (DefaultPluginDependenciesResolver.java:226)
-      at org.apache.maven.plugin.internal.DefaultPluginDependenciesResolver.resolveCoreExtension (DefaultPluginDependenciesResolver.java:159)
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveExtension (BootstrapCoreExtensionManager.java:174)
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.resolveCoreExtensions (BootstrapCoreExtensionManager.java:115)
-      at org.apache.maven.cli.internal.BootstrapCoreExtensionManager.loadCoreExtensions (BootstrapCoreExtensionManager.java:99)
-      at org.apache.maven.cli.MavenCli.loadCoreExtensions (MavenCli.java:768)
-      at org.apache.maven.cli.MavenCli.container (MavenCli.java:639)
-      at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:279)
-      at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
-      at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
-      at java.lang.reflect.Method.invoke (Method.java:580)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
-      at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
-  Error: Process completed with exit code 1.
-
-
-
-
-cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
-git log --oneline -20
-git log --oneline -15 -- .github/workflows/pipeline.yml
-git log --oneline -15 -- .mvn/
-
-
 Windows PowerShell
 Copyright (C) Microsoft Corporation. All rights reserved.
 
@@ -144,9 +39,8 @@ PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --onel
 bf55304 update fiscal-api Se agrega CRUD de las tablas involucradas en Fiscal
 bb619d6 Upload New File
 8521414 feat: Add Maven wrapper files for project setup and dependency management
-PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
-
-
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git log --oneline -15 -- .mvn/^C
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> ^C
 PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
 On branch develop
 Your branch is up to date with 'origin/develop'.
@@ -169,41 +63,66 @@ Untracked files:
         migration/QA-mensajes_cat_message.sql
 
 no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git checkout -- .
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git clean -fn migration/
+Would remove migration/QA-122_migracion_estatus_nc_+2.sql
+Would remove migration/QA-122_reseed_CatEstatusNotaCredito_EF.sql
+Would remove migration/QA-2026-07-24-BUS045-tipo-relacion-no-permitido.sql
+Would remove migration/QA-2026-09-02-BUS2032-tolerancia-parametrizada.sql
+Would remove migration/QA-2026-09-23-repoblar-catestatusfactura.sql
+Would remove migration/QA-mascara-tolerancia-WRN7034.sql
+Would remove migration/QA-mensajes_cat_message.sql
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git clean -f migration/
+Removing migration/QA-122_migracion_estatus_nc_+2.sql
+Removing migration/QA-122_reseed_CatEstatusNotaCredito_EF.sql
+Removing migration/QA-2026-07-24-BUS045-tipo-relacion-no-permitido.sql
+Removing migration/QA-2026-09-02-BUS2032-tolerancia-parametrizada.sql
+Removing migration/QA-2026-09-23-repoblar-catestatusfactura.sql
+Removing migration/QA-mascara-tolerancia-WRN7034.sql
+Removing migration/QA-mensajes_cat_message.sql
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+nothing to commit, working tree clean
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> findstr "UPPER(ch.code) = UPPER(:catalogCode) AND cd.value" src\main\java\com\sodimac\fiscal\api\repository\AddendumRepository.java
+    @Query(value = "SELECT cd.value " +
+            "JOIN shared_catalogs.supplier_type st ON st.id = s.supplier_type_id " +
+            "JOIN shared_catalogs.catalog_header ch ON ch.code = 'CatTipoProveedor' " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id AND cd.key = CASE st.code " +
+            "WHERE s.supplier_number = :supplierNumber LIMIT 1", nativeQuery = true)
+     * Descripci├│n (ES, lang_id=1) del tipo de proveedor a partir de su id (value 1-4 de
+    @Query(value = "SELECT dl.description " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = 1 " +
+            "WHERE ch.code = 'CatTipoProveedor' AND cd.value = :tipoId LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT supplier_type FROM tenant_fiscal.addendum " +
+            "WHERE payments_uuid = :paymentsUuid AND supplier_type IS NOT NULL LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT cd.value FROM tenant_fiscal.addendum a " +
+            "JOIN shared_catalogs.supplier s ON s.supplier_number = a.supplier_number::text " +
+            "JOIN shared_catalogs.supplier_type st ON st.id = s.supplier_type_id " +
+            "JOIN shared_catalogs.catalog_header ch ON ch.code = 'CatTipoProveedor' " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id AND cd.key = CASE st.code " +
+            "WHERE a.payments_uuid = :paymentsUuid LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT dl.description " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = :langId " +
+            "WHERE UPPER(ch.code) = UPPER(:catalogCode) AND cd.value = :value LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM tenant_finance.addendum_manual WHERE invoice_uuid = :fiscalUuid)",
+            nativeQuery = true)
+    @Query(value = "SELECT EXISTS(" +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "JOIN shared_catalogs.dictionary_lang dl ON dl.dict_id = cd.dict_id AND dl.lang_id = 1 " +
+            "WHERE ch.code = 'CATRFCRECEPTOR' AND ch.status = 1 AND cd.status = 1 AND dl.description = :rfc)",
+            nativeQuery = true)
+     * Valores activos (status=1) de un cat├ílogo de shared_catalogs, le├¡dos DIRECTO de la tabla
+    @Query(value = "SELECT cd.value FROM shared_catalogs.catalog_header ch " +
+            "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
+            "WHERE UPPER(ch.code) = UPPER(:catalogCode) AND ch.status = 1 AND cd.status = 1", nativeQuery = true)
+PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api> git status
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+nothing to commit, working tree clean
 PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
-
-==========================================================================
-INSTRUCCIONES — limpiar working tree (restaurar DevOps + borrar .sql untracked)
-==========================================================================
-origin/develop esta limpio; el dano es solo local (sin commitear).
-
-cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
-
--- 1. RESTAURAR todo lo TRACKED a lo commiteado (deshace lo que el /MIR borro/cambio:
---    .mvn/extensions.xml de DevOps + migraciones tracked)
-git checkout -- .
-
--- 2. (opcional) preview de que untracked se borrarian
-git clean -fn migration/
-
--- 3. BORRAR los .sql UNTRACKED (los de "emergencia")
-git clean -f migration/
-
--- 4. VERIFICAR limpio
-git status
---   esperado: "nothing to commit, working tree clean" y .mvn/extensions.xml de vuelta
-
-REGLA DE ORO: NO usar "git add -A" ni "git add ." (commitea el borrado de
-.mvn/extensions.xml y vuelas DevOps en origin). Pasar SOLO archivos modificados,
-o excluir CI/DevOps del robocopy:
-  robocopy ... /MIR /XD .git node_modules dist target build .idea .github .mvn /XF *.log Dockerfile
-
-VERIFICAR FIX DE CODIGO (no salio en el status):
-findstr "UPPER(ch.code) = UPPER(:catalogCode) AND cd.value" src\main\java\com\sodimac\fiscal\api\repository\AddendumRepository.java
-- SALE  -> ya esta (commitea SOLO ese .java si falta) 
-- NO SALE -> copia solo ese .java del mirror y commitea
-
-NOTAS:
-- Deploy falla por artifactregistry-maven-wagon:2.2.5 = INFRA del runner, no el pase.
-  origin conserva .mvn (4748d16) y pipeline.yml (623bc3c).
-- El seed del catalogo estatus factura YA corrio en UAT (1..20, 20=Cancelada);
-  no necesitas el .sql en el repo real.

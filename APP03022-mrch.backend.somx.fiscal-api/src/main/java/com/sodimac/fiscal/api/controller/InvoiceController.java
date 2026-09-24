@@ -365,7 +365,8 @@ public class InvoiceController {
         public ResponseEntity<?> searchInvoices(
                         @Valid @RequestBody InvoiceSearchRequest searchRequest,
                         @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors,
-                        @RequestHeader(value = "x-user-types", required = false) String xUserTypes) {
+                        @RequestHeader(value = "x-user-types", required = false) String xUserTypes,
+                        @RequestHeader(value = "x-user-groups", required = false) String xUserGroups) {
 
                 // STM-323: filtro seguridad por proveedor
                 List<String> allowedVendors = parseVendorHeader(xUserVendors);
@@ -380,6 +381,8 @@ public class InvoiceController {
                 // STM-1458: filtro seguridad por tipo de proveedor
                 List<String> allowedTypes = parseTypeHeader(xUserTypes);
 
+                List<String> allowedGroups = parseGroupHeader(xUserGroups);
+
                 log.info("Solicitud de busqueda de facturas/NC recibida. RFC Emisor: {}, Tipo: {}, Fechas: {} - {}, Vendors: {}",
                                 searchRequest.getRfcEmisor(),
                                 searchRequest.getTipoDocumento(),
@@ -388,7 +391,7 @@ public class InvoiceController {
                                 allowedVendors);
 
                 Page<InvoiceSearchResponse> results = invoiceService.searchInvoices(searchRequest, allowedVendors,
-                                allowedTypes);
+                                allowedTypes, allowedGroups);
 
                 log.info("Busqueda completada. Resultados: {} de {} totales",
                                 results.getNumberOfElements(), results.getTotalElements());
@@ -421,6 +424,22 @@ public class InvoiceController {
                         }
                 }
                 return ids.isEmpty() ? null : ids;
+        }
+
+        private List<String> parseGroupHeader(String header) {
+                if (header == null)
+                        return null;
+                String trimmed = header.trim();
+                if (trimmed.isEmpty() || "-1".equals(trimmed))
+                        return null;
+                List<String> keys = new java.util.ArrayList<>();
+                for (String part : trimmed.split(",")) {
+                        String key = part.trim();
+                        if (!key.isEmpty()) {
+                                keys.add(key);
+                        }
+                }
+                return keys.isEmpty() ? null : keys;
         }
 
         /**

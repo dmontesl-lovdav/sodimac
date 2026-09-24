@@ -29,6 +29,13 @@ export const EVENT_KEYS = {
         CLEAR_FILTERS:       'EVT001',
         VIEW_DETAIL:         'EVT003',
         EDIT:                'EVT004',
+        NEW_ELEMENT:                 'EVT0127',
+        CHANGE_ELEMENT_STATUS:       'EVT0128',
+        VIEW_CONVERSION:             'EVT0129',
+        NEW_CONVERSION:              'EVT0130',
+        CHANGE_PRINCIPAL_CONVERSION: 'EVT0131',
+        DELETE:                      'EVT0132',
+        DELETE_SELECTED:             'EVT0133',
     },
 } as const;
 
@@ -45,6 +52,13 @@ export const APP_EVENT = {
         CLEAR_FILTERS: { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.CLEAR_FILTERS, label: 'Limpiar' },
         VIEW_DETAIL:   { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.VIEW_DETAIL, label: 'Ver' },
         EDIT:          { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.EDIT, label: 'Editar' },
+        NEW_ELEMENT:                 { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.NEW_ELEMENT, label: 'Nuevo Elemento' },
+        CHANGE_ELEMENT_STATUS:       { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.CHANGE_ELEMENT_STATUS, label: 'Cambiar estatus del elemento' },
+        VIEW_CONVERSION:             { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.VIEW_CONVERSION, label: 'Ver Conversión' },
+        NEW_CONVERSION:              { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.NEW_CONVERSION, label: 'Nueva Conversión' },
+        CHANGE_PRINCIPAL_CONVERSION: { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.CHANGE_PRINCIPAL_CONVERSION, label: 'Cambiar conversión principal' },
+        DELETE:                      { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.DELETE, label: 'Borrar' },
+        DELETE_SELECTED:             { app: APP_KEYS.CATALOGS_CATALOG, event: EVENT_KEYS.CATALOGS_CATALOG.DELETE_SELECTED, label: 'Borrar Seleccionados' },
     },
     RECEPTIONS: {
         DOWNLOAD_CSV:        { app: APP_KEYS.RECEPTIONS, event: EVENT_KEYS.RECEPTIONS.DOWNLOAD_CSV, label: 'Exportar CSV' },

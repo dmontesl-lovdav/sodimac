@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { securityService, type AccessContext } from './securityService';
 import { getCurrentUserKey } from './currentUserKey';
+import { getFinanzasUserSyncInFlight } from '@/services/finanzasUserSync';
 
 interface CacheEntry {
     data: AccessContext | null;
@@ -27,20 +28,28 @@ function getCached(userKey: string): CacheEntry | null {
     return entry;
 }
 
+export function invalidateAccessContextCache(userKey?: string): void {
+    if (userKey) cache.delete(userKey);
+    else cache.clear();
+}
+
 async function fetchContext(userKey: string): Promise<AccessContext | null> {
     const existing = cache.get(userKey);
     if (existing?.inFlight) return existing.inFlight;
 
-    const promise = securityService
-        .getAccessContext(userKey)
-        .then((data) => {
+    const promise = (async () => {
+        // Solo espera un sync ya iniciado en la home; no cruza macrorol aquí.
+        const pendingSync = getFinanzasUserSyncInFlight();
+        if (pendingSync) await pendingSync;
+        try {
+            const data = await securityService.getAccessContext(userKey);
             cache.set(userKey, { data, error: null, expiresAt: Date.now() + CACHE_TTL_MS });
             return data;
-        })
-        .catch((error) => {
+        } catch (error) {
             cache.set(userKey, { data: null, error, expiresAt: Date.now() + CACHE_TTL_MS });
             return null;
-        });
+        }
+    })();
 
     cache.set(userKey, {
         data: existing?.data ?? null,
@@ -85,8 +94,9 @@ export function useSecurityContext(): SecurityContextResult {
             setIsLoading(false);
             return;
         }
+        const pendingSync = getFinanzasUserSyncInFlight();
         const hit = getCached(userKey);
-        if (hit?.data) {
+        if (hit?.data && !pendingSync) {
             setData(hit.data);
             setError(hit.error ?? null);
             setIsLoading(false);

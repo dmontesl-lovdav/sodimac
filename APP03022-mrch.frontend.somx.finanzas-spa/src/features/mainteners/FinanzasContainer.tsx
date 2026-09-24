@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
@@ -13,7 +13,8 @@ import iconDoneCheck from '@assets/icons/done-check.png';
 import iconWarning from '@assets/icons/warning.png';
 
 import { getHealthcheck } from './api';
-import { APP_KEYS, PermissionGate } from '@shared/security';
+import { APP_KEYS, PermissionGate, invalidateAccessContextCache } from '@shared/security';
+import { getCurrentUserKey } from '@shared/security/currentUserKey';
 
 import ConfigurationBuilder from '@/configuration/ConfigurationBuilder';
 import { syncFinanzasUser } from '@/services/finanzasUserSync';
@@ -61,18 +62,37 @@ export default function FinanzasContainer({
     const isLocal =
         ConfigurationBuilder.localDeployment;
 
+    const homeSyncStarted = useRef(false);
+
+    // STM-1577: el cruce macrorol ↔ catálogos corre al cargar esta tarjeta, no en cada opción.
+    if (!isLocal && !homeSyncStarted.current) {
+        homeSyncStarted.current = true;
+        invalidateAccessContextCache(getCurrentUserKey() || undefined);
+        void syncFinanzasUser();
+    }
+
     useEffect(() => {
-        /*
-         * En local no necesitamos sincronizar usuario,
-         * ya que estamos trabajando sin autenticación.
-         *
-         * En UAT/PROD se conserva el comportamiento actual.
-         */
-        if (isLocal) {
-            return;
+        if (isLocal) return;
+
+        let cancelled = false;
+
+        async function runAccessSync() {
+            const result = await syncFinanzasUser();
+            if (cancelled) return;
+            if (result.status !== 'denied' && result.status !== 'error') return;
+
+            setModalVariant('alert');
+            setModalSeverity(result.status === 'denied' ? 'warning' : 'error');
+            setModalTitle(result.status === 'denied' ? 'Alerta' : 'Error');
+            setModalMessage(result.message);
+            setModalVisible(true);
         }
 
-        syncFinanzasUser();
+        runAccessSync().catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
     }, [isLocal]);
 
     async function handleHealthcheck() {

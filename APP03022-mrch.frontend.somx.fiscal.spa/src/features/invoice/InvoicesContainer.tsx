@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, getXmlFileNameFromRow, fetchCatalogAsSelectableOptions, getErrorMessage, getStandardFilename, formatDateReport } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, fetchCatalogAsSelectableOptions, getErrorMessage, moduleExportBasename } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -434,13 +434,13 @@ export default function InvoicesGrid() {
             enableCsv
             hideCsvToolbar
             onExportAvailabilityChange={setCanExportCsv}
-            csvFilename={`factura_${formatDateReport(new Date().toString())}`}
+            csvFilename={moduleExportBasename("factura")}
             enableXml
             enablePdf
             xmlAppEvent={APP_EVENT.INVOICES.DOWNLOAD_XML}
             pdfAppEvent={APP_EVENT.INVOICES.DOWNLOAD_PDF}
             getXmlContent={async (row) => (await client.getXmlDocument(row.xmlContent)).data}
-            getFilename={(row) => getStandardFilename(row)}
+            getFilename={() => moduleExportBasename("factura")}
             isDocumentExportDisabled={(row) => row.status == INVOICE_STATUS_CANCELADA}
             filtersEmpty={!hasSearched || !hasReceptionDates(filters)}
           />

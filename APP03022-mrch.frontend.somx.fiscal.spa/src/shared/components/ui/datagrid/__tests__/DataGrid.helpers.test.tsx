@@ -47,6 +47,7 @@ import {
   downloadDataGridXml,
   resolveCsvExportRows,
   extractPaginatedContent,
+  filenameWithExtension,
 } from "../DataGrid";
 
 describe("headerToString", () => {
@@ -218,6 +219,17 @@ describe("parseFiscalXmlError", () => {
 
   it("retorna fallback cuando no hay message", () => {
     expect(parseFiscalXmlError("<root/>")).toContain("No hay PDF disponible");
+  });
+});
+
+describe("filenameWithExtension", () => {
+  it("no recorta el timestamp h24miss al agregar extensión", () => {
+    expect(filenameWithExtension("factura_20260923.094559", "xml")).toBe(
+      "factura_20260923.094559.xml"
+    );
+    expect(filenameWithExtension("nota_credito_20260923.100400.xml", "pdf")).toBe(
+      "nota_credito_20260923.100400.pdf"
+    );
   });
 });
 

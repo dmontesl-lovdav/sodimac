@@ -45,6 +45,9 @@ jest.mock("@/utils/utils", () => ({
   fetchCatalogAsSelectableOptions: () => [],
   getErrorMessage: () => "err",
   getStandardFilename: () => "f",
+  formatDateReport: () => "20260923.094559",
+  moduleExportBasename: (name: string) => `${name}_20260923.094559`,
+  buildFiscalSpaUrl: () => "/",
 }));
 jest.mock("@/shared/components/ui/decorator/SimpleDecorator", () => ({
   decorate: (_b: any, _p: any, node: any) => node,

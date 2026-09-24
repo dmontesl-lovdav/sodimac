@@ -2318,8 +2318,16 @@ public class InvoiceServiceImpl implements InvoiceService {
     // ========== BÚSQUEDA (STM-338) ==========
 
     @Override
-    public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors, java.util.List<String> allowedTypes) {
-        log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={} types={}", allowedVendors, allowedTypes);
+    public Page<InvoiceSearchResponse> searchInvoices(InvoiceSearchRequest searchRequest, java.util.List<String> allowedVendors, java.util.List<String> allowedTypes, java.util.List<String> allowedGroups) {
+        log.info("BUSQUEDA FACTURAS con filtro seguridad vendors={} types={} groups={}", allowedVendors, allowedTypes, allowedGroups);
+
+        java.util.List<String> allowedGroupSuppliers = null;
+        if (allowedGroups != null && !allowedGroups.isEmpty()) {
+            allowedGroupSuppliers = addendumRepository.findSupplierNumbersByGroupKeys(allowedGroups);
+            if (allowedGroupSuppliers == null) {
+                allowedGroupSuppliers = java.util.Collections.emptyList();
+            }
+        }
 
         // Fechas: obligatorias SOLO si NO se busca por UUID. Se omiten con el UUID propio (fiscalUuid)
         // o al filtrar las NCs de una factura por su UUID relacionado (Fer, QA jul-2026): ambos ya
@@ -2331,7 +2339,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             messageCatalog.throwException(FiscalMessageCode.BUS3103);
         }
 
-        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors, allowedTypes);
+        Specification<InvoiceEntity> spec = InvoiceSpecification.buildSpecification(searchRequest, allowedVendors, allowedTypes, allowedGroupSuppliers);
         Sort sort = Sort.by(
                 "DESC".equalsIgnoreCase(searchRequest.getSortDirection()) ? Sort.Direction.DESC : Sort.Direction.ASC,
                 searchRequest.getSortBy() != null ? searchRequest.getSortBy() : "createdAt"

@@ -192,8 +192,6 @@ export function RoleAttributePage() {
           optionsMap[row.attributeTypeId] = row.options;
         }
         setValueOptionsByType(optionsMap);
-
-        setSelectedValuesByType(buildSelectedValuesMap(attributes));
       } catch {
         if (!cancelled) {
           showAlert({
@@ -214,7 +212,11 @@ export function RoleAttributePage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedRole, attributeTypes, attributes]);
+  }, [selectedRole, attributeTypes]);
+
+  useEffect(() => {
+    setSelectedValuesByType(buildSelectedValuesMap(attributes));
+  }, [attributes]);
 
   const updateAssignedValues = (attributeTypeId: number, values: number[]) => {
     setSelectedValuesByType((prev) => ({

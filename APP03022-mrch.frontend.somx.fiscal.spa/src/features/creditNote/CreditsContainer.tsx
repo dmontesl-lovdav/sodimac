@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DataGrid, { DataGridColumn, RowAction, type DataGridHandle } from "@/shared/components/ui/datagrid/DataGrid";
 import { APP_EVENT, PermissionGate, useSecurityContext } from "@shared/security";
-import { formatDate, formatAmount, fetchCatalogMessage, getXmlFileNameFromRow, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl, formatDateReport } from "@/utils/utils";
+import { formatDate, formatAmount, fetchCatalogMessage, fetchCatalogDetails, fetchCatalogAsSelectableOptions, SelectableOption, getErrorMessage, buildFiscalSpaUrl, moduleExportBasename } from "@/utils/utils";
 import { BreadcrumbItem } from "@/shared/components/ui/navigation/Breadcrumb";
 import { decorate } from "@/shared/components/ui/decorator/SimpleDecorator";
 import { ReusableFiltersBar, FilterField } from "@/shared/components/ui/filters";
@@ -478,13 +478,13 @@ export default function CreditsGrid() {
           enableCsv
           hideCsvToolbar
           onExportAvailabilityChange={setCanExportCsv}
-          csvFilename={`nota_credito_${formatDateReport(new Date().toString())}`}
+          csvFilename={moduleExportBasename("nota_credito")}
           enableXml
           enablePdf
           xmlAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_XML}
           pdfAppEvent={APP_EVENT.CREDIT_NOTES.DOWNLOAD_PDF}
           getXmlContent={handleGetXmlContent}
-          getFilename={getXmlFileNameFromRow}
+          getFilename={() => moduleExportBasename("nota_credito")}
           isDocumentExportDisabled={(row) =>
             row.status === CREDIT_NOTE_STATUS_CANCELADA
           }

@@ -66,14 +66,20 @@ export function formatDate(date: string, includeHour:boolean=false){
     });
 }
 
+/** `yyyymmdd.h24miss` — p. ej. `20260923.094559`. */
 export function formatDateReport(date: string): string {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return "";
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const yyyymmdd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-  const hh24miss = `${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`;
-  return `${yyyymmdd}_${hh24miss}`;
+  const h24miss = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  return `${yyyymmdd}.${h24miss}`;
+}
+
+/** `nombre_modulo_yyyymmdd.h24miss` (sin extensión). */
+export function moduleExportBasename(moduleName: string, date: Date = new Date()): string {
+  return `${moduleName}_${formatDateReport(date.toString())}`;
 }
 
 /** Separador de miles sin regex con backtracking (evita S5852 / ReDoS). */

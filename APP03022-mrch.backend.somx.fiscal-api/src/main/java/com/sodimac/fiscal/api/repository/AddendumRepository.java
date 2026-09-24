@@ -123,4 +123,20 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
             "JOIN shared_catalogs.catalog_detail cd ON cd.header_id = ch.id " +
             "WHERE UPPER(ch.code) = UPPER(:catalogCode) AND ch.status = 1 AND cd.status = 1", nativeQuery = true)
     List<String> findActiveCatalogValues(@Param("catalogCode") String catalogCode);
+
+    /**
+     * Resuelve el atributo "Grupo Proveedor" (STM-1458) a numeros de proveedor.
+     * Modelo: CatGrupoProveedores (padre) contiene grupos cuyo value es el nombre del catalogo
+     * hijo (ej. CatGrupoTransporte); ese catalogo hijo contiene los proveedores del grupo, donde
+     * cada value es un supplier_number. Recibe las claves de los grupos asignados (x-user-groups).
+     */
+    @Query(value = "SELECT DISTINCT child_cd.value " +
+            "FROM shared_catalogs.catalog_detail grp_cd " +
+            "JOIN shared_catalogs.catalog_header grp_h ON grp_h.id = grp_cd.header_id " +
+            "  AND (grp_h.code IN ('CatGrupoProveedores','CATGRUPOPROVEEDORBLOQUEA') " +
+            "       OR grp_h.name IN ('CatGrupoProveedores','CATGRUPOPROVEEDORBLOQUEA')) " +
+            "JOIN shared_catalogs.catalog_header child_h ON (child_h.code = grp_cd.value OR child_h.name = grp_cd.value) " +
+            "JOIN shared_catalogs.catalog_detail child_cd ON child_cd.header_id = child_h.id AND child_cd.status = 1 " +
+            "WHERE grp_cd.key IN (:groupKeys) AND grp_cd.status = 1", nativeQuery = true)
+    List<String> findSupplierNumbersByGroupKeys(@Param("groupKeys") List<String> groupKeys);
 }

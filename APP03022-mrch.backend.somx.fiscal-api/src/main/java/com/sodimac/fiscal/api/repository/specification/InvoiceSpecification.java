@@ -41,14 +41,18 @@ public class InvoiceSpecification {
      * @return Specification para ejecutar la query
      */
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest) {
-        return buildSpecification(searchRequest, null, null);
+        return buildSpecification(searchRequest, null, null, null);
     }
 
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors) {
-        return buildSpecification(searchRequest, allowedVendors, null);
+        return buildSpecification(searchRequest, allowedVendors, null, null);
     }
 
     public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors, List<String> allowedTypes) {
+        return buildSpecification(searchRequest, allowedVendors, allowedTypes, null);
+    }
+
+    public static Specification<InvoiceEntity> buildSpecification(InvoiceSearchRequest searchRequest, List<String> allowedVendors, List<String> allowedTypes, List<String> allowedGroupSuppliers) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -256,6 +260,23 @@ public class InvoiceSpecification {
                 typeSubquery.select(typeRoot.get(K_INVOICE_UUID))
                         .where(typeRoot.get("supplierType").in(allowedTypes));
                 predicates.add(root.get(K_INVOICE_UUID).in(typeSubquery));
+            }
+
+            // Filtro de seguridad STM-1458: grupos de proveedor permitidos del usuario (x-user-groups)
+            if (allowedGroupSuppliers != null) {
+                if (allowedGroupSuppliers.isEmpty()) {
+                    predicates.add(criteriaBuilder.disjunction());
+                } else {
+                    List<BigDecimal> groupVendorNumbers = allowedGroupSuppliers.stream()
+                            .map(v -> { try { return new BigDecimal(v.trim()); } catch (NumberFormatException e) { return null; } })
+                            .filter(v -> v != null)
+                            .toList();
+                    Subquery<UUID> groupSubquery = query.subquery(UUID.class);
+                    Root<AddendumEntity> groupRoot = groupSubquery.from(AddendumEntity.class);
+                    groupSubquery.select(groupRoot.get(K_INVOICE_UUID))
+                            .where(groupRoot.get("supplierNumber").in(groupVendorNumbers));
+                    predicates.add(root.get(K_INVOICE_UUID).in(groupSubquery));
+                }
             }
 
             // Combinar todos los predicados con AND

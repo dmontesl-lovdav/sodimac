@@ -5,6 +5,7 @@ import { exportToCSV, exportToExcel } from '@features/catalogos/utils/export';
 import { Pagination } from '@shared/components/ui/pagination';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 const EXPORT_COLUMNS = [
   { key: 'idElemento', label: 'ID Elemento' },
@@ -359,9 +360,13 @@ export default function ConversionsContainer() {
               </button>
             </>
           )}
-          <button style={{ ...S.btn, ...S.outlineBtn, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', opacity: selectedIds.size === 0 ? 0.5 : 1, cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer' }} disabled={selectedIds.size === 0}
-            onClick={() => setModal({ type: 'deleteMultiple' })}><TrashIcon /> Borrar Seleccionados ({selectedIds.size})</button>
-          <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/nueva`)}>+ Nueva Conversión</button>
+          <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DELETE_SELECTED}>
+            <button style={{ ...S.btn, ...S.outlineBtn, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', opacity: selectedIds.size === 0 ? 0.5 : 1, cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer' }} disabled={selectedIds.size === 0}
+              onClick={() => setModal({ type: 'deleteMultiple' })}><TrashIcon /> Borrar Seleccionados ({selectedIds.size})</button>
+          </PermissionGate>
+          <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.NEW_CONVERSION}>
+            <button style={{ ...S.btn, ...S.primaryBtn }} onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/nueva`)}>+ Nueva Conversión</button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -418,16 +423,22 @@ export default function ConversionsContainer() {
                     <td style={S.td}>{c.idUsuarioActualizacion || '-'}</td>
                     <td style={S.td}>{formatDate(c.fechaActualizacion)}</td>
                     <td style={S.td}>
-                      <button type="button" style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#002D4C' : '#cbd5e1', cursor: 'pointer', position: 'relative', border: 'none', padding: 0, appearance: 'none' }}
-                        aria-label="Cambiar conversión principal"
-                        onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 2, left: c.esPrincipal ? 18 : 2, transition: '0.2s' }} />
-                      </button>
+                      <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.CHANGE_PRINCIPAL_CONVERSION}>
+                        <button type="button" style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: c.esPrincipal ? '#002D4C' : '#cbd5e1', cursor: 'pointer', position: 'relative', border: 'none', padding: 0, appearance: 'none' }}
+                          aria-label="Cambiar conversión principal"
+                          onClick={() => setModal({ type: c.esPrincipal ? 'unsetPrincipal' : 'setPrincipal', data: c })}>
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 2, left: c.esPrincipal ? 18 : 2, transition: '0.2s' }} />
+                        </button>
+                      </PermissionGate>
                     </td>
                     <td style={S.td}><button type="button" title="Editar" aria-label="Editar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#002D4C', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}><EditIcon /></button></td>
-                    <td style={S.td}><button type="button" title="Borrar" aria-label="Borrar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#dc2626', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                      onClick={() => setModal({ type: 'delete', data: c })}><TrashIcon /></button></td>
+                    <td style={S.td}>
+                      <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DELETE}>
+                        <button type="button" title="Borrar" aria-label="Borrar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#dc2626', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => setModal({ type: 'delete', data: c })}><TrashIcon /></button>
+                      </PermissionGate>
+                    </td>
                   </tr>
                 ))}
               </tbody>

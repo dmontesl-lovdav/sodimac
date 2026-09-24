@@ -5,6 +5,7 @@ import {
   endOfLocalDay,
   formatLocalDateStr,
   formatDateReport,
+  moduleExportBasename,
   parseLocalDateStr,
   isDateRangeOverSixMonths,
   toNumber,
@@ -166,18 +167,26 @@ describe("endOfLocalDay", () => {
 // ---------------------------------------------------------------------------
 
 describe("formatDateReport", () => {
-  it("devuelve yyyymmdd_hh24.mi.ss en hora local", () => {
+  it("devuelve yyyymmdd.h24miss en hora local", () => {
     const d = new Date(2026, 8, 7, 15, 32, 1);
-    expect(formatDateReport(d.toString())).toBe("20260907_15.32.01");
+    expect(formatDateReport(d.toString())).toBe("20260907.153201");
   });
 
   it("usa hora de 24 horas y rellena ceros", () => {
     const d = new Date(2026, 0, 5, 0, 5, 9);
-    expect(formatDateReport(d.toString())).toBe("20260105_00.05.09");
+    expect(formatDateReport(d.toString())).toBe("20260105.000509");
   });
 
   it("devuelve vacío si la fecha no es válida", () => {
     expect(formatDateReport("no-es-fecha")).toBe("");
+  });
+});
+
+describe("moduleExportBasename", () => {
+  it("arma nombre_modulo_yyyymmdd.h24miss", () => {
+    const d = new Date(2026, 8, 23, 9, 45, 59);
+    expect(moduleExportBasename("factura", d)).toBe("factura_20260923.094559");
+    expect(moduleExportBasename("nota_credito", d)).toBe("nota_credito_20260923.094559");
   });
 });
 

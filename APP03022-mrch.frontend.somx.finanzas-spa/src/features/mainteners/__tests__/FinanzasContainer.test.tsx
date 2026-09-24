@@ -29,6 +29,7 @@ jest.mock("@shared/security", () => ({
     MIGO: "i",
   },
   PermissionGate: ({ children }: any) => children,
+  invalidateAccessContextCache: jest.fn(),
 }));
 jest.mock("react-router-dom", () => {
   const ReactLocal = require("react");
@@ -40,8 +41,18 @@ jest.mock("react-router-dom", () => {
 jest.mock("../api", () => ({
   getHealthcheck: jest.fn(),
 }));
+jest.mock("@/configuration/ConfigurationBuilder", () => ({
+  __esModule: true,
+  localDeployment: false,
+  default: { localDeployment: false },
+}));
+jest.mock("@/services/finanzasUserSync", () => ({
+  syncFinanzasUser: jest.fn(() => Promise.resolve({ status: "skipped" })),
+  getFinanzasUserSyncInFlight: jest.fn(() => null),
+}));
 
 import FinanzasContainer from "../FinanzasContainer";
+import { syncFinanzasUser } from "@/services/finanzasUserSync";
 
 describe("FinanzasContainer", () => {
   it("renderiza tarjetas por defecto", () => {
@@ -49,5 +60,10 @@ describe("FinanzasContainer", () => {
     expect(html).toContain("finanzas-root");
     expect(html).toContain("Guías de embarque");
     expect(html).toContain("Healthcheck");
+  });
+
+  it("inicia el cruce de macrorol al cargar la tarjeta de finanzas", () => {
+    renderToStaticMarkup(React.createElement(FinanzasContainer));
+    expect(syncFinanzasUser).toHaveBeenCalled();
   });
 });

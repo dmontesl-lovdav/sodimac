@@ -173,7 +173,8 @@ public class PaymentRegistrationController {
     public ResponseEntity<?> buscarComplementosPago(
             @ModelAttribute PaymentSearchRequest searchRequest,
             @RequestHeader(value = "x-user-vendors", required = false) String xUserVendors,
-            @RequestHeader(value = "x-user-types", required = false) String xUserTypes) {
+            @RequestHeader(value = "x-user-types", required = false) String xUserTypes,
+            @RequestHeader(value = "x-user-groups", required = false) String xUserGroups) {
 
         List<String> allowedVendors = parseVendorHeader(xUserVendors);
         if (allowedVendors != null && allowedVendors.isEmpty()) {
@@ -184,12 +185,14 @@ public class PaymentRegistrationController {
         }
 
         List<String> allowedTypes = parseTypeHeader(xUserTypes);
+        List<String> allowedGroups = parseGroupHeader(xUserGroups);
 
-        log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}, types: {}", searchRequest,
+        log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}, types: {}, groups: {}", searchRequest,
                 allowedVendors == null ? "sin restricción" : allowedVendors,
-                allowedTypes == null ? "sin restricción" : allowedTypes);
+                allowedTypes == null ? "sin restricción" : allowedTypes,
+                allowedGroups == null ? "sin restricción" : allowedGroups);
 
-        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest, allowedVendors, allowedTypes);
+        Page<PaymentSearchResponse> results = paymentQueryService.searchPayments(searchRequest, allowedVendors, allowedTypes, allowedGroups);
 
         log.info("Búsqueda completada - {}/{} resultados, página {}/{}",
                 results.getNumberOfElements(), results.getTotalElements(),
@@ -218,5 +221,19 @@ public class PaymentRegistrationController {
             }
         }
         return ids.isEmpty() ? null : ids;
+    }
+
+    private List<String> parseGroupHeader(String header) {
+        if (header == null) return null;
+        String trimmed = header.trim();
+        if (trimmed.isEmpty() || "-1".equals(trimmed)) return null;
+        List<String> keys = new java.util.ArrayList<>();
+        for (String part : trimmed.split(",")) {
+            String key = part.trim();
+            if (!key.isEmpty()) {
+                keys.add(key);
+            }
+        }
+        return keys.isEmpty() ? null : keys;
     }
 }

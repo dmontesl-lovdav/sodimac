@@ -24,5 +24,5 @@ public interface PaymentsRepositoryCustom {
      */
     Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest);
 
-    Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors, java.util.List<String> allowedTypes);
+    Page<PaymentsEntity> searchPayments(PaymentSearchRequest searchRequest, java.util.List<String> allowedVendors, java.util.List<String> allowedTypes, java.util.List<String> allowedGroupSuppliers);
 }

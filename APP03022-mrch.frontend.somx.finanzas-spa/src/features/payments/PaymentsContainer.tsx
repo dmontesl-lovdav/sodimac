@@ -33,7 +33,7 @@ import {
 } from "./utils/paymentSearchRestore";
 import { authenticator } from "@/configuration/ConfigurationBuilder";
 import { getErrorMessage } from "@/utils/errorMessage";
-import { fetchProviders } from "@/utils/utils";
+import { fetchProviders, formatFilenameTimestamp } from "@/utils/utils";
 import ConfigurationBuilder from "@/configuration/ConfigurationBuilder";
 
 import "./styles/PaymentsContainer.css";
@@ -682,34 +682,7 @@ export default function PaymentsContainer(): ReactElement {
         const anchor =
             document.createElement("a");
 
-        const now =
-            new Date();
-
-        const pad2 = (
-            value: number
-        ) =>
-            value
-                .toString()
-                .padStart(2, "0");
-
-        const ymd =
-            `${now.getFullYear()}${pad2(
-                now.getMonth() + 1
-            )}${pad2(
-                now.getDate()
-            )}`;
-
-        const hms =
-            `${pad2(
-                now.getHours()
-            )}.${pad2(
-                now.getMinutes()
-            )}.${pad2(
-                now.getSeconds()
-            )}`;
-
-        const fileName =
-            `pagos_${ymd}_${hms}.csv`;
+        const fileName = `pagos_${formatFilenameTimestamp()}.csv`;
 
         anchor.href = url;
         anchor.download =

@@ -112,7 +112,7 @@ export function endOfLocalDay(d: Date): Date {
   return x;
 }
 
-/** `recepcion_yyyymmdd_hh.mm.ss` (sin extensión; exportToCSV agrega .csv). */
+/** `recepcion_yyyymmdd.h24miss` (sin extensión; exportToCSV agrega .csv). */
 export function formatFilenameTimestamp(d = new Date()): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;

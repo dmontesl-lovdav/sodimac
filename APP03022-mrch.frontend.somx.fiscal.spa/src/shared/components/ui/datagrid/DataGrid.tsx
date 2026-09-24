@@ -113,8 +113,14 @@ export function parseFiscalXmlError(xmlText: string): string {
  * Descarga el PDF haciendo un fetch real para poder detectar
  * respuestas de error (XML) en lugar de abrir el link directo.
  * ------------------------------------------------------------ */
+export function filenameWithExtension(name: string, ext: string): string {
+  const cleanExt = ext.replace(/^\./, "").toLowerCase();
+  const base = String(name ?? "").replace(/\.(xml|pdf|csv)$/i, "");
+  return `${base}.${cleanExt}`;
+}
+
 function downloadPdfBlob(blob: Blob, filename: string) {
-  const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
+  const safeName = filenameWithExtension(filename, "pdf");
   const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = blobUrl;
@@ -138,7 +144,7 @@ async function fetchAndDownloadPdf(
     onError("No hay URL de PDF disponible para este registro.");
     return;
   }
-  const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
+  const safeName = filenameWithExtension(filename, "pdf");
   try {
     const res = await fetch(url, { credentials: "include" });
     const contentType = res.headers.get("Content-Type") ?? "";
@@ -165,7 +171,7 @@ export function downloadDataGridXml(xmlContent?: string | null, filename: string
     console.warn("downloadXML: xmlContent vacío o nulo.");
     return;
   }
-  const safeName = filename.toLowerCase().endsWith(".xml") ? filename : `${filename}.xml`;
+  const safeName = filenameWithExtension(filename, "xml");
   const blob = new Blob([xml], { type: "text/xml;charset=utf-8" });
 
   const anyNav = window.navigator as any;
@@ -269,7 +275,8 @@ function buildXmlRowAction<T>(
   isDisabled?: (row: T) => boolean,
 ): GenericRowAction<T> {
   const xmlGetter: (row: T) => any = getXmlContent ?? ((row: any) => row?.xmlContent);
-  const nameGetter: (row: T) => string = getFilename ?? ((row: T) => `${getStandardFilename(row)}.xml`);
+  const nameGetter: (row: T) => string = (row: T) =>
+    filenameWithExtension(getFilename?.(row) || getStandardFilename(row), "xml");
   return {
     title: "Exportar XML",
     icon: xmlIconUrl,
@@ -292,6 +299,7 @@ function buildXmlRowAction<T>(
 function buildPdfRowAction<T>(
   getPdfUrl: ((row: T) => string | null | undefined) | undefined,
   getPdfContent: ((row: T) => Blob | null | undefined | Promise<Blob | null | undefined>) | undefined,
+  getFilename: ((row: T) => string) | undefined,
   setPdfErrorMsg: (msg: string | undefined) => void,
   isDisabled?: (row: T) => boolean,
 ): GenericRowAction<T> {
@@ -301,6 +309,8 @@ function buildPdfRowAction<T>(
     if (!fiscalUuid) return null;
     return `${baseUrl}/invoices/${fiscalUuid}/pdf`;
   });
+  const nameGetter: (row: T) => string = (row: T) =>
+    filenameWithExtension(getFilename?.(row) || getStandardFilename(row), "pdf");
   return {
     title: "Descargar PDF",
     icon: pdfIconUrl,
@@ -313,7 +323,7 @@ function buildPdfRowAction<T>(
               setPdfErrorMsg("Error al obtener el PDF");
               return;
             }
-            downloadPdfBlob(blob, `${getStandardFilename(row)}.pdf`);
+            downloadPdfBlob(blob, nameGetter(row));
           })
           .catch((err: unknown) => {
             console.error(err);
@@ -322,7 +332,7 @@ function buildPdfRowAction<T>(
           });
         return;
       }
-      fetchAndDownloadPdf(pdfUrlGetter(row), `${getStandardFilename(row)}.pdf`, setPdfErrorMsg);
+      fetchAndDownloadPdf(pdfUrlGetter(row), nameGetter(row), setPdfErrorMsg);
     },
   };
 }
@@ -551,7 +561,7 @@ function DataGridInner<T, F = any>(
     }
     if (enablePdf && canPdf) {
       actions.push(
-        buildPdfRowAction(getPdfUrl, getPdfContent, setPdfErrorMsg, isDocumentExportDisabled)
+        buildPdfRowAction(getPdfUrl, getPdfContent, getFilename, setPdfErrorMsg, isDocumentExportDisabled)
       );
     }
     return actions;

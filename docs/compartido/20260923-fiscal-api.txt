@@ -170,3 +170,40 @@ Untracked files:
 
 no changes added to commit (use "git add" and/or "git commit -a")
 PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+==========================================================================
+INSTRUCCIONES — limpiar working tree (restaurar DevOps + borrar .sql untracked)
+==========================================================================
+origin/develop esta limpio; el dano es solo local (sin commitear).
+
+cd C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api
+
+-- 1. RESTAURAR todo lo TRACKED a lo commiteado (deshace lo que el /MIR borro/cambio:
+--    .mvn/extensions.xml de DevOps + migraciones tracked)
+git checkout -- .
+
+-- 2. (opcional) preview de que untracked se borrarian
+git clean -fn migration/
+
+-- 3. BORRAR los .sql UNTRACKED (los de "emergencia")
+git clean -f migration/
+
+-- 4. VERIFICAR limpio
+git status
+--   esperado: "nothing to commit, working tree clean" y .mvn/extensions.xml de vuelta
+
+REGLA DE ORO: NO usar "git add -A" ni "git add ." (commitea el borrado de
+.mvn/extensions.xml y vuelas DevOps en origin). Pasar SOLO archivos modificados,
+o excluir CI/DevOps del robocopy:
+  robocopy ... /MIR /XD .git node_modules dist target build .idea .github .mvn /XF *.log Dockerfile
+
+VERIFICAR FIX DE CODIGO (no salio en el status):
+findstr "UPPER(ch.code) = UPPER(:catalogCode) AND cd.value" src\main\java\com\sodimac\fiscal\api\repository\AddendumRepository.java
+- SALE  -> ya esta (commitea SOLO ese .java si falta) 
+- NO SALE -> copia solo ese .java del mirror y commitea
+
+NOTAS:
+- Deploy falla por artifactregistry-maven-wagon:2.2.5 = INFRA del runner, no el pase.
+  origin conserva .mvn (4748d16) y pipeline.yml (623bc3c).
+- El seed del catalogo estatus factura YA corrio en UAT (1..20, 20=Cancelada);
+  no necesitas el .sql en el repo real.

@@ -194,3 +194,7 @@ MySQL sin esos días, pero RELACION_VENTA_FACTURACION (SQL Server) sí	El batch 
 RELACION_VENTA_FACTURACION sin esos días, pero VENTA_CAB sí	uspRelacionVentaFactura, el SP que arma el detalle
 VENTA_CAB sin esos días	La sincronización de ventas desde BCT (bctfacturacion, proceso 2)
 Pídele a Ivan el idEjecucion que le falló, o el rango exacto que pidió, para cruzarlo con la primera consulta.
+
+
+SELECT COUNT(*) FROM relacionventafacturacion
+WHERE '2026-01-01' <= fecha_ticket AND fecha_ticket < '2026-02-01';

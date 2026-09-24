@@ -1,0 +1,68 @@
+idEjecucion son los milisegundos de la hora de la solicitud. Con eso se saca la fecha, y el rango pedido viene en parametros.
+
+1. Últimos ids del reporte (MySQL 10.138.150.71, base sodimacfiscal)
+
+-- Ultimas 30 solicitudes del Detalle
+SELECT idEjecucion,
+       FROM_UNIXTIME(idEjecucion/1000) AS solicitado,
+       fechaGeneracion,
+       usuario,
+       parametros,          -- "Fecha Inicio: dd/mm/aaaa, Fecha Fin: ..., Tienda: ..."
+       estatus,             -- 0 procesando, 1 listo, 2 fallo al procesar, 4 fallo al descargar
+       mensaje,
+       LENGTH(listaArchivos) AS largo_lista,
+       listaArchivos
+FROM procesodescarga
+WHERE modulo = 'Reportes Detalle'
+ORDER BY fechaSolicitud DESC
+LIMIT 30;
+
+-- Solo los que pidieron enero 2026
+SELECT idEjecucion, FROM_UNIXTIME(idEjecucion/1000) solicitado, usuario, parametros, estatus, mensaje, listaArchivos
+FROM procesodescarga
+WHERE modulo = 'Reportes Detalle' AND parametros LIKE '%/01/2026%'
+ORDER BY fechaSolicitud DESC;
+
+-- Largo real de la columna de archivos
+SHOW CREATE TABLE procesodescarga;
+Si alguna columna no existe con ese nombre, corre SHOW COLUMNS FROM procesodescarga; para ver el nombre real. Por la configuración del proyecto deberían llamarse igual que en Java (idEjecucion, fechaSolicitud…).
+
+2. Qué revisar en el resultado (hipótesis para el 26–31 de enero)
+Cuando el rango pedido pasa de un mes, el código lo parte en tramos que empiezan en el día de inicio pedido, no en el día 1 del mes. Por ejemplo, 26/12/2025 → 31/01/2026 genera dos archivos: 2025-12-26 a 2026-01-25 y 2026-01-26_a_2026-01-31. El 26–31 cae justo en el último archivo del zip. Hay dos formas de que se pierda:
+
+Columna recortada: listaArchivos guarda rutas completas separadas por coma. Si la columna es varchar(255) y largo_lista sale en 255 (o cerca), la última ruta quedó cortada. Al armar el zip no la encuentra y lo corta: el usuario recibe solo el primer archivo.
+Archivo borrado: si el archivo ya no existe porque la limpieza programada cada 8 h lo borró, el zip también se corta. En ese caso el estatus pasa a 4.
+Para confirmarlo, compara la última ruta de listaArchivos: ¿termina en .xlsx o viene truncada?
+
+3. Verificar si los datos existen para el 26–31 de enero
+MySQL sodimacfiscal (lo que lee el portal):
+
+
+SELECT LEFT(fecha_ticket,10) dia, COUNT(*) filas, COUNT(DISTINCT tienda) tiendas
+FROM relacionventafacturacion
+WHERE fecha_ticket >= '2026-01-20' AND fecha_ticket < '2026-02-03'
+GROUP BY 1 ORDER BY 1;
+
+SELECT fecha_ticket, COUNT(*) tiendas, SUM(NUMERO_TICKET_POS) tickets_pos
+FROM tablerocontroltimbrado
+WHERE fecha_ticket BETWEEN '2026-01-20' AND '2026-02-02'
+GROUP BY 1 ORDER BY 1;
+SQL Server 10.138.150.124,5319, base SODIMAC_FISCAL_PROD (el origen), solo si en MySQL faltan días:
+
+
+SELECT CONVERT(date,FECHA_TICKET) dia, COUNT(*) filas
+FROM dbo.RELACION_VENTA_FACTURACION
+WHERE FECHA_TICKET >= '2026-01-20' AND FECHA_TICKET < '2026-02-03'
+GROUP BY CONVERT(date,FECHA_TICKET) ORDER BY 1;
+
+SELECT CONVERT(date,FECHA_TICKET) dia, COUNT(*) tickets
+FROM dbo.VENTA_CAB
+WHERE FECHA_TICKET >= '2026-01-20' AND FECHA_TICKET < '2026-02-03'
+GROUP BY CONVERT(date,FECHA_TICKET) ORDER BY 1;
+Cómo leerlo
+Resultado	Dónde está el problema
+Hay filas del 26–31 en relacionventafacturacion (MySQL)	Los datos existen; se pierden en el reporte (zip / listaArchivos, punto 2)
+MySQL sin esos días, pero RELACION_VENTA_FACTURACION (SQL Server) sí	El batch nocturno que copia a MySQL (BatchReportesCFDI)
+RELACION_VENTA_FACTURACION sin esos días, pero VENTA_CAB sí	uspRelacionVentaFactura, el SP que arma el detalle
+VENTA_CAB sin esos días	La sincronización de ventas desde BCT (bctfacturacion, proceso 2)
+Pídele a Ivan el idEjecucion que le falló, o el rango exacto que pidió, para cruzarlo con la primera consulta.

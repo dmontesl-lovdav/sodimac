@@ -17,14 +17,69 @@ WHERE modulo = 'Reportes Detalle'
 ORDER BY fechaSolicitud DESC
 LIMIT 30;
 
+"idEjecucion","solicitado","fechaGeneracion","usuario","parametros","estatus","mensaje","largo_lista","listaArchivos"
+"1790198711044","2026-09-23 15:25:11.044000","2026-09-23 16:25:51",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026152511.xlsx
+"1790198272152","2026-09-23 15:17:52.152000","2026-09-23 16:19:00",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026151752.xlsx
+"1790196651420","2026-09-23 14:50:51.420000","2026-09-23 15:55:25",GUADALUPE ORTEGA,"Fecha Inicio: 01/03/2026, Fecha Fin: 31/03/2026",1,Listo para descargar,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-03-01_a_2026-03-31_23092026145051.xlsx
+"1790191842081","2026-09-23 13:30:42.081000","2026-09-23 14:34:17",GUADALUPE ORTEGA,"Fecha Inicio: 01/02/2026, Fecha Fin: 28/02/2026",1,Listo para descargar,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-02-01_a_2026-02-28_23092026133042.xlsx
+"1790190652911","2026-09-23 13:10:52.911000","2026-09-23 14:15:57",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026131053.xlsx
+"1789086746612","2026-09-10 18:32:26.612000","2026-09-10 19:33:27",GUADALUPE ORTEGA,"Fecha Inicio: 01/08/2026, Fecha Fin: 31/08/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-08-01_a_2026-08-31_10092026183227.xlsx
+"1789086466457","2026-09-10 18:27:46.457000","2026-09-10 19:30:35",GUADALUPE ORTEGA,"Fecha Inicio: 01/07/2026, Fecha Fin: 31/07/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-07-01_a_2026-07-31_10092026182746.xlsx
+"1789086224459","2026-09-10 18:23:44.459000","2026-09-10 19:25:35",GUADALUPE ORTEGA,"Fecha Inicio: 01/06/2026, Fecha Fin: 30/06/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-06-01_a_2026-06-30_10092026182344.xlsx
+"1789086077280","2026-09-10 18:21:17.280000","2026-09-10 19:23:13",GUADALUPE ORTEGA,"Fecha Inicio: 01/05/2026, Fecha Fin: 31/05/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-05-01_a_2026-05-31_10092026182117.xlsx
+"1789085561808","2026-09-10 18:12:41.808000","2026-09-10 19:14:59",GUADALUPE ORTEGA,"Fecha Inicio: 01/04/2026, Fecha Fin: 30/04/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-04-01_a_2026-04-30_10092026181242.xlsx
+"1789084215969","2026-09-10 17:50:15.969000","2026-09-10 18:51:59",GUADALUPE ORTEGA,"Fecha Inicio: 01/03/2026, Fecha Fin: 31/03/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-03-01_a_2026-03-31_10092026175016.xlsx
+"1789083318664","2026-09-10 17:35:18.664000","2026-09-10 18:37:28",GUADALUPE ORTEGA,"Fecha Inicio: 01/02/2026, Fecha Fin: 28/02/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-02-01_a_2026-02-28_10092026173518.xlsx
+"1789082053840","2026-09-10 17:14:13.840000","2026-09-10 18:17:02",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_10092026171414.xlsx
+"1789073259629","2026-09-10 14:47:39.629000","2026-09-10 15:49:27",GUADALUPE ORTEGA,"Fecha Inicio: 01/08/2026, Fecha Fin: 31/08/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-08-01_a_2026-08-31_10092026144740.xlsx
+"1789073243479","2026-09-10 14:47:23.479000","2026-09-10 15:50:36",GUADALUPE ORTEGA,"Fecha Inicio: 01/07/2026, Fecha Fin: 31/07/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-07-01_a_2026-07-31_10092026144723.xlsx
+"1789073227165","2026-09-10 14:47:07.165000","2026-09-10 15:51:01",GUADALUPE ORTEGA,"Fecha Inicio: 01/06/2026, Fecha Fin: 30/06/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-06-01_a_2026-06-30_10092026144707.xlsx
+"1789073208354","2026-09-10 14:46:48.354000","2026-09-10 15:46:48",GUADALUPE ORTEGA,"Fecha Inicio: 01/05/2026, Fecha Fin: 31/05/2026",0,Procesando Reporte,,
+"1789073190264","2026-09-10 14:46:30.264000","2026-09-10 15:46:30",GUADALUPE ORTEGA,"Fecha Inicio: 01/04/2026, Fecha Fin: 30/04/2026",0,Procesando Reporte,,
+"1789073173067","2026-09-10 14:46:13.067000","2026-09-10 15:46:14",GUADALUPE ORTEGA,"Fecha Inicio: 01/03/2026, Fecha Fin: 31/03/2026",0,Procesando Reporte,,
+"1789073155270","2026-09-10 14:45:55.270000","2026-09-10 15:45:55",GUADALUPE ORTEGA,"Fecha Inicio: 01/02/2026, Fecha Fin: 28/02/2026",0,Procesando Reporte,,
+"1789073132481","2026-09-10 14:45:32.481000","2026-09-10 15:45:33",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",0,Procesando Reporte,,
+"1788907675079","2026-09-08 16:47:55.079000","2026-09-08 17:48:06",GUADALUPE ORTEGA,"Fecha Inicio: 01/08/2026, Fecha Fin: 31/08/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-08-01_a_2026-08-31_08092026164755.xlsx
+"1788807310322","2026-09-07 12:55:10.322000","2026-09-07 13:57:18",GUADALUPE ORTEGA,"Fecha Inicio: 01/06/2026, Fecha Fin: 30/06/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-06-01_a_2026-06-30_07092026125510.xlsx
+"1788323188818","2026-09-01 22:26:28.818000","2026-09-01 23:31:23",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_01092026222629.xlsx
+"1787244128914","2026-08-20 10:42:08.914000","2026-08-20 11:43:46",GUADALUPE ORTEGA,"Fecha Inicio: 01/03/2026, Fecha Fin: 31/03/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-03-01_a_2026-03-31_20082026104209.xlsx
+"1787241114993","2026-08-20 09:51:54.993000","2026-08-20 10:52:07",GUADALUPE ORTEGA,"Fecha Inicio: 01/08/2026, Fecha Fin: 20/08/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-08-01_a_2026-08-20_20082026095155.xlsx
+"1787241089816","2026-08-20 09:51:29.816000","2026-08-20 10:54:16",GUADALUPE ORTEGA,"Fecha Inicio: 01/06/2026, Fecha Fin: 30/06/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-06-01_a_2026-06-30_20082026095129.xlsx
+"1787241067547","2026-08-20 09:51:07.547000","2026-08-20 10:55:24",GUADALUPE ORTEGA,"Fecha Inicio: 01/05/2026, Fecha Fin: 31/05/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-05-01_a_2026-05-31_20082026095107.xlsx
+"1787241044217","2026-08-20 09:50:44.217000","2026-08-20 11:08:25",GUADALUPE ORTEGA,"Fecha Inicio: 01/04/2026, Fecha Fin: 30/04/2026",3,Descargado Correctamente,90,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-04-01_a_2026-04-30_20082026095044.xlsx
+"1787241019463","2026-08-20 09:50:19.463000","2026-08-20 10:50:19",GUADALUPE ORTEGA,"Fecha Inicio: 01/03/2026, Fecha Fin: 31/03/2026",0,Procesando Reporte,,
+
+
 -- Solo los que pidieron enero 2026
 SELECT idEjecucion, FROM_UNIXTIME(idEjecucion/1000) solicitado, usuario, parametros, estatus, mensaje, listaArchivos
 FROM procesodescarga
 WHERE modulo = 'Reportes Detalle' AND parametros LIKE '%/01/2026%'
 ORDER BY fechaSolicitud DESC;
 
+"idEjecucion","solicitado","usuario","parametros","estatus","mensaje","listaArchivos"
+"1790198711044","2026-09-23 15:25:11.044000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026152511.xlsx
+"1790198272152","2026-09-23 15:17:52.152000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026151752.xlsx
+"1790190652911","2026-09-23 13:10:52.911000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",1,Listo para descargar,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_23092026131053.xlsx
+"1789082053840","2026-09-10 17:14:13.840000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",3,Descargado Correctamente,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_10092026171414.xlsx
+"1789073132481","2026-09-10 14:45:32.481000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",0,Procesando Reporte,
+"1788323188818","2026-09-01 22:26:28.818000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",3,Descargado Correctamente,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_01092026222629.xlsx
+"1787240971812","2026-08-20 09:49:31.812000",GUADALUPE ORTEGA,"Fecha Inicio: 01/01/2026, Fecha Fin: 31/01/2026",3,Descargado Correctamente,D:\Facturas\Reporte_Relacion_Venta_Facturacion_2026-01-01_a_2026-01-31_20082026094932.xlsx
+
+
 -- Largo real de la columna de archivos
 SHOW CREATE TABLE procesodescarga;
+CREATE TABLE `procesodescarga` (
+  `idEjecucion` varchar(16) NOT NULL,
+  `fechaSolicitud` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fechaGeneracion` datetime DEFAULT NULL,
+  `parametros` longtext NOT NULL,
+  `modulo` varchar(20) NOT NULL,
+  `usuario` varchar(100) NOT NULL,
+  `estatus` int DEFAULT NULL,
+  `mensaje` longtext,
+  `listaArchivos` longtext,
+  PRIMARY KEY (`idEjecucion`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
 Si alguna columna no existe con ese nombre, corre SHOW COLUMNS FROM procesodescarga; para ver el nombre real. Por la configuración del proyecto deberían llamarse igual que en Java (idEjecucion, fechaSolicitud…).
 
 2. Qué revisar en el resultado (hipótesis para el 26–31 de enero)
@@ -43,10 +98,45 @@ FROM relacionventafacturacion
 WHERE fecha_ticket >= '2026-01-20' AND fecha_ticket < '2026-02-03'
 GROUP BY 1 ORDER BY 1;
 
+"dia","filas","tiendas"
+"2026-01-20",8079,17
+"2026-01-21",8393,17
+"2026-01-22",8448,16
+"2026-01-23",8718,16
+"2026-01-24",11863,16
+"2026-01-25",12579,16
+"2026-01-26",7898,17
+"2026-01-27",7879,16
+"2026-01-28",8155,16
+"2026-01-29",7927,16
+"2026-01-30",8165,16
+"2026-01-31",10998,16
+"2026-02-01",12790,16
+"2026-02-02",13841,16
+
+
 SELECT fecha_ticket, COUNT(*) tiendas, SUM(NUMERO_TICKET_POS) tickets_pos
 FROM tablerocontroltimbrado
 WHERE fecha_ticket BETWEEN '2026-01-20' AND '2026-02-02'
 GROUP BY 1 ORDER BY 1;
+
+"fecha_ticket","tiendas","tickets_pos"
+"2026-01-20",16,7772.0
+"2026-01-21",17,8070.0
+"2026-01-22",16,8132.0
+"2026-01-23",16,8409.0
+"2026-01-24",16,11531.0
+"2026-01-25",16,12215.0
+"2026-01-26",16,7577.0
+"2026-01-27",16,7576.0
+"2026-01-28",16,7854.0
+"2026-01-29",16,7648.0
+"2026-01-30",16,7852.0
+"2026-01-31",16,10690.0
+"2026-02-01",16,12434.0
+"2026-02-02",16,13432.0
+
+
 SQL Server 10.138.150.124,5319, base SODIMAC_FISCAL_PROD (el origen), solo si en MySQL faltan días:
 
 
@@ -55,10 +145,48 @@ FROM dbo.RELACION_VENTA_FACTURACION
 WHERE FECHA_TICKET >= '2026-01-20' AND FECHA_TICKET < '2026-02-03'
 GROUP BY CONVERT(date,FECHA_TICKET) ORDER BY 1;
 
+"dia","filas"
+2026-01-20,8079
+2026-01-21,8393
+2026-01-22,8448
+2026-01-23,8718
+2026-01-24,11863
+2026-01-25,12579
+2026-01-26,7898
+2026-01-27,7879
+2026-01-28,8155
+2026-01-29,7927
+2026-01-30,8165
+2026-01-31,10998
+2026-02-01,12790
+2026-02-02,13841
+
+
 SELECT CONVERT(date,FECHA_TICKET) dia, COUNT(*) tickets
 FROM dbo.VENTA_CAB
 WHERE FECHA_TICKET >= '2026-01-20' AND FECHA_TICKET < '2026-02-03'
 GROUP BY CONVERT(date,FECHA_TICKET) ORDER BY 1;
+
+
+"dia","tickets"
+2026-01-20,8080
+2026-01-21,8393
+2026-01-22,8449
+2026-01-23,8718
+2026-01-24,11864
+2026-01-25,12580
+2026-01-26,7899
+2026-01-27,7881
+2026-01-28,8155
+2026-01-29,7927
+2026-01-30,8165
+2026-01-31,10999
+2026-02-01,12791
+2026-02-02,13841
+
+
+
+
 Cómo leerlo
 Resultado	Dónde está el problema
 Hay filas del 26–31 en relacionventafacturacion (MySQL)	Los datos existen; se pierden en el reporte (zip / listaArchivos, punto 2)

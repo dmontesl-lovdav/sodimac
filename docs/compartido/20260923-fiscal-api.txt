@@ -126,3 +126,6 @@ Your branch is up to date with 'origin/develop'.
 
 nothing to commit, working tree clean
 PS C:\workspace-fbc-github\APP03022-mrch.backend.somx.fiscal-api>
+
+
+curl -s -X PUT "https://uat.fbusinesscenter.com/ppsomx/fiscal/invoices/b6828aef-75b9-4813-862b-3319cd7ea122/status" -H "Content-Type: application/json" -d "{\"estatusOrigen\":2,\"estatusDestino\":20,\"numeroProveedor\":252338,\"idUsuarioActualizacion\":\"11111111-1111-1111-1111-111111111111\"}"

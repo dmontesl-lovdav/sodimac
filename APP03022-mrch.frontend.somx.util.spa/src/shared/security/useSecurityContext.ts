@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { securityService } from '@features/security/services/securityService';
 import { getCurrentUserCatalogKey } from '@features/security/utils/currentUserCatalogKey';
+import { getUtilityUserSyncInFlight } from '@/services/utilityUserSync';
 
 interface AccessContextEvent {
     key: string;
@@ -37,8 +39,6 @@ interface ApiEnvelope<T> {
     data?: T;
 }
 
-const SECURITY_QUERY_KEY = (userKey: string) => ['security', 'access-context', userKey];
-
 const normalizeLabel = (s: string): string =>
     s
         .normalize('NFD')
@@ -70,13 +70,24 @@ export interface SecurityContextResult {
     hasRole: (roleKey: string) => boolean;
 }
 
+export function accessContextQueryKey(userKey: string) {
+    return ['security', 'access-context', userKey] as const;
+}
+
+export function invalidateAccessContextCache(queryClient: QueryClient, userKey?: string): void {
+    if (userKey) queryClient.removeQueries({ queryKey: accessContextQueryKey(userKey) });
+    else queryClient.removeQueries({ queryKey: ['security', 'access-context'] });
+}
+
 export function useSecurityContext(opts: UseSecurityContextOptions = {}): SecurityContextResult {
     const { enabled = true } = opts;
     const userKey = getCurrentUserCatalogKey();
 
     const query = useQuery({
-        queryKey: SECURITY_QUERY_KEY(userKey),
+        queryKey: accessContextQueryKey(userKey),
         queryFn: async () => {
+            const pendingSync = getUtilityUserSyncInFlight();
+            if (pendingSync) await pendingSync;
             const resp = (await securityService.getAccessContext(userKey)) as
                 | AccessContext
                 | ApiEnvelope<AccessContext>

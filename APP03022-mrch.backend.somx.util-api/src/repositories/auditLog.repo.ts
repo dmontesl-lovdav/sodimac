@@ -16,6 +16,8 @@ type FindWithFiltersArgs = {
 
 export async function createOne(args: {
     trace_id: string;
+    trace_front_id?: string | null;
+    duration_ms?: number;
     service_name: string;
     modulo: string;
     paso: string;
@@ -47,8 +49,8 @@ export async function createOne(args: {
 
     const values = [
         args.trace_id,
-        null,
-        0,
+        args.trace_front_id ?? null,
+        args.duration_ms ?? 0,
         isError,
         args.modulo,
         args.service_name,

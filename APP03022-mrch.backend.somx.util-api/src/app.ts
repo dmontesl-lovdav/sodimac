@@ -5,10 +5,13 @@ import helmet from "helmet";
 import cors from "cors";
 
 import router from "./routes/index.js";
+import { activityLogger, globalErrorHandler } from "@/middlewares/logger.js";
 import { errorHandler } from "@/middlewares/errorHandler.js";
 import { healthCheck, livenessProbe, readinessProbe } from "@/controllers/health.controller.js";
 
 const app = express();
+
+app.use(activityLogger("UtilApi"));
 
 // Seguridad basica
 app.use(helmet());
@@ -35,6 +38,7 @@ app.use("/api", (_req, res) => {
 });
 
 // Middleware global de errores (SIEMPRE al final)
+app.use(globalErrorHandler());
 app.use(errorHandler);
 
 export default app;

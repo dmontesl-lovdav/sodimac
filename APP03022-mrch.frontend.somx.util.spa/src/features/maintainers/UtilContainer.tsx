@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { syncUserToCatalogs } from '@/services/utilityUserSync';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { breadcrumbFinanceHomePage } from '@shared/components/ui/navigation/financeBreadcrumb';
@@ -11,7 +11,10 @@ import iconAudit from '@assets/icons/warning.png';
 import GenericModal from '@shared/components/ui/modal/GenericModal';
 import { itemsService } from './services/itemsService';
 
-import { APP_KEYS, useSecurityContext } from '@shared/security';
+import { APP_KEYS, invalidateAccessContextCache, useSecurityContext } from '@shared/security';
+import { getCurrentUserCatalogKey } from '@features/security/utils/currentUserCatalogKey';
+import { syncUtilityUser } from '@/services/utilityUserSync';
+import { isLocalDeployment } from '@/services/utilityUserSync.helpers';
 
 import './styles/UtilContainer.css';
 
@@ -27,15 +30,52 @@ interface UtilCard {
 }
 
 export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }>) {
-    useEffect(() => {
-        syncUserToCatalogs();
-    }, []);
+    const queryClient = useQueryClient();
+    const isLocal = isLocalDeployment();
+    const homeSyncStarted = useRef(false);
+    const redirectHomeOnClose = useRef(false);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalVariant, setModalVariant] = useState<'loading' | 'alert' | 'confirm'>('alert');
     const [modalTitle, setModalTitle] = useState('');
     const [modalMessage, setModalMessage] = useState('');
     const [modalSeverity, setModalSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+
+    // STM-1577: el cruce macrorol ↔ catálogos corre al cargar esta tarjeta, no en cada opción.
+    if (!isLocal && !homeSyncStarted.current) {
+        homeSyncStarted.current = true;
+        invalidateAccessContextCache(queryClient, getCurrentUserCatalogKey() || undefined);
+        void syncUtilityUser();
+    }
+
+    const sec = useSecurityContext();
+
+    useEffect(() => {
+        if (isLocal) return;
+
+        let cancelled = false;
+
+        async function runAccessSync() {
+            const result = await syncUtilityUser();
+            if (cancelled) return;
+            if (result.status !== 'denied' && result.status !== 'error') return;
+
+            redirectHomeOnClose.current =
+                result.status === 'denied' && result.deniedKind === 'profile';
+
+            setModalVariant('alert');
+            setModalSeverity(result.status === 'denied' ? 'warning' : 'error');
+            setModalTitle(result.status === 'denied' ? 'Alerta' : 'Error');
+            setModalMessage(result.message);
+            setModalVisible(true);
+        }
+
+        runAccessSync().catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isLocal]);
 
     const DEFAULT_CARDS: UtilCard[] = [
         {
@@ -78,7 +118,6 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
         },
     ];
 
-    const sec = useSecurityContext();
     const rawCards = cards ?? DEFAULT_CARDS;
     const finalCards = sec.isLoading
         ? rawCards.filter((c) => !c.requiredApp && !c.requiredAnyApp)
@@ -94,9 +133,14 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
         setModalMessage('');
         setModalVariant('alert');
         setModalSeverity('info');
+        if (redirectHomeOnClose.current) {
+            redirectHomeOnClose.current = false;
+            window.location.assign(process.env.FBC_HOME?.trim() || '/');
+        }
     };
 
     const handleHealthCheck = async () => {
+        redirectHomeOnClose.current = false;
         setModalVisible(true);
         setModalVariant('loading');
         setModalSeverity('info');

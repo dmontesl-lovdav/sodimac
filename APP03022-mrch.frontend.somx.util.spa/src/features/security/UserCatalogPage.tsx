@@ -83,20 +83,23 @@ function downloadCsv(content: string, filename: string) {
 
 function buildCsvFilename(tableName: string) {
   const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, '0');
   const yyyy = String(now.getFullYear());
-  const hh = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
+  const mm = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  const hh = pad(now.getHours());
+  const min = pad(now.getMinutes());
+  const ss = pad(now.getSeconds());
   const safeTableName = tableName
     .trim()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[\\/:*?"<>|]/g, '')
-    .replace(/\s+/g, '-');
+    .replace(/\s+/g, '_');
 
-  return `${safeTableName}-${dd}-${mm}-${yyyy}-${hh}-${min}.csv`;
+  // Formato: nombre_yyyymmdd.hh24mmss
+  return `${safeTableName}_${yyyy}${mm}${dd}.${hh}${min}${ss}.csv`;
 }
 
 export function UserCatalogPage() {

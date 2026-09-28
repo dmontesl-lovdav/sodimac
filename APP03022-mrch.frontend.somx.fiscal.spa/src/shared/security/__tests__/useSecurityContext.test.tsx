@@ -20,6 +20,11 @@ jest.mock("@/store/hooks/useAppSelector", () => ({
   useAppSelector: () => ({}),
 }));
 
+jest.mock("@/services/fiscalUserSync", () => ({
+  getFiscalUserSyncInFlight: jest.fn(() => null),
+  syncFiscalUser: jest.fn(),
+}));
+
 import { getCurrentUserKey } from "../currentUserKey";
 import { securityService } from "../securityService";
 import {

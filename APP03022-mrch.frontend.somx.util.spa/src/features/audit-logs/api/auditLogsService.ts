@@ -1,4 +1,5 @@
 import type { ApiClient } from "@/services/apiClient";
+import { formatFilenameTimestamp } from "@features/catalogos/utils/export";
 
 function toQuery(params: any = {}) {
     const sp = new URLSearchParams();
@@ -86,7 +87,7 @@ export function createAuditLogsService(api: ApiClient) {
             `audit-logs/export/csv${suffix}`,
             "get",
             null,
-            "audit-logs.csv"
+            `bitacora_${formatFilenameTimestamp()}.csv`
         );
     }
 

@@ -63,6 +63,7 @@ export default function FinanzasContainer({
         ConfigurationBuilder.localDeployment;
 
     const homeSyncStarted = useRef(false);
+    const redirectHomeOnClose = useRef(false);
 
     // STM-1577: el cruce macrorol ↔ catálogos corre al cargar esta tarjeta, no en cada opción.
     if (!isLocal && !homeSyncStarted.current) {
@@ -81,6 +82,9 @@ export default function FinanzasContainer({
             if (cancelled) return;
             if (result.status !== 'denied' && result.status !== 'error') return;
 
+            redirectHomeOnClose.current =
+                result.status === 'denied' && result.deniedKind === 'profile';
+
             setModalVariant('alert');
             setModalSeverity(result.status === 'denied' ? 'warning' : 'error');
             setModalTitle(result.status === 'denied' ? 'Alerta' : 'Error');
@@ -97,6 +101,7 @@ export default function FinanzasContainer({
 
     async function handleHealthcheck() {
         try {
+            redirectHomeOnClose.current = false;
             setModalVariant('loading');
             setModalMessage(
                 'Validando conexión con el servicio...'
@@ -403,9 +408,13 @@ export default function FinanzasContainer({
                 title={modalTitle}
                 message={modalMessage}
                 buttonText="Aceptar"
-                onClose={() =>
-                    setModalVisible(false)
-                }
+                onClose={() => {
+                    setModalVisible(false);
+                    if (redirectHomeOnClose.current) {
+                        redirectHomeOnClose.current = false;
+                        window.location.assign(process.env.FBC_HOME?.trim() || '/');
+                    }
+                }}
             />
         </div>
     );

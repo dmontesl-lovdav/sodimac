@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { securityService, type AccessContext } from './securityService';
 import { getCurrentUserKey } from './currentUserKey';
 import { useAppSelector } from '@/store/hooks/useAppSelector';
+import { getFiscalUserSyncInFlight } from '@/services/fiscalUserSync';
 
 interface CacheEntry {
     data: AccessContext | null;
@@ -24,6 +25,11 @@ export function clearSecurityContextCache(): void {
     cache.clear();
 }
 
+export function invalidateAccessContextCache(userKey?: string): void {
+    if (userKey) cache.delete(userKey);
+    else cache.clear();
+}
+
 function storeCache(
     userKey: string,
     data: AccessContext | null,
@@ -37,16 +43,18 @@ async function fetchContext(userKey: string): Promise<AccessContext | null> {
     const existing = cache.get(userKey);
     if (existing?.inFlight) return existing.inFlight;
 
-    const promise = securityService
-        .getAccessContext(userKey)
-        .then((data) => {
+    const promise = (async () => {
+        const pendingSync = getFiscalUserSyncInFlight();
+        if (pendingSync) await pendingSync;
+        try {
+            const data = await securityService.getAccessContext(userKey);
             storeCache(userKey, data, null);
             return data;
-        })
-        .catch((error) => {
+        } catch (error) {
             storeCache(userKey, null, error);
             return null;
-        });
+        }
+    })();
 
     let previousData: AccessContext | null = null;
     if (existing) previousData = existing.data;
@@ -57,8 +65,9 @@ async function fetchContext(userKey: string): Promise<AccessContext | null> {
 async function loadAccessContext(
     userKey: string,
 ): Promise<{ data: AccessContext | null; error: unknown }> {
+    const pendingSync = getFiscalUserSyncInFlight();
     const hit = cache.get(userKey);
-    if (hit?.data) {
+    if (hit?.data && !pendingSync) {
         return { data: hit.data, error: hit.error };
     }
 

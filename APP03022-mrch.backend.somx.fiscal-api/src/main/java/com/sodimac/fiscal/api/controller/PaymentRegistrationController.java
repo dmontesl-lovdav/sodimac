@@ -64,7 +64,9 @@ public class PaymentRegistrationController {
      * @param request DTO con los parámetros de entrada
      * @return ResponseEntity con el resultado del registro
      */
-    @RequirePermission("EVT0124")
+    // EVT016 = "Publicar" del set común, ya cableado en APL011 (complementos). Antes exigía
+    // EVT0124, código sin catalogar ni asignar → 403 al registrar complemento.
+    @RequirePermission("EVT016")
     @PostMapping(value = "/registrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Registrar complemento de pago",

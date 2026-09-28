@@ -63,7 +63,9 @@ public class PermissionInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        boolean allowed = securityClient.hasPermission(userKey, annotation.value());
+        // Valida contra user-details (modelo por perfil, poblado) — misma fuente que el front —
+        // en vez de has-permission (modelo por rol, sin seed) que devolvía 403 a todos.
+        boolean allowed = securityClient.hasEvent(userKey, annotation.value());
         if (!allowed) {
             log.warn("Acceso denegado por permiso. userKey={} eventKey={}", userKey, annotation.value());
             response.setStatus(HttpStatus.FORBIDDEN.value());

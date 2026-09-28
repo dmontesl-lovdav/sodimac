@@ -83,8 +83,11 @@ public class InvoiceController {
 
         private static final int STATUS_CANCELADA = 20;
         private static final int STATUS_REPROCESO = 3;
-        private static final String EVENT_CANCELAR = "EVT0052";
-        private static final String EVENT_REPROCESO = "EVT0051";
+        // Códigos alineados al set real del front (eventCodes.ts COMMON): el botón "Cancelar"
+        // se prende con EVT011 y "Reproceso Contable" con EVT012. Antes el backend exigía
+        // EVT0052/EVT0051, códigos inexistentes en el catálogo → 403 para todos.
+        private static final String EVENT_CANCELAR = "EVT011";
+        private static final String EVENT_REPROCESO = "EVT012";
 
         /**
          * GET /api/invoices?page=0
@@ -271,7 +274,9 @@ public class InvoiceController {
                 }
                 if (requiredEvent != null) {
                         String userKey = JwtUserKey.resolve(httpRequest);
-                        if (userKey == null || !securityClient.hasPermission(userKey, requiredEvent)) {
+                        // Valida contra el mismo modelo que el front (user-details/perfil), no el
+                        // modelo por rol (has-permission) que está sin poblar.
+                        if (userKey == null || !securityClient.hasEvent(userKey, requiredEvent)) {
                                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                         }
                 }

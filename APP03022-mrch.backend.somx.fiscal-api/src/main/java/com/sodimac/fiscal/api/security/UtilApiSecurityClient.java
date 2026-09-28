@@ -35,6 +35,7 @@ public class UtilApiSecurityClient {
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Map<String, CachedContext> cache = new ConcurrentHashMap<>();
+    private final Map<String, CachedEvents> eventCache = new ConcurrentHashMap<>();
 
     public UtilApiSecurityClient(@Value("${utils.api.url:http://localhost:3712}") String utilApiUrl) {
         this.utilApiUrl = utilApiUrl;
@@ -130,8 +131,71 @@ public class UtilApiSecurityClient {
         }
     }
 
+    /**
+     * ¿El usuario tiene habilitado el evento (botón) indicado? Consulta el MISMO endpoint que
+     * usa el front (`/api/security/user-details/{userKey}`), que resuelve el modelo por perfil
+     * (module_process/profile_module) ya poblado — a diferencia de {@link #hasPermission} que va
+     * contra el modelo por rol (event_permission/role_permission), sin seed. El evento se busca
+     * en cualquier aplicativo del contexto (equivalente a hasEventInAnyApp del front). Fail-closed.
+     */
+    public boolean hasEvent(String userKey, String eventKey) {
+        if (userKey == null || userKey.isBlank() || eventKey == null || eventKey.isBlank()) {
+            return false;
+        }
+        return fetchAllowedEvents(userKey).contains(eventKey);
+    }
+
+    private java.util.Set<String> fetchAllowedEvents(String userKey) {
+        long now = System.currentTimeMillis();
+        CachedEvents cached = eventCache.get(userKey);
+        if (cached != null && cached.expiresAt > now) {
+            return cached.events;
+        }
+        java.util.Set<String> events = new java.util.HashSet<>();
+        try {
+            URI uri = URI.create(utilApiUrl + "/api/security/user-details/"
+                    + URLEncoder.encode(userKey, StandardCharsets.UTF_8));
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() != 200) {
+                log.warn("util-api user-details returned {} for userKey={}", res.statusCode(), userKey);
+                return events;
+            }
+            JsonNode root = mapper.readTree(res.body());
+            JsonNode apps = root.path("data").path("apps");
+            if (apps.isArray()) {
+                for (JsonNode app : apps) {
+                    JsonNode evs = app.path("events");
+                    if (evs.isArray()) {
+                        for (JsonNode ev : evs) {
+                            String key = ev.path("key").asText(null);
+                            if (key != null && !key.isBlank()) {
+                                events.add(key);
+                            }
+                        }
+                    }
+                }
+            }
+            eventCache.put(userKey, new CachedEvents(events, now + CACHE_TTL_MS));
+            return events;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("util-api user-details interrupted for userKey={}: {}", userKey, e.getMessage());
+            return events;
+        } catch (Exception e) {
+            log.warn("util-api user-details error for userKey={}: {}", userKey, e.getMessage());
+            return events;
+        }
+    }
+
     public void clearCache() {
         cache.clear();
+        eventCache.clear();
     }
 
     public record SecurityAttributes(List<String> vendors, List<String> types, List<String> groups) {
@@ -141,4 +205,6 @@ public class UtilApiSecurityClient {
     }
 
     private record CachedContext(SecurityAttributes data, long expiresAt) {}
+
+    private record CachedEvents(java.util.Set<String> events, long expiresAt) {}
 }

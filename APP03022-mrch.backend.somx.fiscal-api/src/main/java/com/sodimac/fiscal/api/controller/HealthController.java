@@ -18,7 +18,7 @@ public class HealthController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthController.class);
 
-    @GetMapping("/health")
+    @GetMapping({ "/health", "/healthz" })
     public ResponseEntity<Map<String, String>> health() {
         LOGGER.info("Health check requested for fiscal-api");
 

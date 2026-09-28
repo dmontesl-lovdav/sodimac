@@ -16,7 +16,7 @@ import com.sodimac.fiscal.api.model.dto.NCValidationResponse;
 import com.sodimac.fiscal.api.service.InvoiceService;
 import com.sodimac.fiscal.api.service.NCValidationService;
 import com.sodimac.fiscal.api.security.JwtUserKey;
-import com.sodimac.fiscal.api.security.UtilApiSecurityClient;
+import com.sodimac.fiscal.api.security.PermissionResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -79,7 +79,7 @@ public class InvoiceController {
         private final InvoiceService invoiceService;
         private final NCValidationService ncValidationService;
         private final PaginationConfig paginationConfig; // Configuración centralizada de paginación
-        private final UtilApiSecurityClient securityClient;
+        private final PermissionResolver permissionResolver;
 
         private static final int STATUS_CANCELADA = 20;
         private static final int STATUS_REPROCESO = 3;
@@ -274,9 +274,9 @@ public class InvoiceController {
                 }
                 if (requiredEvent != null) {
                         String userKey = JwtUserKey.resolve(httpRequest);
-                        // Valida contra el mismo modelo que el front (user-details/perfil), no el
-                        // modelo por rol (has-permission) que está sin poblar.
-                        if (userKey == null || !securityClient.hasEvent(userKey, requiredEvent)) {
+                        // Resuelve el permiso DIRECTO de la BD (modelo por perfil), sin depender de
+                        // util-api (inalcanzable en UAT). Mismo criterio que el front (user-details).
+                        if (userKey == null || !permissionResolver.hasEvent(userKey, requiredEvent)) {
                                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                         }
                 }

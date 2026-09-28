@@ -125,6 +125,27 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
     List<String> findActiveCatalogValues(@Param("catalogCode") String catalogCode);
 
     /**
+     * ¿El usuario tiene habilitado el evento (botón) indicado, vía su perfil? Resuelve el permiso
+     * DIRECTO de la BD (core_security + shared_catalogs), replicando el modelo por perfil que arma
+     * el endpoint `user-details` de util-api, sin depender de util-api (inalcanzable en UAT; mismo
+     * motivo por el que los catálogos se leen directo). Toda la cadena debe estar activa (status=1):
+     * user_data -> profile_user -> profile_module_process -> module_process -> CatEvento. El usuario
+     * se resuelve por sub / preferred_username / email (el userKey viene del JWT). El evento se busca
+     * en cualquier aplicativo (equivalente a hasEventInAnyApp del front).
+     */
+    @Query(value = "SELECT EXISTS(" +
+            "SELECT 1 FROM core_security.user_data ud " +
+            "JOIN core_security.profile_user pu ON pu.user_data_id = ud.user_data_id AND pu.status = 1 " +
+            "JOIN core_security.profile_module_process pmp ON pmp.catalog_detail_profile_id = pu.catalog_detail_profile_id AND pmp.status = 1 " +
+            "JOIN core_security.module_process mp ON mp.module_process_id = pmp.module_process_id AND mp.status = 1 " +
+            "JOIN shared_catalogs.catalog_detail ev ON ev.id = mp.catalog_detail_process_id AND ev.status = 1 " +
+            "JOIN shared_catalogs.catalog_header hev ON hev.id = ev.header_id AND hev.code = 'CatEvento' " +
+            "WHERE ev.key = :eventKey AND ud.status = 1 " +
+            "AND (ud.sub = :userKey OR ud.preferred_username = :userKey OR ud.email = :userKey))",
+            nativeQuery = true)
+    boolean existsEventForUser(@Param("userKey") String userKey, @Param("eventKey") String eventKey);
+
+    /**
      * Resuelve el atributo "Grupo Proveedor" (STM-1458) a numeros de proveedor.
      * Modelo: CatGrupoProveedores (padre) contiene grupos cuyo value es el nombre del catalogo
      * hijo (ej. CatGrupoTransporte); ese catalogo hijo contiene los proveedores del grupo, donde

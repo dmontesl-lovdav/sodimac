@@ -26,13 +26,13 @@ public class PermissionInterceptor implements HandlerInterceptor {
     private static final Logger log = LoggerFactory.getLogger(PermissionInterceptor.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final UtilApiSecurityClient securityClient;
+    private final PermissionResolver permissionResolver;
     private final String authHeader;
 
     public PermissionInterceptor(
-            UtilApiSecurityClient securityClient,
+            PermissionResolver permissionResolver,
             @Value("${fiscal.jwt.header:Authorization}") String authHeader) {
-        this.securityClient = securityClient;
+        this.permissionResolver = permissionResolver;
         this.authHeader = authHeader;
     }
 
@@ -63,9 +63,9 @@ public class PermissionInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        // Valida contra user-details (modelo por perfil, poblado) — misma fuente que el front —
-        // en vez de has-permission (modelo por rol, sin seed) que devolvía 403 a todos.
-        boolean allowed = securityClient.hasEvent(userKey, annotation.value());
+        // Resuelve el permiso DIRECTO de la BD (modelo por perfil), sin depender de util-api
+        // (inalcanzable en UAT). Antes iba contra has-permission (modelo por rol, sin seed) → 403.
+        boolean allowed = permissionResolver.hasEvent(userKey, annotation.value());
         if (!allowed) {
             log.warn("Acceso denegado por permiso. userKey={} eventKey={}", userKey, annotation.value());
             response.setStatus(HttpStatus.FORBIDDEN.value());

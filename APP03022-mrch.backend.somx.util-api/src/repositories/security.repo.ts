@@ -108,7 +108,7 @@ function normalizeAttributeDisplayName(value: string): string {
 const ATTRIBUTE_VALUE_CATALOG_BY_NAME: Record<string, string> = {
     tipoproveedor: 'CatTipoProveedor',
     tipoprovedor: 'CatTipoProveedor',
-    empresa: 'CatalogoEmpresa',
+    empresa: 'CatEmpresa',
     grupoproveedor: 'CatGrupoProveedores',
     grupoproveedores: 'CatGrupoProveedores',
     tiporebate: 'CatTipoRebate',

@@ -6,6 +6,21 @@ export interface ExportColumn {
   label: string;
 }
 
+/**
+ * Timestamp para nombres de archivo en formato `yyyymmdd.hh24mmss` (hora local).
+ * Ej: 2026-09-22 14:32:01 -> "20260922.143201".
+ */
+export const formatFilenameTimestamp = (date: Date = new Date()): string => {
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${yyyy}${mm}${dd}.${hh}${min}${ss}`;
+};
+
 const normalizeFilename = (filename: string): string => {
   return filename
     .normalize('NFD')

@@ -68,11 +68,11 @@ export default function FinanzasContainer({
     if (!isLocal && !homeSyncStarted.current) {
         homeSyncStarted.current = true;
         invalidateAccessContextCache(getCurrentUserKey() || undefined);
-        void syncFinanzasUser();
+        syncFinanzasUser();
     }
 
     useEffect(() => {
-        if (isLocal) return;
+       // if (isLocal) return;
 
         let cancelled = false;
 

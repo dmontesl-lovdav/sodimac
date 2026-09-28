@@ -41,6 +41,10 @@ export const getCatalogDetails = (code: string) => {
     return client.getCatalogDetailsByCode(code);
 };
 
-export const exportAuditLogsCsv = (filters: any = {}, page: number = 1, size: number = 10) => {
-    return client.exportAuditLogsCsv(buildParams(filters, page, size));
+export const exportAuditLogsCsv = (filters: any = {}) => {
+    // La exportación descarga todos los registros filtrados; no se pagina.
+    const params = buildParams(filters);
+    delete params.page;
+    delete params.limit;
+    return client.exportAuditLogsCsv(params);
 };

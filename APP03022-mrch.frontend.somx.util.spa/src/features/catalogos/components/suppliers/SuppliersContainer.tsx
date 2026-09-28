@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supplierService, Supplier, SupplierType } from '@features/catalogos/services/catalogosApi';
-import { exportToCSV, exportToExcel, ExportColumn } from '@features/catalogos/utils/export';
+import { exportToCSV, exportToExcel, ExportColumn, formatFilenameTimestamp } from '@features/catalogos/utils/export';
 import { useModalNotification } from '@shared/components/ui/modal';
 import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 import { APP_EVENT, PermissionGate } from '@shared/security';
@@ -509,7 +509,7 @@ const SuppliersContainer = () => {
       statusText: s.status === 1 ? 'Activo' : 'Inactivo',
     }));
 
-    const filename = `proveedores_${new Date().toISOString().split('T')[0]}`;
+    const filename = `proveedores_${formatFilenameTimestamp()}`;
 
     if (format === 'csv') {
       exportToCSV(dataToExport, columns, filename);

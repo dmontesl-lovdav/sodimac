@@ -15,6 +15,7 @@ import AuditLogsGridTable from './components/AuditLogsGridTable';
 import AuditLogsToolbar from './components/AuditLogsToolbar';
 
 import { listAuditLogs, exportAuditLogsCsv } from './api';
+import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 
 import type { AuditLogRecord } from './interfaces';
 
@@ -152,15 +153,11 @@ export default function AuditLogsContainer() {
                 return;
             }
 
-            await exportAuditLogsCsv({
-                ...filters,
-                page,
-                limit: perPage,
-            });
-        } catch {
+            await exportAuditLogsCsv({ ...filters });
+        } catch (error) {
             setErrorModal({
                 visible: true,
-                message: 'Error exportando CSV',
+                message: extractApiErrorMessage(error, { fallback: 'Error exportando CSV' }),
             });
         }
     };

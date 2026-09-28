@@ -21,7 +21,7 @@ jest.mock("@/utils/utils", () => ({
 }));
 
 jest.mock("@/shared/security/currentUserKey", () => ({
-  getCurrentUserKey: () => "548958bf-5538-4bdc-8e70-2011d422ecee",
+  getCurrentUserKey: () => "4b36d77f-5b01-4889-bcfc-ef8abe130ade",
 }));
 
 jest.mock("@/store/localStore", () => ({
@@ -29,13 +29,21 @@ jest.mock("@/store/localStore", () => ({
     getState: () => ({
       authentication: {
         tokenDecoded: {
-          sub: "548958bf-5538-4bdc-8e70-2011d422ecee",
-          email: "sodfinanzas@gmail.com",
+          sub: "4b36d77f-5b01-4889-bcfc-ef8abe130ade",
+          email: "zedlav.sd87@gmail.com",
           realm_access: {
-            roles: ["FBC_NATIONAL_SUPPLIER_FINANCE_USER", "offline_access"],
+            roles: [
+              "default-roles-corp",
+              "offline_access",
+              "FBC_NATIONAL_SUPPLIER_FINANCE_USER",
+              "FBC_NATIONAL_LOGISTICS_SUPPLIER_USER",
+              "uma_authorization",
+              "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
+              "sr-readonly",
+            ],
           },
           "vendors-taxs": [
-            { name: "METAL MECANICA", taxId: "MMM031205NG4", country: "MX" },
+            { name: "PORCELANITE", taxId: "PLA071206TS4", country: "MX" },
           ],
         },
       },
@@ -45,12 +53,17 @@ jest.mock("@/store/localStore", () => ({
 
 import { fetchCatalogDetails, fetchProviders } from "@/utils/utils";
 import { resetFinanzasUserSyncForTests, syncFinanzasUser } from "../finanzasUserSync";
+import {
+  MACRO_ROL_PERFIL_CATALOG,
+  MACRO_ROL_ROL_CATALOG,
+  WRN7038_PROFILE_FALLBACK,
+} from "../finanzasUserSync.helpers";
 
 const fetchCatalog = fetchCatalogDetails as jest.MockedFunction<typeof fetchCatalogDetails>;
 const fetchProvidersMock = fetchProviders as jest.MockedFunction<typeof fetchProviders>;
 
-function httpError(status: number, code?: string) {
-  return { response: { status, data: { code, message: code ?? "error" } } };
+function catalogPath(path: string): string {
+  return String(path).replace(/^\/+/, "").toUpperCase();
 }
 
 describe("syncFinanzasUser", () => {
@@ -60,45 +73,39 @@ describe("syncFinanzasUser", () => {
     fetchCatalog.mockReset();
     fetchProvidersMock.mockReset();
     fetchProvidersMock.mockResolvedValue([
-      { id: 77, supplierNumber: "1001", rfc: "MMM031205NG4" },
+      { id: 77, supplierNumber: "1001", rfc: "PLA071206TS4" },
     ]);
   });
 
-  it("muestra WRN7038 cuando el macrorol no tiene conversión en catálogo", async () => {
+  it("muestra WRN7038 cuando ningún macrorol tiene conversión, sin consultar catálogos inexistentes", async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (String(path).includes("user-utility")) return { success: true };
-      if (String(path).includes("user-details")) throw httpError(400, "WRN7031");
       return {};
     });
     fetchCatalog.mockImplementation(async (path: string) => {
-      if (path.includes("message/WRN7038")) {
-        return { key: "WRN7038", description: "sin equivalencia de macrorol" };
-      }
-      if (path.toUpperCase().includes("MACROROLPERFIL") || path === "CatMacroRolPerfil") {
+      if (catalogPath(path) === MACRO_ROL_PERFIL_CATALOG) {
         return {
-          code: "CATMACROROLPERFIL",
+          code: MACRO_ROL_PERFIL_CATALOG,
           details: [
             {
-              id: 1470,
-              externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
-              value: "Proveedor Mercancía",
+              externalKey: "FBC_SUPER_ADMIN_USER",
+              value: "0987",
             },
           ],
         };
       }
-      if (path.toUpperCase().includes("MACROROLROL") || path === "CatMacroRolRolUsuario") {
+      if (catalogPath(path) === MACRO_ROL_ROL_CATALOG) {
         return {
-          code: "CATMACROROLROLUSUARIO",
+          code: MACRO_ROL_ROL_CATALOG,
           details: [
             {
-              id: 1471,
-              externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
-              value: "Proveedor - Mercancía",
+              externalKey: "FBC_SUPER_ADMIN_USER",
+              value: "1031",
             },
           ],
         };
       }
-      return { details: [] };
+      return null;
     });
 
     const result = await syncFinanzasUser();
@@ -106,21 +113,39 @@ describe("syncFinanzasUser", () => {
       status: "denied",
       messageKey: "WRN7038",
       deniedKind: "profile",
-      message: "sin equivalencia de macrorol",
+      message: WRN7038_PROFILE_FALLBACK,
     });
+    expect(fetchCatalog).toHaveBeenCalledWith(MACRO_ROL_PERFIL_CATALOG);
+    expect(fetchCatalog).toHaveBeenCalledWith(MACRO_ROL_ROL_CATALOG);
+    expect(fetchCatalog).not.toHaveBeenCalledWith("CatMacroRolPerfil");
+    expect(fetchCatalog).not.toHaveBeenCalledWith("CatPerfil");
+    expect(fetchCatalog).not.toHaveBeenCalledWith("CatRol");
+    expect(fetchCatalog.mock.calls.some(([path]) => String(path).includes("WRN7038"))).toBe(
+      false
+    );
     expect(mockRequest).not.toHaveBeenCalledWith(
       expect.stringContaining("/profiles"),
-      "post",
+      "put",
       expect.anything()
     );
   });
 
-  it("asigna perfil y rol locales con ids obtenidos de las APIs", async () => {
+  it("asigna el value de CATMACROROLPERFIL y CATMACROROLROLUSUARIO al usuario del catálogo", async () => {
     mockRequest.mockImplementation(async (path: string, method: string) => {
       const p = String(path);
       if (p.includes("user-utility")) return { success: true };
       if (p.includes("user-catalog") && !p.includes("catalog-detail")) {
-        return { data: { items: [{ id: 5, username: "548958bf-5538-4bdc-8e70-2011d422ecee" }] } };
+        return {
+          data: {
+            items: [
+              {
+                id: 13,
+                username: "4b36d77f-5b01-4889-bcfc-ef8abe130ade",
+                email: "zedlav.sd87@gmail.com",
+              },
+            ],
+          },
+        };
       }
       if (p.includes("catalog-detail")) {
         return { data: { profile: null, roles: { items: [] } } };
@@ -131,65 +156,68 @@ describe("syncFinanzasUser", () => {
       return { success: true };
     });
     fetchCatalog.mockImplementation(async (path: string) => {
-      if (path.toUpperCase().includes("MACROROLPERFIL") || path === "CatMacroRolPerfil") {
+      if (catalogPath(path) === MACRO_ROL_PERFIL_CATALOG) {
         return {
           details: [
             {
-              externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER",
-              value: "Proveedor Finanzas",
+              externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
+              value: "0981",
             },
           ],
         };
       }
-      if (path.toUpperCase().includes("MACROROLROL") || path === "CatMacroRolRolUsuario") {
+      if (catalogPath(path) === MACRO_ROL_ROL_CATALOG) {
         return {
           details: [
             {
-              externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER",
-              value: "Proveedor - Finanzas",
+              externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
+              value: "1022",
             },
           ],
         };
       }
-      if (path === "CatPerfil") {
-        return { details: [{ id: 10, value: "Proveedor Finanzas" }] };
-      }
-      if (path === "CatRol") {
-        return { details: [{ id: 20, value: "Proveedor - Finanzas" }] };
-      }
-      return { details: [] };
+      return null;
     });
 
     const result = await syncFinanzasUser();
     expect(result.status).toBe("assigned");
-    expect(mockRequest).toHaveBeenCalledWith("security/profiles/10/users", "put", { selectedIds: [5] });
-    expect(mockRequest).toHaveBeenCalledWith("security/roles/20/users", "put", {
-      selectedIds: [5],
+    expect(mockRequest).toHaveBeenCalledWith("security/profiles/981/users", "put", {
+      selectedIds: [13],
     });
+    expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
+      selectedIds: [13],
+    });
+    expect(fetchCatalog).toHaveBeenCalledTimes(2);
   });
 
-  it("no modifica perfil ni rol si el macrorol sigue mapeando a lo mismo", async () => {
+  it("no modifica perfil ni rol si ya coinciden con la conversión", async () => {
     mockRequest.mockImplementation(async (path: string) => {
       const p = String(path);
       if (p.includes("user-utility")) return { success: true };
       if (p.includes("user-catalog") && !p.includes("catalog-detail")) {
-        return { data: { items: [{ id: 5, username: "548958bf-5538-4bdc-8e70-2011d422ecee" }] } };
+        return {
+          data: {
+            items: [{ id: 13, username: "4b36d77f-5b01-4889-bcfc-ef8abe130ade" }],
+          },
+        };
       }
       if (p.includes("catalog-detail")) {
-        return { data: { profile: { id: 10 }, roles: { items: [{ id: 20 }] } } };
+        return { data: { profile: { id: 981 }, roles: { items: [{ id: 1022 }] } } };
       }
       return { success: true };
     });
     fetchCatalog.mockImplementation(async (path: string) => {
-      if (path.toUpperCase().includes("MACROROLPERFIL") || path === "CatMacroRolPerfil") {
-        return { details: [{ externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER", value: "Proveedor Finanzas" }] };
+      if (catalogPath(path) === MACRO_ROL_PERFIL_CATALOG) {
+        return {
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "0981" }],
+        };
       }
-      if (path.toUpperCase().includes("MACROROLROL") || path === "CatMacroRolRolUsuario") {
-        return { details: [{ externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER", value: "Proveedor - Finanzas" }] };
+      if (catalogPath(path) === MACRO_ROL_ROL_CATALOG) {
+        return {
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "1022" }],
+        };
       }
-      if (path === "CatPerfil") return { details: [{ id: 10, value: "Proveedor Finanzas" }] };
-      if (path === "CatRol") return { details: [{ id: 20, value: "Proveedor - Finanzas" }] };
-      return { details: [] };
+      return null;
     });
 
     const result = await syncFinanzasUser();
@@ -201,57 +229,53 @@ describe("syncFinanzasUser", () => {
     );
   });
 
-  it("elimina el perfil/rol anterior y asigna el nuevo si cambió el macrorol", async () => {
+  it("reemplaza perfil y ajusta roles si cambió el macrorol", async () => {
     mockRequest.mockImplementation(async (path: string, method: string) => {
       const p = String(path);
       if (p.includes("user-utility")) return { success: true };
       if (p.includes("user-catalog") && !p.includes("catalog-detail")) {
-        return { data: { items: [{ id: 5, username: "548958bf-5538-4bdc-8e70-2011d422ecee" }] } };
+        return {
+          data: {
+            items: [{ id: 13, username: "4b36d77f-5b01-4889-bcfc-ef8abe130ade" }],
+          },
+        };
       }
       if (p.includes("catalog-detail")) {
         return { data: { profile: { id: 10 }, roles: { items: [{ id: 20 }] } } };
       }
-      if (p === "security/profiles/11/users" && method === "get") {
+      if (p === "security/profiles/981/users" && method === "get") {
         return { data: { assigned: [] } };
       }
       if (p === "security/roles/20/users" && method === "get") {
-        return { data: { assigned: [{ id: 5 }, { id: 9 }] } };
+        return { data: { assigned: [{ id: 13 }, { id: 9 }] } };
       }
-      if (p === "security/roles/21/users" && method === "get") {
+      if (p === "security/roles/1022/users" && method === "get") {
         return { data: { assigned: [] } };
       }
       return { success: true };
     });
     fetchCatalog.mockImplementation(async (path: string) => {
-      if (path.toUpperCase().includes("MACROROLPERFIL") || path === "CatMacroRolPerfil") {
-        return { details: [{ externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER", value: "Proveedor Nuevo" }] };
-      }
-      if (path.toUpperCase().includes("MACROROLROL") || path === "CatMacroRolRolUsuario") {
-        return { details: [{ externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER", value: "Rol Nuevo" }] };
-      }
-      if (path === "CatPerfil") {
+      if (catalogPath(path) === MACRO_ROL_PERFIL_CATALOG) {
         return {
-          details: [
-            { id: 10, value: "Proveedor Finanzas" },
-            { id: 11, value: "Proveedor Nuevo" },
-          ],
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "0981" }],
         };
       }
-      if (path === "CatRol") {
+      if (catalogPath(path) === MACRO_ROL_ROL_CATALOG) {
         return {
-          details: [
-            { id: 20, value: "Proveedor - Finanzas" },
-            { id: 21, value: "Rol Nuevo" },
-          ],
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "1022" }],
         };
       }
-      return { details: [] };
+      return null;
     });
 
     const result = await syncFinanzasUser();
     expect(result.status).toBe("reassigned");
-    expect(mockRequest).toHaveBeenCalledWith("security/profiles/11/users", "put", { selectedIds: [5] });
+    expect(mockRequest).toHaveBeenCalledWith("security/profiles/981/users", "put", {
+      selectedIds: [13],
+    });
     expect(mockRequest).toHaveBeenCalledWith("security/roles/20/users", "put", { selectedIds: [9] });
-    expect(mockRequest).toHaveBeenCalledWith("security/roles/21/users", "put", { selectedIds: [5] });
+    expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
+      selectedIds: [13],
+    });
   });
 });

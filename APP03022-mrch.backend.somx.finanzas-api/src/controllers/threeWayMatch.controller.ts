@@ -12,16 +12,21 @@ import { AuthenticatedRequest } from "@/middlewares/authToken.js";
 import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
 function buildExportTimestamp(): string {
-    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Mexico_City",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+    }).formatToParts(new Date());
 
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const hh = String(now.getHours()).padStart(2, "0");
-    const min = String(now.getMinutes()).padStart(2, "0");
-    const ss = String(now.getSeconds()).padStart(2, "0");
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+        parts.find((part) => part.type === type)?.value ?? "";
 
-    return `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+    return `${get("year")}${get("month")}${get("day")}_${get("hour")}${get("minute")}${get("second")}`;
 }
 
 const WRN7029 = { success: false, code: "WRN7029", message: "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador" };

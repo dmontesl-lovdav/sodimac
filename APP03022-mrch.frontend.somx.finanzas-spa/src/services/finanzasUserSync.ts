@@ -5,25 +5,21 @@ import { fetchCatalogDetails, fetchProviders } from "@/utils/utils";
 import { getCurrentUserKey } from "@/shared/security/currentUserKey";
 import {
   ACCESS_DENIED_MESSAGE_KEY,
-  LOCAL_PERFIL_CANDIDATES,
-  LOCAL_ROL_CANDIDATES,
-  MACRO_ROL_PERFIL_CANDIDATES,
-  MACRO_ROL_ROL_CANDIDATES,
+  MACRO_ROL_PERFIL_CATALOG,
+  MACRO_ROL_ROL_CATALOG,
   assignmentsMatchExpected,
   axiosErrorMessage,
-  catalogMessageText,
+  conversionValueIds,
+  deniedWarning,
+  extractDetails,
   extractMacroRoles,
   extractMxTaxIds,
   findConversionRows,
   idsMissingFrom,
   idsNotInExpected,
   isoDateOffset,
-  isUsableCatalogMessage,
-  loadCatalogByCandidates,
   matchSupplierByRfc,
   parseUserCatalogAssignments,
-  resolveDeniedWarning,
-  resolveLocalCatalogIds,
   unwrapData,
   writeSessionSupplier,
   type SessionSupplier,
@@ -68,6 +64,9 @@ function readTokenDecoded(): Record<string, unknown> {
     const decoded = (localHomeStore.getState() as {
       authentication?: { tokenDecoded?: Record<string, unknown> };
     })?.authentication?.tokenDecoded;
+    
+
+
     return decoded && typeof decoded === "object" ? decoded : {};
   } catch {
     return {};
@@ -103,29 +102,12 @@ async function findCatalogUserId(userKey: string, email?: string): Promise<numbe
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-async function loadDeniedMessage(kind: "profile" | "role"): Promise<string> {
-  const payload = await fetchCatalogDetails(`message/${ACCESS_DENIED_MESSAGE_KEY}`);
-  let text = catalogMessageText(payload, "");
-  if (!isUsableCatalogMessage(text, ACCESS_DENIED_MESSAGE_KEY)) {
-    try {
-      const body = await api.request<unknown>(
-        `catalog/message/${ACCESS_DENIED_MESSAGE_KEY}`,
-        "get"
-      );
-      text = catalogMessageText(unwrapData(body) ?? body, "");
-    } catch {
-      text = "";
-    }
-  }
-  return resolveDeniedWarning(text, kind);
-}
-
-async function deniedResult(kind: "profile" | "role"): Promise<FinanzasUserSyncResult> {
+function deniedResult(kind: "profile" | "role"): FinanzasUserSyncResult {
   return {
     status: "denied",
     messageKey: ACCESS_DENIED_MESSAGE_KEY,
     deniedKind: kind,
-    message: await loadDeniedMessage(kind),
+    message: deniedWarning(kind),
   };
 }
 
@@ -175,10 +157,7 @@ async function unlinkUser(path: string, userId: number): Promise<void> {
 
 async function linkUser(path: string, userId: number): Promise<void> {
   const assigned = await readAssignedUserIds(path);
-  if (assigned.includes(userId)) {
-    await saveAssignedUserIds(path, assigned);
-    return;
-  }
+  if (assigned.includes(userId)) return;
   await saveAssignedUserIds(path, [...assigned, userId]);
 }
 
@@ -193,20 +172,6 @@ async function readCurrentAssignments(userId: number): Promise<UserAssignments> 
     return parseUserCatalogAssignments(unwrapData(body));
   } catch {
     return EMPTY_ASSIGNMENTS;
-  }
-}
-
-async function unlinkCurrentAssignments(userId: number, current: UserAssignments): Promise<void> {
-  for (const profileId of current.profileIds) {
-    await unlinkUser(profileUsersPath(profileId), userId);
-  }
-  let leftover = await readCurrentAssignments(userId);
-  for (let i = 0; i < 4 && leftover.profileIds.length; i += 1) {
-    await unlinkUser(profileUsersPath(leftover.profileIds[0]!), userId);
-    leftover = await readCurrentAssignments(userId);
-  }
-  for (const roleId of current.roleIds) {
-    await unlinkUser(roleUsersPath(roleId), userId);
   }
 }
 
@@ -243,8 +208,7 @@ async function invalidateBackendCache(userKey: string): Promise<void> {
 async function runSync(): Promise<FinanzasUserSyncResult> {
   if (typeof window === "undefined") return { status: "skipped" };
   if (ConfigurationBuilder.localDeployment) return { status: "skipped" };
-
-  const token = readTokenDecoded();
+  const token =  readTokenDecoded();
   const userKey = getCurrentUserKey() || String(token.sub ?? "").trim();
   if (!userKey) return { status: "skipped" };
 
@@ -258,56 +222,31 @@ async function runSync(): Promise<FinanzasUserSyncResult> {
   }
 
   try {
-    const [perfilConv, rolConv, perfiles, roles] = await Promise.all([
-      loadCatalogByCandidates(fetchCatalogDetails, MACRO_ROL_PERFIL_CANDIDATES),
-      loadCatalogByCandidates(fetchCatalogDetails, MACRO_ROL_ROL_CANDIDATES),
-      loadCatalogByCandidates(fetchCatalogDetails, LOCAL_PERFIL_CANDIDATES),
-      loadCatalogByCandidates(fetchCatalogDetails, LOCAL_ROL_CANDIDATES),
+    const [perfilConv, rolConv] = await Promise.all([
+      fetchCatalogDetails(MACRO_ROL_PERFIL_CATALOG),
+      fetchCatalogDetails(MACRO_ROL_ROL_CATALOG),
     ]);
 
     const macroRoles = extractMacroRoles(token);
-    const profileConversions = findConversionRows(perfilConv?.details ?? [], macroRoles);
-    const roleConversions = findConversionRows(rolConv?.details ?? [], macroRoles);
+    const profileIds = conversionValueIds(
+      findConversionRows(extractDetails(perfilConv), macroRoles)
+    );
+    const roleIds = conversionValueIds(findConversionRows(extractDetails(rolConv), macroRoles));
+    const profileId = profileIds[0];
+    if (!profileId) return deniedResult("profile");
+    if (roleIds.length === 0) return deniedResult("role");
 
     const email = typeof token.email === "string" ? token.email : undefined;
     const userId = await findCatalogUserId(userKey, email);
-    const current = userId ? await readCurrentAssignments(userId) : EMPTY_ASSIGNMENTS;
-    const hadAssignment = current.profileIds.length > 0 || current.roleIds.length > 0;
-
-    if (profileConversions.length === 0) {
-      if (userId) await unlinkCurrentAssignments(userId, current);
-      return deniedResult("profile");
-    }
-    if (roleConversions.length === 0) {
-      if (userId) await unlinkCurrentAssignments(userId, current);
-      return deniedResult("role");
-    }
-
-    const profileIds = resolveLocalCatalogIds(
-      perfiles?.details ?? [],
-      profileConversions.map((row) => String(row.value || row.description || ""))
-    );
-    const roleIds = resolveLocalCatalogIds(
-      roles?.details ?? [],
-      roleConversions.map((row) => String(row.value || row.description || ""))
-    );
-
-    const profileId = profileIds[0];
-    if (!profileId) {
-      if (userId) await unlinkCurrentAssignments(userId, current);
-      return deniedResult("profile");
-    }
-    if (roleIds.length === 0) {
-      if (userId) await unlinkCurrentAssignments(userId, current);
-      return deniedResult("role");
-    }
-
     if (!userId) {
       return {
         status: "error",
         message: "No fue posible localizar el usuario en el catálogo de seguridad.",
       };
     }
+
+    const current = await readCurrentAssignments(userId);
+    const hadAssignment = current.profileIds.length > 0 || current.roleIds.length > 0;
 
     if (assignmentsMatchExpected(current, profileId, roleIds)) {
       await persistMxSupplier(token);

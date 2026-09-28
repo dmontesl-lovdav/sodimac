@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supplierBlockService, SupplierBlock } from '@features/catalogos/services/catalogosApi';
-import { exportToCSV, exportToExcel, ExportColumn } from '@features/catalogos/utils/export';
+import { exportToCSV, exportToExcel, ExportColumn, formatFilenameTimestamp } from '@features/catalogos/utils/export';
 import { useModalNotification } from '@shared/components/ui/modal';
 import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 import editIcon from '@features/catalogos/assets/edit.svg';
@@ -478,7 +478,7 @@ const SupplierBlocksContainer = () => {
       createdAt: b.createdAt ? formatDate(b.createdAt) : '',
     }));
 
-    const filename = `bloqueos_proveedores_${new Date().toISOString().split('T')[0]}`;
+    const filename = `bloqueos_proveedores_${formatFilenameTimestamp()}`;
 
     if (format === 'csv') {
       exportToCSV(dataToExport, columns, filename);

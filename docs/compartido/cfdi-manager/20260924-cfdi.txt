@@ -216,4 +216,4 @@ WHERE '2026-01-01' <= fecha_ticket AND fecha_ticket < '2026-02-01'
 ORDER BY fecha_ticket;
 
 
-& "C:\software\mysql\mysql-8.4.4-winx64\bin\mysql.exe" -h 10.138.150.71 -P 3306 -u configUser -p --batch --raw configuracion < C:\ruta\consulta.sql > C:\Users\g_dco018\export.tsv
+& "C:\software\mysql\mysql-8.4.4-winx64\bin\mysql.exe" -h 10.138.150.71 -P 3306 -u facturaUser -p --batch --raw configuracion < C:\tmp\consulta.sql > C:\Users\g_dco018\export.tsv

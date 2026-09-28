@@ -1,20 +1,16 @@
 import { describe, expect, it } from "@jest/globals";
 import {
-  resolveDeniedWarning,
   conversionMatchesMacroRole,
-  extractCatalogHeaders,
+  conversionValueIds,
+  deniedWarning,
   extractDetails,
   extractMacroRoles,
   extractMxTaxIds,
   findConversionRows,
-  loadCatalogByCandidates,
-  localCatalogMatches,
   matchSupplierByRfc,
   assignmentsMatchExpected,
   parseUserCatalogAssignments,
   normalizeLabel,
-  resolveLocalCatalogIds,
-  splitCatalogValues,
 } from "../finanzasUserSync.helpers";
 
 describe("finanzasUserSync.helpers", () => {
@@ -64,98 +60,42 @@ describe("finanzasUserSync.helpers", () => {
       id: 1470,
       key: "FBC0001",
       externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
-      value: "Proveedor Mercancía",
-      description: "Perfil local",
+      value: "0981",
+      description: "Proveedor Mercancía",
       sortOrder: 1,
     };
 
-    it("cruz a por externalKey del catálogo, no por datos fijos", () => {
+    it("cruza solo por externalKey, no por value ni descripción", () => {
       expect(
-        conversionMatchesMacroRole(
-          conversion,
-          "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER"
-        )
+        conversionMatchesMacroRole(conversion, "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER")
       ).toBe(true);
       expect(
-        conversionMatchesMacroRole(
-          conversion,
-          "FBC_NATIONAL_SUPPLIER_FINANCE_USER"
-        )
+        conversionMatchesMacroRole(conversion, "FBC_NATIONAL_SUPPLIER_FINANCE_USER")
       ).toBe(false);
+      expect(conversionMatchesMacroRole(conversion, "0981")).toBe(false);
     });
 
-    it("no asigna si el macrorol no está en el catálogo de conversión", () => {
+    it("usa el value de la conversión como id numérico", () => {
+      expect(conversionValueIds([conversion])).toEqual([981]);
+      expect(conversionValueIds([{ value: "1022" }, { value: "1022" }])).toEqual([1022]);
+    });
+
+    it("toma coincidencias de varios macroroles del token", () => {
       const rows = findConversionRows(
-        [conversion],
-        ["FBC_NATIONAL_SUPPLIER_FINANCE_USER"]
-      );
-      expect(rows).toEqual([]);
-    });
-  });
-
-  describe("resolveLocalCatalogIds", () => {
-    it("resuelve CatPerfil y CatRol por value ignorando acentos y guiones", () => {
-      const profileIds = resolveLocalCatalogIds(
         [
+          conversion,
           {
-            id: 10,
-            key: "PER001",
-            value: "Proveedor Mercancía",
-            description: "Proveedor Mercancía",
+            externalKey: "FBC_NATIONAL_SUPPLIER_FINANCE_USER",
+            value: "0990",
           },
         ],
-        ["Proveedor Mercancía"]
-      );
-      const roleIds = resolveLocalCatalogIds(
         [
-          {
-            id: 20,
-            key: "ROL001",
-            value: "Proveedor - Mercancía",
-            description: "Proveedor - Mercancía",
-          },
-        ],
-        ["Proveedor - Mercancía"]
+          "FBC_NATIONAL_SUPPLIER_FINANCE_USER",
+          "FBC_NATIONAL_LOGISTICS_SUPPLIER_USER",
+          "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER",
+        ]
       );
-      expect(profileIds).toEqual([10]);
-      expect(roleIds).toEqual([20]);
-    });
-
-    it("acepta varios roles separados en el value del catálogo", () => {
-      expect(splitCatalogValues("Rol A, Rol B")).toEqual(["Rol A", "Rol B"]);
-      expect(
-        localCatalogMatches(
-          { id: 3, value: "Rol A", description: "Rol A" },
-          "rol a"
-        )
-      ).toBe(true);
-    });
-  });
-
-  describe("loadCatalogByCandidates", () => {
-    it("usa el código real del API y, si falta, busca por nombre en el listado", async () => {
-      const fetchCatalog = async (path: string) => {
-        if (path === "CatMacroRolPerfil") return null;
-        if (path === "") {
-          return [
-            { code: "CATMACROROLPERFIL", name: "CatMacroRolPerfil" },
-          ];
-        }
-        if (path === "CATMACROROLPERFIL") {
-          return {
-            code: "CATMACROROLPERFIL",
-            details: [{ id: 1, externalKey: "FBC_X", value: "Perfil X" }],
-          };
-        }
-        return null;
-      };
-
-      const catalog = await loadCatalogByCandidates(fetchCatalog, [
-        "CatMacroRolPerfil",
-        "CATMACROROLPERFIL",
-      ]);
-      expect(catalog?.code).toBe("CATMACROROLPERFIL");
-      expect(catalog?.details).toHaveLength(1);
+      expect(conversionValueIds(rows)).toEqual([990, 981]);
     });
   });
 
@@ -164,19 +104,14 @@ describe("finanzasUserSync.helpers", () => {
       expect(extractDetails({ details: [{ id: 1, value: "A" }] })).toEqual([
         { id: 1, value: "A" },
       ]);
-      expect(extractDetails([{ id: 2, value: "B" }])).toEqual([
-        { id: 2, value: "B" },
-      ]);
-      expect(extractCatalogHeaders([{ code: "CatPerfil", name: "Perfil" }])).toEqual([
-        { code: "CatPerfil", name: "Perfil" },
-      ]);
+      expect(extractDetails([{ id: 2, value: "B" }])).toEqual([{ id: 2, value: "B" }]);
     });
 
-    it("usa el texto de perfil del escenario 3 si el catálogo no trae WRN7038", () => {
-      expect(resolveDeniedWarning("", "profile")).toContain(
+    it("usa el texto local de WRN7038 sin consultar catálogo de mensajes", () => {
+      expect(deniedWarning("profile")).toContain(
         "perfil asignado a su usuario no se encuentra configurado"
       );
-      expect(resolveDeniedWarning("WRN7038", "role")).toContain(
+      expect(deniedWarning("role")).toContain(
         "rol asignado a su usuario no se encuentra configurado"
       );
     });
@@ -202,9 +137,9 @@ describe("finanzasUserSync.helpers", () => {
     it("detecta que el perfil y rol locales coinciden con la conversión", () => {
       expect(
         assignmentsMatchExpected(
-          { profileIds: [10], roleIds: [20, 21], multipleProfiles: false },
-          10,
-          [21, 20]
+          { profileIds: [981], roleIds: [1022], multipleProfiles: false },
+          981,
+          [1022]
         )
       ).toBe(true);
     });
@@ -212,16 +147,16 @@ describe("finanzasUserSync.helpers", () => {
     it("exige reasignar si el macrorol mapea a otro perfil o hay perfiles extra", () => {
       expect(
         assignmentsMatchExpected(
-          { profileIds: [10], roleIds: [20], multipleProfiles: false },
-          11,
-          [20]
+          { profileIds: [10], roleIds: [1022], multipleProfiles: false },
+          981,
+          [1022]
         )
       ).toBe(false);
       expect(
         assignmentsMatchExpected(
-          { profileIds: [10], roleIds: [20], multipleProfiles: true },
-          10,
-          [20]
+          { profileIds: [981], roleIds: [1022], multipleProfiles: true },
+          981,
+          [1022]
         )
       ).toBe(false);
     });
@@ -231,13 +166,13 @@ describe("finanzasUserSync.helpers", () => {
     it("lee ids de perfil y roles del detalle de catálogo", () => {
       expect(
         parseUserCatalogAssignments({
-          profile: { id: 10, name: "Proveedor" },
+          profile: { id: 981, name: "Proveedor" },
           multipleProfilesDetected: false,
-          roles: { items: [{ id: 20 }, { id: 21 }] },
+          roles: { items: [{ id: 1022 }, { id: 1031 }] },
         })
       ).toEqual({
-        profileIds: [10],
-        roleIds: [20, 21],
+        profileIds: [981],
+        roleIds: [1022, 1031],
         multipleProfiles: false,
       });
     });
@@ -245,8 +180,8 @@ describe("finanzasUserSync.helpers", () => {
 
   describe("normalizeLabel", () => {
     it("iguala etiquetas equivalentes", () => {
-      expect(normalizeLabel("Proveedor - Mercancía")).toBe(
-        normalizeLabel("proveedor mercancia")
+      expect(normalizeLabel("FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER")).toBe(
+        normalizeLabel("fbc national commercial supplier user")
       );
     });
   });

@@ -15,6 +15,7 @@ import { useModalNotification } from '@shared/components/ui/modal';
 import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatFilenameTimestamp } from '@features/catalogos/utils/export';
 import documentIconUrl from '@/shared/icons/document.svg';
 
 import './styles/ParameterContainer.css';
@@ -128,9 +129,7 @@ const computeLatestVersionIds = (data: Parameter[] | undefined): Set<string> => 
 };
 
 const buildExportFilename = (format: 'csv' | 'xlsx'): string => {
-  const now = new Date();
-  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  return `parametros_${timestamp}.${format}`;
+  return `parametros_${formatFilenameTimestamp()}.${format}`;
 };
 
 const formatParameterForExport = (

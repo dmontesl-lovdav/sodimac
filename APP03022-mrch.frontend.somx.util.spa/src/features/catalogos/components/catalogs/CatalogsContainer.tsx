@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { exportToCSV, exportToExcel, ExportColumn } from '@features/catalogos/utils/export';
+import { exportToCSV, exportToExcel, ExportColumn, formatFilenameTimestamp } from '@features/catalogos/utils/export';
 import { catalogService, CatalogResponse } from '@features/catalogos/services/catalogosApi';
 import eyeIcon from '@features/catalogos/assets/eye-show.svg';
 import editIcon from '@features/catalogos/assets/edit.svg';
@@ -524,8 +524,7 @@ export default function CatalogsContainer() {
         return;
       }
 
-      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-      const filename = `catalogos_${timestamp}`;
+      const filename = `catalogos_${formatFilenameTimestamp()}`;
       const rows = dataToExport as unknown as Record<string, unknown>[];
 
       if (format === 'csv') {

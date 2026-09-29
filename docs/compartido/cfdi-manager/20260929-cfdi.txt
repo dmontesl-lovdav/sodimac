@@ -386,3 +386,43 @@ WHERE d.NUM_TRX = '2026071310400060316';
 "ID_PROCESO","UUID","TIPO_OPERACION","TIPO_FACTURA","F_VENTA","F_TIMBRADO"
 423682,"0440705f-9349-4032-a14e-ca97f2b80e99",VCS,G,2026-07-13 00:00:00.000,2026-07-14 12:58:01.000
 
+
+
+
+Ivan, te comparto lo que encontré de los tickets que reporta Lupita (julio y agosto 2026)
+
+Resumen: ninguno de los 41 tickets que mandó Lupita está perdido. Todos están en el reporte. Lo que les falta es el UUID de su factura o nota de crédito, y el principal motivo es que la tabla de timbrados de Detecno dejó de actualizarse el 5 de agosto.
+
+Cómo se arma el reporte (para que veas dónde se cae)
+
+Ventas. El batch finanzas_bctfacturacion, proceso 2, copia las ventas de BCT (Oracle, TRX_HDR/TRX_DET) a SODIMAC_FISCAL_PROD en VENTA_CAB y VENTA_DET. Está al día (hasta 2026-09-28).
+Facturas de cliente (control Sodimac). El mismo batch, proceso 3, copia del Portal In House (MySQL .77/facturacion) a SODIMAC_FISCAL_PROD.FACTURACION_CLIENTE. Está al día: ahí sí están las facturas de agosto.
+Timbrados de Detecno. La tabla SODIMAC_FISCAL_PROD.TIMBRADO_PAC_DETECNO es de donde el reporte toma el UUID de la factura o nota de crédito de cliente. Aquí está el corte.
+Relación y tablero. uspRelacionVentaFactura cruza las ventas con las facturas y llena RELACION_VENTA_FACTURACION. Al final llama a uspRangoFactura y a uspGeneraTableroTimbrado. Está corrido hasta el 2026-09-23.
+Copia a MySQL. BatchReportesCFDI corre a las 03:00 y pasa RELACION_VENTA_FACTURACION y TABLERO_CONTROL_TIMBRADO a MySQL sodimacfiscal (.71). De ahí lee el portal CFDI Manager. Copia fiel a lo que hay en el origen.
+Lo que encontré con los tickets de Lupita
+
+Detecno (16 tickets). TIMBRADO_PAC_DETECNO tiene como último registro el 2026-08-05 13:55 (FACTURA_ID 1664540).
+Las facturas y notas de crédito de agosto sí existen en FACTURACION_CLIENTE con su UUID, pero ese UUID no está en TIMBRADO_PAC_DETECNO.
+Como uspRelacionVentaFactura toma el UUID de cliente de esa tabla, cruzando por REGION = TICKET, el reporte los muestra sin UUID.
+Ejemplos: 2026081710400118525, 2026082420380099258, 2026083110400166176.
+Además, el propio uspGeneraTableroTimbrado compara FACTURACION_CLIENTE contra Detecno para "identificar si hace falta sincronizar los folios de detecno". Por eso la pantalla del tablero sí cuenta estas facturas y el detalle no.
+Global de venta faltante, 12 de julio, tiendas 1110 y 2030 (9 tickets).
+En FACTURACION_GLOBAL_CAB esas tiendas ese día solo tienen globales de devolución (TIPO_OPERACION = 'D'). No hay global de venta ('V').
+En VENTA_CAB son 987 ventas de la 1110 y 1,023 de la 2030 que no aparecen en ninguna global.
+Ejemplos: 2026071220300075304, 2026071211100034862.
+Global tipo 'VCS' (1 ticket). El 2026071310400060316 está en una global con TIPO_OPERACION = 'VCS' (ID_PROCESO 423682). uspRelacionVentaFactura solo reconoce 'V', 'D' y 'FD', por eso sale sin UUID global.
+Sin factura en ningún lado (6 tickets). No están en FACTURACION_CLIENTE, ni en Detecno, ni en global: 2026081010800118594, 2026081120000087714, 2026082111200160482, 2026082820100077355, 2026070210400154341, 2026071010400201437. Además, el 2026082420380147667 tiene su registro en FACTURACION_CLIENTE con el UUID vacío.
+Correctos. 10 de las 12 devoluciones de julio sí traen su UUID de nota de crédito.
+Lo que necesito que me ayudes a identificar
+
+¿Qué proceso llena SODIMAC_FISCAL_PROD.TIMBRADO_PAC_DETECNO?
+No está en ninguno de los repos que tenemos (bctfacturacion, BatchReportesCFDI, finanzaswebcfdi).
+Sospecho que es una descarga desde Detecno que usa los rangos que deja uspRangoFactura en RANGO_FACTURACION, en bloques de FACTURA_ID.
+¿Es un job del SQL Agent, un paquete SSIS, un script que corres tú?
+¿Por qué se detuvo el 5 de agosto? ¿Coincide con el cambio o la caída de Detecno de esas fechas?
+Global del 12-jul, tiendas 1110 y 2030: ¿se timbró y no se sincronizó a FACTURACION_GLOBAL_CAB, o nunca se generó? Esto ya sería un tema fiscal, no del reporte.
+¿Qué significa TIPO_OPERACION = 'VCS'? Para saber si hay que agregarla a uspRelacionVentaFactura.
+Una vez que se recargue Detecno, el orden sería: cargar TIMBRADO_PAC_DETECNO desde el 5 de agosto, luego EXEC dbo.uspRelacionVentaFactura, y el batch de las 03:00 lo pasa solo a MySQL. Con eso, el reporte de agosto sale con los UUID. No hace falta volver a generar nada desde el portal antes.
+
+Tengo el detalle de las consultas por si quieres revisarlas.

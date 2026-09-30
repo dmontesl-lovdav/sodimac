@@ -454,3 +454,59 @@ Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git
 Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | ForEach-Object {
   "{0}  [{1}]  {2}" -f $_.Name, (git -C $_.FullName branch --show-current), (git -C $_.FullName remote get-url origin 2>$null)
 }
+
+
+
+PS C:\workspace_sts> Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | Select-Object -ExpandProperty Name
+autofacturador
+autofacturadorbatch
+bctfacturacion_20250327
+finanzasadminfacturacion
+finanzasreportescfdibatch
+finanzastotemgcisapk
+finanzaswebcfdi
+finanzas_bctfacturacion
+finanzas_descargafacturaproveedores
+finanzas_descarga_oc_prov_detecno
+finanzas_ws_mdw_ticket
+finanzas_ws_param_facturacion
+mrch.backend.somx.aclaraciones-api
+mrch.backend.somx.finanzas-api
+mrch.backend.somx.fiscal-api
+sodimacfinanzasnotascreditobatch
+sodimacfinanzasrebatesweb
+sodimacfinanzassincronizacionbatch_v1
+sodimacfinanzaswsft
+sodimacfinanzaswsft_20250815
+sodimac_finanzas_recupera_uuid_detecno
+somxfin-wsobtenerticket_v40
+totemback
+totemgcis
+PS C:\workspace_sts> Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | ForEach-Object {
+>>   "{0}  [{1}]  {2}" -f $_.Name, (git -C $_.FullName branch --show-current), (git -C $_.FullName remote get-url origin 2>$null)
+>> }
+autofacturador  [master_ces]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/autofacturador.git
+autofacturadorbatch  [master_2.0.0]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/autofacturadorbatch.git
+bctfacturacion_20250327  [puntos-ces]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_bctfacturacion.git
+finanzasadminfacturacion  [main-v.0.0.3-FormaMetodoPagoProd]  https://gitlab.falabella.tech/mavasquezvi/finanzasadminfacturacion.git
+finanzasreportescfdibatch  [Develop]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzasreportescfdibatch.git
+finanzastotemgcisapk  [feature/new_conteo_ciclico]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzastotemgcisapk.git
+finanzaswebcfdi  [developer]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzaswebcfdi.git
+finanzas_bctfacturacion  [puntos-ces]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_bctfacturacion.git
+finanzas_descargafacturaproveedores  [main-fixes-multiplesaddendas]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_descargafacturaproveedores.git
+finanzas_descarga_oc_prov_detecno  [Develop]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_descarga_oc_prov_detecno.git
+finanzas_ws_mdw_ticket  [redisenio-bd]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_ws_mdw_ticket.git
+finanzas_ws_param_facturacion  [Develop]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/finanzas_ws_param_facturacion.git
+mrch.backend.somx.aclaraciones-api  [develop]  https://gitlab.falabella.tech/rtl/merchandise-ti-corp/sourcing/portalprovsomx/sodimac/backend/mrch.backend.somx.aclaraciones-api.git
+mrch.backend.somx.finanzas-api  [develop]  https://gitlab.falabella.tech/rtl/merchandise-ti-corp/sourcing/portalprovsomx/sodimac/backend/mrch.backend.somx.finanzas-api.git
+mrch.backend.somx.fiscal-api  [develop]  https://gitlab.falabella.tech/rtl/merchandise-ti-corp/sourcing/portalprovsomx/sodimac/backend/mrch.backend.somx.fiscal-api.git
+sodimacfinanzasnotascreditobatch  [master_2.0.0]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimacfinanzasnotascreditobatch.git
+sodimacfinanzasrebatesweb  [master-FixBtnPeriodo]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimacfinanzasrebatesweb
+sodimacfinanzassincronizacionbatch_v1  [master_2.0.0]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimacfinanzassincronizacionbatch.git
+sodimacfinanzaswsft  [developer]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimacfinanzaswsft
+sodimacfinanzaswsft_20250815  [master_CES]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimacfinanzaswsft.git
+sodimac_finanzas_recupera_uuid_detecno  [main]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/sodimac_finanzas_recupera_uuid_detecno.git
+somxfin-wsobtenerticket_v40  [master_2.0.0]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/somxfin-wsobtenerticket_v40.git
+totemback  [conteo-ciclico]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/totemback.git
+totemgcis  [conteo-ciclico]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/totemgcis.git
+PS C:\workspace_sts>

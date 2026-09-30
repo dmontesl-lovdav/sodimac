@@ -510,3 +510,22 @@ somxfin-wsobtenerticket_v40  [master_2.0.0]  https://gitlab.falabella.tech/sodim
 totemback  [conteo-ciclico]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/totemback.git
 totemgcis  [conteo-ciclico]  https://gitlab.falabella.tech/sodimac-corp/desarrollo-sodimac-mexico/totemgcis.git
 PS C:\workspace_sts>
+
+
+
+-- Algun SP/vista/trigger que escriba en la tabla
+SELECT o.type_desc, o.name, o.modify_date
+FROM sys.sql_modules m JOIN sys.objects o ON o.object_id = m.object_id
+WHERE m.definition LIKE '%INSERT%TIMBRADO_PAC_DETECNO%'
+   OR m.definition LIKE '%BULK%TIMBRADO_PAC_DETECNO%'
+   OR m.definition LIKE '%TIMBRADO_PAC_DETECNO%OPENROWSET%';
+
+-- Si hay tabla staging o de carga con nombre parecido
+SELECT name, create_date, modify_date FROM sys.tables
+WHERE name LIKE '%DETECNO%' OR name LIKE '%TIMBRADO%' ORDER BY modify_date DESC;
+
+-- Cuando se escribio por ultima vez (se resetea si reinician el motor)
+SELECT OBJECT_NAME(object_id) tabla, MAX(last_user_update) ultima_escritura
+FROM sys.dm_db_index_usage_stats
+WHERE database_id = DB_ID() AND OBJECT_NAME(object_id) LIKE 'TIMBRADO%'
+GROUP BY OBJECT_NAME(object_id);

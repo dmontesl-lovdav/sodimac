@@ -437,3 +437,11 @@ Get-ChildItem -Path C:\workspace-sodimac -Recurse -Force -Directory -Filter .git
       Remoto = git -C $repo remote get-url origin 2>$null
     }
   } | Format-Table -AutoSize
+
+
+
+Get-ChildItem -Path C:\workspace-sodimac -Force -Directory -Filter .git -Depth 3 -ErrorAction SilentlyContinue |
+  ForEach-Object {
+    $repo = $_.Parent.FullName
+    "{0}  [{1}]  {2}" -f $repo, (git -C $repo branch --show-current), (git -C $repo remote get-url origin 2>$null)
+  }

@@ -426,3 +426,14 @@ Global del 12-jul, tiendas 1110 y 2030: ¿se timbró y no se sincronizó a FACTU
 Una vez que se recargue Detecno, el orden sería: cargar TIMBRADO_PAC_DETECNO desde el 5 de agosto, luego EXEC dbo.uspRelacionVentaFactura, y el batch de las 03:00 lo pasa solo a MySQL. Con eso, el reporte de agosto sale con los UUID. No hace falta volver a generar nada desde el portal antes.
 
 Tengo el detalle de las consultas por si quieres revisarlas.
+
+
+Get-ChildItem -Path C:\workspace-sodimac -Recurse -Force -Directory -Filter .git -ErrorAction SilentlyContinue |
+  ForEach-Object {
+    $repo = $_.Parent.FullName
+    [pscustomobject]@{
+      Repo   = $repo
+      Rama   = git -C $repo branch --show-current
+      Remoto = git -C $repo remote get-url origin 2>$null
+    }
+  } | Format-Table -AutoSize

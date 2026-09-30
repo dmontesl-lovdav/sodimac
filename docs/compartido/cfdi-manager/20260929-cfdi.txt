@@ -445,3 +445,12 @@ Get-ChildItem -Path C:\workspace-sodimac -Force -Directory -Filter .git -Depth 3
     $repo = $_.Parent.FullName
     "{0}  [{1}]  {2}" -f $repo, (git -C $repo branch --show-current), (git -C $repo remote get-url origin 2>$null)
   }
+
+
+
+Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | Select-Object -ExpandProperty Name
+
+
+Get-ChildItem -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | ForEach-Object {
+  "{0}  [{1}]  {2}" -f $_.Name, (git -C $_.FullName branch --show-current), (git -C $_.FullName remote get-url origin 2>$null)
+}

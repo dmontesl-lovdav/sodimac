@@ -42,13 +42,13 @@ public class SecurityContextFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(SecurityContextFilter.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final UtilApiSecurityClient utilApi;
+    private final UserAttributeResolver attributeResolver;
     private final boolean securityEnabled;
 
     public SecurityContextFilter(
-            UtilApiSecurityClient utilApi,
+            UserAttributeResolver attributeResolver,
             @Value("${security.enabled:true}") boolean securityEnabled) {
-        this.utilApi = utilApi;
+        this.attributeResolver = attributeResolver;
         this.securityEnabled = securityEnabled;
     }
 
@@ -67,7 +67,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
             return;
         }
 
-        UtilApiSecurityClient.SecurityAttributes attrs = utilApi.getAttributesBySub(sub);
+        UtilApiSecurityClient.SecurityAttributes attrs = attributeResolver.resolve(sub);
         log.debug("STM-1403 sub={} vendors={} types={} groups={}", sub, attrs.vendors(), attrs.types(), attrs.groups());
 
         java.util.List<String> vendors = new java.util.ArrayList<>(attrs.vendors());
@@ -82,7 +82,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
 
         java.util.List<String> rfcs = extractRfcs(request);
         if (!rfcs.isEmpty()) {
-            java.util.List<String> rfcSuppliers = utilApi.getSupplierNumbersByRfcs(rfcs);
+            java.util.List<String> rfcSuppliers = attributeResolver.resolveSupplierNumbersByRfcs(rfcs);
             if (!rfcSuppliers.isEmpty()) {
                 if (vendors.isEmpty()) {
                     vendors = new java.util.ArrayList<>(rfcSuppliers);

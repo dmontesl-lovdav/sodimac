@@ -146,6 +146,43 @@ public interface AddendumRepository extends JpaRepository<AddendumEntity, UUID> 
     boolean existsEventForUser(@Param("userKey") String userKey, @Param("eventKey") String eventKey);
 
     /**
+     * Atributos de seguridad del usuario (STM-1403) resueltos DIRECTO de la BD, sin util-api
+     * (inalcanzable en UAT; mismo motivo que los catálogos y el permiso de eventos). Replica
+     * `getUserAttributesByKey` de util-api: hace merge de los atributos DIRECTOS del usuario
+     * (`user_attribute`) y los heredados por ROL (`role_attribute` vía `role_user`), todos activos
+     * (status=1). Devuelve filas [type_key, value_key] (ej. ATR001/supplier_number). El usuario se
+     * resuelve por sub / preferred_username / email. El mapeo type_key -> vendors/tipos/grupos lo
+     * hace {@code UserAttributeResolver}.
+     */
+    @Query(value =
+            "SELECT t.key AS type_key, v.key AS value_key " +
+            "FROM core_security.user_data ud " +
+            "JOIN core_security.user_attribute ua ON ua.user_data_id = ud.user_data_id AND ua.status = 1 " +
+            "JOIN shared_catalogs.catalog_detail t ON t.id = ua.catalog_detail_attribute_type_id " +
+            "LEFT JOIN shared_catalogs.catalog_detail v ON v.id = ua.catalog_detail_attribute_value_id " +
+            "WHERE ud.status = 1 AND (ud.sub = :userKey OR ud.preferred_username = :userKey OR ud.email = :userKey) " +
+            "UNION " +
+            "SELECT t.key AS type_key, v.key AS value_key " +
+            "FROM core_security.user_data ud " +
+            "JOIN core_security.role_user ru ON ru.user_data_id = ud.user_data_id AND ru.status = 1 " +
+            "JOIN core_security.role_attribute ra ON ra.catalog_detail_role_id = ru.catalog_detail_role_id AND ra.status = 1 " +
+            "JOIN shared_catalogs.catalog_detail t ON t.id = ra.catalog_detail_attribute_type_id " +
+            "LEFT JOIN shared_catalogs.catalog_detail v ON v.id = ra.catalog_detail_attribute_value_id " +
+            "WHERE ud.status = 1 AND (ud.sub = :userKey OR ud.preferred_username = :userKey OR ud.email = :userKey)",
+            nativeQuery = true)
+    List<Object[]> findUserSecurityAttributes(@Param("userKey") String userKey);
+
+    /**
+     * Números de proveedor a partir de una lista de RFCs, leídos DIRECTO de `shared_catalogs.supplier`
+     * (activos), sin util-api. Reemplaza la llamada a `/api/suppliers/by-rfcs` de util-api (inalcanzable
+     * en UAT) usada por el filtro de seguridad cuando el request acota por RFC receptor. Los RFCs deben
+     * venir en MAYÚSCULAS (el llamador normaliza); la comparación es case-insensitive por el UPPER.
+     */
+    @Query(value = "SELECT s.supplier_number FROM shared_catalogs.supplier s " +
+            "WHERE s.status = 1 AND UPPER(s.rfc) IN (:rfcs)", nativeQuery = true)
+    List<String> findSupplierNumbersByRfcs(@Param("rfcs") List<String> rfcs);
+
+    /**
      * Resuelve el atributo "Grupo Proveedor" (STM-1458) a numeros de proveedor.
      * Modelo: CatGrupoProveedores (padre) contiene grupos cuyo value es el nombre del catalogo
      * hijo (ej. CatGrupoTransporte); ese catalogo hijo contiene los proveedores del grupo, donde

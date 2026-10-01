@@ -28,7 +28,7 @@ export async function create(dto: CreateAuditLogDto) {
     return row;
 }
 
-export async function list(q: ListAuditLogsQuery) {
+export async function list(q: ListAuditLogsQuery, restrictUserIds?: string[]) {
     validateRange(q);
 
     return r.findWithFilters({
@@ -41,6 +41,7 @@ export async function list(q: ListAuditLogsQuery) {
         ...(q.idTransaccion && { idTransaccion: q.idTransaccion }),
         ...(q.modulo && { modulo: q.modulo }),
         ...(q.search && { search: q.search }),
+        ...(restrictUserIds?.length ? { restrictUserIds } : {}),
         page: q.page ?? 1,
         limit: q.limit ?? 10,
     });
@@ -67,13 +68,13 @@ function escapeCsv(v: any) {
     return `"${s.replace(/"/g, '""')}"`;
 }
 
-export async function exportCsv(q: ListAuditLogsQuery) {
+export async function exportCsv(q: ListAuditLogsQuery, restrictUserIds?: string[]) {
     validateRange(q);
 
     let rows: any[] = [];
 
     if (q.ids?.length) {
-        rows = await r.findManyByIds(q.ids);
+        rows = await r.findManyByIds(q.ids, restrictUserIds);
     } else {
         const result = await r.findWithFilters({
             fechaInicio: q.fechaInicio,
@@ -84,6 +85,7 @@ export async function exportCsv(q: ListAuditLogsQuery) {
             ...(q.idTransaccion && { idTransaccion: q.idTransaccion }),
             ...(q.modulo && { modulo: q.modulo }),
             ...(q.search && { search: q.search }),
+            ...(restrictUserIds?.length ? { restrictUserIds } : {}),
             page: 1,
             limit: 100000,
         });
@@ -129,4 +131,8 @@ export async function exportCsv(q: ListAuditLogsQuery) {
     ];
 
     return lines.join("\n");
+}
+
+export async function applications(modulo?: string) {
+    return r.findServiceNames(modulo);
 }

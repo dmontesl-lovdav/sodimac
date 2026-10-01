@@ -18,11 +18,15 @@ import type { AuditLogsFiltersProps } from '../interfaces';
 
 type CatalogOption = { value: string; label: string; id?: number; parentElementId?: number | null };
 
-const mapCatalogOptions = (details: unknown): CatalogOption[] => {
+const mapCatalogOptions = (details: unknown, useKeyAsValue = false): CatalogOption[] => {
     if (!Array.isArray(details)) return [];
     return details
         .map((d: any) => {
-            const value = String(d?.value ?? d?.key ?? '').trim();
+            const value = String(
+                useKeyAsValue
+                    ? d?.key ?? d?.value ?? ''
+                    : d?.value ?? d?.key ?? ''
+            ).trim();
             const label = String(d?.description ?? d?.value ?? d?.key ?? '').trim();
             const id = typeof d?.id === 'number' ? d.id : undefined;
             const parentElementId = typeof d?.parentElementId === 'number' ? d.parentElementId : null;
@@ -96,8 +100,12 @@ export default function AuditLogsFilters({
             getCatalogDetails('CatAplicativo').catch(() => []),
         ]).then(([modulos, aplicativos]) => {
             if (!active) return;
-            setModuloOptions(mapCatalogOptions(modulos));
-            setAplicativoOptions(mapCatalogOptions(aplicativos));
+            setModuloOptions(
+                mapCatalogOptions(modulos).filter((option) =>
+                    ['1', '2', '5'].includes(option.value)
+                )
+            );
+            setAplicativoOptions(mapCatalogOptions(aplicativos, true));
         });
         return () => {
             active = false;
@@ -204,8 +212,8 @@ export default function AuditLogsFilters({
                     />
 
                     <GenericDateRangePicker
-                        value={dateRange}
-                        onChange={(dates) => setDateRange(dates)}
+                        value={dateRange as any}
+                        onChange={(dates: [Date | null, Date | null]) => setDateRange(dates)}
                         placeholder="Fecha desde – hasta"
                         size="md"
                     />

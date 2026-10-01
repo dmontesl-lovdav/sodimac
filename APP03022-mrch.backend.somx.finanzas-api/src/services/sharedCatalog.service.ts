@@ -216,6 +216,46 @@ export async function getActiveSupplierNumbersByGroups(
         .filter((n) => !Number.isNaN(n) && n > 0);
 }
 
+export async function getSupplierNumbersByRfcs(rfcs: string[]): Promise<string[]> {
+    const upper = rfcs.map((r) => String(r).trim().toUpperCase()).filter((r) => r.length > 0);
+    if (upper.length === 0) return [];
+
+    const rows = await getDataSource()
+        .getRepository(SharedSupplier)
+        .createQueryBuilder("s")
+        .select("s.supplierNumber", "supplierNumber")
+        .where("s.status = 1")
+        .andWhere("UPPER(s.rfc) IN (:...rfcs)", { rfcs: upper })
+        .getRawMany<{ supplierNumber: string | number }>();
+
+    return rows
+        .map((r) => String(r.supplierNumber ?? "").trim())
+        .filter((n) => n.length > 0);
+}
+
+const CATTIPOREBATE_KEYS = ["CatTipoRebate", "CATTIPOREBATE"] as const;
+
+export async function getRebateSourcesByTypeKeys(typeKeys: string[]): Promise<number[]> {
+    if (typeKeys.length === 0) return [];
+
+    const headerRepo = getDataSource().getRepository(SharedCatalogHeader);
+    const detailRepo = getDataSource().getRepository(SharedCatalogDetail);
+
+    const header = await headerRepo.findOne({
+        where: CATTIPOREBATE_KEYS.flatMap((k) => [{ code: k }, { name: k }]),
+    });
+    if (!header) return [];
+
+    const details = await detailRepo.find({
+        where: { headerId: header.id, status: 1, key: In(typeKeys) },
+        select: ["value"],
+    });
+
+    return details
+        .map((d) => Number((d.value ?? "").trim()))
+        .filter((n) => !Number.isNaN(n));
+}
+
 export async function getAllSuppliers(
     tipoProveedorList: GenericCatalogDetails[],
 ): Promise<Supplier[]> {

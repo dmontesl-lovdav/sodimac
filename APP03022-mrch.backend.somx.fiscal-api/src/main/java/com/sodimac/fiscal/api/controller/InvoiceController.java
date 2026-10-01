@@ -373,20 +373,22 @@ public class InvoiceController {
                         @RequestHeader(value = "x-user-types", required = false) String xUserTypes,
                         @RequestHeader(value = "x-user-groups", required = false) String xUserGroups) {
 
-                // STM-323: filtro seguridad por proveedor
+                // STM-323/1458: filtro seguridad por proveedor / tipo / grupo
                 List<String> allowedVendors = parseVendorHeader(xUserVendors);
-                if (allowedVendors != null && allowedVendors.isEmpty()) {
+                List<String> allowedTypes = parseTypeHeader(xUserTypes);
+                List<String> allowedGroups = parseGroupHeader(xUserGroups);
+                boolean noVendors = allowedVendors != null && allowedVendors.isEmpty();
+                boolean hasTypes = allowedTypes != null && !allowedTypes.isEmpty();
+                boolean hasGroups = allowedGroups != null && !allowedGroups.isEmpty();
+                // WRN7029 solo si el usuario no tiene NINGÚN atributo (ni proveedor, ni tipo, ni grupo).
+                // Si tiene tipo o grupo (aunque no proveedor), se permite y se filtra por esos.
+                if (noVendors && !hasTypes && !hasGroups) {
                         return ResponseEntity.badRequest().body(java.util.Map.of(
                                         "success", false,
                                         "code", "WRN7029",
                                         "message",
                                         "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador"));
                 }
-
-                // STM-1458: filtro seguridad por tipo de proveedor
-                List<String> allowedTypes = parseTypeHeader(xUserTypes);
-
-                List<String> allowedGroups = parseGroupHeader(xUserGroups);
 
                 log.info("Solicitud de busqueda de facturas/NC recibida. RFC Emisor: {}, Tipo: {}, Fechas: {} - {}, Vendors: {}",
                                 searchRequest.getRfcEmisor(),

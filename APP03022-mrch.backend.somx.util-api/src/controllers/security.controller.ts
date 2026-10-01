@@ -67,12 +67,22 @@ export async function getProfileUserAssignment(req: Request, res: Response, next
     }
 }
 
+function parseIsFromFront(raw: unknown): boolean {
+    if (raw === true || raw === 1) return true;
+    if (typeof raw === 'string') {
+        const value = raw.trim().toLowerCase();
+        return value === '1' || value === 'true';
+    }
+    return false;
+}
+
 export async function saveProfileUserAssignment(req: Request, res: Response, next: NextFunction) {
     try {
         const id = Number(req.params.id);
         await securityService.saveProfileUserAssignment(id, {
             selectedIds: Array.isArray(req.body?.selectedIds) ? req.body.selectedIds : [],
             actorId: parseActorId(req),
+            isFromFront: parseIsFromFront(req.body?.isFromFront),
         });
         res.json({ success: true, message: 'Relacion perfil-usuario actualizada correctamente' });
     } catch (error) {
@@ -105,6 +115,7 @@ export async function saveRoleUserAssignment(req: Request, res: Response, next: 
         await securityService.saveRoleUserAssignment(id, {
             selectedIds: Array.isArray(req.body?.selectedIds) ? req.body.selectedIds : [],
             actorId: parseActorId(req),
+            isFromFront: parseIsFromFront(req.body?.isFromFront),
         });
         res.json({ success: true, message: 'Relacion rol-usuario actualizada correctamente' });
     } catch (error) {

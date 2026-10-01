@@ -44,7 +44,11 @@ const WRN7029 = { success: false, code: 'WRN7029', message: 'El usuario no tiene
 function allowedVendors(req: Request): number[] | null | 'wrn7029' {
     const sec = req.security;
     if (!sec) return null;
-    if (Array.isArray(sec.vendors) && sec.vendors.length === 0) return 'wrn7029';
+    const noVendors = Array.isArray(sec.vendors) && sec.vendors.length === 0;
+    const hasTypes = Array.isArray(sec.types) && sec.types.length > 0;
+    const hasGroups = Array.isArray(sec.groups) && sec.groups.length > 0;
+    // WRN7029 solo si el usuario no tiene NINGÚN atributo (ni proveedor, ni tipo, ni grupo).
+    if (noVendors && !hasTypes && !hasGroups) return 'wrn7029';
     return sec.vendors ? sec.vendors.map(Number).filter(n => !isNaN(n)) : null;
 }
 

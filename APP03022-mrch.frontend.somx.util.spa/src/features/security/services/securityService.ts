@@ -208,7 +208,7 @@ export const securityService = {
   },
 
   saveProfileUserAssignment: async (id: number, selectedIds: number[]): Promise<void> => {
-    await apiClient.request(`/security/profiles/${id}/users`, 'put', { selectedIds });
+    await apiClient.request(`/security/profiles/${id}/users`, 'put', { selectedIds, isFromFront: 0 });
   },
 
   searchRoleUsers: (filters: SecurityFilters) => fetchSearch('/security/role-users', filters),
@@ -222,7 +222,7 @@ export const securityService = {
   },
 
   saveRoleUserAssignment: async (id: number, selectedIds: number[]): Promise<void> => {
-    await apiClient.request(`/security/roles/${id}/users`, 'put', { selectedIds });
+    await apiClient.request(`/security/roles/${id}/users`, 'put', { selectedIds, isFromFront: 0 });
   },
 
   searchRolePermissions: (filters: SecurityFilters) => fetchSearch('/security/role-permissions', filters),

@@ -7,6 +7,7 @@ import { Pagination } from '@shared/components/ui/pagination';
 import { extractApiErrorMessage } from '@shared/utils/errorMessage';
 import Breadcrumb from '@shared/components/ui/navigation/Breadcrumb';
 import { withFinanceBreadcrumb } from '@shared/components/ui/navigation/financeBreadcrumb';
+import { APP_EVENT, PermissionGate } from '@shared/security';
 
 interface CatalogData {
   id: string;
@@ -864,38 +865,46 @@ export default function CatalogElementsContainer() {
           <div style={styles.buttonsGroup}>
             {showResults && filteredElements.length > 0 && (
               <>
-                <button
-                  style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
-                  onClick={() => handleExport('csv')}
-                  disabled={isExporting}
-                  title="Exportar a CSV"
-                >
-                  <ExportFileIcon />
-                  Exportar CSV
-                </button>
-                <button
-                  style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
-                  onClick={() => handleExport('xlsx')}
-                  disabled={isExporting}
-                  title="Exportar a Excel"
-                >
-                  <ExportFileIcon />
-                  Exportar Excel
-                </button>
+                <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DOWNLOAD_CSV}>
+                  <button
+                    style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                    onClick={() => handleExport('csv')}
+                    disabled={isExporting}
+                    title="Exportar a CSV"
+                  >
+                    <ExportFileIcon />
+                    Exportar CSV
+                  </button>
+                </PermissionGate>
+                <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DOWNLOAD_EXCEL}>
+                  <button
+                    style={{ ...styles.secondaryBtn, opacity: isExporting ? 0.5 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+                    onClick={() => handleExport('xlsx')}
+                    disabled={isExporting}
+                    title="Exportar a Excel"
+                  >
+                    <ExportFileIcon />
+                    Exportar Excel
+                  </button>
+                </PermissionGate>
               </>
             )}
-            <button
-              style={styles.outlineBtn}
-              onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/importar`)}
-            >
-              ⬇ Importar Elementos
-            </button>
-            <button
-              style={styles.primaryBtn}
-              onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/nuevo`)}
-            >
-              ⊕ Nuevo Elemento
-            </button>
+            <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.IMPORT}>
+              <button
+                style={styles.outlineBtn}
+                onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/importar`)}
+              >
+                ⬇ Importar Elementos
+              </button>
+            </PermissionGate>
+            <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.NEW_ELEMENT}>
+              <button
+                style={styles.primaryBtn}
+                onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/nuevo`)}
+              >
+                ⊕ Nuevo Elemento
+              </button>
+            </PermissionGate>
           </div>
         </div>
 
@@ -1135,52 +1144,58 @@ export default function CatalogElementsContainer() {
                       <td style={styles.td}>{el.updatedBy || '-'}</td>
                       <td style={styles.td}>{el.updatedAt || '-'}</td>
                       <td style={styles.td}>
-                        <button
-                          style={styles.actionBtn}
-                          title="Ver Conversión"
-                          onClick={() => navigate(`/util/catalogos/elementos/${el.id}/conversiones`, { state: { catalogId: id } })}
-                        >
-                          <ViewIcon />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.VIEW_CONVERSION}>
+                          <button
+                            style={styles.actionBtn}
+                            title="Ver Conversión"
+                            onClick={() => navigate(`/util/catalogos/elementos/${el.id}/conversiones`, { state: { catalogId: id } })}
+                          >
+                            <ViewIcon />
+                          </button>
+                        </PermissionGate>
                       </td>
                       <td style={styles.td}>
-                        <button
-                          style={styles.actionBtn}
-                          title="Editar"
-                          onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/editar/${el.id}`)}
-                        >
-                          <EditIcon />
-                        </button>
+                        <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT_ELEMENT}>
+                          <button
+                            style={styles.actionBtn}
+                            title="Editar"
+                            onClick={() => navigate(`/util/catalogos/catalogs/${id}/elementos/editar/${el.id}`)}
+                          >
+                            <EditIcon />
+                          </button>
+                        </PermissionGate>
                       </td>
                       <td style={styles.td}>
-                        <button
-                          type="button"
-                          style={{
-                            ...styles.toggleSwitch,
-                            opacity: togglingId === el.id ? 0.5 : 1,
-                            pointerEvents: togglingId === el.id ? 'none' : 'auto',
-                            border: 'none',
-                            padding: 0,
-                            appearance: 'none',
-                            background: 'transparent',
-                          }}
-                          aria-label="Cambiar estatus del elemento"
-                          onClick={() => handleToggleStatus(el.id)}
-                        >
-                          <span
+                        <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.CHANGE_ELEMENT_STATUS}>
+                          <button
+                            type="button"
                             style={{
-                              ...styles.toggleSlider,
-                              ...(el.status === 'Activo' ? styles.toggleSliderActive : {}),
+                              ...styles.toggleSwitch,
+                              opacity: togglingId === el.id ? 0.5 : 1,
+                              pointerEvents: togglingId === el.id ? 'none' : 'auto',
+                              border: 'none',
+                              padding: 0,
+                              appearance: 'none',
+                              background: 'transparent',
                             }}
+                            aria-label="Cambiar estatus del elemento"
+                            onClick={() => handleToggleStatus(el.id)}
                           >
                             <span
                               style={{
-                                ...styles.toggleSliderBefore,
-                                ...(el.status === 'Activo' ? styles.toggleSliderBeforeActive : {}),
+                                ...styles.toggleSlider,
+                                ...(el.status === 'Activo' ? styles.toggleSliderActive : {}),
                               }}
-                            />
-                          </span>
-                        </button>
+                            >
+                              <span
+                                style={{
+                                  ...styles.toggleSliderBefore,
+                                  ...(el.status === 'Activo' ? styles.toggleSliderBeforeActive : {}),
+                                }}
+                              />
+                            </span>
+                          </button>
+                        </PermissionGate>
                       </td>
                     </tr>
                   ))}

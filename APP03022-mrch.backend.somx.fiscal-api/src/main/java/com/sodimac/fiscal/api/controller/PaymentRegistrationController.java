@@ -179,15 +179,18 @@ public class PaymentRegistrationController {
             @RequestHeader(value = "x-user-groups", required = false) String xUserGroups) {
 
         List<String> allowedVendors = parseVendorHeader(xUserVendors);
-        if (allowedVendors != null && allowedVendors.isEmpty()) {
+        List<String> allowedTypes = parseTypeHeader(xUserTypes);
+        List<String> allowedGroups = parseGroupHeader(xUserGroups);
+        boolean noVendors = allowedVendors != null && allowedVendors.isEmpty();
+        boolean hasTypes = allowedTypes != null && !allowedTypes.isEmpty();
+        boolean hasGroups = allowedGroups != null && !allowedGroups.isEmpty();
+        // WRN7029 solo si el usuario no tiene NINGÚN atributo (ni proveedor, ni tipo, ni grupo).
+        if (noVendors && !hasTypes && !hasGroups) {
             return ResponseEntity.badRequest().body(Map.of(
                     "code", "WRN7029",
                     "message", "El usuario no tiene configurado los atributos para el manejo de información, favor de validar con el administrador"
             ));
         }
-
-        List<String> allowedTypes = parseTypeHeader(xUserTypes);
-        List<String> allowedGroups = parseGroupHeader(xUserGroups);
 
         log.info("Búsqueda complementos de pago - Filtros: {}, vendors: {}, types: {}, groups: {}", searchRequest,
                 allowedVendors == null ? "sin restricción" : allowedVendors,

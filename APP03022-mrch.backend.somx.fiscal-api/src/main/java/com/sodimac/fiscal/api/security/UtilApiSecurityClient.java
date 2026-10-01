@@ -99,6 +99,42 @@ public class UtilApiSecurityClient {
         }
     }
 
+    public List<String> getSupplierNumbersByRfcs(List<String> rfcs) {
+        if (rfcs == null || rfcs.isEmpty()) return Collections.emptyList();
+        try {
+            String joined = URLEncoder.encode(String.join(",", rfcs), StandardCharsets.UTF_8);
+            URI uri = URI.create(utilApiUrl + "/api/suppliers/by-rfcs?rfcs=" + joined);
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() != 200) {
+                log.warn("util-api suppliers-by-rfc returned {} for rfcs={}", res.statusCode(), rfcs);
+                return Collections.emptyList();
+            }
+
+            JsonNode arr = mapper.readTree(res.body()).path("data").path("supplierNumbers");
+            List<String> out = new ArrayList<>();
+            if (arr.isArray()) {
+                for (JsonNode n : arr) {
+                    String v = n.asText(null);
+                    if (v != null && !v.isBlank()) out.add(v.trim());
+                }
+            }
+            return out;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("util-api suppliers-by-rfc interrupted for rfcs={}: {}", rfcs, e.getMessage());
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("util-api suppliers-by-rfc error for rfcs={}: {}", rfcs, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
     public boolean hasPermission(String userKey, String eventKey) {
         if (userKey == null || userKey.isBlank() || eventKey == null || eventKey.isBlank()) {
             return false;

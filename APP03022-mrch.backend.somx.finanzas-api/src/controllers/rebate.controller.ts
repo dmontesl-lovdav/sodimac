@@ -13,6 +13,7 @@ import {
     type RebateFilterDto,
 } from "@/schemas/rebate.schema.js";
 import { RebateCsvStream } from "@/utils/csvStream.js";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
 // GET /rebates/published - Obtener rebates publicados (status = 1)
 export async function getPublishedRebates(req: Request, res: Response, next: NextFunction) {
@@ -122,7 +123,13 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         const securityGroups = (req.security?.groups ?? [])
             .map((g) => String(g).trim())
             .filter((g) => g.length > 0);
-        const rows = await svc.list(q, securityVendors, securityTypeIds, securityGroups);
+        const securityRebateKeys = (req.security?.rebates ?? [])
+            .map((rk) => String(rk).trim())
+            .filter((rk) => rk.length > 0);
+        const securityRebateSources = securityRebateKeys.length > 0
+            ? await sharedCatalogService.getRebateSourcesByTypeKeys(securityRebateKeys)
+            : null;
+        const rows = await svc.list(q, securityVendors, securityTypeIds, securityGroups, securityRebateSources);
 
         if (!rows.length) throw new HttpError(404, "No records found for that filter");
 

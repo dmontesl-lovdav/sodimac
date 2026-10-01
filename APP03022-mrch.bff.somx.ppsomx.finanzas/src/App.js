@@ -16,7 +16,7 @@ const remoteUrl = process.env.REMOTE_URL || 'http://localhost:3001';
 const localPort = process.env.LOCAL_PORT || '3000';
 const localContext = process.env.LOCAL_CONTEXT || '/';
 const healthPath = process.env.HEALTH_PATH || '/health';
-const utilApiUrl = process.env.UTIL_API_URL || 'http://localhost:3712';
+const utilApiUrl = process.env.UTIL_API_URL || 'http://localhost:3712/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,12 +89,46 @@ function extractUserKey(request) {
     return null;
 }
 
+function extractTokenPayload(request) {
+    const gcpInfo = request.headers["x-endpoint-api-userinfo"];
+    if (gcpInfo) {
+        try { return JSON.parse(Buffer.from(gcpInfo, "base64url").toString("utf8")); } catch { /* ignore */ }
+    }
+    const auth = request.headers["authorization"] || "";
+    const token = auth.replace(/^Bearer\s+/i, "");
+    if (token) {
+        try {
+            const parts = token.split(".");
+            if (parts.length === 3) {
+                return JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+            }
+        } catch { /* ignore */ }
+    }
+    return null;
+}
+
+// RFC(s) del usuario proveedor desde el token (para segmentar la data por su proveedor).
+function extractRfcsFromToken(request) {
+    const payload = extractTokenPayload(request);
+    if (!payload) return [];
+    const list =
+        payload["vendors-taxs"] ?? payload.vendorsTaxs ?? payload.taxIds ?? payload.tax_ids;
+    if (!Array.isArray(list)) return [];
+    const rfcs = [];
+    for (const v of list) {
+        if (!v || typeof v !== "object") continue;
+        const raw = v.taxId ?? v.rfc ?? v.tax_id;
+        if (typeof raw === "string" && raw.trim()) rfcs.push(raw.trim());
+    }
+    return [...new Set(rfcs)];
+}
+
 async function fetchSecurityContext(userKey) {
     const now = Date.now();
     const cached = SECURITY_CACHE.get(userKey);
     if (cached && cached.expiresAt > now) return cached.data;
     try {
-        const res = await fetch(`${utilApiUrl}/api/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
+        const res = await fetch(`${utilApiUrl}/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
         if (!res.ok) { logger.warn({ userKey, status: res.status }, "util-api user-attributes non-ok"); return null; }
         const body = await res.json();
         const data = body?.data ?? body;
@@ -111,12 +145,14 @@ function buildSecurityHeaders(context) {
     const attrs = context.attributes ?? [];
     const valuesFor = (typeKey) => attrs.filter(a => a.typeKey === typeKey).map(a => a.valueKey).filter(Boolean);
     const vendors = valuesFor("ATR001");
-    const types = valuesFor("ATR002");
-    const groups = valuesFor("ATR004");
+    const types   = valuesFor("ATR002");
+    const groups  = valuesFor("ATR004");
+    const rebates = valuesFor("ATR005");
     return {
         "x-user-vendors": vendors.length ? vendors.join(",") : "",
-        "x-user-types": types.length ? types.join(",") : "",
-        "x-user-groups": groups.length ? groups.join(",") : "",
+        "x-user-types":   types.length   ? types.join(",")   : "",
+        "x-user-groups":  groups.length  ? groups.join(",")  : "",
+        "x-user-rebates": rebates.length ? rebates.join(",") : "",
     };
 }
 
@@ -255,8 +291,11 @@ const remoteResolver = proxy(remoteUrl, {
         const context = await fetchSecurityContext(userKey);
         const secHeaders = buildSecurityHeaders(context);
 
+        const rfcs = extractRfcsFromToken(request);
+        if (rfcs.length) secHeaders["x-user-rfcs"] = rfcs.join(",");
+
         options.headers = { ...options.headers, "x-user-key": userKey, ...secHeaders };
-        logger.info({ userKey, vendors: secHeaders["x-user-vendors"], types: secHeaders["x-user-types"] }, "Security context injected");
+        logger.info({ userKey, vendors: secHeaders["x-user-vendors"], types: secHeaders["x-user-types"], rfcs: secHeaders["x-user-rfcs"] }, "Security context injected");
 
         return options;
     },

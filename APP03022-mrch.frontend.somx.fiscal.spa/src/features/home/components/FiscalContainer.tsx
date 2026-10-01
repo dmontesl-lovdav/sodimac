@@ -10,6 +10,8 @@ export default function FiscalContainer(): React.ReactElement {
     const isLocal = ConfigurationBuilder.localDeployment;
     const homeSyncStarted = useRef(false);
     const redirectHomeOnClose = useRef(false);
+    const [moduleReady, setModuleReady] = useState(isLocal);
+    const [syncLoading, setSyncLoading] = useState(!isLocal);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalTitle, setModalTitle] = useState('');
     const [modalMessage, setModalMessage] = useState('');
@@ -25,14 +27,23 @@ export default function FiscalContainer(): React.ReactElement {
     }
 
     useEffect(() => {
-        if (isLocal) return;
+        if (isLocal) {
+            setSyncLoading(false);
+            setModuleReady(true);
+            return;
+        }
 
         let cancelled = false;
 
         async function runAccessSync() {
+            setSyncLoading(true);
             const result = await syncFiscalUser();
             if (cancelled) return;
-            if (result.status !== 'denied' && result.status !== 'error') return;
+            setSyncLoading(false);
+            if (result.status !== 'denied' && result.status !== 'error') {
+                setModuleReady(true);
+                return;
+            }
 
             redirectHomeOnClose.current =
                 result.status === 'denied' && result.deniedKind === 'profile';
@@ -55,14 +66,21 @@ export default function FiscalContainer(): React.ReactElement {
         if (redirectHomeOnClose.current) {
             redirectHomeOnClose.current = false;
             window.location.assign(process.env.FBC_HOME?.trim() || '/');
+            return;
         }
+        setModuleReady(true);
     };
 
     return (
         <div className="fiscal-container">
             <Breadcrumb items={[{ label: 'Fiscal' }]} />
             <h3 className="fiscal-section-title">Gestión de documentación fiscal</h3>
-            <FiscalCardsList />
+            {moduleReady ? <FiscalCardsList /> : null}
+            <GenericModal
+                visible={syncLoading}
+                variant="loading"
+                message="Cargando el módulo..."
+            />
             <GenericModal
                 visible={modalVisible}
                 variant="alert"

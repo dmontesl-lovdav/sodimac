@@ -277,3 +277,37 @@ audit-logs-by-id:
           $ref: "../definitions/common.yaml#/ExceptionWrapper"
     security:
       - bearerAuth: []
+
+audit-logs-applications:
+  get:
+    tags:
+      - audit-logs
+    summary: List audit log applications
+    operationId: listAuditLogApplications
+    produces:
+      - application/json
+    parameters:
+      - name: modulo
+        in: query
+        required: false
+        description: Module used to filter applications
+        type: string
+    responses:
+      "200":
+        description: List of applications registered in audit logs
+        schema:
+          $ref: "../definitions/audit-logs.yaml#/AuditLogApplicationsResponse"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "401":
+        description: Unauthorized
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+      "500":
+        description: Internal error
+        schema:
+          $ref: "../definitions/common.yaml#/ExceptionWrapper"
+    security:
+      - bearerAuth: []

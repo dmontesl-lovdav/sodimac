@@ -84,6 +84,7 @@ export interface SecurityFilters {
 export interface AssignmentPayload {
     selectedIds: number[];
     actorId: string;
+    isFromFront?: boolean;
 }
 
 export interface CreateUserAttributePayload {
@@ -167,7 +168,7 @@ export async function saveProfileUserAssignment(idProfile: number, payload: Assi
         throw new HttpException(400, 'Uno o mas usuarios no existen o estan inactivos');
     }
 
-    await securityRepo.syncProfileUsers(idProfile, selectedIds, payload.actorId);
+    await securityRepo.syncProfileUsers(idProfile, selectedIds, payload.actorId, payload.isFromFront === true);
 }
 
 export async function searchRoleUsers(filters: SecurityFilters) {
@@ -201,7 +202,7 @@ export async function saveRoleUserAssignment(idRole: number, payload: Assignment
         throw new HttpException(400, 'Uno o mas usuarios no existen o estan inactivos');
     }
 
-    await securityRepo.syncRoleUsers(idRole, selectedIds, payload.actorId);
+    await securityRepo.syncRoleUsers(idRole, selectedIds, payload.actorId, payload.isFromFront === true);
 }
 
 export async function searchRolePermissions(filters: SecurityFilters) {
@@ -741,6 +742,7 @@ export async function getUserCatalogDetail(
         id: c.id,
         name: c.label,
         description: c.catalogKey ?? '',
+        ...(typeof c.isFromFront === 'boolean' ? { isFromFront: c.isFromFront } : {}),
     });
 
     const primaryProfile = snap.profiles.length > 0 ? mapRef(snap.profiles[0]!) : null;
@@ -1081,4 +1083,52 @@ export async function registerUserFromUtilitySession(req: Request): Promise<void
         givenName,
         familyName,
     });
+}
+
+function tokenHasVendorTax(payload: JWTPayload): boolean {
+    const o = payload as Record<string, unknown>;
+    const arr = o['vendors-taxs'] ?? o['vendorsTaxs'] ?? o['taxIds'] ?? o['tax_ids'];
+    return Array.isArray(arr) && arr.length > 0;
+}
+
+export async function resolveAuditUserScope(
+    req: Request,
+): Promise<{ restrictToUser: boolean; userIds: string[] }> {
+    const token = parseBearerToken(req);
+    let payload: JWTPayload | null = null;
+    if (token) {
+        try {
+            payload = await readJwtPayloadFromRequest(token);
+        } catch {
+            payload = null;
+        }
+    }
+    if (!payload || !tokenHasVendorTax(payload)) {
+        return { restrictToUser: false, userIds: [] };
+    }
+
+    const ids = new Set<string>();
+    const sub = stringClaim(payload, 'sub');
+    const email = stringClaim(payload, 'email');
+    const preferred = stringClaim(payload, 'preferred_username', 'preferredUsername');
+    for (const v of [sub, email, preferred]) {
+        if (v) ids.add(v);
+    }
+
+    const lookupKey = sub ?? email ?? preferred;
+    if (lookupKey) {
+        try {
+            const user = await securityRepo.findUserByLookupKey(lookupKey);
+            if (user) {
+                if (user.sub) ids.add(user.sub);
+                if (user.email) ids.add(user.email);
+                if (user.preferredUsername) ids.add(user.preferredUsername);
+                ids.add(String(user.idUserData));
+            }
+        } catch {
+        }
+    }
+
+    const userIds = [...ids].map((s) => s.trim()).filter((s) => s !== '');
+    return { restrictToUser: userIds.length > 0, userIds };
 }

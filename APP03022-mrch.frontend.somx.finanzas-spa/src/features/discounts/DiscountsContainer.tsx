@@ -56,6 +56,8 @@ const CSV_HEADERS = [
   "Estatus",
 ];
 
+const FETCH_PAGE_SIZE = 300;
+
 const renderStatus = (status: number) => {
   const selected = RebateStatusOptions.find((item) => item.value === status);
   return selected ?? { value: -1, type: "error", label: "Desconocido" };
@@ -63,8 +65,11 @@ const renderStatus = (status: number) => {
 
 function parseFilterDateBound(value?: string, asEndOfDay = false): number | null {
   if (!value?.trim()) return null;
+
   const parsed = parseDisplayDate(value.trim());
+
   if (!parsed) return null;
+
   return (asEndOfDay ? endOfLocalDay(parsed) : startOfLocalDay(parsed)).getTime();
 }
 
@@ -74,7 +79,9 @@ function isPostingDateInFilterRange(
   to?: string
 ): boolean {
   if (!postingDate?.trim()) return false;
+
   const parsed = parseDisplayDate(postingDate);
+
   if (!parsed) return false;
 
   const timestamp = parsed.getTime();
@@ -83,6 +90,7 @@ function isPostingDateInFilterRange(
 
   if (fromTs != null && timestamp < fromTs) return false;
   if (toTs != null && timestamp > toTs) return false;
+
   return true;
 }
 
@@ -103,59 +111,53 @@ function applyClientFilters(
         .filter((item) => item.supplierType?.id == criteria.supplierType)
         .map((item) => String(item.supplierNumber))
     );
+
     data = data.filter((row) =>
-      vendorNumbers.has(String(row.vendorNumber ?? row.supplierNumber ?? ""))
+      vendorNumbers.has(
+        String(
+          row.vendorNumber ??
+          row.supplierNumber ??
+          ""
+        )
+      )
     );
   }
 
-  const documentQuery = criteria.documentNumber?.trim().toLowerCase();
+  const documentQuery =
+    criteria.documentNumber?.trim().toLowerCase();
+
   if (documentQuery) {
-    data = data.filter((row) => includesIgnoreCase(row.documentNumber, documentQuery));
+    data = data.filter((row) =>
+      includesIgnoreCase(
+        row.documentNumber,
+        documentQuery
+      )
+    );
   }
 
-  const sapQuery = criteria.sapDocument?.trim().toLowerCase();
+  const sapQuery =
+    criteria.sapDocument?.trim().toLowerCase();
+
   if (sapQuery) {
-    data = data.filter((row) => includesIgnoreCase(row.sapDocument, sapQuery));
+    data = data.filter((row) =>
+      includesIgnoreCase(
+        row.sapDocument,
+        sapQuery
+      )
+    );
   }
 
   if (criteria.from || criteria.to) {
     data = data.filter((row) =>
-      isPostingDateInFilterRange(row.postingDate, criteria.from, criteria.to)
+      isPostingDateInFilterRange(
+        row.postingDate,
+        criteria.from,
+        criteria.to
+      )
     );
   }
 
   return data;
-}
-
-function hasClientSideFilter(criteria: RebateFilters): boolean {
-  return Boolean(
-    (criteria.supplierType && criteria.supplierType > 0) ||
-      criteria.documentNumber?.trim() ||
-      criteria.sapDocument?.trim() ||
-      criteria.from ||
-      criteria.to
-  );
-}
-
-function resolvePagination(
-  dataLength: number,
-  page: number,
-  pageSize: number,
-  clientFiltered: boolean
-): { totalItems: number; totalPages: number } {
-  if (clientFiltered) {
-    return {
-      totalItems: dataLength,
-      totalPages: Math.max(1, Math.ceil(dataLength / pageSize)),
-    };
-  }
-
-  const knownMinimum = (page - 1) * pageSize + dataLength;
-  const hasMore = dataLength >= pageSize;
-  return {
-    totalItems: hasMore ? knownMinimum + 1 : knownMinimum,
-    totalPages: hasMore ? page + 1 : page,
-  };
 }
 
 function findProvider(
@@ -163,32 +165,58 @@ function findProvider(
   vendorNumber: string | number | undefined
 ): ProviderRow | undefined {
   if (vendorNumber == null || vendorNumber === "") return undefined;
-  return providers.find((item) => String(item.supplierNumber) === String(vendorNumber));
+
+  return providers.find(
+    (item) =>
+      String(item.supplierNumber) ===
+      String(vendorNumber)
+  );
 }
 
-function toProviderCatalog(providers: ProviderRow[]): ProvidersOptions[] {
+function toProviderCatalog(
+  providers: ProviderRow[]
+): ProvidersOptions[] {
   return [
-    { label: "Todos los proveedores", value: "" },
+    {
+      label: "Todos los proveedores",
+      value: "",
+    },
     ...providers.map((provider) => ({
       label: `${provider.businessName ?? ""} (${provider.rfc ?? ""})`,
-      value: String(provider.supplierNumber ?? ""),
+      value: String(
+        provider.supplierNumber ?? ""
+      ),
     })),
   ];
 }
 
 /** IDs de tipo proveedor permitidos en rebates (`details[].value` del catálogo CATTIPOPROVEEDORREBATE). */
-function getRebateAllowedSupplierTypeIds(catalog: unknown): Set<number> {
-  const raw = catalog as Record<string, unknown> | null | undefined;
-  const rows: Array<{ value?: string | number }> = Array.isArray(catalog)
-    ? catalog
-    : Array.isArray(raw?.details)
-      ? (raw.details as Array<{ value?: string | number }>)
-      : [];
+function getRebateAllowedSupplierTypeIds(
+  catalog: unknown
+): Set<number> {
+  const raw =
+    catalog as Record<string, unknown> |
+    null |
+    undefined;
+
+  const rows: Array<{
+    value?: string | number;
+  }> = Array.isArray(catalog)
+      ? catalog
+      : Array.isArray(raw?.details)
+        ? (raw.details as Array<{
+          value?: string | number;
+        }>)
+        : [];
 
   return new Set(
     rows
       .map((row) => Number(row.value))
-      .filter((id) => Number.isFinite(id) && id > 0)
+      .filter(
+        (id) =>
+          Number.isFinite(id) &&
+          id > 0
+      )
   );
 }
 
@@ -196,101 +224,198 @@ function filterProvidersByRebateTypes(
   providers: ProviderRow[],
   allowedTypeIds: Set<number>
 ): ProviderRow[] {
-  if (allowedTypeIds.size === 0) return providers;
+  if (allowedTypeIds.size === 0) {
+    return providers;
+  }
+
   return providers.filter(
     (provider) =>
       provider.supplierType?.id != null &&
-      allowedTypeIds.has(Number(provider.supplierType.id))
+      allowedTypeIds.has(
+        Number(
+          provider.supplierType.id
+        )
+      )
   );
 }
 
 export default function DiscountsContainer(): ReactElement {
-  const financeAlert = useFinanceAlertModal();
-  const warnIfEmptyRef = useRef(false);
+  const financeAlert =
+    useFinanceAlertModal();
 
-  const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState<Rebate[]>([]);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [providers, setProviders] = useState<ProviderRow[]>([]);
-  const [providerCatalog, setProviderCatalog] = useState<ProvidersOptions[]>([]);
-  const [supplierTypeOptions, setSupplierTypeOptions] = useState<ProvidersOptions[]>([]);
-  const [rebateTypeOptions, setRebateTypeOptions] = useState<ProvidersOptions[]>([]);
-  const [statusOptions, setStatusOptions] = useState<ProvidersOptions[]>([]);
-  const [filters, setFilters] = useState<RebateFilters | null>(null);
+  const warnIfEmptyRef =
+    useRef(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [rows, setRows] =
+    useState<Rebate[]>([]);
+
+  const [page, setPage] =
+    useState(1);
+
+  const [perPage, setPerPage] =
+    useState(10);
+
+  const [
+    providers,
+    setProviders,
+  ] = useState<ProviderRow[]>([]);
+
+  const [
+    providerCatalog,
+    setProviderCatalog,
+  ] = useState<ProvidersOptions[]>([]);
+
+  const [
+    supplierTypeOptions,
+    setSupplierTypeOptions,
+  ] = useState<ProvidersOptions[]>([]);
+
+  const [
+    rebateTypeOptions,
+    setRebateTypeOptions,
+  ] = useState<ProvidersOptions[]>([]);
+
+  const [
+    statusOptions,
+    setStatusOptions,
+  ] = useState<ProvidersOptions[]>([]);
+
+  const [filters, setFilters] =
+    useState<RebateFilters | null>(
+      null
+    );
 
   useEffect(() => {
     let active = true;
 
     const loadCatalogs = async () => {
-      const [providerList, supplierTypeList, rebateTypeCatalog, statusCatalog, providerRebateTypeCatalog] =
-        await Promise.all([
-          fetchProviders(),
-          fetchSupplierTypesAsCatalog(),
-          fetchCatalogDetails("CATTIPOREBATE"),
-          fetchCatalogDetails("CEDC"),
-          fetchCatalogDetails("CATTIPOPROVEEDORREBATE"),
-        ]);
+      const [
+        providerList,
+        supplierTypeList,
+        rebateTypeCatalog,
+        statusCatalog,
+        providerRebateTypeCatalog,
+      ] = await Promise.all([
+        fetchProviders(),
+        fetchSupplierTypesAsCatalog(),
+        fetchCatalogDetails(
+          "CATTIPOREBATE"
+        ),
+        fetchCatalogDetails(
+          "CEDC"
+        ),
+        fetchCatalogDetails(
+          "CATTIPOPROVEEDORREBATE"
+        ),
+      ]);
 
       if (!active) return;
 
-      const list = providerList ?? [];
+      const list =
+        providerList ?? [];
+
       setProviders(list);
 
-      if (providerRebateTypeCatalog) {
-        const allowedTypeIds = getRebateAllowedSupplierTypeIds(providerRebateTypeCatalog);
-        const rebateTypeFilterOptions = fetchCatalogAsSelectableOptions(
-          providerRebateTypeCatalog,
-          "Todos los tipos",
-          "value"
-        ).map((option) => ({
-          ...option,
-          value: option.value.trim(),
-        }));
+      if (
+        providerRebateTypeCatalog
+      ) {
+        const allowedTypeIds =
+          getRebateAllowedSupplierTypeIds(
+            providerRebateTypeCatalog
+          );
 
-        setSupplierTypeOptions(rebateTypeFilterOptions);
+        const rebateTypeFilterOptions =
+          fetchCatalogAsSelectableOptions(
+            providerRebateTypeCatalog,
+            "Todos los tipos",
+            "value"
+          ).map(
+            (option) => ({
+              ...option,
+              value: option.value.trim(),
+            })
+          );
+
+        setSupplierTypeOptions(
+          rebateTypeFilterOptions
+        );
+
         setProviderCatalog(
-          toProviderCatalog(filterProvidersByRebateTypes(list, allowedTypeIds))
+          toProviderCatalog(
+            filterProvidersByRebateTypes(
+              list,
+              allowedTypeIds
+            )
+          )
         );
       } else {
-        setSupplierTypeOptions(supplierTypeList ?? []);
-        setProviderCatalog(toProviderCatalog(list));
+        setSupplierTypeOptions(
+          supplierTypeList ??
+          []
+        );
+
+        setProviderCatalog(
+          toProviderCatalog(
+            list
+          )
+        );
       }
 
       if (rebateTypeCatalog) {
         setRebateTypeOptions(
-          fetchCatalogAsSelectableOptions(rebateTypeCatalog, "Todos los tipos")
+          fetchCatalogAsSelectableOptions(
+            rebateTypeCatalog,
+            "Todos los tipos"
+          )
         );
       }
+
       if (statusCatalog) {
         setStatusOptions(
-          fetchCatalogAsSelectableOptions(statusCatalog, "Todos los tipos")
+          fetchCatalogAsSelectableOptions(
+            statusCatalog,
+            "Todos los tipos"
+          )
         );
       }
     };
 
     loadCatalogs();
+
     return () => {
       active = false;
     };
   }, []);
 
-  const fiscalRestoreHydratedRef = useRef(false);
-  if (!fiscalRestoreHydratedRef.current) {
-    fiscalRestoreHydratedRef.current = true;
+  const fiscalRestoreHydratedRef =
+    useRef(false);
+
+  if (
+    !fiscalRestoreHydratedRef.current
+  ) {
+    fiscalRestoreHydratedRef.current =
+      true;
+
     if (
-      typeof window !== "undefined" &&
-      isFinanceListUrlRestore(new URLSearchParams(window.location.search))
+      typeof window !==
+      "undefined" &&
+      isFinanceListUrlRestore(
+        new URLSearchParams(
+          window.location.search
+        )
+      )
     ) {
       hydrateDiscountSearchRestoreIntoSession();
     }
   }
 
-  const returningFromDetail = useFinanceListScreenSession(
-    FINANCE_LIST_KEYS.discounts
-  );
+  const returningFromDetail =
+    useFinanceListScreenSession(
+      FINANCE_LIST_KEYS.discounts
+    );
 
   const runSearch = useCallback(
     async (
@@ -301,33 +426,78 @@ export default function DiscountsContainer(): ReactElement {
       try {
         setLoading(true);
 
-        const currentPage = nextPage ?? page;
-        const currentPageSize = nextPerPage ?? perPage;
-        const finalCriteria: RebateFilters = {
+        const currentPage =
+          nextPage ??
+          criteria.pageNumber ??
+          1;
+
+        const currentPageSize =
+          nextPerPage ??
+          criteria.pageSize ??
+          perPage;
+
+        const requestCriteria: RebateFilters =
+        {
           ...criteria,
-          pageNumber: currentPage,
-          pageSize: currentPageSize,
+          pageNumber: 1,
+          pageSize:
+            FETCH_PAGE_SIZE,
         };
 
-        setFilters(finalCriteria);
+        const raw =
+          (await DiscountsClient.get(
+            requestCriteria
+          )) ?? [];
 
-        const raw = (await DiscountsClient.get(finalCriteria)) ?? [];
-        const data = applyClientFilters(raw, criteria, providers);
+        const data =
+          applyClientFilters(
+            raw,
+            criteria,
+            providers
+          );
+
+        const availablePages =
+          Math.max(
+            1,
+            Math.ceil(
+              data.length /
+              currentPageSize
+            )
+          );
+
+        const resolvedPage =
+          Math.min(
+            currentPage,
+            availablePages
+          );
+
+        const finalCriteria: RebateFilters =
+        {
+          ...criteria,
+          pageNumber:
+            resolvedPage,
+          pageSize:
+            currentPageSize,
+        };
 
         setRows(data);
-        setPage(currentPage);
-        setPerPage(currentPageSize);
 
-        const pagination = resolvePagination(
-          data.length,
-          currentPage,
-          currentPageSize,
-          hasClientSideFilter(criteria)
+        setPage(
+          resolvedPage
         );
-        setTotalItems(pagination.totalItems);
-        setTotalPages(pagination.totalPages);
 
-        if (data.length === 0 && warnIfEmptyRef.current) {
+        setPerPage(
+          currentPageSize
+        );
+
+        setFilters(
+          finalCriteria
+        );
+
+        if (
+          data.length === 0 &&
+          warnIfEmptyRef.current
+        ) {
           financeAlert.showWarning(
             "Sin registros",
             "No se encontraron descuentos comerciales con los criterios indicados."
@@ -339,71 +509,136 @@ export default function DiscountsContainer(): ReactElement {
           error,
           "No fue posible obtener los descuentos comerciales. Intenta nuevamente."
         );
+
         setRows([]);
-        setTotalItems(0);
-        setTotalPages(1);
+        setPage(1);
       } finally {
-        warnIfEmptyRef.current = false;
+        warnIfEmptyRef.current =
+          false;
+
         setLoading(false);
       }
     },
-    [page, perPage, providers, financeAlert]
+    [
+      perPage,
+      providers,
+      financeAlert,
+    ]
   );
 
   useFinanceListRefetchOnReturn<RebateFilters>(
     FINANCE_LIST_KEYS.discounts,
     returningFromDetail,
     async (criteria) => {
-      warnIfEmptyRef.current = true;
-      const nextPage = criteria.pageNumber ?? 1;
-      const nextSize = criteria.pageSize ?? perPage;
+      warnIfEmptyRef.current =
+        true;
+
+      const nextPage =
+        criteria.pageNumber ??
+        1;
+
+      const nextSize =
+        criteria.pageSize ??
+        perPage;
+
       setPage(nextPage);
-      await runSearch(criteria, nextPage, nextSize);
+
+      setPerPage(nextSize);
+
+      await runSearch(
+        criteria,
+        nextPage,
+        nextSize
+      );
+
       clearDiscountSearchRestore();
     }
   );
 
   const handleClearGrid = () => {
-    warnIfEmptyRef.current = false;
+    warnIfEmptyRef.current =
+      false;
+
     setRows([]);
     setFilters(null);
     setPage(1);
-    setTotalItems(0);
-    setTotalPages(1);
   };
 
-  const handleSearch = (criteria: RebateFilters) => {
-    warnIfEmptyRef.current = true;
+  const handleSearch = (
+    criteria: RebateFilters
+  ) => {
+    warnIfEmptyRef.current =
+      true;
+
     setPage(1);
-    runSearch(criteria, 1, perPage);
+
+    runSearch(
+      criteria,
+      1,
+      perPage
+    );
   };
 
   const handleExportCsv = () => {
     if (!rows.length) return;
 
-    const body = rows.map((row) => {
-      const provider = findProvider(providers, row.vendorNumber);
-      const rebateType =
-        rebateTypeOptions.find((item) => item.value === String(row.source))
-          ?.label ?? "--";
-      const supplierTypeCode = provider?.supplierType?.code;
-      const supplierType = supplierTypeCode
-        ? capitalizeWord(supplierTypeCode)
-        : "--";
+    const body =
+      rows.map((row) => {
+        const provider =
+          findProvider(
+            providers,
+            row.vendorNumber
+          );
 
-      return [
-        row.documentNumber ?? "--",
-        rebateType,
-        row.sapDocument ?? "--",
-        formatAmount(row.amount),
-        row.periodId ?? "--",
-        row.vendorNumber ?? "--",
-        provider?.businessName ?? "--",
-        supplierType,
-        row.dueDate ? formatDate(String(row.dueDate)) : "--",
-        renderStatus(row.status).label,
-      ];
-    });
+        const rebateType =
+          rebateTypeOptions.find(
+            (item) =>
+              item.value ===
+              String(
+                row.source
+              )
+          )?.label ?? "--";
+
+        const supplierTypeCode =
+          provider
+            ?.supplierType
+            ?.code;
+
+        const supplierType =
+          supplierTypeCode
+            ? capitalizeWord(
+              supplierTypeCode
+            )
+            : "--";
+
+        return [
+          row.documentNumber ??
+          "--",
+          rebateType,
+          row.sapDocument ??
+          "--",
+          formatAmount(
+            row.amount
+          ),
+          row.periodId ??
+          "--",
+          row.vendorNumber ??
+          "--",
+          provider?.businessName ??
+          "--",
+          supplierType,
+          row.dueDate
+            ? formatDate(
+              String(
+                row.dueDate
+              )
+            )
+            : "--",
+          renderStatus(
+            row.status
+          ).label,
+        ];
+      });
 
     exportToCSV(
       CSV_HEADERS,
@@ -412,26 +647,71 @@ export default function DiscountsContainer(): ReactElement {
     );
   };
 
+  const totalItems =
+    rows.length;
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        totalItems /
+        perPage
+      )
+    );
+
+  const firstRowIndex =
+    (page - 1) *
+    perPage;
+
+  const paginatedRows =
+    rows.slice(
+      firstRowIndex,
+      firstRowIndex +
+      perPage
+    );
+
   return (
     <div className="dc-layout">
       <Breadcrumb
-        items={withFinanceBreadcrumb([{ label: "Descuentos Comerciales" }])}
+        items={withFinanceBreadcrumb(
+          [
+            {
+              label:
+                "Descuentos Comerciales",
+            },
+          ]
+        )}
       />
 
       <div className="dc-box">
         <div className="dc-header">
           <div>
-            <Title title="Listado de Descuentos Comerciales" />
+            <Title
+              title="Listado de Descuentos Comerciales"
+            />
+
             <p className="dc-description">
               Consulta y seguimiento de rebates/documentos comerciales.
             </p>
           </div>
 
-          <PermissionGate appEvent={APP_EVENT.DISCOUNTS.DOWNLOAD_CSV}>
+          <PermissionGate
+            appEvent={
+              APP_EVENT
+                .DISCOUNTS
+                .DOWNLOAD_CSV
+            }
+          >
             <GenericButton
               variant="primary"
-              onClick={handleExportCsv}
-              disabled={loading || rows.length === 0}
+              onClick={
+                handleExportCsv
+              }
+              disabled={
+                loading ||
+                rows.length ===
+                0
+              }
               type="button"
             >
               Exportar CSV
@@ -441,12 +721,24 @@ export default function DiscountsContainer(): ReactElement {
 
         <div className="dc-filters-section">
           <FiltersBar
-            providers={providerCatalog}
-            supplierTypeOptions={supplierTypeOptions}
-            rebateTypeOptions={rebateTypeOptions}
-            statusOptions={statusOptions}
-            onSearch={handleSearch}
-            onClear={handleClearGrid}
+            providers={
+              providerCatalog
+            }
+            supplierTypeOptions={
+              supplierTypeOptions
+            }
+            rebateTypeOptions={
+              rebateTypeOptions
+            }
+            statusOptions={
+              statusOptions
+            }
+            onSearch={
+              handleSearch
+            }
+            onClear={
+              handleClearGrid
+            }
           />
         </div>
 
@@ -454,40 +746,111 @@ export default function DiscountsContainer(): ReactElement {
 
         <div className="dc-grid-section">
           <DiscountsGridTable
-            providers={providers}
-            rebateTypeOptions={rebateTypeOptions}
-            lastSearch={filters}
-            rows={rows}
-            page={page}
-            perPage={perPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            loading={loading}
-            onChangePage={(newPage) => {
-              setPage(newPage);
-              if (filters) runSearch(filters, newPage, perPage);
+            providers={
+              providers
+            }
+            rebateTypeOptions={
+              rebateTypeOptions
+            }
+            lastSearch={
+              filters
+            }
+            rows={
+              paginatedRows
+            }
+            page={
+              page
+            }
+            perPage={
+              perPage
+            }
+            totalPages={
+              totalPages
+            }
+            totalItems={
+              totalItems
+            }
+            loading={
+              loading
+            }
+            onChangePage={(
+              newPage
+            ) => {
+              setPage(
+                newPage
+              );
+
+              setFilters(
+                (
+                  current
+                ) =>
+                  current
+                    ? {
+                      ...current,
+                      pageNumber:
+                        newPage,
+                      pageSize:
+                        perPage,
+                    }
+                    : current
+              );
             }}
-            onChangePerPage={(newPageSize) => {
-              setPerPage(newPageSize);
+            onChangePerPage={(
+              newPageSize
+            ) => {
+              setPerPage(
+                newPageSize
+              );
+
               setPage(1);
-              if (filters) runSearch(filters, 1, newPageSize);
+
+              setFilters(
+                (
+                  current
+                ) =>
+                  current
+                    ? {
+                      ...current,
+                      pageNumber:
+                        1,
+                      pageSize:
+                        newPageSize,
+                    }
+                    : current
+              );
             }}
-            renderStatus={renderStatus}
+            renderStatus={
+              renderStatus
+            }
           />
         </div>
 
         {loading && (
-          <GenericModal visible variant="loading" message="Cargando…" />
+          <GenericModal
+            visible
+            variant="loading"
+            message="Cargando…"
+          />
         )}
 
         <GenericModal
-          visible={financeAlert.alertVisible}
+          visible={
+            financeAlert.alertVisible
+          }
           variant="alert"
-          severity={financeAlert.alertSeverity}
-          title={financeAlert.alertTitle}
-          message={financeAlert.alertMessage}
+          severity={
+            financeAlert.alertSeverity
+          }
+          title={
+            financeAlert.alertTitle
+          }
+          message={
+            financeAlert.alertMessage
+          }
           buttonText="Aceptar"
-          onClose={financeAlert.closeAlert}
+          onClose={
+            financeAlert.closeAlert
+          }
         />
       </div>
     </div>

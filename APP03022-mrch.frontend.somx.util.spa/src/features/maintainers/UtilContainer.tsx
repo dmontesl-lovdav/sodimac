@@ -35,6 +35,8 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
     const homeSyncStarted = useRef(false);
     const redirectHomeOnClose = useRef(false);
 
+    const [moduleReady, setModuleReady] = useState(isLocal);
+    const [syncLoading, setSyncLoading] = useState(!isLocal);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalVariant, setModalVariant] = useState<'loading' | 'alert' | 'confirm'>('alert');
     const [modalTitle, setModalTitle] = useState('');
@@ -51,14 +53,23 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
     const sec = useSecurityContext();
 
     useEffect(() => {
-        if (isLocal) return;
+        if (isLocal) {
+            setSyncLoading(false);
+            setModuleReady(true);
+            return;
+        }
 
         let cancelled = false;
 
         async function runAccessSync() {
+            setSyncLoading(true);
             const result = await syncUtilityUser();
             if (cancelled) return;
-            if (result.status !== 'denied' && result.status !== 'error') return;
+            setSyncLoading(false);
+            if (result.status !== 'denied' && result.status !== 'error') {
+                setModuleReady(true);
+                return;
+            }
 
             redirectHomeOnClose.current =
                 result.status === 'denied' && result.deniedKind === 'profile';
@@ -136,7 +147,9 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
         if (redirectHomeOnClose.current) {
             redirectHomeOnClose.current = false;
             window.location.assign(process.env.FBC_HOME?.trim() || '/');
+            return;
         }
+        if (!moduleReady) setModuleReady(true);
     };
 
     const handleHealthCheck = async () => {
@@ -181,6 +194,7 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
                 <section className="util-box">
                     <h1 className="maintainers-title">Auditoría y trazabilidad de eventos del módulo financiero y fiscal</h1>
 
+                    {moduleReady ? (
                     <section className="cards-grid">
                         {finalCards.map((it) => {
                             const cardKey = it.title;
@@ -225,9 +239,15 @@ export default function UtilContainer({ cards }: Readonly<{ cards?: UtilCard[] }
                             );
                         })}
                     </section>
+                    ) : null}
                 </section>
             </main>
 
+            <GenericModal
+                visible={syncLoading}
+                variant="loading"
+                message="Cargando el módulo..."
+            />
             <GenericModal
                 visible={modalVisible}
                 variant={modalVariant}

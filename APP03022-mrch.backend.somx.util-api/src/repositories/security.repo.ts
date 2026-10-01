@@ -159,6 +159,8 @@ export interface SecurityCatalogRef {
     dictId: number;
     label: string;
     status: number;
+    /** Presente en perfil/rol asignados: true = sync macrorol, false = admin utilerias */
+    isFromFront?: boolean;
 }
 
 /** Detalle completo de seguridad por usuario (core_security.user_data) */
@@ -212,13 +214,23 @@ function dictionaryLabelExpr(alias: string, langId: number): string {
     return `COALESCE((SELECT dl.description FROM shared_catalogs.dictionary_lang dl WHERE dl.dict_id = ${alias}.dict_id AND dl.lang_id = ${langId} LIMIT 1), ${detailLabelExpr(alias)})`;
 }
 
+function parseRawBool(value: unknown): boolean | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (value === 1 || value === '1' || value === 't' || value === 'true') return true;
+    if (value === 0 || value === '0' || value === 'f' || value === 'false') return false;
+    return undefined;
+}
+
 function mapRawToCatalogRef(row: Record<string, unknown>): SecurityCatalogRef {
+    const isFromFront = parseRawBool(row.isFromFront);
     return {
         id: Number(row.id),
         catalogKey: String(row.catalogKey ?? ''),
         dictId: Number(row.dictId ?? 0),
         label: String(row.label ?? ''),
         status: Number(row.status ?? 0),
+        ...(isFromFront !== undefined ? { isFromFront } : {}),
     };
 }
 
@@ -563,14 +575,69 @@ async function upsertComposite<T extends ObjectLiteral>(
     await repo.save(repo.create(createData as T));
 }
 
-export async function syncProfileUsers(profileId: number, userIds: number[], actorId: string): Promise<void> {
+export async function syncProfileUsers(
+    profileId: number,
+    userIds: number[],
+    actorId: string,
+    isFromFront = false,
+): Promise<void> {
     await datasource.transaction(async (manager) => {
         const profileRepo = manager.getRepository(ProfileUser);
+        const now = new Date();
+
+        if (isFromFront) {
+            await profileRepo
+                .createQueryBuilder()
+                .update(ProfileUser)
+                .set({ status: 0, updatedBy: actorId, updatedAt: now })
+                .where('catalog_detail_profile_id = :profileId', { profileId })
+                .andWhere('status = 1')
+                .andWhere('is_from_front = :fromFront', { fromFront: true })
+                .andWhere(userIds.length ? 'user_data_id NOT IN (:...userIds)' : '1=1', { userIds })
+                .execute();
+
+            const adminRows = userIds.length
+                ? await profileRepo.find({
+                      where: { userDataId: In(userIds), status: 1, isFromFront: false },
+                  })
+                : [];
+            const usersWithAdminProfile = new Set(adminRows.map((row) => row.userDataId));
+            const usersToAssign = userIds.filter((userId) => !usersWithAdminProfile.has(userId));
+
+            if (usersToAssign.length) {
+                await profileRepo
+                    .createQueryBuilder()
+                    .update(ProfileUser)
+                    .set({ status: 0, updatedBy: actorId, updatedAt: now })
+                    .where('user_data_id IN (:...userIds)', { userIds: usersToAssign })
+                    .andWhere('catalog_detail_profile_id <> :profileId', { profileId })
+                    .andWhere('status = 1')
+                    .andWhere('is_from_front = :fromFront', { fromFront: true })
+                    .execute();
+            }
+
+            for (const userId of usersToAssign) {
+                await upsertComposite(
+                    manager,
+                    ProfileUser,
+                    { idCatalogDetailProfile: profileId, userDataId: userId },
+                    {
+                        idCatalogDetailProfile: profileId,
+                        userDataId: userId,
+                        status: 1,
+                        isFromFront: true,
+                        createdBy: actorId,
+                    },
+                    { status: 1, isFromFront: true, updatedBy: actorId, updatedAt: now },
+                );
+            }
+            return;
+        }
 
         await profileRepo
             .createQueryBuilder()
             .update(ProfileUser)
-            .set({ status: 0, updatedBy: actorId, updatedAt: new Date() })
+            .set({ status: 0, updatedBy: actorId, updatedAt: now })
             .where('catalog_detail_profile_id = :profileId', { profileId })
             .andWhere('status = 1')
             .andWhere(userIds.length ? 'user_data_id NOT IN (:...userIds)' : '1=1', { userIds })
@@ -580,7 +647,7 @@ export async function syncProfileUsers(profileId: number, userIds: number[], act
             await profileRepo
                 .createQueryBuilder()
                 .update(ProfileUser)
-                .set({ status: 0, updatedBy: actorId, updatedAt: new Date() })
+                .set({ status: 0, updatedBy: actorId, updatedAt: now })
                 .where('user_data_id IN (:...userIds)', { userIds })
                 .andWhere('catalog_detail_profile_id <> :profileId', { profileId })
                 .andWhere('status = 1')
@@ -596,22 +663,71 @@ export async function syncProfileUsers(profileId: number, userIds: number[], act
                     idCatalogDetailProfile: profileId,
                     userDataId: userId,
                     status: 1,
+                    isFromFront: false,
                     createdBy: actorId,
                 },
-                { status: 1, updatedBy: actorId, updatedAt: new Date() },
+                { status: 1, isFromFront: false, updatedBy: actorId, updatedAt: now },
             );
         }
     });
 }
 
-export async function syncRoleUsers(roleId: number, userIds: number[], actorId: string): Promise<void> {
+export async function syncRoleUsers(
+    roleId: number,
+    userIds: number[],
+    actorId: string,
+    isFromFront = false,
+): Promise<void> {
     await datasource.transaction(async (manager) => {
         const repo = manager.getRepository(RoleUser);
+        const now = new Date();
+
+        if (isFromFront) {
+            await repo
+                .createQueryBuilder()
+                .update(RoleUser)
+                .set({ status: 0, updatedBy: actorId, updatedAt: now })
+                .where('catalog_detail_role_id = :roleId', { roleId })
+                .andWhere('status = 1')
+                .andWhere('is_from_front = :fromFront', { fromFront: true })
+                .andWhere(userIds.length ? 'user_data_id NOT IN (:...userIds)' : '1=1', { userIds })
+                .execute();
+
+            const adminRows = userIds.length
+                ? await repo.find({
+                      where: {
+                          idCatalogDetailRole: roleId,
+                          userDataId: In(userIds),
+                          status: 1,
+                          isFromFront: false,
+                      },
+                  })
+                : [];
+            const usersWithAdminRole = new Set(adminRows.map((row) => row.userDataId));
+            const usersToAssign = userIds.filter((userId) => !usersWithAdminRole.has(userId));
+
+            for (const userId of usersToAssign) {
+                await upsertComposite(
+                    manager,
+                    RoleUser,
+                    { idCatalogDetailRole: roleId, userDataId: userId },
+                    {
+                        idCatalogDetailRole: roleId,
+                        userDataId: userId,
+                        status: 1,
+                        isFromFront: true,
+                        createdBy: actorId,
+                    },
+                    { status: 1, isFromFront: true, updatedBy: actorId, updatedAt: now },
+                );
+            }
+            return;
+        }
 
         await repo
             .createQueryBuilder()
             .update(RoleUser)
-            .set({ status: 0, updatedBy: actorId, updatedAt: new Date() })
+            .set({ status: 0, updatedBy: actorId, updatedAt: now })
             .where('catalog_detail_role_id = :roleId', { roleId })
             .andWhere('status = 1')
             .andWhere(userIds.length ? 'user_data_id NOT IN (:...userIds)' : '1=1', { userIds })
@@ -626,9 +742,10 @@ export async function syncRoleUsers(roleId: number, userIds: number[], actorId: 
                     idCatalogDetailRole: roleId,
                     userDataId: userId,
                     status: 1,
+                    isFromFront: false,
                     createdBy: actorId,
                 },
-                { status: 1, updatedBy: actorId, updatedAt: new Date() },
+                { status: 1, isFromFront: false, updatedBy: actorId, updatedAt: now },
             );
         }
     });
@@ -1594,6 +1711,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         .addSelect('p.dictId', 'dictId')
         .addSelect(catalogRefLabelExpr('p', langId), 'label')
         .addSelect('p.status', 'status')
+        .addSelect('pu.is_from_front', 'isFromFront')
         .orderBy(catalogRefLabelExpr('p', langId), 'ASC')
         .getRawMany<Record<string, unknown>>();
 
@@ -1679,6 +1797,7 @@ export async function getSecurityUserDetailsByCatalogKey(
         .addSelect('r.dictId', 'dictId')
         .addSelect(catalogRefLabelExpr('r', langId), 'label')
         .addSelect('r.status', 'status')
+        .addSelect('ru.is_from_front', 'isFromFront')
         .orderBy(catalogRefLabelExpr('r', langId), 'ASC')
         .getRawMany<Record<string, unknown>>();
 
@@ -2176,9 +2295,10 @@ export async function linkProfileUserOnly(userId: number, profileId: number, act
                 idCatalogDetailProfile: profileId,
                 userDataId: userId,
                 status: 1,
+                isFromFront: false,
                 createdBy: actorId,
             },
-            { status: 1, updatedBy: actorId, updatedAt: new Date() },
+            { status: 1, isFromFront: false, updatedBy: actorId, updatedAt: new Date() },
         );
     });
 }

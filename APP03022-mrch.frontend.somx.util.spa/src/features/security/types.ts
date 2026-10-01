@@ -145,6 +145,7 @@ export interface CatalogDetailGridRow {
   id: number;
   name: string;
   description: string;
+  isFromFront?: boolean;
 }
 
 export interface UserApplicationEventRow {

@@ -70,10 +70,33 @@ public class SecurityContextFilter extends OncePerRequestFilter {
         UtilApiSecurityClient.SecurityAttributes attrs = utilApi.getAttributesBySub(sub);
         log.debug("STM-1403 sub={} vendors={} types={} groups={}", sub, attrs.vendors(), attrs.types(), attrs.groups());
 
+        java.util.List<String> vendors = new java.util.ArrayList<>(attrs.vendors());
+        java.util.List<String> types   = new java.util.ArrayList<>(attrs.types());
+        java.util.List<String> groups  = new java.util.ArrayList<>(attrs.groups());
+
+        if (vendors.isEmpty() && types.isEmpty() && groups.isEmpty()) {
+            vendors = parseHeaderList(request.getHeader("x-user-vendors"));
+            types   = parseHeaderList(request.getHeader("x-user-types"));
+            groups  = parseHeaderList(request.getHeader("x-user-groups"));
+        }
+
+        java.util.List<String> rfcs = extractRfcs(request);
+        if (!rfcs.isEmpty()) {
+            java.util.List<String> rfcSuppliers = utilApi.getSupplierNumbersByRfcs(rfcs);
+            if (!rfcSuppliers.isEmpty()) {
+                if (vendors.isEmpty()) {
+                    vendors = new java.util.ArrayList<>(rfcSuppliers);
+                } else {
+                    java.util.Set<String> allowed = new java.util.HashSet<>(rfcSuppliers);
+                    vendors = vendors.stream().filter(allowed::contains).collect(java.util.stream.Collectors.toList());
+                }
+            }
+        }
+
         Map<String, String> overrides = new HashMap<>();
-        overrides.put("x-user-vendors", joinOrEmpty(attrs.vendors()));
-        overrides.put("x-user-types",   joinOrEmpty(attrs.types()));
-        overrides.put("x-user-groups",  joinOrEmpty(attrs.groups()));
+        overrides.put("x-user-vendors", joinOrEmpty(vendors));
+        overrides.put("x-user-types",   joinOrEmpty(types));
+        overrides.put("x-user-groups",  joinOrEmpty(groups));
 
         HttpServletRequest wrapped = new HeaderOverrideRequest(request, overrides);
         chain.doFilter(wrapped, response);
@@ -99,9 +122,50 @@ public class SecurityContextFilter extends OncePerRequestFilter {
         }
     }
 
+    private java.util.List<String> extractRfcs(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        if (auth == null || !auth.startsWith("Bearer ")) return java.util.Collections.emptyList();
+        String token = auth.substring("Bearer ".length()).trim();
+        if (token.isEmpty()) return java.util.Collections.emptyList();
+
+        try {
+            String[] parts = token.split("\\.", -1);
+            if (parts.length != 3) return java.util.Collections.emptyList();
+            JsonNode payload = MAPPER.readTree(Base64.getUrlDecoder().decode(parts[1]));
+
+            JsonNode list = null;
+            for (String field : new String[] { "vendors-taxs", "vendorsTaxs", "taxIds", "tax_ids" }) {
+                if (payload.has(field)) { list = payload.get(field); break; }
+            }
+            if (list == null || !list.isArray()) return java.util.Collections.emptyList();
+
+            java.util.LinkedHashSet<String> rfcs = new java.util.LinkedHashSet<>();
+            for (JsonNode v : list) {
+                String raw = v.path("taxId").asText(null);
+                if (raw == null) raw = v.path("rfc").asText(null);
+                if (raw == null) raw = v.path("tax_id").asText(null);
+                if (raw != null && !raw.isBlank()) rfcs.add(raw.trim());
+            }
+            return new java.util.ArrayList<>(rfcs);
+        } catch (Exception e) {
+            log.debug("Failed to extract RFCs from JWT payload: {}", e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
     private static String joinOrEmpty(java.util.List<String> values) {
         if (values == null || values.isEmpty()) return "";
         return String.join(",", values);
+    }
+
+    private static java.util.List<String> parseHeaderList(String value) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (value == null || value.isBlank()) return out;
+        for (String part : value.split(",")) {
+            String t = part.trim();
+            if (!t.isEmpty()) out.add(t);
+        }
+        return out;
     }
 
     /**

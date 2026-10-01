@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import * as svc from "@/services/auditLog.service.js";
+import { resolveAuditUserScope } from "@/services/security.service.js";
 import {
     CreateAuditLogSchema,
     ListAuditLogsQuerySchema,
@@ -20,7 +21,8 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function list(req: Request, res: Response, next: NextFunction) {
     try {
         const q = ListAuditLogsQuerySchema.parse(req.query);
-        const result = await svc.list(q);
+        const scope = await resolveAuditUserScope(req);
+        const result = await svc.list(q, scope.restrictToUser ? scope.userIds : undefined);
         res.json(result);
     } catch (e) {
         next(e);
@@ -50,13 +52,33 @@ export async function detailByTransaction(req: Request, res: Response, next: Nex
 export async function exportCsv(req: Request, res: Response, next: NextFunction) {
     try {
         const q = ListAuditLogsQuerySchema.parse(req.query);
-        const csv = await svc.exportCsv(q);
+        const scope = await resolveAuditUserScope(req);
+        const csv = await svc.exportCsv(q, scope.restrictToUser ? scope.userIds : undefined);
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
         res.setHeader("Content-Type", "text/csv; charset=utf-8");
         res.setHeader("Content-Disposition", `attachment; filename="audit_logs_${timestamp}.csv"`);
         res.send(csv);
+    } catch (e) {
+        next(e);
+    }
+}
+
+export async function applications(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const modulo =
+            typeof req.query.modulo === "string"
+                ? req.query.modulo.trim()
+                : undefined;
+
+        const result = await svc.applications(modulo || undefined);
+
+        res.json(result);
     } catch (e) {
         next(e);
     }

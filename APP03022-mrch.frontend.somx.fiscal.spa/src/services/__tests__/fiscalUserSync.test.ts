@@ -128,9 +128,11 @@ describe("syncFiscalUser", () => {
     expect(result.status).toBe("assigned");
     expect(mockRequest).toHaveBeenCalledWith("security/profiles/981/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
     });
     expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
     });
   });
 });

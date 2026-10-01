@@ -19,6 +19,8 @@ export interface UserAssignments {
   profileIds: number[];
   roleIds: number[];
   multipleProfiles: boolean;
+  profileIsFromFront?: boolean | null;
+  frontRoleIds?: number[];
 }
 
 export function normalizeLabel(value: string | null | undefined): string {
@@ -131,6 +133,12 @@ function positiveId(value: unknown): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function readIsFromFront(value: unknown, defaultValue = true): boolean {
+  if (value === false || value === 0 || value === "0" || value === "false") return false;
+  if (value === true || value === 1 || value === "1" || value === "true") return true;
+  return defaultValue;
+}
+
 export function parseUserCatalogAssignments(detail: unknown): UserAssignments {
   const record = asRecord(detail);
   const profile = asRecord(record?.profile);
@@ -144,18 +152,23 @@ export function parseUserCatalogAssignments(detail: unknown): UserAssignments {
       ? record.roles
       : [];
   const roleIds: number[] = [];
+  const frontRoleIds: number[] = [];
   const seen = new Set<number>();
   for (const row of roleRows) {
-    const id = positiveId(asRecord(row)?.id);
+    const item = asRecord(row);
+    const id = positiveId(item?.id);
     if (!id || seen.has(id)) continue;
     seen.add(id);
     roleIds.push(id);
+    if (readIsFromFront(item?.isFromFront, true)) frontRoleIds.push(id);
   }
 
   return {
     profileIds,
     roleIds,
     multipleProfiles: Boolean(record?.multipleProfilesDetected) || profileIds.length > 1,
+    profileIsFromFront: profileId ? readIsFromFront(profile?.isFromFront, true) : null,
+    frontRoleIds,
   };
 }
 
@@ -182,7 +195,17 @@ export function assignmentsMatchExpected(
   roleIds: number[]
 ): boolean {
   if (current.multipleProfiles) return false;
-  return sameNumberSet(current.profileIds, [profileId]) && sameNumberSet(current.roleIds, roleIds);
+  if (!current.profileIds.length) return false;
+
+  const profileFromFront = current.profileIsFromFront !== false;
+  if (profileFromFront && current.profileIds[0] !== profileId) return false;
+
+  const have = new Set(current.roleIds);
+  if (roleIds.some((id) => !have.has(id))) return false;
+
+  const frontRoles = current.frontRoleIds ?? current.roleIds;
+  const expected = new Set(roleIds);
+  return !frontRoles.some((id) => !expected.has(id));
 }
 
 export function axiosErrorMessage(error: unknown): string | undefined {

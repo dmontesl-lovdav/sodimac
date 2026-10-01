@@ -579,30 +579,35 @@ export default function CatalogsContainer() {
                 {(() => {
                   const exportDisabled = isExporting || !hasSearched || catalogs.length === 0;
                   return (
-                    <>
-                      <button
-                        style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
-                        onClick={() => handleExport('csv')}
-                        disabled={exportDisabled}
-                        title="Exportar a CSV"
-                      >
-                        <ExportFileIcon />
-                        Exportar CSV
-                      </button>
-                      <button
-                        style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
-                        onClick={() => handleExport('xlsx')}
-                        disabled={exportDisabled}
-                        title="Exportar a Excel"
-                      >
-                        <ExportFileIcon />
-                        Exportar Excel
-                      </button>
-                    </>
+                    <button
+                      style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
+                      onClick={() => handleExport('csv')}
+                      disabled={exportDisabled}
+                      title="Exportar a CSV"
+                    >
+                      <ExportFileIcon />
+                      Exportar CSV
+                    </button>
                   );
                 })()}
               </PermissionGate>
-              <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT}>
+              <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DOWNLOAD_EXCEL}>
+                {(() => {
+                  const exportDisabled = isExporting || !hasSearched || catalogs.length === 0;
+                  return (
+                    <button
+                      style={{ ...styles.secondaryBtn, opacity: exportDisabled ? 0.5 : 1, cursor: exportDisabled ? 'not-allowed' : 'pointer' }}
+                      onClick={() => handleExport('xlsx')}
+                      disabled={exportDisabled}
+                      title="Exportar a Excel"
+                    >
+                      <ExportFileIcon />
+                      Exportar Excel
+                    </button>
+                  );
+                })()}
+              </PermissionGate>
+              <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.NEW_CATALOG}>
                 <button
                   style={styles.primaryBtn}
                   onClick={() => navigate('/util/catalogos/catalogs/crear')}
@@ -803,13 +808,15 @@ export default function CatalogsContainer() {
                         <td style={styles.td}>{catalog.updatedBy || '-'}</td>
                         <td style={styles.td}>{formatDate(catalog.updatedAt)}</td>
                         <td style={styles.td}>
-                          <button
-                            style={styles.actionBtn}
-                            title="Ver"
-                            onClick={() => navigate(`/util/catalogos/catalogs/${catalog.id}/elementos`)}
-                          >
-                            <img src={eyeIcon} alt="Ver" style={{ width: '20px', height: '20px' }} />
-                          </button>
+                          <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.VIEW_DETAIL}>
+                            <button
+                              style={styles.actionBtn}
+                              title="Ver"
+                              onClick={() => navigate(`/util/catalogos/catalogs/${catalog.id}/elementos`)}
+                            >
+                              <img src={eyeIcon} alt="Ver" style={{ width: '20px', height: '20px' }} />
+                            </button>
+                          </PermissionGate>
                         </td>
                         <td style={styles.td}>
                           <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT}>

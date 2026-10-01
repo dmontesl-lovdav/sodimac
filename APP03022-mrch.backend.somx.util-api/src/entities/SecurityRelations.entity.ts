@@ -104,6 +104,9 @@ export class ProfileUser {
     @Column({ name: 'status', type: 'smallint', default: 1 })
     status!: number;
 
+    @Column({ name: 'is_from_front', type: 'boolean', default: false })
+    isFromFront!: boolean;
+
     @Column({ name: 'created_by', type: 'varchar', length: 80, default: () => "'SYSTEM'" })
     createdBy!: string;
 
@@ -151,6 +154,9 @@ export class RoleUser {
 
     @Column({ name: 'status', type: 'smallint', default: 1 })
     status!: number;
+
+    @Column({ name: 'is_from_front', type: 'boolean', default: false })
+    isFromFront!: boolean;
 
     @Column({ name: 'created_by', type: 'varchar', length: 80, default: () => "'SYSTEM'" })
     createdBy!: string;

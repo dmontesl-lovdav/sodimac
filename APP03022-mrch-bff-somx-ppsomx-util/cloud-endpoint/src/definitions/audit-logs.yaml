@@ -170,3 +170,8 @@ AuditLogsByTransactionResponse:
       type: array
       items:
         $ref: "#/AuditLogDto"
+
+AuditLogApplicationsResponse:
+  type: array
+  items:
+    type: string

@@ -10,6 +10,7 @@ type FindWithFiltersArgs = {
     idTransaccion?: string;
     modulo?: string;
     search?: string;
+    restrictUserIds?: string[];
     page: number;
     limit: number;
 };
@@ -130,6 +131,11 @@ function buildWhere(a: FindWithFiltersArgs) {
         );
     }
 
+    if (a.restrictUserIds?.length) {
+        values.push(a.restrictUserIds);
+        where.push(`user_id = ANY($${i++}::text[])`);
+    }
+
     return { whereSql: `WHERE ${where.join(" AND ")}`, values, nextIndex: i };
 }
 
@@ -179,7 +185,13 @@ export async function findWithFilters(args: FindWithFiltersArgs) {
     return { page: args.page, limit: args.limit, total, data };
 }
 
-export async function findManyByIds(ids: string[]) {
+export async function findManyByIds(ids: string[], restrictUserIds?: string[]) {
+    const params: any[] = [ids];
+    let userFilter = "";
+    if (restrictUserIds?.length) {
+        params.push(restrictUserIds);
+        userFilter = `AND user_id = ANY($2::text[])`;
+    }
     const sql = `
         SELECT
             activity_logs_uuid, trace_front_id, trace_id, duration_ms, is_error,
@@ -188,9 +200,10 @@ export async function findManyByIds(ids: string[]) {
             timestamp, details
         FROM core_audit.activity_logs
         WHERE activity_logs_uuid = ANY($1::uuid[])
+        ${userFilter}
         ORDER BY timestamp DESC
     `;
-    const rows = await datasource.query(sql, [ids]);
+    const rows = await datasource.query(sql, params);
     return rows ?? [];
 }
 
@@ -222,4 +235,29 @@ export async function findByTransactionId(idTransaccion: string) {
     `;
     const rows = await datasource.query(sql, [idTransaccion]);
     return rows ?? [];
+}
+
+export async function findServiceNames(modulo?: string) {
+    const values: any[] = [];
+
+    let whereSql = `
+        WHERE service_name IS NOT NULL
+        AND BTRIM(service_name) <> ''
+    `;
+
+    if (modulo) {
+        values.push(modulo);
+        whereSql += ` AND modulo = $1`;
+    }
+
+    const sql = `
+        SELECT DISTINCT service_name
+        FROM core_audit.activity_logs
+        ${whereSql}
+        ORDER BY service_name
+    `;
+
+    const rows = await datasource.query(sql, values);
+
+    return rows.map((row: any) => row.service_name);
 }

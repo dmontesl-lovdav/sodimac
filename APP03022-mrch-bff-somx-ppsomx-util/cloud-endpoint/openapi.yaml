@@ -3284,6 +3284,39 @@ paths:
             $ref: '#/definitions/ExceptionWrapper'
       security:
         - bearerAuth: []
+  /audit-logs/applications:
+    get:
+      tags:
+        - audit-logs
+      summary: List audit log applications
+      operationId: listAuditLogApplications
+      produces:
+        - application/json
+      parameters:
+        - name: modulo
+          in: query
+          required: false
+          description: Module used to filter applications
+          type: string
+      responses:
+        '200':
+          description: List of applications registered in audit logs
+          schema:
+            $ref: '#/definitions/AuditLogApplicationsResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+        '500':
+          description: Internal error
+          schema:
+            $ref: '#/definitions/ExceptionWrapper'
+      security:
+        - bearerAuth: []
   '/audit-logs/transaction/{idTransaccion}':
     get:
       tags:
@@ -7357,6 +7390,10 @@ definitions:
         example: true
       data:
         $ref: '#/definitions/InvalidateUserDetailsCacheData'
+  AuditLogApplicationsResponse:
+    type: array
+    items:
+      type: string
 securityDefinitions:
   api_key:
     in: query

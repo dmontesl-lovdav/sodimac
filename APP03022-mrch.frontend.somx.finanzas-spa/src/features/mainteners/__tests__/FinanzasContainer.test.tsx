@@ -55,11 +55,11 @@ import FinanzasContainer from "../FinanzasContainer";
 import { syncFinanzasUser } from "@/services/finanzasUserSync";
 
 describe("FinanzasContainer", () => {
-  it("renderiza tarjetas por defecto", () => {
+  it("no muestra las tarjetas hasta terminar el sync del módulo", () => {
     const html = renderToStaticMarkup(React.createElement(FinanzasContainer));
     expect(html).toContain("finanzas-root");
-    expect(html).toContain("Guías de embarque");
-    expect(html).toContain("Healthcheck");
+    expect(html).not.toContain("Healthcheck");
+    expect(html).not.toContain("Guías de embarque");
   });
 
   it("inicia el cruce de macrorol al cargar la tarjeta de finanzas", () => {

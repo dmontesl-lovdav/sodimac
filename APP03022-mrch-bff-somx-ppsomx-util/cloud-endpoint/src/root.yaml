@@ -150,6 +150,8 @@ paths:
     $ref: "./paths/audit-logs.yaml#/audit-logs"
   /audit-logs/export/csv:
     $ref: "./paths/audit-logs.yaml#/audit-logs-export-csv"
+  /audit-logs/applications:
+    $ref: "./paths/audit-logs.yaml#/audit-logs-applications"
   /audit-logs/transaction/{idTransaccion}:
     $ref: "./paths/audit-logs.yaml#/audit-logs-by-transaction"
   /audit-logs/{id}:
@@ -494,6 +496,8 @@ definitions:
     $ref: "./definitions/security.yaml#/InvalidateUserDetailsCacheData"
   InvalidateUserDetailsCacheResponse:
     $ref: "./definitions/security.yaml#/InvalidateUserDetailsCacheResponse"
+  AuditLogApplicationsResponse:
+    $ref: "./definitions/audit-logs.yaml#/AuditLogApplicationsResponse"
 
 securityDefinitions:
   api_key:
@@ -524,4 +528,3 @@ x-components: {}
 x-google-endpoints:
   - allowCors: true
     name: ${DOMAIN_OPENAPI}
-

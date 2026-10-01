@@ -160,6 +160,22 @@ describe("finanzasUserSync.helpers", () => {
         )
       ).toBe(false);
     });
+
+    it("no exige cambiar el perfil si lo asignó el admin y conserva roles extra del admin", () => {
+      expect(
+        assignmentsMatchExpected(
+          {
+            profileIds: [10],
+            roleIds: [1022, 50],
+            multipleProfiles: false,
+            profileIsFromFront: false,
+            frontRoleIds: [1022],
+          },
+          981,
+          [1022]
+        )
+      ).toBe(true);
+    });
   });
 
   describe("parseUserCatalogAssignments", () => {
@@ -174,6 +190,29 @@ describe("finanzasUserSync.helpers", () => {
         profileIds: [981],
         roleIds: [1022, 1031],
         multipleProfiles: false,
+        profileIsFromFront: true,
+        frontRoleIds: [1022, 1031],
+      });
+    });
+
+    it("marca perfil y roles del admin cuando isFromFront es false", () => {
+      expect(
+        parseUserCatalogAssignments({
+          profile: { id: 10, isFromFront: false },
+          multipleProfilesDetected: false,
+          roles: {
+            items: [
+              { id: 1022, isFromFront: 1 },
+              { id: 50, isFromFront: 0 },
+            ],
+          },
+        })
+      ).toEqual({
+        profileIds: [10],
+        roleIds: [1022, 50],
+        multipleProfiles: false,
+        profileIsFromFront: false,
+        frontRoleIds: [1022],
       });
     });
   });

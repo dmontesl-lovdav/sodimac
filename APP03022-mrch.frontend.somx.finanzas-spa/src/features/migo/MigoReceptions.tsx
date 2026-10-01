@@ -15,7 +15,8 @@ import { APP_EVENT, PermissionGate } from '@shared/security';
 
 import eyeIcon from '@assets/eye-show.svg';
 
-import { formatDate } from '@/utils/utils';
+import { formatDate, fetchCatalogDetails } from '@/utils/utils';
+import { catalogDetailsToReceptionTypeOptions } from '@/features/orders/receptionTypeQuery';
 import { migoService } from './api/MigoClient';
 import type { MigoDocument, MigoReception } from './interfaces';
 import { MIGO_STATUS_MAP } from './interfaces';
@@ -50,6 +51,28 @@ export default function MigoReceptions(): ReactElement {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
+    // Mapa valor(IdTipoRecepcion) -> descripción (CatTipoRecepcion) para mostrar el nombre en el grid.
+    const [receptionTypeMap, setReceptionTypeMap] = useState<Map<string, string>>(new Map());
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetchCatalogDetails('CATTIPORECEPCION');
+                if (cancelled) return;
+                const map = new Map<string, string>();
+                for (const opt of catalogDetailsToReceptionTypeOptions(res)) {
+                    if (opt.value) map.set(String(opt.value), opt.label);
+                }
+                setReceptionTypeMap(map);
+            } catch {
+                /* si falla el catálogo, se muestra el valor crudo */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const loadDocument = useCallback(async () => {
         if (!id) return;
@@ -117,6 +140,7 @@ export default function MigoReceptions(): ReactElement {
         exportGroupedMigoReceptionsCsv(
             groupedReceptions,
             migoReceptionsCsvFileName(doc?.folio ?? id),
+            receptionTypeMap,
         );
     };
 
@@ -125,7 +149,10 @@ export default function MigoReceptions(): ReactElement {
     const columns: Column<GroupedMigoReception>[] = [
         { header: 'Orden Compra', render: (r) => r.nroOc },
         { header: 'Recepción', render: (r) => r.nroRecepcion },
-        { header: 'Tipo Recepción', align: 'center', render: (r) => (r.tipoRecepcion != null ? r.tipoRecepcion : '--') },
+        { header: 'Tipo Recepción', align: 'center', render: (r) => {
+            if (r.tipoRecepcion == null) return '--';
+            return receptionTypeMap.get(String(r.tipoRecepcion)) ?? String(r.tipoRecepcion);
+        } },
         { header: 'Sucursal', align: 'center', render: (r) => r.sucursal },
         { header: 'Número Proveedor', render: (r) => r.numeroProveedor ?? '--' },
         { header: 'Nombre Proveedor', render: (r) => r.vendorName ?? '--' },

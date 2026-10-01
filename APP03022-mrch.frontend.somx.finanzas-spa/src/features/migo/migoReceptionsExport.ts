@@ -66,12 +66,16 @@ export function groupMigoReceptions(
 }
 
 export function mapGroupedMigoReceptionToCsvRow(
-    r: GroupedMigoReception
+    r: GroupedMigoReception,
+    receptionTypeMap?: Map<string, string>
 ): string[] {
+    const tipoRecepcion = r.tipoRecepcion != null
+        ? (receptionTypeMap?.get(String(r.tipoRecepcion)) ?? String(r.tipoRecepcion))
+        : "--";
     return [
         String(r.nroOc ?? ""),
         String(r.nroRecepcion ?? ""),
-        r.tipoRecepcion != null ? String(r.tipoRecepcion) : "--",
+        tipoRecepcion,
         String(r.sucursal ?? ""),
         r.numeroProveedor || "--",
         r.vendorName || "--",
@@ -86,11 +90,12 @@ export function mapGroupedMigoReceptionToCsvRow(
 
 export function exportGroupedMigoReceptionsCsv(
     receptions: GroupedMigoReception[],
-    fileBaseName: string
+    fileBaseName: string,
+    receptionTypeMap?: Map<string, string>
 ): void {
     exportToCSV(
         [...MIGO_GROUPED_RECEPTION_CSV_HEADERS],
-        receptions.map(mapGroupedMigoReceptionToCsvRow),
+        receptions.map((r) => mapGroupedMigoReceptionToCsvRow(r, receptionTypeMap)),
         fileBaseName
     );
 }

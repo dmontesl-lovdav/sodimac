@@ -144,6 +144,7 @@ export default function CreditsGrid() {
     setErrorMsg(null);
     try {
       await client.cancelCreditNote(row.fiscalUuid ?? "", row.numeroProveedor ?? "1001");
+      setSearchToken((t) => t + 1);
     } catch (error: unknown) {
       setErrorMsg(getErrorMessage(error, "Error al cancelar la nota de crédito"));
     } finally {

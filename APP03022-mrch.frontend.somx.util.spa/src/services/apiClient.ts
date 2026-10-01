@@ -91,8 +91,6 @@ export function createApiClient(options?: {
         const token = resolveToken();
         const isLocal = isLocalEnvironment();
 
-        if (!token && !isLocal) throw new Error("No token");
-
         const isFormData =
             typeof FormData !== "undefined" && data instanceof FormData;
 
@@ -132,7 +130,6 @@ export function createApiClient(options?: {
         const token = resolveToken();
         const isLocal = isLocalEnvironment();
 
-        if (!token && !isLocal) throw new Error("No token");
 
         const isFormData =
             typeof FormData !== "undefined" && data instanceof FormData;

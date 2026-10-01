@@ -14,7 +14,7 @@ const localPort = process.env.PORT || process.env.LOCAL_PORT || "8080"
 const localContext = process.env.LOCAL_CONTEXT || "/";
 const healthPath = process.env.HEALTH_PATH || "/health";
 const maximumPayloadSize = process.env.MAX_BODY_SIZE || "66mb";
-const utilApiUrl = process.env.UTIL_API_URL || "http://localhost:3712";
+const utilApiUrl = process.env.UTIL_API_URL || "http://localhost:3712/api";
 
 // ---------------------------------------------------------------------------
 // Security context
@@ -53,7 +53,7 @@ async function fetchSecurityContext(userKey) {
   const cached = SECURITY_CACHE.get(userKey);
   if (cached && cached.expiresAt > now) return cached.data;
   try {
-    const res = await fetch(`${utilApiUrl}/api/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
+    const res = await fetch(`${utilApiUrl}/security/user-attributes-by-key/${encodeURIComponent(userKey)}`);
     if (!res.ok) { logger.warn({ userKey, status: res.status }, "util-api user-attributes non-ok"); return null; }
     const body = await res.json();
     const data = body?.data ?? body;

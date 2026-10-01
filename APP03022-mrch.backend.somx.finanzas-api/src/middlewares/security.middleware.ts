@@ -1,9 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
+import * as sharedCatalogService from "@/services/sharedCatalog.service.js";
 
 export interface SecurityContext {
     vendors: string[] | null; // null = sin restricción (admin)
     types: string[] | null;
     groups: string[] | null;
+    rebates: string[] | null; 
 }
 
 declare module "express-serve-static-core" {
@@ -30,7 +32,7 @@ function parseHeader(value: string | undefined): string[] | null | "empty" {
         .filter(Boolean);
 }
 
-export function attachSecurityContext(
+export async function attachSecurityContext(
     req: Request,
     _res: Response,
     next: NextFunction,
@@ -38,11 +40,32 @@ export function attachSecurityContext(
     const vendors = parseHeader(req.headers["x-user-vendors"] as string | undefined);
     const types = parseHeader(req.headers["x-user-types"] as string | undefined);
     const groups = parseHeader(req.headers["x-user-groups"] as string | undefined);
+    const rebates = parseHeader(req.headers["x-user-rebates"] as string | undefined);
+    const rfcs = parseHeader(req.headers["x-user-rfcs"] as string | undefined);
+
+    let effectiveVendors: string[] | null = vendors === "empty" ? [] : vendors;
+
+    const rfcList = rfcs === "empty" ? [] : rfcs;
+    if (rfcList && rfcList.length > 0) {
+        try {
+            const rfcSuppliers = await sharedCatalogService.getSupplierNumbersByRfcs(rfcList);
+            if (rfcSuppliers.length > 0) {
+                if (effectiveVendors === null) {
+                    effectiveVendors = rfcSuppliers;
+                } else {
+                    const allowed = new Set(rfcSuppliers.map(String));
+                    effectiveVendors = effectiveVendors.filter((v) => allowed.has(String(v)));
+                }
+            }
+        } catch {
+        }
+    }
 
     req.security = {
-        vendors: vendors === "empty" ? [] : vendors,
+        vendors: effectiveVendors,
         types: types === "empty" ? [] : types,
         groups: groups === "empty" ? [] : groups,
+        rebates: rebates === "empty" ? [] : rebates,
     };
 
     next();

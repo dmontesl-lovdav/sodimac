@@ -16,6 +16,8 @@ r.get("/", validateQuery(ListAuditLogsQuerySchema), controller.list);
 
 r.get("/export/csv", validateQuery(ListAuditLogsQuerySchema), controller.exportCsv);
 
+r.get("/applications", controller.applications);
+
 r.get(
     "/transaction/:idTransaccion",
     validateParams(AuditLogTransactionParamSchema),

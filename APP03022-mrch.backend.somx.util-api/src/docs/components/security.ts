@@ -63,6 +63,12 @@ export const securitySchemas = {
                 type: 'array',
                 items: { type: 'integer' },
             },
+            isFromFront: {
+                type: 'boolean',
+                default: false,
+                description:
+                    'Solo aplica a PUT perfil-usuario y rol-usuario. true/1 = sync de macrorol (Finanzas/Fiscal/Utils); false/0 = admin de utilerias. Default false.',
+            },
         },
     },
     UserAttribute: {

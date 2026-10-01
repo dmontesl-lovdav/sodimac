@@ -225,6 +225,10 @@ export async function findByTypeAndBlockStatus(
         const allowedVendors = new Set(security.vendors.map(String));
         suppliers = suppliers.filter((s) => allowedVendors.has(String(s.supplierNumber)));
     }
+    if (security?.groupSuppliers != null) {
+        const allowedGroup = new Set(security.groupSuppliers.map(String));
+        suppliers = suppliers.filter((s) => allowedGroup.has(String(s.supplierNumber)));
+    }
     if (security?.typeIds && security.typeIds.length > 0) {
         const allowedTypes = new Set(security.typeIds);
         suppliers = suppliers.filter((s) => s.supplierTypeId != null && allowedTypes.has(s.supplierTypeId));

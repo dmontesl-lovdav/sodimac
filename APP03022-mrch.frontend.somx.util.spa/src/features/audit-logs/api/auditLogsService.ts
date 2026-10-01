@@ -29,7 +29,7 @@ export function createAuditLogsService(api: ApiClient) {
         idTransaccion?: string;
         modulo?: string;
         search?: string;
-        ids?: string[]; 
+        ids?: string[];
         fechaInicio: string | Date;
         fechaFin: string | Date;
         page?: number;
@@ -91,10 +91,18 @@ export function createAuditLogsService(api: ApiClient) {
         );
     }
 
+    async function getAuditLogApplications(modulo?: string) {
+        const query = toQuery({ modulo });
+        const suffix = query ? `?${query}` : "";
+
+        return api.request(`audit-logs/applications${suffix}`, "get");
+    }
+
     return {
         listAuditLogs,
         getAuditLogDetail,
         getCatalogDetailsByCode,
         exportAuditLogsCsv,
+        getAuditLogApplications
     };
 }

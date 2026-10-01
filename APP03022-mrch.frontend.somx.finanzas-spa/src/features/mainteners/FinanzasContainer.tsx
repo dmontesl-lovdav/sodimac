@@ -62,6 +62,11 @@ export default function FinanzasContainer({
     const isLocal =
         ConfigurationBuilder.localDeployment;
 
+    const [moduleReady, setModuleReady] =
+        useState(isLocal);
+    const [syncLoading, setSyncLoading] =
+        useState(!isLocal);
+
     const homeSyncStarted = useRef(false);
     const redirectHomeOnClose = useRef(false);
 
@@ -73,14 +78,23 @@ export default function FinanzasContainer({
     }
 
     useEffect(() => {
-       // if (isLocal) return;
+        if (isLocal) {
+            setSyncLoading(false);
+            setModuleReady(true);
+            return;
+        }
 
         let cancelled = false;
 
         async function runAccessSync() {
+            setSyncLoading(true);
             const result = await syncFinanzasUser();
             if (cancelled) return;
-            if (result.status !== 'denied' && result.status !== 'error') return;
+            setSyncLoading(false);
+            if (result.status !== 'denied' && result.status !== 'error') {
+                setModuleReady(true);
+                return;
+            }
 
             redirectHomeOnClose.current =
                 result.status === 'denied' && result.deniedKind === 'profile';
@@ -252,6 +266,7 @@ export default function FinanzasContainer({
                         pagos y descuentos
                     </h1>
 
+                    {moduleReady ? (
                     <section className="cards-grid">
                         {finalCards.map(
                             (it) => {
@@ -398,8 +413,15 @@ export default function FinanzasContainer({
                             }
                         )}
                     </section>
+                    ) : null}
                 </section>
             </main>
+
+            <GenericModal
+                visible={syncLoading}
+                variant="loading"
+                message="Cargando el módulo..."
+            />
 
             <GenericModal
                 visible={modalVisible}
@@ -413,7 +435,9 @@ export default function FinanzasContainer({
                     if (redirectHomeOnClose.current) {
                         redirectHomeOnClose.current = false;
                         window.location.assign(process.env.FBC_HOME?.trim() || '/');
+                        return;
                     }
+                    setModuleReady(true);
                 }}
             />
         </div>

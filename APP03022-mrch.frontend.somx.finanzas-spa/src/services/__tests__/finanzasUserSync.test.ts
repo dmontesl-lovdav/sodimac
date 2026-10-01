@@ -183,9 +183,11 @@ describe("syncFinanzasUser", () => {
     expect(result.status).toBe("assigned");
     expect(mockRequest).toHaveBeenCalledWith("security/profiles/981/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
     });
     expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
     });
     expect(fetchCatalog).toHaveBeenCalledTimes(2);
   });
@@ -272,10 +274,71 @@ describe("syncFinanzasUser", () => {
     expect(result.status).toBe("reassigned");
     expect(mockRequest).toHaveBeenCalledWith("security/profiles/981/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
     });
-    expect(mockRequest).toHaveBeenCalledWith("security/roles/20/users", "put", { selectedIds: [9] });
+    expect(mockRequest).toHaveBeenCalledWith("security/roles/20/users", "put", {
+      selectedIds: [9],
+      isFromFront: 1,
+    });
     expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
       selectedIds: [13],
+      isFromFront: 1,
+    });
+  });
+
+  it("no reemplaza el perfil del admin y solo agrega roles del macrorol", async () => {
+    mockRequest.mockImplementation(async (path: string, method: string) => {
+      const p = String(path);
+      if (p.includes("user-utility")) return { success: true };
+      if (p.includes("user-catalog") && !p.includes("catalog-detail")) {
+        return {
+          data: {
+            items: [{ id: 13, username: "4b36d77f-5b01-4889-bcfc-ef8abe130ade" }],
+          },
+        };
+      }
+      if (p.includes("catalog-detail")) {
+        return {
+          data: {
+            profile: { id: 10, isFromFront: false },
+            roles: { items: [{ id: 50, isFromFront: false }] },
+          },
+        };
+      }
+      if (p === "security/roles/1022/users" && method === "get") {
+        return { data: { assigned: [] } };
+      }
+      return { success: true };
+    });
+    fetchCatalog.mockImplementation(async (path: string) => {
+      if (catalogPath(path) === MACRO_ROL_PERFIL_CATALOG) {
+        return {
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "0981" }],
+        };
+      }
+      if (catalogPath(path) === MACRO_ROL_ROL_CATALOG) {
+        return {
+          details: [{ externalKey: "FBC_NATIONAL_COMMERCIAL_SUPPLIER_USER", value: "1022" }],
+        };
+      }
+      return null;
+    });
+
+    const result = await syncFinanzasUser();
+    expect(result.status).toBe("reassigned");
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      "security/profiles/981/users",
+      "put",
+      expect.anything()
+    );
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      "security/roles/50/users",
+      "put",
+      expect.anything()
+    );
+    expect(mockRequest).toHaveBeenCalledWith("security/roles/1022/users", "put", {
+      selectedIds: [13],
+      isFromFront: 1,
     });
   });
 });

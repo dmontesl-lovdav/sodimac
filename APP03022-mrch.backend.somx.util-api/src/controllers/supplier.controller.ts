@@ -3,6 +3,7 @@ import * as supplierService from '@/services/supplier.service.js';
 import { SupplierCreateSchema, SupplierUpdateSchema } from '@/dto/supplier.dto.js';
 import { resolveUserKey } from '@/middlewares/permission.middleware.js';
 import * as securityService from '@/services/security.service.js';
+import * as supplierRepo from '@/repositories/supplier.repo.js';
 import type { SupplierSecurityFilter } from '@/repositories/supplier.repo.js';
 
 function userId(req: Request): string {
@@ -24,9 +25,17 @@ async function resolveSupplierSecurity(req: Request): Promise<SupplierSecurityFi
             .filter((a) => a.typeKey === 'ATR002')
             .map((a) => Number(String(a.valueKey ?? '').replace(/\D/g, '')))
             .filter((n) => !Number.isNaN(n) && n > 0);
+        const groupKeys = attrs
+            .filter((a) => a.typeKey === 'ATR004')
+            .map((a) => a.valueKey)
+            .filter((v): v is string => typeof v === 'string' && v.trim() !== '');
+        const groupSuppliers = groupKeys.length > 0
+            ? await supplierRepo.getSupplierNumbersByGroupKeys(groupKeys)
+            : null;
         return {
             vendors: vendors.length > 0 ? vendors : null,
             typeIds: typeIds.length > 0 ? typeIds : null,
+            groupSuppliers,
         };
     } catch {
         return undefined;
@@ -83,6 +92,18 @@ export async function getSupplierByRfc(req: Request, res: Response, next: NextFu
         const result = await supplierService.findByRfc(String(req.params.rfc));
         if (!result) return res.status(404).json({ error: 'Proveedor no encontrado' });
         res.json(result);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function getSupplierNumbersByRfcs(req: Request, res: Response, next: NextFunction) {
+    try {
+        const raw = req.query.rfcs;
+        const joined = Array.isArray(raw) ? raw.join(',') : String(raw ?? '');
+        const rfcs = joined.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+        const supplierNumbers = await supplierRepo.findSupplierNumbersByRfcs(rfcs);
+        res.json({ data: { supplierNumbers } });
     } catch (err) {
         next(err);
     }

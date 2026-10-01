@@ -43,6 +43,8 @@ const EMPTY_ASSIGNMENTS: UserAssignments = {
   profileIds: [],
   roleIds: [],
   multipleProfiles: false,
+  profileIsFromFront: null,
+  frontRoleIds: [],
 };
 
 const utilUrl =
@@ -123,7 +125,7 @@ async function readAssignedUserIds(path: string): Promise<number[]> {
 }
 
 async function saveAssignedUserIds(path: string, selectedIds: number[]): Promise<void> {
-  await api.request(path, "put", { selectedIds });
+  await api.request(path, "put", { selectedIds, isFromFront: 1 });
 }
 
 function profileUsersPath(profileId: number): string {
@@ -169,13 +171,16 @@ async function applyExpectedAssignments(
   profileId: number,
   roleIds: number[]
 ): Promise<void> {
+  const hasAdminProfile =
+    current.profileIds.length > 0 && current.profileIsFromFront === false;
   const profileChanged =
     current.multipleProfiles || !current.profileIds.length || current.profileIds[0] !== profileId;
-  if (profileChanged) {
+  if (!hasAdminProfile && profileChanged) {
     await linkUser(profileUsersPath(profileId), userId);
   }
 
-  for (const roleId of idsNotInExpected(current.roleIds, roleIds)) {
+  const frontRoleIds = current.frontRoleIds ?? current.roleIds;
+  for (const roleId of idsNotInExpected(frontRoleIds, roleIds)) {
     await unlinkUser(roleUsersPath(roleId), userId);
   }
   for (const roleId of idsMissingFrom(current.roleIds, roleIds)) {

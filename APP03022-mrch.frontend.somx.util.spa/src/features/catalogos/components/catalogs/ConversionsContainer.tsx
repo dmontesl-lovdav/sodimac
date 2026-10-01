@@ -431,8 +431,12 @@ export default function ConversionsContainer() {
                         </button>
                       </PermissionGate>
                     </td>
-                    <td style={S.td}><button type="button" title="Editar" aria-label="Editar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#002D4C', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                      onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}><EditIcon /></button></td>
+                    <td style={S.td}>
+                      <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.EDIT_CONVERSION}>
+                        <button type="button" title="Editar" aria-label="Editar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#002D4C', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => navigate(`/util/catalogos/elementos/${elementId}/conversiones/editar/${c.idConversion}`)}><EditIcon /></button>
+                      </PermissionGate>
+                    </td>
                     <td style={S.td}>
                       <PermissionGate appEvent={APP_EVENT.CATALOGS_CATALOG.DELETE}>
                         <button type="button" title="Borrar" aria-label="Borrar" style={{ background: 'transparent', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#dc2626', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}

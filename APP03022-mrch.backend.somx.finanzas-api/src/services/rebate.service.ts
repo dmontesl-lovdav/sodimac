@@ -29,7 +29,7 @@ async function resolveAllowedVendorNums(
     return allowed;
 }
 
-export async function list(q: ListRebateQuery, securityVendors: string[] = [], securityTypeIds: number[] = [], securityGroups: string[] = []) {
+export async function list(q: ListRebateQuery, securityVendors: string[] = [], securityTypeIds: number[] = [], securityGroups: string[] = [], securityRebateSources: number[] | null = null) {
     const filter: FindOptionsWhere<Rebate> = {};
 
     if (q.status !== undefined) filter.status = q.status;
@@ -42,6 +42,14 @@ export async function list(q: ListRebateQuery, securityVendors: string[] = [], s
     if (q.from && q.to) filter.postingDate = Between(q.from, q.to);
     else if (q.from) filter.postingDate = MoreThanOrEqual(q.from);
     else if (q.to) filter.postingDate = LessThanOrEqual(q.to);
+
+    if (securityRebateSources !== null) {
+        if (q.source !== undefined) {
+            filter.source = securityRebateSources.includes(q.source) ? q.source : In([-1]);
+        } else {
+            filter.source = securityRebateSources.length > 0 ? In(securityRebateSources) : In([-1]);
+        }
+    }
 
     const allowedVendorNums = await resolveAllowedVendorNums(securityVendors, securityTypeIds, securityGroups);
     if (q.vendorNumber !== undefined) {
